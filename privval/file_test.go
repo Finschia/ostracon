@@ -2,7 +2,9 @@ package privval
 
 import (
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
+	"github.com/tendermint/tendermint/crypto/vrf"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -240,6 +242,33 @@ func TestSignProposal(t *testing.T) {
 	err = privVal.SignProposal("mychainid", proposal)
 	assert.NoError(err)
 	assert.Equal(sig, proposal.Signature)
+}
+
+func TestGenerateVRFProof(t *testing.T) {
+	assert := assert.New(t)
+
+	tempKeyFile, err := ioutil.TempFile("", "priv_validator_key_")
+	require.Nil(t, err)
+	tempStateFile, err := ioutil.TempFile("", "priv_validator_state_")
+	require.Nil(t, err)
+
+	privVal := GenFilePV(tempKeyFile.Name(), tempStateFile.Name())
+
+	privKeyEd25519, ok := privVal.Key.PrivKey.(ed25519.PrivKeyEd25519)
+	require.True(t, ok)
+	pubKeyEd25519, ok := privKeyEd25519.PubKey().(ed25519.PubKeyEd25519)
+	require.True(t, ok)
+	success := [][]byte{ {}, {0x00}, make([]byte,100) }
+	for _, msg := range success {
+		proof, err := privVal.GenerateVRFProof(msg)
+		require.Nil(t, err)
+		t.Log("  Message    : ", hex.EncodeToString(msg), " -> ", hex.EncodeToString(proof[:]))
+		actual, err := proof.ToHash()
+		require.Nil(t, err)
+		expected, err := vrf.Verify(&pubKeyEd25519, proof, msg)
+		require.Nil(t, err)
+		assert.Equal(expected, actual)
+	}
 }
 
 func TestDifferByTimestamp(t *testing.T) {

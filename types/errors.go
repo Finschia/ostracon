@@ -16,6 +16,12 @@ type (
 		Expected int
 		Actual   int
 	}
+
+	// ErrUnsupportedKey is returned when we encounter a private key which doesn't
+	// support generating VRF proof.
+	ErrUnsupportedKey struct {
+		Expected string
+	}
 )
 
 func NewErrInvalidCommitHeight(expected, actual int64) ErrInvalidCommitHeight {
@@ -38,4 +44,14 @@ func NewErrInvalidCommitSignatures(expected, actual int) ErrInvalidCommitSignatu
 
 func (e ErrInvalidCommitSignatures) Error() string {
 	return fmt.Sprintf("Invalid commit -- wrong set size: %v vs %v", e.Expected, e.Actual)
+}
+
+func NewErrUnsupportedKey(expected string) ErrUnsupportedKey {
+	return ErrUnsupportedKey{
+		Expected: expected,
+	}
+}
+
+func (e ErrUnsupportedKey) Error() string {
+	return fmt.Sprintf("the private key is not a %s", e.Expected)
 }
