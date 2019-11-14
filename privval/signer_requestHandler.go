@@ -86,6 +86,16 @@ func DefaultValidationRequestHandler(
 	case *privvalproto.Message_PingRequest:
 		err, res = nil, mustWrapMsg(&privvalproto.PingResponse{})
 
+	case *privvalproto.Message_VrfProofRequest:
+		message := r.VrfProofRequest.Message
+		proof, err := privVal.GenerateVRFProof(message)
+		if err != nil {
+			err := privvalproto.RemoteSignerError{Code: 0, Description: err.Error()}
+			res = mustWrapMsg(&privvalproto.VRFProofResponse{Proof: nil, Error: &err})
+		} else {
+			res = mustWrapMsg(&privvalproto.VRFProofResponse{Proof: proof[:], Error: nil})
+		}
+
 	default:
 		err = fmt.Errorf("unknown msg: %v", r)
 	}

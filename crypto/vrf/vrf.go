@@ -47,7 +47,7 @@ func (op *Output) ToInt() *big.Int {
     return &i
 }
 
-func Prove(privateKey *ed25519.PrivKeyEd25519, message []byte) (*Proof, error) {
+func Prove(privateKey *ed25519.PrivKey, message []byte) (*Proof, error) {
     privKey := (*[vrfimpl.SECRETKEYBYTES]byte)(unsafe.Pointer(privateKey))
     pf, err := vrfimpl.Prove(privKey, message)
     if err != nil {
@@ -56,7 +56,7 @@ func Prove(privateKey *ed25519.PrivKeyEd25519, message []byte) (*Proof, error) {
     return newProof(pf), nil
 }
 
-func Verify(publicKey *ed25519.PubKeyEd25519, proof *Proof, message []byte) (*Output, error) {
+func Verify(publicKey *ed25519.PubKey, proof *Proof, message []byte) (*Output, error) {
     pubKey := (*[vrfimpl.PUBLICKEYBYTES]byte)(unsafe.Pointer(publicKey))
     op, err := vrfimpl.Verify(pubKey, proof.toBytes(), message)
     if err != nil {

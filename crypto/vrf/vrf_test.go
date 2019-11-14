@@ -86,6 +86,51 @@ func TestKeyPairFromSeed(t *testing.T) {
     t.Logf("output: %s (%d bytes)\n", enc(output[:]), len(output))
 }
 
+func TestHashIsDeterministicForKeyPairAndMessage(t *testing.T) {
+    sk := ed25519.GenPrivKey()
+    pk, _ := sk.PubKey().(ed25519.PubKeyEd25519)
+    message := []byte("hello, world")
+    var hashes = []*vrf.Output{}
+    var proofs = []*vrf.Proof{}
+    for i := 0; i < 100; i++ {
+        var proof, err1 = vrf.Prove(&sk, message[:])
+        if err1 != nil {
+            t.Errorf("probe failed: %s", err1)
+        } else {
+            hash, err2 := proof.ToHash()
+            if err2 != nil {
+                t.Errorf("failed to hash proof: %s", err2)
+            } else {
+                output, err3 := vrf.Verify(&pk, proof, message)
+                if err3 != nil {
+                    t.Errorf("fail to verify proof: %s", err3)
+                } else if !bytes.Equal(hash[:], output[:]) {
+                    t.Errorf("hash not match")
+                } else {
+                    hashes = append(hashes, hash)
+                    proofs = append(proofs, proof)
+                }
+            }
+        }
+    }
+
+    t.Logf("proofs for \"%s\": %s × %d", string(message), hex.EncodeToString(proofs[0][:]), len(hashes))
+    t.Logf("hashes for \"%s\": %s × %d", string(message), hex.EncodeToString(hashes[0][:]), len(hashes))
+
+    hash := hashes[0]
+    proof := proofs[0]
+    for i := 1; i < len(hashes); i++ {
+        if ! bytes.Equal(hash[:], hashes[i][:]) {
+            t.Errorf("contains different hash: %s != %s",
+                hex.EncodeToString(hash[:]), hex.EncodeToString(hashes[i][:]))
+        }
+        if ! bytes.Equal(proof[:], proofs[i][:]) {
+            t.Errorf("contains different proof: %s != %s",
+                hex.EncodeToString(proof[:]), hex.EncodeToString(proofs[i][:]))
+        }
+    }
+}
+
 func TestIsValidKey(t *testing.T) {
 
     // generated from KeyPair()
@@ -227,6 +272,8 @@ func TestToHash(t *testing.T) {
 }
 
 func TestKeyPairCompatibility(t *testing.T) {
+
+    // deterministic Tendermint's key-pair
     var secret [vrfimpl.SEEDBYTES]byte
     tmPrivKey := ed25519.GenPrivKeyFromSecret(secret[:])
     tmPubKey, _ := tmPrivKey.PubKey().(ed25519.PubKeyEd25519)
@@ -254,6 +301,30 @@ func TestKeyPairCompatibility(t *testing.T) {
     pubKeyBytesPtr := (*[vrfimpl.PUBLICKEYBYTES]byte)(unsafe.Pointer(&tmPubKey))
     if ! vrfimpl.IsValidKey(pubKeyBytesPtr) {
         t.Errorf("ed25519 key is not a valid public key")
+    }
+
+    // random Tendermint's key-pairs
+    msg := []byte("hello, world")
+    for i := 0; i < 100; i++ {
+        privKey := ed25519.GenPrivKey()
+        proof, err := vrf.Prove(&privKey, msg)
+        if err != nil {
+            t.Errorf("Prove() failed: %s", err)
+        } else {
+            pubKey, _ := privKey.PubKey().(ed25519.PubKeyEd25519)
+            output, err := vrf.Verify(&pubKey, proof, msg)
+            if err != nil {
+                t.Errorf("Verify() failed: %s", err)
+            } else {
+                hash, err := proof.ToHash()
+                if err != nil {
+                    t.Errorf("Proof.ToHash() failed: %s", err)
+                } else if !bytes.Equal(hash[:], output[:]) {
+                    t.Errorf("proof hash and verify hash didn't match: %s != %s",
+                        hex.EncodeToString(hash[:]), hex.EncodeToString(output[:]))
+                }
+            }
+        }
     }
 }
 

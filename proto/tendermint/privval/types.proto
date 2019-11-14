@@ -56,6 +56,17 @@ message SignedProposalResponse {
   RemoteSignerError         error    = 2;
 }
 
+// VRFProofRequest is a PrivValidatorSocket message containing a message to generate proof.
+message VRFProofRequest {
+  bytes message = 1;
+}
+
+// VRFProofResponse is a PrivValidatorSocket message containing a Proof.
+message VRFProofResponse {
+  bytes             proof = 1;
+  RemoteSignerError error = 2;
+}
+
 // PingRequest is a request to confirm that the connection is alive.
 message PingRequest {}
 
@@ -72,5 +83,7 @@ message Message {
     SignedProposalResponse signed_proposal_response = 6;
     PingRequest            ping_request             = 7;
     PingResponse           ping_response            = 8;
+    VRFProofRequest        vrf_proof_request        = 1000;
+    VRFProofResponse       vrf_proof_response       = 1001;
   }
 }
