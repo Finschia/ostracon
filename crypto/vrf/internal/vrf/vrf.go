@@ -4,7 +4,7 @@ package vrf
 /*
 #cgo CFLAGS: -I./libsodium/src/libsodium/include
 #cgo LDFLAGS: -lsodium
-#include "./libsodium/src/libsodium/include/sodium.h"
+#include "./crypto/vrf/internal/vrf/libsodium/src/libsodium/include/sodium.h"
 */
 import "C"
 import (
@@ -58,11 +58,10 @@ func Prove(privateKey *[SECRETKEYBYTES]byte, message []byte) (*[PROOFBYTES]byte,
     proof := [PROOFBYTES]byte{}
     proofPtr := (*C.uchar)(unsafe.Pointer(&proof))
     privateKeyPtr := (*C.uchar)(unsafe.Pointer(privateKey))
-    messagePtr := (*C.uchar)(unsafe.Pointer(&message))
+	messagePtr := bytesToUnsignedCharPointer(message)
     messageLen := (C.ulonglong)(len(message))
     if C.crypto_vrf_prove(proofPtr, privateKeyPtr, messagePtr, messageLen) != 0 {
-        return nil, errors.New(fmt.Sprintf("unable to decode the given privateKey: %s",
-            hex.EncodeToString(privateKey[:])))
+        return nil, errors.New(fmt.Sprintf("unable to decode the given privateKey"))
     }
     return &proof, nil
 }
@@ -76,7 +75,7 @@ func Verify(publicKey *[PUBLICKEYBYTES]byte, proof *[PROOFBYTES]byte, message []
     outputPtr := (*C.uchar)(unsafe.Pointer(&output))
     publicKeyPtr := (*C.uchar)(unsafe.Pointer(publicKey))
     proofPtr := (*C.uchar)(unsafe.Pointer(proof))
-    messagePtr := (*C.uchar)(unsafe.Pointer(&message))
+    messagePtr := bytesToUnsignedCharPointer(message)
     messageLen := (C.ulonglong)(len(message))
     if C.crypto_vrf_verify(outputPtr, publicKeyPtr, proofPtr, messagePtr, messageLen) != 0 {
         return nil, errors.New(fmt.Sprintf(
@@ -115,4 +114,11 @@ func SkToSeed(privateKey *[SECRETKEYBYTES]byte) *[SEEDBYTES]byte {
     privateKeyPtr := (*C.uchar)(unsafe.Pointer(privateKey))
     C.crypto_vrf_sk_to_seed(seedPtr, privateKeyPtr) // void
     return &seed
+}
+
+func bytesToUnsignedCharPointer(msg []byte) *C.uchar {
+	if len(msg) == 0 {
+		return (*C.uchar)(C.NULL)
+	}
+	return (*C.uchar)(unsafe.Pointer(&msg[0]))
 }
