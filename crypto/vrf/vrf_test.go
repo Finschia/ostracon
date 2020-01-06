@@ -282,6 +282,6 @@ func TestProve(t *testing.T) {
     if err3 != nil {
         t.Errorf("failed to verify: %s", err3)
     } else if ! bytes.Equal(hash1[:], hash2[:]) {
-        t.Errorf("output incompativle: %s != %s", enc(hash1[:]), enc(hash2[:]))
+        t.Errorf("incompatible output: %s != %s", enc(hash1[:]), enc(hash2[:]))
     }
 }

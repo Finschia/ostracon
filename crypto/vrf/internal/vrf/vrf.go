@@ -4,7 +4,7 @@ package vrf
 /*
 #cgo CFLAGS: -I./libsodium/src/libsodium/include
 #cgo LDFLAGS: -lsodium
-#include "./libsodium/src/libsodium/include/sodium.h"
+#include "./crypto/vrf/internal/vrf/libsodium/src/libsodium/include/sodium.h"
 */
 import "C"
 import (
@@ -61,8 +61,7 @@ func Prove(privateKey *[SECRETKEYBYTES]byte, message []byte) (*[PROOFBYTES]byte,
     messagePtr := (*C.uchar)(unsafe.Pointer(&message))
     messageLen := (C.ulonglong)(len(message))
     if C.crypto_vrf_prove(proofPtr, privateKeyPtr, messagePtr, messageLen) != 0 {
-        return nil, errors.New(fmt.Sprintf("unable to decode the given privateKey: %s",
-            hex.EncodeToString(privateKey[:])))
+        return nil, errors.New(fmt.Sprintf("unable to decode the given privateKey"))
     }
     return &proof, nil
 }
