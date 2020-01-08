@@ -68,7 +68,7 @@ install_abci:
 ### libsodium
 
 libsodium:
-	cd ./crypto/vrf/internal/vrf/libsodium && \
+	cd $(SRCPATH)/crypto/vrf/internal/vrf/libsodium && \
 		./autogen.sh && \
 		./configure --disable-shared --prefix="$(SRCPATH)/crypto/vrf/internal/vrf/" &&	\
 		$(MAKE) && \
