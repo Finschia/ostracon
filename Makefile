@@ -1,4 +1,5 @@
 PACKAGES=$(shell go list ./...)
+SRCPATH=$(shell pwd)
 OUTPUT?=build/tendermint
 
 BUILD_TAGS?=tendermint
@@ -108,6 +109,19 @@ install_abci:
 ###############################################################################
 ###                              Distribution                               ###
 ###############################################################################
+
+########################################
+### libsodium
+
+libsodium:
+	cd $(SRCPATH)/crypto/vrf/internal/vrf/libsodium && \
+		./autogen.sh && \
+		./configure --disable-shared --prefix="$(SRCPATH)/crypto/vrf/internal/vrf/" &&	\
+		$(MAKE) && \
+		$(MAKE) install
+
+########################################
+### Distribution
 
 # dist builds binaries for all platforms and packages them for distribution
 # TODO add abci to these scripts

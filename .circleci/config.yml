@@ -16,6 +16,14 @@ executors:
       AWS_REGION: us-east-1
 
 commands:
+  checkout_with_submodules:
+    steps:
+      - checkout
+      - run:
+          name: "Pull Submodules"
+          command: |
+            git submodule init
+            git submodule update
   run_test:
     parameters:
       script_path:
@@ -27,7 +35,7 @@ commands:
           name: "Restore source code cache"
           keys:
             - go-src-v1-{{ .Revision }}
-      - checkout
+      - checkout_with_submodules
       - restore_cache:
           name: "Restore go modules cache"
           keys:
@@ -40,7 +48,7 @@ jobs:
   setup_dependencies:
     executor: golang
     steps:
-      - checkout
+      - checkout_with_submodules
       - restore_cache:
           name: "Restore go modules cache"
           keys:
@@ -75,7 +83,7 @@ jobs:
   deploy_docs:
     executor: docs
     steps:
-      - checkout
+      - checkout_with_submodules
       - run:
           name: "Pull versions"
           command: git fetch origin v0.32 v0.33
@@ -93,7 +101,7 @@ jobs:
           name: "Restore source code cache"
           keys:
             - go-src-v1-{{ .Revision }}
-      - checkout
+      - checkout_with_submodules
       - run:
           name: Get next release number
           command: |
