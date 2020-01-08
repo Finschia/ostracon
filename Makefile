@@ -5,6 +5,7 @@ GOTOOLS = \
 	github.com/square/certstrap
 GOBIN?=${GOPATH}/bin
 PACKAGES=$(shell go list ./...)
+SRCPATH=$(shell pwd)
 OUTPUT?=build/tendermint
 
 INCLUDE = -I=. -I=${GOPATH}/src -I=${GOPATH}/src/github.com/gogo/protobuf/protobuf
@@ -62,6 +63,16 @@ build_abci:
 
 install_abci:
 	@go install -mod=readonly ./abci/cmd/...
+
+########################################
+### libsodium
+
+libsodium:
+	cd ./crypto/vrf/internal/vrf/libsodium && \
+		./autogen.sh && \
+		./configure --disable-shared --prefix="$(SRCPATH)/crypto/vrf/internal/vrf/" &&	\
+		$(MAKE) && \
+		$(MAKE) install
 
 ########################################
 ### Distribution
