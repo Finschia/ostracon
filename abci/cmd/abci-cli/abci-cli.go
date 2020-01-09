@@ -111,16 +111,28 @@ func Execute() error {
 }
 
 func addGlobalFlags() {
-	RootCmd.PersistentFlags().StringVarP(&flagAddress, "address", "", "tcp://0.0.0.0:26658", "address of application socket")
+	RootCmd.PersistentFlags().StringVarP(&flagAddress,
+		"address",
+		"",
+		"tcp://0.0.0.0:26658",
+		"address of application socket")
 	RootCmd.PersistentFlags().StringVarP(&flagAbci, "abci", "", "socket", "either socket or grpc")
-	RootCmd.PersistentFlags().BoolVarP(&flagVerbose, "verbose", "v", false, "print the command and results as if it were a console session")
+	RootCmd.PersistentFlags().BoolVarP(&flagVerbose,
+		"verbose",
+		"v",
+		false,
+		"print the command and results as if it were a console session")
 	RootCmd.PersistentFlags().StringVarP(&flagLogLevel, "log_level", "", "debug", "set the logger level")
 }
 
 func addQueryFlags() {
 	queryCmd.PersistentFlags().StringVarP(&flagPath, "path", "", "/store", "path to prefix query with")
 	queryCmd.PersistentFlags().IntVarP(&flagHeight, "height", "", 0, "height to query the blockchain at")
-	queryCmd.PersistentFlags().BoolVarP(&flagProve, "prove", "", false, "whether or not to return a merkle proof of the query result")
+	queryCmd.PersistentFlags().BoolVarP(&flagProve,
+		"prove",
+		"",
+		false,
+		"whether or not to return a merkle proof of the query result")
 }
 
 func addCounterFlags() {
@@ -332,16 +344,18 @@ func cmdTest(cmd *cobra.Command, args []string) error {
 
 func cmdBatch(cmd *cobra.Command, args []string) error {
 	bufReader := bufio.NewReader(os.Stdin)
+LOOP:
 	for {
 
 		line, more, err := bufReader.ReadLine()
-		if more {
+		switch {
+		case more:
 			return errors.New("Input line is too long")
-		} else if err == io.EOF {
-			break
-		} else if len(line) == 0 {
+		case err == io.EOF:
+			break LOOP
+		case len(line) == 0:
 			continue
-		} else if err != nil {
+		case err != nil:
 			return err
 		}
 

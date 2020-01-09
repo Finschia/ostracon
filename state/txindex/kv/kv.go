@@ -103,7 +103,7 @@ func (txi *TxIndex) AddBatch(b *txindex.Batch) error {
 		storeBatch.Set(hash, rawBytes)
 	}
 
-	storeBatch.Write()
+	storeBatch.WriteSync()
 	return nil
 }
 
@@ -132,7 +132,7 @@ func (txi *TxIndex) Index(result *types.TxResult) error {
 	}
 
 	b.Set(hash, rawBytes)
-	b.Write()
+	b.WriteSync()
 
 	return nil
 }
@@ -168,7 +168,10 @@ func (txi *TxIndex) Search(q *query.Query) ([]*types.TxResult, error) {
 	filteredHashes := make(map[string][]byte)
 
 	// get a list of conditions (like "tx.height > 5")
-	conditions := q.Conditions()
+	conditions, err := q.Conditions()
+	if err != nil {
+		return nil, errors.Wrap(err, "error during parsing conditions from query")
+	}
 
 	// if there is a hash condition, return the result immediately
 	hash, err, ok := lookForHash(conditions)
@@ -176,10 +179,14 @@ func (txi *TxIndex) Search(q *query.Query) ([]*types.TxResult, error) {
 		return nil, errors.Wrap(err, "error during searching for a hash in the query")
 	} else if ok {
 		res, err := txi.Get(hash)
-		if res == nil {
+		switch {
+		case err != nil:
+			return []*types.TxResult{}, errors.Wrap(err, "error while retrieving the result")
+		case res == nil:
 			return []*types.TxResult{}, nil
+		default:
+			return []*types.TxResult{res}, nil
 		}
-		return []*types.TxResult{res}, errors.Wrap(err, "error while retrieving the result")
 	}
 
 	// conditions to skip because they're handled before "everything else"
@@ -276,10 +283,10 @@ func lookForHeight(conditions []query.Condition) (height int64) {
 type queryRanges map[string]queryRange
 
 type queryRange struct {
-	key               string
 	lowerBound        interface{} // int || time.Time
-	includeLowerBound bool
 	upperBound        interface{} // int || time.Time
+	key               string
+	includeLowerBound bool
 	includeUpperBound bool
 }
 
@@ -370,7 +377,12 @@ func isRangeOperation(op query.Operator) bool {
 // non-intersecting matches are removed.
 //
 // NOTE: filteredHashes may be empty if no previous condition has matched.
-func (txi *TxIndex) match(c query.Condition, startKeyBz []byte, filteredHashes map[string][]byte, firstRun bool) map[string][]byte {
+func (txi *TxIndex) match(
+	c query.Condition,
+	startKeyBz []byte,
+	filteredHashes map[string][]byte,
+	firstRun bool,
+) map[string][]byte {
 	// A previous match was attempted but resulted in no matches, so we return
 	// no matches (assuming AND operand).
 	if !firstRun && len(filteredHashes) == 0 {
@@ -379,7 +391,8 @@ func (txi *TxIndex) match(c query.Condition, startKeyBz []byte, filteredHashes m
 
 	tmpHashes := make(map[string][]byte)
 
-	if c.Op == query.OpEqual {
+	switch {
+	case c.Op == query.OpEqual:
 		it := dbm.IteratePrefix(txi.store, startKeyBz)
 		defer it.Close()
 
@@ -387,7 +400,7 @@ func (txi *TxIndex) match(c query.Condition, startKeyBz []byte, filteredHashes m
 			tmpHashes[string(it.Value())] = it.Value()
 		}
 
-	} else if c.Op == query.OpContains {
+	case c.Op == query.OpContains:
 		// XXX: startKey does not apply here.
 		// For example, if startKey = "account.owner/an/" and search query = "account.owner CONTAINS an"
 		// we can't iterate with prefix "account.owner/an/" because we might miss keys like "account.owner/Ulan/"
@@ -403,7 +416,7 @@ func (txi *TxIndex) match(c query.Condition, startKeyBz []byte, filteredHashes m
 				tmpHashes[string(it.Value())] = it.Value()
 			}
 		}
-	} else {
+	default:
 		panic("other operators should be handled already")
 	}
 
@@ -434,7 +447,12 @@ func (txi *TxIndex) match(c query.Condition, startKeyBz []byte, filteredHashes m
 // any non-intersecting matches are removed.
 //
 // NOTE: filteredHashes may be empty if no previous condition has matched.
-func (txi *TxIndex) matchRange(r queryRange, startKey []byte, filteredHashes map[string][]byte, firstRun bool) map[string][]byte {
+func (txi *TxIndex) matchRange(
+	r queryRange,
+	startKey []byte,
+	filteredHashes map[string][]byte,
+	firstRun bool,
+) map[string][]byte {
 	// A previous match was attempted but resulted in no matches, so we return
 	// no matches (assuming AND operand).
 	if !firstRun && len(filteredHashes) == 0 {
@@ -454,8 +472,7 @@ LOOP:
 			continue
 		}
 
-		switch r.AnyBound().(type) {
-		case int64:
+		if _, ok := r.AnyBound().(int64); ok {
 			v, err := strconv.ParseInt(extractValueFromKey(it.Key()), 10, 64)
 			if err != nil {
 				continue LOOP
