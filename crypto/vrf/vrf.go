@@ -8,11 +8,14 @@ import (
     "unsafe"
 )
 
-const PROOFBYTES = vrfimpl.PROOFBYTES
-
-const OUTPUTBYTES = vrfimpl.OUTPUTBYTES
+const (
+    PROOFBYTES = vrfimpl.PROOFBYTES
+    OUTPUTBYTES = vrfimpl.OUTPUTBYTES
+)
 
 type Proof [PROOFBYTES]byte
+
+type Output [OUTPUTBYTES]byte
 
 func newProof(bytes *[PROOFBYTES]byte) *Proof {
     proof := Proof{}
@@ -31,8 +34,6 @@ func (pf *Proof) ToHash() (*Output, error) {
     }
     return newOutput(op), nil
 }
-
-type Output [OUTPUTBYTES]byte
 
 func newOutput(bytes *[OUTPUTBYTES]byte) *Output {
     output := Output{}
