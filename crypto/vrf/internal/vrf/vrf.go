@@ -15,17 +15,14 @@ import (
 	"unsafe"
 )
 
-const PUBLICKEYBYTES = uint32(C.crypto_vrf_PUBLICKEYBYTES)
-
-const SECRETKEYBYTES = uint32(C.crypto_vrf_SECRETKEYBYTES)
-
-const SEEDBYTES = uint32(C.crypto_vrf_SEEDBYTES)
-
-const PROOFBYTES = uint32(C.crypto_vrf_PROOFBYTES)
-
-const OUTPUTBYTES = uint32(C.crypto_vrf_OUTPUTBYTES)
-
-const PRIMITIVE = C.crypto_vrf_PRIMITIVE
+const (
+	PUBLICKEYBYTES = uint32(C.crypto_vrf_PUBLICKEYBYTES)
+	SECRETKEYBYTES = uint32(C.crypto_vrf_SECRETKEYBYTES)
+	SEEDBYTES = uint32(C.crypto_vrf_SEEDBYTES)
+	PROOFBYTES = uint32(C.crypto_vrf_PROOFBYTES)
+	OUTPUTBYTES = uint32(C.crypto_vrf_OUTPUTBYTES)
+	PRIMITIVE = C.crypto_vrf_PRIMITIVE
+)
 
 // Generate an Ed25519 key pair for use with VRF.
 func KeyPair() (*[PUBLICKEYBYTES]byte, *[SECRETKEYBYTES]byte) {
