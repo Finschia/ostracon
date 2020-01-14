@@ -16,6 +16,14 @@ executors:
       AWS_REGION: us-east-1
 
 commands:
+  checkout_with_submodules:
+    steps:
+      - checkout
+      - run:
+          name: "Pull Submodules"
+          command: |
+            git submodule init
+            git submodule update
   run_test:
     parameters:
       script_path:
@@ -27,7 +35,7 @@ commands:
           name: "Restore source code cache"
           keys:
             - go-src-v1-{{ .Revision }}
-      - checkout
+      - checkout_with_submodules
       - restore_cache:
           name: "Restore go modules cache"
           keys:
@@ -41,7 +49,7 @@ jobs:
   setup_dependencies:
     executor: golang
     steps:
-      - checkout
+      - checkout_with_submodules
       - restore_cache:
           name: "Restore go modules cache"
           keys:
@@ -107,18 +115,23 @@ jobs:
           name: "Restore source code cache"
           keys:
             - go-src-v1-{{ .Revision }}
-      - checkout
+      - checkout_with_submodules
       - restore_cache:
           name: "Restore go module cache"
           keys:
             - go-mod-v2-{{ checksum "go.sum" }}
+      - run:
+          name: "Build and install libsodium"
+          command: |
+            sudo apt-get update && sudo apt-get -y install libtool
+            make libsodium
       - run:
           name: "Run tests"
           command: |
             export VERSION="$(git describe --tags --long | sed 's/v\(.*\)/\1/')"
             export GO111MODULE=on
             mkdir -p /tmp/logs /tmp/workspace/profiles
-            for pkg in $(go list github.com/tendermint/tendermint/... | circleci tests split --split-by=timings); do
+            for pkg in $(go list ./... | circleci tests split --split-by=timings); do
               id=$(basename "$pkg")
               go test -v -timeout 5m -mod=readonly -race -coverprofile=/tmp/workspace/profiles/$id.out -covermode=atomic "$pkg" | tee "/tmp/logs/$id-$RANDOM.log"
             done
@@ -140,7 +153,7 @@ jobs:
       GOARCH: amd64
     parallelism: 1
     steps:
-      - checkout
+      - checkout_with_submodules
       - run:
           name: run localnet and exit on failure
           command: |
@@ -156,42 +169,42 @@ jobs:
     machine:
       image: circleci/classic:latest
     steps:
-      - checkout
+      - checkout_with_submodules
       - run: mkdir -p $GOPATH/src/github.com/tendermint
       - run: ln -sf /home/circleci/project $GOPATH/src/github.com/tendermint/tendermint
       - run: bash test/p2p/circleci.sh
       - store_artifacts:
           path: /home/circleci/project/test/p2p/logs
 
-  upload_coverage:
-    executor: golang
-    steps:
-      - attach_workspace:
-          at: /tmp/workspace
-      - restore_cache:
-          name: "Restore source code cache"
-          keys:
-            - go-src-v1-{{ .Revision }}
-      - checkout
-      - restore_cache:
-          name: "Restore go module cache"
-          keys:
-            - go-mod-v2-{{ checksum "go.sum" }}
-      - run:
-          name: gather
-          command: |
-            echo "mode: atomic" > coverage.txt
-            for prof in $(ls /tmp/workspace/profiles/); do
-              tail -n +2 /tmp/workspace/profiles/"$prof" >> coverage.txt
-            done
-      - run:
-          name: upload
-          command: bash .circleci/codecov.sh -f coverage.txt
+#  upload_coverage:
+#    executor: golang
+#    steps:
+#      - attach_workspace:
+#          at: /tmp/workspace
+#      - restore_cache:
+#          name: "Restore source code cache"
+#          keys:
+#            - go-src-v1-{{ .Revision }}
+#      - checkout
+#      - restore_cache:
+#          name: "Restore go module cache"
+#          keys:
+#            - go-mod-v2-{{ checksum "go.sum" }}
+#      - run:
+#          name: gather
+#          command: |
+#            echo "mode: atomic" > coverage.txt
+#            for prof in $(ls /tmp/workspace/profiles/); do
+#              tail -n +2 /tmp/workspace/profiles/"$prof" >> coverage.txt
+#            done
+#      - run:
+#          name: upload
+#          command: bash .circleci/codecov.sh -f coverage.txt
 
   deploy_docs:
     executor: docs
     steps:
-      - checkout
+      - checkout_with_submodules
       - run:
           name: "Build docs"
           command: make build-docs
@@ -206,7 +219,7 @@ jobs:
           name: "Restore source code cache"
           keys:
             - go-src-v1-{{ .Revision }}
-      - checkout
+      - checkout_with_submodules
       - run:
           name: Get next release number
           command: |
@@ -239,7 +252,7 @@ jobs:
           name: "Restore source code cache"
           keys:
             - go-src-v1-{{ .Revision }}
-      - checkout
+      - checkout_with_submodules
       - restore_cache:
           name: "Restore release dependencies cache"
           keys:
@@ -268,7 +281,7 @@ jobs:
           name: "Restore source code cache"
           keys:
             - go-src-v1-{{ .Revision }}
-      - checkout
+      - checkout_with_submodules
       - attach_workspace:
           at: /tmp/workspace
       - run:
@@ -297,7 +310,7 @@ jobs:
     machine:
       image: ubuntu-1604:201903-01
     steps:
-      - checkout
+      - checkout_with_submodules
       - attach_workspace:
           at: /tmp/workspace
       - run:
@@ -316,7 +329,7 @@ jobs:
     steps:
       - attach_workspace:
           at: /tmp/workspace
-      - checkout
+      - checkout_with_submodules
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
@@ -351,7 +364,7 @@ jobs:
       GOARCH: amd64
     parallelism: 1
     steps:
-      - checkout
+      - checkout_with_submodules
       - run:
           name: Test RPC endpoints against swagger documentation
           command: |
@@ -407,9 +420,9 @@ workflows:
           requires:
             - setup_dependencies
       - test_p2p
-      - upload_coverage:
-          requires:
-            - test_cover
+#      - upload_coverage:
+#          requires:
+#            - test_cover
       - reproducible_builds:
           filters:
             branches:
