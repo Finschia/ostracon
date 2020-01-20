@@ -21,8 +21,8 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/crypto"
-	cmn "github.com/tendermint/tendermint/libs/common"
 	"github.com/tendermint/tendermint/libs/log"
+	tmrand "github.com/tendermint/tendermint/libs/rand"
 	mempl "github.com/tendermint/tendermint/mempool"
 	"github.com/tendermint/tendermint/mock"
 	"github.com/tendermint/tendermint/privval"
@@ -63,17 +63,18 @@ func TestMain(m *testing.M) {
 // and which ones we need the wal for - then we'd also be able to only flush the
 // wal writer when we need to, instead of with every message.
 
-func startNewConsensusStateAndWaitForBlock(t *testing.T, consensusReplayConfig *cfg.Config,
+func startNewStateAndWaitForBlock(t *testing.T, consensusReplayConfig *cfg.Config,
 	lastBlockHeight int64, blockDB dbm.DB, stateDB dbm.DB) {
 	logger := log.TestingLogger()
 	state, _ := sm.LoadStateFromDBOrGenesisFile(stateDB, consensusReplayConfig.GenesisFile())
 	privValidator := loadPrivValidator(consensusReplayConfig)
-	cs := newConsensusStateWithConfigAndBlockStore(
+	cs := newStateWithConfigAndBlockStore(
 		consensusReplayConfig,
 		state,
 		privValidator,
-		kvstore.NewKVStoreApplication(),
-		blockDB)
+		kvstore.NewApplication(),
+		blockDB,
+	)
 	cs.SetLogger(logger)
 
 	bytes, _ := ioutil.ReadFile(cs.config.WalFile())
@@ -98,7 +99,7 @@ func startNewConsensusStateAndWaitForBlock(t *testing.T, consensusReplayConfig *
 	}
 }
 
-func sendTxs(ctx context.Context, cs *ConsensusState) {
+func sendTxs(ctx context.Context, cs *State) {
 	for i := 0; i < 256; i++ {
 		select {
 		case <-ctx.Done():
@@ -115,14 +116,14 @@ func sendTxs(ctx context.Context, cs *ConsensusState) {
 func TestWALCrash(t *testing.T) {
 	testCases := []struct {
 		name         string
-		initFn       func(dbm.DB, *ConsensusState, context.Context)
+		initFn       func(dbm.DB, *State, context.Context)
 		heightToStop int64
 	}{
 		{"empty block",
-			func(stateDB dbm.DB, cs *ConsensusState, ctx context.Context) {},
+			func(stateDB dbm.DB, cs *State, ctx context.Context) {},
 			1},
 		{"many non-empty blocks",
-			func(stateDB dbm.DB, cs *ConsensusState, ctx context.Context) {
+			func(stateDB dbm.DB, cs *State, ctx context.Context) {
 				go sendTxs(ctx, cs)
 			},
 			3},
@@ -138,7 +139,7 @@ func TestWALCrash(t *testing.T) {
 }
 
 func crashWALandCheckLiveness(t *testing.T, consensusReplayConfig *cfg.Config,
-	initFn func(dbm.DB, *ConsensusState, context.Context), heightToStop int64) {
+	initFn func(dbm.DB, *State, context.Context), heightToStop int64) {
 	walPanicked := make(chan error)
 	crashingWal := &crashingWAL{panicCh: walPanicked, heightToStop: heightToStop}
 
@@ -153,12 +154,13 @@ LOOP:
 		stateDB := blockDB
 		state, _ := sm.MakeGenesisStateFromFile(consensusReplayConfig.GenesisFile())
 		privValidator := loadPrivValidator(consensusReplayConfig)
-		cs := newConsensusStateWithConfigAndBlockStore(
+		cs := newStateWithConfigAndBlockStore(
 			consensusReplayConfig,
 			state,
 			privValidator,
-			kvstore.NewKVStoreApplication(),
-			blockDB)
+			kvstore.NewApplication(),
+			blockDB,
+		)
 		cs.SetLogger(logger)
 
 		// start sending transactions
@@ -188,7 +190,7 @@ LOOP:
 			t.Logf("WAL panicked: %v", err)
 
 			// make sure we can make blocks after a crash
-			startNewConsensusStateAndWaitForBlock(t, consensusReplayConfig, cs.Height, blockDB, stateDB)
+			startNewStateAndWaitForBlock(t, consensusReplayConfig, cs.Height, blockDB, stateDB)
 
 			// stop consensus state and transactions sender (initFn)
 			cs.Stop()
@@ -548,8 +550,8 @@ func TestMockProxyApp(t *testing.T) {
 
 	assert.NotPanics(t, func() {
 		abciResWithEmptyDeliverTx := new(sm.ABCIResponses)
-		abciResWithEmptyDeliverTx.DeliverTx = make([]*abci.ResponseDeliverTx, 0)
-		abciResWithEmptyDeliverTx.DeliverTx = append(abciResWithEmptyDeliverTx.DeliverTx, &abci.ResponseDeliverTx{})
+		abciResWithEmptyDeliverTx.DeliverTxs = make([]*abci.ResponseDeliverTx, 0)
+		abciResWithEmptyDeliverTx.DeliverTxs = append(abciResWithEmptyDeliverTx.DeliverTxs, &abci.ResponseDeliverTx{})
 
 		// called when saveABCIResponses:
 		bytes := cdc.MustMarshalBinaryBare(abciResWithEmptyDeliverTx)
@@ -562,7 +564,7 @@ func TestMockProxyApp(t *testing.T) {
 		mock := newMockProxyApp([]byte("mock_hash"), loadedAbciRes)
 
 		abciRes := new(sm.ABCIResponses)
-		abciRes.DeliverTx = make([]*abci.ResponseDeliverTx, len(loadedAbciRes.DeliverTx))
+		abciRes.DeliverTxs = make([]*abci.ResponseDeliverTx, len(loadedAbciRes.DeliverTxs))
 		// Execute transactions and get hash.
 		proxyCb := func(req *abci.Request, res *abci.Response) {
 			if r, ok := res.Value.(*abci.Response_DeliverTx); ok {
@@ -576,7 +578,7 @@ func TestMockProxyApp(t *testing.T) {
 					logger.Debug("Invalid tx", "code", txRes.Code, "log", txRes.Log)
 					invalidTxs++
 				}
-				abciRes.DeliverTx[txIndex] = txRes
+				abciRes.DeliverTxs[txIndex] = txRes
 				txIndex++
 			}
 		}
@@ -883,7 +885,7 @@ func makeBlocks(n int, state *sm.State, privVal types.PrivValidator) []*types.Bl
 func makeBlock(state sm.State, lastBlock *types.Block, lastBlockMeta *types.BlockMeta,
 	privVal types.PrivValidator, height int64) (*types.Block, *types.PartSet) {
 
-	lastCommit := types.NewCommit(types.BlockID{}, nil)
+	lastCommit := types.NewCommit(height-1, 0, types.BlockID{}, nil)
 	if height > 1 {
 		vote, _ := types.MakeVote(
 			lastBlock.Header.Height,
@@ -891,8 +893,8 @@ func makeBlock(state sm.State, lastBlock *types.Block, lastBlockMeta *types.Bloc
 			state.Validators,
 			privVal,
 			lastBlock.Header.ChainID)
-		voteCommitSig := vote.CommitSig()
-		lastCommit = types.NewCommit(lastBlockMeta.BlockID, []*types.CommitSig{voteCommitSig})
+		lastCommit = types.NewCommit(vote.Height, vote.Round,
+			lastBlockMeta.BlockID, []types.CommitSig{vote.CommitSig()})
 	}
 
 	return state.MakeBlock(height, []types.Tx{}, lastCommit, nil, state.Validators.GetProposer().Address)
@@ -910,11 +912,11 @@ func (app *badApp) Commit() abci.ResponseCommit {
 	app.height++
 	if app.onlyLastHashIsWrong {
 		if app.height == app.numBlocks {
-			return abci.ResponseCommit{Data: cmn.RandBytes(8)}
+			return abci.ResponseCommit{Data: tmrand.Bytes(8)}
 		}
 		return abci.ResponseCommit{Data: []byte{app.height}}
 	} else if app.allHashesAreWrong {
-		return abci.ResponseCommit{Data: cmn.RandBytes(8)}
+		return abci.ResponseCommit{Data: tmrand.Bytes(8)}
 	}
 
 	panic("either allHashesAreWrong or onlyLastHashIsWrong must be set")
@@ -932,7 +934,7 @@ func makeBlockchainFromWAL(wal WAL) ([]*types.Block, []*types.Commit, error) {
 		return nil, nil, err
 	}
 	if !found {
-		return nil, nil, fmt.Errorf("WAL does not contain height %d", height)
+		return nil, nil, fmt.Errorf("wal does not contain height %d", height)
 	}
 	defer gr.Close() // nolint: errcheck
 
@@ -971,7 +973,7 @@ func makeBlockchainFromWAL(wal WAL) ([]*types.Block, []*types.Commit, error) {
 				if block.Height != height+1 {
 					panic(fmt.Sprintf("read bad block from wal. got height %d, expected %d", block.Height, height+1))
 				}
-				commitHeight := thisBlockCommit.Precommits[0].Height
+				commitHeight := thisBlockCommit.Height
 				if commitHeight != height+1 {
 					panic(fmt.Sprintf("commit doesnt match. got height %d, expected %d", commitHeight, height+1))
 				}
@@ -988,8 +990,8 @@ func makeBlockchainFromWAL(wal WAL) ([]*types.Block, []*types.Commit, error) {
 			}
 		case *types.Vote:
 			if p.Type == types.PrecommitType {
-				commitSigs := []*types.CommitSig{p.CommitSig()}
-				thisBlockCommit = types.NewCommit(p.BlockID, commitSigs)
+				thisBlockCommit = types.NewCommit(p.Height, p.Round,
+					p.BlockID, []types.CommitSig{p.CommitSig()})
 			}
 		}
 	}
@@ -1002,7 +1004,7 @@ func makeBlockchainFromWAL(wal WAL) ([]*types.Block, []*types.Commit, error) {
 	if block.Height != height+1 {
 		panic(fmt.Sprintf("read bad block from wal. got height %d, expected %d", block.Height, height+1))
 	}
-	commitHeight := thisBlockCommit.Precommits[0].Height
+	commitHeight := thisBlockCommit.Height
 	if commitHeight != height+1 {
 		panic(fmt.Sprintf("commit doesnt match. got height %d, expected %d", commitHeight, height+1))
 	}
@@ -1060,6 +1062,9 @@ func newMockBlockStore(config *cfg.Config, params types.ConsensusParams) *mockBl
 
 func (bs *mockBlockStore) Height() int64                       { return int64(len(bs.chain)) }
 func (bs *mockBlockStore) LoadBlock(height int64) *types.Block { return bs.chain[height-1] }
+func (bs *mockBlockStore) LoadBlockByHash(hash []byte) *types.Block {
+	return bs.chain[int64(len(bs.chain))-1]
+}
 func (bs *mockBlockStore) LoadBlockMeta(height int64) *types.BlockMeta {
 	block := bs.chain[height-1]
 	return &types.BlockMeta{

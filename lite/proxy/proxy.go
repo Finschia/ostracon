@@ -6,7 +6,7 @@ import (
 
 	amino "github.com/tendermint/go-amino"
 
-	cmn "github.com/tendermint/tendermint/libs/common"
+	"github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/rpc/client"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
@@ -134,7 +134,7 @@ func makeValidatorsFunc(c rpcclient.Client) func(
 	height *int64,
 ) (*ctypes.ResultValidators, error) {
 	return func(ctx *rpctypes.Context, height *int64) (*ctypes.ResultValidators, error) {
-		return c.Validators(height)
+		return c.Validators(height, 0, 0)
 	}
 }
 
@@ -168,9 +168,9 @@ func makeBroadcastTxAsyncFunc(c rpcclient.Client) func(
 func makeABCIQueryFunc(c rpcclient.Client) func(
 	ctx *rpctypes.Context,
 	path string,
-	data cmn.HexBytes,
+	data bytes.HexBytes,
 ) (*ctypes.ResultABCIQuery, error) {
-	return func(ctx *rpctypes.Context, path string, data cmn.HexBytes) (*ctypes.ResultABCIQuery, error) {
+	return func(ctx *rpctypes.Context, path string, data bytes.HexBytes) (*ctypes.ResultABCIQuery, error) {
 		return c.ABCIQuery(path, data)
 	}
 }

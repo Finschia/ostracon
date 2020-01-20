@@ -1,5 +1,6 @@
 module.exports = {
   theme: "cosmos",
+  title: "Tendermint",
   // locales: {
   //   "/": {
   //     lang: "en-US"
@@ -130,7 +131,7 @@ module.exports = {
           },
           {
             title: "RPC",
-            path: "/rpc/",
+            path: "/master/rpc/",
             static: true
           }
         ]
@@ -141,5 +142,13 @@ module.exports = {
     anchor: {
       permalinkSymbol: ""
     }
-  }
+  },
+  plugins: [
+    [
+      "@vuepress/google-analytics",
+      {
+        ga: "UA-51029217-11"
+      }
+    ]
+  ],
 };

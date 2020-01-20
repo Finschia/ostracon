@@ -3,15 +3,18 @@ package state_test
 import (
 	"bytes"
 	"fmt"
+	"time"
+
+	dbm "github.com/tendermint/tm-db"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
+	tmrand "github.com/tendermint/tendermint/libs/rand"
 	"github.com/tendermint/tendermint/proxy"
 	sm "github.com/tendermint/tendermint/state"
 	"github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
-	dbm "github.com/tendermint/tm-db"
 )
 
 type paramsChangeTestCase struct {
@@ -61,7 +64,8 @@ func makeAndApplyGoodBlock(state sm.State, height int64, lastCommit *types.Commi
 	if err := blockExec.ValidateBlock(state, block); err != nil {
 		return state, types.BlockID{}, err
 	}
-	blockID := types.BlockID{Hash: block.Hash(), PartsHeader: types.PartSetHeader{}}
+	blockID := types.BlockID{Hash: block.Hash(),
+		PartsHeader: types.PartSetHeader{Total: 3, Hash: tmrand.Bytes(32)}}
 	state, err := blockExec.ApplyBlock(state, blockID, block)
 	if err != nil {
 		return state, types.BlockID{}, err
@@ -75,7 +79,7 @@ func makeValidCommit(
 	vals *types.ValidatorSet,
 	privVals map[string]types.PrivValidator,
 ) (*types.Commit, error) {
-	sigs := make([]*types.CommitSig, 0)
+	sigs := make([]types.CommitSig, 0)
 	for i := 0; i < vals.Size(); i++ {
 		_, val := vals.GetByIndex(i)
 		vote, err := types.MakeVote(height, blockID, vals, privVals[val.Address.String()], chainID)
@@ -84,7 +88,7 @@ func makeValidCommit(
 		}
 		sigs = append(sigs, vote.CommitSig())
 	}
-	return types.NewCommit(blockID, sigs), nil
+	return types.NewCommit(height, 0, blockID, sigs), nil
 }
 
 // make some bogus txs
@@ -158,7 +162,8 @@ func makeConsensusParams(
 			TimeIotaMs: blockTimeIotaMs,
 		},
 		Evidence: types.EvidenceParams{
-			MaxAge: evidenceAge,
+			MaxAgeNumBlocks: evidenceAge,
+			MaxAgeDuration:  time.Duration(evidenceAge),
 		},
 	}
 }

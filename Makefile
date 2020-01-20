@@ -1,14 +1,8 @@
-GOTOOLS = \
-	github.com/mitchellh/gox \
-	github.com/golangci/golangci-lint/cmd/golangci-lint \
-	github.com/gogo/protobuf/protoc-gen-gogo \
-	github.com/square/certstrap
-GOBIN?=${GOPATH}/bin
 PACKAGES=$(shell go list ./...)
 SRCPATH=$(shell pwd)
 OUTPUT?=build/tendermint
 
-INCLUDE = -I=. -I=${GOPATH}/src -I=${GOPATH}/src/github.com/gogo/protobuf/protobuf
+INCLUDE = -I=${GOPATH}/src/github.com/tendermint/tendermint -I=${GOPATH}/src -I=${GOPATH}/src/github.com/gogo/protobuf/protobuf
 BUILD_TAGS?='tendermint'
 LD_FLAGS = -X github.com/tendermint/tendermint/version.GitCommit=`git rev-parse --short=8 HEAD` -s -w
 BUILD_FLAGS = -mod=readonly -ldflags "$(LD_FLAGS)"
@@ -48,7 +42,7 @@ protoc_all: protoc_libs protoc_merkle protoc_abci protoc_grpc protoc_proto3types
 	## See https://stackoverflow.com/a/25518702
 	## Note the $< here is substituted for the %.proto
 	## Note the $@ here is substituted for the %.pb.go
-	protoc $(INCLUDE) $< --gogo_out=Mgoogle/protobuf/timestamp.proto=github.com/golang/protobuf/ptypes/timestamp,plugins=grpc:.
+	protoc $(INCLUDE) $< --gogo_out=Mgoogle/protobuf/timestamp.proto=github.com/golang/protobuf/ptypes/timestamp,Mgoogle/protobuf/duration.proto=github.com/golang/protobuf/ptypes/duration,plugins=grpc:../../..
 
 ########################################
 ### Build ABCI
@@ -82,19 +76,6 @@ libsodium:
 dist:
 	@BUILD_TAGS=$(BUILD_TAGS) sh -c "'$(CURDIR)/scripts/dist.sh'"
 
-#For ABCI and libs
-get_protoc:
-	@# https://github.com/google/protobuf/releases
-	curl -L https://github.com/google/protobuf/releases/download/v3.6.1/protobuf-cpp-3.6.1.tar.gz | tar xvz && \
-		cd protobuf-3.6.1 && \
-		DIST_LANG=cpp ./configure && \
-		make && \
-		make check && \
-		sudo make install && \
-		sudo ldconfig && \
-		cd .. && \
-		rm -rf protobuf-3.6.1
-
 go-mod-cache: go.sum
 	@echo "--> Download go modules to local cache"
 	@go mod download
@@ -119,7 +100,7 @@ get_deps_bin_size:
 ########################################
 ### Libs
 
-protoc_libs: libs/common/types.pb.go
+protoc_libs: libs/kv/types.pb.go
 
 # generates certificates for TLS testing in remotedb and RPC server
 gen_certs: clean_certs
@@ -258,7 +239,7 @@ contract-tests:
 # unless there is a reason not to.
 # https://www.gnu.org/software/make/manual/html_node/Phony-Targets.html
 .PHONY: check build build_race build_abci dist install install_abci check_tools tools update_tools draw_deps \
- 	get_protoc protoc_abci protoc_libs gen_certs clean_certs grpc_dbserver fmt build-linux localnet-start \
+ 	protoc_abci protoc_libs gen_certs clean_certs grpc_dbserver fmt build-linux localnet-start \
  	localnet-stop build-docker build-docker-localnode sentry-start sentry-config sentry-stop protoc_grpc protoc_all \
  	build_c install_c test_with_deadlock cleanup_after_test_with_deadlock lint build-contract-tests-hooks contract-tests \
 	build_c-amazonlinux

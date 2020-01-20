@@ -6,7 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	cmn "github.com/tendermint/tendermint/libs/common"
+	"github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/libs/log"
 	tmpubsub "github.com/tendermint/tendermint/libs/pubsub"
 	tmquery "github.com/tendermint/tendermint/libs/pubsub/query"
@@ -73,13 +73,13 @@ func (c *Local) ABCIInfo() (*ctypes.ResultABCIInfo, error) {
 	return core.ABCIInfo(c.ctx)
 }
 
-func (c *Local) ABCIQuery(path string, data cmn.HexBytes) (*ctypes.ResultABCIQuery, error) {
+func (c *Local) ABCIQuery(path string, data bytes.HexBytes) (*ctypes.ResultABCIQuery, error) {
 	return c.ABCIQueryWithOptions(path, data, DefaultABCIQueryOptions)
 }
 
 func (c *Local) ABCIQueryWithOptions(
 	path string,
-	data cmn.HexBytes,
+	data bytes.HexBytes,
 	opts ABCIQueryOptions) (*ctypes.ResultABCIQuery, error) {
 	return core.ABCIQuery(c.ctx, path, data, opts.Height, opts.Prove)
 }
@@ -116,6 +116,10 @@ func (c *Local) ConsensusState() (*ctypes.ResultConsensusState, error) {
 	return core.ConsensusState(c.ctx)
 }
 
+func (c *Local) ConsensusParams(height *int64) (*ctypes.ResultConsensusParams, error) {
+	return core.ConsensusParams(c.ctx, height)
+}
+
 func (c *Local) Health() (*ctypes.ResultHealth, error) {
 	return core.Health(c.ctx)
 }
@@ -148,8 +152,8 @@ func (c *Local) Commit(height *int64) (*ctypes.ResultCommit, error) {
 	return core.Commit(c.ctx, height)
 }
 
-func (c *Local) Validators(height *int64) (*ctypes.ResultValidators, error) {
-	return core.Validators(c.ctx, height)
+func (c *Local) Validators(height *int64, page, perPage int) (*ctypes.ResultValidators, error) {
+	return core.Validators(c.ctx, height, page, perPage)
 }
 
 func (c *Local) Tx(hash []byte, prove bool) (*ctypes.ResultTx, error) {
@@ -173,14 +177,20 @@ func (c *Local) Subscribe(
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse query")
 	}
-	sub, err := c.EventBus.Subscribe(ctx, subscriber, q)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to subscribe")
-	}
 
 	outCap := 1
 	if len(outCapacity) > 0 {
 		outCap = outCapacity[0]
+	}
+
+	var sub types.Subscription
+	if outCap > 0 {
+		sub, err = c.EventBus.Subscribe(ctx, subscriber, q, outCap)
+	} else {
+		sub, err = c.EventBus.SubscribeUnbuffered(ctx, subscriber, q)
+	}
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to subscribe")
 	}
 
 	outc := make(chan ctypes.ResultEvent, outCap)
