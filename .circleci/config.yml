@@ -131,7 +131,7 @@ jobs:
             export VERSION="$(git describe --tags --long | sed 's/v\(.*\)/\1/')"
             export GO111MODULE=on
             mkdir -p /tmp/logs /tmp/workspace/profiles
-            for pkg in $(go list ./... | circleci tests split --split-by=timings); do
+            for pkg in $(go list github.com/tendermint/tendermint/... | circleci tests split --split-by=timings); do
               id=$(basename "$pkg")
               go test -v -timeout 5m -mod=readonly -race -coverprofile=/tmp/workspace/profiles/$id.out -covermode=atomic "$pkg" | tee "/tmp/logs/$id-$RANDOM.log"
             done
@@ -352,34 +352,34 @@ jobs:
       - store_artifacts:
           path: /go/src/github.com/tendermint/tendermint/tendermint-*.tar.gz
 
-  # Test RPC implementation against the swagger documented specs
-  contract_tests:
-    working_directory: /home/circleci/.go_workspace/src/github.com/tendermint/tendermint
-    machine:
-      image: circleci/classic:latest
-    environment:
-      GOBIN: /home/circleci/.go_workspace/bin
-      GOPATH: /home/circleci/.go_workspace/
-      GOOS: linux
-      GOARCH: amd64
-    parallelism: 1
-    steps:
-      - checkout_with_submodules
-      - run:
-          name: Test RPC endpoints against swagger documentation
-          command: |
-            set -x
-            export PATH=~/.local/bin:$PATH
+  # # Test RPC implementation against the swagger documented specs
+  # contract_tests:
+  #   working_directory: /home/circleci/.go_workspace/src/github.com/tendermint/tendermint
+  #   machine:
+  #     image: circleci/classic:latest
+  #   environment:
+  #     GOBIN: /home/circleci/.go_workspace/bin
+  #     GOPATH: /home/circleci/.go_workspace/
+  #     GOOS: linux
+  #     GOARCH: amd64
+  #   parallelism: 1
+  #   steps:
+  #     - checkout_with_submodules
+  #     - run:
+  #         name: Test RPC endpoints against swagger documentation
+  #         command: |
+  #           set -x
+  #           export PATH=~/.local/bin:$PATH
 
-            # install node and dredd
-            ./scripts/get_nodejs.sh
+  #           # install node and dredd
+  #           ./scripts/get_nodejs.sh
 
-            # build the binaries with a proper version of Go
-            docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang make build-linux build-contract-tests-hooks
+  #           # build the binaries with a proper version of Go
+  #           docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang make build-linux build-contract-tests-hooks
 
-            # This docker image works with go 1.7, we can install here the hook handler that contract-tests is going to use
-            go get github.com/snikch/goodman/cmd/goodman
-            make contract-tests
+  #           # This docker image works with go 1.7, we can install here the hook handler that contract-tests is going to use
+  #           go get github.com/snikch/goodman/cmd/goodman
+  #           make contract-tests
 
 workflows:
   version: 2
@@ -429,9 +429,9 @@ workflows:
               only:
                 - master
                 - /v[0-9]+\.[0-9]+/
-      - contract_tests:
-          requires:
-            - setup_dependencies
+      # - contract_tests:
+      #     requires:
+      #       - setup_dependencies
 
   release:
     jobs:

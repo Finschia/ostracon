@@ -46,3 +46,5 @@ terraform.tfstate.d
 .vscode
 
 profile\.out
+crypto/vrf/internal/vrf/lib
+crypto/vrf/internal/vrf/include

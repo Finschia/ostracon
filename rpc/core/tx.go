@@ -3,7 +3,7 @@ package core
 import (
 	"fmt"
 
-	cmn "github.com/tendermint/tendermint/libs/common"
+	tmmath "github.com/tendermint/tendermint/libs/math"
 
 	tmquery "github.com/tendermint/tendermint/libs/pubsub/query"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -20,7 +20,7 @@ func Tx(ctx *rpctypes.Context, hash []byte, prove bool) (*ctypes.ResultTx, error
 
 	// if index is disabled, return error
 	if _, ok := txIndexer.(*null.TxIndex); ok {
-		return nil, fmt.Errorf("Transaction indexing is disabled")
+		return nil, fmt.Errorf("transaction indexing is disabled")
 	}
 
 	r, err := txIndexer.Get(hash)
@@ -29,7 +29,7 @@ func Tx(ctx *rpctypes.Context, hash []byte, prove bool) (*ctypes.ResultTx, error
 	}
 
 	if r == nil {
-		return nil, fmt.Errorf("Tx (%X) not found", hash)
+		return nil, fmt.Errorf("tx (%X) not found", hash)
 	}
 
 	height := r.Height
@@ -57,7 +57,7 @@ func Tx(ctx *rpctypes.Context, hash []byte, prove bool) (*ctypes.ResultTx, error
 func TxSearch(ctx *rpctypes.Context, query string, prove bool, page, perPage int) (*ctypes.ResultTxSearch, error) {
 	// if index is disabled, return error
 	if _, ok := txIndexer.(*null.TxIndex); ok {
-		return nil, fmt.Errorf("Transaction indexing is disabled")
+		return nil, fmt.Errorf("transaction indexing is disabled")
 	}
 
 	q, err := tmquery.New(query)
@@ -78,7 +78,7 @@ func TxSearch(ctx *rpctypes.Context, query string, prove bool, page, perPage int
 	}
 	skipCount := validateSkipCount(page, perPage)
 
-	apiResults := make([]*ctypes.ResultTx, cmn.MinInt(perPage, totalCount-skipCount))
+	apiResults := make([]*ctypes.ResultTx, tmmath.MinInt(perPage, totalCount-skipCount))
 	var proof types.TxProof
 	// if there's no tx in the results array, we don't need to loop through the apiResults array
 	for i := 0; i < len(apiResults); i++ {

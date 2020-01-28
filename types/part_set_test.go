@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/tendermint/tendermint/crypto/merkle"
-	cmn "github.com/tendermint/tendermint/libs/common"
+	tmrand "github.com/tendermint/tendermint/libs/rand"
 )
 
 const (
@@ -17,7 +17,7 @@ const (
 
 func TestBasicPartSet(t *testing.T) {
 	// Construct random data of size partSize * 100
-	data := cmn.RandBytes(testPartSize * 100)
+	data := tmrand.Bytes(testPartSize * 100)
 	partSet := NewPartSetFromData(data, testPartSize)
 
 	assert.NotEmpty(t, partSet.Hash())
@@ -36,7 +36,7 @@ func TestBasicPartSet(t *testing.T) {
 		//t.Logf("\n%v", part)
 		added, err := partSet2.AddPart(part)
 		if !added || err != nil {
-			t.Errorf("Failed to add part %v, error: %v", i, err)
+			t.Errorf("failed to add part %v, error: %v", i, err)
 		}
 	}
 	// adding part with invalid index
@@ -62,7 +62,7 @@ func TestBasicPartSet(t *testing.T) {
 
 func TestWrongProof(t *testing.T) {
 	// Construct random data of size partSize * 100
-	data := cmn.RandBytes(testPartSize * 100)
+	data := tmrand.Bytes(testPartSize * 100)
 	partSet := NewPartSetFromData(data, testPartSize)
 
 	// Test adding a part with wrong data.
@@ -73,7 +73,7 @@ func TestWrongProof(t *testing.T) {
 	part.Proof.Aunts[0][0] += byte(0x01)
 	added, err := partSet2.AddPart(part)
 	if added || err == nil {
-		t.Errorf("Expected to fail adding a part with bad trail.")
+		t.Errorf("expected to fail adding a part with bad trail.")
 	}
 
 	// Test adding a part with wrong bytes.
@@ -81,7 +81,7 @@ func TestWrongProof(t *testing.T) {
 	part.Bytes[0] += byte(0x01)
 	added, err = partSet2.AddPart(part)
 	if added || err == nil {
-		t.Errorf("Expected to fail adding a part with bad bytes.")
+		t.Errorf("expected to fail adding a part with bad bytes.")
 	}
 }
 
@@ -98,7 +98,7 @@ func TestPartSetHeaderValidateBasic(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.testName, func(t *testing.T) {
-			data := cmn.RandBytes(testPartSize * 100)
+			data := tmrand.Bytes(testPartSize * 100)
 			ps := NewPartSetFromData(data, testPartSize)
 			psHeader := ps.Header()
 			tc.malleatePartSetHeader(&psHeader)
@@ -128,7 +128,7 @@ func TestPartValidateBasic(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.testName, func(t *testing.T) {
-			data := cmn.RandBytes(testPartSize * 100)
+			data := tmrand.Bytes(testPartSize * 100)
 			ps := NewPartSetFromData(data, testPartSize)
 			part := ps.GetPart(0)
 			tc.malleatePart(part)
