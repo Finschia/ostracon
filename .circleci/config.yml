@@ -428,9 +428,9 @@ workflows:
       - test_persistence:
           requires:
             - setup_dependencies
-      - localnet:
-          requires:
-            - setup_dependencies
+#      - localnet:
+#          requires:
+#            - setup_dependencies
       - test_p2p
 #      - upload_coverage:
 #          requires:
@@ -445,26 +445,26 @@ workflows:
       #     requires:
       #       - setup_dependencies
 
-  release:
-    jobs:
-      - prepare_build
-      - build_artifacts:
-          requires:
-            - prepare_build
-      - release_artifacts:
-          requires:
-            - prepare_build
-            - build_artifacts
-          filters:
-            branches:
-              only:
-                - /v[0-9]+\.[0-9]+/
-      - release_docker:
-          requires:
-            - prepare_build
-            - build_artifacts
-          filters:
-            branches:
-              only:
-                - /v[0-9]+\.[0-9]+/
-                - master
+#  release:
+#    jobs:
+#      - prepare_build
+#      - build_artifacts:
+#          requires:
+#            - prepare_build
+#      - release_artifacts:
+#          requires:
+#            - prepare_build
+#            - build_artifacts
+#          filters:
+#            branches:
+#              only:
+#                - /v[0-9]+\.[0-9]+/
+#      - release_docker:
+#          requires:
+#            - prepare_build
+#            - build_artifacts
+#          filters:
+#            branches:
+#              only:
+#                - /v[0-9]+\.[0-9]+/
+#                - master
