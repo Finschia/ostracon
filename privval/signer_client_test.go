@@ -10,7 +10,7 @@ import (
 
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/crypto/vrf"
-	"github.com/tendermint/tendermint/libs/common"
+	"github.com/tendermint/tendermint/libs/rand"
 	"github.com/tendermint/tendermint/types"
 )
 
@@ -26,7 +26,7 @@ func getSignerTestCases(t *testing.T) []signerTestCase {
 
 	// Get test cases for each possible dialer (DialTCP / DialUnix / etc)
 	for _, dtc := range getDialerTestCases(t) {
-		chainID := common.RandStr(12)
+		chainID := rand.Str(12)
 		mockKey := ed25519.GenPrivKey()
 		mockPV := types.NewMockPVWithParams(mockKey, false, false)
 
