@@ -47,7 +47,7 @@ endif
 # allow users to pass additional flags via the conventional LDFLAGS variable
 LD_FLAGS += $(LDFLAGS)
 
-all: check build test install
+all: check libsodium build test install
 .PHONY: all
 
 include tests.mk
@@ -113,12 +113,15 @@ install_abci:
 ########################################
 ### libsodium
 
+prepare_libsodium:
+	apt-get update && apt-get -y install libtool libboost-all-dev autoconf build-essential
+
 libsodium:
 	cd $(SRCPATH)/crypto/vrf/internal/vrf/libsodium && \
-		./autogen.sh && \
-		./configure --disable-shared --prefix="$(SRCPATH)/crypto/vrf/internal/vrf/" &&	\
-		$(MAKE) && \
-		$(MAKE) install
+    		./autogen.sh && \
+    		./configure --disable-shared --prefix="$(SRCPATH)/crypto/vrf/internal/vrf/" &&	\
+    		$(MAKE) && \
+    		$(MAKE) install
 
 ########################################
 ### Distribution
@@ -225,7 +228,7 @@ build-docker: build-linux
 ###############################################################################
 
 # Build linux binary on other platforms
-build-linux:
+build-linux: prepare_libsodium libsodium
 	GOOS=linux GOARCH=amd64 $(MAKE) build
 .PHONY: build-linux
 
