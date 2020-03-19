@@ -1,3 +1,5 @@
+// +build !libsodium
+
 package vrf
 
 import (
@@ -9,16 +11,20 @@ type VrfEd25519r2ishiguro struct {
 
 }
 
+func init() {
+	defaultVrf = NewVrfEd25519r2ishiguro()
+}
+
 func NewVrfEd25519r2ishiguro() VrfEd25519r2ishiguro {
 	return VrfEd25519r2ishiguro{}
 }
 
-func (base VrfEd25519r2ishiguro) Prove(privateKey ed25519.PrivKeyEd25519, message []byte) (Proof, error) {
-	pubKey := privateKey.PubKey().(ed25519.PubKeyEd25519)
+func (base VrfEd25519r2ishiguro) Prove(privateKey ed25519.PrivKey, message []byte) (Proof, error) {
+	pubKey := privateKey.PubKey().(ed25519.PubKey)
 	return r2ishiguro.ECVRF_prove(pubKey[:], privateKey[:], message)
 }
 
-func (base VrfEd25519r2ishiguro) Verify(publicKey ed25519.PubKeyEd25519, proof Proof, message []byte) (bool, error) {
+func (base VrfEd25519r2ishiguro) Verify(publicKey ed25519.PubKey, proof Proof, message []byte) (bool, error) {
 	return r2ishiguro.ECVRF_verify(publicKey[:], proof, message)
 }
 

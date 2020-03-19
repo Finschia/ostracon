@@ -2,8 +2,17 @@ PACKAGES=$(shell go list ./...)
 SRCPATH=$(shell pwd)
 OUTPUT?=build/tendermint
 
-BUILD_TAGS?=tendermint
+INCLUDE = -I=${GOPATH}/src/github.com/tendermint/tendermint -I=${GOPATH}/src -I=${GOPATH}/src/github.com/gogo/protobuf/protobuf
+BUILD_TAGS?='tendermint'
 VERSION := $(shell git describe --always)
+CGO_OPTPTION=0
+LIBSODIUM_TARGET=
+ifeq ($(LIBSODIUM), 1)
+  BUILD_TAGS='libsodium tendermint'
+  CGO_OPTPTION=1
+  LIBSODIUM_TARGET=libsodium
+endif
+LIBSODIM_BUILD_TAGS='libsodium tendermint'
 LD_FLAGS = -X github.com/tendermint/tendermint/version.TMCoreSemVer=$(VERSION)
 BUILD_FLAGS = -mod=readonly -ldflags "$(LD_FLAGS)"
 HTTPS_GIT := https://github.com/tendermint/tendermint.git
@@ -47,7 +56,7 @@ endif
 # allow users to pass additional flags via the conventional LDFLAGS variable
 LD_FLAGS += $(LDFLAGS)
 
-all: check libsodium build test install
+all: check $(LIBSODIUM_TARGET) build test install
 .PHONY: all
 
 include tests.mk

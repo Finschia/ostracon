@@ -21,7 +21,7 @@ func NewVrfEd25519ConiksForVerifier(output Output, proof Proof) *VrfEd25519Conik
 	return &VrfEd25519Coniks{output, proof}
 }
 
-func (base *VrfEd25519Coniks) Prove(privateKey ed25519.PrivKeyEd25519, message []byte) (Proof, error) {
+func (base *VrfEd25519Coniks) Prove(privateKey ed25519.PrivKey, message []byte) (Proof, error) {
 	if len(privateKey) != coniksimpl.PrivateKeySize {
 		return nil, errors.New("private key size is invalid")
 	}
@@ -33,7 +33,7 @@ func (base *VrfEd25519Coniks) Prove(privateKey ed25519.PrivKeyEd25519, message [
 	return proof, nil
 }
 
-func (base *VrfEd25519Coniks) Verify(publicKey ed25519.PubKeyEd25519, proof Proof, message []byte) (bool, error) {
+func (base *VrfEd25519Coniks) Verify(publicKey ed25519.PubKey, proof Proof, message []byte) (bool, error) {
 	if base.generatedHash == nil {
 		return false, errors.New("vrf hash was not given")
 	}

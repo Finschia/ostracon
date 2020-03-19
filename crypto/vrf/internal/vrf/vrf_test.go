@@ -1,3 +1,5 @@
+// +build libsodium
+
 package vrf
 
 import (

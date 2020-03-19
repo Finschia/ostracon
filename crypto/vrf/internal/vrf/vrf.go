@@ -1,3 +1,5 @@
+// +build libsodium
+
 // This vrf package makes the VRF API in Algorand's libsodium C library available to golang.
 package vrf
 
@@ -22,6 +24,10 @@ const (
 	PROOFBYTES = uint32(C.crypto_vrf_PROOFBYTES)
 	OUTPUTBYTES = uint32(C.crypto_vrf_OUTPUTBYTES)
 	PRIMITIVE = C.crypto_vrf_PRIMITIVE
+)
+
+var (
+	VrfLibsodiumUsed = true
 )
 
 // Generate an Ed25519 key pair for use with VRF.

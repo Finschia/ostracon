@@ -2,6 +2,7 @@ package privval
 
 import (
 	"fmt"
+	"github.com/tendermint/tendermint/crypto/vrf"
 	"time"
 
 	"github.com/tendermint/tendermint/crypto"
@@ -93,4 +94,17 @@ func (sc *RetrySignerClient) SignProposal(chainID string, proposal *tmproto.Prop
 		time.Sleep(sc.timeout)
 	}
 	return fmt.Errorf("exhausted all attempts to sign proposal: %w", err)
+}
+
+func (sc *RetrySignerClient) GenerateVRFProof(message []byte) (vrf.Proof, error) {
+	var err error
+	var proof vrf.Proof
+	for i := 0; i < sc.retries || sc.retries == 0; i++ {
+		proof, err = sc.next.GenerateVRFProof(message)
+		if err == nil {
+			return proof, nil
+		}
+		time.Sleep(sc.timeout)
+	}
+	return proof, fmt.Errorf("exhausted all attempts to generate vrf proof: %w", err)
 }

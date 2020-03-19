@@ -6,11 +6,7 @@ import (
     "github.com/tendermint/tendermint/crypto/ed25519"
 )
 
-var (
-    // If we have no problem in using C-library then comment-out it
-    //defaultVrf = NewVrfEd25519ImplLibsodium()
-    defaultVrf = NewVrfEd25519r2ishiguro()
-)
+var defaultVrf VrfEd25519
 
 type Proof []byte
 
