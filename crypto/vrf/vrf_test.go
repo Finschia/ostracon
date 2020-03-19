@@ -58,7 +58,7 @@ func TestProofToHash(t *testing.T) {
     }
 }
 
-func TestProve(t *testing.T) {
+func TestProveAndVerify(t *testing.T) {
 	secret := [SEEDBYTES]byte{}
     privateKey := ed25519.GenPrivKeyFromSecret(secret[:])
     publicKey, _ := privateKey.PubKey().(ed25519.PubKeyEd25519)
