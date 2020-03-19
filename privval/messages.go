@@ -65,7 +65,7 @@ type VRFProofRequest struct {
 
 // VRFProofResponse is a PrivValidatorSocket message containing a Proof.
 type VRFProofResponse struct {
-	Proof *vrf.Proof
+	Proof vrf.Proof
 	Error *RemoteSignerError
 }
 

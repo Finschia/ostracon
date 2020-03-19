@@ -113,13 +113,13 @@ func TestSignerGenerateVRFProof(t *testing.T) {
 
 		proof, err := tc.signerClient.GenerateVRFProof(message)
 		require.Nil(t, err)
-		actual, err := proof.ToHash()
+		_, err = vrf.ProofToHash(proof)
 		require.Nil(t, err)
 		pubKey, ok := tc.signerClient.GetPubKey().(ed25519.PubKeyEd25519)
 		require.True(t, ok)
-		expected, err := vrf.Verify(&pubKey, proof, message)
+		expected, err := vrf.Verify(pubKey, proof, message)
 		require.Nil(t, err)
-		assert.Equal(t, expected, actual)
+		assert.True(t, expected)
 	}
 }
 
