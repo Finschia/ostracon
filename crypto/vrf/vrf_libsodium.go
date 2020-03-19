@@ -1,3 +1,5 @@
+// +build libsodium
+
 // This libsodiumwrap package makes the VRF API in Algorand's libsodium C library available to golang.
 
 package vrf
@@ -15,6 +17,10 @@ type VrfImplLibsodium struct {
 
 func NewVrfEd25519ImplLibsodium() VrfEd25519 {
 	return VrfImplLibsodium{}
+}
+
+func init() {
+	defaultVrf = NewVrfEd25519ImplLibsodium()
 }
 
 func (base VrfImplLibsodium) Prove(privateKey ed25519.PrivKeyEd25519, message []byte) (Proof, error) {

@@ -1,3 +1,5 @@
+// +build !libsodium
+
 package vrf
 
 import (
@@ -7,6 +9,10 @@ import (
 
 type VrfEd25519r2ishiguro struct {
 
+}
+
+func init() {
+	defaultVrf = NewVrfEd25519r2ishiguro()
 }
 
 func NewVrfEd25519r2ishiguro() VrfEd25519r2ishiguro {
