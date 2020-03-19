@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/tendermint/tendermint/crypto/vrf"
 	"io/ioutil"
 	"time"
 
@@ -257,6 +258,15 @@ func (pv *FilePV) SignProposal(chainID string, proposal *types.Proposal) error {
 		return fmt.Errorf("error signing proposal: %v", err)
 	}
 	return nil
+}
+
+// GenerateVRFProof generates a proof for specified message.
+func (pv *FilePV) GenerateVRFProof(message []byte) (*vrf.Proof, error) {
+	privKey, ok := pv.Key.PrivKey.(ed25519.PrivKeyEd25519)
+	if ! ok {
+		return nil, types.NewErrUnsupportedKey("ed25519")
+	}
+	return vrf.Prove(&privKey, message)
 }
 
 // Save persists the FilePV to disk.

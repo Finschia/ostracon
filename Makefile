@@ -7,7 +7,7 @@ BUILD_TAGS?='tendermint'
 LD_FLAGS = -X github.com/tendermint/tendermint/version.GitCommit=`git rev-parse --short=8 HEAD` -s -w
 BUILD_FLAGS = -mod=readonly -ldflags "$(LD_FLAGS)"
 
-all: check build test install
+all: check libsodium build test install
 
 # The below include contains the tools.
 include tools.mk
@@ -17,7 +17,7 @@ include tests.mk
 ### Build Tendermint
 
 build:
-	CGO_ENABLED=0 go build $(BUILD_FLAGS) -tags $(BUILD_TAGS) -o $(OUTPUT) ./cmd/tendermint/
+	CGO_ENABLED=1 go build $(BUILD_FLAGS) -tags $(BUILD_TAGS) -o $(OUTPUT) ./cmd/tendermint/
 
 build_c:
 	CGO_ENABLED=1 go build $(BUILD_FLAGS) -tags "$(BUILD_TAGS) cleveldb" -o $(OUTPUT) ./cmd/tendermint/
@@ -26,7 +26,7 @@ build_race:
 	CGO_ENABLED=1 go build -race $(BUILD_FLAGS) -tags $(BUILD_TAGS) -o $(OUTPUT) ./cmd/tendermint
 
 install:
-	CGO_ENABLED=0 go install $(BUILD_FLAGS) -tags $(BUILD_TAGS) ./cmd/tendermint
+	CGO_ENABLED=1 go install $(BUILD_FLAGS) -tags $(BUILD_TAGS) ./cmd/tendermint
 
 install_c:
 	CGO_ENABLED=1 go install $(BUILD_FLAGS) -tags "$(BUILD_TAGS) cleveldb" ./cmd/tendermint
@@ -61,12 +61,15 @@ install_abci:
 ########################################
 ### libsodium
 
+prepare_libsodium:
+	apt-get update && apt-get -y install libtool libboost-all-dev autoconf build-essential
+
 libsodium:
 	cd $(SRCPATH)/crypto/vrf/internal/vrf/libsodium && \
-		./autogen.sh && \
-		./configure --disable-shared --prefix="$(SRCPATH)/crypto/vrf/internal/vrf/" &&	\
-		$(MAKE) && \
-		$(MAKE) install
+    		./autogen.sh && \
+    		./configure --disable-shared --prefix="$(SRCPATH)/crypto/vrf/internal/vrf/" &&	\
+    		$(MAKE) && \
+    		$(MAKE) install
 
 ########################################
 ### Distribution
@@ -177,7 +180,7 @@ build-docker:
 ### Local testnet using docker
 
 # Build linux binary on other platforms
-build-linux: tools
+build-linux: tools prepare_libsodium libsodium
 	GOOS=linux GOARCH=amd64 $(MAKE) build
 
 build-docker-localnode:

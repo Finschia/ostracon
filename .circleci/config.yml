@@ -24,6 +24,13 @@ commands:
           command: |
             git submodule init
             git submodule update
+  make_libsodium:
+    steps:
+      - run:
+          name: "Build and install libsodium"
+          command: |
+            sudo apt-get update && sudo apt-get -y install libtool
+            make libsodium
   run_test:
     parameters:
       script_path:
@@ -40,6 +47,7 @@ commands:
           name: "Restore go modules cache"
           keys:
             - go-mod-v1-{{ checksum "go.sum" }}
+      - make_libsodium
       - run:
           name: "Running test"
           command: |
@@ -63,6 +71,9 @@ jobs:
       - run:
           name: tools
           command: make tools
+      - attach_workspace:
+          at: /tmp/workspace
+      - make_libsodium
       - run:
           name: "Build binaries"
           command: make install install_abci
@@ -120,11 +131,7 @@ jobs:
           name: "Restore go module cache"
           keys:
             - go-mod-v2-{{ checksum "go.sum" }}
-      - run:
-          name: "Build and install libsodium"
-          command: |
-            sudo apt-get update && sudo apt-get -y install libtool
-            make libsodium
+      - make_libsodium
       - run:
           name: "Run tests"
           command: |
@@ -142,25 +149,27 @@ jobs:
       - store_artifacts:
           path: /tmp/logs
 
-  localnet:
-    working_directory: /home/circleci/.go_workspace/src/github.com/tendermint/tendermint
-    machine:
-      image: circleci/classic:latest
-    environment:
-      GOBIN: /home/circleci/.go_workspace/bin
-      GOPATH: /home/circleci/.go_workspace/
-      GOOS: linux
-      GOARCH: amd64
-    parallelism: 1
-    steps:
-      - checkout_with_submodules
-      - run:
-          name: run localnet and exit on failure
-          command: |
-            set -x
-            docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang make build-linux
-            make localnet-start &
-            ./scripts/localnet-blocks-test.sh 40 5 10 localhost
+# TODO We need to replace the docker image with the image that adds libsodium library.
+#  localnet:
+#    working_directory: /home/circleci/.go_workspace/src/github.com/tendermint/tendermint
+#    machine:
+#      image: circleci/classic:latest
+#    environment:
+#      GOBIN: /home/circleci/.go_workspace/bin
+#      GOPATH: /home/circleci/.go_workspace/
+#      GOOS: linux
+#      GOARCH: amd64
+#    parallelism: 1
+#    steps:
+#      - checkout_with_submodules
+#      - make_libsodium
+#      - run:
+#          name: run localnet and exit on failure
+#          command: |
+#            set -x
+#            docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang make build-linux
+#            make localnet-start &
+#            ./scripts/localnet-blocks-test.sh 40 5 10 localhost
 
   test_p2p:
     environment:
@@ -170,12 +179,14 @@ jobs:
       image: circleci/classic:latest
     steps:
       - checkout_with_submodules
+      - make_libsodium
       - run: mkdir -p $GOPATH/src/github.com/tendermint
       - run: ln -sf /home/circleci/project $GOPATH/src/github.com/tendermint/tendermint
       - run: bash test/p2p/circleci.sh
       - store_artifacts:
           path: /home/circleci/project/test/p2p/logs
 
+# TODO We need to replace the docker image with the image that adds libsodium library.
 #  upload_coverage:
 #    executor: golang
 #    steps:
@@ -244,35 +255,36 @@ jobs:
           paths:
             - "/go/pkg/mod"
 
-  build_artifacts:
-    executor: golang
-    parallelism: 4
-    steps:
-      - restore_cache:
-          name: "Restore source code cache"
-          keys:
-            - go-src-v1-{{ .Revision }}
-      - checkout_with_submodules
-      - restore_cache:
-          name: "Restore release dependencies cache"
-          keys:
-            - v2-release-deps-{{ checksum "go.sum" }}
-      - attach_workspace:
-          at: /tmp/workspace
-      - run:
-          name: Build artifact
-          command: |
-            # Setting CIRCLE_TAG because we do not tag the release ourselves.
-            source /tmp/workspace/release-version.source
-            if test ${CIRCLE_NODE_INDEX:-0} == 0 ;then export GOOS=linux GOARCH=amd64   && export OUTPUT=build/tendermint_${GOOS}_${GOARCH} && make build && python -u scripts/release_management/zip-file.py ;fi
-            if test ${CIRCLE_NODE_INDEX:-0} == 1 ;then export GOOS=darwin GOARCH=amd64  && export OUTPUT=build/tendermint_${GOOS}_${GOARCH} && make build && python -u scripts/release_management/zip-file.py ;fi
-            if test ${CIRCLE_NODE_INDEX:-0} == 2 ;then export GOOS=windows GOARCH=amd64 && export OUTPUT=build/tendermint_${GOOS}_${GOARCH} && make build && python -u scripts/release_management/zip-file.py ;fi
-            if test ${CIRCLE_NODE_INDEX:-0} == 3 ;then export GOOS=linux GOARCH=arm     && export OUTPUT=build/tendermint_${GOOS}_${GOARCH} && make build && python -u scripts/release_management/zip-file.py ;fi
-      - persist_to_workspace:
-          root: build
-          paths:
-            - "*.zip"
-            - "tendermint_linux_amd64"
+#  build_artifacts:
+#    executor: golang
+#    parallelism: 4
+#    steps:
+#      - restore_cache:
+#          name: "Restore source code cache"
+#          keys:
+#            - go-src-v1-{{ .Revision }}
+#      - checkout_with_submodules
+#      - restore_cache:
+#          name: "Restore release dependencies cache"
+#          keys:
+#            - v2-release-deps-{{ checksum "go.sum" }}
+#      - attach_workspace:
+#          at: /tmp/workspace
+#      - make_libsodium
+#      - run:
+#          name: Build artifact
+#          command: |
+#            # Setting CIRCLE_TAG because we do not tag the release ourselves.
+#            source /tmp/workspace/release-version.source
+#            if test ${CIRCLE_NODE_INDEX:-0} == 0 ;then export GOOS=linux GOARCH=amd64   && export OUTPUT=build/tendermint_${GOOS}_${GOARCH} && make build && python -u scripts/release_management/zip-file.py ;fi
+#            if test ${CIRCLE_NODE_INDEX:-0} == 1 ;then export GOOS=darwin GOARCH=amd64  && export OUTPUT=build/tendermint_${GOOS}_${GOARCH} && make build && python -u scripts/release_management/zip-file.py ;fi
+#            if test ${CIRCLE_NODE_INDEX:-0} == 2 ;then export GOOS=windows GOARCH=amd64 && export OUTPUT=build/tendermint_${GOOS}_${GOARCH} && make build && python -u scripts/release_management/zip-file.py ;fi
+#            if test ${CIRCLE_NODE_INDEX:-0} == 3 ;then export GOOS=linux GOARCH=arm     && export OUTPUT=build/tendermint_${GOOS}_${GOARCH} && make build && python -u scripts/release_management/zip-file.py ;fi
+#      - persist_to_workspace:
+#          root: build
+#          paths:
+#            - "*.zip"
+#            - "tendermint_linux_amd64"
 
   release_artifacts:
     executor: golang
@@ -416,9 +428,9 @@ workflows:
       - test_persistence:
           requires:
             - setup_dependencies
-      - localnet:
-          requires:
-            - setup_dependencies
+#      - localnet:
+#          requires:
+#            - setup_dependencies
       - test_p2p
 #      - upload_coverage:
 #          requires:
@@ -433,26 +445,26 @@ workflows:
       #     requires:
       #       - setup_dependencies
 
-  release:
-    jobs:
-      - prepare_build
-      - build_artifacts:
-          requires:
-            - prepare_build
-      - release_artifacts:
-          requires:
-            - prepare_build
-            - build_artifacts
-          filters:
-            branches:
-              only:
-                - /v[0-9]+\.[0-9]+/
-      - release_docker:
-          requires:
-            - prepare_build
-            - build_artifacts
-          filters:
-            branches:
-              only:
-                - /v[0-9]+\.[0-9]+/
-                - master
+#  release:
+#    jobs:
+#      - prepare_build
+#      - build_artifacts:
+#          requires:
+#            - prepare_build
+#      - release_artifacts:
+#          requires:
+#            - prepare_build
+#            - build_artifacts
+#          filters:
+#            branches:
+#              only:
+#                - /v[0-9]+\.[0-9]+/
+#      - release_docker:
+#          requires:
+#            - prepare_build
+#            - build_artifacts
+#          filters:
+#            branches:
+#              only:
+#                - /v[0-9]+\.[0-9]+/
+#                - master
