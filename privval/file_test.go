@@ -4,11 +4,12 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto/vrf"
 	"io/ioutil"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/tendermint/tendermint/crypto/vrf"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -280,11 +281,11 @@ func TestGenerateVRFProof(t *testing.T) {
 		proof, err := privVal.GenerateVRFProof(msg)
 		require.Nil(t, err)
 		t.Log("  Message    : ", hex.EncodeToString(msg), " -> ", hex.EncodeToString(proof[:]))
-		actual, err := proof.ToHash()
+		_, err = vrf.ProofToHash(proof)
 		require.Nil(t, err)
-		expected, err := vrf.Verify(&pubKeyEd25519, proof, msg)
+		expected, err := vrf.Verify(pubKeyEd25519, proof, msg)
 		require.Nil(t, err)
-		assert.Equal(expected, actual)
+		assert.True(expected)
 	}
 }
 

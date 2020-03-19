@@ -4,12 +4,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto/vrf"
 	"io/ioutil"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-
+	"github.com/tendermint/tendermint/crypto/vrf"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
@@ -270,12 +269,12 @@ func (pv *FilePV) SignProposal(chainID string, proposal *tmproto.Proposal) error
 }
 
 // GenerateVRFProof generates a proof for specified message.
-func (pv *FilePV) GenerateVRFProof(message []byte) (*vrf.Proof, error) {
-	privKey, ok := pv.Key.PrivKey.(ed25519.PrivKeyEd25519)
+func (pv *FilePV) GenerateVRFProof(message []byte) (vrf.Proof, error) {
+	privKey, ok := pv.Key.PrivKey.(ed25519.PrivKey)
 	if ! ok {
 		return nil, types.NewErrUnsupportedKey("ed25519")
 	}
-	return vrf.Prove(&privKey, message)
+	return vrf.Prove(privKey, message)
 }
 
 // Save persists the FilePV to disk.

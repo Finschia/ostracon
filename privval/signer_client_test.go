@@ -165,15 +165,15 @@ func TestSignerGenerateVRFProof(t *testing.T) {
 
 		proof, err := tc.signerClient.GenerateVRFProof(message)
 		require.Nil(t, err)
-		actual, err := proof.ToHash()
+		_, err = vrf.ProofToHash(proof)
 		require.Nil(t, err)
 		pubKey, err := tc.signerClient.GetPubKey()
 		require.Nil(t, err)
 		ed25519PubKey, ok := pubKey.(ed25519.PubKey)
 		require.True(t, ok)
-		expected, err := vrf.Verify(&ed25519PubKey, proof, message)
+		expected, err := vrf.Verify(ed25519PubKey, proof, message)
 		require.Nil(t, err)
-		assert.Equal(t, expected, actual)
+		assert.True(t, expected)
 	}
 }
 

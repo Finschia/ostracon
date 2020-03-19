@@ -6,9 +6,9 @@ import (
 
 	"github.com/tendermint/tendermint/crypto"
 	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
+	"github.com/tendermint/tendermint/crypto/vrf"
 	privvalproto "github.com/tendermint/tendermint/proto/tendermint/privval"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	"github.com/tendermint/tendermint/crypto/vrf"
 	"github.com/tendermint/tendermint/types"
 )
 
@@ -134,27 +134,27 @@ func (sc *SignerClient) SignProposal(chainID string, proposal *tmproto.Proposal)
 }
 
 // GenerateVRFProof requests a remote signer to generate a VRF proof
-func (sc *SignerClient) GenerateVRFProof(message []byte) (*vrf.Proof, error) {
+func (sc *SignerClient) GenerateVRFProof(message []byte) (vrf.Proof, error) {
+	var proof vrf.Proof
 	msg := &privvalproto.VRFProofRequest{Message: message}
 	response, err := sc.endpoint.SendRequest(mustWrapMsg(msg))
 	if err != nil {
 		sc.endpoint.Logger.Error("SignerClient::GenerateVRFProof", "err", err)
-		return nil, err
+		return proof, err
 	}
 
 	switch r := response.Sum.(type) {
 	case *privvalproto.Message_VrfProofResponse:
 		if r.VrfProofResponse.Error != nil {
-			return nil, fmt.Errorf(r.VrfProofResponse.Error.Description)
+			return proof, fmt.Errorf(r.VrfProofResponse.Error.Description)
 		}
-		var proof vrf.Proof
 		length := copy(proof[:], r.VrfProofResponse.Proof)
-		if length != int(vrf.PROOFBYTES) {
+		if length != len(proof) {
 			return nil, fmt.Errorf("")
 		}
-		return &proof, nil
+		return proof, nil
 	default:
 		sc.endpoint.Logger.Error("SignerClient::GenerateVRFProof", "err", "response != VRFProofResponse")
-		return nil, ErrUnexpectedResponse
+		return proof, ErrUnexpectedResponse
 	}
 }
