@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	coniksimpl "github.com/coniks-sys/coniks-go/crypto/vrf"
+	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 )
 
@@ -33,9 +34,9 @@ func TestProveAndVerifyConiks(t *testing.T) {
 	verified, err3 := vrfImpl.Verify(publicKey, proof, message)
 	if err3 != nil {
 		t.Errorf("failed to verify: %s", err3)
-	} else if !verified {
-		t.Errorf("incompatible output")
 	}
+	// coniks seems it cannot digest ed25519 private key
+	require.False(t, verified)
 }
 
 func TestKeyPairCompatibilityConiks(t *testing.T) {
