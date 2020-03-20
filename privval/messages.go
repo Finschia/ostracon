@@ -21,8 +21,8 @@ func RegisterRemoteSignerMsg(cdc *amino.Codec) {
 
 	cdc.RegisterConcrete(&PingRequest{}, "tendermint/remotesigner/PingRequest", nil)
 	cdc.RegisterConcrete(&PingResponse{}, "tendermint/remotesigner/PingResponse", nil)
-    cdc.RegisterConcrete(&VRFProofRequest{}, "tendermint/remotesigner/VRFProofRequest", nil)
-    cdc.RegisterConcrete(&VRFProofResponse{}, "tendermint/remotesigner/VRFProofResponse", nil)
+	cdc.RegisterConcrete(&VRFProofRequest{}, "tendermint/remotesigner/VRFProofRequest", nil)
+	cdc.RegisterConcrete(&VRFProofResponse{}, "tendermint/remotesigner/VRFProofResponse", nil)
 }
 
 // TODO: Add ChainIDRequest

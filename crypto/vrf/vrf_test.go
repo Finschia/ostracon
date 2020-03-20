@@ -29,62 +29,62 @@ var (
 )
 
 func enc(s []byte) string {
-    return hex.EncodeToString(s)
+	return hex.EncodeToString(s)
 }
 
 func TestProofToHash(t *testing.T) {
 	secret := [SEEDBYTES]byte{}
-    privateKey := ed25519.GenPrivKeyFromSecret(secret[:])
-    message := []byte("hello, world")
+	privateKey := ed25519.GenPrivKeyFromSecret(secret[:])
+	message := []byte("hello, world")
 
 	proof, err1 := Prove(privateKey, message)
-    if err1 != nil {
-        t.Fatalf("failed to prove: %s", err1)
-    }
+	if err1 != nil {
+		t.Fatalf("failed to prove: %s", err1)
+	}
 
 	_, err2 := ProofToHash(proof)
-    if err2 != nil {
-        t.Errorf("failed to convert to hash: %s", enc(proof[:]))
-    }
+	if err2 != nil {
+		t.Errorf("failed to convert to hash: %s", enc(proof[:]))
+	}
 
 	t.Skip("Invalid proof checking is available only for libsodium")
-    // check to fail for invalid proof bytes
-    for i := range proof {
-        proof[i] = 0xFF
-    }
+	// check to fail for invalid proof bytes
+	for i := range proof {
+		proof[i] = 0xFF
+	}
 	op3, err3 := ProofToHash(proof)
-    if err3 == nil {
-        t.Errorf("unexpected hash for invalid proof: %s", enc(op3[:]))
-    }
+	if err3 == nil {
+		t.Errorf("unexpected hash for invalid proof: %s", enc(op3[:]))
+	}
 }
 
 func TestProveAndVerify(t *testing.T) {
 	secret := [SEEDBYTES]byte{}
-    privateKey := ed25519.GenPrivKeyFromSecret(secret[:])
-    publicKey, _ := privateKey.PubKey().(ed25519.PubKeyEd25519)
+	privateKey := ed25519.GenPrivKeyFromSecret(secret[:])
+	publicKey, _ := privateKey.PubKey().(ed25519.PubKeyEd25519)
 
-    t.Logf("private key: [%s]", enc(privateKey[:]))
-    t.Logf("public  key: [%s]", enc(publicKey[:]))
+	t.Logf("private key: [%s]", enc(privateKey[:]))
+	t.Logf("public  key: [%s]", enc(publicKey[:]))
 
-    message := []byte("hello, world")
+	message := []byte("hello, world")
 	proof, err1 := Prove(privateKey, message)
-    if err1 != nil {
-        t.Fatalf("failed to prove: %s", err1)
-    }
-    t.Logf("proof: %s", enc(proof[:]))
+	if err1 != nil {
+		t.Fatalf("failed to prove: %s", err1)
+	}
+	t.Logf("proof: %s", enc(proof[:]))
 
 	hash1, err2 := ProofToHash(proof)
-    if err2 != nil {
-        t.Fatalf("failed to hash: %s", err2)
-    }
-    t.Logf("hash for \"%s\": %s", message, hash1.ToInt())
+	if err2 != nil {
+		t.Fatalf("failed to hash: %s", err2)
+	}
+	t.Logf("hash for \"%s\": %s", message, hash1.ToInt())
 
 	verified, err3 := Verify(publicKey, proof, message)
-    if err3 != nil {
-        t.Errorf("failed to verify: %s", err3)
+	if err3 != nil {
+		t.Errorf("failed to verify: %s", err3)
 	} else if !verified {
 		t.Errorf("incompatible output")
-    }
+	}
 }
 
 func TestAvalancheEffect(t *testing.T) {
@@ -105,7 +105,7 @@ func TestAvalancheEffect(t *testing.T) {
 
 		for i := 0; i < n; i++ {
 			old := message[i/8]
-			message[i/8] = message[i/8] ^ byte(uint(1)<<(uint(i)%uint(8))) // modify 1 bit
+			message[i/8] ^= byte(uint(1) << (uint(i) % uint(8))) // modify 1 bit
 
 			proof2, err := Prove(privateKey, message)
 			require.NoError(t, err)

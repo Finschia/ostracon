@@ -174,11 +174,11 @@ func TestHashIsDeterministicForKeyPairAndMessage(t *testing.T) {
 	hash := hashes[0]
 	proof := proofs[0]
 	for i := 1; i < len(hashes); i++ {
-		if ! bytes.Equal(hash[:], hashes[i][:]) {
+		if !bytes.Equal(hash[:], hashes[i][:]) {
 			t.Errorf("contains different hash: %s != %s",
 				hex.EncodeToString(hash[:]), hex.EncodeToString(hashes[i][:]))
 		}
-		if ! bytes.Equal(proof[:], proofs[i][:]) {
+		if !bytes.Equal(proof[:], proofs[i][:]) {
 			t.Errorf("contains different proof: %s != %s",
 				hex.EncodeToString(proof[:]), hex.EncodeToString(proofs[i][:]))
 		}
@@ -189,14 +189,14 @@ func TestIsValidKey(t *testing.T) {
 
 	// generated from KeyPair()
 	var pk1, _ = KeyPair()
-	if ! IsValidKey(pk1) {
+	if !IsValidKey(pk1) {
 		t.Errorf("public key is not valid: %s", enc(pk1[:]))
 	}
 
 	// generated from KeyPairFromSeed()
 	var seed [SEEDBYTES]byte
 	var pk2, _ = KeyPairFromSeed(&seed)
-	if ! IsValidKey(pk2) {
+	if !IsValidKey(pk2) {
 		t.Errorf("public key is not valid: %s", enc(pk2[:]))
 	}
 
@@ -339,21 +339,21 @@ func TestKeyPairCompatibility(t *testing.T) {
 	copy(seed[:], hashedSecret[:])
 	lsPubKey, lsPrivKey := KeyPairFromSeed(&seed)
 
-	if ! bytes.Equal(tmPrivKeyBytes, lsPrivKey[:]) {
+	if !bytes.Equal(tmPrivKeyBytes, lsPrivKey[:]) {
 		t.Errorf("incompatible private key: %s != %s",
 			enc(tmPrivKeyBytes), enc(lsPrivKey[:]))
 	}
 	t.Logf("tendermint: private key: %s (%d bytes)\n", enc(tmPrivKeyBytes[:]), len(tmPrivKey))
 	t.Logf("libsodium : private key: %s (%d bytes)\n", enc(lsPrivKey[:]), len(lsPrivKey))
 
-	if ! bytes.Equal(tmPubKeyBytes, lsPubKey[:]) {
+	if !bytes.Equal(tmPubKeyBytes, lsPubKey[:]) {
 		t.Errorf("incompatible public key: %s != %s", enc(tmPubKeyBytes), enc(lsPubKey[:]))
 	}
 	t.Logf("tendermint: public key: %s (%d bytes)\n", enc(tmPubKeyBytes), len(tmPubKey))
 	t.Logf("libsodium : public key: %s (%d bytes)\n", enc(lsPubKey[:]), len(lsPubKey))
 
 	pubKeyBytesPtr := (*[PUBLICKEYBYTES]byte)(unsafe.Pointer(&tmPubKey))
-	if ! IsValidKey(pubKeyBytesPtr) {
+	if !IsValidKey(pubKeyBytesPtr) {
 		t.Errorf("ed25519 key is not a valid public key")
 	}
 
@@ -406,7 +406,7 @@ func TestProve(t *testing.T) {
 	hash2, err3 := verify(&publicKey, proof, message)
 	if err3 != nil {
 		t.Errorf("failed to verify: %s", err3)
-	} else if ! bytes.Equal(hash1[:], hash2[:]) {
+	} else if !bytes.Equal(hash1[:], hash2[:]) {
 		t.Errorf("incompatible output: %s != %s", enc(hash1[:]), enc(hash2[:]))
 	}
 }

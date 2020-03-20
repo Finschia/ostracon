@@ -101,7 +101,7 @@ func (pv *MockPV) SignProposal(chainID string, proposal *Proposal) error {
 // Implements PrivValidator.
 func (pv *MockPV) GenerateVRFProof(message []byte) (vrf.Proof, error) {
 	privKey, ok := pv.privKey.(ed25519.PrivKeyEd25519)
-	if ! ok {
+	if !ok {
 		return nil, NewErrUnsupportedKey("ed25519")
 	}
 	return vrf.Prove(privKey, message)
