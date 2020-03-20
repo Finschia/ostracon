@@ -313,7 +313,7 @@ func TestByzantineConflictingProposalsWithPartition(t *testing.T) {
 		if i == 0 {
 			// NOTE: Now, test validators are MockPV, which by default doesn't
 			// do any safety checks.
-			css[i].privValidator.(types.MockPV).DisableChecks()
+			css[i].privValidator.(*types.MockPV).DisableChecks()
 			css[i].decideProposal = func(j int32) func(int64, int32) {
 				return func(height int64, round int32) {
 					byzantineDecideProposalFunc(t, height, round, css[j], switches[j])

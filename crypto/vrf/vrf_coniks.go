@@ -8,20 +8,23 @@ import (
 	"github.com/tendermint/tendermint/crypto/ed25519"
 )
 
-type VrfEd25519Coniks struct {
-	generatedHash []byte
+//nolint
+type vrfEd25519Coniks struct {
+	generatedHash  []byte
 	generatedProof []byte
 }
 
-func NewVrfEd25519Coniks() *VrfEd25519Coniks {
-	return &VrfEd25519Coniks{nil, nil}
+//nolint
+func newVrfEd25519Coniks() *vrfEd25519Coniks {
+	return &vrfEd25519Coniks{nil, nil}
 }
 
-func NewVrfEd25519ConiksForVerifier(output Output, proof Proof) *VrfEd25519Coniks {
-	return &VrfEd25519Coniks{output, proof}
+//nolint
+func newVrfEd25519ConiksForVerifier(output Output, proof Proof) *vrfEd25519Coniks {
+	return &vrfEd25519Coniks{output, proof}
 }
 
-func (base *VrfEd25519Coniks) Prove(privateKey ed25519.PrivKey, message []byte) (Proof, error) {
+func (base *vrfEd25519Coniks) Prove(privateKey ed25519.PrivKey, message []byte) (Proof, error) {
 	if len(privateKey) != coniksimpl.PrivateKeySize {
 		return nil, errors.New("private key size is invalid")
 	}
@@ -33,11 +36,11 @@ func (base *VrfEd25519Coniks) Prove(privateKey ed25519.PrivKey, message []byte) 
 	return proof, nil
 }
 
-func (base *VrfEd25519Coniks) Verify(publicKey ed25519.PubKey, proof Proof, message []byte) (bool, error) {
+func (base *vrfEd25519Coniks) Verify(publicKey ed25519.PubKey, proof Proof, message []byte) (bool, error) {
 	if base.generatedHash == nil {
 		return false, errors.New("vrf hash was not given")
 	}
-	if bytes.Compare(base.generatedProof, proof) != 0 {
+	if !bytes.Equal(base.generatedProof, proof) {
 		return false, errors.New("proof is not same to the previously generated proof")
 	}
 	if len(publicKey) != coniksimpl.PublicKeySize {
@@ -48,11 +51,11 @@ func (base *VrfEd25519Coniks) Verify(publicKey ed25519.PubKey, proof Proof, mess
 	return coniksPubKey.Verify(message, base.generatedHash, proof), nil
 }
 
-func (base *VrfEd25519Coniks) ProofToHash(proof Proof) (Output, error) {
+func (base *vrfEd25519Coniks) ProofToHash(proof Proof) (Output, error) {
 	if base.generatedHash == nil {
 		return nil, errors.New("vrf hash was not given")
 	}
-	if bytes.Compare(base.generatedProof, proof) != 0 {
+	if !bytes.Equal(base.generatedProof, proof) {
 		return nil, errors.New("proof is not same to the previously generated proof")
 	}
 	return base.generatedHash, nil

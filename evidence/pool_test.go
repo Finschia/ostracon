@@ -451,7 +451,7 @@ func defaultTestPool(height int64) (*evidence.Pool, types.MockPV) {
 		panic("test evidence pool could not be created")
 	}
 	pool.SetLogger(log.TestingLogger())
-	return pool, val
+	return pool, *val
 }
 
 func createState(height int64, valSet *types.ValidatorSet) sm.State {

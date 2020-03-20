@@ -28,6 +28,10 @@ func mustWrapMsg(pb proto.Message) privvalproto.Message {
 		msg.Sum = &privvalproto.Message_SignedProposalResponse{SignedProposalResponse: pb}
 	case *privvalproto.SignProposalRequest:
 		msg.Sum = &privvalproto.Message_SignProposalRequest{SignProposalRequest: pb}
+	case *privvalproto.VRFProofRequest:
+		msg.Sum = &privvalproto.Message_VrfProofRequest{VrfProofRequest: pb}
+	case *privvalproto.VRFProofResponse:
+		msg.Sum = &privvalproto.Message_VrfProofResponse{VrfProofResponse: pb}
 	case *privvalproto.PingRequest:
 		msg.Sum = &privvalproto.Message_PingRequest{PingRequest: pb}
 	case *privvalproto.PingResponse:

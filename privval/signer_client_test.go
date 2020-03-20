@@ -165,6 +165,7 @@ func TestSignerGenerateVRFProof(t *testing.T) {
 
 		proof, err := tc.signerClient.GenerateVRFProof(message)
 		require.Nil(t, err)
+		require.True(t, len(proof) > 0)
 		_, err = vrf.ProofToHash(proof)
 		require.Nil(t, err)
 		pubKey, err := tc.signerClient.GetPubKey()

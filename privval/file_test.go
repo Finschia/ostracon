@@ -272,11 +272,11 @@ func TestGenerateVRFProof(t *testing.T) {
 
 	privVal := GenFilePV(tempKeyFile.Name(), tempStateFile.Name())
 
-	privKeyEd25519, ok := privVal.Key.PrivKey.(ed25519.PrivKeyEd25519)
+	privKeyEd25519, ok := privVal.Key.PrivKey.(ed25519.PrivKey)
 	require.True(t, ok)
-	pubKeyEd25519, ok := privKeyEd25519.PubKey().(ed25519.PubKeyEd25519)
+	pubKeyEd25519, ok := privKeyEd25519.PubKey().(ed25519.PubKey)
 	require.True(t, ok)
-	success := [][]byte{ {}, {0x00}, make([]byte,100) }
+	success := [][]byte{{}, {0x00}, make([]byte, 100)}
 	for _, msg := range success {
 		proof, err := privVal.GenerateVRFProof(msg)
 		require.Nil(t, err)

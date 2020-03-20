@@ -135,26 +135,21 @@ func (sc *SignerClient) SignProposal(chainID string, proposal *tmproto.Proposal)
 
 // GenerateVRFProof requests a remote signer to generate a VRF proof
 func (sc *SignerClient) GenerateVRFProof(message []byte) (vrf.Proof, error) {
-	var proof vrf.Proof
 	msg := &privvalproto.VRFProofRequest{Message: message}
 	response, err := sc.endpoint.SendRequest(mustWrapMsg(msg))
 	if err != nil {
 		sc.endpoint.Logger.Error("SignerClient::GenerateVRFProof", "err", err)
-		return proof, err
+		return nil, err
 	}
 
 	switch r := response.Sum.(type) {
 	case *privvalproto.Message_VrfProofResponse:
 		if r.VrfProofResponse.Error != nil {
-			return proof, fmt.Errorf(r.VrfProofResponse.Error.Description)
+			return nil, fmt.Errorf(r.VrfProofResponse.Error.Description)
 		}
-		length := copy(proof[:], r.VrfProofResponse.Proof)
-		if length != len(proof) {
-			return nil, fmt.Errorf("")
-		}
-		return proof, nil
+		return r.VrfProofResponse.Proof, nil
 	default:
 		sc.endpoint.Logger.Error("SignerClient::GenerateVRFProof", "err", "response != VRFProofResponse")
-		return proof, ErrUnexpectedResponse
+		return nil, ErrUnexpectedResponse
 	}
 }

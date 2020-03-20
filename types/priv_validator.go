@@ -114,7 +114,7 @@ func (pv MockPV) ExtractIntoValidator(votingPower int64) *Validator {
 }
 
 // Implements PrivValidator.
-func (pv *MockPV) GenerateVRFProof(message []byte) (vrf.Proof, error) {
+func (pv MockPV) GenerateVRFProof(message []byte) (vrf.Proof, error) {
 	privKey, ok := pv.PrivKey.(ed25519.PrivKey)
 	if !ok {
 		return nil, NewErrUnsupportedKey("ed25519")
