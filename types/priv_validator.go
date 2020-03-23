@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/crypto/vrf"
@@ -18,7 +19,7 @@ type PrivValidator interface {
 	SignVote(chainID string, vote *Vote) error
 	SignProposal(chainID string, proposal *Proposal) error
 
-	GenerateVRFProof(message []byte) (*vrf.Proof, error)
+	GenerateVRFProof(message []byte) (vrf.Proof, error)
 }
 
 //----------------------------------------
@@ -98,12 +99,12 @@ func (pv *MockPV) SignProposal(chainID string, proposal *Proposal) error {
 }
 
 // Implements PrivValidator.
-func (pv *MockPV) GenerateVRFProof(message []byte) (*vrf.Proof, error) {
+func (pv *MockPV) GenerateVRFProof(message []byte) (vrf.Proof, error) {
 	privKey, ok := pv.privKey.(ed25519.PrivKeyEd25519)
-	if ! ok {
+	if !ok {
 		return nil, NewErrUnsupportedKey("ed25519")
 	}
-	return vrf.Prove(&privKey, message)
+	return vrf.Prove(privKey, message)
 }
 
 // String returns a string representation of the MockPV.

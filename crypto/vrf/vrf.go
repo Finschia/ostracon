@@ -1,66 +1,40 @@
-// This vrf package makes the VRF API in Algorand's libsodium C library available to golang.
 package vrf
 
 import (
-    "github.com/tendermint/tendermint/crypto/ed25519"
-    vrfimpl "github.com/tendermint/tendermint/crypto/vrf/internal/vrf"
-    "math/big"
-    "unsafe"
+	"math/big"
+
+	"github.com/tendermint/tendermint/crypto/ed25519"
 )
 
-const (
-    PROOFBYTES = vrfimpl.PROOFBYTES
-    OUTPUTBYTES = vrfimpl.OUTPUTBYTES
-)
+// defaultVrf is assigned to vrfEd25519r2ishiguro by init() of vrf_r2ishguro.go
+// If you want to use libsodium for vrf implementation, then you should put build option like this
+// `make build LIBSODIUM=1`
+// Please refer https://github.com/line/tendermint/pull/41 for more detail
+var defaultVrf vrfEd25519
 
-type Proof [PROOFBYTES]byte
+type Proof []byte
+type Output []byte
 
-type Output [OUTPUTBYTES]byte
-
-func newProof(bytes *[PROOFBYTES]byte) *Proof {
-    proof := Proof{}
-    copy(proof[:], bytes[:])
-    return &proof
+type vrfEd25519 interface {
+	Prove(privateKey ed25519.PrivKeyEd25519, message []byte) (Proof, error)
+	Verify(publicKey ed25519.PubKeyEd25519, proof Proof, message []byte) (bool, error)
+	ProofToHash(proof Proof) (Output, error)
 }
 
-func (pf *Proof) toBytes() *[PROOFBYTES]byte {
-    return (*[PROOFBYTES]byte)(unsafe.Pointer(pf))
+func (op Output) ToInt() *big.Int {
+	i := big.Int{}
+	i.SetBytes(op)
+	return &i
 }
 
-func (pf *Proof) ToHash() (*Output, error) {
-    op, err := vrfimpl.ProofToHash(pf.toBytes())
-    if err != nil {
-        return nil, err
-    }
-    return newOutput(op), nil
+func Prove(privateKey ed25519.PrivKeyEd25519, message []byte) (Proof, error) {
+	return defaultVrf.Prove(privateKey, message)
 }
 
-func newOutput(bytes *[OUTPUTBYTES]byte) *Output {
-    output := Output{}
-    copy(output[:], bytes[:])
-    return &output
+func Verify(publicKey ed25519.PubKeyEd25519, proof Proof, message []byte) (bool, error) {
+	return defaultVrf.Verify(publicKey, proof, message)
 }
 
-func (op *Output) ToInt() *big.Int {
-    i := big.Int{}
-    i.SetBytes(op[:])
-    return &i
-}
-
-func Prove(privateKey *ed25519.PrivKeyEd25519, message []byte) (*Proof, error) {
-    privKey := (*[vrfimpl.SECRETKEYBYTES]byte)(unsafe.Pointer(privateKey))
-    pf, err := vrfimpl.Prove(privKey, message)
-    if err != nil {
-        return nil, err
-    }
-    return newProof(pf), nil
-}
-
-func Verify(publicKey *ed25519.PubKeyEd25519, proof *Proof, message []byte) (*Output, error) {
-    pubKey := (*[vrfimpl.PUBLICKEYBYTES]byte)(unsafe.Pointer(publicKey))
-    op, err := vrfimpl.Verify(pubKey, proof.toBytes(), message)
-    if err != nil {
-        return nil, err
-    }
-    return newOutput(op), nil
+func ProofToHash(proof Proof) (Output, error) {
+	return defaultVrf.ProofToHash(proof)
 }
