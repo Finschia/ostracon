@@ -420,9 +420,9 @@ workflows:
       - test_persistence:
           requires:
             - setup_dependencies
-      - localnet:
-          requires:
-            - setup_dependencies
+#      - localnet:
+#          requires:
+#            - setup_dependencies
       - test_p2p
       - reproducible_builds:
           filters:
