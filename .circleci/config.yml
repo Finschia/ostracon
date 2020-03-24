@@ -286,6 +286,21 @@ jobs:
 #            - "*.zip"
 #            - "tendermint_linux_amd64"
 
+  lint:
+    executor: golang
+    parallelism: 1
+    steps:
+      - checkout
+      - restore_cache:
+          name: "Restore go modules cache"
+          keys:
+            - go-mod-v1-{{ checksum "go.sum" }}
+      - run:
+          name: "Run linter"
+          command: |
+            curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $(go env GOPATH)/bin v1.20.0
+            make lint
+
   release_artifacts:
     executor: golang
     steps:
@@ -412,7 +427,10 @@ workflows:
             branches:
               only:
                 - docs-theme-latest
-      - setup_dependencies
+      - lint
+      - setup_dependencies:
+          requires:
+            - lint
       - test_abci_apps:
           requires:
             - setup_dependencies

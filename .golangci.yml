@@ -68,3 +68,8 @@ linters-settings:
 #     disabled-checks:
 #       - wrapperFunc
 #       - commentFormatting # https://github.com/go-critic/go-critic/issues/755
+
+# options for analysis running
+run:
+  # timeout for analysis, e.g. 30s, 5m, default is 1m
+  timeout: 5m

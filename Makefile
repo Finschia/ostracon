@@ -151,8 +151,9 @@ fmt:
 	@go fmt ./...
 
 lint:
-	@echo "--> Running linter"
-	@golangci-lint run
+	sh -c "$(CURDIR)/scripts/current_branch_lint.sh"
+	find . -name '*.go' -type f -not -path "*.git*" | xargs gofmt -d -s
+	go mod verify
 
 DESTINATION = ./index.html.md
 
