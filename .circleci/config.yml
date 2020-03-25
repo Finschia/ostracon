@@ -186,32 +186,6 @@ jobs:
       - store_artifacts:
           path: /home/circleci/project/test/p2p/logs
 
-# TODO We need to replace the docker image with the image that adds libsodium library.
-#  upload_coverage:
-#    executor: golang
-#    steps:
-#      - attach_workspace:
-#          at: /tmp/workspace
-#      - restore_cache:
-#          name: "Restore source code cache"
-#          keys:
-#            - go-src-v1-{{ .Revision }}
-#      - checkout
-#      - restore_cache:
-#          name: "Restore go module cache"
-#          keys:
-#            - go-mod-v2-{{ checksum "go.sum" }}
-#      - run:
-#          name: gather
-#          command: |
-#            echo "mode: atomic" > coverage.txt
-#            for prof in $(ls /tmp/workspace/profiles/); do
-#              tail -n +2 /tmp/workspace/profiles/"$prof" >> coverage.txt
-#            done
-#      - run:
-#          name: upload
-#          command: bash .circleci/codecov.sh -f coverage.txt
-
   deploy_docs:
     executor: docs
     steps:
@@ -278,13 +252,28 @@ jobs:
 #            source /tmp/workspace/release-version.source
 #            if test ${CIRCLE_NODE_INDEX:-0} == 0 ;then export GOOS=linux GOARCH=amd64   && export OUTPUT=build/tendermint_${GOOS}_${GOARCH} && make build && python -u scripts/release_management/zip-file.py ;fi
 #            if test ${CIRCLE_NODE_INDEX:-0} == 1 ;then export GOOS=darwin GOARCH=amd64  && export OUTPUT=build/tendermint_${GOOS}_${GOARCH} && make build && python -u scripts/release_management/zip-file.py ;fi
-#            if test ${CIRCLE_NODE_INDEX:-0} == 2 ;then export GOOS=windows GOARCH=amd64 && export OUTPUT=build/tendermint_${GOOS}_${GOARCH} && make build && python -u scripts/release_management/zip-file.py ;fi
+#            if test x${CIRCLE_NODE_INDEX:-0} == 2 ;then export GOOS=windows GOARCH=amd64 && export OUTPUT=build/tendermint_${GOOS}_${GOARCH} && make build && python -u scripts/release_management/zip-file.py ;fi
 #            if test ${CIRCLE_NODE_INDEX:-0} == 3 ;then export GOOS=linux GOARCH=arm     && export OUTPUT=build/tendermint_${GOOS}_${GOARCH} && make build && python -u scripts/release_management/zip-file.py ;fi
 #      - persist_to_workspace:
 #          root: build
 #          paths:
 #            - "*.zip"
 #            - "tendermint_linux_amd64"
+
+  lint:
+    executor: golang
+    parallelism: 1
+    steps:
+      - checkout
+      - restore_cache:
+          name: "Restore go modules cache"
+          keys:
+            - go-mod-v1-{{ checksum "go.sum" }}
+      - run:
+          name: "Run linter"
+          command: |
+            curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.23.8
+            make lint
 
   release_artifacts:
     executor: golang
@@ -412,7 +401,10 @@ workflows:
             branches:
               only:
                 - docs-theme-latest
-      - setup_dependencies
+      - lint
+      - setup_dependencies:
+          requires:
+            - lint
       - test_abci_apps:
           requires:
             - setup_dependencies
@@ -432,9 +424,6 @@ workflows:
 #          requires:
 #            - setup_dependencies
       - test_p2p
-#      - upload_coverage:
-#          requires:
-#            - test_cover
       - reproducible_builds:
           filters:
             branches:
