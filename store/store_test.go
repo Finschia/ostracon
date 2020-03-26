@@ -50,7 +50,11 @@ func makeTxs(height int64) (txs []types.Tx) {
 }
 
 func makeBlock(height int64, state sm.State, lastCommit *types.Commit) *types.Block {
-	block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, nil, state.Validators.GetProposer().Address)
+	round := int32(0)
+	privVal := types.NewMockPV()
+	message, _ := state.MakeHashMessage(round)
+	proof, _ := privVal.GenerateVRFProof(message)
+	block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, nil, state.Validators.GetProposer().Address, round, proof)
 	return block
 }
 

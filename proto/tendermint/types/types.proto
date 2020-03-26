@@ -79,6 +79,12 @@ message Header {
   // consensus info
   bytes evidence_hash    = 13;  // evidence included in the block
   bytes proposer_address = 14;  // original proposer of the block
+
+  // *** Ostracon Extended Fields ***
+
+  // vrf info
+  int32 round = 1000;
+  bytes proof = 1001;
 }
 
 // Data contains the set of transactions included in the block

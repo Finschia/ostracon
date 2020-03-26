@@ -2,6 +2,7 @@ package state
 
 import (
 	"bytes"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -9,6 +10,8 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 
+	"github.com/tendermint/tendermint/crypto/tmhash"
+	"github.com/tendermint/tendermint/crypto/vrf"
 	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
@@ -57,6 +60,9 @@ type State struct {
 	LastBlockID     types.BlockID
 	LastBlockTime   time.Time
 
+	// vrf proof
+	LastProof vrf.Proof
+
 	// LastValidators is used to validate block.LastCommit.
 	// Validators are persisted to the database separately every time they change,
 	// so we can query for historical validator sets.
@@ -80,6 +86,27 @@ type State struct {
 	AppHash []byte
 }
 
+func (state State) MakeHashMessage(round int32) ([]byte, error) {
+	var seed []byte
+
+	if len(state.LastProof) == 0 {
+		// TODO: This code is temporary. When genesis seed is prepared, use that code.
+		seed = []byte("LINE Blockchain VRF Algorithm's first seed")
+	} else {
+		output, err := vrf.ProofToHash(state.LastProof)
+		if err != nil {
+			return nil, err
+		}
+		seed = output
+	}
+	b := make([]byte, 16)
+	binary.PutVarint(b, state.LastBlockHeight)
+	binary.PutVarint(b[8:], int64(round))
+	hash := tmhash.New()
+	hash.Write(seed)
+	return hash.Sum(b), nil
+}
+
 // Copy makes a copy of the State for mutating.
 func (state State) Copy() State {
 
@@ -91,6 +118,8 @@ func (state State) Copy() State {
 		LastBlockHeight: state.LastBlockHeight,
 		LastBlockID:     state.LastBlockID,
 		LastBlockTime:   state.LastBlockTime,
+
+		LastProof: state.LastProof,
 
 		NextValidators:              state.NextValidators.Copy(),
 		Validators:                  state.Validators.Copy(),
@@ -172,6 +201,8 @@ func (state *State) ToProto() (*tmstate.State, error) {
 	sm.LastResultsHash = state.LastResultsHash
 	sm.AppHash = state.AppHash
 
+	sm.LastProof = state.LastProof
+
 	return sm, nil
 }
 
@@ -223,6 +254,8 @@ func StateFromProto(pb *tmstate.State) (*State, error) { //nolint:golint
 	state.LastResultsHash = pb.LastResultsHash
 	state.AppHash = pb.AppHash
 
+	state.LastProof = pb.LastProof
+
 	return state, nil
 }
 
@@ -238,6 +271,8 @@ func (state State) MakeBlock(
 	commit *types.Commit,
 	evidence []types.Evidence,
 	proposerAddress []byte,
+	round int32,
+	proof vrf.Proof,
 ) (*types.Block, *types.PartSet) {
 
 	// Build base block with block data.
@@ -258,6 +293,8 @@ func (state State) MakeBlock(
 		state.Validators.Hash(), state.NextValidators.Hash(),
 		types.HashConsensusParams(state.ConsensusParams), state.AppHash, state.LastResultsHash,
 		proposerAddress,
+		round,
+		proof,
 	)
 
 	return block, block.MakePartSet(types.BlockPartSizeBytes)
@@ -342,6 +379,9 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 		LastBlockHeight: 0,
 		LastBlockID:     types.BlockID{},
 		LastBlockTime:   genDoc.GenesisTime,
+
+		// genesis block has no last proof
+		LastProof: nil,
 
 		NextValidators:              nextValidatorSet,
 		Validators:                  validatorSet,

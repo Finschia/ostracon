@@ -1197,10 +1197,21 @@ func (cs *State) createProposalBlock() (block *types.Block, blockParts *types.Pa
 		cs.Logger.Error("propose step; empty priv validator public key", "err", errPubKeyIsNotSet)
 		return
 	}
-
 	proposerAddr := cs.privValidatorPubKey.Address()
 
-	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerAddr)
+	message, err := cs.state.MakeHashMessage(cs.Round)
+	if err != nil {
+		cs.Logger.Error(fmt.Sprintf("enterPropose: Cannot generate vrf message: %s", err.Error()))
+		return
+	}
+
+	proof, err := cs.privValidator.GenerateVRFProof(message)
+	if err != nil {
+		cs.Logger.Error(fmt.Sprintf("enterPropose: Cannot generate vrf proof: %s", err.Error()))
+		return
+	}
+
+	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerAddr, cs.Round, proof)
 }
 
 // Enter: `timeoutPropose` after entering Propose.
@@ -1388,6 +1399,7 @@ func (cs *State) enterPrecommit(height int64, round int32) {
 
 		// Validate the block.
 		if err := cs.blockExec.ValidateBlock(cs.state, cs.ProposalBlock); err != nil {
+			cs.Logger.Error(fmt.Sprintf("%v; block=%v", err, cs.ProposalBlock))
 			panic(fmt.Sprintf("precommit step; +2/3 prevoted for an invalid block: %v", err))
 		}
 
@@ -1663,7 +1675,6 @@ func (cs *State) finalizeCommit(height int64) {
 
 	// NewHeightStep!
 	cs.updateToState(stateCopy)
-
 	fail.Fail() // XXX
 
 	// Private validator might have changed it's key pair => refetch pubkey.

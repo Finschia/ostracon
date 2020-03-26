@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/tendermint/tendermint/crypto/vrf"
+
 	gogotypes "github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -323,7 +325,9 @@ func TestHeaderHash(t *testing.T) {
 			LastResultsHash:    tmhash.Sum([]byte("last_results_hash")),
 			EvidenceHash:       tmhash.Sum([]byte("evidence_hash")),
 			ProposerAddress:    crypto.AddressHash([]byte("proposer_address")),
-		}, hexBytesFromString("F740121F553B5418C3EFBD343C2DBFE9E007BB67B0D020A0741374BAB65242A4")},
+			Round:              1,
+			Proof:              tmhash.Sum([]byte("proof")),
+		}, hexBytesFromString("289807A21DCFEBF29F324E34E4217D43F351E20935D8DE569C54039A0EE555F7")},
 		{"nil header yields nil", nil, nil},
 		{"nil ValidatorsHash yields nil", &Header{
 			Version:            tmversion.Consensus{Block: 1, App: 2},
@@ -340,6 +344,8 @@ func TestHeaderHash(t *testing.T) {
 			LastResultsHash:    tmhash.Sum([]byte("last_results_hash")),
 			EvidenceHash:       tmhash.Sum([]byte("evidence_hash")),
 			ProposerAddress:    crypto.AddressHash([]byte("proposer_address")),
+			Round:              1,
+			Proof:              tmhash.Sum([]byte("proof")),
 		}, nil},
 	}
 	for _, tc := range testCases {
@@ -360,7 +366,7 @@ func TestHeaderHash(t *testing.T) {
 						s.Type().Field(i).Name)
 
 					switch f := f.Interface().(type) {
-					case int64, bytes.HexBytes, string:
+					case int32, int64, bytes.HexBytes, vrf.Proof, string:
 						byteSlices = append(byteSlices, cdcEncode(f))
 					case time.Time:
 						bz, err := gogotypes.StdTimeMarshal(f)

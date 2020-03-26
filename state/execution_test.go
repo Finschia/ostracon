@@ -40,13 +40,13 @@ func TestApplyBlock(t *testing.T) {
 	require.Nil(t, err)
 	defer proxyApp.Stop() //nolint:errcheck // ignore for tests
 
-	state, stateDB, _ := makeState(1, 1)
+	state, stateDB, privVals := makeState(1, 1)
 	stateStore := sm.NewStore(stateDB)
 
 	blockExec := sm.NewBlockExecutor(stateStore, log.TestingLogger(), proxyApp.Consensus(),
 		mmock.Mempool{}, sm.EmptyEvidencePool{})
 
-	block := makeBlock(state, 1)
+	block := makeBlockWithPrivVal(state, privVals[state.Validators.Proposer.Address.String()], 1)
 	blockID := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
 
 	state, retainHeight, err := blockExec.ApplyBlock(state, blockID, block)
@@ -66,7 +66,7 @@ func TestBeginBlockValidators(t *testing.T) {
 	require.Nil(t, err)
 	defer proxyApp.Stop() //nolint:errcheck // no need to check error again
 
-	state, stateDB, _ := makeState(2, 2)
+	state, stateDB, privVals := makeState(2, 2)
 	stateStore := sm.NewStore(stateDB)
 
 	prevHash := state.LastBlockID.Hash
@@ -99,8 +99,11 @@ func TestBeginBlockValidators(t *testing.T) {
 	for _, tc := range testCases {
 		lastCommit := types.NewCommit(1, 0, prevBlockID, tc.lastCommitSigs)
 
+		message, _ := state.MakeHashMessage(0)
+		proof, _ := privVals[state.Validators.GetProposer().Address.String()].GenerateVRFProof(message)
+
 		// block for height 2
-		block, _ := state.MakeBlock(2, makeTxs(2), lastCommit, nil, state.Validators.GetProposer().Address)
+		block, _ := state.MakeBlock(2, makeTxs(2), lastCommit, nil, state.Validators.GetProposer().Address, 0, proof)
 
 		_, err = sm.ExecCommitBlock(proxyApp.Consensus(), block, log.TestingLogger(), stateStore, 1)
 		require.Nil(t, err, tc.desc)
@@ -129,7 +132,7 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 	require.Nil(t, err)
 	defer proxyApp.Stop() //nolint:errcheck // ignore for tests
 
-	state, stateDB, privVals := makeState(1, 1)
+	state, stateDB, privVals := makeState(2, 12)
 	stateStore := sm.NewStore(stateDB)
 
 	defaultEvidenceTime := time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -201,10 +204,67 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 	blockExec := sm.NewBlockExecutor(stateStore, log.TestingLogger(), proxyApp.Consensus(),
 		mmock.Mempool{}, evpool)
 
-	block := makeBlock(state, 1)
+	now := tmtime.Now()
+	state.LastBlockID = blockID
+	state.LastBlockTime = now.Add(-1 * time.Second)
+
+	prevHash := state.LastBlockID.Hash
+	prevParts := types.PartSetHeader{}
+	prevBlockID := types.BlockID{Hash: prevHash, PartSetHeader: prevParts}
+
+	//height1, idx1, val1 := int64(8), 0, state.Validators.Validators[0].Address
+	//height2, idx2, val2 := int64(3), 1, state.Validators.Validators[1].Address
+	ev1 := types.DuplicateVoteEvidence{
+		VoteA:            &types.Vote{},
+		VoteB:            &types.Vote{},
+		TotalVotingPower: 100,
+		ValidatorPower:   10,
+		Timestamp:        time.Now(),
+	}
+	ev2 := types.LightClientAttackEvidence{}
+
+	//valSet := state.Validators
+	testCases := []struct {
+		desc                        string
+		evidence                    []types.Evidence
+		expectedByzantineValidators []abci.Evidence
+	}{
+		{"none byzantine", []types.Evidence{}, []abci.Evidence{}},
+		{"one byzantine", []types.Evidence{&ev1}, ev1.ABCI()},
+		{"multiple byzantine", []types.Evidence{&ev1, &ev2}, append(ev1.ABCI(), ev2.ABCI()...)},
+	}
+
+	var (
+		commitSig0 = types.NewCommitSigForBlock(
+			[]byte("Signature1"),
+			state.Validators.Validators[0].Address,
+			now)
+		commitSig1 = types.NewCommitSigForBlock(
+			[]byte("Signature2"),
+			state.Validators.Validators[1].Address,
+			now)
+	)
+	commitSigs := []types.CommitSig{commitSig0, commitSig1}
+	lastCommit := types.NewCommit(9, 0, prevBlockID, commitSigs)
+	for _, tc := range testCases {
+		message, _ := state.MakeHashMessage(0)
+		proof, _ := privVals[state.Validators.GetProposer().Address.String()].GenerateVRFProof(message)
+		block, _ := state.MakeBlock(10, makeTxs(2), lastCommit, nil, state.Validators.GetProposer().Address, 0, proof)
+		block.Time = now
+		block.Evidence.Evidence = tc.evidence
+		_, err = sm.ExecCommitBlock(proxyApp.Consensus(), block, log.TestingLogger(), stateStore, 10)
+		require.Nil(t, err, tc.desc)
+	}
+
+	block := makeBlock(state, 12)
 	block.Evidence = types.EvidenceData{Evidence: ev}
 	block.Header.EvidenceHash = block.Evidence.Hash()
 	blockID = types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
+	block.LastCommit, _ = makeValidCommit(11, state.LastBlockID, state.Validators, privVals)
+	block.LastCommitHash = block.LastCommit.Hash()
+	block.Time = sm.MedianTime(block.LastCommit, state.LastValidators)
+	message, _ := state.MakeHashMessage(block.Round)
+	block.Proof, _ = privVal.GenerateVRFProof(message)
 
 	state, retainHeight, err := blockExec.ApplyBlock(state, blockID, block)
 	require.Nil(t, err)
@@ -353,7 +413,7 @@ func TestEndBlockValidatorUpdates(t *testing.T) {
 	require.Nil(t, err)
 	defer proxyApp.Stop() //nolint:errcheck // ignore for tests
 
-	state, stateDB, _ := makeState(1, 1)
+	state, stateDB, privVals := makeState(1, 1)
 	stateStore := sm.NewStore(stateDB)
 
 	blockExec := sm.NewBlockExecutor(
@@ -378,7 +438,7 @@ func TestEndBlockValidatorUpdates(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	block := makeBlock(state, 1)
+	block := makeBlockWithPrivVal(state, privVals[state.Validators.Proposer.Address.String()], 1)
 	blockID := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
 
 	pubkey := ed25519.GenPrivKey().PubKey()

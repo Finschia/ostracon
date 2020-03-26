@@ -661,6 +661,11 @@ func testHandshakeReplay(t *testing.T, config *cfg.Config, nBlocks int, mode uin
 		defer os.RemoveAll(testConfig.RootDir)
 		stateDB = dbm.NewMemDB()
 
+		// Make the global variable "sim" be initialized forcefully by calling "TestSimulateValidatorChange()"
+		// if it is not initialized as in unit execution.
+		if sim.Config == nil {
+			TestSimulateValidatorsChange(t)
+		}
 		genesisState = sim.GenesisState
 		config = sim.Config
 		chain = append([]*types.Block{}, sim.Chain...) // copy chain
@@ -990,7 +995,9 @@ func makeBlock(state sm.State, lastBlock *types.Block, lastBlockMeta *types.Bloc
 			lastBlockMeta.BlockID, []types.CommitSig{vote.CommitSig()})
 	}
 
-	return state.MakeBlock(height, []types.Tx{}, lastCommit, nil, state.Validators.GetProposer().Address)
+	message, _ := state.MakeHashMessage(0)
+	proof, _ := privVal.GenerateVRFProof(message)
+	return state.MakeBlock(height, []types.Tx{}, lastCommit, nil, state.Validators.GetProposer().Address, 0, proof)
 }
 
 type badApp struct {

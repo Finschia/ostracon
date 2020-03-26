@@ -2,8 +2,9 @@ package privval
 
 import (
 	"fmt"
-	"github.com/tendermint/tendermint/crypto/vrf"
 	"time"
+
+	"github.com/tendermint/tendermint/crypto/vrf"
 
 	"github.com/tendermint/tendermint/crypto"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"

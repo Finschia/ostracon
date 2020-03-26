@@ -414,9 +414,11 @@ func initializeBlockStore(db dbm.DB, state sm.State, valAddr []byte) *store.Bloc
 	blockStore := store.NewBlockStore(db)
 
 	for i := int64(1); i <= state.LastBlockHeight; i++ {
+		round := int32(0)
 		lastCommit := makeCommit(i-1, valAddr)
+		proof, _ := state.MakeHashMessage(round)
 		block, _ := state.MakeBlock(i, []types.Tx{}, lastCommit, nil,
-			state.Validators.GetProposer().Address)
+			state.Validators.GetProposer().Address, round, proof)
 		block.Header.Time = defaultEvidenceTime.Add(time.Duration(i) * time.Minute)
 		block.Header.Version = tmversion.Consensus{Block: version.BlockProtocol, App: 1}
 		const parts = 1

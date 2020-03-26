@@ -39,7 +39,7 @@ func makeAndCommitGoodBlock(
 	privVals map[string]types.PrivValidator,
 	evidence []types.Evidence) (sm.State, types.BlockID, *types.Commit, error) {
 	// A good block passes
-	state, blockID, err := makeAndApplyGoodBlock(state, height, lastCommit, proposerAddr, blockExec, evidence)
+	state, blockID, err := makeAndApplyGoodBlock(state, privVals[state.Validators.Proposer.Address.String()], height, lastCommit, proposerAddr, blockExec, evidence)
 	if err != nil {
 		return state, types.BlockID{}, nil, err
 	}
@@ -52,9 +52,11 @@ func makeAndCommitGoodBlock(
 	return state, blockID, commit, nil
 }
 
-func makeAndApplyGoodBlock(state sm.State, height int64, lastCommit *types.Commit, proposerAddr []byte,
+func makeAndApplyGoodBlock(state sm.State, privVal types.PrivValidator, height int64, lastCommit *types.Commit, proposerAddr []byte,
 	blockExec *sm.BlockExecutor, evidence []types.Evidence) (sm.State, types.BlockID, error) {
-	block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, evidence, proposerAddr)
+	message, _ := state.MakeHashMessage(0)
+	proof, _ := privVal.GenerateVRFProof(message)
+	block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, evidence, proposerAddr, 0, proof)
 	if err := blockExec.ValidateBlock(state, block); err != nil {
 		return state, types.BlockID{}, err
 	}
@@ -91,6 +93,11 @@ func makeTxs(height int64) (txs []types.Tx) {
 		txs = append(txs, types.Tx([]byte{byte(height), byte(i)}))
 	}
 	return txs
+}
+
+func makePrivVal() types.PrivValidator {
+	pk := ed25519.GenPrivKeyFromSecret([]byte("test private validator"))
+	return types.NewMockPVWithParams(pk, false, false)
 }
 
 func makeState(nVals, height int) (sm.State, dbm.DB, map[string]types.PrivValidator) {
@@ -132,12 +139,20 @@ func makeState(nVals, height int) (sm.State, dbm.DB, map[string]types.PrivValida
 }
 
 func makeBlock(state sm.State, height int64) *types.Block {
+	return makeBlockWithPrivVal(state, makePrivVal(), height)
+}
+
+func makeBlockWithPrivVal(state sm.State, privVal types.PrivValidator, height int64) *types.Block {
+	message, _ := state.MakeHashMessage(0)
+	proof, _ := privVal.GenerateVRFProof(message)
 	block, _ := state.MakeBlock(
 		height,
 		makeTxs(state.LastBlockHeight),
 		new(types.Commit),
 		nil,
 		state.Validators.GetProposer().Address,
+		0,
+		proof,
 	)
 	return block
 }

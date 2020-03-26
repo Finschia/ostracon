@@ -1273,7 +1273,17 @@ func (cs *State) createProposalBlock() (block *types.Block, blockParts *types.Pa
 	}
 	proposerAddr := cs.privValidatorPubKey.Address()
 
-	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerAddr)
+	message, err := cs.GetState().MakeHashMessage(cs.Round)
+	if err != nil {
+		cs.Logger.Error(fmt.Sprintf("enterPropose: %v", err))
+		return
+	}
+	proof, err := cs.privValidator.GenerateVRFProof(message)
+	if err != nil {
+		cs.Logger.Error(fmt.Sprintf("enterPropose: %v", err))
+		return
+	}
+	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerAddr, cs.Round, proof)
 }
 
 // Enter: any +2/3 prevotes at next round.

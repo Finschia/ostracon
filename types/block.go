@@ -10,6 +10,8 @@ import (
 	"github.com/gogo/protobuf/proto"
 	gogotypes "github.com/gogo/protobuf/types"
 
+	"github.com/tendermint/tendermint/crypto/vrf"
+
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/merkle"
 	"github.com/tendermint/tendermint/crypto/tmhash"
@@ -347,6 +349,10 @@ type Header struct {
 	// consensus info
 	EvidenceHash    tmbytes.HexBytes `json:"evidence_hash"`    // evidence included in the block
 	ProposerAddress Address          `json:"proposer_address"` // original proposer of the block
+
+	// vrf info
+	Round int32     `json:"round"`
+	Proof vrf.Proof `json:"proof"`
 }
 
 // Populate the Header with state-derived data.
@@ -357,6 +363,8 @@ func (h *Header) Populate(
 	valHash, nextValHash []byte,
 	consensusHash, appHash, lastResultsHash []byte,
 	proposerAddress Address,
+	round int32,
+	proof vrf.Proof,
 ) {
 	h.Version = version
 	h.ChainID = chainID
@@ -368,6 +376,8 @@ func (h *Header) Populate(
 	h.AppHash = appHash
 	h.LastResultsHash = lastResultsHash
 	h.ProposerAddress = proposerAddress
+	h.Round = round
+	h.Proof = proof
 }
 
 // ValidateBasic performs stateless validation on a Header returning an error
@@ -470,6 +480,9 @@ func (h *Header) Hash() tmbytes.HexBytes {
 		cdcEncode(h.LastResultsHash),
 		cdcEncode(h.EvidenceHash),
 		cdcEncode(h.ProposerAddress),
+		// include round and vrf proof in block hash
+		cdcEncode(h.Round),
+		cdcEncode(h.Proof),
 	})
 }
 
@@ -493,6 +506,8 @@ func (h *Header) StringIndented(indent string) string {
 %s  Results:        %v
 %s  Evidence:       %v
 %s  Proposer:       %v
+%s  Round:          %v
+%s  Proof:          %X
 %s}#%v`,
 		indent, h.Version,
 		indent, h.ChainID,
@@ -508,6 +523,8 @@ func (h *Header) StringIndented(indent string) string {
 		indent, h.LastResultsHash,
 		indent, h.EvidenceHash,
 		indent, h.ProposerAddress,
+		indent, h.Round,
+		indent, h.Proof,
 		indent, h.Hash())
 }
 
@@ -532,6 +549,8 @@ func (h *Header) ToProto() *tmproto.Header {
 		LastResultsHash:    h.LastResultsHash,
 		LastCommitHash:     h.LastCommitHash,
 		ProposerAddress:    h.ProposerAddress,
+		Round:              h.Round,
+		Proof:              h.Proof,
 	}
 }
 
@@ -564,6 +583,8 @@ func HeaderFromProto(ph *tmproto.Header) (Header, error) {
 	h.LastResultsHash = ph.LastResultsHash
 	h.LastCommitHash = ph.LastCommitHash
 	h.ProposerAddress = ph.ProposerAddress
+	h.Round = ph.Round
+	h.Proof = ph.Proof
 
 	return *h, h.ValidateBasic()
 }

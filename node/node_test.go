@@ -291,10 +291,14 @@ func TestCreateProposalBlock(t *testing.T) {
 	)
 
 	commit := types.NewCommit(height-1, 0, types.BlockID{}, nil)
+	message, _ := state.MakeHashMessage(0)
+	proof, _ := privVals[0].GenerateVRFProof(message)
 	block, _ := blockExec.CreateProposalBlock(
 		height,
 		state, commit,
 		proposerAddr,
+		0,
+		proof,
 	)
 
 	// check that the part set does not exceed the maximum block size
@@ -325,7 +329,7 @@ func TestMaxProposalBlockSize(t *testing.T) {
 	logger := log.TestingLogger()
 
 	var height int64 = 1
-	state, stateDB, _ := state(1, height)
+	state, stateDB, privVals := state(1, height)
 	stateStore := sm.NewStore(stateDB)
 	var maxBytes int64 = 16384
 	var partSize uint32 = 256
@@ -359,10 +363,14 @@ func TestMaxProposalBlockSize(t *testing.T) {
 	)
 
 	commit := types.NewCommit(height-1, 0, types.BlockID{}, nil)
+	message, _ := state.MakeHashMessage(0)
+	proof, _ := privVals[0].GenerateVRFProof(message)
 	block, _ := blockExec.CreateProposalBlock(
 		height,
 		state, commit,
 		proposerAddr,
+		0,
+		proof,
 	)
 
 	pb, err := block.ToProto()
@@ -411,7 +419,9 @@ func state(nVals int, height int64) (sm.State, dbm.DB, []types.PrivValidator) {
 	privVals := make([]types.PrivValidator, nVals)
 	vals := make([]types.GenesisValidator, nVals)
 	for i := 0; i < nVals; i++ {
-		privVal := types.NewMockPV()
+		secret := []byte(fmt.Sprintf("test%d", i))
+		pk := ed25519.GenPrivKeyFromSecret(secret)
+		privVal := types.NewMockPVWithParams(pk, false, false)
 		privVals[i] = privVal
 		vals[i] = types.GenesisValidator{
 			Address: privVal.PrivKey.PubKey().Address(),

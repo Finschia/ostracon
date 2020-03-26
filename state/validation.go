@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/ed25519"
+	"github.com/tendermint/tendermint/crypto/vrf"
 	"github.com/tendermint/tendermint/types"
 )
 
@@ -145,6 +147,19 @@ func validateBlock(state State, block *types.Block) error {
 	// Check evidence doesn't exceed the limit amount of bytes.
 	if max, got := state.ConsensusParams.Evidence.MaxBytes, block.Evidence.ByteSize(); got > max {
 		return types.NewErrEvidenceOverflow(max, got)
+	}
+
+	// TODO: verify right proposer using ElectProposer
+
+	// Validate vrf proof
+	message, err := state.MakeHashMessage(block.Round)
+	if err != nil {
+		return types.NewErrInvalidProof(err.Error())
+	}
+	_, val := state.Validators.GetByAddress(block.ProposerAddress)
+	verified, err := vrf.Verify(val.PubKey.(ed25519.PubKey), block.Proof, message)
+	if !verified {
+		return types.NewErrInvalidProof(fmt.Sprintf("proof: %X, lastProof: %X, height=%d, round=%d, addr: %v, msg: %X", block.Proof, state.LastProof, state.LastBlockHeight, block.Round, block.ProposerAddress, message))
 	}
 
 	return nil

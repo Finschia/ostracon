@@ -7,6 +7,7 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
+	"github.com/tendermint/tendermint/crypto/vrf"
 	"github.com/tendermint/tendermint/libs/fail"
 	"github.com/tendermint/tendermint/libs/log"
 	mempl "github.com/tendermint/tendermint/mempool"
@@ -95,6 +96,8 @@ func (blockExec *BlockExecutor) CreateProposalBlock(
 	height int64,
 	state State, commit *types.Commit,
 	proposerAddr []byte,
+	round int32,
+	proof vrf.Proof,
 ) (*types.Block, *types.PartSet) {
 
 	maxBytes := state.ConsensusParams.Block.MaxBytes
@@ -107,7 +110,7 @@ func (blockExec *BlockExecutor) CreateProposalBlock(
 
 	txs := blockExec.mempool.ReapMaxBytesMaxGas(maxDataBytes, maxGas)
 
-	return state.MakeBlock(height, txs, commit, evidence, proposerAddr)
+	return state.MakeBlock(height, txs, commit, evidence, proposerAddr, round, proof)
 }
 
 // ValidateBlock validates the given block against the given state.
@@ -462,6 +465,7 @@ func updateState(
 		LastHeightConsensusParamsChanged: lastHeightParamsChanged,
 		LastResultsHash:                  ABCIResponsesResultsHash(abciResponses),
 		AppHash:                          nil,
+		LastProof:                        header.Proof,
 	}, nil
 }
 

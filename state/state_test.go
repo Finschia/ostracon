@@ -1084,3 +1084,19 @@ func TestStateProto(t *testing.T) {
 		}
 	}
 }
+
+func TestState_MakeHashMessage(t *testing.T) {
+	_, _, state := setupTestCase(t)
+	message1, err := state.MakeHashMessage(0)
+	require.NoError(t, err)
+	message2, err := state.MakeHashMessage(1)
+	require.NoError(t, err)
+	require.False(t, bytes.Equal(message1, message2))
+
+	privVal := makePrivVal()
+	state.LastProof, _ = privVal.GenerateVRFProof(message1)
+	message3, err := state.MakeHashMessage(0)
+	require.NoError(t, err)
+	require.False(t, bytes.Equal(message1, message3))
+	require.False(t, bytes.Equal(message2, message3))
+}

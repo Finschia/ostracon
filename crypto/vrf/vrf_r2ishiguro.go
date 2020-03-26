@@ -4,6 +4,7 @@ package vrf
 
 import (
 	r2ishiguro "github.com/r2ishiguro/vrf/go/vrf_ed25519"
+
 	"github.com/tendermint/tendermint/crypto/ed25519"
 )
 

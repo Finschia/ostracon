@@ -3,8 +3,9 @@ package node
 import (
 	"errors"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto/vrf"
 	"io/ioutil"
+
+	"github.com/tendermint/tendermint/crypto/vrf"
 
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"

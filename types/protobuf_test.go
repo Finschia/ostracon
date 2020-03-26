@@ -3,6 +3,12 @@ package types
 import (
 	"testing"
 
+	"github.com/golang/protobuf/proto"
+	"github.com/tendermint/go-amino"
+
+	"github.com/tendermint/tendermint/proto/tendermint/version"
+	"github.com/tendermint/tendermint/types/time"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -58,6 +64,81 @@ func TestABCIConsensusParams(t *testing.T) {
 	cp2 := UpdateConsensusParams(*cp, abciCP)
 
 	assert.Equal(t, *cp, cp2)
+}
+
+func newHeader(
+	height int64, commitHash, dataHash, evidenceHash []byte,
+) *Header {
+	return &Header{
+		Height:         height,
+		LastCommitHash: commitHash,
+		DataHash:       dataHash,
+		EvidenceHash:   evidenceHash,
+	}
+}
+
+func TestABCIHeader(t *testing.T) {
+	// build a full header
+	var height int64 = 5
+	header := newHeader(height, []byte("lastCommitHash"), []byte("dataHash"), []byte("evidenceHash"))
+	protocolVersion := version.Consensus{Block: 7, App: 8}
+	timestamp := time.Now()
+	lastBlockID := BlockID{
+		Hash: []byte("hash"),
+		PartSetHeader: PartSetHeader{
+			Total: 10,
+			Hash:  []byte("hash"),
+		},
+	}
+	header.Populate(
+		protocolVersion, "chainID", timestamp, lastBlockID,
+		[]byte("valHash"), []byte("nextValHash"),
+		[]byte("consHash"), []byte("appHash"), []byte("lastResultsHash"),
+		[]byte("proposerAddress"), 0, []byte("lastProof"),
+	)
+
+	cdc := amino.NewCodec()
+	headerBz := cdc.MustMarshalBinaryBare(header)
+
+	pbHeader := TM2PB.Header(header)
+	pbHeaderBz, err := proto.Marshal(&pbHeader)
+	assert.NoError(t, err)
+
+	// assert some fields match
+	assert.EqualValues(t, protocolVersion.Block, pbHeader.Version.Block)
+	assert.EqualValues(t, protocolVersion.App, pbHeader.Version.App)
+	assert.EqualValues(t, "chainID", pbHeader.ChainID)
+	assert.EqualValues(t, height, pbHeader.Height)
+	assert.EqualValues(t, timestamp, pbHeader.Time)
+	assert.EqualValues(t, lastBlockID.Hash, pbHeader.LastBlockId.Hash)
+	assert.EqualValues(t, []byte("lastCommitHash"), pbHeader.LastCommitHash)
+	assert.Equal(t, []byte("proposerAddress"), pbHeader.ProposerAddress)
+
+	// assert the encodings match
+	// NOTE: they don't yet because Amino encodes
+	// int64 as zig-zag and we're using non-zigzag in the protobuf.
+	// See https://github.com/tendermint/tendermint/issues/2682
+	_, _ = headerBz, pbHeaderBz
+	// assert.EqualValues(t, headerBz, pbHeaderBz)
+
+}
+
+func TestABCIEvidence(t *testing.T) {
+	val := NewMockPV()
+	blockID := makeBlockID([]byte("blockhash"), 1000, []byte("partshash"))
+	blockID2 := makeBlockID([]byte("blockhash2"), 1000, []byte("partshash"))
+	const chainID = "mychain"
+	now := time.Now()
+	ev := &DuplicateVoteEvidence{
+		VoteA:            makeVote(t, val, chainID, 0, 10, 2, 1, blockID, now),
+		VoteB:            makeVote(t, val, chainID, 0, 10, 2, 1, blockID2, now),
+		TotalVotingPower: int64(100),
+		ValidatorPower:   int64(10),
+		Timestamp:        now,
+	}
+	for _, abciEv := range ev.ABCI() {
+		assert.Equal(t, "DUPLICATE_VOTE", abciEv.Type.String())
+	}
 }
 
 type pubKeyEddie struct{}
