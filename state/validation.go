@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/ed25519"
+	"github.com/tendermint/tendermint/crypto/vrf"
 	"github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 )
@@ -147,6 +149,19 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, block
 		return fmt.Errorf("block.Header.ProposerAddress, %X, is not a validator",
 			block.ProposerAddress,
 		)
+	}
+
+	// TODO: verify right proposer using ElectProposer
+
+	// Validate vrf proof
+	message, err := state.MakeHashMessage(block.Round)
+	if err != nil {
+		return types.NewErrInvalidProof(err.Error())
+	}
+	_, val := state.Validators.GetByAddress(block.ProposerAddress)
+	verified, err := vrf.Verify(val.PubKey.(ed25519.PubKeyEd25519), block.Proof, message)
+	if !verified {
+		return types.NewErrInvalidProof(fmt.Sprintf("proof: %v, prevProof: %v, height=%d, round=%d, addr: %v", block.Proof, state.LastProof, state.LastBlockHeight, block.Round, block.ProposerAddress))
 	}
 
 	return nil

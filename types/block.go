@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/tendermint/tendermint/crypto/vrf"
 
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/merkle"
@@ -345,6 +346,10 @@ type Header struct {
 	// consensus info
 	EvidenceHash    tmbytes.HexBytes `json:"evidence_hash"`    // evidence included in the block
 	ProposerAddress Address          `json:"proposer_address"` // original proposer of the block
+
+	// vrf info
+	Round int       `json:"round"`
+	Proof vrf.Proof `json:"proof"`
 }
 
 // Populate the Header with state-derived data.
@@ -355,6 +360,8 @@ func (h *Header) Populate(
 	valHash, nextValHash []byte,
 	consensusHash, appHash, lastResultsHash []byte,
 	proposerAddress Address,
+	round int,
+	proof vrf.Proof,
 ) {
 	h.Version = version
 	h.ChainID = chainID
@@ -366,6 +373,8 @@ func (h *Header) Populate(
 	h.AppHash = appHash
 	h.LastResultsHash = lastResultsHash
 	h.ProposerAddress = proposerAddress
+	h.Round = round
+	h.Proof = proof
 }
 
 // Hash returns the hash of the header.
@@ -393,6 +402,9 @@ func (h *Header) Hash() tmbytes.HexBytes {
 		cdcEncode(h.LastResultsHash),
 		cdcEncode(h.EvidenceHash),
 		cdcEncode(h.ProposerAddress),
+		// include round and vrf proof in block hash
+		cdcEncode(h.Round),
+		cdcEncode(h.Proof),
 	})
 }
 
@@ -416,6 +428,8 @@ func (h *Header) StringIndented(indent string) string {
 %s  Results:        %v
 %s  Evidence:       %v
 %s  Proposer:       %v
+%s  Round:          %v
+%s  Proof:          %v
 %s}#%v`,
 		indent, h.Version,
 		indent, h.ChainID,
@@ -431,6 +445,8 @@ func (h *Header) StringIndented(indent string) string {
 		indent, h.LastResultsHash,
 		indent, h.EvidenceHash,
 		indent, h.ProposerAddress,
+		indent, h.Round,
+		indent, h.Proof,
 		indent, h.Hash())
 }
 
