@@ -2,6 +2,7 @@ package state_test
 
 import (
 	"context"
+	"github.com/tendermint/tendermint/libs/bytes"
 	"testing"
 	"time"
 
@@ -264,7 +265,8 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 	block.LastCommitHash = block.LastCommit.Hash()
 	block.Time = sm.MedianTime(block.LastCommit, state.LastValidators)
 	message, _ := state.MakeHashMessage(block.Round)
-	block.Proof, _ = privVal.GenerateVRFProof(message)
+	proof, _ := privVal.GenerateVRFProof(message)
+	block.Proof = bytes.HexBytes(proof)
 
 	state, retainHeight, err := blockExec.ApplyBlock(state, blockID, block)
 	require.Nil(t, err)

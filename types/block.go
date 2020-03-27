@@ -351,8 +351,8 @@ type Header struct {
 	ProposerAddress Address          `json:"proposer_address"` // original proposer of the block
 
 	// vrf info
-	Round int32     `json:"round"`
-	Proof vrf.Proof `json:"proof"`
+	Round int32            `json:"round"`
+	Proof tmbytes.HexBytes `json:"proof"`
 }
 
 // Populate the Header with state-derived data.
@@ -377,7 +377,7 @@ func (h *Header) Populate(
 	h.LastResultsHash = lastResultsHash
 	h.ProposerAddress = proposerAddress
 	h.Round = round
-	h.Proof = proof
+	h.Proof = tmbytes.HexBytes(proof)
 }
 
 // ValidateBasic performs stateless validation on a Header returning an error

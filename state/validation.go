@@ -157,7 +157,7 @@ func validateBlock(state State, block *types.Block) error {
 		return types.NewErrInvalidProof(err.Error())
 	}
 	_, val := state.Validators.GetByAddress(block.ProposerAddress)
-	verified, err := vrf.Verify(val.PubKey.(ed25519.PubKey), block.Proof, message)
+	verified, err := vrf.Verify(val.PubKey.(ed25519.PubKey), block.Proof.Bytes(), message)
 	if !verified {
 		return types.NewErrInvalidProof(fmt.Sprintf("proof: %X, lastProof: %X, height=%d, round=%d, addr: %v, msg: %X", block.Proof, state.LastProof, state.LastBlockHeight, block.Round, block.ProposerAddress, message))
 	}
