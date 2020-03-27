@@ -958,7 +958,7 @@ func (cs *State) defaultDecideProposal(height int64, round int) {
 		block, blockParts = cs.ValidBlock, cs.ValidBlockParts
 	} else {
 		// Create a new proposal block from state/txs from the mempool.
-		block, blockParts = cs.createProposalBlock()
+		block, blockParts = cs.createProposalBlock(round)
 		if block == nil { // on error
 			return
 		}
@@ -1007,7 +1007,7 @@ func (cs *State) isProposalComplete() bool {
 // is returned for convenience so we can log the proposal block.
 // Returns nil block upon error.
 // NOTE: keep it side-effect free for clarity.
-func (cs *State) createProposalBlock() (block *types.Block, blockParts *types.PartSet) {
+func (cs *State) createProposalBlock(round int) (block *types.Block, blockParts *types.PartSet) {
 	var commit *types.Commit
 	switch {
 	case cs.Height == 1:
@@ -1024,8 +1024,7 @@ func (cs *State) createProposalBlock() (block *types.Block, blockParts *types.Pa
 	}
 
 	proposerAddr := cs.privValidator.GetPubKey().Address()
-
-	message, err := cs.state.MakeHashMessage(cs.Round)
+	message, err := cs.state.MakeHashMessage(round)
 	if err != nil {
 		cs.Logger.Error("enterPropose: Cannot generate vrf message: %s", err.Error())
 		return
@@ -1036,7 +1035,7 @@ func (cs *State) createProposalBlock() (block *types.Block, blockParts *types.Pa
 		cs.Logger.Error("enterPropose: Cannot generate vrf proof: %s", err.Error())
 		return
 	}
-	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerAddr, cs.Round, proof)
+	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerAddr, round, proof)
 }
 
 // Enter: `timeoutPropose` after entering Propose.

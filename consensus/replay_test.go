@@ -349,7 +349,7 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	newValidatorTx1 := kvstore.MakeValSetChangeTx(valPubKey1ABCI, testMinPower)
 	err := assertMempool(css[0].txNotifier).CheckTx(newValidatorTx1, nil, mempl.TxInfo{})
 	assert.Nil(t, err)
-	propBlock, _ := css[0].createProposalBlock() //changeProposer(t, cs1, vs2)
+	propBlock, _ := css[0].createProposalBlock(0) //changeProposer(t, cs1, vs2)
 	propBlockParts := propBlock.MakePartSet(partSize)
 	blockID := types.BlockID{Hash: propBlock.Hash(), PartsHeader: propBlockParts.Header()}
 	proposal := types.NewProposal(vss[1].Height, round, -1, blockID)
@@ -374,7 +374,7 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	updateValidatorTx1 := kvstore.MakeValSetChangeTx(updatePubKey1ABCI, 25)
 	err = assertMempool(css[0].txNotifier).CheckTx(updateValidatorTx1, nil, mempl.TxInfo{})
 	assert.Nil(t, err)
-	propBlock, _ = css[0].createProposalBlock() //changeProposer(t, cs1, vs2)
+	propBlock, _ = css[0].createProposalBlock(0) //changeProposer(t, cs1, vs2)
 	propBlockParts = propBlock.MakePartSet(partSize)
 	blockID = types.BlockID{Hash: propBlock.Hash(), PartsHeader: propBlockParts.Header()}
 	proposal = types.NewProposal(vss[2].Height, round, -1, blockID)
@@ -404,7 +404,7 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	newValidatorTx3 := kvstore.MakeValSetChangeTx(newVal3ABCI, testMinPower)
 	err = assertMempool(css[0].txNotifier).CheckTx(newValidatorTx3, nil, mempl.TxInfo{})
 	assert.Nil(t, err)
-	propBlock, _ = css[0].createProposalBlock() //changeProposer(t, cs1, vs2)
+	propBlock, _ = css[0].createProposalBlock(0) //changeProposer(t, cs1, vs2)
 	propBlockParts = propBlock.MakePartSet(partSize)
 	blockID = types.BlockID{Hash: propBlock.Hash(), PartsHeader: propBlockParts.Header()}
 	newVss := make([]*validatorStub, nVals+1)
@@ -462,7 +462,7 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	removeValidatorTx3 := kvstore.MakeValSetChangeTx(newVal3ABCI, 0)
 	err = assertMempool(css[0].txNotifier).CheckTx(removeValidatorTx3, nil, mempl.TxInfo{})
 	assert.Nil(t, err)
-	propBlock, _ = css[0].createProposalBlock() //changeProposer(t, cs1, vs2)
+	propBlock, _ = css[0].createProposalBlock(0) //changeProposer(t, cs1, vs2)
 	propBlockParts = propBlock.MakePartSet(partSize)
 	blockID = types.BlockID{Hash: propBlock.Hash(), PartsHeader: propBlockParts.Header()}
 	newVss = make([]*validatorStub, nVals+3)
