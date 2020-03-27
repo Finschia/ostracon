@@ -2,6 +2,7 @@ package types
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"strings"
 	"sync"
@@ -446,7 +447,7 @@ func (h *Header) StringIndented(indent string) string {
 		indent, h.EvidenceHash,
 		indent, h.ProposerAddress,
 		indent, h.Round,
-		indent, h.Proof,
+		indent, strings.ToUpper(hex.EncodeToString(h.Proof)),
 		indent, h.Hash())
 }
 
