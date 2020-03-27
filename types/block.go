@@ -2,7 +2,6 @@ package types
 
 import (
 	"bytes"
-	"encoding/hex"
 	"fmt"
 	"strings"
 	"sync"
@@ -349,8 +348,8 @@ type Header struct {
 	ProposerAddress Address          `json:"proposer_address"` // original proposer of the block
 
 	// vrf info
-	Round int       `json:"round"`
-	Proof vrf.Proof `json:"proof"`
+	Round int              `json:"round"`
+	Proof tmbytes.HexBytes `json:"proof"`
 }
 
 // Populate the Header with state-derived data.
@@ -375,7 +374,7 @@ func (h *Header) Populate(
 	h.LastResultsHash = lastResultsHash
 	h.ProposerAddress = proposerAddress
 	h.Round = round
-	h.Proof = proof
+	h.Proof = tmbytes.HexBytes(proof)
 }
 
 // Hash returns the hash of the header.
@@ -447,7 +446,7 @@ func (h *Header) StringIndented(indent string) string {
 		indent, h.EvidenceHash,
 		indent, h.ProposerAddress,
 		indent, h.Round,
-		indent, strings.ToUpper(hex.EncodeToString(h.Proof)),
+		indent, h.Proof,
 		indent, h.Hash())
 }
 

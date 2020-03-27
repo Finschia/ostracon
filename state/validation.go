@@ -159,7 +159,7 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, block
 		return types.NewErrInvalidProof(err.Error())
 	}
 	_, val := state.Validators.GetByAddress(block.ProposerAddress)
-	verified, err := vrf.Verify(val.PubKey.(ed25519.PubKeyEd25519), block.Proof, message)
+	verified, err := vrf.Verify(val.PubKey.(ed25519.PubKeyEd25519), block.Proof.Bytes(), message)
 	if !verified {
 		return types.NewErrInvalidProof(fmt.Sprintf("proof: %v, prevProof: %v, height=%d, round=%d, addr: %v", block.Proof, state.LastProof, state.LastBlockHeight, block.Round, block.ProposerAddress))
 	}

@@ -433,7 +433,7 @@ func updateState(
 		LastBlockHeight:                  header.Height,
 		LastBlockID:                      blockID,
 		LastBlockTime:                    header.Time,
-		LastProof:                        header.Proof,
+		LastProof:                        header.Proof.Bytes(),
 		NextValidators:                   nValSet,
 		Validators:                       state.NextValidators.Copy(),
 		LastValidators:                   state.Validators.Copy(),
