@@ -100,8 +100,8 @@ func (state State) MakeHashMessage(round int32) ([]byte, error) {
 		seed = output
 	}
 	b := make([]byte, 16)
-	binary.PutVarint(b, state.LastBlockHeight)
-	binary.PutVarint(b[8:], int64(round))
+	binary.LittleEndian.PutUint64(b, uint64(state.LastBlockHeight))
+	binary.LittleEndian.PutUint64(b[8:], uint64(round))
 	hash := tmhash.New()
 	hash.Write(seed)
 	return hash.Sum(b), nil
