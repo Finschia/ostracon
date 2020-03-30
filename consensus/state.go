@@ -1263,7 +1263,7 @@ func (cs *State) defaultDoPrevote(height int64, round int32) {
 	}
 
 	// Validate proposal block
-	err := cs.blockExec.ValidateBlock(cs.state, cs.ProposalBlock)
+	err := cs.blockExec.ValidateBlock(cs.state, round, cs.ProposalBlock)
 	if err != nil {
 		// ProposalBlock is invalid, prevote nil.
 		logger.Error("prevote step: ProposalBlock is invalid", "err", err)
@@ -1399,9 +1399,9 @@ func (cs *State) enterPrecommit(height int64, round int32) {
 		logger.Debug("precommit step; +2/3 prevoted proposal block; locking", "hash", blockID.Hash)
 
 		// Validate the block.
-		if err := cs.blockExec.ValidateBlock(cs.state, cs.ProposalBlock); err != nil {
+		if err := cs.blockExec.ValidateBlock(cs.state, round, cs.ProposalBlock); err != nil {
 			cs.Logger.Error(fmt.Sprintf("%v; block=%v", err, cs.ProposalBlock))
-			panic(fmt.Sprintf("precommit step; +2/3 prevoted for an invalid block: %v", err))
+			panic(fmt.Sprintf("enterPrecommit: +2/3 prevoted for an invalid block: %v", err))
 		}
 
 		cs.LockedRound = round
@@ -1492,7 +1492,7 @@ func (cs *State) enterCommit(height int64, commitRound int32) {
 		cs.newStep()
 
 		// Maybe finalize immediately.
-		cs.tryFinalizeCommit(height)
+		cs.tryFinalizeCommit(height, commitRound)
 	}()
 
 	blockID, ok := cs.Votes.Precommits(commitRound).TwoThirdsMajority()
@@ -1533,7 +1533,7 @@ func (cs *State) enterCommit(height int64, commitRound int32) {
 }
 
 // If we have the block AND +2/3 commits for it, finalize.
-func (cs *State) tryFinalizeCommit(height int64) {
+func (cs *State) tryFinalizeCommit(height int64, round int32) {
 	logger := cs.Logger.With("height", height)
 
 	if cs.Height != height {
@@ -1557,11 +1557,12 @@ func (cs *State) tryFinalizeCommit(height int64) {
 		return
 	}
 
-	cs.finalizeCommit(height)
+	//	go
+	cs.finalizeCommit(height, round)
 }
 
 // Increment height and goto cstypes.RoundStepNewHeight
-func (cs *State) finalizeCommit(height int64) {
+func (cs *State) finalizeCommit(height int64, round int32) {
 	logger := cs.Logger.With("height", height)
 
 	if cs.Height != height || cs.Step != cstypes.RoundStepCommit {
@@ -1584,9 +1585,8 @@ func (cs *State) finalizeCommit(height int64) {
 	if !block.HashesTo(blockID.Hash) {
 		panic("cannot finalize commit; proposal block does not hash to commit hash")
 	}
-
-	if err := cs.blockExec.ValidateBlock(cs.state, block); err != nil {
-		panic(fmt.Errorf("+2/3 committed an invalid block: %w", err))
+	if err := cs.blockExec.ValidateBlock(cs.state, round, block); err != nil {
+		panic(fmt.Sprintf("+2/3 committed an invalid block: %v", err))
 	}
 
 	logger.Info(
@@ -1929,7 +1929,7 @@ func (cs *State) addProposalBlockPart(msg *BlockPartMessage, peerID p2p.ID) (add
 			}
 		} else if cs.Step == cstypes.RoundStepCommit {
 			// If we're waiting on the proposal block...
-			cs.tryFinalizeCommit(height)
+			cs.tryFinalizeCommit(height, cs.CommitRound)
 		}
 
 		return added, nil

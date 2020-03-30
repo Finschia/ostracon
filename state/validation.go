@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/crypto/vrf"
@@ -14,7 +13,7 @@ import (
 //-----------------------------------------------------
 // Validate block
 
-func validateBlock(state State, block *types.Block) error {
+func validateBlock(state State, round int32, block *types.Block) error {
 	// Validate internal consistency.
 	if err := block.ValidateBasic(); err != nil {
 		return err
@@ -151,7 +150,12 @@ func validateBlock(state State, block *types.Block) error {
 
 	// TODO: verify right proposer using ElectProposer
 
-	// Validate vrf proof
+	// validate round
+	if round != block.Round {
+		return types.NewErrInvalidRound(round, block.Round)
+	}
+
+	// validate vrf proof
 	message, err := state.MakeHashMessage(block.Round)
 	if err != nil {
 		return types.NewErrInvalidProof(err.Error())

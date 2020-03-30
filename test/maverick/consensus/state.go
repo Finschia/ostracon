@@ -1461,7 +1461,7 @@ func (cs *State) finalizeCommit(height int64) {
 	if !block.HashesTo(blockID.Hash) {
 		panic("Cannot finalizeCommit, ProposalBlock does not hash to commit hash")
 	}
-	if err := cs.blockExec.ValidateBlock(cs.state, block); err != nil {
+	if err := cs.blockExec.ValidateBlock(cs.state, cs.Round, block); err != nil {
 		panic(fmt.Errorf("+2/3 committed an invalid block: %w", err))
 	}
 

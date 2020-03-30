@@ -27,6 +27,12 @@ type (
 	ErrInvalidProof struct {
 		ErrorMessage string
 	}
+
+	// invalid round
+	ErrInvalidRound struct {
+		ConsensusRound int32
+		BlockRound     int32
+	}
 )
 
 func NewErrInvalidCommitHeight(expected, actual int64) ErrInvalidCommitHeight {
@@ -67,4 +73,12 @@ func NewErrInvalidProof(message string) ErrInvalidProof {
 
 func (e ErrInvalidProof) Error() string {
 	return fmt.Sprintf("Proof verification failed: %s", e.ErrorMessage)
+}
+
+func NewErrInvalidRound(consensusRound, blockRound int32) ErrInvalidRound {
+	return ErrInvalidRound{ConsensusRound: consensusRound, BlockRound: blockRound}
+}
+
+func (e ErrInvalidRound) Error() string {
+	return fmt.Sprintf("Block round(%d) is mismatched to consensus round(%d)", e.BlockRound, e.ConsensusRound)
 }

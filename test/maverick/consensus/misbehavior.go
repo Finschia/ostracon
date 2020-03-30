@@ -66,7 +66,7 @@ func DoublePrevoteMisbehavior() Misbehavior {
 		}
 
 		// Validate proposal block
-		err := cs.blockExec.ValidateBlock(cs.state, cs.ProposalBlock)
+		err := cs.blockExec.ValidateBlock(cs.state, round, cs.ProposalBlock)
 		if err != nil {
 			// ProposalBlock is invalid, prevote nil.
 			cs.Logger.Error("enterPrevote: ProposalBlock is invalid", "err", err)
@@ -165,7 +165,7 @@ func defaultEnterPrevote(cs *State, height int64, round int32) {
 	}
 
 	// Validate proposal block
-	err := cs.blockExec.ValidateBlock(cs.state, cs.ProposalBlock)
+	err := cs.blockExec.ValidateBlock(cs.state, round, cs.ProposalBlock)
 	if err != nil {
 		// ProposalBlock is invalid, prevote nil.
 		logger.Error("enterPrevote: ProposalBlock is invalid", "err", err)
@@ -236,7 +236,7 @@ func defaultEnterPrecommit(cs *State, height int64, round int32) {
 	if cs.ProposalBlock.HashesTo(blockID.Hash) {
 		logger.Debug("enterPrecommit: +2/3 prevoted proposal block; locking", "hash", blockID.Hash)
 		// Validate the block.
-		if err := cs.blockExec.ValidateBlock(cs.state, cs.ProposalBlock); err != nil {
+		if err := cs.blockExec.ValidateBlock(cs.state, round, cs.ProposalBlock); err != nil {
 			panic(fmt.Sprintf("enterPrecommit: +2/3 prevoted for an invalid block: %v", err))
 		}
 		cs.LockedRound = round

@@ -117,12 +117,8 @@ func (blockExec *BlockExecutor) CreateProposalBlock(
 // If the block is invalid, it returns an error.
 // Validation does not mutate state, but does require historical information from the stateDB,
 // ie. to verify evidence from a validator at an old height.
-func (blockExec *BlockExecutor) ValidateBlock(state State, block *types.Block) error {
-	err := validateBlock(state, block)
-	if err != nil {
-		return err
-	}
-	return blockExec.evpool.CheckEvidence(block.Evidence.Evidence)
+func (blockExec *BlockExecutor) ValidateBlock(state State, round int32, block *types.Block) error {
+	return validateBlock(state, round, block)
 }
 
 // ApplyBlock validates the block against the state, executes it against the app,
@@ -135,7 +131,9 @@ func (blockExec *BlockExecutor) ApplyBlock(
 	state State, blockID types.BlockID, block *types.Block,
 ) (State, int64, error) {
 
-	if err := validateBlock(state, block); err != nil {
+	// When doing ApplyBlock, we don't need to check whether the block.Round is same to current round,
+	// so we just put block.Round for the current round parameter
+	if err := blockExec.ValidateBlock(state, block.Round, block); err != nil {
 		return state, 0, ErrInvalidBlock(err)
 	}
 

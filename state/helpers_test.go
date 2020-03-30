@@ -57,7 +57,7 @@ func makeAndApplyGoodBlock(state sm.State, privVal types.PrivValidator, height i
 	message, _ := state.MakeHashMessage(0)
 	proof, _ := privVal.GenerateVRFProof(message)
 	block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, evidence, proposerAddr, 0, proof)
-	if err := blockExec.ValidateBlock(state, block); err != nil {
+	if err := blockExec.ValidateBlock(state, 0, block); err != nil {
 		return state, types.BlockID{}, err
 	}
 	blockID := types.BlockID{Hash: block.Hash(),
