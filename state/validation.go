@@ -15,7 +15,7 @@ import (
 //-----------------------------------------------------
 // Validate block
 
-func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, block *types.Block) error {
+func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, round int, block *types.Block) error {
 	// Validate internal consistency.
 	if err := block.ValidateBasic(); err != nil {
 		return err
@@ -153,7 +153,12 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, block
 
 	// TODO: verify right proposer using ElectProposer
 
-	// Validate vrf proof
+	// validate round
+	if round != block.Round {
+		return types.NewErrInvalidRound(round, block.Round)
+	}
+
+	// validate vrf proof
 	message, err := state.MakeHashMessage(block.Round)
 	if err != nil {
 		return types.NewErrInvalidProof(err.Error())

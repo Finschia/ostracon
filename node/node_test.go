@@ -290,7 +290,7 @@ func TestCreateProposalBlock(t *testing.T) {
 		proof,
 	)
 
-	err = blockExec.ValidateBlock(state, block)
+	err = blockExec.ValidateBlock(state, 0, block)
 	assert.NoError(t, err)
 }
 
