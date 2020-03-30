@@ -25,7 +25,8 @@ const uint64Mask = uint64(0x7FFFFFFFFFFFFFFF)
 // Returns:
 // samples - A randomly selected candidate from a set of candidates. NOTE that the same candidate may have been
 // selected in duplicate.
-func RandomSamplingWithPriority(seed uint64, candidates []Candidate, sampleSize int, totalPriority uint64) (samples []Candidate) {
+func RandomSamplingWithPriority(
+	seed uint64, candidates []Candidate, sampleSize int, totalPriority uint64) (samples []Candidate) {
 
 	// generates a random selection threshold for candidates' cumulative priority
 	thresholds := make([]uint64, sampleSize)
@@ -94,9 +95,8 @@ func sort(candidates []Candidate) []Candidate {
 	s.Slice(temp, func(i, j int) bool {
 		if temp[i].Priority() != temp[j].Priority() {
 			return temp[i].Priority() > temp[j].Priority()
-		} else {
-			return temp[i].LessThan(&temp[j])
 		}
+		return temp[i].LessThan(&temp[j])
 	})
 	return temp
 }
