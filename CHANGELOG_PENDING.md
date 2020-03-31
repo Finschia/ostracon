@@ -19,11 +19,9 @@ Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermi
 - Blockchain Protocol
   - [state] [\#7](https://github.com/line/tendermint/issues/7) Add round, proof in block
 
-### FEATURES:
+### FEATURES
 
 - [types] [\#40](https://github.com/line/tendermint/issues/40) Add vrf interface and add a function generating vrf proof to PrivValidator
-
-### FEATURES
 
 ### IMPROVEMENTS
 

@@ -2669,7 +2669,7 @@ components:
               type: string
               example: ""
             codespace:
-              type: string
+              type: "string"
               example: "ibc"
             hash:
               type: string
