@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	"github.com/tendermint/tendermint/crypto/vrf"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 // PrivValidator defines the functionality of a local Tendermint validator
@@ -115,7 +115,7 @@ func (pv MockPV) ExtractIntoValidator(votingPower int64) *Validator {
 // Implements PrivValidator.
 func (pv *MockPV) GenerateVRFProof(message []byte) (*vrf.Proof, error) {
 	privKey, ok := pv.PrivKey.(ed25519.PrivKey)
-	if ! ok {
+	if !ok {
 		return nil, NewErrUnsupportedKey("ed25519")
 	}
 	return vrf.Prove(&privKey, message)
