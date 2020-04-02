@@ -9,7 +9,7 @@ Or [Blockchain](<https://en.wikipedia.org/wiki/Blockchain_(database)>), for shor
 [![version](https://img.shields.io/github/tag/tendermint/tendermint.svg)](https://github.com/tendermint/tendermint/releases/latest)
 [![API Reference](https://camo.githubusercontent.com/915b7be44ada53c290eb157634330494ebe3e30a/68747470733a2f2f676f646f632e6f72672f6769746875622e636f6d2f676f6c616e672f6764646f3f7374617475732e737667)](https://godoc.org/github.com/tendermint/tendermint)
 [![Go version](https://img.shields.io/badge/go-1.13-blue.svg)](https://github.com/moovweb/gvm)
-[![riot.im](https://img.shields.io/badge/riot.im-JOIN%20CHAT-green.svg)](https://riot.im/app/#/room/#tendermint:matrix.org)
+[![Discord](https://img.shields.io/discord/669268347736686612.svg)](https://discord.gg/AzefAFd)  
 [![license](https://img.shields.io/github/license/tendermint/tendermint.svg)](https://github.com/tendermint/tendermint/blob/master/LICENSE)
 [![](https://tokei.rs/b1/github/tendermint/tendermint?category=lines)](https://github.com/tendermint/tendermint)
 
@@ -47,9 +47,9 @@ For examples of the kinds of bugs we're looking for, see [SECURITY.md](SECURITY.
 
 ## Minimum requirements
 
-| Requirement | Notes              |
-| ----------- | ------------------ |
-| Go version  | Go1.13 or higher   |
+| Requirement | Notes            |
+| ----------- | ---------------- |
+| Go version  | Go1.13 or higher |
 
 ## Documentation
 
@@ -129,7 +129,7 @@ For more information on upgrading, see [UPGRADING.md](./UPGRADING.md)
 ### Tendermint Core
 
 For details about the blockchain data structures and the p2p protocols, see the
-[Tendermint specification](/docs/spec).
+[Tendermint specification](https://docs.tendermint.com/master/spec/).
 
 For details on using the software, see the [documentation](/docs/) which is also
 hosted at: https://docs.tendermint.com/master/
@@ -157,6 +157,5 @@ Additional documentation is found [here](/docs/tools).
 
 - [The latest gossip on BFT consensus](https://arxiv.org/abs/1807.04938)
 - [Master's Thesis on Tendermint](https://atrium.lib.uoguelph.ca/xmlui/handle/10214/9769)
-- [Original Whitepaper](https://github.com/tendermint/spec)
-  - You can find the link at the bottom of the readme
+- [Original Whitepaper: "Tendermint: Consensus Without Mining"](https://tendermint.com/static/docs/tendermint.pdf)
 - [Blog](https://blog.cosmos.network/tendermint/home)

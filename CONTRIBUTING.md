@@ -31,7 +31,7 @@ at the RFC stage will build collective understanding of the dimensions
 of the problems and help structure conversations around trade-offs.
 
 When the problem is well understood but the solution leads to large
-strucural changes to the code base, these changes should be proposed in
+structural changes to the code base, these changes should be proposed in
 the form of an [Architectural Decision Record
 (ADR)](./docs/architecture/). The ADR will help build consensus on an
 overall strategy to ensure the code base maintains coherence
@@ -97,6 +97,28 @@ When updating dependencies, please only update the particular dependencies you
 need. Instead of running `go get -u=patch`, which will update anything,
 specify exactly the dependency you want to update, eg.
 `GO111MODULE=on go get -u github.com/tendermint/go-amino@master`.
+
+## Protobuf
+
+We use [Protocol Buffers](https://developers.google.com/protocol-buffers) along with [gogoproto](https://github.com/gogo/protobuf) to generate code for use across Tendermint Core.
+
+For linting and checking breaking changes, we use [buf](https://buf.build/). If you would like to run linting and check if the changes you have made are breaking then you will have to install the needed dependencies with `make buf`. Then the linting cmd will be `make proto-lint` and the breaking changes check will be `make proto-check-breaking`.
+
+To generate new stubs based off of your changes you can run `make proto-gen` after installing `protoc` and gogoproto.
+
+### Installation Instructions
+
+To install `protoc`, download an appropriate release (https://github.com/protocolbuffers/protobuf) and then move the provided binaries into your PATH (follow instructions in README included with the download).
+
+To install `gogoproto`, do the following:
+
+```sh
+$ go get github.com/gogo/protobuf/gogoproto
+$ cd $GOPATH/pkg/mod/github.com/gogo/protobuf@v1.3.1 # or wherever go get installs things
+$ make install
+```
+
+You should now be able to run `make proto-gen` from inside the root Tendermint directory to generate new files from proto files.
 
 ## Vagrant
 

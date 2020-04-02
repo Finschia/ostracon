@@ -319,7 +319,7 @@ func MaxDataBytesUnknownEvidence(maxBytes int64, valsCount int) int64 {
 // NOTE: changes to the Header should be duplicated in:
 // - header.Hash()
 // - abci.Header
-// - /docs/spec/blockchain/blockchain.md
+// - https://github.com/tendermint/spec/blob/master/spec/blockchain/blockchain.md
 type Header struct {
 	// basic block info
 	Version version.Consensus `json:"version"`
@@ -752,7 +752,6 @@ type SignedHeader struct {
 
 // ValidateBasic does basic consistency checks and makes sure the header
 // and commit are consistent.
-//
 // NOTE: This does not actually check the cryptographic signatures.  Make
 // sure to use a Verifier to validate the signatures actually provide a
 // significantly strong proof for this header's validity.
