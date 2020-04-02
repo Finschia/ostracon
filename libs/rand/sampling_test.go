@@ -57,8 +57,35 @@ func TestRandomSamplingWithPriority(t *testing.T) {
 	}
 }
 
+func TestRandomSamplingPanicCase(t *testing.T) {
+	type Case struct {
+		Candidates    []Candidate
+		TotalPriority uint64
+	}
+
+	cases := [...]*Case{
+		// empty candidate set
+		{newCandidates(0, func(i int) uint64 { return 0 }), 0},
+		// actual total priority is zero
+		{newCandidates(100, func(i int) uint64 { return 0 }), 100},
+		// specified total priority is less than actual one
+		{newCandidates(2, func(i int) uint64 { return 1 }), 1000},
+	}
+
+	for i, c := range cases {
+		func() {
+			defer func() {
+				if recover() == nil {
+					t.Errorf("expected panic didn't happen in case %d", i+1)
+				}
+			}()
+			RandomSamplingWithPriority(0, c.Candidates, 10, c.TotalPriority)
+		}()
+	}
+}
+
 func newCandidates(length int, prio func(int) uint64) (candidates []Candidate) {
-	candidates = make([]Candidate, 100)
+	candidates = make([]Candidate, length)
 	for i := 0; i < length; i++ {
 		candidates[i] = &Element{uint32(i), prio(i)}
 	}

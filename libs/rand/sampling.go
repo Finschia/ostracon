@@ -54,22 +54,15 @@ func RandomSamplingWithPriority(
 		cumulativePriority += candidate.Priority()
 	}
 
-	// Possible factors: 1) the given total priority is less than the actual cumulative on, 2) the given candidates is
-	// an empty set, or 3) a bug.
+	// This step is performed if and only if the parameter is invalid. The reasons are as stated in the message:
 	actualTotalPriority := uint64(0)
 	for i := 0; i < len(candidates); i++ {
 		actualTotalPriority += candidates[i].Priority()
 	}
-	msg := fmt.Sprintf("totalPriority=%d, actualTotalPriority=%d,"+
-		" seed=%d, sampleSize=%d, undrawn=%d, threshold[%d]=%d",
-		actualTotalPriority, totalPriority, seed, sampleSize, undrawn, undrawn, thresholds[undrawn])
-	if len(candidates) == 0 {
-		msg = fmt.Sprintf("The given candidate is an empty set: %s", msg)
-	} else if totalPriority < actualTotalPriority {
-		msg = fmt.Sprintf("The given total priority %d is less than the actual one %d, or a bug: %s",
-			totalPriority, actualTotalPriority, msg)
-	}
-	panic(msg)
+	panic(fmt.Sprintf("Either the given candidate is an empty set, the actual cumulative priority is zero,"+
+		" or the total priority is less than the actual one; totalPriority=%d, actualTotalPriority=%d,"+
+		" seed=%d, sampleSize=%d, undrawn=%d, threshold[%d]=%d, len(candidates)=%d",
+		totalPriority, actualTotalPriority, seed, sampleSize, undrawn, undrawn, thresholds[undrawn], len(candidates)))
 }
 
 // SplitMix64
