@@ -38,8 +38,7 @@ func DefaultValidationRequestHandler(
 		}
 
 	case *VRFProofRequest:
-		message := r.Message
-		proof, err := privVal.GenerateVRFProof(message)
+		proof, err := privVal.GenerateVRFProof(r.Message)
 		if err != nil {
 			res = &VRFProofResponse{nil, &RemoteSignerError{0, err.Error()}}
 		} else {

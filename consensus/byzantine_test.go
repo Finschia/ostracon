@@ -176,7 +176,7 @@ func byzantineDecideProposalFunc(t *testing.T, height int64, round int, cs *Stat
 	// Avoid sending on internalMsgQueue and running consensus state.
 
 	// Create a new proposal block from state/txs from the mempool.
-	block1, blockParts1 := cs.createProposalBlock()
+	block1, blockParts1 := cs.createProposalBlock(round)
 	polRound, propBlockID := cs.ValidRound, types.BlockID{Hash: block1.Hash(), PartsHeader: blockParts1.Header()}
 	proposal1 := types.NewProposal(height, round, polRound, propBlockID)
 	if err := cs.privValidator.SignProposal(cs.state.ChainID, proposal1); err != nil {
@@ -184,7 +184,7 @@ func byzantineDecideProposalFunc(t *testing.T, height int64, round int, cs *Stat
 	}
 
 	// Create a new proposal block from state/txs from the mempool.
-	block2, blockParts2 := cs.createProposalBlock()
+	block2, blockParts2 := cs.createProposalBlock(round)
 	polRound, propBlockID = cs.ValidRound, types.BlockID{Hash: block2.Hash(), PartsHeader: blockParts2.Header()}
 	proposal2 := types.NewProposal(height, round, polRound, propBlockID)
 	if err := cs.privValidator.SignProposal(cs.state.ChainID, proposal2); err != nil {

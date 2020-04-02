@@ -228,7 +228,7 @@ func TestCreateProposalBlock(t *testing.T) {
 	logger := log.TestingLogger()
 
 	var height int64 = 1
-	state, stateDB := state(1, height)
+	state, stateDB, privVal := state(1, height)
 	maxBytes := 16384
 	state.ConsensusParams.Block.MaxBytes = int64(maxBytes)
 	proposerAddr, _ := state.Validators.GetByIndex(0)
@@ -280,13 +280,17 @@ func TestCreateProposalBlock(t *testing.T) {
 	)
 
 	commit := types.NewCommit(height-1, 0, types.BlockID{}, nil)
+	message, _ := state.MakeHashMessage(0)
+	proof, _ := privVal.GenerateVRFProof(message)
 	block, _ := blockExec.CreateProposalBlock(
 		height,
 		state, commit,
 		proposerAddr,
+		0,
+		proof,
 	)
 
-	err = blockExec.ValidateBlock(state, block)
+	err = blockExec.ValidateBlock(state, 0, block)
 	assert.NoError(t, err)
 }
 
@@ -323,11 +327,15 @@ func TestNodeNewNodeCustomReactors(t *testing.T) {
 	assert.Equal(t, customBlockchainReactor, n.Switch().Reactor("BLOCKCHAIN"))
 }
 
-func state(nVals int, height int64) (sm.State, dbm.DB) {
+func state(nVals int, height int64) (sm.State, dbm.DB, types.PrivValidator) {
 	vals := make([]types.GenesisValidator, nVals)
+	var privVal types.PrivValidator
 	for i := 0; i < nVals; i++ {
 		secret := []byte(fmt.Sprintf("test%d", i))
 		pk := ed25519.GenPrivKeyFromSecret(secret)
+		if privVal == nil {
+			privVal = types.NewMockPVWithParams(pk, false, false)
+		}
 		vals[i] = types.GenesisValidator{
 			Address: pk.PubKey().Address(),
 			PubKey:  pk.PubKey(),
@@ -350,5 +358,5 @@ func state(nVals int, height int64) (sm.State, dbm.DB) {
 		s.LastValidators = s.Validators.Copy()
 		sm.SaveState(stateDB, s)
 	}
-	return s, stateDB
+	return s, stateDB, privVal
 }

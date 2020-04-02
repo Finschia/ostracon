@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/ed25519"
+	"github.com/tendermint/tendermint/crypto/vrf"
 	"github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 )
@@ -13,7 +15,7 @@ import (
 //-----------------------------------------------------
 // Validate block
 
-func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, block *types.Block) error {
+func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, round int, block *types.Block) error {
 	// Validate internal consistency.
 	if err := block.ValidateBasic(); err != nil {
 		return err
@@ -147,6 +149,26 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, block
 		return fmt.Errorf("block.Header.ProposerAddress, %X, is not a validator",
 			block.ProposerAddress,
 		)
+	}
+
+	// TODO: verify right proposer using ElectProposer
+
+	// validate round
+	if round != block.Round {
+		return types.NewErrInvalidRound(round, block.Round)
+	}
+
+	// validate vrf proof
+	message, err := state.MakeHashMessage(block.Round)
+	if err != nil {
+		return types.NewErrInvalidProof(err.Error())
+	}
+	_, val := state.Validators.GetByAddress(block.ProposerAddress)
+	verified, err := vrf.Verify(val.PubKey.(ed25519.PubKeyEd25519), block.Proof.Bytes(), message)
+	if err != nil {
+		return types.NewErrInvalidProof(fmt.Sprintf("verification failed: %s; proof: %v, prevProof: %v, height=%d, round=%d, addr: %v", err.Error(), block.Proof, state.LastProof, state.LastBlockHeight, block.Round, block.ProposerAddress))
+	} else if !verified {
+		return types.NewErrInvalidProof(fmt.Sprintf("proof: %v, prevProof: %v, height=%d, round=%d, addr: %v", block.Proof, state.LastProof, state.LastBlockHeight, block.Round, block.ProposerAddress))
 	}
 
 	return nil

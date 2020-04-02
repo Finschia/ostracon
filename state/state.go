@@ -2,10 +2,13 @@ package state
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 	"io/ioutil"
 	"time"
 
+	"github.com/tendermint/tendermint/crypto/tmhash"
+	"github.com/tendermint/tendermint/crypto/vrf"
 	"github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
 	"github.com/tendermint/tendermint/version"
@@ -59,6 +62,9 @@ type State struct {
 	LastBlockID     types.BlockID
 	LastBlockTime   time.Time
 
+	// vrf proof
+	LastProof vrf.Proof
+
 	// LastValidators is used to validate block.LastCommit.
 	// Validators are persisted to the database separately every time they change,
 	// so we can query for historical validator sets.
@@ -82,6 +88,27 @@ type State struct {
 	AppHash []byte
 }
 
+func (state State) MakeHashMessage(round int) ([]byte, error) {
+	var seed []byte
+
+	if len(state.LastProof) == 0 {
+		// TODO: This code is temporary. When genesis seed is prepared, use that code.
+		seed = []byte("LINE Blockchain VRF Algorithm's first seed")
+	} else {
+		output, err := vrf.ProofToHash(state.LastProof)
+		if err != nil {
+			return nil, err
+		}
+		seed = output
+	}
+	b := make([]byte, 16)
+	binary.LittleEndian.PutUint64(b, uint64(state.LastBlockHeight))
+	binary.LittleEndian.PutUint64(b[8:], uint64(round))
+	hash := tmhash.New()
+	hash.Write(seed)
+	return hash.Sum(b), nil
+}
+
 // Copy makes a copy of the State for mutating.
 func (state State) Copy() State {
 	return State{
@@ -91,6 +118,8 @@ func (state State) Copy() State {
 		LastBlockHeight: state.LastBlockHeight,
 		LastBlockID:     state.LastBlockID,
 		LastBlockTime:   state.LastBlockTime,
+
+		LastProof: state.LastProof,
 
 		NextValidators:              state.NextValidators.Copy(),
 		Validators:                  state.Validators.Copy(),
@@ -134,6 +163,8 @@ func (state State) MakeBlock(
 	commit *types.Commit,
 	evidence []types.Evidence,
 	proposerAddress []byte,
+	round int,
+	proof vrf.Proof,
 ) (*types.Block, *types.PartSet) {
 
 	// Build base block with block data.
@@ -154,6 +185,8 @@ func (state State) MakeBlock(
 		state.Validators.Hash(), state.NextValidators.Hash(),
 		state.ConsensusParams.Hash(), state.AppHash, state.LastResultsHash,
 		proposerAddress,
+		round,
+		proof,
 	)
 
 	return block, block.MakePartSet(types.BlockPartSizeBytes)
@@ -237,6 +270,9 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 		LastBlockHeight: 0,
 		LastBlockID:     types.BlockID{},
 		LastBlockTime:   genDoc.GenesisTime,
+
+		// genesis block has no last proof
+		LastProof: nil,
 
 		NextValidators:              nextValidatorSet,
 		Validators:                  validatorSet,
