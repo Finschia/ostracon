@@ -182,6 +182,7 @@ workflows:
             branches:
               only:
                 - docs-theme-latest
+      - lint
       - setup_dependencies
       - test_abci_apps:
           requires:

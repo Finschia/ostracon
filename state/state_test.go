@@ -3,7 +3,6 @@ package state_test
 import (
 	"bytes"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto/vrf"
 	"math"
 	"math/big"
 	"os"
@@ -18,6 +17,7 @@ import (
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
+	"github.com/tendermint/tendermint/crypto/vrf"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
