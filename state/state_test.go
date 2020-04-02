@@ -3,7 +3,6 @@ package state_test
 import (
 	"bytes"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto/vrf"
 	"math"
 	"math/big"
 	"os"
@@ -14,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/ed25519"
+	"github.com/tendermint/tendermint/crypto/vrf"
 	"github.com/tendermint/tendermint/libs/kv"
 	"github.com/tendermint/tendermint/libs/rand"
 	tmrand "github.com/tendermint/tendermint/libs/rand"

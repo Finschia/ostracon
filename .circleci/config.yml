@@ -402,9 +402,7 @@ workflows:
               only:
                 - docs-theme-latest
       - lint
-      - setup_dependencies:
-          requires:
-            - lint
+      - setup_dependencies
       - test_abci_apps:
           requires:
             - setup_dependencies
