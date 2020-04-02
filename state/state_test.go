@@ -3,6 +3,7 @@ package state_test
 import (
 	"bytes"
 	"fmt"
+	"github.com/tendermint/tendermint/crypto/vrf"
 	"math"
 	"math/big"
 	"os"
@@ -1095,6 +1096,8 @@ func TestState_MakeHashMessage(t *testing.T) {
 
 	privVal := makePrivVal()
 	state.LastProof, _ = privVal.GenerateVRFProof(message1)
+	output, _ := vrf.ProofToHash(state.LastProof)
+	state.LastProofHash = output
 	message3, err := state.MakeHashMessage(0)
 	require.NoError(t, err)
 	require.False(t, bytes.Equal(message1, message3))
