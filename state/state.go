@@ -63,7 +63,6 @@ type State struct {
 	LastBlockTime   time.Time
 
 	// vrf proof
-	LastProof     vrf.Proof
 	LastProofHash []byte
 
 	// LastValidators is used to validate block.LastCommit.
@@ -108,7 +107,6 @@ func (state State) Copy() State {
 		LastBlockID:     state.LastBlockID,
 		LastBlockTime:   state.LastBlockTime,
 
-		LastProof:     state.LastProof,
 		LastProofHash: state.LastProofHash,
 
 		NextValidators:              state.NextValidators.Copy(),
@@ -261,8 +259,7 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 		LastBlockID:     types.BlockID{},
 		LastBlockTime:   genDoc.GenesisTime,
 
-		// genesis block has no last proof
-		LastProof:     nil,
+		// genesis block use the hash of GenesisDoc instead for the `LastProofHash`
 		LastProofHash: genDoc.Hash(),
 
 		NextValidators:              nextValidatorSet,
