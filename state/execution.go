@@ -427,6 +427,12 @@ func updateState(
 	// TODO: allow app to upgrade version
 	nextVersion := state.Version
 
+	// get proof hash from vrf proof
+	proofHash, err := vrf.ProofToHash(header.Proof.Bytes())
+	if err != nil {
+		return state, fmt.Errorf("error get proof of hash: %v", err)
+	}
+
 	// NOTE: the AppHash has not been populated.
 	// It will be filled on state.Save.
 	return State{
@@ -436,6 +442,7 @@ func updateState(
 		LastBlockID:                      blockID,
 		LastBlockTime:                    header.Time,
 		LastProof:                        header.Proof.Bytes(),
+		LastProofHash:                    proofHash,
 		NextValidators:                   nValSet,
 		Validators:                       state.NextValidators.Copy(),
 		LastValidators:                   state.Validators.Copy(),

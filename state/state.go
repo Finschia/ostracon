@@ -63,7 +63,8 @@ type State struct {
 	LastBlockTime   time.Time
 
 	// vrf proof
-	LastProof vrf.Proof
+	LastProof     vrf.Proof
+	LastProofHash []byte
 
 	// LastValidators is used to validate block.LastCommit.
 	// Validators are persisted to the database separately every time they change,
@@ -89,23 +90,11 @@ type State struct {
 }
 
 func (state State) MakeHashMessage(round int) ([]byte, error) {
-	var seed []byte
-
-	if len(state.LastProof) == 0 {
-		// TODO: This code is temporary. When genesis seed is prepared, use that code.
-		seed = []byte("LINE Blockchain VRF Algorithm's first seed")
-	} else {
-		output, err := vrf.ProofToHash(state.LastProof)
-		if err != nil {
-			return nil, err
-		}
-		seed = output
-	}
 	b := make([]byte, 16)
 	binary.LittleEndian.PutUint64(b, uint64(state.LastBlockHeight))
 	binary.LittleEndian.PutUint64(b[8:], uint64(round))
 	hash := tmhash.New()
-	hash.Write(seed)
+	hash.Write(state.LastProofHash)
 	return hash.Sum(b), nil
 }
 
@@ -119,7 +108,8 @@ func (state State) Copy() State {
 		LastBlockID:     state.LastBlockID,
 		LastBlockTime:   state.LastBlockTime,
 
-		LastProof: state.LastProof,
+		LastProof:     state.LastProof,
+		LastProofHash: state.LastProofHash,
 
 		NextValidators:              state.NextValidators.Copy(),
 		Validators:                  state.Validators.Copy(),
@@ -272,7 +262,8 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 		LastBlockTime:   genDoc.GenesisTime,
 
 		// genesis block has no last proof
-		LastProof: nil,
+		LastProof:     nil,
+		LastProofHash: genDoc.Hash(),
 
 		NextValidators:              nextValidatorSet,
 		Validators:                  validatorSet,
