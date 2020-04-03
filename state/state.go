@@ -62,7 +62,7 @@ type State struct {
 	LastBlockID     types.BlockID
 	LastBlockTime   time.Time
 
-	// vrf proof
+	// vrf hash from proof
 	LastProofHash []byte
 
 	// LastValidators is used to validate block.LastCommit.
