@@ -8,7 +8,7 @@ import (
 // Interface for performing weighted deterministic random selection.
 type Candidate interface {
 	Priority() uint64
-	LessThan(other *Candidate) bool
+	LessThan(other Candidate) bool
 }
 
 const uint64Mask = uint64(0x7FFFFFFFFFFFFFFF)
@@ -89,7 +89,7 @@ func sort(candidates []Candidate) []Candidate {
 		if temp[i].Priority() != temp[j].Priority() {
 			return temp[i].Priority() > temp[j].Priority()
 		}
-		return temp[i].LessThan(&temp[j])
+		return temp[i].LessThan(temp[j])
 	})
 	return temp
 }
