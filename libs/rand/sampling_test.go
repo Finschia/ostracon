@@ -16,8 +16,8 @@ func (e *Element) Priority() uint64 {
 	return e.Weight
 }
 
-func (e *Element) LessThan(other *Candidate) bool {
-	o, ok := (*other).(*Element)
+func (e *Element) LessThan(other Candidate) bool {
+	o, ok := other.(*Element)
 	if !ok {
 		panic("incompatible type")
 	}
@@ -96,8 +96,8 @@ func sameCandidates(c1 []Candidate, c2 []Candidate) bool {
 	if len(c1) != len(c2) {
 		return false
 	}
-	s.Slice(c1, func(i, j int) bool { return c1[i].LessThan(&c1[j]) })
-	s.Slice(c2, func(i, j int) bool { return c2[i].LessThan(&c2[j]) })
+	s.Slice(c1, func(i, j int) bool { return c1[i].LessThan(c1[j]) })
+	s.Slice(c2, func(i, j int) bool { return c2[i].LessThan(c2[j]) })
 	for i := 0; i < len(c1); i++ {
 		if c1[i].(*Element).ID != c2[i].(*Element).ID {
 			return false
