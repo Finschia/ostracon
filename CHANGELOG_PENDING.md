@@ -22,8 +22,7 @@ Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermi
 ### FEATURES
 - [types] [\#40](https://github.com/line/tendermint/issues/40) Add vrf interface and add a function generating vrf proof to PrivValidator
 - [state] [\#44](https://github.com/line/tendermint/issues/44) Add genesis seed for electing proposer of first block
-
-- [types] [\#40](https://github.com/line/tendermint/issues/40) Add vrf interface and add a function generating vrf proof to PrivValidator
+- [lib/rand] [\#43](https://github.com/line/tendermint/issues/43) Implementation of selection algorithms using categorical distributions
 
 ### IMPROVEMENTS
 
