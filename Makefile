@@ -7,10 +7,16 @@ BUILD_TAGS?='tendermint'
 VERSION := $(shell git describe --always)
 CGO_OPTPTION=0
 LIBSODIUM_TARGET=
+PREPARE_LIBSODIUM_TARGET=
 ifeq ($(LIBSODIUM), 1)
   BUILD_TAGS='libsodium tendermint'
   CGO_OPTPTION=1
   LIBSODIUM_TARGET=libsodium
+ifneq ($(OS), Windows_NT)
+ifeq ($(shell uname -s), Linux)
+  PREPARE_LIBSODIUM_TARGET=prepare-libsodium-linux
+endif
+endif
 endif
 LIBSODIM_BUILD_TAGS='libsodium tendermint'
 LD_FLAGS = -X github.com/tendermint/tendermint/version.TMCoreSemVer=$(VERSION)
@@ -56,7 +62,7 @@ endif
 # allow users to pass additional flags via the conventional LDFLAGS variable
 LD_FLAGS += $(LDFLAGS)
 
-all: check $(LIBSODIUM_TARGET) build test install
+all: check build test install
 .PHONY: all
 
 include tests.mk
@@ -65,12 +71,12 @@ include tests.mk
 ###                                Build Tendermint                        ###
 ###############################################################################
 
-build:
-	CGO_ENABLED=$(CGO_ENABLED) go build $(BUILD_FLAGS) -tags '$(BUILD_TAGS)' -o $(OUTPUT) ./cmd/tendermint/
+build: $(LIBSODIUM_TARGET)
+	CGO_ENABLED=$(CGO_ENABLED) go build $(BUILD_FLAGS) -tags "$(BUILD_TAGS)" -o $(OUTPUT) ./cmd/tendermint/
 .PHONY: build
 
 install:
-	CGO_ENABLED=$(CGO_ENABLED) go install $(BUILD_FLAGS) -tags $(BUILD_TAGS) ./cmd/tendermint
+	CGO_ENABLED=$(CGO_ENABLED) go install $(BUILD_FLAGS) -tags "$(BUILD_TAGS)" ./cmd/tendermint
 .PHONY: install
 
 ###############################################################################
@@ -122,7 +128,7 @@ install_abci:
 ########################################
 ### libsodium
 
-prepare_libsodium:
+prepare-libsodium-linux:
 	apt-get update && apt-get -y install libtool libboost-all-dev autoconf build-essential
 
 libsodium:
@@ -237,7 +243,7 @@ build-docker: build-linux
 ###############################################################################
 
 # Build linux binary on other platforms
-build-linux: prepare_libsodium libsodium
+build-linux: tools $(PREPARE_LIBSODIUM_TARGET) $(LIBSODIUM_TARGET)
 	GOOS=linux GOARCH=amd64 $(MAKE) build
 .PHONY: build-linux
 
