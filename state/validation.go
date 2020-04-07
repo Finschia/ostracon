@@ -151,7 +151,9 @@ func validateBlock(state State, round int32, block *types.Block) error {
 	// TODO: verify right proposer using ElectProposer
 
 	// validate round
-	if round != block.Round {
+	// The block round must be less than or equal to the current round
+	// If some proposer proposes his ValidBlock as a proposal, then the proposal block round is less than current round
+	if block.Round > round {
 		return types.NewErrInvalidRound(round, block.Round)
 	}
 
