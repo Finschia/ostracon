@@ -3,12 +3,12 @@ package state
 import (
 	"errors"
 	"fmt"
-	"github.com/tendermint/tendermint/libs/bytes"
 	"time"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
 	"github.com/tendermint/tendermint/crypto/vrf"
+	"github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/libs/fail"
 	"github.com/tendermint/tendermint/libs/log"
 	mempl "github.com/tendermint/tendermint/mempool"
@@ -111,7 +111,8 @@ func (blockExec *BlockExecutor) CreateProposalBlock(
 
 	txs := blockExec.mempool.ReapMaxBytesMaxGas(maxDataBytes, maxGas)
 
-	blockExec.logger.Info("Create Block", "Height", height, "Round", round, "ProposerAddr", bytes.HexBytes(proposerAddr).String())
+	blockExec.logger.Info("Create Block", "Height", height, "Round", round,
+		"ProposerAddr", bytes.HexBytes(proposerAddr).String())
 	return state.MakeBlock(height, txs, commit, evidence, proposerAddr, round, proof)
 }
 
