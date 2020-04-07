@@ -27,5 +27,6 @@ program](https://hackerone.com/tendermint).
 ### IMPROVEMENTS:
 
 ### BUG FIXES:
+- [state] [\#54](https://github.com/line/tendermint/pull/54) Fix round validation of a block
 
 
