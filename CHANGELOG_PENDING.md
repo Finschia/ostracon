@@ -27,4 +27,7 @@ Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermi
 ### IMPROVEMENTS
 
 ### BUG FIXES
+- [state] [\#54](https://github.com/line/tendermint/pull/54) Fix round validation of a block
+
+### BUG FIXES
 
