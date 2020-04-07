@@ -2,9 +2,10 @@ package state_test
 
 import (
 	"context"
-	"github.com/tendermint/tendermint/libs/bytes"
 	"testing"
 	"time"
+
+	"github.com/tendermint/tendermint/libs/bytes"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

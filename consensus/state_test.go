@@ -1221,7 +1221,8 @@ func TestValidateValidBlockOnCommit(t *testing.T) {
 	timeoutProposeCh := subscribe(cs1.eventBus, types.EventQueryTimeoutPropose)
 	newRoundCh := subscribe(cs1.eventBus, types.EventQueryNewRound)
 	unlockCh := subscribe(cs1.eventBus, types.EventQueryUnlock)
-	addr := cs1.privValidator.GetPubKey().Address()
+	pubKey, _ := cs1.privValidator.GetPubKey()
+	addr := pubKey.Address()
 	voteCh := subscribeToVoter(cs1, addr)
 
 	// start round and wait for propose and prevote
@@ -1237,13 +1238,13 @@ func TestValidateValidBlockOnCommit(t *testing.T) {
 	validatePrevote(t, cs1, round, vss[0], propBlockHash)
 
 	// the others sign a polka
-	signAddVotes(cs1, types.PrevoteType, propBlockHash, propBlock.MakePartSet(partSize).Header(), vs2, vs3, vs4)
+	signAddVotes(cs1, tmproto.PrevoteType, propBlockHash, propBlock.MakePartSet(partSize).Header(), vs2, vs3, vs4)
 
 	ensurePrecommit(voteCh, height, round)
 	// we should have precommitted
 	validatePrecommit(t, cs1, round, round, vss[0], propBlockHash, propBlockHash)
 
-	signAddVotes(cs1, types.PrecommitType, nil, types.PartSetHeader{}, vs2, vs3, vs4)
+	signAddVotes(cs1, tmproto.PrecommitType, nil, types.PartSetHeader{}, vs2, vs3, vs4)
 
 	ensureNewTimeout(timeoutWaitCh, height, round, cs1.config.Precommit(round).Nanoseconds())
 
@@ -1260,7 +1261,7 @@ func TestValidateValidBlockOnCommit(t *testing.T) {
 	ensurePrevote(voteCh, height, round)
 	validatePrevote(t, cs1, round, vss[0], propBlockHash)
 
-	signAddVotes(cs1, types.PrevoteType, nil, types.PartSetHeader{}, vs2, vs3, vs4)
+	signAddVotes(cs1, tmproto.PrevoteType, nil, types.PartSetHeader{}, vs2, vs3, vs4)
 
 	ensureNewUnlock(unlockCh, height, round)
 
@@ -1268,7 +1269,7 @@ func TestValidateValidBlockOnCommit(t *testing.T) {
 	// we should have precommitted
 	validatePrecommit(t, cs1, round, -1, vss[0], nil, nil)
 
-	signAddVotes(cs1, types.PrecommitType, nil, types.PartSetHeader{}, vs2, vs3, vs4)
+	signAddVotes(cs1, tmproto.PrecommitType, nil, types.PartSetHeader{}, vs2, vs3, vs4)
 
 	incrementRound(vs2, vs3, vs4)
 	round++ // moving to the next round
@@ -1282,13 +1283,13 @@ func TestValidateValidBlockOnCommit(t *testing.T) {
 	ensurePrevote(voteCh, height, round)
 	validatePrevote(t, cs1, round, vss[0], nil)
 
-	signAddVotes(cs1, types.PrevoteType, nil, types.PartSetHeader{}, vs2, vs3, vs4)
+	signAddVotes(cs1, tmproto.PrevoteType, nil, types.PartSetHeader{}, vs2, vs3, vs4)
 
 	ensurePrecommit(voteCh, height, round)
 	// we should have precommitted
 	validatePrecommit(t, cs1, round, -1, vss[0], nil, nil)
 
-	signAddVotes(cs1, types.PrecommitType, nil, types.PartSetHeader{}, vs2, vs3, vs4)
+	signAddVotes(cs1, tmproto.PrecommitType, nil, types.PartSetHeader{}, vs2, vs3, vs4)
 
 	incrementRound(vs2, vs3, vs4)
 	round++ // moving to the next round
@@ -1302,13 +1303,13 @@ func TestValidateValidBlockOnCommit(t *testing.T) {
 	ensurePrevote(voteCh, height, round)
 	validatePrevote(t, cs1, round, vss[0], nil)
 
-	signAddVotes(cs1, types.PrevoteType, nil, types.PartSetHeader{}, vs2, vs3, vs4)
+	signAddVotes(cs1, tmproto.PrevoteType, nil, types.PartSetHeader{}, vs2, vs3, vs4)
 
 	ensurePrecommit(voteCh, height, round)
 	// we should have precommitted
 	validatePrecommit(t, cs1, round, -1, vss[0], nil, nil)
 
-	signAddVotes(cs1, types.PrecommitType, nil, types.PartSetHeader{}, vs2, vs3, vs4)
+	signAddVotes(cs1, tmproto.PrecommitType, nil, types.PartSetHeader{}, vs2, vs3, vs4)
 
 	incrementRound(vs2, vs3, vs4)
 	round++ // moving to the next round
@@ -1328,13 +1329,13 @@ func TestValidateValidBlockOnCommit(t *testing.T) {
 	validatePrevote(t, cs1, round, vss[0], propBlockHash)
 
 	// the others sign a polka
-	signAddVotes(cs1, types.PrevoteType, propBlockHash, propBlock.MakePartSet(partSize).Header(), vs2, vs3, vs4)
+	signAddVotes(cs1, tmproto.PrevoteType, propBlockHash, propBlock.MakePartSet(partSize).Header(), vs2, vs3, vs4)
 
 	ensurePrecommit(voteCh, height, round)
 	// we should have precommitted
 	validatePrecommit(t, cs1, round, round, vss[0], propBlockHash, propBlockHash)
 
-	signAddVotes(cs1, types.PrecommitType, propBlockHash, types.PartSetHeader{}, vs2, vs3, vs4)
+	signAddVotes(cs1, tmproto.PrecommitType, propBlockHash, types.PartSetHeader{}, vs2, vs3, vs4)
 
 	rs = cs1.GetRoundState()
 	assert.True(t, bytes.Equal(rs.ProposalBlock.Hash(), propBlockHash))
