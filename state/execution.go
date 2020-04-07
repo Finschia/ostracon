@@ -2,6 +2,7 @@ package state
 
 import (
 	"fmt"
+	"github.com/tendermint/tendermint/libs/bytes"
 	"time"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -108,6 +109,7 @@ func (blockExec *BlockExecutor) CreateProposalBlock(
 	maxDataBytes := types.MaxDataBytes(maxBytes, state.Validators.Size(), len(evidence))
 	txs := blockExec.mempool.ReapMaxBytesMaxGas(maxDataBytes, maxGas)
 
+	blockExec.logger.Info("Create Block", "Height", height, "Round", round, "ProposerAddr", bytes.HexBytes(proposerAddr).String())
 	return state.MakeBlock(height, txs, commit, evidence, proposerAddr, round, proof)
 }
 
