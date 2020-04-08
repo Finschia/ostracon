@@ -2,15 +2,20 @@ package types
 
 import (
 	"bytes"
+	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"math"
 	"math/big"
+	"os"
+	"runtime"
 	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/crypto/merkle"
 	tmmath "github.com/tendermint/tendermint/libs/math"
+	tmrand "github.com/tendermint/tendermint/libs/rand"
 )
 
 const (
@@ -55,13 +60,20 @@ type ValidatorSet struct {
 // Note the validator set size has an implied limit equal to that of the MaxVotesCount -
 // commits by a validator set larger than this will fail validation.
 func NewValidatorSet(valz []*Validator) *ValidatorSet {
+_, file, line, _ := runtime.Caller(1)
+fmt.Printf("***** NewValidatorSet() ***** called by %s:%d\n", file, line)
+	return NewRandomValidatorSet(valz, []byte{})
+}
+
+func NewRandomValidatorSet(valz []*Validator, hash []byte) *ValidatorSet {
 	vals := &ValidatorSet{}
 	err := vals.updateWithChangeSet(valz, false)
 	if err != nil {
 		panic(fmt.Sprintf("cannot create validator set: %s", err))
 	}
-	if len(valz) > 0 {
+	if !vals.IsNilOrEmpty() {
 		vals.IncrementProposerPriority(1)
+		vals.ResetProposerAtRandom(hash)
 	}
 	return vals
 }
@@ -76,6 +88,7 @@ func (vals *ValidatorSet) IsNilOrEmpty() bool {
 func (vals *ValidatorSet) CopyIncrementProposerPriority(times int) *ValidatorSet {
 	copy := vals.Copy()
 	copy.IncrementProposerPriority(times)
+	copy.ResetProposerAtRandom([]byte{})
 	return copy
 }
 
@@ -104,6 +117,35 @@ func (vals *ValidatorSet) IncrementProposerPriority(times int) {
 	}
 
 	vals.Proposer = proposer
+}
+
+func (vals *ValidatorSet) ResetProposerAtRandom(hash []byte) {
+	if vals.IsNilOrEmpty() {
+		panic("empty validator set")
+	}
+	seed := hashToSeed(hash)
+	proposer := vals.selectProposerAtRandom(seed)
+	proposerChanged(seed, vals.Proposer, proposer)
+	vals.Proposer = proposer
+}
+
+func hashToSeed(hash []byte) uint64 {
+	for len(hash) < 8 {
+		hash = append(hash, byte(0))
+	}
+	return binary.LittleEndian.Uint64(hash[:8])
+}
+
+func proposerChanged(seed uint64, p1 *Validator, p2 *Validator){
+	from := "nil"
+	to := "nil"
+	if p1 != nil && p1.PubKey != nil && p1.PubKey.Bytes() != nil {
+		from = hex.EncodeToString(p1.PubKey.Bytes()[:8])
+	}
+	if p2 != nil && p2.PubKey != nil && p2.PubKey.Bytes() != nil {
+		to = hex.EncodeToString(p2.PubKey.Bytes()[:8])
+	}
+	fmt.Fprintf(os.Stderr, "******** ResetProposerAtRandom: Proposer [%d] %s -> %s\n", seed, from, to)
 }
 
 // RescalePriorities rescales the priorities such that the distance between the maximum and minimum
@@ -295,6 +337,7 @@ func (vals *ValidatorSet) GetProposer() (proposer *Validator) {
 	}
 	if vals.Proposer == nil {
 		vals.Proposer = vals.findProposer()
+		vals.ResetProposerAtRandom([]byte{})
 	}
 	return vals.Proposer.Copy()
 }
@@ -307,6 +350,32 @@ func (vals *ValidatorSet) findProposer() *Validator {
 		}
 	}
 	return proposer
+}
+
+func (v *Validator) Priority() uint64 {
+	// TODO Is it possible to have a negative VotingPower?
+	if v.VotingPower < 0 {
+		return 0
+	}
+	return uint64(v.VotingPower)
+}
+
+func (v *Validator) LessThan(other tmrand.Candidate) bool {
+	o, ok := other.(*Validator)
+	if !ok {
+		panic("incompatible type")
+	}
+	return bytes.Compare(v.PubKey.Bytes(), o.PubKey.Bytes()) < 0
+}
+
+func (vals *ValidatorSet) selectProposerAtRandom(seed uint64) (proposer *Validator) {
+	candidates := make([]tmrand.Candidate, len(vals.Validators))
+	for i := 0; i < len(candidates); i++ {
+		candidates[i] = vals.Validators[i]
+	}
+	validators := tmrand.RandomSamplingWithPriority(seed, candidates, 1, uint64(vals.TotalVotingPower()))
+	proposer = validators[0].(*Validator)
+	return
 }
 
 // Hash returns the Merkle root hash build using validators (as leaves) in the

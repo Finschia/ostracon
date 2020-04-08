@@ -834,6 +834,9 @@ func (cs *State) enterNewRound(height int64, round int) {
 		validators.IncrementProposerPriority(round - cs.Round)
 	}
 
+	// Select the current height and round Proposer
+	validators.ResetProposerAtRandom(sm.MakeRoundHash(cs.state.LastProofHash, height, round))
+
 	// Setup new round
 	// we don't fire newStep for this step,
 	// but we fire an event, so update the round step first
@@ -927,6 +930,9 @@ func (cs *State) enterPropose(height int64, round int) {
 		return
 	}
 	logger.Debug("This node is a validator")
+
+	// Select the current height and round Proposer
+	cs.Validators.ResetProposerAtRandom(sm.MakeRoundHash(cs.state.LastProofHash, height, round))
 
 	if cs.isProposer(address) {
 		logger.Info("enterPropose: Our turn to propose",
