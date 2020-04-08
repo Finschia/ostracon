@@ -20,6 +20,7 @@ import (
 	smmocks "github.com/tendermint/tendermint/state/mocks"
 	"github.com/tendermint/tendermint/store"
 	"github.com/tendermint/tendermint/types"
+	tmtime "github.com/tendermint/tendermint/types/time"
 	"github.com/tendermint/tendermint/version"
 )
 
@@ -35,6 +36,40 @@ var (
 	defaultEvidenceTime           = time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
 	defaultEvidenceMaxBytes int64 = 1000
 )
+
+// TODO v0.34.8 apply: make sure that in a future commit this function will be merged with the one of the same name
+// defined at the back of this file.
+func initializeValidatorState___(valAddr []byte, height int64) dbm.DB {
+	stateDB := dbm.NewMemDB()
+	stateStore := sm.NewStore(stateDB)
+
+	// create validator set and state
+	valSet := &types.ValidatorSet{
+		Validators: []*types.Validator{
+			{Address: valAddr, VotingPower: 1},
+		},
+	}
+	state := sm.State{
+		LastBlockHeight:             0,
+		LastBlockTime:               tmtime.Now(),
+		Validators:                  valSet,
+		NextValidators:              valSet.CopyIncrementProposerPriority(1),
+		LastHeightValidatorsChanged: 1,
+		ConsensusParams: tmproto.ConsensusParams{
+			Evidence: tmproto.EvidenceParams{
+				MaxAgeNumBlocks: 10000,
+				MaxAgeDuration:  48 * time.Hour,
+			},
+		},
+	}
+	// save all states up to height
+	for i := int64(0); i < height; i++ {
+		state.LastBlockHeight = i
+		stateStore.Save(state)
+	}
+
+	return stateDB
+}
 
 func TestEvidencePoolBasic(t *testing.T) {
 	var (
