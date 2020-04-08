@@ -27,7 +27,7 @@ func initializeValidatorState(valAddr []byte, height int64) dbm.DB {
 	// create validator set and state
 	valSet := &types.ValidatorSet{
 		Validators: []*types.Validator{
-			{Address: valAddr},
+			{Address: valAddr, VotingPower: 1},
 		},
 	}
 	state := sm.State{

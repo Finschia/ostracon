@@ -60,8 +60,8 @@ type ValidatorSet struct {
 // Note the validator set size has an implied limit equal to that of the MaxVotesCount -
 // commits by a validator set larger than this will fail validation.
 func NewValidatorSet(valz []*Validator) *ValidatorSet {
-_, file, line, _ := runtime.Caller(1)
-fmt.Printf("***** NewValidatorSet() ***** called by %s:%d\n", file, line)
+	_, file, line, _ := runtime.Caller(1)
+	fmt.Printf("***** NewValidatorSet() ***** called by %s:%d\n", file, line)
 	return NewRandomValidatorSet(valz, []byte{})
 }
 
@@ -136,7 +136,7 @@ func hashToSeed(hash []byte) uint64 {
 	return binary.LittleEndian.Uint64(hash[:8])
 }
 
-func proposerChanged(seed uint64, p1 *Validator, p2 *Validator){
+func proposerChanged(seed uint64, p1 *Validator, p2 *Validator) {
 	from := "nil"
 	to := "nil"
 	if p1 != nil && p1.PubKey != nil && p1.PubKey.Bytes() != nil {
