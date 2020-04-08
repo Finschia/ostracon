@@ -87,12 +87,7 @@ type State struct {
 }
 
 func (state State) MakeHashMessage(round int32) ([]byte, error) {
-	b := make([]byte, 16)
-	binary.LittleEndian.PutUint64(b, uint64(state.LastBlockHeight))
-	binary.LittleEndian.PutUint64(b[8:], uint64(round))
-	hash := tmhash.New()
-	hash.Write(state.LastProofHash)
-	return hash.Sum(b), nil
+	return MakeRoundHash(state.LastProofHash, state.LastBlockHeight, round), nil
 }
 
 // Copy makes a copy of the State for mutating.
@@ -288,6 +283,17 @@ func (state State) MakeBlock(
 	return block, block.MakePartSet(types.BlockPartSizeBytes)
 }
 
+// MakeRoundHash combines the VRF hash, block height, and round to create a hash value for each round. This value is
+// used for random sampling of the Proposer.
+func MakeRoundHash(proofHash []byte, height int64, round int32) []byte {
+	b := make([]byte, 16)
+	binary.LittleEndian.PutUint64(b, uint64(height))
+	binary.LittleEndian.PutUint64(b[8:], uint64(round))
+	hash := tmhash.New()
+	hash.Write(proofHash)
+	return hash.Sum(b)
+}
+
 // MedianTime computes a median time for a given Commit (based on Timestamp field of votes messages) and the
 // corresponding validator set. The computed time is always between timestamps of
 // the votes sent by honest processes, i.e., a faulty processes can not arbitrarily increase or decrease the
@@ -355,8 +361,8 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 		for i, val := range genDoc.Validators {
 			validators[i] = types.NewValidator(val.PubKey, val.Power)
 		}
-		validatorSet = types.NewValidatorSet(validators)
-		nextValidatorSet = types.NewValidatorSet(validators).CopyIncrementProposerPriority(1)
+		validatorSet = types.NewRandomValidatorSet(validators, MakeRoundHash(genDoc.Hash(), 0, 0))
+		nextValidatorSet = types.NewRandomValidatorSet(validators, MakeRoundHash(genDoc.Hash(), 0, 1))
 	}
 
 	return State{
@@ -373,8 +379,8 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 
 		NextValidators:              nextValidatorSet,
 		Validators:                  validatorSet,
-		LastValidators:              types.NewValidatorSet(nil),
-		LastHeightValidatorsChanged: genDoc.InitialHeight,
+		LastValidators:              types.NewRandomValidatorSet(nil, MakeRoundHash(genDoc.Hash(), 0, 0)),
+		LastHeightValidatorsChanged: 1,
 
 		ConsensusParams:                  *genDoc.ConsensusParams,
 		LastHeightConsensusParamsChanged: genDoc.InitialHeight,

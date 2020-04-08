@@ -981,6 +981,9 @@ func (cs *State) enterNewRound(height int64, round int32) {
 		validators.IncrementProposerPriority(tmmath.SafeSubInt32(round, cs.Round))
 	}
 
+	// Select the current height and round Proposer
+	validators.ResetProposerAtRandom(sm.MakeRoundHash(cs.state.LastProofHash, height, round))
+
 	// Setup new round
 	// we don't fire newStep for this step,
 	// but we fire an event, so update the round step first
@@ -1090,6 +1093,9 @@ func (cs *State) enterPropose(height int64, round int32) {
 		logger.Debug("node is not a validator", "addr", address, "vals", cs.Validators)
 		return
 	}
+
+	// Select the current height and round Proposer
+	cs.Validators.ResetProposerAtRandom(sm.MakeRoundHash(cs.state.LastProofHash, height, round))
 
 	if cs.isProposer(address) {
 		logger.Debug("propose step; our turn to propose", "proposer", address)
