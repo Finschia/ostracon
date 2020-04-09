@@ -16,16 +16,17 @@ func main() {
 		fmt.Println(t[0].Name)
 	})
 	h.BeforeEach(func(t *transaction.Transaction) {
-		if strings.HasPrefix(t.Name, "Tx") ||
+		if t.Expected.StatusCode != "200" {
+			t.Skip = true
+		} else if strings.HasPrefix(t.Name, "Tx") ||
 			// We need a proper example of evidence to broadcast
-			strings.HasPrefix(t.Name, "Info > /broadcast_evidence") ||
+			strings.HasPrefix(t.Name, "/broadcast_evidence >") ||
 			// We need a proper example of path and data
-			strings.HasPrefix(t.Name, "ABCI > /abci_query") ||
+			strings.HasPrefix(t.Name, "/abci_query >") ||
 			// We need to find a way to make a transaction before starting the tests,
 			// that hash should replace the dummy one in hte swagger file
-			strings.HasPrefix(t.Name, "Info > /tx") {
+			strings.HasPrefix(t.Name, "/tx >") {
 			t.Skip = true
-			fmt.Printf("%s Has been skipped\n", t.Name)
 		}
 	})
 	server.Serve()
