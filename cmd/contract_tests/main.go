@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/tendermint/tendermint/cmd/contract_tests/unmarshaler"
 
 	"github.com/snikch/goodman/hooks"
 	"github.com/snikch/goodman/transaction"
@@ -29,7 +32,22 @@ func main() {
 			t.Skip = true
 		}
 	})
+
+	// dredd can not validate optional items
+	h.Before("/genesis > Get Genesis > 200 > application/json", func(t *transaction.Transaction) {
+		makeExpectedGenesis(t)
+	})
 	server.Serve()
 	defer server.Listener.Close()
-	fmt.Print("FINE")
+}
+
+// add optional field of genesis response, because dredd has bug about OA3
+func makeExpectedGenesis(t *transaction.Transaction) {
+	expected := unmarshaler.UnmarshalJSON(&t.Expected.Body)
+	expected.DeleteProperty("result", "genesis", "app_state")
+	newBody, err := json.Marshal(expected.Body)
+	if err != nil {
+		panic(fmt.Sprintf("fail to marshal expected body with %s", err))
+	}
+	t.Expected.Body = string(newBody)
 }
