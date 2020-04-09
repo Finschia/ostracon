@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/libs/fail"
 	"github.com/tendermint/tendermint/libs/log"
 	tmos "github.com/tendermint/tendermint/libs/os"
@@ -962,6 +963,8 @@ func (cs *State) defaultDecideProposal(height int64, round int) {
 		if block == nil { // on error
 			return
 		}
+		cs.Logger.Info("Create Block", "Height", height, "Round", round,
+			"ProposerAddr", tmbytes.HexBytes(block.Header.ProposerAddress).String())
 	}
 
 	// Flush the WAL. Otherwise, we may not recompute the same proposal to sign,
