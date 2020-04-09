@@ -52,7 +52,7 @@ paths:
           required: true
           schema:
             type: string
-          example: "hello"
+          example: "456"
           description: The transaction
       responses:
         200:
@@ -1969,11 +1969,15 @@ components:
                     evidence:
                       type: "object"
                       required:
-                        - "max_age"
+                        - "max_age_num_blocks"
+                        - "max_age_duration"
                       properties:
-                        max_age:
+                        max_age_num_blocks:
                           type: "string"
                           example: "100000"
+                        max_age_duration:
+                          type: "string"
+                          example: "172800000000000"
                     validator:
                       type: "object"
                       required:
