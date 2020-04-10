@@ -55,7 +55,7 @@ func makeAndCommitGoodBlock(
 
 func makeAndApplyGoodBlock(state sm.State, privVal types.PrivValidator, height int64, lastCommit *types.Commit,
 	proposerAddr []byte, blockExec *sm.BlockExecutor, evidence []types.Evidence) (sm.State, types.BlockID, error) {
-	message, _ := state.MakeHashMessage(0)
+	message := state.MakeHashMessage(0)
 	proof, _ := privVal.GenerateVRFProof(message)
 	block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, evidence, proposerAddr, 0, proof)
 	if err := blockExec.ValidateBlock(state, 0, block); err != nil {
@@ -144,7 +144,7 @@ func makeBlock(state sm.State, height int64) *types.Block {
 }
 
 func makeBlockWithPrivVal(state sm.State, privVal types.PrivValidator, height int64) *types.Block {
-	message, _ := state.MakeHashMessage(0)
+	message := state.MakeHashMessage(0)
 	proof, _ := privVal.GenerateVRFProof(message)
 	block, _ := state.MakeBlock(
 		height,

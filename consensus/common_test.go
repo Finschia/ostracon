@@ -52,11 +52,9 @@ const (
 type cleanupFunc func()
 
 // genesis, chain_id, priv_val
-var (
-	config                *cfg.Config // NOTE: must be reset for each _test.go file
-	consensusReplayConfig *cfg.Config
-	ensureTimeout         = time.Millisecond * 200
-)
+var config *cfg.Config // NOTE: must be reset for each _test.go file
+var consensusReplayConfig *cfg.Config
+var ensureTimeout = time.Millisecond * 1000
 
 func ensureDir(dir string, mode os.FileMode) {
 	if err := tmos.EnsureDir(dir, mode); err != nil {
@@ -450,7 +448,7 @@ func forceProposer(cs *State, vals []*validatorStub, index []int, height []int64
 		firstHash := []byte{byte(i)}
 		cs.state.LastProofHash = firstHash
 		for j := 0; j < len(index); j++ {
-			hash := sm.MakeRoundHash(cs.state.LastProofHash, height[j], round[j])
+			hash := types.MakeRoundHash(cs.state.LastProofHash, height[j], round[j])
 			var curVal *validatorStub
 			var mustBe bool
 			if index[j] < len(vals) {
@@ -461,7 +459,7 @@ func forceProposer(cs *State, vals []*validatorStub, index []int, height []int64
 				mustBe = false
 			}
 			curValPubKey, _ := curVal.GetPubKey()
-			cs.Validators.ResetProposerAtRandom(hash)
+			cs.Validators.SelectProposerWithHash(hash)
 			if curValPubKey.Equals(cs.Validators.GetProposer().PubKey) != mustBe {
 				allMatch = false
 				break

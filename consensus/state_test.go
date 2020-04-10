@@ -254,7 +254,7 @@ func TestStateOversizedBlock(t *testing.T) {
 	height, round := cs1.Height, cs1.Round
 	vs2 := vss[1]
 
-	forceProposer(cs1, vss, []int{1, 1}, []int64{height, height}, []int32{round, round})
+	forceProposer(cs1, vss, []int{1, 1}, []int64{height, height}, []int32{round, round + 1})
 
 	partSize := types.BlockPartSizeBytes
 

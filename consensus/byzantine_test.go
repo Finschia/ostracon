@@ -193,7 +193,7 @@ func TestByzantinePrevoteEquivocation(t *testing.T) {
 		}
 		proposerAddr := lazyProposer.privValidatorPubKey.Address()
 
-		message, _ := lazyProposer.state.MakeHashMessage(lazyProposer.Round)
+		message := lazyProposer.state.MakeHashMessage(lazyProposer.Round)
 		proof, _ := lazyProposer.privValidator.GenerateVRFProof(message)
 		block, blockParts := lazyProposer.blockExec.CreateProposalBlock(
 			lazyProposer.Height, lazyProposer.state, commit, proposerAddr, lazyProposer.Round, proof,

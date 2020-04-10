@@ -1016,7 +1016,7 @@ func makeBlock(state sm.State, lastBlock *types.Block, lastBlockMeta *types.Bloc
 			lastBlockMeta.BlockID, []types.CommitSig{vote.CommitSig()})
 	}
 
-	message, _ := state.MakeHashMessage(0)
+	message := state.MakeHashMessage(0)
 	proof, _ := privVal.GenerateVRFProof(message)
 	return state.MakeBlock(height, []types.Tx{}, lastCommit, nil, state.Validators.GetProposer().Address, 0, proof)
 }

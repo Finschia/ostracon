@@ -2,15 +2,11 @@ package state
 
 import (
 	"bytes"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
-
-	"github.com/tendermint/tendermint/crypto/tmhash"
 	"github.com/tendermint/tendermint/crypto/vrf"
 	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -86,8 +82,8 @@ type State struct {
 	AppHash []byte
 }
 
-func (state State) MakeHashMessage(round int32) ([]byte, error) {
-	return MakeRoundHash(state.LastProofHash, state.LastBlockHeight, round), nil
+func (state State) MakeHashMessage(round int32) []byte {
+	return types.MakeRoundHash(state.LastProofHash, state.LastBlockHeight, round)
 }
 
 // Copy makes a copy of the State for mutating.
@@ -131,7 +127,7 @@ func (state State) Bytes() []byte {
 	if err != nil {
 		panic(err)
 	}
-	bz, err := proto.Marshal(sm)
+	bz, err := sm.Marshal()
 	if err != nil {
 		panic(err)
 	}
@@ -283,19 +279,6 @@ func (state State) MakeBlock(
 	return block, block.MakePartSet(types.BlockPartSizeBytes)
 }
 
-// MakeRoundHash combines the VRF hash, block height, and round to create a hash value for each round. This value is
-// used for random sampling of the Proposer.
-func MakeRoundHash(proofHash []byte, height int64, round int32) []byte {
-	b := make([]byte, 16)
-	binary.LittleEndian.PutUint64(b, uint64(height))
-	binary.LittleEndian.PutUint64(b[8:], uint64(round))
-	hash := tmhash.New()
-	hash.Write(proofHash)
-	hash.Write(b[:8])
-	hash.Write(b[8:16])
-	return hash.Sum(nil)
-}
-
 // MedianTime computes a median time for a given Commit (based on Timestamp field of votes messages) and the
 // corresponding validator set. The computed time is always between timestamps of
 // the votes sent by honest processes, i.e., a faulty processes can not arbitrarily increase or decrease the
@@ -363,8 +346,8 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 		for i, val := range genDoc.Validators {
 			validators[i] = types.NewValidator(val.PubKey, val.Power)
 		}
-		validatorSet = types.NewRandomValidatorSet(validators, MakeRoundHash(genDoc.Hash(), 1, 0))
-		nextValidatorSet = types.NewRandomValidatorSet(validators, MakeRoundHash(genDoc.Hash(), 1, 1))
+		validatorSet = types.NewRandomValidatorSet(validators, types.MakeRoundHash(genDoc.Hash(), 1, 0))
+		nextValidatorSet = types.NewRandomValidatorSet(validators, types.MakeRoundHash(genDoc.Hash(), 2, 0))
 	}
 
 	return State{
@@ -381,7 +364,7 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 
 		NextValidators:              nextValidatorSet,
 		Validators:                  validatorSet,
-		LastValidators:              types.NewRandomValidatorSet(nil, MakeRoundHash(genDoc.Hash(), 1, 0)),
+		LastValidators:              types.NewRandomValidatorSet(nil, types.MakeRoundHash(genDoc.Hash(), 1, 0)),
 		LastHeightValidatorsChanged: 1,
 
 		ConsensusParams:                  *genDoc.ConsensusParams,

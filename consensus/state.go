@@ -982,7 +982,7 @@ func (cs *State) enterNewRound(height int64, round int32) {
 	}
 
 	// Select the current height and round Proposer
-	validators.ResetProposerAtRandom(sm.MakeRoundHash(cs.state.LastProofHash, height, round))
+	validators.SelectProposerWithRound(cs.state.LastProofHash, height, round)
 
 	// Setup new round
 	// we don't fire newStep for this step,
@@ -1095,7 +1095,7 @@ func (cs *State) enterPropose(height int64, round int32) {
 	}
 
 	// Select the current height and round Proposer
-	cs.Validators.ResetProposerAtRandom(sm.MakeRoundHash(cs.state.LastProofHash, height, round))
+	cs.Validators.SelectProposerWithRound(cs.state.LastProofHash, height, round)
 
 	if cs.isProposer(address) {
 		logger.Debug("propose step; our turn to propose", "proposer", address)
@@ -1205,14 +1205,10 @@ func (cs *State) createProposalBlock(round int32) (block *types.Block, blockPart
 		cs.Logger.Error("propose step; empty priv validator public key", "err", errPubKeyIsNotSet)
 		return
 	}
+
 	proposerAddr := cs.privValidatorPubKey.Address()
 
-	message, err := cs.state.MakeHashMessage(round)
-
-	if err != nil {
-		cs.Logger.Error(fmt.Sprintf("enterPropose: Cannot generate vrf message: %s", err.Error()))
-		return
-	}
+	message := cs.state.MakeHashMessage(round)
 
 	proof, err := cs.privValidator.GenerateVRFProof(message)
 	if err != nil {

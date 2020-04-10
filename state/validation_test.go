@@ -78,7 +78,7 @@ func TestValidateBlockHeader(t *testing.T) {
 			Invalid blocks don't pass
 		*/
 		for _, tc := range testCases {
-			message, _ := state.MakeHashMessage(0)
+			message := state.MakeHashMessage(0)
 			proof, _ := privVals[proposerAddr.String()].GenerateVRFProof(message)
 			block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, nil, proposerAddr, 0, proof)
 			tc.malleateBlock(block)
@@ -135,7 +135,7 @@ func TestValidateBlockCommit(t *testing.T) {
 				state.LastBlockID,
 				[]types.CommitSig{wrongHeightVote.CommitSig()},
 			)
-			message, _ := state.MakeHashMessage(0)
+			message := state.MakeHashMessage(0)
 			proof, _ := privVals[proposerAddr.String()].GenerateVRFProof(message)
 			block, _ := state.MakeBlock(height, makeTxs(height), wrongHeightCommit, nil, proposerAddr, 0, proof)
 			err = blockExec.ValidateBlock(state, 0, block)
@@ -252,7 +252,7 @@ func TestValidateBlockEvidence(t *testing.T) {
 				evidence = append(evidence, newEv)
 				currentBytes += int64(len(newEv.Bytes()))
 			}
-			message, _ := state.MakeHashMessage(0)
+			message := state.MakeHashMessage(0)
 			proof, _ := privVals[proposerAddr.String()].GenerateVRFProof(message)
 			block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, evidence, proposerAddr, 0, proof)
 			err := blockExec.ValidateBlock(state, 0, block)

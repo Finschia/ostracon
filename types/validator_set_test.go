@@ -27,11 +27,11 @@ func TestValidatorSetBasic(t *testing.T) {
 	// but attempting to IncrementProposerPriority on them will panic.
 	vset := NewRandomValidatorSet([]*Validator{}, []byte{})
 	assert.Panics(t, func() { vset.IncrementProposerPriority(1) })
-	assert.Panics(t, func() { vset.ResetProposerAtRandom([]byte{}) })
+	assert.Panics(t, func() { vset.SelectProposerWithHash([]byte{}) })
 
 	vset = NewRandomValidatorSet(nil, []byte{})
 	assert.Panics(t, func() { vset.IncrementProposerPriority(1) })
-	assert.Panics(t, func() { vset.ResetProposerAtRandom([]byte{}) })
+	assert.Panics(t, func() { vset.SelectProposerWithHash([]byte{}) })
 
 	assert.EqualValues(t, vset, vset.Copy())
 	assert.False(t, vset.HasAddress([]byte("some val")))
@@ -204,7 +204,7 @@ func bytesToInt(b []byte) int {
 func verifyWinningRate(t *testing.T, vals *ValidatorSet, tries int, error float64) {
 	selected := make([]int, len(vals.Validators))
 	for i := 0; i < tries; i++ {
-		vals.ResetProposerAtRandom(intToBytes(i))
+		vals.SelectProposerWithHash(intToBytes(i))
 		prop := vals.GetProposer()
 		for j := 0; j < len(vals.Validators); j++ {
 			if bytes.Equal(prop.Address, vals.Validators[j].Address) {
@@ -237,7 +237,7 @@ func TestProposerSelection1(t *testing.T) {
 		val := vset.GetProposer()
 		proposers = append(proposers, string(val.Address))
 		hash := intToBytes(i)
-		vset.ResetProposerAtRandom(hash)
+		vset.SelectProposerWithHash(hash)
 	}
 	expected := `baz baz foo foo foo bar baz foo baz foo foo foo baz foo foo bar foo baz foo foo` +
 		` foo foo foo foo bar foo foo foo foo foo foo foo baz bar foo foo foo bar foo bar foo` +
@@ -260,7 +260,7 @@ func TestProposerSelection2(t *testing.T) {
 	vals := NewRandomValidatorSet(valList, []byte{})
 	expected := []int{2, 0, 0, 0, 2, 2, 1, 2, 0, 1, 0, 1, 0, 1, 2}
 	for i := 0; i < len(valList)*5; i++ {
-		vals.ResetProposerAtRandom(intToBytes(i))
+		vals.SelectProposerWithHash(intToBytes(i))
 		prop := vals.GetProposer()
 		if bytesToInt(prop.Address) != expected[i] {
 			t.Fatalf("(%d): Expected %d. Got %d", i, expected[i], bytesToInt(prop.Address))
@@ -287,7 +287,7 @@ func TestProposerSelection2(t *testing.T) {
 	for i := 0; i < 10000*N; i++ {
 		prop := vals.GetProposer()
 		propCount[bytesToInt(prop.Address)]++
-		vals.ResetProposerAtRandom(intToBytes(i))
+		vals.SelectProposerWithHash(intToBytes(i))
 	}
 	fmt.Printf("%v", propCount)
 

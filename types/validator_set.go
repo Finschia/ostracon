@@ -3,17 +3,15 @@ package types
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"math"
 	"math/big"
-	"os"
-	"runtime"
 	"sort"
 	"strings"
 
 	"github.com/tendermint/tendermint/crypto/merkle"
+	"github.com/tendermint/tendermint/crypto/tmhash"
 	tmmath "github.com/tendermint/tendermint/libs/math"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -73,11 +71,10 @@ type ValidatorSet struct {
 // MaxVotesCount - commits by a validator set larger than this will fail
 // validation.
 func NewValidatorSet(valz []*Validator) *ValidatorSet {
-	_, file, line, _ := runtime.Caller(1)
-	fmt.Fprintf(os.Stderr, "***** NewValidatorSet() ***** called by %s:%d\n", file, line)
 	return NewRandomValidatorSet(valz, []byte{})
 }
 
+// NewRandomValidatorSet adds the ability to specify a round hash to select Proposer randomly to NewValidatorSet.
 func NewRandomValidatorSet(valz []*Validator, hash []byte) *ValidatorSet {
 	vals := &ValidatorSet{}
 	err := vals.updateWithChangeSet(valz, false)
@@ -86,7 +83,7 @@ func NewRandomValidatorSet(valz []*Validator, hash []byte) *ValidatorSet {
 	}
 	if !vals.IsNilOrEmpty() {
 		vals.IncrementProposerPriority(1)
-		vals.ResetProposerAtRandom(hash)
+		vals.SelectProposerWithHash(hash)
 	}
 	return vals
 }
@@ -119,7 +116,7 @@ func (vals *ValidatorSet) IsNilOrEmpty() bool {
 func (vals *ValidatorSet) CopyIncrementProposerPriority(times int32) *ValidatorSet {
 	copy := vals.Copy()
 	copy.IncrementProposerPriority(times)
-	copy.ResetProposerAtRandom([]byte{})
+	copy.Proposer = nil
 	return copy
 }
 
@@ -150,14 +147,31 @@ func (vals *ValidatorSet) IncrementProposerPriority(times int32) {
 	vals.Proposer = proposer
 }
 
-func (vals *ValidatorSet) ResetProposerAtRandom(hash []byte) {
+// MakeRoundHash combines the VRF hash, block height, and round to create a hash value for each round. This value is
+// used for random sampling of the Proposer.
+func MakeRoundHash(proofHash []byte, height int64, round int32) []byte {
+	b := make([]byte, 16)
+	binary.LittleEndian.PutUint64(b, uint64(height))
+	binary.LittleEndian.PutUint64(b[8:], uint64(round))
+	hash := tmhash.New()
+	hash.Write(proofHash)
+	hash.Write(b[:8])
+	hash.Write(b[8:16])
+	return hash.Sum(nil)
+}
+
+func (vals *ValidatorSet) SelectProposerWithRound(proofHash []byte, height int64, round int32) *Validator {
+	return vals.SelectProposerWithHash(MakeRoundHash(proofHash, height, round))
+}
+
+func (vals *ValidatorSet) SelectProposerWithHash(hash []byte) *Validator {
 	if vals.IsNilOrEmpty() {
 		panic("empty validator set")
 	}
 	seed := hashToSeed(hash)
 	proposer := vals.selectProposerAtRandom(seed)
-	proposerChanged(vals, seed, hash, vals.Proposer, proposer)
 	vals.Proposer = proposer
+	return proposer
 }
 
 func hashToSeed(hash []byte) uint64 {
@@ -165,28 +179,6 @@ func hashToSeed(hash []byte) uint64 {
 		hash = append(hash, byte(0))
 	}
 	return binary.LittleEndian.Uint64(hash[:8])
-}
-
-func proposerChanged(vals *ValidatorSet, seed uint64, hash []byte, p1 *Validator, p2 *Validator) {
-	from := "nil"
-	to := "nil"
-	if p1 != nil && p1.PubKey != nil && p1.PubKey.Bytes() != nil {
-		from = hex.EncodeToString(p1.PubKey.Bytes()[:8])
-	}
-	if p2 != nil && p2.PubKey != nil && p2.PubKey.Bytes() != nil {
-		to = hex.EncodeToString(p2.PubKey.Bytes()[:8])
-	}
-	var i1 = -1
-	var i2 = -1
-	for i, val := range vals.Validators {
-		if p1 != nil && bytes.Equal(val.Address, p1.Address) {
-			i1 = i
-		}
-		if p2 != nil && bytes.Equal(val.Address, p2.Address) {
-			i2 = i
-		}
-	}
-	fmt.Fprintf(os.Stderr, "******** ResetProposerAtRandom: Proposer (seed=%d,hash=%X) [%d]%s -> [%d]%s\n", seed, hash, i1, from, i2, to)
 }
 
 // RescalePriorities rescales the priorities such that the distance between the maximum and minimum
@@ -371,15 +363,11 @@ func (vals *ValidatorSet) TotalVotingPower() int64 {
 	return vals.totalVotingPower
 }
 
-// GetProposer returns the current proposer. If the validator set is empty, nil
+// GetProposer returns the current proposer. If the validator set is empty, or proposer hasn't yet made a decision,
 // is returned.
 func (vals *ValidatorSet) GetProposer() (proposer *Validator) {
-	if len(vals.Validators) == 0 {
+	if len(vals.Validators) == 0 || vals.Proposer == nil {
 		return nil
-	}
-	if vals.Proposer == nil {
-		vals.Proposer = vals.findProposer()
-		vals.ResetProposerAtRandom([]byte{})
 	}
 	return vals.Proposer.Copy()
 }
@@ -710,7 +698,7 @@ func (vals *ValidatorSet) updateWithChangeSet(changes []*Validator, allowDeletes
 	vals.shiftByAvgProposerPriority()
 
 	// Reset proposer
-	vals.ResetProposerAtRandom([]byte{})
+	vals.Proposer = nil
 
 	sort.Sort(ValidatorsByVotingPower(vals.Validators))
 

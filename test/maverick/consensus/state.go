@@ -1273,11 +1273,7 @@ func (cs *State) createProposalBlock() (block *types.Block, blockParts *types.Pa
 	}
 	proposerAddr := cs.privValidatorPubKey.Address()
 
-	message, err := cs.GetState().MakeHashMessage(cs.Round)
-	if err != nil {
-		cs.Logger.Error(fmt.Sprintf("enterPropose: %v", err))
-		return
-	}
+	message := cs.GetState().MakeHashMessage(cs.Round)
 	proof, err := cs.privValidator.GenerateVRFProof(message)
 	if err != nil {
 		cs.Logger.Error(fmt.Sprintf("enterPropose: %v", err))
