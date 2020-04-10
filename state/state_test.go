@@ -1021,18 +1021,15 @@ func TestApplyUpdates(t *testing.T) {
 
 func TestState_MakeHashMessage(t *testing.T) {
 	_, _, state := setupTestCase(t)
-	message1, err := state.MakeHashMessage(0)
-	require.NoError(t, err)
-	message2, err := state.MakeHashMessage(1)
-	require.NoError(t, err)
+	message1 := state.MakeHashMessage(0)
+	message2 := state.MakeHashMessage(1)
 	require.False(t, bytes.Equal(message1, message2))
 
 	privVal := makePrivVal()
 	proof, _ := privVal.GenerateVRFProof(message1)
 	output, _ := vrf.ProofToHash(proof)
 	state.LastProofHash = output
-	message3, err := state.MakeHashMessage(0)
-	require.NoError(t, err)
+	message3 := state.MakeHashMessage(0)
 	require.False(t, bytes.Equal(message1, message3))
 	require.False(t, bytes.Equal(message2, message3))
 }

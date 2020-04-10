@@ -159,10 +159,7 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, round
 	}
 
 	// validate vrf proof
-	message, err := state.MakeHashMessage(block.Round)
-	if err != nil {
-		return types.NewErrInvalidProof(err.Error())
-	}
+	message := state.MakeHashMessage(block.Round)
 	_, val := state.Validators.GetByAddress(block.ProposerAddress)
 	verified, err := vrf.Verify(val.PubKey.(ed25519.PubKeyEd25519), block.Proof.Bytes(), message)
 	if err != nil {
