@@ -61,7 +61,7 @@ type ValidatorSet struct {
 // commits by a validator set larger than this will fail validation.
 func NewValidatorSet(valz []*Validator) *ValidatorSet {
 	_, file, line, _ := runtime.Caller(1)
-	fmt.Printf("***** NewValidatorSet() ***** called by %s:%d\n", file, line)
+	fmt.Fprintf(os.Stderr, "***** NewValidatorSet() ***** called by %s:%d\n", file, line)
 	return NewRandomValidatorSet(valz, []byte{})
 }
 
@@ -365,7 +365,7 @@ func (v *Validator) LessThan(other tmrand.Candidate) bool {
 	if !ok {
 		panic("incompatible type")
 	}
-	return bytes.Compare(v.PubKey.Bytes(), o.PubKey.Bytes()) < 0
+	return bytes.Compare(v.Address, o.Address) < 0
 }
 
 func (vals *ValidatorSet) selectProposerAtRandom(seed uint64) (proposer *Validator) {
@@ -674,6 +674,9 @@ func (vals *ValidatorSet) updateWithChangeSet(changes []*Validator, allowDeletes
 	vals.RescalePriorities(PriorityWindowSizeFactor * vals.TotalVotingPower())
 	vals.shiftByAvgProposerPriority()
 
+	// Reset proposer
+	vals.ResetProposerAtRandom([]byte{})
+
 	return nil
 }
 
@@ -972,7 +975,7 @@ func RandValidatorSet(numValidators int, votingPower int64) (*ValidatorSet, []Pr
 		valz[i] = val
 		privValidators[i] = privValidator
 	}
-	vals := NewValidatorSet(valz)
+	vals := NewRandomValidatorSet(valz, []byte{})
 	sort.Sort(PrivValidatorsByAddress(privValidators))
 	return vals, privValidators
 }

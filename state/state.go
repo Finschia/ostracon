@@ -183,7 +183,9 @@ func MakeRoundHash(proofHash []byte, height int64, round int) []byte {
 	binary.LittleEndian.PutUint64(b[8:], uint64(round))
 	hash := tmhash.New()
 	hash.Write(proofHash)
-	return hash.Sum(b)
+	hash.Write(b[:8])
+	hash.Write(b[8:16])
+	return hash.Sum(nil)
 }
 
 // MedianTime computes a median time for a given Commit (based on Timestamp field of votes messages) and the
@@ -253,8 +255,8 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 		for i, val := range genDoc.Validators {
 			validators[i] = types.NewValidator(val.PubKey, val.Power)
 		}
-		validatorSet = types.NewRandomValidatorSet(validators, MakeRoundHash(genDoc.Hash(), 0, 0))
-		nextValidatorSet = types.NewRandomValidatorSet(validators, MakeRoundHash(genDoc.Hash(), 0, 1))
+		validatorSet = types.NewRandomValidatorSet(validators, MakeRoundHash(genDoc.Hash(), 1, 0))
+		nextValidatorSet = types.NewRandomValidatorSet(validators, MakeRoundHash(genDoc.Hash(), 1, 1))
 	}
 
 	return State{
@@ -270,7 +272,7 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 
 		NextValidators:              nextValidatorSet,
 		Validators:                  validatorSet,
-		LastValidators:              types.NewRandomValidatorSet(nil, MakeRoundHash(genDoc.Hash(), 0, 0)),
+		LastValidators:              types.NewRandomValidatorSet(nil, MakeRoundHash(genDoc.Hash(), 1, 0)),
 		LastHeightValidatorsChanged: 1,
 
 		ConsensusParams:                  *genDoc.ConsensusParams,
