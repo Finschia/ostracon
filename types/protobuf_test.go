@@ -46,7 +46,7 @@ func TestABCIValidators(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, tmValExpected, tmVals[0])
 
-	abciVals := TM2PB.ValidatorUpdates(NewValidatorSet(tmVals))
+	abciVals := TM2PB.ValidatorUpdates(NewRandomValidatorSet(tmVals, []byte{}))
 	assert.Equal(t, []abci.ValidatorUpdate{abciVal}, abciVals)
 
 	// val with address
