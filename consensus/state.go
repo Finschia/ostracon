@@ -931,9 +931,6 @@ func (cs *State) enterPropose(height int64, round int) {
 	}
 	logger.Debug("This node is a validator")
 
-	// Select the current height and round Proposer
-	cs.Validators.SelectProposerWithRound(cs.state.LastProofHash, height, round)
-
 	if cs.isProposer(address) {
 		logger.Info("enterPropose: Our turn to propose",
 			"proposer",
