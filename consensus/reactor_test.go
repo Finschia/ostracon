@@ -19,6 +19,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	cfg "github.com/tendermint/tendermint/config"
 	cstypes "github.com/tendermint/tendermint/consensus/types"
+	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	"github.com/tendermint/tendermint/libs/bits"
 	"github.com/tendermint/tendermint/libs/bytes"
@@ -293,27 +294,51 @@ func TestReactorReceivePanicsIfInitPeerHasntBeenCalledYet(t *testing.T) {
 
 // Test we record stats about votes and block parts from other peers.
 func TestReactorRecordsVotesAndBlockParts(t *testing.T) {
-	// FIXME
-	t.Skip("Temporarily excluded because this a case that doesn't end due to Proposer selection changes.")
-
 	N := 4
 	css, cleanup := randConsensusNet(N, "consensus_reactor_test", newMockTickerFunc(true), newCounter)
 	defer cleanup()
 	reactors, blocksSubs, eventBuses := startConsensusNet(t, css, N)
 	defer stopConsensusNet(log.TestingLogger(), reactors, eventBuses)
 
+	proposers := map[int64]crypto.Address{}
 	// wait till everyone makes the first new block
 	timeoutWaitGroup(t, N, func(j int) {
 		<-blocksSubs[j].Out()
+		// save proposer of height
+		cs := css[j]
+		if proposers[cs.Height] == nil {
+			addr := cs.Validators.Proposer.PubKey.Address()
+			copyAddr := make([]byte, len(addr))
+			copy(copyAddr, addr)
+			proposers[cs.Height] = copyAddr
+		}
 	}, css)
 
+	// get proposer of fist block
+	proposer := proposers[1]
+	// look up proposer index
+	proposerIdx, _ := css[0].Validators.GetByAddress(proposer)
+	// look up proposer index in the validator not proposer
+	// 0:[1,2,3], 1:[0,2,3], 2:[0,1,3], 3:[0,1,2]
+	var otherIdx int
+	var proposerIdxInOtherPeer int
+	if proposerIdx == 0 {
+		otherIdx = 1
+		proposerIdxInOtherPeer = 0
+	} else {
+		otherIdx = 0
+		proposerIdxInOtherPeer = proposerIdx - 1
+	}
+
 	// Get peer
-	peer := reactors[1].Switch.Peers().List()[0]
+	peer := reactors[otherIdx].Switch.Peers().List()[proposerIdxInOtherPeer]
+
 	// Get peer state
 	ps := peer.Get(types.PeerStateKey).(*PeerState)
 
 	assert.Equal(t, true, ps.VotesSent() > 0, "number of votes sent should have increased")
-	assert.Equal(t, true, ps.BlockPartsSent() > 0, fmt.Sprintf("number of votes sent should have increased: %d", ps.BlockPartsSent()))
+	assert.Equal(t, true, ps.BlockPartsSent() > 0,
+		fmt.Sprintf("number of votes sent should have increased: %d", ps.BlockPartsSent()))
 }
 
 //-------------------------------------------------------------
