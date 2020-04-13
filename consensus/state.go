@@ -1094,9 +1094,6 @@ func (cs *State) enterPropose(height int64, round int32) {
 		return
 	}
 
-	// Select the current height and round Proposer
-	cs.Validators.SelectProposerWithRound(cs.state.LastProofHash, height, round)
-
 	if cs.isProposer(address) {
 		logger.Debug("propose step; our turn to propose", "proposer", address)
 		cs.decideProposal(height, round)

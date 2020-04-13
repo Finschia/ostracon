@@ -904,7 +904,9 @@ func TestStoreLoadValidatorsIncrementsProposerPriority(t *testing.T) {
 	t.Cleanup(func() { tearDown(t) })
 	stateStore := sm.NewStore(stateDB)
 	state.Validators = genValSet(valSetSize)
+	state.Validators.SelectProposerWithRound([]byte{}, 1, 0)
 	state.NextValidators = state.Validators.Copy()
+	state.NextValidators.SelectProposerWithRound([]byte{}, 2, 0)
 	err := stateStore.Save(state)
 	require.NoError(t, err)
 
@@ -930,7 +932,9 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 	stateStore := sm.NewStore(stateDB)
 	require.Equal(t, int64(0), state.LastBlockHeight)
 	state.Validators = genValSet(valSetSize)
+	state.Validators.SelectProposerWithRound([]byte{}, 1, 0)
 	state.NextValidators = state.Validators.Copy()
+	state.NextValidators.SelectProposerWithRound([]byte{}, 2, 0)
 	err := stateStore.Save(state)
 	require.NoError(t, err)
 
