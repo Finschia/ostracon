@@ -1018,7 +1018,7 @@ func makeBlock(state sm.State, lastBlock *types.Block, lastBlockMeta *types.Bloc
 
 	message := state.MakeHashMessage(0)
 	proof, _ := privVal.GenerateVRFProof(message)
-	return state.MakeBlock(height, []types.Tx{}, lastCommit, nil, state.Validators.GetProposer().Address, 0, proof)
+	return state.MakeBlock(height, []types.Tx{}, lastCommit, nil, sm.SelectProposer(state.Validators, state.LastProofHash, height, 0).Address, 0, proof)
 }
 
 type badApp struct {

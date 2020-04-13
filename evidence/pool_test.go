@@ -50,8 +50,8 @@ func initializeValidatorState___(valAddr []byte, height int64) dbm.DB {
 	state := sm.State{
 		LastBlockHeight:             0,
 		LastBlockTime:               tmtime.Now(),
-		Validators:                  types.NewRandomValidatorSet(vals, types.MakeRoundHash([]byte{}, 1, 0)),
-		NextValidators:              types.NewRandomValidatorSet(vals, types.MakeRoundHash([]byte{}, 2, 0)),
+		Validators:                  types.NewValidatorSet(vals),
+		NextValidators:              types.NewValidatorSet(vals).CopyIncrementProposerPriority(1),
 		LastHeightValidatorsChanged: 1,
 		ConsensusParams: tmproto.ConsensusParams{
 			Evidence: tmproto.EvidenceParams{
@@ -435,7 +435,6 @@ func initializeValidatorState(privVal types.PrivValidator, height int64) sm.Stor
 	// create validator set and state
 	valSet := &types.ValidatorSet{
 		Validators: []*types.Validator{validator},
-		Proposer:   validator,
 	}
 
 	return initializeStateFromValidatorSet(valSet, height)
@@ -451,7 +450,7 @@ func initializeBlockStore(db dbm.DB, state sm.State, valAddr []byte) *store.Bloc
 		lastCommit := makeCommit(i-1, valAddr)
 		proof := state.MakeHashMessage(round)
 		block, _ := state.MakeBlock(i, []types.Tx{}, lastCommit, nil,
-			state.Validators.GetProposer().Address, round, proof)
+			sm.SelectProposer(state.Validators, proof, i, round).Address, round, proof)
 		block.Header.Time = defaultEvidenceTime.Add(time.Duration(i) * time.Minute)
 		block.Header.Version = tmversion.Consensus{Block: version.BlockProtocol, App: 1}
 		const parts = 1

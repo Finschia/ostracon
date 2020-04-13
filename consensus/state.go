@@ -974,21 +974,13 @@ func (cs *State) enterNewRound(height int64, round int32) {
 
 	logger.Debug("entering new round", "current", fmt.Sprintf("%v/%v/%v", cs.Height, cs.Round, cs.Step))
 
-	// increment validators if necessary
-	validators := cs.Validators
-	if cs.Round < round {
-		validators = validators.Copy()
-		validators.IncrementProposerPriority(tmmath.SafeSubInt32(round, cs.Round))
-	}
-
 	// Select the current height and round Proposer
-	validators.SelectProposerWithRound(cs.state.LastProofHash, height, round)
+	cs.Proposer = sm.SelectProposer(cs.Validators, cs.state.LastProofHash, height, round)
 
 	// Setup new round
 	// we don't fire newStep for this step,
 	// but we fire an event, so update the round step first
 	cs.updateRoundStep(round, cstypes.RoundStepNewRound)
-	cs.Validators = validators
 	if round == 0 {
 		// We've already reset these upon new height,
 		// and meanwhile we might have received a proposal
@@ -1098,12 +1090,12 @@ func (cs *State) enterPropose(height int64, round int32) {
 		logger.Debug("propose step; our turn to propose", "proposer", address)
 		cs.decideProposal(height, round)
 	} else {
-		logger.Debug("propose step; not our turn to propose", "proposer", cs.Validators.GetProposer().Address)
+		logger.Debug("propose step; not our turn to propose", "proposer", cs.Proposer.Address)
 	}
 }
 
 func (cs *State) isProposer(address []byte) bool {
-	return bytes.Equal(cs.Validators.GetProposer().Address, address)
+	return bytes.Equal(cs.Proposer.Address, address)
 }
 
 func (cs *State) defaultDecideProposal(height int64, round int32) {
@@ -1820,11 +1812,11 @@ func (cs *State) defaultSetProposal(proposal *types.Proposal) error {
 
 	p := proposal.ToProto()
 	// Verify signature
-	if !cs.Validators.GetProposer().PubKey.VerifySignature(
+	if !cs.Proposer.PubKey.VerifySignature(
 		types.ProposalSignBytes(cs.state.ChainID, p), proposal.Signature,
 	) {
 		cs.Logger.Error(fmt.Sprintf("proposal signature verification failed: proposer=%X, bytes=%X, signature=%X",
-			cs.Validators.GetProposer().Address, types.ProposalSignBytes(cs.state.ChainID, p),
+			cs.Proposer.Address, types.ProposalSignBytes(cs.state.ChainID, p),
 			proposal.Signature))
 		return ErrInvalidProposalSignature
 	}

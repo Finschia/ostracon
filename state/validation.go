@@ -149,7 +149,14 @@ func validateBlock(state State, round int32, block *types.Block) error {
 		return types.NewErrEvidenceOverflow(max, got)
 	}
 
-	// TODO: verify right proposer using ElectProposer
+	// validate proposer
+	if !bytes.Equal(block.ProposerAddress.Bytes(),
+		SelectProposer(state.Validators, state.LastProofHash, block.Height, block.Round).Address.Bytes()) {
+		return fmt.Errorf("block.ProposerAddress, %X, is not the proposer %X",
+			block.ProposerAddress,
+			SelectProposer(state.Validators, state.LastProofHash, block.Height, block.Round).Address,
+		)
+	}
 
 	// validate round
 	// The block round must be less than or equal to the current round

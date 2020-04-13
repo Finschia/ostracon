@@ -71,7 +71,7 @@ func TestStateProposerSelection0(t *testing.T) {
 	ensureNewRound(newRoundCh, height, round)
 
 	// Commit a block and ensure proposer for the next height is correct.
-	prop := cs1.GetRoundState().Validators.GetProposer()
+	prop := cs1.GetRoundState().Proposer
 	pv, err := cs1.privValidator.GetPubKey()
 	require.NoError(t, err)
 	address := pv.Address()
@@ -88,7 +88,7 @@ func TestStateProposerSelection0(t *testing.T) {
 	// Wait for new round so next validator is set.
 	ensureNewRound(newRoundCh, height+1, 0)
 
-	prop = cs1.GetRoundState().Validators.GetProposer()
+	prop = cs1.GetRoundState().Proposer
 	pv1, err := vss[1].GetPubKey()
 	require.NoError(t, err)
 	addr := pv1.Address()
@@ -117,7 +117,7 @@ func TestStateProposerSelection2(t *testing.T) {
 
 	// everyone just votes nil. we get a new proposer each round
 	for i := int32(0); int(i) < len(vss); i++ {
-		prop := cs1.GetRoundState().Validators.GetProposer()
+		prop := cs1.GetRoundState().Proposer
 		pvk, err := vss[int(i+round)%len(vss)].GetPubKey()
 		require.NoError(t, err)
 		addr := pvk.Address()
