@@ -827,21 +827,13 @@ func (cs *State) enterNewRound(height int64, round int) {
 
 	logger.Info(fmt.Sprintf("enterNewRound(%v/%v). Current: %v/%v/%v", height, round, cs.Height, cs.Round, cs.Step))
 
-	// Increment validators if necessary
-	validators := cs.Validators
-	if cs.Round < round {
-		validators = validators.Copy()
-		validators.IncrementProposerPriority(round - cs.Round)
-	}
-
 	// Select the current height and round Proposer
-	validators.SelectProposerWithRound(cs.state.LastProofHash, height, round)
+	cs.Proposer = sm.SelectProposer(cs.Validators, cs.state.LastProofHash, height, round)
 
 	// Setup new round
 	// we don't fire newStep for this step,
 	// but we fire an event, so update the round step first
 	cs.updateRoundStep(round, cstypes.RoundStepNewRound)
-	cs.Validators = validators
 	if round == 0 {
 		// We've already reset these upon new height,
 		// and meanwhile we might have received a proposal
@@ -931,27 +923,24 @@ func (cs *State) enterPropose(height int64, round int) {
 	}
 	logger.Debug("This node is a validator")
 
-	// Select the current height and round Proposer
-	cs.Validators.SelectProposerWithRound(cs.state.LastProofHash, height, round)
-
 	if cs.isProposer(address) {
 		logger.Info("enterPropose: Our turn to propose",
 			"proposer",
-			cs.Validators.GetProposer().Address,
+			cs.Proposer.Address,
 			"privValidator",
 			cs.privValidator)
 		cs.decideProposal(height, round)
 	} else {
 		logger.Info("enterPropose: Not our turn to propose",
 			"proposer",
-			cs.Validators.GetProposer().Address,
+			cs.Proposer.Address,
 			"privValidator",
 			cs.privValidator)
 	}
 }
 
 func (cs *State) isProposer(address []byte) bool {
-	return bytes.Equal(cs.Validators.GetProposer().Address, address)
+	return bytes.Equal(cs.Proposer.Address, address)
 }
 
 func (cs *State) defaultDecideProposal(height int64, round int) {
@@ -1560,7 +1549,7 @@ func (cs *State) defaultSetProposal(proposal *types.Proposal) error {
 	}
 
 	// Verify signature
-	if !cs.Validators.GetProposer().PubKey.VerifyBytes(proposal.SignBytes(cs.state.ChainID), proposal.Signature) {
+	if !cs.Proposer.PubKey.VerifyBytes(proposal.SignBytes(cs.state.ChainID), proposal.Signature) {
 		return ErrInvalidProposalSignature
 	}
 
