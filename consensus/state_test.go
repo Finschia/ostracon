@@ -1433,7 +1433,7 @@ func TestEmitNewValidBlockEventOnCommitWithoutBlock(t *testing.T) {
 func TestCommitFromPreviousRound(t *testing.T) {
 	cs1, vss := randState(4)
 	vs2, vs3, vs4 := vss[1], vss[2], vss[3]
-	height, round := cs1.Height, 0
+	height, round := cs1.Height, 1
 
 	partSize := types.BlockPartSizeBytes
 
@@ -1441,16 +1441,10 @@ func TestCommitFromPreviousRound(t *testing.T) {
 	validBlockCh := subscribe(cs1.eventBus, types.EventQueryValidBlock)
 	proposalCh := subscribe(cs1.eventBus, types.EventQueryCompleteProposal)
 
-	proposer := types.SelectProposer(cs1.Validators, cs1.state.LastProofHash, cs1.Height, 0)
-	proposerIndex := 0
-	for i, p := range vss {
-		if p.GetPubKey().Equals(proposer.PubKey) {
-			proposerIndex = i
-			break
-		}
-	}
-	cs1.privValidator = vss[proposerIndex].PrivValidator
-	prop, propBlock := decideProposal(cs1, vss[proposerIndex], vss[proposerIndex].Height, 0)
+	// Set the proofHash value arbitrarily to ensure that the first vss is elected proposer.
+	cs1.state.LastProofHash = []byte{2}
+	
+	prop, propBlock := decideProposal(cs1, vs2, vs2.Height, vs2.Round)
 	propBlockHash := propBlock.Hash()
 	propBlockParts := propBlock.MakePartSet(partSize)
 
