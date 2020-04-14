@@ -388,7 +388,8 @@ func TestAveragingInIncrementProposerPriority(t *testing.T) {
 	}
 	for i, tc := range tcs {
 		// work on copy to have the old ProposerPriorities:
-		newVset := tc.vs.CopyIncrementProposerPriority(tc.times)
+		newVset := tc.vs.Copy()
+		newVset.SelectProposerWithRound([]byte{}, int64(tc.times*i), 0)
 		for _, val := range tc.vs.Validators {
 			_, updatedVal := newVset.GetByAddress(val.Address)
 			assert.Equal(t, updatedVal.ProposerPriority, val.ProposerPriority-tc.avg, "test case: %v", i)

@@ -76,6 +76,8 @@ func (vals *ValidatorSet) CopyIncrementProposerPriority(times int) *ValidatorSet
 	return copy
 }
 
+// TODO The current random selection by VRF uses VotingPower, so the processing on ProposerPriority can be removed,
+// TODO but it remains for later verification of random selection based on ProposerPriority.
 // IncrementProposerPriority increments ProposerPriority of each validator and updates the
 // proposer. Panics if validator set is empty.
 // `times` must be positive.
