@@ -1261,6 +1261,9 @@ func TestValidateValidBlockOnCommit(t *testing.T) {
 	addr := pubKey.Address()
 	voteCh := subscribeToVoter(cs1, addr)
 
+	// Set the proofHash value arbitrarily to ensure that the first vss is elected proposer.
+	cs1.state.LastProofHash = []byte{2}
+
 	// start round and wait for propose and prevote
 	startTestRound(cs1, cs1.Height, round)
 	ensureNewRound(newRoundCh, height, round)
