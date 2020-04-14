@@ -957,6 +957,8 @@ func (cs *State) defaultDecideProposal(height int64, round int) {
 		if block == nil { // on error
 			return
 		}
+		cs.Logger.Info("Create Block", "Height", height, "Round", round,
+			"ProposerAddr", block.Header.ProposerAddress.String())
 	}
 
 	// Flush the WAL. Otherwise, we may not recompute the same proposal to sign,
