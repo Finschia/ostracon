@@ -56,6 +56,7 @@ commands:
 jobs:
   setup_dependencies:
     executor: golang
+    resource_class: large
     steps:
       - checkout_with_submodules
       - restore_cache:
@@ -108,12 +109,14 @@ jobs:
 
   test_apps:
     executor: golang
+    resource_class: large
     steps:
       - run_test:
           script_path: test/app/test.sh
 
   test_persistence:
     executor: golang
+    resource_class: large
     steps:
       - run_test:
           script_path: test/persist/test_failure_indices.sh
@@ -170,6 +173,7 @@ jobs:
             ./scripts/localnet-blocks-test.sh 40 5 10 localhost
 
   test_p2p:
+    resource_class: xlarge
     environment:
       GOBIN: /home/circleci/.go_workspace/bin
       GOPATH: /home/circleci/.go_workspace
