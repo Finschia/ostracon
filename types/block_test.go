@@ -16,7 +16,6 @@ import (
 	gogotypes "github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/merkle"
 	"github.com/tendermint/tendermint/crypto/tmhash"
@@ -72,7 +71,7 @@ func TestBlockValidateBasic(t *testing.T) {
 		expErr        bool
 	}{
 		{"Make Block", func(blk *Block) {}, false},
-		{"Make Block w/ proposer Addr", func(blk *Block) { blk.ProposerAddress = valSet.GetProposer().Address }, false},
+		{"Make Block w/ proposer Addr", func(blk *Block) { blk.ProposerAddress = SelectProposer(valSet, []byte{}, blk.Height, 0).Address }, false},
 		{"Negative Height", func(blk *Block) { blk.Height = -1 }, true},
 		{"Remove 1/2 the commits", func(blk *Block) {
 			blk.LastCommit.Signatures = commit.Signatures[:commit.Size()/2]
@@ -98,7 +97,7 @@ func TestBlockValidateBasic(t *testing.T) {
 		i := i
 		t.Run(tc.testName, func(t *testing.T) {
 			block := MakeBlock(h, txs, commit, evList)
-			block.ProposerAddress = valSet.GetProposer().Address
+			block.ProposerAddress = SelectProposer(valSet, []byte{}, block.Height, 0).Address
 			tc.malleateBlock(block)
 			err = block.ValidateBasic()
 			assert.Equal(t, tc.expErr, err != nil, "#%d: %v", i, err)

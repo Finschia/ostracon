@@ -305,6 +305,7 @@ func TestOneValidatorChangesSaveLoad(t *testing.T) {
 }
 
 func TestProposerFrequency(t *testing.T) {
+	t.Skip("This test is for priority based proposer. Vrf selection based proposer skips this test.")
 
 	// some explicit test cases
 	testCases := []struct {
@@ -403,7 +404,7 @@ func testProposerFreq(t *testing.T, caseNum int, valSet *types.ValidatorSet) {
 	runs := int(totalPower) * runMult
 	freqs := make([]int, N)
 	for i := 0; i < runs; i++ {
-		prop := valSet.GetProposer()
+		prop := types.SelectProposer(valSet, []byte{}, 1, int32(i))
 		idx, _ := valSet.GetByAddress(prop.Address)
 		freqs[idx]++
 		valSet.IncrementProposerPriority(1)
@@ -556,7 +557,7 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 	state.Validators = types.NewValidatorSet([]*types.Validator{val1})
 	state.NextValidators = state.Validators
 	// we only have one validator:
-	assert.Equal(t, val1PubKey.Address(), state.Validators.Proposer.Address)
+	assert.Equal(t, val1PubKey.Address(), types.SelectProposer(state.Validators, []byte{}, state.LastBlockHeight+1, 0).Address)
 
 	block := makeBlock(state, state.LastBlockHeight+1)
 	blockID := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
@@ -575,7 +576,7 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 	totalPower := val1VotingPower
 	wantVal1Prio := 0 + val1VotingPower - totalPower
 	assert.Equal(t, wantVal1Prio, updatedState.NextValidators.Validators[0].ProposerPriority)
-	assert.Equal(t, val1PubKey.Address(), updatedState.NextValidators.Proposer.Address)
+	assert.Equal(t, val1PubKey.Address(), updatedState.NextValidators.Validators[0].Address)
 
 	// add a validator with the same voting power as the first
 	val2PubKey := ed25519.GenPrivKey().PubKey()
@@ -592,10 +593,10 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 	assert.Equal(t, updatedState2.Validators, updatedState.NextValidators)
 
 	// val1 will still be proposer as val2 just got added:
-	assert.Equal(t, val1PubKey.Address(), updatedState.NextValidators.Proposer.Address)
-	assert.Equal(t, updatedState2.Validators.Proposer.Address, updatedState2.NextValidators.Proposer.Address)
-	assert.Equal(t, updatedState2.Validators.Proposer.Address, val1PubKey.Address())
-	assert.Equal(t, updatedState2.NextValidators.Proposer.Address, val1PubKey.Address())
+	assert.Equal(t, val1PubKey.Address(), updatedState.NextValidators.Validators[0].Address)
+	assert.Equal(t, updatedState2.Validators.Validators[0].Address, updatedState2.NextValidators.Validators[0].Address)
+	assert.Equal(t, updatedState2.Validators.Validators[0].Address, val1PubKey.Address())
+	assert.Equal(t, updatedState2.NextValidators.Validators[0].Address, val1PubKey.Address())
 
 	_, updatedVal1 := updatedState2.NextValidators.GetByAddress(val1PubKey.Address())
 	_, oldVal1 := updatedState2.Validators.GetByAddress(val1PubKey.Address())
@@ -631,14 +632,14 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 	updatedState3, err := sm.UpdateState(updatedState2, blockID, &block.Header, abciResponses, validatorUpdates)
 	assert.NoError(t, err)
 
-	assert.Equal(t, updatedState3.Validators.Proposer.Address, updatedState3.NextValidators.Proposer.Address)
+	assert.Equal(t, updatedState3.Validators.Validators[0].Address, updatedState3.NextValidators.Validators[0].Address)
 
 	assert.Equal(t, updatedState3.Validators, updatedState2.NextValidators)
 	_, updatedVal1 = updatedState3.NextValidators.GetByAddress(val1PubKey.Address())
 	_, updatedVal2 = updatedState3.NextValidators.GetByAddress(val2PubKey.Address())
 
 	// val1 will still be proposer:
-	assert.Equal(t, val1PubKey.Address(), updatedState3.NextValidators.Proposer.Address)
+	assert.Equal(t, val1PubKey.Address(), updatedState3.NextValidators.Validators[0].Address)
 
 	// check if expected proposer prio is matched:
 	// Increment
@@ -692,22 +693,22 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 		// alternate (and cyclic priorities):
 		assert.NotEqual(
 			t,
-			updatedState.Validators.Proposer.Address,
-			updatedState.NextValidators.Proposer.Address,
+			updatedState.Validators.Validators[0].Address,
+			updatedState.NextValidators.Validators[0].Address,
 			"iter: %v",
 			i,
 		)
-		assert.Equal(t, oldState.Validators.Proposer.Address, updatedState.NextValidators.Proposer.Address, "iter: %v", i)
+		assert.Equal(t, oldState.Validators.Validators[0].Address, updatedState.NextValidators.Validators[0].Address, "iter: %v", i)
 
 		_, updatedVal1 = updatedState.NextValidators.GetByAddress(val1PubKey.Address())
 		_, updatedVal2 = updatedState.NextValidators.GetByAddress(val2PubKey.Address())
 
 		if i%2 == 0 {
-			assert.Equal(t, updatedState.Validators.Proposer.Address, val2PubKey.Address())
+			assert.Equal(t, updatedState.Validators.Validators[0].Address, val2PubKey.Address())
 			assert.Equal(t, expectedVal1Prio, updatedVal1.ProposerPriority) // -19
 			assert.Equal(t, expectedVal2Prio, updatedVal2.ProposerPriority) // 0
 		} else {
-			assert.Equal(t, updatedState.Validators.Proposer.Address, val1PubKey.Address())
+			assert.Equal(t, updatedState.Validators.Validators[0].Address, val1PubKey.Address())
 			assert.Equal(t, expectedVal1Prio2, updatedVal1.ProposerPriority) // -9
 			assert.Equal(t, expectedVal2Prio2, updatedVal2.ProposerPriority) // -10
 		}
@@ -754,7 +755,7 @@ func TestLargeGenesisValidator(t *testing.T) {
 		// than -Total == -Voting)
 		// -> no change in ProposerPrio (stays zero):
 		assert.EqualValues(t, oldState.NextValidators, updatedState.NextValidators)
-		assert.EqualValues(t, 0, updatedState.NextValidators.Proposer.ProposerPriority)
+		assert.EqualValues(t, 0, types.SelectProposer(updatedState.NextValidators, []byte{}, block.Height, 0).ProposerPriority)
 
 		oldState = updatedState
 	}
@@ -862,7 +863,8 @@ func TestLargeGenesisValidator(t *testing.T) {
 		blockID = types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
 		curState, err = sm.UpdateState(curState, blockID, &block.Header, abciResponses, validatorUpdates)
 		require.NoError(t, err)
-		if !bytes.Equal(curState.Validators.Proposer.Address, curState.NextValidators.Proposer.Address) {
+		if !bytes.Equal(types.SelectProposer(curState.Validators, []byte{}, int64(count), 0).Address,
+			types.SelectProposer(curState.NextValidators, []byte{}, int64(count+1), 0).Address) {
 			isProposerUnchanged = false
 		}
 		count++
@@ -890,9 +892,9 @@ func TestLargeGenesisValidator(t *testing.T) {
 		require.NoError(t, err)
 		if i > numVals { // expect proposers to cycle through after the first iteration (of numVals blocks):
 			if proposers[i%numVals] == nil {
-				proposers[i%numVals] = updatedState.NextValidators.Proposer
+				proposers[i%numVals] = updatedState.NextValidators.Validators[0]
 			} else {
-				assert.Equal(t, proposers[i%numVals], updatedState.NextValidators.Proposer)
+				assert.Equal(t, proposers[i%numVals], updatedState.NextValidators.Validators[0])
 			}
 		}
 	}
@@ -904,9 +906,9 @@ func TestStoreLoadValidatorsIncrementsProposerPriority(t *testing.T) {
 	t.Cleanup(func() { tearDown(t) })
 	stateStore := sm.NewStore(stateDB)
 	state.Validators = genValSet(valSetSize)
-	state.Validators.SelectProposerWithRound([]byte{}, 1, 0)
+	types.SelectProposer(state.Validators, []byte{}, 1, 0)
 	state.NextValidators = state.Validators.Copy()
-	state.NextValidators.SelectProposerWithRound([]byte{}, 2, 0)
+	types.SelectProposer(state.NextValidators, []byte{}, 2, 0)
 	err := stateStore.Save(state)
 	require.NoError(t, err)
 
@@ -932,9 +934,9 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 	stateStore := sm.NewStore(stateDB)
 	require.Equal(t, int64(0), state.LastBlockHeight)
 	state.Validators = genValSet(valSetSize)
-	state.Validators.SelectProposerWithRound([]byte{}, 1, 0)
+	types.SelectProposer(state.Validators, []byte{}, 1, 0)
 	state.NextValidators = state.Validators.Copy()
-	state.NextValidators.SelectProposerWithRound([]byte{}, 2, 0)
+	types.SelectProposer(state.NextValidators, []byte{}, 2, 0)
 	err := stateStore.Save(state)
 	require.NoError(t, err)
 
@@ -980,13 +982,11 @@ func TestStateMakeBlock(t *testing.T) {
 	tearDown, _, state := setupTestCase(t)
 	defer tearDown(t)
 
-	proposerAddress := state.Validators.GetProposer().Address
 	stateVersion := state.Version.Consensus
 	block := makeBlock(state, 2)
 
 	// test we set some fields
 	assert.Equal(t, stateVersion, block.Version)
-	assert.Equal(t, proposerAddress, block.ProposerAddress)
 }
 
 // TestConsensusParamsChangesSaveLoad tests saving and loading consensus params

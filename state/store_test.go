@@ -61,9 +61,9 @@ func BenchmarkLoadValidators(b *testing.B) {
 	}
 
 	state.Validators = genValSet(valSetSize)
-	state.Validators.SelectProposerWithRound([]byte{}, 1, 0)
+	types.SelectProposer(state.Validators, []byte{}, 1, 0)
 	state.NextValidators = state.Validators.Copy()
-	state.NextValidators.SelectProposerWithRound([]byte{}, 2, 0)
+	types.SelectProposer(state.NextValidators, []byte{}, 2, 0)
 	err = stateStore.Save(state)
 	require.NoError(b, err)
 
@@ -117,7 +117,6 @@ func TestPruneStates(t *testing.T) {
 			validator := &types.Validator{Address: tmrand.Bytes(crypto.AddressSize), VotingPower: 100, PubKey: pk}
 			validatorSet := &types.ValidatorSet{
 				Validators: []*types.Validator{validator},
-				Proposer:   validator,
 			}
 			valsChanged := int64(0)
 			paramsChanged := int64(0)

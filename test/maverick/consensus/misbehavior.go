@@ -142,7 +142,7 @@ func defaultEnterPropose(cs *State, height int64, round int32) {
 		cs.decideProposal(height, round)
 	} else {
 		logger.Debug("enterPropose: not our turn to propose",
-			"proposer", cs.Validators.GetProposer().Address,
+			"proposer", cs.Proposer.Address,
 		)
 	}
 }
@@ -380,7 +380,7 @@ func defaultReceiveProposal(cs *State, proposal *types.Proposal) error {
 
 	p := proposal.ToProto()
 	// Verify signature
-	if !cs.Validators.GetProposer().PubKey.VerifySignature(
+	if !cs.Proposer.PubKey.VerifySignature(
 		types.ProposalSignBytes(cs.state.ChainID, p), proposal.Signature) {
 		return ErrInvalidProposalSignature
 	}

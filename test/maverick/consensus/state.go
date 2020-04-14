@@ -1178,7 +1178,7 @@ func (cs *State) needProofBlock(height int64) bool {
 }
 
 func (cs *State) isProposer(address []byte) bool {
-	return bytes.Equal(cs.Validators.GetProposer().Address, address)
+	return bytes.Equal(cs.Proposer.Address, address)
 }
 
 func (cs *State) defaultDecideProposal(height int64, round int32) {

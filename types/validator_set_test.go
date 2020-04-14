@@ -25,13 +25,13 @@ import (
 func TestValidatorSetBasic(t *testing.T) {
 	// empty or nil validator lists are allowed,
 	// but attempting to IncrementProposerPriority on them will panic.
-	vset := NewRandomValidatorSet([]*Validator{}, []byte{})
+	vset := NewValidatorSet([]*Validator{})
 	assert.Panics(t, func() { vset.IncrementProposerPriority(1) })
-	assert.Panics(t, func() { vset.SelectProposerWithHash([]byte{}) })
+	assert.Panics(t, func() { SelectProposer(vset, []byte{}, 1, 0) })
 
-	vset = NewRandomValidatorSet(nil, []byte{})
+	vset = NewValidatorSet(nil)
 	assert.Panics(t, func() { vset.IncrementProposerPriority(1) })
-	assert.Panics(t, func() { vset.SelectProposerWithHash([]byte{}) })
+	assert.Panics(t, func() { SelectProposer(vset, []byte{}, 1, 0) })
 
 	assert.EqualValues(t, vset, vset.Copy())
 	assert.False(t, vset.HasAddress([]byte("some val")))
@@ -49,7 +49,7 @@ func TestValidatorSetBasic(t *testing.T) {
 	assert.Nil(t, val)
 	assert.Zero(t, vset.Size())
 	assert.Equal(t, int64(0), vset.TotalVotingPower())
-	assert.Nil(t, vset.GetProposer())
+	assert.Nil(t, vset.Hash())
 	assert.Equal(t, []byte{0xe3, 0xb0, 0xc4, 0x42, 0x98, 0xfc, 0x1c, 0x14, 0x9a, 0xfb, 0xf4,
 		0xc8, 0x99, 0x6f, 0xb9, 0x24, 0x27, 0xae, 0x41, 0xe4, 0x64, 0x9b, 0x93, 0x4c, 0xa4, 0x95,
 		0x99, 0x1b, 0x78, 0x52, 0xb8, 0x55}, vset.Hash())
@@ -66,7 +66,7 @@ func TestValidatorSetBasic(t *testing.T) {
 	assert.Equal(t, val.VotingPower, vset.TotalVotingPower())
 	assert.NotNil(t, vset.Hash())
 	assert.NotPanics(t, func() { vset.IncrementProposerPriority(1) })
-	assert.Equal(t, val.Address, vset.GetProposer().Address)
+	assert.Equal(t, val.Address, SelectProposer(vset, []byte{}, 1, 0).Address)
 
 	// update
 	val = randValidator(vset.TotalVotingPower())
@@ -120,7 +120,6 @@ func TestValidatorSetValidateBasic(t *testing.T) {
 		{
 			vals: ValidatorSet{
 				Validators: []*Validator{val},
-				Proposer:   val,
 			},
 			err: false,
 			msg: "",
@@ -157,11 +156,11 @@ func TestCopy(t *testing.T) {
 
 // Test that IncrementProposerPriority requires positive times.
 func TestIncrementProposerPriorityPositiveTimes(t *testing.T) {
-	vset := NewRandomValidatorSet([]*Validator{
+	vset := NewValidatorSet([]*Validator{
 		newValidator([]byte("foo"), 1000),
 		newValidator([]byte("bar"), 300),
 		newValidator([]byte("baz"), 330),
-	}, []byte{})
+	})
 
 	assert.Panics(t, func() { vset.IncrementProposerPriority(-1) })
 	assert.Panics(t, func() { vset.IncrementProposerPriority(0) })
@@ -204,8 +203,7 @@ func bytesToInt(b []byte) int {
 func verifyWinningRate(t *testing.T, vals *ValidatorSet, tries int, error float64) {
 	selected := make([]int, len(vals.Validators))
 	for i := 0; i < tries; i++ {
-		vals.SelectProposerWithHash(intToBytes(i))
-		prop := vals.GetProposer()
+		prop := SelectProposer(vals, []byte{}, int64(i), 0)
 		for j := 0; j < len(vals.Validators); j++ {
 			if bytes.Equal(prop.Address, vals.Validators[j].Address) {
 				selected[j]++
@@ -227,23 +225,20 @@ func verifyWinningRate(t *testing.T, vals *ValidatorSet, tries int, error float6
 }
 
 func TestProposerSelection1(t *testing.T) {
-	vset := NewRandomValidatorSet([]*Validator{
+	vset := NewValidatorSet([]*Validator{
 		newValidator([]byte("foo"), 1000),
 		newValidator([]byte("bar"), 300),
 		newValidator([]byte("baz"), 330),
-	}, []byte{})
+	})
 	var proposers []string
 	for i := 0; i < 99; i++ {
-		val := vset.GetProposer()
+		val := SelectProposer(vset, []byte{}, int64(i), 0)
 		proposers = append(proposers, string(val.Address))
-		hash := intToBytes(i)
-		vset.SelectProposerWithHash(hash)
 	}
-	expected := `baz baz foo foo foo bar baz foo baz foo foo foo baz foo foo bar foo baz foo foo` +
-		` foo foo foo foo bar foo foo foo foo foo foo foo baz bar foo foo foo bar foo bar foo` +
-		` foo foo foo foo bar bar foo bar foo foo foo baz bar foo foo bar foo foo bar foo foo` +
-		` foo foo foo baz foo foo baz foo baz baz baz foo baz foo foo baz baz baz foo foo foo` +
-		` foo foo baz bar baz bar foo baz bar bar foo bar bar bar baz baz`
+	expected := `foo foo foo foo bar bar foo bar foo baz bar foo baz baz baz foo foo bar foo bar baz bar foo baz foo ` +
+		`foo baz foo foo baz foo foo baz bar foo foo foo baz foo baz baz bar foo foo foo foo baz bar bar bar bar foo ` +
+		`foo foo baz foo foo foo foo foo foo baz foo foo baz bar bar foo bar foo foo baz bar foo foo baz foo foo baz ` +
+		`foo foo bar foo foo baz foo foo foo bar foo foo baz baz foo foo bar baz foo baz`
 	if expected != strings.Join(proposers, " ") {
 		t.Errorf("expected sequence of proposers was\n%v\nbut got \n%v", expected, strings.Join(proposers, " "))
 	}
@@ -257,41 +252,39 @@ func TestProposerSelection2(t *testing.T) {
 	// when all voting power is same, the order is random but deterministic
 	val0, val1, val2 := newValidator(addr0, 100), newValidator(addr1, 100), newValidator(addr2, 100)
 	valList := []*Validator{val0, val1, val2}
-	vals := NewRandomValidatorSet(valList, []byte{})
-	expected := []int{2, 0, 0, 0, 2, 2, 1, 2, 0, 1, 0, 1, 0, 1, 2}
+	vals := NewValidatorSet(valList)
+	expected := []int{0, 1, 0, 0, 2, 2, 0, 2, 1, 2, 2, 1, 2, 2, 2}
 	for i := 0; i < len(valList)*5; i++ {
-		vals.SelectProposerWithHash(intToBytes(i))
-		prop := vals.GetProposer()
+		prop := SelectProposer(vals, []byte{}, int64(i), 0)
 		if bytesToInt(prop.Address) != expected[i] {
 			t.Fatalf("(%d): Expected %d. Got %d", i, expected[i], bytesToInt(prop.Address))
 		}
 	}
-	verifyWinningRate(t, vals, 100, 0.2)
+	verifyWinningRate(t, vals, 100, 0.3)
 
 	// One validator has more than the others
 	*val2 = *newValidator(addr2, 400)
-	vals = NewRandomValidatorSet(valList, intToBytes(0))
-	verifyWinningRate(t, vals, 100, 0.2)
+	vals = NewValidatorSet(valList)
+	verifyWinningRate(t, vals, 100, 0.3)
 
 	// One validator has more than the others
 	*val2 = *newValidator(addr2, 401)
-	vals = NewRandomValidatorSet(valList, []byte{})
-	verifyWinningRate(t, vals, 100, 0.2)
+	vals = NewValidatorSet(valList)
+	verifyWinningRate(t, vals, 100, 0.3)
 
 	// each validator should be the proposer a proportional number of times
 	val0, val1, val2 = newValidator(addr0, 4), newValidator(addr1, 5), newValidator(addr2, 3)
 	valList = []*Validator{val0, val1, val2}
 	propCount := make([]int, 3)
-	vals = NewRandomValidatorSet(valList, []byte{})
+	vals = NewValidatorSet(valList)
 	N := 4 + 5 + 3
 	for i := 0; i < 10000*N; i++ {
-		prop := vals.GetProposer()
+		prop := SelectProposer(vals, []byte{}, int64(i), 0)
 		propCount[bytesToInt(prop.Address)]++
-		vals.SelectProposerWithHash(intToBytes(i))
 	}
 	fmt.Printf("%v", propCount)
 
-	if propCount[0] != 40185 {
+	if propCount[0] != 40257 {
 		t.Fatalf(
 			"Expected prop count for validator with 4/12 of voting power to be %d/%d. Got %d/%d",
 			40185,
@@ -300,7 +293,7 @@ func TestProposerSelection2(t *testing.T) {
 			10000*N,
 		)
 	}
-	if propCount[1] != 49681 {
+	if propCount[1] != 50017 {
 		t.Fatalf(
 			"Expected prop count for validator with 5/12 of voting power to be %d/%d. Got %d/%d",
 			40185,
@@ -309,7 +302,7 @@ func TestProposerSelection2(t *testing.T) {
 			10000*N,
 		)
 	}
-	if propCount[2] != 30134 {
+	if propCount[2] != 29726 {
 		t.Fatalf(
 			"Expected prop count for validator with 3/12 of voting power to be %d/%d. Got %d/%d",
 			40185,
@@ -345,7 +338,7 @@ func randValidatorSet(numValidators int) *ValidatorSet {
 		validators[i] = randValidator(totalVotingPower)
 		totalVotingPower += validators[i].VotingPower
 	}
-	return NewRandomValidatorSet(validators, []byte{})
+	return NewValidatorSet(validators)
 }
 
 func (vals *ValidatorSet) toBytes() []byte {
@@ -384,11 +377,11 @@ func TestValidatorSetTotalVotingPowerPanicsOnOverflow(t *testing.T) {
 	// NewValidatorSet calls IncrementProposerPriority which calls TotalVotingPower()
 	// which should panic on overflows:
 	shouldPanic := func() {
-		NewRandomValidatorSet([]*Validator{
+		NewValidatorSet([]*Validator{
 			{Address: []byte("a"), VotingPower: math.MaxInt64, ProposerPriority: 0},
 			{Address: []byte("b"), VotingPower: math.MaxInt64, ProposerPriority: 0},
 			{Address: []byte("c"), VotingPower: math.MaxInt64, ProposerPriority: 0},
-		}, []byte{})
+		})
 	}
 
 	assert.Panics(t, shouldPanic)
@@ -464,7 +457,6 @@ func TestAveragingInIncrementProposerPriority(t *testing.T) {
 	for i, tc := range tcs {
 		// work on copy to have the old ProposerPriorities:
 		newVset := tc.vs.Copy()
-		newVset.SelectProposerWithRound([]byte{}, int64(tc.times*int32(i)), 0)
 		for _, val := range tc.vs.Validators {
 			_, updatedVal := newVset.GetByAddress(val.Address)
 			assert.Equal(t, updatedVal.ProposerPriority, val.ProposerPriority-tc.avg, "test case: %v", i)
@@ -532,7 +524,7 @@ func TestAveragingInIncrementProposerPriorityWithVotingPower(t *testing.T) {
 				0 + 5*vp1 - total,       // now this val is mostest for the 1st time (hence -12==totalVotingPower)
 				0 + 5*vp2},
 			5,
-			vals.Validators[1]},
+			vals.Validators[2]},
 		5: {
 			vals.Copy(),
 			[]int64{
@@ -540,7 +532,7 @@ func TestAveragingInIncrementProposerPriorityWithVotingPower(t *testing.T) {
 				0 + 6*vp1 - total,   // mostest once up to here
 				0 + 6*vp2},
 			6,
-			vals.Validators[0]},
+			vals.Validators[2]},
 		6: {
 			vals.Copy(),
 			[]int64{
@@ -556,7 +548,7 @@ func TestAveragingInIncrementProposerPriorityWithVotingPower(t *testing.T) {
 				0 + 8*vp1 - total,
 				0 + 8*vp2},
 			8,
-			vals.Validators[0]},
+			vals.Validators[2]},
 		8: {
 			vals.Copy(),
 			[]int64{
@@ -564,7 +556,7 @@ func TestAveragingInIncrementProposerPriorityWithVotingPower(t *testing.T) {
 				0 + 9*vp1 - total,
 				0 + 9*vp2 - total}, // mostest
 			9,
-			vals.Validators[2]},
+			vals.Validators[0]},
 		9: {
 			vals.Copy(),
 			[]int64{
@@ -580,15 +572,14 @@ func TestAveragingInIncrementProposerPriorityWithVotingPower(t *testing.T) {
 				0 + 11*vp1 - total, // after 6 iters this val is "mostest" once and not in between
 				0 + 11*vp2 - total}, // after 10 iters this val is "mostest" once
 			11,
-			vals.Validators[0]},
+			vals.Validators[1]},
 	}
 	for i, tc := range tcs {
 		tc.vals.IncrementProposerPriority(tc.times)
 
-		assert.Equal(t, tc.wantProposer.Address, tc.vals.GetProposer().Address,
+		assert.Equal(t, tc.wantProposer.Address, SelectProposer(tc.vals, []byte{}, int64(i), 0).Address,
 			"test case: %v",
 			i)
-
 		for valIdx, val := range tc.vals.Validators {
 			assert.Equal(t,
 				tc.wantProposerPrioritys[valIdx],
@@ -777,12 +768,11 @@ func TestValidatorSet_VerifyCommitLightTrusting_ReturnsAsSoonAsTrustLevelOfVotin
 func TestEmptySet(t *testing.T) {
 
 	var valList []*Validator
-	valSet := NewRandomValidatorSet(valList, []byte{})
+	valSet := NewValidatorSet(valList)
 	assert.Panics(t, func() { valSet.IncrementProposerPriority(1) })
 	assert.Panics(t, func() { valSet.RescalePriorities(100) })
 	assert.Panics(t, func() { valSet.shiftByAvgProposerPriority() })
 	assert.Panics(t, func() { assert.Zero(t, computeMaxMinPriorityDiff(valSet)) })
-	valSet.GetProposer()
 
 	// Add to empty set
 	v1 := newValidator([]byte("v1"), 100)
@@ -806,7 +796,7 @@ func TestUpdatesForNewValidatorSet(t *testing.T) {
 	v1 := newValidator([]byte("v1"), 100)
 	v2 := newValidator([]byte("v2"), 100)
 	valList := []*Validator{v1, v2}
-	valSet := NewRandomValidatorSet(valList, []byte{})
+	valSet := NewValidatorSet(valList)
 	verifyValidatorSet(t, valSet)
 
 	// Verify duplicates are caught in NewValidatorSet() and it panics
@@ -814,21 +804,21 @@ func TestUpdatesForNewValidatorSet(t *testing.T) {
 	v112 := newValidator([]byte("v1"), 123)
 	v113 := newValidator([]byte("v1"), 234)
 	valList = []*Validator{v111, v112, v113}
-	assert.Panics(t, func() { NewRandomValidatorSet(valList, []byte{}) })
+	assert.Panics(t, func() { NewValidatorSet(valList) })
 
 	// Verify set including validator with voting power 0 cannot be created
 	v1 = newValidator([]byte("v1"), 0)
 	v2 = newValidator([]byte("v2"), 22)
 	v3 := newValidator([]byte("v3"), 33)
 	valList = []*Validator{v1, v2, v3}
-	assert.Panics(t, func() { NewRandomValidatorSet(valList, []byte{}) })
+	assert.Panics(t, func() { NewValidatorSet(valList) })
 
 	// Verify set including validator with negative voting power cannot be created
 	v1 = newValidator([]byte("v1"), 10)
 	v2 = newValidator([]byte("v2"), -20)
 	v3 = newValidator([]byte("v3"), 30)
 	valList = []*Validator{v1, v2, v3}
-	assert.Panics(t, func() { NewRandomValidatorSet(valList, []byte{}) })
+	assert.Panics(t, func() { NewValidatorSet(valList) })
 
 }
 
@@ -858,7 +848,7 @@ func createNewValidatorList(testValList []testVal) []*Validator {
 }
 
 func createNewValidatorSet(testValList []testVal) *ValidatorSet {
-	return NewRandomValidatorSet(createNewValidatorList(testValList), []byte{})
+	return NewValidatorSet(createNewValidatorList(testValList))
 }
 
 func valSetTotalProposerPriority(valSet *ValidatorSet) int64 {
@@ -1566,12 +1556,6 @@ func TestValidatorSetProtoBuf(t *testing.T) {
 	valset2, _ := RandValidatorSet(10, 100)
 	valset2.Validators[0] = &Validator{}
 
-	valset3, _ := RandValidatorSet(10, 100)
-	valset3.Proposer = nil
-
-	valset4, _ := RandValidatorSet(10, 100)
-	valset4.Proposer = &Validator{}
-
 	testCases := []struct {
 		msg      string
 		v1       *ValidatorSet
@@ -1580,8 +1564,6 @@ func TestValidatorSetProtoBuf(t *testing.T) {
 	}{
 		{"success", valset, true, true},
 		{"fail valSet2, pubkey empty", valset2, false, false},
-		{"fail nil Proposer", valset3, false, false},
-		{"fail empty Proposer", valset4, false, false},
 		{"fail empty valSet", &ValidatorSet{}, true, false},
 		{"false nil", nil, true, false},
 	}

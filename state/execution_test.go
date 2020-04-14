@@ -48,7 +48,7 @@ func TestApplyBlock(t *testing.T) {
 	blockExec := sm.NewBlockExecutor(stateStore, log.TestingLogger(), proxyApp.Consensus(),
 		mmock.Mempool{}, sm.EmptyEvidencePool{})
 
-	block := makeBlockWithPrivVal(state, privVals[state.Validators.Proposer.Address.String()], 1)
+	block := makeBlockWithPrivVal(state, privVals[state.Validators.Validators[0].Address.String()], 1)
 	blockID := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
 
 	state, retainHeight, err := blockExec.ApplyBlock(state, blockID, block)
@@ -102,10 +102,10 @@ func TestBeginBlockValidators(t *testing.T) {
 		lastCommit := types.NewCommit(1, 0, prevBlockID, tc.lastCommitSigs)
 
 		message := state.MakeHashMessage(0)
-		proof, _ := privVals[state.Validators.GetProposer().Address.String()].GenerateVRFProof(message)
+		proof, _ := privVals[state.Validators.Validators[0].Address.String()].GenerateVRFProof(message)
 
 		// block for height 2
-		block, _ := state.MakeBlock(2, makeTxs(2), lastCommit, nil, state.Validators.GetProposer().Address, 0, proof)
+		block, _ := state.MakeBlock(2, makeTxs(2), lastCommit, nil, state.Validators.Validators[0].Address, 0, proof)
 
 		_, err = sm.ExecCommitBlock(proxyApp.Consensus(), block, log.TestingLogger(), stateStore, 1)
 		require.Nil(t, err, tc.desc)
@@ -250,8 +250,8 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 	lastCommit := types.NewCommit(9, 0, prevBlockID, commitSigs)
 	for _, tc := range testCases {
 		message := state.MakeHashMessage(0)
-		proof, _ := privVals[state.Validators.GetProposer().Address.String()].GenerateVRFProof(message)
-		block, _ := state.MakeBlock(10, makeTxs(2), lastCommit, nil, state.Validators.GetProposer().Address, 0, proof)
+		proof, _ := privVals[state.Validators.Validators[0].Address.String()].GenerateVRFProof(message)
+		block, _ := state.MakeBlock(10, makeTxs(2), lastCommit, nil, state.Validators.Validators[0].Address, 0, proof)
 		block.Time = now
 		block.Evidence.Evidence = tc.evidence
 		_, err = sm.ExecCommitBlock(proxyApp.Consensus(), block, log.TestingLogger(), stateStore, 10)
@@ -441,7 +441,7 @@ func TestEndBlockValidatorUpdates(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	block := makeBlockWithPrivVal(state, privVals[state.Validators.Proposer.Address.String()], 1)
+	block := makeBlockWithPrivVal(state, privVals[state.Validators.Validators[0].Address.String()], 1)
 	blockID := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
 
 	pubkey := ed25519.GenPrivKey().PubKey()

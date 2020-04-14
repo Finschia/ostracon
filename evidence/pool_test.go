@@ -51,7 +51,7 @@ func initializeValidatorState___(valAddr []byte, height int64) dbm.DB {
 		LastBlockHeight:             0,
 		LastBlockTime:               tmtime.Now(),
 		Validators:                  types.NewValidatorSet(vals),
-		NextValidators:              types.NewValidatorSet(vals).CopyIncrementProposerPriority(1),
+		NextValidators:              types.NewValidatorSet(vals),
 		LastHeightValidatorsChanged: 1,
 		ConsensusParams: tmproto.ConsensusParams{
 			Evidence: tmproto.EvidenceParams{
@@ -450,7 +450,7 @@ func initializeBlockStore(db dbm.DB, state sm.State, valAddr []byte) *store.Bloc
 		lastCommit := makeCommit(i-1, valAddr)
 		proof := state.MakeHashMessage(round)
 		block, _ := state.MakeBlock(i, []types.Tx{}, lastCommit, nil,
-			sm.SelectProposer(state.Validators, proof, i, round).Address, round, proof)
+			types.SelectProposer(state.Validators, proof, i, round).Address, round, proof)
 		block.Header.Time = defaultEvidenceTime.Add(time.Duration(i) * time.Minute)
 		block.Header.Version = tmversion.Consensus{Block: version.BlockProtocol, App: 1}
 		const parts = 1

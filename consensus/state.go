@@ -975,7 +975,7 @@ func (cs *State) enterNewRound(height int64, round int32) {
 	logger.Debug("entering new round", "current", fmt.Sprintf("%v/%v/%v", cs.Height, cs.Round, cs.Step))
 
 	// Select the current height and round Proposer
-	cs.Proposer = sm.SelectProposer(cs.Validators, cs.state.LastProofHash, height, round)
+	cs.Proposer = types.SelectProposer(cs.Validators, cs.state.LastProofHash, height, round)
 
 	// Setup new round
 	// we don't fire newStep for this step,

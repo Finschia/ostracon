@@ -459,8 +459,8 @@ func forceProposer(cs *State, vals []*validatorStub, index []int, height []int64
 				mustBe = false
 			}
 			curValPubKey, _ := curVal.GetPubKey()
-			cs.Validators.SelectProposerWithHash(hash)
-			if curValPubKey.Equals(cs.Validators.GetProposer().PubKey) != mustBe {
+			cs.Proposer = types.SelectProposer(cs.state.Validators, cs.state.LastProofHash, height[j], 0)
+			if curValPubKey.Equals(cs.Proposer.PubKey) != mustBe {
 				allMatch = false
 				break
 			}
