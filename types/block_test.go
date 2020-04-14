@@ -71,7 +71,9 @@ func TestBlockValidateBasic(t *testing.T) {
 		expErr        bool
 	}{
 		{"Make Block", func(blk *Block) {}, false},
-		{"Make Block w/ proposer Addr", func(blk *Block) { blk.ProposerAddress = SelectProposer(valSet, []byte{}, blk.Height, 0).Address }, false},
+		{"Make Block w/ proposer Addr", func(blk *Block) {
+			blk.ProposerAddress = SelectProposer(valSet, []byte{}, blk.Height, 0).Address
+		}, false},
 		{"Negative Height", func(blk *Block) { blk.Height = -1 }, true},
 		{"Remove 1/2 the commits", func(blk *Block) {
 			blk.LastCommit.Signatures = commit.Signatures[:commit.Size()/2]

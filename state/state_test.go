@@ -557,7 +557,8 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 	state.Validators = types.NewValidatorSet([]*types.Validator{val1})
 	state.NextValidators = state.Validators
 	// we only have one validator:
-	assert.Equal(t, val1PubKey.Address(), types.SelectProposer(state.Validators, []byte{}, state.LastBlockHeight+1, 0).Address)
+	assert.Equal(t, val1PubKey.Address(),
+		types.SelectProposer(state.Validators, []byte{}, state.LastBlockHeight+1, 0).Address)
 
 	block := makeBlock(state, state.LastBlockHeight+1)
 	blockID := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
@@ -698,7 +699,8 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 			"iter: %v",
 			i,
 		)
-		assert.Equal(t, oldState.Validators.Validators[0].Address, updatedState.NextValidators.Validators[0].Address, "iter: %v", i)
+		assert.Equal(t, oldState.Validators.Validators[0].Address,
+			updatedState.NextValidators.Validators[0].Address, "iter: %v", i)
 
 		_, updatedVal1 = updatedState.NextValidators.GetByAddress(val1PubKey.Address())
 		_, updatedVal2 = updatedState.NextValidators.GetByAddress(val2PubKey.Address())
@@ -755,7 +757,8 @@ func TestLargeGenesisValidator(t *testing.T) {
 		// than -Total == -Voting)
 		// -> no change in ProposerPrio (stays zero):
 		assert.EqualValues(t, oldState.NextValidators, updatedState.NextValidators)
-		assert.EqualValues(t, 0, types.SelectProposer(updatedState.NextValidators, []byte{}, block.Height, 0).ProposerPriority)
+		assert.EqualValues(t, 0,
+			types.SelectProposer(updatedState.NextValidators, []byte{}, block.Height, 0).ProposerPriority)
 
 		oldState = updatedState
 	}
