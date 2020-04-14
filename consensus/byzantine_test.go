@@ -284,14 +284,14 @@ func TestByzantinePrevoteEquivocation(t *testing.T) {
 // B sees a commit, A doesn't.
 // Heal partition and ensure A sees the commit
 func TestByzantine(t *testing.T) {
-	// FIXME
-	t.Skip("Temporarily excluded because this a case that doesn't end due to Proposer selection changes.")
-
 	N := 4
 	logger := consensusLogger().With("test", "byzantine")
 	app := newCounter
 	css, cleanup := randConsensusNet(N, "consensus_byzantine_test", newMockTickerFunc(false), app)
 	defer cleanup()
+
+	// get proposer of first block
+	proposerIdx, _ := css[0].Validators.GetByAddress(css[0].Proposer.PubKey.Address())
 
 	// give the byzantine validator a normal ticker
 	ticker := NewTimeoutTicker()
@@ -318,7 +318,7 @@ func TestByzantine(t *testing.T) {
 		// enable txs so we can create different proposals
 		assertMempool(css[i].txNotifier).EnableTxsAvailable()
 		// make first val byzantine
-		if i == 0 {
+		if int32(i) == proposerIdx {
 			// NOTE: Now, test validators are MockPV, which by default doesn't
 			// do any safety checks.
 			css[i].privValidator.(*types.MockPV).DisableChecks()
@@ -346,7 +346,7 @@ func TestByzantine(t *testing.T) {
 		var conRI p2p.Reactor = conR
 
 		// make first val byzantine
-		if i == 0 {
+		if int32(i) == proposerIdx {
 			conRI = NewByzantineReactor(conR)
 		}
 
@@ -373,7 +373,7 @@ func TestByzantine(t *testing.T) {
 		return switches[i]
 	}, func(sws []*p2p.Switch, i, j int) {
 		// the network starts partitioned with globally active adversary
-		if i != 0 {
+		if int32(i) != proposerIdx && int32(j) != proposerIdx {
 			return
 		}
 		p2p.Connect2Switches(sws, i, j)
@@ -381,20 +381,22 @@ func TestByzantine(t *testing.T) {
 
 	// start the non-byz state machines.
 	// note these must be started before the byz
-	for i := 1; i < N; i++ {
-		cr := reactors[i].(*Reactor)
-		cr.SwitchToConsensus(cr.conS.GetState(), false)
+	for i := 0; i < N; i++ {
+		if int32(i) != proposerIdx {
+			cr := reactors[i].(*Reactor)
+			cr.SwitchToConsensus(cr.conS.GetState(), false)
+		}
 	}
 
 	// start the byzantine state machine
-	byzR := reactors[0].(*ByzantineReactor)
+	byzR := reactors[proposerIdx].(*ByzantineReactor)
 	s := byzR.reactor.conS.GetState()
 	byzR.reactor.SwitchToConsensus(s, false)
 
 	// byz proposer sends one block to peers[0]
 	// and the other block to peers[1] and peers[2].
 	// note peers and switches order don't match.
-	peers := switches[0].Peers().List()
+	peers := switches[proposerIdx].Peers().List()
 
 	// partition A
 	ind0 := getSwitchIndex(switches, peers[0])
@@ -415,12 +417,14 @@ func TestByzantine(t *testing.T) {
 	// wait till everyone makes the first new block
 	// (one of them already has)
 	wg := new(sync.WaitGroup)
-	for i := 1; i < N-1; i++ {
-		wg.Add(1)
-		go func(j int) {
-			<-blocksSubs[j].Out()
-			wg.Done()
-		}(i)
+	for i := 0; i < N-1; i++ {
+		if int32(i) != proposerIdx {
+			wg.Add(1)
+			go func(j int) {
+				<-blocksSubs[j].Out()
+				wg.Done()
+			}(i)
+		}
 	}
 
 	done := make(chan struct{})
