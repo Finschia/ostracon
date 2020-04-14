@@ -971,4 +971,3 @@ func MakeRoundHash(proofHash []byte, height int64, round int) []byte {
 	hash.Write(b[8:16])
 	return hash.Sum(nil)
 }
-
