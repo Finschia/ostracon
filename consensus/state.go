@@ -834,6 +834,9 @@ func (cs *State) enterNewRound(height int64, round int) {
 		validators.IncrementProposerPriority(round - cs.Round)
 	}
 
+	// Select the current height and round Proposer
+	validators.SelectProposerWithRound(cs.state.LastProofHash, height, round)
+
 	// Setup new round
 	// we don't fire newStep for this step,
 	// but we fire an event, so update the round step first
@@ -1026,11 +1029,7 @@ func (cs *State) createProposalBlock(round int) (block *types.Block, blockParts 
 	}
 
 	proposerAddr := cs.privValidator.GetPubKey().Address()
-	message, err := cs.state.MakeHashMessage(round)
-	if err != nil {
-		cs.Logger.Error("enterPropose: Cannot generate vrf message: %s", err.Error())
-		return
-	}
+	message := cs.state.MakeHashMessage(round)
 
 	proof, err := cs.privValidator.GenerateVRFProof(message)
 	if err != nil {

@@ -280,7 +280,7 @@ func TestCreateProposalBlock(t *testing.T) {
 	)
 
 	commit := types.NewCommit(height-1, 0, types.BlockID{}, nil)
-	message, _ := state.MakeHashMessage(0)
+	message := state.MakeHashMessage(0)
 	proof, _ := privVal.GenerateVRFProof(message)
 	block, _ := blockExec.CreateProposalBlock(
 		height,

@@ -2,12 +2,10 @@ package state
 
 import (
 	"bytes"
-	"encoding/binary"
 	"fmt"
 	"io/ioutil"
 	"time"
 
-	"github.com/tendermint/tendermint/crypto/tmhash"
 	"github.com/tendermint/tendermint/crypto/vrf"
 	"github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
@@ -88,13 +86,8 @@ type State struct {
 	AppHash []byte
 }
 
-func (state State) MakeHashMessage(round int) ([]byte, error) {
-	b := make([]byte, 16)
-	binary.LittleEndian.PutUint64(b, uint64(state.LastBlockHeight))
-	binary.LittleEndian.PutUint64(b[8:], uint64(round))
-	hash := tmhash.New()
-	hash.Write(state.LastProofHash)
-	return hash.Sum(b), nil
+func (state State) MakeHashMessage(round int) []byte {
+	return types.MakeRoundHash(state.LastProofHash, state.LastBlockHeight, round)
 }
 
 // Copy makes a copy of the State for mutating.
@@ -247,8 +240,8 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 		for i, val := range genDoc.Validators {
 			validators[i] = types.NewValidator(val.PubKey, val.Power)
 		}
-		validatorSet = types.NewValidatorSet(validators)
-		nextValidatorSet = types.NewValidatorSet(validators).CopyIncrementProposerPriority(1)
+		validatorSet = types.NewRandomValidatorSet(validators, types.MakeRoundHash(genDoc.Hash(), 1, 0))
+		nextValidatorSet = types.NewRandomValidatorSet(validators, types.MakeRoundHash(genDoc.Hash(), 2, 0))
 	}
 
 	return State{
@@ -264,7 +257,7 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 
 		NextValidators:              nextValidatorSet,
 		Validators:                  validatorSet,
-		LastValidators:              types.NewValidatorSet(nil),
+		LastValidators:              types.NewRandomValidatorSet(nil, types.MakeRoundHash(genDoc.Hash(), 1, 0)),
 		LastHeightValidatorsChanged: 1,
 
 		ConsensusParams:                  *genDoc.ConsensusParams,

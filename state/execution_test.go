@@ -88,7 +88,7 @@ func TestBeginBlockValidators(t *testing.T) {
 	for _, tc := range testCases {
 		lastCommit := types.NewCommit(1, 0, prevBlockID, tc.lastCommitSigs)
 
-		message, _ := state.MakeHashMessage(0)
+		message := state.MakeHashMessage(0)
 		proof, _ := privVals[state.Validators.GetProposer().Address.String()].GenerateVRFProof(message)
 
 		// block for height 2
@@ -159,7 +159,7 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 	commitSigs := []types.CommitSig{commitSig0, commitSig1}
 	lastCommit := types.NewCommit(9, 0, prevBlockID, commitSigs)
 	for _, tc := range testCases {
-		message, _ := state.MakeHashMessage(0)
+		message := state.MakeHashMessage(0)
 		proof, _ := privVals[state.Validators.GetProposer().Address.String()].GenerateVRFProof(message)
 		block, _ := state.MakeBlock(10, makeTxs(2), lastCommit, nil, state.Validators.GetProposer().Address, 0, proof)
 		block.Time = now

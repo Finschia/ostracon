@@ -843,7 +843,9 @@ func TestStoreLoadValidatorsIncrementsProposerPriority(t *testing.T) {
 	tearDown, stateDB, state := setupTestCase(t)
 	defer tearDown(t)
 	state.Validators = genValSet(valSetSize)
-	state.NextValidators = state.Validators.CopyIncrementProposerPriority(1)
+	state.Validators.SelectProposerWithRound([]byte{}, 1, 0)
+	state.NextValidators = state.Validators.Copy()
+	state.NextValidators.SelectProposerWithRound([]byte{}, 2, 0)
 	sm.SaveState(stateDB, state)
 
 	nextHeight := state.LastBlockHeight + 1
@@ -867,7 +869,9 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 	defer tearDown(t)
 	require.Equal(t, int64(0), state.LastBlockHeight)
 	state.Validators = genValSet(valSetSize)
-	state.NextValidators = state.Validators.CopyIncrementProposerPriority(1)
+	state.Validators.SelectProposerWithRound([]byte{}, 1, 0)
+	state.NextValidators = state.Validators.Copy()
+	state.NextValidators.SelectProposerWithRound([]byte{}, 2, 0)
 	sm.SaveState(stateDB, state)
 
 	_, valOld := state.Validators.GetByIndex(0)
@@ -1021,18 +1025,15 @@ func TestApplyUpdates(t *testing.T) {
 
 func TestState_MakeHashMessage(t *testing.T) {
 	_, _, state := setupTestCase(t)
-	message1, err := state.MakeHashMessage(0)
-	require.NoError(t, err)
-	message2, err := state.MakeHashMessage(1)
-	require.NoError(t, err)
+	message1 := state.MakeHashMessage(0)
+	message2 := state.MakeHashMessage(1)
 	require.False(t, bytes.Equal(message1, message2))
 
 	privVal := makePrivVal()
 	proof, _ := privVal.GenerateVRFProof(message1)
 	output, _ := vrf.ProofToHash(proof)
 	state.LastProofHash = output
-	message3, err := state.MakeHashMessage(0)
-	require.NoError(t, err)
+	message3 := state.MakeHashMessage(0)
 	require.False(t, bytes.Equal(message1, message3))
 	require.False(t, bytes.Equal(message2, message3))
 }
