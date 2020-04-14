@@ -1443,7 +1443,6 @@ func TestCommitFromPreviousRound(t *testing.T) {
 
 	// Set the proofHash value arbitrarily to ensure that the first vss is elected proposer.
 	cs1.state.LastProofHash = []byte{2}
-	
 	prop, propBlock := decideProposal(cs1, vs2, vs2.Height, vs2.Round)
 	propBlockHash := propBlock.Hash()
 	propBlockParts := propBlock.MakePartSet(partSize)
