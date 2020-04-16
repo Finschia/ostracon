@@ -307,7 +307,7 @@ func TestReactorRecordsVotesAndBlockParts(t *testing.T) {
 		// save proposer of height
 		cs := css[j]
 		if proposers[cs.Height] == nil {
-			addr := cs.Validators.Proposer.PubKey.Address()
+			addr := cs.Proposer.PubKey.Address()
 			copyAddr := make([]byte, len(addr))
 			copy(copyAddr, addr)
 			proposers[cs.Height] = copyAddr

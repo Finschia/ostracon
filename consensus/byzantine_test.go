@@ -30,7 +30,8 @@ func TestByzantine(t *testing.T) {
 	defer cleanup()
 
 	// get proposer of first block
-	proposerIdx, _ := css[0].Validators.GetByAddress(css[0].Validators.Proposer.PubKey.Address())
+	proposerIdx, _ := findProposer(css[0])
+	fmt.Printf("TestByzantine proposerIdx: %d\n", proposerIdx)
 
 	// give the byzantine validator a normal ticker
 	ticker := NewTimeoutTicker()
@@ -174,6 +175,12 @@ func TestByzantine(t *testing.T) {
 		}
 		t.Fatalf("Timed out waiting for all validators to commit first block")
 	}
+}
+
+// find proposer of current height and round from State
+func findProposer(state *State) (int, *types.Validator) {
+	proposer := types.SelectProposer(state.Validators, state.state.LastProofHash, state.Height, state.Round)
+	return state.Validators.GetByAddress(proposer.PubKey.Address())
 }
 
 //-------------------------------
