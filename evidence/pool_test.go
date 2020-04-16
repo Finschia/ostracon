@@ -31,8 +31,8 @@ func initializeValidatorState(valAddr []byte, height int64) dbm.DB {
 	state := sm.State{
 		LastBlockHeight:             0,
 		LastBlockTime:               tmtime.Now(),
-		Validators:                  types.NewRandomValidatorSet(vals, types.MakeRoundHash([]byte{}, 1, 0)),
-		NextValidators:              types.NewRandomValidatorSet(vals, types.MakeRoundHash([]byte{}, 2, 0)),
+		Validators:                  types.NewValidatorSet(vals),
+		NextValidators:              types.NewValidatorSet(vals),
 		LastHeightValidatorsChanged: 1,
 		ConsensusParams: types.ConsensusParams{
 			Evidence: types.EvidenceParams{
