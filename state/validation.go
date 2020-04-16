@@ -151,14 +151,7 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, round
 		)
 	}
 
-	// validate proposer
-	if !bytes.Equal(block.ProposerAddress.Bytes(),
-		types.SelectProposer(state.Validators, state.LastProofHash, block.Height, block.Round).Address.Bytes()) {
-		return fmt.Errorf("block.ProposerAddress, %X, is not the proposer %X",
-			block.ProposerAddress,
-			types.SelectProposer(state.Validators, state.LastProofHash, block.Height, block.Round).Address,
-		)
-	}
+	// TODO: verify right proposer using ElectProposer
 
 	// validate round
 	// The block round must be less than or equal to the current round
