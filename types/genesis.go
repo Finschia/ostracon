@@ -59,7 +59,7 @@ func (genDoc *GenesisDoc) ValidatorHash() []byte {
 	for i, v := range genDoc.Validators {
 		vals[i] = NewValidator(v.PubKey, v.Power)
 	}
-	vset := NewRandomValidatorSet(vals, genDoc.Hash())
+	vset := NewValidatorSet(vals)
 	return vset.Hash()
 }
 

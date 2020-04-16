@@ -67,7 +67,7 @@ func TestStateProposerSelection0(t *testing.T) {
 	ensureNewRound(newRoundCh, height, round)
 
 	// Commit a block and ensure proposer for the next height is correct.
-	prop := cs1.GetRoundState().Validators.GetProposer()
+	prop := cs1.GetRoundState().Proposer
 	address := cs1.privValidator.GetPubKey().Address()
 	if !bytes.Equal(prop.Address, address) {
 		t.Fatalf("expected proposer to be validator %d. Got %X", 0, prop.Address)
@@ -82,7 +82,7 @@ func TestStateProposerSelection0(t *testing.T) {
 	// Wait for new round so next validator is set.
 	ensureNewRound(newRoundCh, height+1, 0)
 
-	prop = cs1.GetRoundState().Validators.GetProposer()
+	prop = cs1.GetRoundState().Proposer
 	addr := vss[1].GetPubKey().Address()
 	if !bytes.Equal(prop.Address, addr) {
 		panic(fmt.Sprintf("expected proposer to be validator %d. Got %X", 1, prop.Address))
@@ -109,7 +109,7 @@ func TestStateProposerSelection2(t *testing.T) {
 
 	// everyone just votes nil. we get a new proposer each round
 	for i := 0; i < len(vss); i++ {
-		prop := cs1.GetRoundState().Validators.GetProposer()
+		prop := cs1.GetRoundState().Proposer
 		addr := vss[(i+round)%len(vss)].GetPubKey().Address()
 		correctProposer := addr
 		if !bytes.Equal(prop.Address, correctProposer) {
@@ -1033,6 +1033,9 @@ func TestValidateValidBlockOnCommit(t *testing.T) {
 	addr := cs1.privValidator.GetPubKey().Address()
 	voteCh := subscribeToVoter(cs1, addr)
 
+	// Set the proofHash value arbitrarily to ensure that the first vss is elected proposer.
+	cs1.state.LastProofHash = []byte{2}
+
 	// start round and wait for propose and prevote
 	startTestRound(cs1, cs1.Height, round)
 	ensureNewRound(newRoundCh, height, round)
@@ -1438,6 +1441,8 @@ func TestCommitFromPreviousRound(t *testing.T) {
 	validBlockCh := subscribe(cs1.eventBus, types.EventQueryValidBlock)
 	proposalCh := subscribe(cs1.eventBus, types.EventQueryCompleteProposal)
 
+	// Set the proofHash value arbitrarily to ensure that the first vss is elected proposer.
+	cs1.state.LastProofHash = []byte{2}
 	prop, propBlock := decideProposal(cs1, vs2, vs2.Height, vs2.Round)
 	propBlockHash := propBlock.Hash()
 	propBlockParts := propBlock.MakePartSet(partSize)

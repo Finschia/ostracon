@@ -240,8 +240,8 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 		for i, val := range genDoc.Validators {
 			validators[i] = types.NewValidator(val.PubKey, val.Power)
 		}
-		validatorSet = types.NewRandomValidatorSet(validators, types.MakeRoundHash(genDoc.Hash(), 1, 0))
-		nextValidatorSet = types.NewRandomValidatorSet(validators, types.MakeRoundHash(genDoc.Hash(), 2, 0))
+		validatorSet = types.NewValidatorSet(validators)
+		nextValidatorSet = types.NewValidatorSet(validators)
 	}
 
 	return State{
@@ -257,7 +257,7 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 
 		NextValidators:              nextValidatorSet,
 		Validators:                  validatorSet,
-		LastValidators:              types.NewRandomValidatorSet(nil, types.MakeRoundHash(genDoc.Hash(), 1, 0)),
+		LastValidators:              types.NewValidatorSet(nil),
 		LastHeightValidatorsChanged: 1,
 
 		ConsensusParams:                  *genDoc.ConsensusParams,
