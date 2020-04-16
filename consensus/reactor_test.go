@@ -22,7 +22,6 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	cfg "github.com/tendermint/tendermint/config"
 	cstypes "github.com/tendermint/tendermint/consensus/types"
-	"github.com/tendermint/tendermint/crypto"
 	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	"github.com/tendermint/tendermint/libs/bits"
@@ -285,24 +284,14 @@ func TestReactorRecordsVotesAndBlockParts(t *testing.T) {
 	reactors, blocksSubs, eventBuses := startConsensusNet(t, css, N)
 	defer stopConsensusNet(log.TestingLogger(), reactors, eventBuses)
 
-	proposers := map[int64]crypto.Address{}
+	// look up proposer index
+	proposerIdx, _ := css[0].Validators.GetByAddress(css[0].Proposer.PubKey.Address())
+
 	// wait till everyone makes the first new block
 	timeoutWaitGroup(t, N, func(j int) {
 		<-blocksSubs[j].Out()
-		// save proposer of height
-		cs := css[j]
-		if proposers[cs.Height] == nil {
-			addr := cs.Proposer.PubKey.Address()
-			copyAddr := make([]byte, len(addr))
-			copy(copyAddr, addr)
-			proposers[cs.Height] = copyAddr
-		}
 	}, css)
 
-	// get proposer of fist block
-	proposer := proposers[1]
-	// look up proposer index
-	proposerIdx, _ := css[0].Validators.GetByAddress(proposer)
 	// look up proposer index in the validator not proposer
 	// 0:[1,2,3], 1:[0,2,3], 2:[0,1,3], 3:[0,1,2]
 	var otherIdx int

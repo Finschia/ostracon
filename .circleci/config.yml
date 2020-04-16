@@ -129,7 +129,7 @@ jobs:
           name: "Restore go module cache"
           keys:
             - go-mod-v2-{{ checksum "go.sum" }}
-      - make_libsodium
+#      - make_libsodium
       - run:
           name: "Run tests"
           command: |
