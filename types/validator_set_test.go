@@ -145,6 +145,7 @@ func verifyWinningRate(t *testing.T, vals *ValidatorSet, tries int, error float6
 		for j := 0; j < len(vals.Validators); j++ {
 			if bytes.Equal(prop.Address, vals.Validators[j].Address) {
 				selected[j]++
+				break
 			}
 		}
 	}
@@ -198,17 +199,17 @@ func TestProposerSelection2(t *testing.T) {
 			t.Fatalf("(%d): Expected %d. Got %d", i, expected[i], bytesToInt(prop.Address))
 		}
 	}
-	verifyWinningRate(t, vals, 100, 0.3)
+	verifyWinningRate(t, vals, 10000, 0.01)
 
 	// One validator has more than the others
 	*val2 = *newValidator(addr2, 400)
 	vals = NewValidatorSet(valList)
-	verifyWinningRate(t, vals, 100, 0.3)
+	verifyWinningRate(t, vals, 10000, 0.01)
 
 	// One validator has more than the others
 	*val2 = *newValidator(addr2, 401)
 	vals = NewValidatorSet(valList)
-	verifyWinningRate(t, vals, 100, 0.3)
+	verifyWinningRate(t, vals, 100000, 0.01)
 
 	// each validator should be the proposer a proportional number of times
 	val0, val1, val2 = newValidator(addr0, 4), newValidator(addr1, 5), newValidator(addr2, 3)

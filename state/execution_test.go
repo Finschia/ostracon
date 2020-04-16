@@ -88,11 +88,12 @@ func TestBeginBlockValidators(t *testing.T) {
 	for _, tc := range testCases {
 		lastCommit := types.NewCommit(1, 0, prevBlockID, tc.lastCommitSigs)
 
+		proposer := types.SelectProposer(state.Validators, state.LastProofHash, 1, 0)
 		message := state.MakeHashMessage(0)
-		proof, _ := privVals[state.Validators.Validators[0].Address.String()].GenerateVRFProof(message)
+		proof, _ := privVals[proposer.Address.String()].GenerateVRFProof(message)
 
 		// block for height 2
-		block, _ := state.MakeBlock(2, makeTxs(2), lastCommit, nil, state.Validators.Validators[0].Address, 0, proof)
+		block, _ := state.MakeBlock(2, makeTxs(2), lastCommit, nil, proposer.Address, 0, proof)
 
 		_, err = sm.ExecCommitBlock(proxyApp.Consensus(), block, log.TestingLogger(), stateDB)
 		require.Nil(t, err, tc.desc)
@@ -160,8 +161,9 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 	lastCommit := types.NewCommit(9, 0, prevBlockID, commitSigs)
 	for _, tc := range testCases {
 		message := state.MakeHashMessage(0)
-		proof, _ := privVals[state.Validators.Validators[0].Address.String()].GenerateVRFProof(message)
-		block, _ := state.MakeBlock(10, makeTxs(2), lastCommit, nil, state.Validators.Validators[0].Address, 0, proof)
+		proposer := types.SelectProposer(state.Validators, state.LastProofHash, 1, 0)
+		proof, _ := privVals[proposer.Address.String()].GenerateVRFProof(message)
+		block, _ := state.MakeBlock(10, makeTxs(2), lastCommit, nil, proposer.Address, 0, proof)
 		block.Time = now
 		block.Evidence.Evidence = tc.evidence
 		_, err = sm.ExecCommitBlock(proxyApp.Consensus(), block, log.TestingLogger(), stateDB)
