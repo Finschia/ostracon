@@ -183,6 +183,7 @@ func (rs *RoundState) StringIndented(indent string) string {
 %s  StartTime:     %v
 %s  CommitTime:    %v
 %s  Validators:    %v
+%s  Proposer:      %v
 %s  Proposal:      %v
 %s  ProposalBlock: %v %v
 %s  LockedRound:   %v
@@ -197,6 +198,7 @@ func (rs *RoundState) StringIndented(indent string) string {
 		indent, rs.StartTime,
 		indent, rs.CommitTime,
 		indent, rs.Validators.StringIndented(indent+"  "),
+		indent, rs.Proposer.String(),
 		indent, rs.Proposal,
 		indent, rs.ProposalBlockParts.StringShort(), rs.ProposalBlock.StringShort(),
 		indent, rs.LockedRound,
