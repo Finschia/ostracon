@@ -423,6 +423,7 @@ func loadPrivValidator(config *cfg.Config) *privval.FilePV {
 func randState(nValidators int) (*State, []*validatorStub) {
 	// Get State
 	state, privVals := randGenesisState(nValidators, false, 10)
+	state.LastProofHash = []byte{2}
 
 	vss := make([]*validatorStub, nValidators)
 

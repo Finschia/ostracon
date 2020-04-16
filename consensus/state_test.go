@@ -56,9 +56,6 @@ x * TestHalt1 - if we see +2/3 precommits after timing out into new round, we sh
 // ProposeSuite
 
 func TestStateProposerSelection0(t *testing.T) {
-	// FIXME
-	t.Skip("Temporarily excluded because this a case that doesn't end due to Proposer selection changes.")
-
 	cs1, vss := randState(4)
 	height, round := cs1.Height, cs1.Round
 
@@ -89,9 +86,7 @@ func TestStateProposerSelection0(t *testing.T) {
 	ensureNewRound(newRoundCh, height+1, 0)
 
 	prop = cs1.GetRoundState().Proposer
-	pv1, err := vss[1].GetPubKey()
-	require.NoError(t, err)
-	addr := pv1.Address()
+	addr := types.SelectProposer(cs1.Validators, cs1.state.LastProofHash, cs1.Height, cs1.Round).PubKey.Address()
 	if !bytes.Equal(prop.Address, addr) {
 		panic(fmt.Sprintf("expected proposer to be validator %d. Got %X", 1, prop.Address))
 	}
