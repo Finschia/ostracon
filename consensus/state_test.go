@@ -88,9 +88,6 @@ func TestStateProposerSelection0(t *testing.T) {
 
 // Now let's do it all again, but starting from round 2 instead of 0
 func TestStateProposerSelection2(t *testing.T) {
-	// FIXME
-	t.Skip("Temporarily excluded because this a case that doesn't end due to Proposer selection changes.")
-
 	cs1, vss := randState(4) // test needs more work for more than 3 validators
 	height := cs1.Height
 	newRoundCh := subscribe(cs1.eventBus, types.EventQueryNewRound)
@@ -107,12 +104,13 @@ func TestStateProposerSelection2(t *testing.T) {
 	// everyone just votes nil. we get a new proposer each round
 	for i := 0; i < len(vss); i++ {
 		prop := cs1.GetRoundState().Proposer
-		addr := vss[(i+round)%len(vss)].GetPubKey().Address()
+		addr := types.SelectProposer(cs1.Validators, cs1.state.LastProofHash, cs1.Height, cs1.Round).PubKey.Address()
 		correctProposer := addr
 		if !bytes.Equal(prop.Address, correctProposer) {
+			idx, _ := cs1.Validators.GetByAddress(addr)
 			panic(fmt.Sprintf(
 				"expected RoundState.Validators.GetProposer() to be validator %d. Got %X",
-				(i+2)%len(vss),
+				idx,
 				prop.Address))
 		}
 
@@ -175,9 +173,6 @@ func TestStateEnterProposeYesPrivValidator(t *testing.T) {
 }
 
 func TestStateBadProposal(t *testing.T) {
-	// FIXME
-	t.Skip("Temporarily excluded because this a case that doesn't end due to Proposer selection changes.")
-
 	cs1, vss := randState(2)
 	height, round := cs1.Height, cs1.Round
 	vs2 := vss[1]
@@ -291,9 +286,6 @@ func TestStateFullRoundNil(t *testing.T) {
 // run through propose, prevote, precommit commit with two validators
 // where the first validator has to wait for votes from the second
 func TestStateFullRound2(t *testing.T) {
-	// FIXME
-	t.Skip("Temporarily excluded because this a case that doesn't end due to Proposer selection changes.")
-
 	cs1, vss := randState(2)
 	vs2 := vss[1]
 	height, round := cs1.Height, cs1.Round
@@ -1295,9 +1287,6 @@ func TestWaitingTimeoutOnNilPolka(t *testing.T) {
 // What we want:
 // P0 waits for timeoutPropose in the next round before entering prevote
 func TestWaitingTimeoutProposeOnNewRound(t *testing.T) {
-	// FIXME
-	t.Skip("Temporarily excluded because this a case that doesn't end due to Proposer selection changes.")
-
 	cs1, vss := randState(4)
 	vs2, vs3, vs4 := vss[1], vss[2], vss[3]
 	height, round := cs1.Height, cs1.Round
@@ -1366,9 +1355,6 @@ func TestRoundSkipOnNilPolkaFromHigherRound(t *testing.T) {
 // What we want:
 // P0 wait for timeoutPropose to expire before sending prevote.
 func TestWaitTimeoutProposeOnNilPolkaForTheCurrentRound(t *testing.T) {
-	// FIXME
-	t.Skip("Temporarily excluded because this a case that doesn't end due to Proposer selection changes.")
-
 	cs1, vss := randState(4)
 	vs2, vs3, vs4 := vss[1], vss[2], vss[3]
 	height, round := cs1.Height, 1
