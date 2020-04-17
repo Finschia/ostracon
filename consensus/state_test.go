@@ -104,7 +104,7 @@ func TestStateProposerSelection2(t *testing.T) {
 	// everyone just votes nil. we get a new proposer each round
 	for i := 0; i < len(vss); i++ {
 		prop := cs1.GetRoundState().Proposer
-		addr := types.SelectProposer(cs1.Validators, cs1.state.LastProofHash, cs1.Height, cs1.Round).PubKey.Address()
+		addr := types.SelectProposer(cs1.Validators, cs1.state.LastProofHash, height, i+round).PubKey.Address()
 		correctProposer := addr
 		if !bytes.Equal(prop.Address, correctProposer) {
 			idx, _ := cs1.Validators.GetByAddress(addr)
