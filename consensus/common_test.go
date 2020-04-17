@@ -724,7 +724,12 @@ func randConsensusNet(nValidators int, testName string, tickerFunc func() Timeou
 	for i := 0; i < nValidators; i++ {
 		stateDB := dbm.NewMemDB() // each state needs its own db
 		stateStore := sm.NewStore(stateDB)
-		state, _ := stateStore.LoadFromDBOrGenesisDoc(genDoc)
+		state, err := stateStore.LoadFromDBOrGenesisDoc(genDoc)
+		if err != nil {
+			panic(fmt.Errorf("error constructing state from genesis file: %w", err))
+		}
+		// set the first peer to become the first proposer
+		state.LastProofHash = []byte{2}
 		thisConfig := ResetConfig(fmt.Sprintf("%s_%d", testName, i))
 		configRootDirs = append(configRootDirs, thisConfig.RootDir)
 		for _, opt := range configOpts {
