@@ -1811,9 +1811,12 @@ func (cs *State) defaultSetProposal(proposal *types.Proposal) error {
 		return ErrInvalidProposalPOLRound
 	}
 
+	// If consensus does not enterNewRound yet, cs.Proposer may be nil or prior proposer, so don't use cs.Proposer
+	proposer := types.SelectProposer(cs.Validators, cs.state.LastProofHash, proposal.Height, proposal.Round)
+
 	p := proposal.ToProto()
 	// Verify signature
-	if !cs.Proposer.PubKey.VerifySignature(
+	if !proposer.PubKey.VerifySignature(
 		types.ProposalSignBytes(cs.state.ChainID, p), proposal.Signature,
 	) {
 		cs.Logger.Error(fmt.Sprintf("proposal signature verification failed: proposer=%X, bytes=%X, signature=%X",
