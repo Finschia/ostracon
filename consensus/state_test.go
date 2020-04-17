@@ -326,10 +326,9 @@ func TestStateFullRound2(t *testing.T) {
 // two validators, 4 rounds.
 // two vals take turns proposing. val1 locks on first one, precommits nil on everything else
 func TestStateLockNoPOL(t *testing.T) {
-	// FIXME
-	t.Skip("Temporarily excluded because this a case that doesn't end due to Proposer selection changes.")
-
 	cs1, vss := randState(2)
+	// set the lastProofHash that the proposer order is 0,1,0,1
+	cs1.state.LastProofHash = []byte{3}
 	vs2 := vss[1]
 	height, round := cs1.Height, cs1.Round
 
