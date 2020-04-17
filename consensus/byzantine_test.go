@@ -292,7 +292,6 @@ func TestByzantine(t *testing.T) {
 
 	// get proposer of first block
 	proposerIdx, _ := findProposer(css[0])
-	fmt.Printf("TestByzantine proposerIdx: %d\n", proposerIdx)
 
 	// give the byzantine validator a normal ticker
 	ticker := NewTimeoutTicker()
