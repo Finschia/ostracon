@@ -322,6 +322,23 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	sim.GenesisState, _ = sm.MakeGenesisState(genDoc)
 	sim.CleanupFunc = cleanup
 
+	// Make the PrivValidator in the consensus state to be the Proposer of the round.
+	privVals := make([]types.PrivValidator, len(css))
+	for i := 0; i < len(css); i++ {
+		privVals[i] = css[i].privValidator
+	}
+	for i := 0; i < len(css); i++ {
+		cs := css[i]
+		rs := cs.GetRoundState()
+		proposer := types.SelectProposer(cs.state.Validators, cs.state.LastProofHash, rs.Height, rs.Round)
+		for j := 0; j < len(privVals); j++ {
+			if bytes.Equal(proposer.PubKey.Address(), privVals[j].GetPubKey().Address()) {
+				css[i].SetPrivValidator(privVals[j])
+				break
+			}
+		}
+	}
+
 	partSize := types.BlockPartSizeBytes
 
 	newRoundCh := subscribe(css[0].eventBus, types.EventQueryNewRound)
