@@ -293,27 +293,41 @@ func TestReactorReceivePanicsIfInitPeerHasntBeenCalledYet(t *testing.T) {
 
 // Test we record stats about votes and block parts from other peers.
 func TestReactorRecordsVotesAndBlockParts(t *testing.T) {
-	// FIXME
-	t.Skip("Temporarily excluded because this a case that doesn't end due to Proposer selection changes.")
-
 	N := 4
 	css, cleanup := randConsensusNet(N, "consensus_reactor_test", newMockTickerFunc(true), newCounter)
 	defer cleanup()
 	reactors, blocksSubs, eventBuses := startConsensusNet(t, css, N)
 	defer stopConsensusNet(log.TestingLogger(), reactors, eventBuses)
 
+	// the proposer idx is always 0, because the LastProofHash is []byte{2}
+	proposerIdx := 0
+
 	// wait till everyone makes the first new block
 	timeoutWaitGroup(t, N, func(j int) {
 		<-blocksSubs[j].Out()
 	}, css)
 
+	// look up proposer index in the validator not proposer
+	// 0:[1,2,3], 1:[0,2,3], 2:[0,1,3], 3:[0,1,2]
+	var otherIdx int
+	var proposerIdxInOtherPeer int
+	if proposerIdx == 0 {
+		otherIdx = 1
+		proposerIdxInOtherPeer = 0
+	} else {
+		otherIdx = 0
+		proposerIdxInOtherPeer = proposerIdx - 1
+	}
+
 	// Get peer
-	peer := reactors[1].Switch.Peers().List()[0]
+	peer := reactors[otherIdx].Switch.Peers().List()[proposerIdxInOtherPeer]
+
 	// Get peer state
 	ps := peer.Get(types.PeerStateKey).(*PeerState)
 
 	assert.Equal(t, true, ps.VotesSent() > 0, "number of votes sent should have increased")
-	assert.Equal(t, true, ps.BlockPartsSent() > 0, fmt.Sprintf("number of votes sent should have increased: %d", ps.BlockPartsSent()))
+	assert.Equal(t, true, ps.BlockPartsSent() > 0,
+		fmt.Sprintf("number of votes sent should have increased: %d", ps.BlockPartsSent()))
 }
 
 //-------------------------------------------------------------
@@ -503,9 +517,6 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 
 // Check we can make blocks with skip_timeout_commit=false
 func TestReactorWithTimeoutCommit(t *testing.T) {
-	// FIXME
-	t.Skip("Temporarily excluded because this a case that doesn't end due to Proposer selection changes.")
-
 	N := 4
 	css, cleanup := randConsensusNet(N, "consensus_reactor_with_timeout_commit_test", newMockTickerFunc(false), newCounter)
 	defer cleanup()

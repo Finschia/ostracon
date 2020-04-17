@@ -379,6 +379,7 @@ func loadPrivValidator(config *cfg.Config) *privval.FilePV {
 func randState(nValidators int) (*State, []*validatorStub) {
 	// Get State
 	state, privVals := randGenesisState(nValidators, false, 10)
+	state.LastProofHash = []byte{2}
 
 	vss := make([]*validatorStub, nValidators)
 
@@ -630,6 +631,8 @@ func randConsensusNet(nValidators int, testName string, tickerFunc func() Timeou
 	for i := 0; i < nValidators; i++ {
 		stateDB := dbm.NewMemDB() // each state needs its own db
 		state, _ := sm.LoadStateFromDBOrGenesisDoc(stateDB, genDoc)
+		// set the first peer to become the first proposer
+		state.LastProofHash = []byte{2}
 		thisConfig := ResetConfig(fmt.Sprintf("%s_%d", testName, i))
 		configRootDirs = append(configRootDirs, thisConfig.RootDir)
 		for _, opt := range configOpts {
