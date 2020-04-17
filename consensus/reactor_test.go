@@ -284,8 +284,8 @@ func TestReactorRecordsVotesAndBlockParts(t *testing.T) {
 	reactors, blocksSubs, eventBuses := startConsensusNet(t, css, N)
 	defer stopConsensusNet(log.TestingLogger(), reactors, eventBuses)
 
-	// look up proposer index
-	proposerIdx, _ := css[0].Validators.GetByAddress(css[0].Proposer.PubKey.Address())
+	// the proposer idx is always 0, because the LastProofHash is []byte{2}
+	proposerIdx := int32(0)
 
 	// wait till everyone makes the first new block
 	timeoutWaitGroup(t, N, func(j int) {
