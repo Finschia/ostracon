@@ -180,6 +180,7 @@ func BenchmarkValidatorSetCopy(b *testing.B) {
 
 //-------------------------------------------------------------------
 
+//nolint:unused,deadcode
 func intToBytes(i int) []byte {
 	hash := make([]byte, 64)
 	binary.LittleEndian.PutUint64(hash, uint64(i))
