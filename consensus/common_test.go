@@ -395,7 +395,7 @@ func randState(nValidators int) (*State, []*validatorStub) {
 	return cs, vss
 }
 
-func forceProposer(cs *State, vals []*validatorStub, index []int, height [] int64, round [] int) {
+func forceProposer(cs *State, vals []*validatorStub, index []int, height []int64, round []int) {
 	for i := 0; i < 10000; i++ {
 		cs.state.LastProofHash = []byte{byte(i)}
 		allMatch := true
