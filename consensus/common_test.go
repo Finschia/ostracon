@@ -403,22 +403,23 @@ func randState(nValidators int) (*State, []*validatorStub) {
 
 func forceProposer(cs *State, vals []*validatorStub, index []int, height []int64, round []int) {
 	for i := 0; i < 10000; i++ {
-		cs.state.LastProofHash = []byte{byte(i)}
 		allMatch := true
-		hash := cs.state.LastProofHash
+		firstHash := []byte{byte(i)}
+		currentHash := firstHash
 		for j := 0; j < len(index); j++ {
 			if !cs.Validators.Validators[index[j]].PubKey.Equals(
-				types.SelectProposer(cs.Validators, hash, height[j], round[j]).PubKey) {
+				types.SelectProposer(cs.Validators, currentHash, height[j], round[j]).PubKey) {
 				allMatch = false
 				break
 			}
 			if j+1 < len(height) && height[j+1] > height[j] {
-				message := types.MakeRoundHash(hash, height[j]-1, round[j])
+				message := types.MakeRoundHash(currentHash, height[j]-1, round[j])
 				proof, _ := vals[index[j]].PrivValidator.GenerateVRFProof(message)
-				hash, _ = vrf.ProofToHash(proof)
+				currentHash, _ = vrf.ProofToHash(proof)
 			}
 		}
 		if allMatch {
+			cs.state.LastProofHash = firstHash
 			return
 		}
 	}
