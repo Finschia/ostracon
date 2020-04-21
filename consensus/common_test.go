@@ -452,19 +452,32 @@ func theOthers(index int) int {
 }
 
 func forceProposer(cs *State, vals []*validatorStub, index []int, height []int64, round []int32) {
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 1000; i++ {
 		allMatch := true
 		firstHash := []byte{byte(i)}
 		currentHash := firstHash
 		for j := 0; j < len(index); j++ {
-			if !cs.Validators.Validators[index[j]].PubKey.Equals(
-				types.SelectProposer(cs.Validators, currentHash, height[j], round[j]).PubKey) {
-				allMatch = false
-				break
+			var curVal *validatorStub
+			if index[j] < len(vals) {
+				curVal = vals[index[j]]
+				pubKey, _ := curVal.GetPubKey()
+				if !pubKey.Equals(
+					types.SelectProposer(cs.Validators, currentHash, height[j], round[j]).PubKey) {
+					allMatch = false
+					break
+				}
+			} else {
+				curVal = vals[theOthers(index[j])]
+				pubKey, _ := curVal.GetPubKey()
+				if pubKey.Equals(
+					types.SelectProposer(cs.Validators, currentHash, height[j], round[j]).PubKey) {
+					allMatch = false
+					break
+				}
 			}
 			if j+1 < len(height) && height[j+1] > height[j] {
 				message := types.MakeRoundHash(currentHash, height[j]-1, round[j])
-				proof, _ := vals[index[j]].PrivValidator.GenerateVRFProof(message)
+				proof, _ := curVal.PrivValidator.GenerateVRFProof(message)
 				currentHash, _ = vrf.ProofToHash(proof)
 			}
 		}

@@ -1148,8 +1148,8 @@ func TestProposeValidBlock(t *testing.T) {
 	addr := pv1.Address()
 	voteCh := subscribeToVoter(cs1, addr)
 
-	forceProposer(cs1, vss, []int{0, 1, 2, 3, 0}, []int64{height, height, height, height, height},
-		[]int32{round, round + 1, round + 2, round + 3, round + 4})
+	forceProposer(cs1, vss, []int{0, theOthers(0), theOthers(0), theOthers(0), 0},
+		[]int64{height, height, height, height, height}, []int32{round, round + 1, round + 2, round + 3, round + 4})
 
 	// start round and wait for propose and prevote
 	startTestRound(cs1, cs1.Height, round)
@@ -1234,8 +1234,6 @@ func TestValidateValidBlockOnCommit(t *testing.T) {
 
 	partSize := types.BlockPartSizeBytes
 
-	forceProposer(cs1, vss, []int{0, 1, 2}, []int64{height, height, height}, []int32{round, round + 1, round + 2})
-
 	proposalCh := subscribe(cs1.eventBus, types.EventQueryCompleteProposal)
 	timeoutWaitCh := subscribe(cs1.eventBus, types.EventQueryTimeoutWait)
 	timeoutProposeCh := subscribe(cs1.eventBus, types.EventQueryTimeoutPropose)
@@ -1245,8 +1243,8 @@ func TestValidateValidBlockOnCommit(t *testing.T) {
 	addr := pubKey.Address()
 	voteCh := subscribeToVoter(cs1, addr)
 
-	// Set the proofHash value arbitrarily to ensure that the first vss is elected proposer.
-	cs1.state.LastProofHash = []byte{2}
+	forceProposer(cs1, vss, []int{0, theOthers(0), theOthers(0), theOthers(0), 0},
+		[]int64{height, height, height, height, height}, []int32{round, round + 1, round + 2, round + 3, round + 4})
 
 	// start round and wait for propose and prevote
 	startTestRound(cs1, cs1.Height, round)
