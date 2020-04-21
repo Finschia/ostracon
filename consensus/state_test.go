@@ -401,7 +401,8 @@ func TestStateFullRound2(t *testing.T) {
 func TestStateLockNoPOL(t *testing.T) {
 	cs1, vss := randState(2)
 	// set the lastProofHash that the proposer order is 0,1,0,1
-	cs1.state.LastProofHash = []byte{3}
+	forceProposer(cs1, vss, []int{0, 1, 0, 1}, []int64{1, 1, 1, 1}, []int32{0, 1, 2, 3})
+
 	vs2 := vss[1]
 	height, round := cs1.Height, cs1.Round
 
