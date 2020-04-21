@@ -191,7 +191,7 @@ func (c *Client) BlockchainInfo(minHeight, maxHeight int64) (*ctypes.ResultBlock
 
 	// Verify each of the BlockMetas.
 	for _, meta := range res.BlockMetas {
-		h, err := c.lc.TrustedHeader(meta.Header.Height, time.Now())
+		h, err := c.lc.TrustedHeader(meta.Header.Height)
 		if err != nil {
 			return nil, errors.Wrapf(err, "TrustedHeader(%d)", meta.Header.Height)
 		}
@@ -295,8 +295,9 @@ func (c *Client) Tx(hash []byte, prove bool) (*ctypes.ResultTx, error) {
 	return res, res.Proof.Validate(h.DataHash)
 }
 
-func (c *Client) TxSearch(query string, prove bool, page, perPage int) (*ctypes.ResultTxSearch, error) {
-	return c.next.TxSearch(query, prove, page, perPage)
+func (c *Client) TxSearch(query string, prove bool, page, perPage int, orderBy string) (
+	*ctypes.ResultTxSearch, error) {
+	return c.next.TxSearch(query, prove, page, perPage, orderBy)
 }
 
 func (c *Client) Validators(height *int64, page, perPage int) (*ctypes.ResultValidators, error) {
@@ -321,20 +322,8 @@ func (c *Client) UnsubscribeAll(ctx context.Context, subscriber string) error {
 }
 
 func (c *Client) updateLiteClientIfNeededTo(height int64) (*types.SignedHeader, error) {
-	lastTrustedHeight, err := c.lc.LastTrustedHeight()
-	if err != nil {
-		return nil, errors.Wrap(err, "LastTrustedHeight")
-	}
-
-	if lastTrustedHeight < height {
-		return c.lc.VerifyHeaderAtHeight(height, time.Now())
-	}
-
-	h, err := c.lc.TrustedHeader(height, time.Now())
-	if err != nil {
-		return nil, errors.Wrapf(err, "TrustedHeader(#%d)", height)
-	}
-	return h, nil
+	h, err := c.lc.VerifyHeaderAtHeight(height, time.Now())
+	return h, errors.Wrapf(err, "failed to update light client to %d", height)
 }
 
 func (c *Client) RegisterOpDecoder(typ string, dec merkle.OpDecoder) {
