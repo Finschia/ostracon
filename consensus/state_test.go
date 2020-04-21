@@ -737,7 +737,6 @@ func TestStateLockPOLUnlock(t *testing.T) {
 
 	// before we time out into new round, set next proposal block
 	prop, propBlock := decideProposal(cs1, vs2, vs2.Height, vs2.Round+1)
-
 	propBlockParts := propBlock.MakePartSet(partSize)
 
 	// timeout to new round
@@ -956,7 +955,6 @@ func TestStateLockPOLSafety1(t *testing.T) {
 	t.Log("### ONTO ROUND 1")
 
 	prop, propBlock := decideProposal(cs1, vs2, vs2.Height, vs2.Round+1)
-
 	propBlockHash := propBlock.Hash()
 	propBlockParts := propBlock.MakePartSet(partSize)
 
@@ -992,7 +990,6 @@ func TestStateLockPOLSafety1(t *testing.T) {
 
 	ensurePrecommit(voteCh, height, round)
 	// we should have precommitted
-
 	validatePrecommit(t, cs1, round, round, vss[0], propBlockHash, propBlockHash)
 
 	signAddVotes(cs1, tmproto.PrecommitType, nil, types.PartSetHeader{}, vs2, vs3, vs4)
@@ -1015,7 +1012,6 @@ func TestStateLockPOLSafety1(t *testing.T) {
 	// finish prevote
 	ensurePrevote(voteCh, height, round)
 	// we should prevote what we're locked on
-
 	validatePrevote(t, cs1, round, vss[0], propBlockHash)
 
 	newStepCh := subscribe(cs1.eventBus, types.EventQueryNewRoundStep)
@@ -1813,7 +1809,6 @@ func TestResetTimeoutPrecommitUponNewHeight(t *testing.T) {
 	ensureNewBlockHeader(newBlockHeader, height, theBlockHash)
 
 	prop, propBlock := decideProposal(cs1, vs2, height+1, 0)
-
 	propBlockParts := propBlock.MakePartSet(partSize)
 
 	if err := cs1.SetProposalAndBlock(prop, propBlock, propBlockParts, "some peer"); err != nil {
