@@ -163,8 +163,14 @@ func decideProposal(
 	height int64,
 	round int,
 ) (proposal *types.Proposal, block *types.Block) {
+	oldPrivValidator := cs1.privValidator
 	cs1.mtx.Lock()
+	if !cs1.privValidator.GetPubKey().Equals(vs.PrivValidator.GetPubKey()) {
+		// block creater must be the cs.privValidator
+		cs1.privValidator = vs.PrivValidator
+	}
 	block, blockParts := cs1.createProposalBlock(round)
+	cs1.privValidator = oldPrivValidator
 	validRound := cs1.ValidRound
 	chainID := cs1.state.ChainID
 	cs1.mtx.Unlock()

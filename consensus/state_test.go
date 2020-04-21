@@ -557,9 +557,7 @@ func TestStateLockPOLRelock(t *testing.T) {
 	signAddVotes(cs1, types.PrecommitType, theBlockHash, theBlockParts, vs3)
 
 	// before we timeout to the new round set the new proposal
-	cs1.privValidator = vs2.PrivValidator // block1 should be made by vs2
 	prop, propBlock := decideProposal(cs1, vs2, vs2.Height, vs2.Round+1)
-	cs1.privValidator = vss[0].PrivValidator // prevoter should be vss[0]
 
 	propBlockParts := propBlock.MakePartSet(partSize)
 	propBlockHash := propBlock.Hash()
@@ -656,9 +654,7 @@ func TestStateLockPOLUnlock(t *testing.T) {
 	signAddVotes(cs1, types.PrecommitType, theBlockHash, theBlockParts, vs3)
 
 	// before we time out into new round, set next proposal block
-	cs1.privValidator = vs2.PrivValidator
 	prop, propBlock := decideProposal(cs1, vs2, vs2.Height, vs2.Round+1)
-	cs1.privValidator = vss[0].PrivValidator
 
 	propBlockParts := propBlock.MakePartSet(partSize)
 
@@ -748,9 +744,7 @@ func TestStateLockPOLSafety1(t *testing.T) {
 
 	t.Log("### ONTO ROUND 1")
 
-	cs1.privValidator = vs2.PrivValidator
 	prop, propBlock := decideProposal(cs1, vs2, vs2.Height, vs2.Round+1)
-	cs1.privValidator = vss[0].PrivValidator
 
 	propBlockHash := propBlock.Hash()
 	propBlockParts := propBlock.MakePartSet(partSize)
@@ -862,9 +856,7 @@ func TestStateLockPOLSafety2(t *testing.T) {
 	prevotes := signVotes(types.PrevoteType, propBlockHash0, propBlockParts0.Header(), vs2, vs3, vs4)
 
 	// the block for round 1
-	cs1.privValidator = vs2.PrivValidator
 	prop1, propBlock1 := decideProposal(cs1, vs2, vs2.Height, vs2.Round+1)
-	cs1.privValidator = vss[0].PrivValidator
 
 	propBlockHash1 := propBlock1.Hash()
 	propBlockParts1 := propBlock1.MakePartSet(partSize)
@@ -1442,8 +1434,7 @@ func TestCommitFromPreviousRound(t *testing.T) {
 	validBlockCh := subscribe(cs1.eventBus, types.EventQueryValidBlock)
 	proposalCh := subscribe(cs1.eventBus, types.EventQueryCompleteProposal)
 
-	// Set the proofHash value arbitrarily to ensure that the first vss is elected proposer.
-	cs1.state.LastProofHash = []byte{2}
+	forceProposer(cs1, vss, []int{1, 1, 2}, []int64{height, height, height + 1}, []int{0, round, 0})
 	prop, propBlock := decideProposal(cs1, vs2, vs2.Height, vs2.Round)
 	propBlockHash := propBlock.Hash()
 	propBlockParts := propBlock.MakePartSet(partSize)
@@ -1583,9 +1574,7 @@ func TestResetTimeoutPrecommitUponNewHeight(t *testing.T) {
 
 	ensureNewBlockHeader(newBlockHeader, height, theBlockHash)
 
-	cs1.privValidator = vs2.PrivValidator
 	prop, propBlock := decideProposal(cs1, vs2, height+1, 0)
-	cs1.privValidator = vss[0].PrivValidator
 
 	propBlockParts := propBlock.MakePartSet(partSize)
 
