@@ -414,20 +414,18 @@ func forceProposer(cs *State, vals []*validatorStub, index []int, height []int64
 		currentHash := firstHash
 		for j := 0; j < len(index); j++ {
 			var curVal *validatorStub
+			var mustBe bool
 			if index[j] < len(vals) {
 				curVal = vals[index[j]]
-				if !curVal.GetPubKey().Equals(
-					types.SelectProposer(cs.Validators, currentHash, height[j], round[j]).PubKey) {
-					allMatch = false
-					break
-				}
+				mustBe = true
 			} else {
 				curVal = vals[theOthers(index[j])]
-				if curVal.GetPubKey().Equals(
-					types.SelectProposer(cs.Validators, currentHash, height[j], round[j]).PubKey) {
-					allMatch = false
-					break
-				}
+				mustBe = false
+			}
+			if curVal.GetPubKey().Equals(types.SelectProposer(cs.Validators, currentHash, height[j], round[j]).PubKey) !=
+				mustBe {
+				allMatch = false
+				break
 			}
 			if j+1 < len(height) && height[j+1] > height[j] {
 				message := types.MakeRoundHash(currentHash, height[j]-1, round[j])
