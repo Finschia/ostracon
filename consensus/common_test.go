@@ -13,10 +13,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tendermint/tendermint/crypto/vrf"
-
 	"github.com/go-kit/kit/log/term"
 	"github.com/stretchr/testify/require"
+
+	"github.com/tendermint/tendermint/crypto/vrf"
 
 	"path"
 
@@ -444,35 +444,23 @@ func theOthers(index int) int {
 }
 
 func forceProposer(cs *State, vals []*validatorStub, index []int, height []int64, round []int32) {
-	for i := 0; i < 5000; i++ {
+	for i := 0; i < 10000; i++ {
+		cs.state.LastProofHash = []byte{byte(i)}
 		allMatch := true
-		firstHash := []byte{byte(i)}
-		cs.state.LastProofHash = firstHash
+		hash := cs.state.LastProofHash
 		for j := 0; j < len(index); j++ {
-			hash := types.MakeRoundHash(cs.state.LastProofHash, height[j], round[j])
-			var curVal *validatorStub
-			var mustBe bool
-			if index[j] < len(vals) {
-				curVal = vals[index[j]]
-				mustBe = true
-			} else {
-				curVal = vals[theOthers(index[j])]
-				mustBe = false
-			}
-			curValPubKey, _ := curVal.GetPubKey()
-			cs.Proposer = types.SelectProposer(cs.state.Validators, cs.state.LastProofHash, height[j], round[j])
-			if curValPubKey.Equals(cs.Proposer.PubKey) != mustBe {
+			if !cs.Validators.Validators[index[j]].PubKey.Equals(
+				types.SelectProposer(cs.Validators, hash, height[j], round[j]).PubKey) {
 				allMatch = false
 				break
 			}
-			// The case for moving to the next height
 			if j+1 < len(height) && height[j+1] > height[j] {
-				proof, _ := curVal.PrivValidator.GenerateVRFProof(hash)
-				cs.state.LastProofHash, _ = vrf.ProofToHash(proof)
+				message := types.MakeRoundHash(hash, height[j]-1, round[j])
+				proof, _ := vals[index[j]].PrivValidator.GenerateVRFProof(message)
+				hash, _ = vrf.ProofToHash(proof)
 			}
 		}
 		if allMatch {
-			cs.state.LastProofHash = firstHash
 			return
 		}
 	}
