@@ -650,13 +650,12 @@ func TestStateLockPOLRelock(t *testing.T) {
 	ensureNewTimeout(timeoutWaitCh, height, round, cs1.config.Precommit(round).Nanoseconds())
 
 	round++ // moving to the next round
-
 	//XXX: this isnt guaranteed to get there before the timeoutPropose ...
 	if err := cs1.SetProposalAndBlock(prop, propBlock, propBlockParts, "some peer"); err != nil {
 		t.Fatal(err)
 	}
 
-	ensureNewRound(newRoundCh, height, 1)
+	ensureNewRound(newRoundCh, height, round)
 	t.Log("### ONTO ROUND 1")
 
 	/*
@@ -667,7 +666,6 @@ func TestStateLockPOLRelock(t *testing.T) {
 
 	// now we're on a new round and not the proposer
 	// but we should receive the proposal
-
 	ensureNewProposal(proposalCh, height, round)
 
 	// go to prevote, node should prevote for locked block (not the new proposal) - this is relocking
@@ -987,8 +985,7 @@ func TestStateLockPOLSafety1(t *testing.T) {
 
 	// go to prevote, prevote for proposal block
 	ensurePrevote(voteCh, height, round)
-	// vrf makes a block in next round that has different block hash with prior block
-	//validatePrevote(t, cs1, round, vss[0], propBlockHash)
+	validatePrevote(t, cs1, round, vss[0], propBlockHash)
 
 	// now we see the others prevote for it, so we should lock on it
 	signAddVotes(cs1, tmproto.PrevoteType, propBlockHash, propBlockParts.Header(), vs2, vs3, vs4)
@@ -996,8 +993,7 @@ func TestStateLockPOLSafety1(t *testing.T) {
 	ensurePrecommit(voteCh, height, round)
 	// we should have precommitted
 
-	// vrf makes a block in next round that has different block hash with prior block
-	//validatePrecommit(t, cs1, round, round, vss[0], propBlockHash, propBlockHash)
+	validatePrecommit(t, cs1, round, round, vss[0], propBlockHash, propBlockHash)
 
 	signAddVotes(cs1, tmproto.PrecommitType, nil, types.PartSetHeader{}, vs2, vs3, vs4)
 
@@ -1020,8 +1016,7 @@ func TestStateLockPOLSafety1(t *testing.T) {
 	ensurePrevote(voteCh, height, round)
 	// we should prevote what we're locked on
 
-	// vrf makes a block in next round that has different block hash with prior block
-	//validatePrevote(t, cs1, round, vss[0], propBlockHash)
+	validatePrevote(t, cs1, round, vss[0], propBlockHash)
 
 	newStepCh := subscribe(cs1.eventBus, types.EventQueryNewRoundStep)
 
@@ -1072,7 +1067,6 @@ func TestStateLockPOLSafety2(t *testing.T) {
 
 	// the block for round 1
 	prop1, propBlock1 := decideProposal(cs1, vs2, vs2.Height, vs2.Round+1)
-
 	propBlockHash1 := propBlock1.Hash()
 	propBlockParts1 := propBlock1.MakePartSet(partSize)
 
@@ -1158,7 +1152,6 @@ func TestProposeValidBlock(t *testing.T) {
 	addr := pv1.Address()
 	voteCh := subscribeToVoter(cs1, addr)
 
-	// force the vss[0], vss[1] to become a proposer by turns
 	forceProposer(cs1, vss, []int{0, 1, 2, 3, 0}, []int64{height, height, height, height, height},
 		[]int32{round, round + 1, round + 2, round + 3, round + 4})
 
