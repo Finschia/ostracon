@@ -831,9 +831,14 @@ func (cs *State) enterNewRound(height int64, round int) {
 	prevProposer := cs.Proposer
 	cs.Proposer = types.SelectProposer(cs.Validators, cs.state.LastProofHash, height, round)
 	if prevProposer == nil || !bytes.Equal(prevProposer.Address, cs.Proposer.Address) {
-		logger.Info(fmt.Sprintf("Changing Proposer: %+v -> %+v", prevProposer, cs.Proposer))
+		prev := "nil"
+		if prevProposer != nil {
+			prev = fmt.Sprintf("%+v", prevProposer.PubKey.Address())
+		}
+		logger.Info(fmt.Sprintf("Changing Proposer: %+v -> [height=%d, round=%d] %+v",
+			prev, height, round, cs.Proposer.PubKey.Address()))
 	} else {
-		logger.Info(fmt.Sprintf("Current Proposer: %+v", cs.Proposer))
+		logger.Info(fmt.Sprintf("Current Proposer: %+v", cs.Proposer.PubKey.Address()))
 	}
 
 	// Setup new round

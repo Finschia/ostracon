@@ -22,6 +22,7 @@ import (
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/libs/log"
+	tmpubsub "github.com/tendermint/tendermint/libs/pubsub"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 	mempl "github.com/tendermint/tendermint/mempool"
 	"github.com/tendermint/tendermint/mock"
@@ -313,7 +314,7 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	nPeers := 7
 	nVals := 4
 	css, genDoc, config, cleanup := randConsensusNetWithPeers(
-		nVals,
+		nPeers,
 		nPeers,
 		"replay_test",
 		newMockTickerFunc(true),
@@ -322,70 +323,94 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	sim.GenesisState, _ = sm.MakeGenesisState(genDoc)
 	sim.CleanupFunc = cleanup
 
-	// Make the PrivValidator in the consensus state to be the Proposer of the round.
-	privVals := make([]types.PrivValidator, len(css))
-	for i := 0; i < len(css); i++ {
-		privVals[i] = css[i].privValidator
-	}
-	for i := 0; i < len(css); i++ {
-		cs := css[i]
-		rs := cs.GetRoundState()
-		proposer := types.SelectProposer(cs.state.Validators, cs.state.LastProofHash, rs.Height, rs.Round)
-		for j := 0; j < len(privVals); j++ {
-			if bytes.Equal(proposer.PubKey.Address(), privVals[j].GetPubKey().Address()) {
-				css[i].SetPrivValidator(privVals[j])
-				break
-			}
-		}
-	}
-
-	partSize := types.BlockPartSizeBytes
-
-	newRoundCh := subscribe(css[0].eventBus, types.EventQueryNewRound)
-	proposalCh := subscribe(css[0].eventBus, types.EventQueryCompleteProposal)
-
 	vss := make([]*validatorStub, nPeers)
 	for i := 0; i < nPeers; i++ {
 		vss[i] = NewValidatorStub(css[i].privValidator, i)
 	}
-	height, round := css[0].Height, css[0].Round
+
+	currentCommittee := func(css []*State, vss []*validatorStub) (i int, proposer *State, validators []*validatorStub) {
+		vals := css[0].state.Validators
+		//		height, round := vss[0].Height, vss[0].Round
+		height, round := css[0].GetRoundState().Height, css[0].GetRoundState().Round
+		prop := types.SelectProposer(vals, css[0].state.LastProofHash, height, round)
+		i = -1
+		for j := 0; j < len(vals.Validators); j++ {
+			if bytes.Equal(prop.PubKey.Address(), vals.Validators[j].PubKey.Address()) {
+				i = j
+				break
+			}
+		}
+		proposer = css[i]
+		validators = append(vss[0:i], vss[i+1:]...)
+		proposer.Logger.Info(fmt.Sprintf("***** Height %d: proposer = vss[%d] = %+v, validators = %+v *****", height, i, proposer.privValidator, validators))
+		return
+	}
+	setCSSHeight := func(height int64, css ...*State) {
+		for i := 0; i < len(css); i++ {
+			css[i].RoundState.Height = height
+			css[i].RoundState.Round = 0
+		}
+	}
+	pi, proposer, validators := currentCommittee(css, vss)
+
+	partSize := types.BlockPartSizeBytes
+
+	newRoundChs := make([]<-chan tmpubsub.Message, nPeers)
+	proposalChs := make([]<-chan tmpubsub.Message, nPeers)
+	for i := 0; i < nPeers; i++ {
+		newRoundChs[i] = subscribe(css[i].eventBus, types.EventQueryNewRound)
+		proposalChs[i] = subscribe(css[i].eventBus, types.EventQueryCompleteProposal)
+	}
+	//newRoundCh := subscribe(proposer.eventBus, types.EventQueryNewRound)
+	//proposalCh := subscribe(proposer.eventBus, types.EventQueryCompleteProposal)
+
+	height, round := proposer.Height, proposer.Round
 	// start the machine
-	startTestRound(css[0], height, round)
+	startTestRound(proposer, height, round)
 	incrementHeight(vss...)
-	ensureNewRound(newRoundCh, height, 0)
-	ensureNewProposal(proposalCh, height, round)
-	rs := css[0].GetRoundState()
-	signAddVotes(css[0], types.PrecommitType, rs.ProposalBlock.Hash(), rs.ProposalBlockParts.Header(), vss[1:nVals]...)
-	ensureNewRound(newRoundCh, height+1, 0)
+	setCSSHeight(height, css...)
+	ensureNewRound(newRoundChs[pi], height, 0)
+	ensureNewProposal(proposalChs[pi], height, round)
+	rs := proposer.GetRoundState()
+	signAddVotes(proposer, types.PrecommitType, rs.ProposalBlock.Hash(), rs.ProposalBlockParts.Header(), validators...)
+	ensureNewRound(newRoundChs[pi], height+1, 0)
+	time.Sleep(time.Second * 1)
 
 	//height 2
 	height++
 	incrementHeight(vss...)
+	setCSSHeight(height, css...)
+	pi, proposer, validators = currentCommittee(css, vss)
 	newValidatorPubKey1 := css[nVals].privValidator.GetPubKey()
 	valPubKey1ABCI := types.TM2PB.PubKey(newValidatorPubKey1)
 	newValidatorTx1 := kvstore.MakeValSetChangeTx(valPubKey1ABCI, testMinPower)
-	err := assertMempool(css[0].txNotifier).CheckTx(newValidatorTx1, nil, mempl.TxInfo{})
+	err := assertMempool(proposer.txNotifier).CheckTx(newValidatorTx1, nil, mempl.TxInfo{})
 	assert.Nil(t, err)
-	propBlock, _ := css[0].createProposalBlock(0) //changeProposer(t, cs1, vs2)
+	proposer.Logger.Info("******************")
+	// proposer.LastCommit.
+	propBlock, _ := proposer.createProposalBlock(0) //changeProposer(t, cs1, vs2)
+	proposer.Logger.Info("******************")
 	propBlockParts := propBlock.MakePartSet(partSize)
 	blockID := types.BlockID{Hash: propBlock.Hash(), PartsHeader: propBlockParts.Header()}
-	proposal := types.NewProposal(vss[1].Height, round, -1, blockID)
-	if err := vss[1].SignProposal(config.ChainID(), proposal); err != nil {
+	proposal := types.NewProposal(validators[0].Height, round, -1, blockID)
+	if err := validators[0].SignProposal(config.ChainID(), proposal); err != nil {
 		t.Fatal("failed to sign bad proposal", err)
 	}
 
 	// set the proposal block
-	if err := css[0].SetProposalAndBlock(proposal, propBlock, propBlockParts, "some peer"); err != nil {
+	if err := proposer.SetProposalAndBlock(proposal, propBlock, propBlockParts, "some peer"); err != nil {
 		t.Fatal(err)
 	}
-	ensureNewProposal(proposalCh, height, round)
-	rs = css[0].GetRoundState()
-	signAddVotes(css[0], types.PrecommitType, rs.ProposalBlock.Hash(), rs.ProposalBlockParts.Header(), vss[1:nVals]...)
-	ensureNewRound(newRoundCh, height+1, 0)
+	ensureNewProposal(proposalChs[pi], height, round)
+	rs = proposer.GetRoundState()
+	signAddVotes(proposer, types.PrecommitType, rs.ProposalBlock.Hash(), rs.ProposalBlockParts.Header(), validators...)
+	ensureNewRound(newRoundChs[pi], height+1, 0)
 
 	//height 3
 	height++
 	incrementHeight(vss...)
+	setCSSHeight(height, css...)
+	pi, proposer, validators = currentCommittee(css, vss)
 	updateValidatorPubKey1 := css[nVals].privValidator.GetPubKey()
 	updatePubKey1ABCI := types.TM2PB.PubKey(updateValidatorPubKey1)
 	updateValidatorTx1 := kvstore.MakeValSetChangeTx(updatePubKey1ABCI, 25)
@@ -403,14 +428,16 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	if err := css[0].SetProposalAndBlock(proposal, propBlock, propBlockParts, "some peer"); err != nil {
 		t.Fatal(err)
 	}
-	ensureNewProposal(proposalCh, height, round)
+	ensureNewProposal(proposalChs[pi], height, round)
 	rs = css[0].GetRoundState()
 	signAddVotes(css[0], types.PrecommitType, rs.ProposalBlock.Hash(), rs.ProposalBlockParts.Header(), vss[1:nVals]...)
-	ensureNewRound(newRoundCh, height+1, 0)
+	ensureNewRound(newRoundChs[pi], height+1, 0)
 
 	//height 4
 	height++
 	incrementHeight(vss...)
+	setCSSHeight(height, css...)
+	pi, proposer, validators = currentCommittee(css, vss)
 	newValidatorPubKey2 := css[nVals+1].privValidator.GetPubKey()
 	newVal2ABCI := types.TM2PB.PubKey(newValidatorPubKey2)
 	newValidatorTx2 := kvstore.MakeValSetChangeTx(newVal2ABCI, testMinPower)
@@ -444,7 +471,7 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	if err := css[0].SetProposalAndBlock(proposal, propBlock, propBlockParts, "some peer"); err != nil {
 		t.Fatal(err)
 	}
-	ensureNewProposal(proposalCh, height, round)
+	ensureNewProposal(proposalChs[pi], height, round)
 
 	removeValidatorTx2 := kvstore.MakeValSetChangeTx(newVal2ABCI, 0)
 	err = assertMempool(css[0].txNotifier).CheckTx(removeValidatorTx2, nil, mempl.TxInfo{})
@@ -458,12 +485,14 @@ func TestSimulateValidatorsChange(t *testing.T) {
 		signAddVotes(css[0], types.PrecommitType, rs.ProposalBlock.Hash(), rs.ProposalBlockParts.Header(), newVss[i])
 	}
 
-	ensureNewRound(newRoundCh, height+1, 0)
+	ensureNewRound(newRoundChs[pi], height+1, 0)
 
 	//height 5
 	height++
 	incrementHeight(vss...)
-	ensureNewProposal(proposalCh, height, round)
+	setCSSHeight(height, css...)
+	pi, proposer, validators = currentCommittee(css, vss)
+	ensureNewProposal(proposalChs[pi], height, round)
 	rs = css[0].GetRoundState()
 	for i := 0; i < nVals+1; i++ {
 		if i == selfIndex {
@@ -471,11 +500,13 @@ func TestSimulateValidatorsChange(t *testing.T) {
 		}
 		signAddVotes(css[0], types.PrecommitType, rs.ProposalBlock.Hash(), rs.ProposalBlockParts.Header(), newVss[i])
 	}
-	ensureNewRound(newRoundCh, height+1, 0)
+	ensureNewRound(newRoundChs[pi], height+1, 0)
 
 	//height 6
 	height++
 	incrementHeight(vss...)
+	setCSSHeight(height, css...)
+	pi, proposer, validators = currentCommittee(css, vss)
 	removeValidatorTx3 := kvstore.MakeValSetChangeTx(newVal3ABCI, 0)
 	err = assertMempool(css[0].txNotifier).CheckTx(removeValidatorTx3, nil, mempl.TxInfo{})
 	assert.Nil(t, err)
@@ -500,7 +531,7 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	if err := css[0].SetProposalAndBlock(proposal, propBlock, propBlockParts, "some peer"); err != nil {
 		t.Fatal(err)
 	}
-	ensureNewProposal(proposalCh, height, round)
+	ensureNewProposal(proposalChs[pi], height, round)
 	rs = css[0].GetRoundState()
 	for i := 0; i < nVals+3; i++ {
 		if i == selfIndex {
@@ -508,7 +539,7 @@ func TestSimulateValidatorsChange(t *testing.T) {
 		}
 		signAddVotes(css[0], types.PrecommitType, rs.ProposalBlock.Hash(), rs.ProposalBlockParts.Header(), newVss[i])
 	}
-	ensureNewRound(newRoundCh, height+1, 0)
+	ensureNewRound(newRoundChs[pi], height+1, 0)
 
 	sim.Chain = make([]*types.Block, 0)
 	sim.Commits = make([]*types.Commit, 0)
