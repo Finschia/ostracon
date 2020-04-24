@@ -122,9 +122,6 @@ func sendTxs(ctx context.Context, cs *State) {
 
 // TestWALCrash uses crashing WAL to test we can recover from any WAL failure.
 func TestWALCrash(t *testing.T) {
-	// FIXME
-	t.Skip("Temporarily excluded because this a case that doesn't end due to Proposer selection changes.")
-
 	testCases := []struct {
 		name         string
 		initFn       func(dbm.DB, *State, context.Context)
