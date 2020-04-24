@@ -312,22 +312,6 @@ func (vals *ValidatorSet) TotalVotingPower() int64 {
 	return vals.totalVotingPower
 }
 
-func (v *Validator) Priority() uint64 {
-	// TODO Is it possible to have a negative VotingPower?
-	if v.VotingPower < 0 {
-		return 0
-	}
-	return uint64(v.VotingPower)
-}
-
-func (v *Validator) LessThan(other tmrand.Candidate) bool {
-	o, ok := other.(*Validator)
-	if !ok {
-		panic("incompatible type")
-	}
-	return bytes.Compare(v.Address, o.Address) < 0
-}
-
 // Hash returns the Merkle root hash build using validators (as leaves) in the
 // set.
 func (vals *ValidatorSet) Hash() []byte {
@@ -1063,17 +1047,41 @@ func safeMul(a, b int64) (int64, bool) {
 	return a * b, false
 }
 
+// candidate save simple validator data for selecting proposer
+type candidate struct {
+	idx         int
+	address     Address
+	votingPower int64
+}
+
+func (c *candidate) Priority() uint64 {
+	// TODO Is it possible to have a negative VotingPower?
+	if c.votingPower < 0 {
+		return 0
+	}
+	return uint64(c.votingPower)
+}
+
+func (c *candidate) LessThan(other tmrand.Candidate) bool {
+	o, ok := other.(*candidate)
+	if !ok {
+		panic("incompatible type")
+	}
+	return bytes.Compare(c.address, o.address) < 0
+}
+
 func SelectProposer(validators *ValidatorSet, proofHash []byte, height int64, round int32) *Validator {
 	if validators.IsNilOrEmpty() {
 		panic("empty validator set")
 	}
 	seed := hashToSeed(MakeRoundHash(proofHash, height, round))
 	candidates := make([]tmrand.Candidate, len(validators.Validators))
-	for i := 0; i < len(candidates); i++ {
-		candidates[i] = validators.Validators[i]
+	for i, val := range validators.Validators {
+		candidates[i] = &candidate{idx: i, address: val.Address, votingPower: val.VotingPower}
 	}
 	vals := tmrand.RandomSamplingWithPriority(seed, candidates, 1, uint64(validators.TotalVotingPower()))
-	return vals[0].(*Validator)
+	proposerIdx := vals[0].(*candidate).idx
+	return validators.Validators[proposerIdx]
 }
 
 func hashToSeed(hash []byte) uint64 {
