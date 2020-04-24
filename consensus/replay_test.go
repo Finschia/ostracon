@@ -338,7 +338,7 @@ func consensusNewBlock(t *testing.T, height int64, vss []*validatorStub, css []*
 		addTxFn()
 	}
 
-	proposerIdx, prop := getProposerIdx(css[0], css[0].Height, css[0].Round)
+	proposerIdx, prop := getProposerIdx(css[0], height, 0)
 	// search idx of proposer in the css
 	proposerIdxOfCss := 0
 	for i, cs := range css {
