@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"os"
 	"path/filepath"
 	"sort"
@@ -13,6 +14,7 @@ import (
 	"time"
 
 	"github.com/go-kit/kit/log/term"
+	"github.com/tendermint/tendermint/crypto/vrf"
 
 	"path"
 
@@ -162,8 +164,14 @@ func decideProposal(
 	height int64,
 	round int,
 ) (proposal *types.Proposal, block *types.Block) {
+	oldPrivValidator := cs1.privValidator
 	cs1.mtx.Lock()
+	if !cs1.privValidator.GetPubKey().Equals(vs.PrivValidator.GetPubKey()) {
+		// block creater must be the cs.privValidator
+		cs1.privValidator = vs.PrivValidator
+	}
 	block, blockParts := cs1.createProposalBlock(round)
+	cs1.privValidator = oldPrivValidator
 	validRound := cs1.ValidRound
 	chainID := cs1.state.ChainID
 	cs1.mtx.Unlock()
@@ -392,6 +400,45 @@ func randState(nValidators int) (*State, []*validatorStub) {
 	incrementHeight(vss[1:]...)
 
 	return cs, vss
+}
+
+func theOthers(index int) int {
+	const theOtherIndex = math.MaxInt32
+	return theOtherIndex - index
+}
+
+func forceProposer(cs *State, vals []*validatorStub, index []int, height []int64, round []int) {
+	for i := 0; i < 1000; i++ {
+		allMatch := true
+		firstHash := []byte{byte(i)}
+		currentHash := firstHash
+		for j := 0; j < len(index); j++ {
+			var curVal *validatorStub
+			var mustBe bool
+			if index[j] < len(vals) {
+				curVal = vals[index[j]]
+				mustBe = true
+			} else {
+				curVal = vals[theOthers(index[j])]
+				mustBe = false
+			}
+			if curVal.GetPubKey().Equals(types.SelectProposer(cs.Validators, currentHash, height[j], round[j]).PubKey) !=
+				mustBe {
+				allMatch = false
+				break
+			}
+			if j+1 < len(height) && height[j+1] > height[j] {
+				message := types.MakeRoundHash(currentHash, height[j]-1, round[j])
+				proof, _ := curVal.PrivValidator.GenerateVRFProof(message)
+				currentHash, _ = vrf.ProofToHash(proof)
+			}
+		}
+		if allMatch {
+			cs.state.LastProofHash = firstHash
+			return
+		}
+	}
+	panic("no such LastProofHash making index validator to be proposer")
 }
 
 //-------------------------------------------------------------------------------
