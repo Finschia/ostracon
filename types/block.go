@@ -339,10 +339,10 @@ type Header struct {
 	DataHash       tmbytes.HexBytes `json:"data_hash"`        // transactions
 
 	// hashes from the app output from the prev block
-	ValidatorsHash     tmbytes.HexBytes `json:"validators_hash"`      // validators for the current block
-	NextValidatorsHash tmbytes.HexBytes `json:"next_validators_hash"` // validators for the next block
-	ConsensusHash      tmbytes.HexBytes `json:"consensus_hash"`       // consensus params for current block
-	AppHash            tmbytes.HexBytes `json:"app_hash"`             // state after txs from the previous block
+	VotersHash     tmbytes.HexBytes `json:"voters_hash"`      // voters for the current block
+	NextVotersHash tmbytes.HexBytes `json:"next_voters_hash"` // voters for the next block
+	ConsensusHash  tmbytes.HexBytes `json:"consensus_hash"`   // consensus params for current block
+	AppHash        tmbytes.HexBytes `json:"app_hash"`         // state after txs from the previous block
 	// root hash of all results from the txs from the previous block
 	LastResultsHash tmbytes.HexBytes `json:"last_results_hash"`
 
@@ -360,7 +360,7 @@ type Header struct {
 func (h *Header) Populate(
 	version tmversion.Consensus, chainID string,
 	timestamp time.Time, lastBlockID BlockID,
-	valHash, nextValHash []byte,
+	votersHash, nextVotersHash []byte,
 	consensusHash, appHash, lastResultsHash []byte,
 	proposerAddress Address,
 	round int32,
@@ -370,8 +370,8 @@ func (h *Header) Populate(
 	h.ChainID = chainID
 	h.Time = timestamp
 	h.LastBlockID = lastBlockID
-	h.ValidatorsHash = valHash
-	h.NextValidatorsHash = nextValHash
+	h.VotersHash = votersHash
+	h.NextVotersHash = nextVotersHash
 	h.ConsensusHash = consensusHash
 	h.AppHash = appHash
 	h.LastResultsHash = lastResultsHash
@@ -423,10 +423,11 @@ func (h Header) ValidateBasic() error {
 
 	// Basic validation of hashes related to application data.
 	// Will validate fully against state in state#ValidateBlock.
-	if err := ValidateHash(h.ValidatorsHash); err != nil {
+	if err := ValidateHash(h.VotersHash); err != nil {
 		return fmt.Errorf("wrong ValidatorsHash: %v", err)
 	}
-	if err := ValidateHash(h.NextValidatorsHash); err != nil {
+	// TODO When we add `Header.ValidatorsHash` in a future commit, we have to add a similar check here.
+	if err := ValidateHash(h.NextVotersHash); err != nil {
 		return fmt.Errorf("wrong NextValidatorsHash: %v", err)
 	}
 	if err := ValidateHash(h.ConsensusHash); err != nil {
@@ -447,7 +448,7 @@ func (h Header) ValidateBasic() error {
 // since a Header is not valid unless there is
 // a ValidatorsHash (corresponding to the validator set).
 func (h *Header) Hash() tmbytes.HexBytes {
-	if h == nil || len(h.ValidatorsHash) == 0 {
+	if h == nil || len(h.VotersHash) == 0 {
 		return nil
 	}
 	hbz, err := h.Version.Marshal()
@@ -473,8 +474,8 @@ func (h *Header) Hash() tmbytes.HexBytes {
 		bzbi,
 		cdcEncode(h.LastCommitHash),
 		cdcEncode(h.DataHash),
-		cdcEncode(h.ValidatorsHash),
-		cdcEncode(h.NextValidatorsHash),
+		cdcEncode(h.VotersHash),
+		cdcEncode(h.NextVotersHash),
 		cdcEncode(h.ConsensusHash),
 		cdcEncode(h.AppHash),
 		cdcEncode(h.LastResultsHash),
@@ -516,8 +517,8 @@ func (h *Header) StringIndented(indent string) string {
 		indent, h.LastBlockID,
 		indent, h.LastCommitHash,
 		indent, h.DataHash,
-		indent, h.ValidatorsHash,
-		indent, h.NextValidatorsHash,
+		indent, h.VotersHash,
+		indent, h.NextVotersHash,
 		indent, h.AppHash,
 		indent, h.ConsensusHash,
 		indent, h.LastResultsHash,
@@ -535,22 +536,22 @@ func (h *Header) ToProto() *tmproto.Header {
 	}
 
 	return &tmproto.Header{
-		Version:            h.Version,
-		ChainID:            h.ChainID,
-		Height:             h.Height,
-		Time:               h.Time,
-		LastBlockId:        h.LastBlockID.ToProto(),
-		ValidatorsHash:     h.ValidatorsHash,
-		NextValidatorsHash: h.NextValidatorsHash,
-		ConsensusHash:      h.ConsensusHash,
-		AppHash:            h.AppHash,
-		DataHash:           h.DataHash,
-		EvidenceHash:       h.EvidenceHash,
-		LastResultsHash:    h.LastResultsHash,
-		LastCommitHash:     h.LastCommitHash,
-		ProposerAddress:    h.ProposerAddress,
-		Round:              h.Round,
-		Proof:              h.Proof,
+		Version:         h.Version,
+		ChainID:         h.ChainID,
+		Height:          h.Height,
+		Time:            h.Time,
+		LastBlockId:     h.LastBlockID.ToProto(),
+		VotersHash:      h.VotersHash,
+		NextVotersHash:  h.NextVotersHash,
+		ConsensusHash:   h.ConsensusHash,
+		AppHash:         h.AppHash,
+		DataHash:        h.DataHash,
+		EvidenceHash:    h.EvidenceHash,
+		LastResultsHash: h.LastResultsHash,
+		LastCommitHash:  h.LastCommitHash,
+		ProposerAddress: h.ProposerAddress,
+		Round:           h.Round,
+		Proof:           h.Proof,
 	}
 }
 
@@ -574,8 +575,8 @@ func HeaderFromProto(ph *tmproto.Header) (Header, error) {
 	h.Time = ph.Time
 	h.Height = ph.Height
 	h.LastBlockID = *bi
-	h.ValidatorsHash = ph.ValidatorsHash
-	h.NextValidatorsHash = ph.NextValidatorsHash
+	h.VotersHash = ph.VotersHash
+	h.NextVotersHash = ph.NextVotersHash
 	h.ConsensusHash = ph.ConsensusHash
 	h.AppHash = ph.AppHash
 	h.DataHash = ph.DataHash
@@ -756,9 +757,9 @@ func (cs *CommitSig) FromProto(csp tmproto.CommitSig) error {
 // NOTE: Commit is empty for height 1, but never nil.
 type Commit struct {
 	// NOTE: The signatures are in order of address to preserve the bonded
-	// ValidatorSet order.
+	// VoterSet order.
 	// Any peer with a block can gossip signatures by index with a peer without
-	// recalculating the active ValidatorSet.
+	// recalculating the active VoterSet.
 	Height     int64       `json:"height"`
 	Round      int32       `json:"round"`
 	BlockID    BlockID     `json:"block_id"`
@@ -784,8 +785,8 @@ func NewCommit(height int64, round int32, blockID BlockID, commitSigs []CommitSi
 // CommitToVoteSet constructs a VoteSet from the Commit and validator set.
 // Panics if signatures from the commit can't be added to the voteset.
 // Inverse of VoteSet.MakeCommit().
-func CommitToVoteSet(chainID string, commit *Commit, vals *ValidatorSet) *VoteSet {
-	voteSet := NewVoteSet(chainID, commit.Height, commit.Round, tmproto.PrecommitType, vals)
+func CommitToVoteSet(chainID string, commit *Commit, voters *VoterSet) *VoteSet {
+	voteSet := NewVoteSet(chainID, commit.Height, commit.Round, tmproto.PrecommitType, voters)
 	for idx, commitSig := range commit.Signatures {
 		if commitSig.Absent() {
 			continue // OK, some precommits can be missing.

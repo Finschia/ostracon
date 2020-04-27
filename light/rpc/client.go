@@ -453,8 +453,8 @@ func (c *Client) TxSearch(ctx context.Context, query string, prove bool, page, p
 	return c.next.TxSearch(ctx, query, prove, page, perPage, orderBy)
 }
 
-// Validators fetches and verifies validators.
-func (c *Client) Validators(ctx context.Context, height *int64, pagePtr, perPagePtr *int) (*ctypes.ResultValidators,
+// Voters fetches and verifies validators.
+func (c *Client) Voters(ctx context.Context, height *int64, pagePtr, perPagePtr *int) (*ctypes.ResultVoters,
 	error) {
 	// Update the light client if we're behind and retrieve the light block at the requested height
 	// or at the latest height if no height is provided.
@@ -474,11 +474,19 @@ func (c *Client) Validators(ctx context.Context, height *int64, pagePtr, perPage
 
 	v := l.ValidatorSet.Validators[skipCount : skipCount+tmmath.MinInt(perPage, totalCount-skipCount)]
 
-	return &ctypes.ResultValidators{
-		BlockHeight: l.Height,
-		Validators:  v,
-		Count:       len(v),
-		Total:       totalCount}, nil
+	voterIndices := make([]int, 0)
+	for i := range v {
+		if j, _ := l.VoterSet.GetByAddress(v[i].Address); j >= 0 {
+			voterIndices = append(voterIndices, int(j))
+		}
+	}
+
+	return &ctypes.ResultVoters{
+		BlockHeight:  l.Height,
+		Validators:   v,
+		VoterIndices: voterIndices,
+		Count:        len(v),
+		Total:        totalCount}, nil
 }
 
 func (c *Client) BroadcastEvidence(ctx context.Context, ev types.Evidence) (*ctypes.ResultBroadcastEvidence, error) {

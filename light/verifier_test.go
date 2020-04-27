@@ -26,15 +26,15 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 	var (
 		keys = genPrivKeys(4)
 		// 20, 30, 40, 50 - the first 3 don't have 2/3, the last 3 do!
-		vals     = keys.ToValidators(20, 10)
+		voters     = types.ToVoterAll(keys.ToValidators(20, 10))
 		bTime, _ = time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
-		header   = keys.GenSignedHeader(chainID, lastHeight, bTime, nil, vals, vals,
+		header   = keys.GenSignedHeader(chainID, lastHeight, bTime, nil, voters, voters,
 			hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys))
 	)
 
 	testCases := []struct {
 		newHeader      *types.SignedHeader
-		newVals        *types.ValidatorSet
+		newVoters        *types.VoterSet
 		trustingPeriod time.Duration
 		now            time.Time
 		expErr         error
@@ -43,7 +43,7 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 		// same header -> no error
 		0: {
 			header,
-			vals,
+			voters,
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
 			nil,
@@ -51,9 +51,9 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 		},
 		// different chainID -> error
 		1: {
-			keys.GenSignedHeader("different-chainID", nextHeight, bTime.Add(1*time.Hour), nil, vals, vals,
+			keys.GenSignedHeader("different-chainID", nextHeight, bTime.Add(1*time.Hour), nil, voters, voters,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys)),
-			vals,
+			voters,
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
 			nil,
@@ -61,9 +61,9 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 		},
 		// new header's time is before old header's time -> error
 		2: {
-			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(-1*time.Hour), nil, vals, vals,
+			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(-1*time.Hour), nil, voters, voters,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys)),
-			vals,
+			voters,
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
 			nil,
@@ -71,9 +71,9 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 		},
 		// new header's time is from the future -> error
 		3: {
-			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(3*time.Hour), nil, vals, vals,
+			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(3*time.Hour), nil, voters, voters,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys)),
-			vals,
+			voters,
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
 			nil,
@@ -82,9 +82,9 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 		// new header's time is from the future, but it's acceptable (< maxClockDrift) -> no error
 		4: {
 			keys.GenSignedHeader(chainID, nextHeight,
-				bTime.Add(2*time.Hour).Add(maxClockDrift).Add(-1*time.Millisecond), nil, vals, vals,
+				bTime.Add(2*time.Hour).Add(maxClockDrift).Add(-1*time.Millisecond), nil, voters, voters,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys)),
-			vals,
+			voters,
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
 			nil,
@@ -92,9 +92,9 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 		},
 		// 3/3 signed -> no error
 		5: {
-			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil, vals, vals,
+			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil, voters, voters,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys)),
-			vals,
+			voters,
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
 			nil,
@@ -102,9 +102,9 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 		},
 		// 2/3 signed -> no error
 		6: {
-			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil, vals, vals,
+			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil, voters, voters,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), 1, len(keys)),
-			vals,
+			voters,
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
 			nil,
@@ -112,29 +112,30 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 		},
 		// 1/3 signed -> error
 		7: {
-			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil, vals, vals,
+			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil, voters, voters,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), len(keys)-1, len(keys)),
-			vals,
+			voters,
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
 			light.ErrInvalidHeader{Reason: types.ErrNotEnoughVotingPowerSigned{Got: 50, Needed: 93}},
 			"",
 		},
-		// vals does not match with what we have -> error
+		// voters does not match with what we have -> error
 		8: {
-			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil, keys.ToValidators(10, 1), vals,
-				hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys)),
-			keys.ToValidators(10, 1),
+			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil,
+				types.ToVoterAll(keys.ToValidators(10, 1)), voters, hash("app_hash"), hash("cons_hash"),
+				hash("results_hash"), 0, len(keys)),
+			types.ToVoterAll(keys.ToValidators(10, 1)),
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
 			nil,
 			"to match those from new header",
 		},
-		// vals are inconsistent with newHeader -> error
+		// voters are inconsistent with newHeader -> error
 		9: {
-			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil, vals, vals,
+			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil, voters, voters,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys)),
-			keys.ToValidators(10, 1),
+			types.ToVoterAll(keys.ToValidators(10, 1)),
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
 			nil,
@@ -142,9 +143,9 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 		},
 		// old header has expired -> error
 		10: {
-			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil, vals, vals,
+			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil, voters, voters,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys)),
-			keys.ToValidators(10, 1),
+			types.ToVoterAll(keys.ToValidators(10, 1)),
 			1 * time.Hour,
 			bTime.Add(1 * time.Hour),
 			nil,
@@ -155,7 +156,7 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 	for i, tc := range testCases {
 		tc := tc
 		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
-			err := light.VerifyAdjacent(header, tc.newHeader, tc.newVals, tc.trustingPeriod, tc.now, maxClockDrift)
+			err := light.VerifyAdjacent(header, tc.newHeader, tc.newVoters, tc.trustingPeriod, tc.now, maxClockDrift)
 			switch {
 			case tc.expErr != nil && assert.Error(t, err):
 				assert.Equal(t, tc.expErr, err)
@@ -178,87 +179,87 @@ func TestVerifyNonAdjacentHeaders(t *testing.T) {
 	var (
 		keys = genPrivKeys(4)
 		// 20, 30, 40, 50 - the first 3 don't have 2/3, the last 3 do!
-		vals     = keys.ToValidators(20, 10)
+		voters     = types.ToVoterAll(keys.ToValidators(20, 10))
 		bTime, _ = time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
-		header   = keys.GenSignedHeader(chainID, lastHeight, bTime, nil, vals, vals,
+		header   = keys.GenSignedHeader(chainID, lastHeight, bTime, nil, voters, voters,
 			hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys))
 
 		// 30, 40, 50
 		twoThirds     = keys[1:]
-		twoThirdsVals = twoThirds.ToValidators(30, 10)
+		twoThirdsVoters = types.ToVoterAll(twoThirds.ToValidators(30, 10))
 
 		// 50
 		oneThird     = keys[len(keys)-1:]
-		oneThirdVals = oneThird.ToValidators(50, 10)
+		oneThirdVoters = types.ToVoterAll(oneThird.ToValidators(50, 10))
 
 		// 20
 		lessThanOneThird     = keys[0:1]
-		lessThanOneThirdVals = lessThanOneThird.ToValidators(20, 10)
+		lessThanOneThirdVoters = types.ToVoterAll(lessThanOneThird.ToValidators(20, 10))
 	)
 
 	testCases := []struct {
 		newHeader      *types.SignedHeader
-		newVals        *types.ValidatorSet
+		newVoters        *types.VoterSet
 		trustingPeriod time.Duration
 		now            time.Time
 		expErr         error
 		expErrText     string
 	}{
-		// 3/3 new vals signed, 3/3 old vals present -> no error
+		// 3/3 new voters signed, 3/3 old voters present -> no error
 		0: {
-			keys.GenSignedHeader(chainID, 3, bTime.Add(1*time.Hour), nil, vals, vals,
+			keys.GenSignedHeader(chainID, 3, bTime.Add(1*time.Hour), nil, voters, voters,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys)),
-			vals,
+			voters,
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
 			nil,
 			"",
 		},
-		// 2/3 new vals signed, 3/3 old vals present -> no error
+		// 2/3 new voters signed, 3/3 old voters present -> no error
 		1: {
-			keys.GenSignedHeader(chainID, 4, bTime.Add(1*time.Hour), nil, vals, vals,
+			keys.GenSignedHeader(chainID, 4, bTime.Add(1*time.Hour), nil, voters, voters,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), 1, len(keys)),
-			vals,
+			voters,
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
 			nil,
 			"",
 		},
-		// 1/3 new vals signed, 3/3 old vals present -> error
+		// 1/3 new voters signed, 3/3 old voters present -> error
 		2: {
-			keys.GenSignedHeader(chainID, 5, bTime.Add(1*time.Hour), nil, vals, vals,
+			keys.GenSignedHeader(chainID, 5, bTime.Add(1*time.Hour), nil, voters, voters,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), len(keys)-1, len(keys)),
-			vals,
+			voters,
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
 			light.ErrInvalidHeader{types.ErrNotEnoughVotingPowerSigned{Got: 50, Needed: 93}},
 			"",
 		},
-		// 3/3 new vals signed, 2/3 old vals present -> no error
+		// 3/3 new voters signed, 2/3 old voters present -> no error
 		3: {
-			twoThirds.GenSignedHeader(chainID, 5, bTime.Add(1*time.Hour), nil, twoThirdsVals, twoThirdsVals,
+			twoThirds.GenSignedHeader(chainID, 5, bTime.Add(1*time.Hour), nil, twoThirdsVoters, twoThirdsVoters,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(twoThirds)),
-			twoThirdsVals,
+			twoThirdsVoters,
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
 			nil,
 			"",
 		},
-		// 3/3 new vals signed, 1/3 old vals present -> no error
+		// 3/3 new voters signed, 1/3 old voters present -> no error
 		4: {
-			oneThird.GenSignedHeader(chainID, 5, bTime.Add(1*time.Hour), nil, oneThirdVals, oneThirdVals,
+			oneThird.GenSignedHeader(chainID, 5, bTime.Add(1*time.Hour), nil, oneThirdVoters, oneThirdVoters,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(oneThird)),
-			oneThirdVals,
+			oneThirdVoters,
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
 			nil,
 			"",
 		},
-		// 3/3 new vals signed, less than 1/3 old vals present -> error
+		// 3/3 new voters signed, less than 1/3 old voters present -> error
 		5: {
-			lessThanOneThird.GenSignedHeader(chainID, 5, bTime.Add(1*time.Hour), nil, lessThanOneThirdVals, lessThanOneThirdVals,
+			lessThanOneThird.GenSignedHeader(chainID, 5, bTime.Add(1*time.Hour), nil, lessThanOneThirdVoters, lessThanOneThirdVoters,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(lessThanOneThird)),
-			lessThanOneThirdVals,
+			lessThanOneThirdVoters,
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
 			light.ErrNewValSetCantBeTrusted{types.ErrNotEnoughVotingPowerSigned{Got: 20, Needed: 46}},
@@ -269,7 +270,7 @@ func TestVerifyNonAdjacentHeaders(t *testing.T) {
 	for i, tc := range testCases {
 		tc := tc
 		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
-			err := light.VerifyNonAdjacent(header, vals, tc.newHeader, tc.newVals, tc.trustingPeriod,
+			err := light.VerifyNonAdjacent(header, voters, tc.newHeader, tc.newVoters, tc.trustingPeriod,
 				tc.now, maxClockDrift,
 				light.DefaultTrustLevel)
 
@@ -294,13 +295,13 @@ func TestVerifyReturnsErrorIfTrustLevelIsInvalid(t *testing.T) {
 	var (
 		keys = genPrivKeys(4)
 		// 20, 30, 40, 50 - the first 3 don't have 2/3, the last 3 do!
-		vals     = keys.ToValidators(20, 10)
+		voters     = types.ToVoterAll(keys.ToValidators(20, 10))
 		bTime, _ = time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
-		header   = keys.GenSignedHeader(chainID, lastHeight, bTime, nil, vals, vals,
+		header   = keys.GenSignedHeader(chainID, lastHeight, bTime, nil, voters, voters,
 			hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys))
 	)
 
-	err := light.Verify(header, vals, header, vals, 2*time.Hour, time.Now(), maxClockDrift,
+	err := light.Verify(header, voters, header, voters, 2*time.Hour, time.Now(), maxClockDrift,
 		tmmath.Fraction{Numerator: 2, Denominator: 1})
 	assert.Error(t, err)
 }

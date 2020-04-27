@@ -321,8 +321,8 @@ var (
 var modes = []uint{0, 1, 2, 3}
 
 func getProposerIdx(state *State, height int64, round int32) (int32, *types.Validator) {
-	proposer := types.SelectProposer(state.Validators, state.state.LastProofHash, height, round)
-	return state.Validators.GetByAddress(proposer.PubKey.Address())
+	proposer := state.Validators.SelectProposer(state.state.LastProofHash, height, round)
+	return state.Voters.GetByAddress(proposer.PubKey.Address())
 }
 
 func createProposalBlock(cs *State, proposerState *State, round int32) (*types.Block, *types.PartSet) {
@@ -916,7 +916,7 @@ func TestHandshakePanicsIfAppReturnsWrongAppHash(t *testing.T) {
 	stateDB, state, store := stateAndStore(config, pubKey, appVersion)
 	stateStore := sm.NewStore(stateDB)
 	genDoc, _ := sm.MakeGenesisDocFromFile(config.GenesisFile())
-	state.LastValidators = state.Validators.Copy()
+	state.LastVoters = state.Voters.Copy()
 	// mode = 0 for committing all the blocks
 	blocks := makeBlocks(3, &state, privVal)
 	store.chain = blocks
@@ -1016,7 +1016,7 @@ func makeBlock(state sm.State, lastBlock *types.Block, lastBlockMeta *types.Bloc
 	message := state.MakeHashMessage(0)
 	proof, _ := privVal.GenerateVRFProof(message)
 	return state.MakeBlock(height, []types.Tx{}, lastCommit, nil,
-		types.SelectProposer(state.Validators, state.LastProofHash, height, 0).Address, 0, proof)
+		state.Validators.SelectProposer(state.LastProofHash, height, 0).Address, 0, proof)
 }
 
 type badApp struct {

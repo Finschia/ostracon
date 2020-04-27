@@ -164,9 +164,11 @@ func (s *lightClientStateProvider) State(ctx context.Context, height uint64) (sm
 	state.LastBlockID = lastLightBlock.Commit.BlockID
 	state.AppHash = currentLightBlock.AppHash
 	state.LastResultsHash = currentLightBlock.LastResultsHash
-	state.LastValidators = lastLightBlock.ValidatorSet
+	state.LastVoters = lastLightBlock.VoterSet
 	state.Validators = currentLightBlock.ValidatorSet
+	state.Voters = currentLightBlock.VoterSet
 	state.NextValidators = nextLightBlock.ValidatorSet
+	state.NextVoters = nextLightBlock.VoterSet
 	state.LastHeightValidatorsChanged = nextLightBlock.Height
 
 	// We'll also need to fetch consensus params via RPC, using light client verification.

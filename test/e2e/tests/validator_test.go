@@ -40,7 +40,7 @@ func TestValidator_Sets(t *testing.T) {
 			validators := []*types.Validator{}
 			perPage := 100
 			for page := 1; ; page++ {
-				resp, err := client.Validators(ctx, &(h), &(page), &perPage)
+				resp, err := client.Voters(ctx, &(h), &(page), &perPage)
 				require.NoError(t, err)
 				validators = append(validators, resp.Validators...)
 				if len(validators) == resp.Total {
@@ -70,7 +70,7 @@ func TestValidator_Propose(t *testing.T) {
 		proposeCount := 0
 		for _, block := range blocks {
 			proofHash, _ := vrf.ProofToHash(block.Header.Proof.Bytes())
-			proposer := types.SelectProposer(valSchedule.Set, proofHash, block.Height, block.Round)
+			proposer := valSchedule.Set.SelectProposer(proofHash, block.Height, block.Round)
 			if bytes.Equal(proposer.Address, address) {
 				expectCount++
 				if bytes.Equal(block.ProposerAddress, address) {

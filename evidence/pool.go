@@ -518,7 +518,7 @@ func (evpool *Pool) processConsensusBuffer(state sm.State) {
 	defer evpool.mtx.Unlock()
 	for _, voteSet := range evpool.consensusBuffer {
 
-		// Check the height of the conflicting votes and fetch the corresponding time and validator set
+		// Check the height of the conflicting votes and fetch the corresponding time and voter set
 		// to produce the valid evidence
 		var dve *types.DuplicateVoteEvidence
 		switch {
@@ -527,13 +527,13 @@ func (evpool *Pool) processConsensusBuffer(state sm.State) {
 				voteSet.VoteA,
 				voteSet.VoteB,
 				state.LastBlockTime,
-				state.LastValidators,
+				state.LastVoters,
 			)
 
 		case voteSet.VoteA.Height < state.LastBlockHeight:
-			valSet, err := evpool.stateDB.LoadValidators(voteSet.VoteA.Height)
+			_, voterSet, err := evpool.stateDB.LoadValidators(voteSet.VoteA.Height)
 			if err != nil {
-				evpool.logger.Error("failed to load validator set for conflicting votes", "height",
+				evpool.logger.Error("failed to load validator/voter set for conflicting votes", "height",
 					voteSet.VoteA.Height, "err", err,
 				)
 				continue
@@ -547,7 +547,7 @@ func (evpool *Pool) processConsensusBuffer(state sm.State) {
 				voteSet.VoteA,
 				voteSet.VoteB,
 				blockMeta.Header.Time,
-				valSet,
+				voterSet,
 			)
 
 		default:

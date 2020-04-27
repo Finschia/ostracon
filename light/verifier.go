@@ -23,17 +23,17 @@ var (
 //	b) untrustedHeader is valid (if not, ErrInvalidHeader is returned)
 //	c) trustLevel ([1/3, 1]) of trustedHeaderVals (or trustedHeaderNextVals)
 //  signed correctly (if not, ErrNewValSetCantBeTrusted is returned)
-//	d) more than 2/3 of untrustedVals have signed h2
+//	d) more than 2/3 of untrustedVoters have signed h2
 //    (otherwise, ErrInvalidHeader is returned)
 //  e) headers are non-adjacent.
 //
 // maxClockDrift defines how much untrustedHeader.Time can drift into the
 // future.
 func VerifyNonAdjacent(
-	trustedHeader *types.SignedHeader, // height=X
-	trustedVals *types.ValidatorSet, // height=X or height=X+1
+	trustedHeader *types.SignedHeader,   // height=X
+	trustedVoters *types.VoterSet,       // height=X or height=X+1
 	untrustedHeader *types.SignedHeader, // height=Y
-	untrustedVals *types.ValidatorSet, // height=Y
+	untrustedVoters *types.VoterSet,     // height=Y
 	trustingPeriod time.Duration,
 	now time.Time,
 	maxClockDrift time.Duration,
@@ -48,14 +48,14 @@ func VerifyNonAdjacent(
 	}
 
 	if err := verifyNewHeaderAndVals(
-		untrustedHeader, untrustedVals,
+		untrustedHeader, untrustedVoters,
 		trustedHeader,
 		now, maxClockDrift); err != nil {
 		return ErrInvalidHeader{err}
 	}
 
 	// Ensure that +`trustLevel` (default 1/3) or more of last trusted validators signed correctly.
-	err := trustedVals.VerifyCommitLightTrusting(trustedHeader.ChainID, untrustedHeader.Commit, trustLevel)
+	err := trustedVoters.VerifyCommitLightTrusting(trustedHeader.ChainID, untrustedHeader.Commit, trustLevel)
 	if err != nil {
 		switch e := err.(type) {
 		case types.ErrNotEnoughVotingPowerSigned:
@@ -67,10 +67,10 @@ func VerifyNonAdjacent(
 
 	// Ensure that +2/3 of new validators signed correctly.
 	//
-	// NOTE: this should always be the last check because untrustedVals can be
+	// NOTE: this should always be the last check because untrustedVoters can be
 	// intentionally made very large to DOS the light client. not the case for
-	// VerifyAdjacent, where validator set is known in advance.
-	if err := untrustedVals.VerifyCommitLight(trustedHeader.ChainID, untrustedHeader.Commit.BlockID,
+	// VerifyAdjacent, where voter set is known in advance.
+	if err := untrustedVoters.VerifyCommitLight(trustedHeader.ChainID, untrustedHeader.Commit.BlockID,
 		untrustedHeader.Height, untrustedHeader.Commit); err != nil {
 		return ErrInvalidHeader{err}
 	}
@@ -84,7 +84,7 @@ func VerifyNonAdjacent(
 //  a) trustedHeader can still be trusted (if not, ErrOldHeaderExpired is returned)
 //  b) untrustedHeader is valid (if not, ErrInvalidHeader is returned)
 //  c) untrustedHeader.ValidatorsHash equals trustedHeader.NextValidatorsHash
-//  d) more than 2/3 of new validators (untrustedVals) have signed h2
+//  d) more than 2/3 of new validators (untrustedVoters) have signed h2
 //    (otherwise, ErrInvalidHeader is returned)
 //  e) headers are adjacent.
 //
@@ -93,7 +93,7 @@ func VerifyNonAdjacent(
 func VerifyAdjacent(
 	trustedHeader *types.SignedHeader, // height=X
 	untrustedHeader *types.SignedHeader, // height=X+1
-	untrustedVals *types.ValidatorSet, // height=X+1
+	untrustedVoters *types.VoterSet, // height=X+1
 	trustingPeriod time.Duration,
 	now time.Time,
 	maxClockDrift time.Duration) error {
@@ -107,23 +107,23 @@ func VerifyAdjacent(
 	}
 
 	if err := verifyNewHeaderAndVals(
-		untrustedHeader, untrustedVals,
+		untrustedHeader, untrustedVoters,
 		trustedHeader,
 		now, maxClockDrift); err != nil {
 		return ErrInvalidHeader{err}
 	}
 
 	// Check the validator hashes are the same
-	if !bytes.Equal(untrustedHeader.ValidatorsHash, trustedHeader.NextValidatorsHash) {
+	if !bytes.Equal(untrustedHeader.VotersHash, trustedHeader.NextVotersHash) {
 		err := fmt.Errorf("expected old header next validators (%X) to match those from new header (%X)",
-			trustedHeader.NextValidatorsHash,
-			untrustedHeader.ValidatorsHash,
+			trustedHeader.NextVotersHash,
+			untrustedHeader.VotersHash,
 		)
 		return err
 	}
 
 	// Ensure that +2/3 of new validators signed correctly.
-	if err := untrustedVals.VerifyCommitLight(trustedHeader.ChainID, untrustedHeader.Commit.BlockID,
+	if err := untrustedVoters.VerifyCommitLight(trustedHeader.ChainID, untrustedHeader.Commit.BlockID,
 		untrustedHeader.Height, untrustedHeader.Commit); err != nil {
 		return ErrInvalidHeader{err}
 	}
@@ -133,26 +133,26 @@ func VerifyAdjacent(
 
 // Verify combines both VerifyAdjacent and VerifyNonAdjacent functions.
 func Verify(
-	trustedHeader *types.SignedHeader, // height=X
-	trustedVals *types.ValidatorSet, // height=X or height=X+1
+	trustedHeader *types.SignedHeader,   // height=X
+	trustedVoters *types.VoterSet,       // height=X or height=X+1
 	untrustedHeader *types.SignedHeader, // height=Y
-	untrustedVals *types.ValidatorSet, // height=Y
+	untrustedVoters *types.VoterSet,     // height=Y
 	trustingPeriod time.Duration,
 	now time.Time,
 	maxClockDrift time.Duration,
 	trustLevel tmmath.Fraction) error {
 
 	if untrustedHeader.Height != trustedHeader.Height+1 {
-		return VerifyNonAdjacent(trustedHeader, trustedVals, untrustedHeader, untrustedVals,
+		return VerifyNonAdjacent(trustedHeader, trustedVoters, untrustedHeader, untrustedVoters,
 			trustingPeriod, now, maxClockDrift, trustLevel)
 	}
 
-	return VerifyAdjacent(trustedHeader, untrustedHeader, untrustedVals, trustingPeriod, now, maxClockDrift)
+	return VerifyAdjacent(trustedHeader, untrustedHeader, untrustedVoters, trustingPeriod, now, maxClockDrift)
 }
 
 func verifyNewHeaderAndVals(
 	untrustedHeader *types.SignedHeader,
-	untrustedVals *types.ValidatorSet,
+	untrustedVoters *types.VoterSet,
 	trustedHeader *types.SignedHeader,
 	now time.Time,
 	maxClockDrift time.Duration) error {
@@ -180,10 +180,10 @@ func verifyNewHeaderAndVals(
 			maxClockDrift)
 	}
 
-	if !bytes.Equal(untrustedHeader.ValidatorsHash, untrustedVals.Hash()) {
+	if !bytes.Equal(untrustedHeader.VotersHash, untrustedVoters.Hash()) {
 		return fmt.Errorf("expected new header validators (%X) to match those that were supplied (%X) at height %d",
-			untrustedHeader.ValidatorsHash,
-			untrustedVals.Hash(),
+			untrustedHeader.VotersHash,
+			untrustedVoters.Hash(),
 			untrustedHeader.Height,
 		)
 	}

@@ -63,7 +63,7 @@ type VoteSet struct {
 	height        int64
 	round         int32
 	signedMsgType tmproto.SignedMsgType
-	valSet        *ValidatorSet
+	voterSet      *VoterSet
 
 	mtx           tmsync.Mutex
 	votesBitArray *bits.BitArray
@@ -76,7 +76,7 @@ type VoteSet struct {
 
 // Constructs a new VoteSet struct used to accumulate votes for given height/round.
 func NewVoteSet(chainID string, height int64, round int32,
-	signedMsgType tmproto.SignedMsgType, valSet *ValidatorSet) *VoteSet {
+	signedMsgType tmproto.SignedMsgType, voterSet *VoterSet) *VoteSet {
 	if height == 0 {
 		panic("Cannot make VoteSet for height == 0, doesn't make sense.")
 	}
@@ -85,12 +85,12 @@ func NewVoteSet(chainID string, height int64, round int32,
 		height:        height,
 		round:         round,
 		signedMsgType: signedMsgType,
-		valSet:        valSet,
-		votesBitArray: bits.NewBitArray(valSet.Size()),
-		votes:         make([]*Vote, valSet.Size()),
+		voterSet:      voterSet,
+		votesBitArray: bits.NewBitArray(voterSet.Size()),
+		votes:         make([]*Vote, voterSet.Size()),
 		sum:           0,
 		maj23:         nil,
-		votesByBlock:  make(map[string]*blockVotes, valSet.Size()),
+		votesByBlock:  make(map[string]*blockVotes, voterSet.Size()),
 		peerMaj23s:    make(map[P2PID]BlockID),
 	}
 }
@@ -128,7 +128,7 @@ func (voteSet *VoteSet) Size() int {
 	if voteSet == nil {
 		return 0
 	}
-	return voteSet.valSet.Size()
+	return voteSet.voterSet.Size()
 }
 
 // Returns added=true if vote is valid and new.
@@ -176,11 +176,11 @@ func (voteSet *VoteSet) addVote(vote *Vote) (added bool, err error) {
 	}
 
 	// Ensure that signer is a validator.
-	lookupAddr, val := voteSet.valSet.GetByIndex(valIndex)
+	lookupAddr, val := voteSet.voterSet.GetByIndex(valIndex)
 	if val == nil {
 		return false, fmt.Errorf(
-			"cannot find validator %d in valSet of size %d: %w",
-			valIndex, voteSet.valSet.Size(), ErrVoteInvalidValidatorIndex)
+			"cannot find voter %d in voterSet of size %d: %w",
+			valIndex, voteSet.voterSet.Size(), ErrVoteInvalidValidatorIndex)
 	}
 
 	// Ensure that the signer has the right address.
@@ -271,14 +271,14 @@ func (voteSet *VoteSet) addVerifiedVote(
 		}
 		// ... and there's no conflicting vote.
 		// Start tracking this blockKey
-		votesByBlock = newBlockVotes(false, voteSet.valSet.Size())
+		votesByBlock = newBlockVotes(false, voteSet.voterSet.Size())
 		voteSet.votesByBlock[blockKey] = votesByBlock
 		// We'll add the vote in a bit.
 	}
 
 	// Before adding to votesByBlock, see if we'll exceed quorum
 	origSum := votesByBlock.sum
-	quorum := voteSet.valSet.TotalVotingPower()*2/3 + 1
+	quorum := voteSet.voterSet.TotalVotingPower()*2/3 + 1
 
 	// Add vote to votesByBlock
 	votesByBlock.addVerifiedVote(vote, votingPower)
@@ -334,7 +334,7 @@ func (voteSet *VoteSet) SetPeerMaj23(peerID P2PID, blockID BlockID) error {
 		votesByBlock.peerMaj23 = true
 		// No need to copy votes, already there.
 	} else {
-		votesByBlock = newBlockVotes(true, voteSet.valSet.Size())
+		votesByBlock = newBlockVotes(true, voteSet.voterSet.Size())
 		voteSet.votesByBlock[blockKey] = votesByBlock
 		// No need to copy votes, no votes to copy over.
 	}
@@ -381,7 +381,7 @@ func (voteSet *VoteSet) GetByAddress(address []byte) *Vote {
 	}
 	voteSet.mtx.Lock()
 	defer voteSet.mtx.Unlock()
-	valIndex, val := voteSet.valSet.GetByAddress(address)
+	valIndex, val := voteSet.voterSet.GetByAddress(address)
 	if val == nil {
 		panic("GetByAddress(address) returned nil")
 	}
@@ -416,13 +416,13 @@ func (voteSet *VoteSet) HasTwoThirdsAny() bool {
 	}
 	voteSet.mtx.Lock()
 	defer voteSet.mtx.Unlock()
-	return voteSet.sum > voteSet.valSet.TotalVotingPower()*2/3
+	return voteSet.sum > voteSet.voterSet.TotalVotingPower()*2/3
 }
 
 func (voteSet *VoteSet) HasAll() bool {
 	voteSet.mtx.Lock()
 	defer voteSet.mtx.Unlock()
-	return voteSet.sum == voteSet.valSet.TotalVotingPower()
+	return voteSet.sum == voteSet.voterSet.TotalVotingPower()
 }
 
 // If there was a +2/3 majority for blockID, return blockID and true.
@@ -562,7 +562,7 @@ func (voteSet *VoteSet) StringShort() string {
 
 // return the power voted, the total, and the fraction
 func (voteSet *VoteSet) sumTotalFrac() (int64, int64, float64) {
-	voted, total := voteSet.sum, voteSet.valSet.TotalVotingPower()
+	voted, total := voteSet.sum, voteSet.voterSet.TotalVotingPower()
 	fracVoted := float64(voted) / float64(total)
 	return voted, total, fracVoted
 }
@@ -616,11 +616,11 @@ type blockVotes struct {
 	sum       int64          // vote sum
 }
 
-func newBlockVotes(peerMaj23 bool, numValidators int) *blockVotes {
+func newBlockVotes(peerMaj23 bool, numVoters int) *blockVotes {
 	return &blockVotes{
 		peerMaj23: peerMaj23,
-		bitArray:  bits.NewBitArray(numValidators),
-		votes:     make([]*Vote, numValidators),
+		bitArray:  bits.NewBitArray(numVoters),
+		votes:     make([]*Vote, numVoters),
 		sum:       0,
 	}
 }

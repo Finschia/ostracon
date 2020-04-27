@@ -101,7 +101,7 @@ func TestBeginBlockValidators(t *testing.T) {
 	for _, tc := range testCases {
 		lastCommit := types.NewCommit(1, 0, prevBlockID, tc.lastCommitSigs)
 
-		proposer := types.SelectProposer(state.Validators, state.LastProofHash, 1, 0)
+		proposer := state.Validators.SelectProposer(state.LastProofHash, 1, 0)
 		message := state.MakeHashMessage(0)
 		proof, _ := privVals[proposer.Address.String()].GenerateVRFProof(message)
 
@@ -142,20 +142,20 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 	privVal := privVals[state.Validators.Validators[0].Address.String()]
 	blockID := makeBlockID([]byte("headerhash"), 1000, []byte("partshash"))
 	header := &types.Header{
-		Version:            tmversion.Consensus{Block: version.BlockProtocol, App: 1},
-		ChainID:            state.ChainID,
-		Height:             10,
-		Time:               defaultEvidenceTime,
-		LastBlockID:        blockID,
-		LastCommitHash:     crypto.CRandBytes(tmhash.Size),
-		DataHash:           crypto.CRandBytes(tmhash.Size),
-		ValidatorsHash:     state.Validators.Hash(),
-		NextValidatorsHash: state.Validators.Hash(),
-		ConsensusHash:      crypto.CRandBytes(tmhash.Size),
-		AppHash:            crypto.CRandBytes(tmhash.Size),
-		LastResultsHash:    crypto.CRandBytes(tmhash.Size),
-		EvidenceHash:       crypto.CRandBytes(tmhash.Size),
-		ProposerAddress:    crypto.CRandBytes(crypto.AddressSize),
+		Version:         tmversion.Consensus{Block: version.BlockProtocol, App: 1},
+		ChainID:         state.ChainID,
+		Height:          10,
+		Time:            defaultEvidenceTime,
+		LastBlockID:     blockID,
+		LastCommitHash:  crypto.CRandBytes(tmhash.Size),
+		DataHash:        crypto.CRandBytes(tmhash.Size),
+		VotersHash:      state.Validators.Hash(),
+		NextVotersHash:  state.Validators.Hash(),
+		ConsensusHash:   crypto.CRandBytes(tmhash.Size),
+		AppHash:         crypto.CRandBytes(tmhash.Size),
+		LastResultsHash: crypto.CRandBytes(tmhash.Size),
+		EvidenceHash:    crypto.CRandBytes(tmhash.Size),
+		ProposerAddress: crypto.CRandBytes(crypto.AddressSize),
 	}
 
 	// we don't need to worry about validating the evidence as long as they pass validate basic
@@ -172,7 +172,7 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 					Signature:        crypto.CRandBytes(types.MaxSignatureSize),
 				}}),
 			},
-			ValidatorSet: state.Validators,
+			VoterSet: state.Voters,
 		},
 		CommonHeight:        8,
 		ByzantineValidators: []*types.Validator{state.Validators.Validators[0]},
@@ -226,7 +226,6 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 	}
 	ev2 := types.LightClientAttackEvidence{}
 
-	//valSet := state.Validators
 	testCases := []struct {
 		desc                        string
 		evidence                    []types.Evidence
@@ -251,7 +250,7 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 	lastCommit := types.NewCommit(9, 0, prevBlockID, commitSigs)
 	for _, tc := range testCases {
 		message := state.MakeHashMessage(0)
-		proposer := types.SelectProposer(state.Validators, state.LastProofHash, 1, 0)
+		proposer := state.Validators.SelectProposer(state.LastProofHash, 1, 0)
 		proof, _ := privVals[proposer.Address.String()].GenerateVRFProof(message)
 		block, _ := state.MakeBlock(10, makeTxs(2), lastCommit, nil, proposer.Address, 0, proof)
 		block.Time = now
@@ -260,7 +259,7 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 		require.Nil(t, err, tc.desc)
 	}
 
-	proposer := types.SelectProposer(state.Validators, state.LastProofHash, 12, 0)
+	proposer := state.Validators.SelectProposer(state.LastProofHash, 12, 0)
 	privVal = privVals[proposer.Address.String()]
 
 	block := makeBlockWithPrivVal(state, privVal, 12)
@@ -269,7 +268,7 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 	blockID = types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
 	block.LastCommit, _ = makeValidCommit(11, state.LastBlockID, state.Validators, privVals)
 	block.LastCommitHash = block.LastCommit.Hash()
-	block.Time = sm.MedianTime(block.LastCommit, state.LastValidators)
+	block.Time = sm.MedianTime(block.LastCommit, state.LastVoters)
 	message := state.MakeHashMessage(block.Round)
 	proof, _ := privVal.GenerateVRFProof(message)
 	block.Proof = bytes.HexBytes(proof)

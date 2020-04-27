@@ -375,13 +375,13 @@ func TestEvidenceVectors(t *testing.T) {
 		VotingPower: 10,
 	}
 
-	valSet := types.NewValidatorSet([]*types.Validator{val})
+	voterSet := types.NewVoterSet([]*types.Validator{val})
 
 	dupl := types.NewDuplicateVoteEvidence(
 		exampleVote(1),
 		exampleVote(2),
 		defaultEvidenceTime,
-		valSet,
+		voterSet,
 	)
 
 	testCases := []struct {

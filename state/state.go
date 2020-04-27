@@ -59,7 +59,7 @@ type State struct {
 	// vrf hash from proof
 	LastProofHash []byte
 
-	// LastValidators is used to validate block.LastCommit.
+	// LastVoters is used to validate block.LastCommit.
 	// Validators are persisted to the database separately every time they change,
 	// so we can query for historical validator sets.
 	// Note that if s.LastBlockHeight causes a valset change,
@@ -67,7 +67,9 @@ type State struct {
 	// Extra +1 due to nextValSet delay.
 	NextValidators              *types.ValidatorSet
 	Validators                  *types.ValidatorSet
-	LastValidators              *types.ValidatorSet
+	NextVoters                  *types.VoterSet
+	Voters                      *types.VoterSet
+	LastVoters                  *types.VoterSet
 	LastHeightValidatorsChanged int64
 
 	// Consensus parameters used for validating blocks.
@@ -101,8 +103,10 @@ func (state State) Copy() State {
 		LastProofHash: state.LastProofHash,
 
 		NextValidators:              state.NextValidators.Copy(),
+		NextVoters:                  state.NextVoters.Copy(),
 		Validators:                  state.Validators.Copy(),
-		LastValidators:              state.LastValidators.Copy(),
+		Voters:                      state.Voters.Copy(),
+		LastVoters:                  state.LastVoters.Copy(),
 		LastHeightValidatorsChanged: state.LastHeightValidatorsChanged,
 
 		ConsensusParams:                  state.ConsensusParams,
@@ -159,19 +163,35 @@ func (state *State) ToProto() (*tmstate.State, error) {
 		return nil, err
 	}
 	sm.Validators = vals
+	voters, err := state.Voters.ToProto()
+	if err != nil {
+		return nil, err
+	}
+	sm.Voters = voters
 
 	nVals, err := state.NextValidators.ToProto()
 	if err != nil {
 		return nil, err
 	}
 	sm.NextValidators = nVals
+	nVoters, err := state.NextVoters.ToProto()
+	if err != nil {
+		return nil, err
+	}
+	sm.NextVoters = nVoters
+
+	voters, err = state.LastVoters.ToProto()
+	if err != nil {
+		return nil, err
+	}
+	sm.LastVoters = voters
 
 	if state.LastBlockHeight >= 1 { // At Block 1 LastValidators is nil
-		lVals, err := state.LastValidators.ToProto()
+		lVoters, err := state.LastVoters.ToProto()
 		if err != nil {
 			return nil, err
 		}
-		sm.LastValidators = lVals
+		sm.LastVoters = lVoters
 	}
 
 	sm.LastHeightValidatorsChanged = state.LastHeightValidatorsChanged
@@ -210,21 +230,31 @@ func StateFromProto(pb *tmstate.State) (*State, error) { //nolint:golint
 		return nil, err
 	}
 	state.Validators = vals
+	voters, err := types.VoterSetFromProto(pb.Voters)
+	if err != nil {
+		return nil, err
+	}
+	state.Voters = voters
 
 	nVals, err := types.ValidatorSetFromProto(pb.NextValidators)
 	if err != nil {
 		return nil, err
 	}
 	state.NextValidators = nVals
+	nVoters, err := types.VoterSetFromProto(pb.NextVoters)
+	if err != nil {
+		return nil, err
+	}
+	state.NextVoters = nVoters
 
 	if state.LastBlockHeight >= 1 { // At Block 1 LastValidators is nil
-		lVals, err := types.ValidatorSetFromProto(pb.LastValidators)
+		lVoters, err := types.VoterSetFromProto(pb.LastVoters)
 		if err != nil {
 			return nil, err
 		}
-		state.LastValidators = lVals
+		state.LastVoters = lVoters
 	} else {
-		state.LastValidators = types.NewValidatorSet(nil)
+		state.LastVoters = &types.VoterSet{} // XXX Need to be the same
 	}
 
 	state.LastHeightValidatorsChanged = pb.LastHeightValidatorsChanged
@@ -262,14 +292,14 @@ func (state State) MakeBlock(
 	if height == state.InitialHeight {
 		timestamp = state.LastBlockTime // genesis time
 	} else {
-		timestamp = MedianTime(commit, state.LastValidators)
+		timestamp = MedianTime(commit, state.LastVoters)
 	}
 
 	// Fill rest of header with state data.
 	block.Header.Populate(
 		state.Version.Consensus, state.ChainID,
 		timestamp, state.LastBlockID,
-		state.Validators.Hash(), state.NextValidators.Hash(),
+		state.Voters.Hash(), state.NextVoters.Hash(),
 		types.HashConsensusParams(state.ConsensusParams), state.AppHash, state.LastResultsHash,
 		proposerAddress,
 		round,
@@ -283,7 +313,7 @@ func (state State) MakeBlock(
 // corresponding validator set. The computed time is always between timestamps of
 // the votes sent by honest processes, i.e., a faulty processes can not arbitrarily increase or decrease the
 // computed value.
-func MedianTime(commit *types.Commit, validators *types.ValidatorSet) time.Time {
+func MedianTime(commit *types.Commit, voters *types.VoterSet) time.Time {
 	weightedTimes := make([]*tmtime.WeightedTime, len(commit.Signatures))
 	totalVotingPower := int64(0)
 
@@ -291,7 +321,7 @@ func MedianTime(commit *types.Commit, validators *types.ValidatorSet) time.Time 
 		if commitSig.Absent() {
 			continue
 		}
-		_, validator := validators.GetByAddress(commitSig.ValidatorAddress)
+		_, validator := voters.GetByAddress(commitSig.ValidatorAddress)
 		// If there's no condition, TestValidateBlockCommit panics; not needed normally.
 		if validator != nil {
 			totalVotingPower += validator.VotingPower
@@ -363,8 +393,10 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 		LastProofHash: genDoc.Hash(),
 
 		NextValidators:              nextValidatorSet,
+		NextVoters:                  types.SelectVoter(nextValidatorSet, genDoc.Hash()),
 		Validators:                  validatorSet,
-		LastValidators:              types.NewValidatorSet(nil),
+		Voters:                      types.ToVoterAll(validatorSet),
+		LastVoters:                  &types.VoterSet{}, // XXX Need to be the same
 		LastHeightValidatorsChanged: 1,
 
 		ConsensusParams:                  *genDoc.ConsensusParams,

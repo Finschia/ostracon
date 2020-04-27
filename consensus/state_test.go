@@ -86,7 +86,7 @@ func TestStateProposerSelection0(t *testing.T) {
 	ensureNewRound(newRoundCh, height+1, 0)
 
 	prop = cs1.GetRoundState().Proposer
-	addr := types.SelectProposer(cs1.Validators, cs1.state.LastProofHash, cs1.Height, cs1.Round).PubKey.Address()
+	addr := cs1.Validators.SelectProposer(cs1.state.LastProofHash, cs1.Height, cs1.Round).PubKey.Address()
 	if !bytes.Equal(prop.Address, addr) {
 		panic(fmt.Sprintf("expected proposer to be validator %d. Got %X", 1, prop.Address))
 	}
@@ -110,10 +110,10 @@ func TestStateProposerSelection2(t *testing.T) {
 	// everyone just votes nil. we get a new proposer each round
 	for i := int32(0); int(i) < len(vss); i++ {
 		prop := cs1.GetRoundState().Proposer
-		addr := types.SelectProposer(cs1.Validators, cs1.state.LastProofHash, height, i+round).PubKey.Address()
+		addr := cs1.Validators.SelectProposer(cs1.state.LastProofHash, height, i+round).PubKey.Address()
 		correctProposer := addr
 		if !bytes.Equal(prop.Address, correctProposer) {
-			idx, _ := cs1.Validators.GetByAddress(addr)
+			idx, _ := cs1.Voters.GetByAddress(addr)
 			panic(fmt.Sprintf(
 				"expected RoundState.Validators.GetProposer() to be validator %d. Got %X",
 				idx,

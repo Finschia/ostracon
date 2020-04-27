@@ -81,7 +81,7 @@ func TestDuplicateVoteEvidenceValidation(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			vote1 := makeVote(t, val, chainID, math.MaxInt32, math.MaxInt64, math.MaxInt32, 0x02, blockID, defaultVoteTime)
 			vote2 := makeVote(t, val, chainID, math.MaxInt32, math.MaxInt64, math.MaxInt32, 0x02, blockID2, defaultVoteTime)
-			valSet := NewValidatorSet([]*Validator{val.ExtractIntoValidator(10)})
+			valSet := NewVoterSet([]*Validator{val.ExtractIntoValidator(10)})
 			ev := NewDuplicateVoteEvidence(vote1, vote2, defaultVoteTime, valSet)
 			tc.malleateEvidence(ev)
 			assert.Equal(t, tc.expectErr, ev.ValidateBasic() != nil, "Validate Basic had an unexpected result")
@@ -91,7 +91,7 @@ func TestDuplicateVoteEvidenceValidation(t *testing.T) {
 
 func TestLightClientAttackEvidence(t *testing.T) {
 	height := int64(5)
-	voteSet, valSet, privVals := randVoteSet(height, 1, tmproto.PrecommitType, 10, 1)
+	voteSet, _, voterSet, privVals := randVoteSet(height, 1, tmproto.PrecommitType, 10, 1)
 	header := makeHeaderRandom()
 	header.Height = height
 	blockID := makeBlockID(tmhash.Sum([]byte("blockhash")), math.MaxInt32, tmhash.Sum([]byte("partshash")))
@@ -103,7 +103,7 @@ func TestLightClientAttackEvidence(t *testing.T) {
 				Header: header,
 				Commit: commit,
 			},
-			ValidatorSet: valSet,
+			VoterSet: voterSet,
 		},
 		CommonHeight: height - 1,
 	}
@@ -118,7 +118,7 @@ func TestLightClientAttackEvidence(t *testing.T) {
 				Header: header,
 				Commit: differentCommit,
 			},
-			ValidatorSet: valSet,
+			VoterSet: voterSet,
 		},
 		CommonHeight: height - 1,
 	}
@@ -131,7 +131,7 @@ func TestLightClientAttackEvidence(t *testing.T) {
 				Header: differentHeader,
 				Commit: differentCommit,
 			},
-			ValidatorSet: valSet,
+			VoterSet: voterSet,
 		},
 		CommonHeight: height - 1,
 	}
@@ -143,7 +143,7 @@ func TestLightClientAttackEvidence(t *testing.T) {
 				Header: header,
 				Commit: differentCommit,
 			},
-			ValidatorSet: valSet,
+			VoterSet: voterSet,
 		},
 		CommonHeight: height - 2,
 	}
@@ -154,10 +154,10 @@ func TestLightClientAttackEvidence(t *testing.T) {
 
 func TestLightClientAttackEvidenceValidation(t *testing.T) {
 	height := int64(5)
-	voteSet, valSet, privVals := randVoteSet(height, 1, tmproto.PrecommitType, 10, 1)
+	voteSet, valSet, voterSet, privVals := randVoteSet(height, 1, tmproto.PrecommitType, 10, 1)
 	header := makeHeaderRandom()
 	header.Height = height
-	header.ValidatorsHash = valSet.Hash()
+	header.VotersHash = valSet.Hash()
 	blockID := makeBlockID(header.Hash(), math.MaxInt32, tmhash.Sum([]byte("partshash")))
 	commit, err := MakeCommit(blockID, height, 1, voteSet, privVals, time.Now())
 	require.NoError(t, err)
@@ -167,7 +167,7 @@ func TestLightClientAttackEvidenceValidation(t *testing.T) {
 				Header: header,
 				Commit: commit,
 			},
-			ValidatorSet: valSet,
+			VoterSet: voterSet,
 		},
 		CommonHeight: height - 1,
 	}
@@ -186,7 +186,7 @@ func TestLightClientAttackEvidenceValidation(t *testing.T) {
 		{"Nil conflicting header", func(ev *LightClientAttackEvidence) { ev.ConflictingBlock.Header = nil }, true},
 		{"Nil conflicting blocl", func(ev *LightClientAttackEvidence) { ev.ConflictingBlock = nil }, true},
 		{"Nil validator set", func(ev *LightClientAttackEvidence) {
-			ev.ConflictingBlock.ValidatorSet = &ValidatorSet{}
+			ev.ConflictingBlock.VoterSet = &VoterSet{}
 		}, true},
 	}
 	for _, tc := range testCases {
@@ -198,7 +198,7 @@ func TestLightClientAttackEvidenceValidation(t *testing.T) {
 						Header: header,
 						Commit: commit,
 					},
-					ValidatorSet: valSet,
+					VoterSet: voterSet,
 				},
 				CommonHeight: height - 1,
 			}
@@ -244,20 +244,20 @@ func makeVote(
 
 func makeHeaderRandom() *Header {
 	return &Header{
-		Version:            tmversion.Consensus{Block: version.BlockProtocol, App: 1},
-		ChainID:            tmrand.Str(12),
-		Height:             int64(tmrand.Uint16()) + 1,
-		Time:               time.Now(),
-		LastBlockID:        makeBlockIDRandom(),
-		LastCommitHash:     crypto.CRandBytes(tmhash.Size),
-		DataHash:           crypto.CRandBytes(tmhash.Size),
-		ValidatorsHash:     crypto.CRandBytes(tmhash.Size),
-		NextValidatorsHash: crypto.CRandBytes(tmhash.Size),
-		ConsensusHash:      crypto.CRandBytes(tmhash.Size),
-		AppHash:            crypto.CRandBytes(tmhash.Size),
-		LastResultsHash:    crypto.CRandBytes(tmhash.Size),
-		EvidenceHash:       crypto.CRandBytes(tmhash.Size),
-		ProposerAddress:    crypto.CRandBytes(crypto.AddressSize),
+		Version:         tmversion.Consensus{Block: version.BlockProtocol, App: 1},
+		ChainID:         tmrand.Str(12),
+		Height:          int64(tmrand.Uint16()) + 1,
+		Time:            time.Now(),
+		LastBlockID:     makeBlockIDRandom(),
+		LastCommitHash:  crypto.CRandBytes(tmhash.Size),
+		DataHash:        crypto.CRandBytes(tmhash.Size),
+		VotersHash:      crypto.CRandBytes(tmhash.Size),
+		NextVotersHash:  crypto.CRandBytes(tmhash.Size),
+		ConsensusHash:   crypto.CRandBytes(tmhash.Size),
+		AppHash:         crypto.CRandBytes(tmhash.Size),
+		LastResultsHash: crypto.CRandBytes(tmhash.Size),
+		EvidenceHash:    crypto.CRandBytes(tmhash.Size),
+		ProposerAddress: crypto.CRandBytes(crypto.AddressSize),
 	}
 }
 

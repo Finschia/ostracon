@@ -2,18 +2,15 @@ package types
 
 import (
 	"bytes"
-	"encoding/binary"
 	"fmt"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"math"
 	"math/big"
 	"sort"
 	"strings"
 	"testing"
 	"testing/quick"
-	"time"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
@@ -27,11 +24,11 @@ func TestValidatorSetBasic(t *testing.T) {
 	// but attempting to IncrementProposerPriority on them will panic.
 	vset := NewValidatorSet([]*Validator{})
 	assert.Panics(t, func() { vset.IncrementProposerPriority(1) })
-	assert.Panics(t, func() { SelectProposer(vset, []byte{}, 1, 0) })
+	assert.Panics(t, func() { vset.SelectProposer([]byte{}, 1, 0) })
 
 	vset = NewValidatorSet(nil)
 	assert.Panics(t, func() { vset.IncrementProposerPriority(1) })
-	assert.Panics(t, func() { SelectProposer(vset, []byte{}, 1, 0) })
+	assert.Panics(t, func() { vset.SelectProposer([]byte{}, 1, 0) })
 
 	assert.EqualValues(t, vset, vset.Copy())
 	assert.False(t, vset.HasAddress([]byte("some val")))
@@ -65,7 +62,8 @@ func TestValidatorSetBasic(t *testing.T) {
 	assert.Equal(t, val.VotingPower, vset.TotalVotingPower())
 	assert.NotNil(t, vset.Hash())
 	assert.NotPanics(t, func() { vset.IncrementProposerPriority(1) })
-	assert.Equal(t, val.Address, SelectProposer(vset, []byte{}, 1, 0).Address)
+	assert.Equal(t, val.Address,
+		vset.SelectProposer([]byte{}, 1, 0).Address)
 
 	// update
 	val = randValidator(vset.TotalVotingPower())
@@ -180,13 +178,6 @@ func BenchmarkValidatorSetCopy(b *testing.B) {
 
 //-------------------------------------------------------------------
 
-//nolint:unused,deadcode
-func intToBytes(i int) []byte {
-	hash := make([]byte, 64)
-	binary.LittleEndian.PutUint64(hash, uint64(i))
-	return hash
-}
-
 func bytesToInt(b []byte) int {
 	i := big.Int{}
 	i.SetBytes(b)
@@ -196,7 +187,7 @@ func bytesToInt(b []byte) int {
 func verifyWinningRate(t *testing.T, vals *ValidatorSet, tries int, error float64) {
 	selected := make([]int, len(vals.Validators))
 	for i := 0; i < tries; i++ {
-		prop := SelectProposer(vals, []byte{}, int64(i), 0)
+		prop := vals.SelectProposer([]byte{}, int64(i), 0)
 		for j := 0; j < len(vals.Validators); j++ {
 			if bytes.Equal(prop.Address, vals.Validators[j].Address) {
 				selected[j]++
@@ -226,7 +217,7 @@ func TestProposerSelection1(t *testing.T) {
 	})
 	var proposers []string
 	for i := 0; i < 99; i++ {
-		val := SelectProposer(vset, []byte{}, int64(i), 0)
+		val := vset.SelectProposer([]byte{}, int64(i), 0)
 		proposers = append(proposers, string(val.Address))
 	}
 	expected := `foo foo foo foo bar bar foo bar foo baz bar foo baz baz baz foo foo bar foo bar baz bar foo baz foo ` +
@@ -249,7 +240,7 @@ func TestProposerSelection2(t *testing.T) {
 	vals := NewValidatorSet(valList)
 	expected := []int{0, 1, 0, 0, 2, 2, 0, 2, 1, 2, 2, 1, 2, 2, 2}
 	for i := 0; i < len(valList)*5; i++ {
-		prop := SelectProposer(vals, []byte{}, int64(i), 0)
+		prop := vals.SelectProposer([]byte{}, int64(i), 0)
 		if bytesToInt(prop.Address) != expected[i] {
 			t.Fatalf("(%d): Expected %d. Got %d", i, expected[i], bytesToInt(prop.Address))
 		}
@@ -273,7 +264,7 @@ func TestProposerSelection2(t *testing.T) {
 	vals = NewValidatorSet(valList)
 	N := 4 + 5 + 3
 	for i := 0; i < 10000*N; i++ {
-		prop := SelectProposer(vals, []byte{}, int64(i), 0)
+		prop := vals.SelectProposer([]byte{}, int64(i), 0)
 		propCount[bytesToInt(prop.Address)]++
 	}
 	fmt.Printf("%v", propCount)
@@ -307,6 +298,69 @@ func TestProposerSelection2(t *testing.T) {
 	}
 }
 
+func TestProposerSelection3(t *testing.T) {
+	vset := NewValidatorSet([]*Validator{
+		newValidator([]byte("avalidator_address12"), 1),
+		newValidator([]byte("bvalidator_address12"), 1),
+		newValidator([]byte("cvalidator_address12"), 1),
+		newValidator([]byte("dvalidator_address12"), 1),
+	})
+
+	proposerOrder := make([]*Validator, 4)
+	for i := 0; i < 4; i++ {
+		// need to give all validators to have keys
+		pk := ed25519.GenPrivKey().PubKey()
+		vset.Validators[i].PubKey = pk
+		proposerOrder[i] = vset.SelectProposer([]byte{}, int64(i), 0)
+		vset.IncrementProposerPriority(1)
+	}
+
+	// i for the loop
+	// j for the times
+	// we should go in order for ever, despite some IncrementProposerPriority with times > 1
+	var (
+		i int
+		j int32
+	)
+	for ; i < 10000; i++ {
+		got := vset.SelectProposer([]byte{}, int64(i), 0).Address
+		expected := proposerOrder[j%4].Address
+		if !bytes.Equal(got, expected) {
+			t.Fatalf(fmt.Sprintf("vset.Proposer (%X) does not match expected proposer (%X) for (%d, %d)", got, expected, i, j))
+		}
+
+		// serialize, deserialize, check proposer
+		b := vset.toBytes()
+		vset = vset.fromBytes(b)
+
+		computed := vset.SelectProposer([]byte{}, int64(i), 0) // findGetProposer()
+		if i != 0 {
+			if !bytes.Equal(got, computed.Address) {
+				t.Fatalf(
+					fmt.Sprintf(
+						"vset.Proposer (%X) does not match computed proposer (%X) for (%d, %d)",
+						got,
+						computed.Address,
+						i,
+						j,
+					),
+				)
+			}
+		}
+
+		// times is usually 1
+		times := int32(1)
+		mod := (tmrand.Int() % 5) + 1
+		if tmrand.Int()%mod > 0 {
+			// sometimes its up to 5
+			times = (tmrand.Int31() % 4) + 1
+		}
+		vset.IncrementProposerPriority(times)
+
+		j += times
+	}
+}
+
 func newValidator(address []byte, power int64) *Validator {
 	return &Validator{Address: address, VotingPower: power, PubKey: randPubKey()}
 }
@@ -333,6 +387,25 @@ func randValidatorSet(numValidators int) *ValidatorSet {
 		totalVotingPower += validators[i].VotingPower
 	}
 	return NewValidatorSet(validators)
+}
+
+func randValidatorWithMinMax(min, max int64) (*Validator, PrivValidator) {
+	privVal := NewMockPV()
+	pubKey, _ := privVal.GetPubKey()
+	val := NewValidator(pubKey, min+int64(tmrand.Uint64()%uint64(1+max-min)))
+	val.ProposerPriority = min + tmrand.Int64()%max
+	return val, privVal
+}
+
+func randValidatorSetWithMinMax(numValidators int, min, max int64) (*ValidatorSet, map[string]PrivValidator) {
+	validators := make([]*Validator, numValidators)
+	privMap := make(map[string]PrivValidator)
+	var privVal PrivValidator
+	for i := 0; i < numValidators; i++ {
+		validators[i], privVal = randValidatorWithMinMax(min, max)
+		privMap[validators[i].Address.String()] = privVal
+	}
+	return NewValidatorSet(validators), privMap
 }
 
 func (vals *ValidatorSet) toBytes() []byte {
@@ -571,7 +644,8 @@ func TestAveragingInIncrementProposerPriorityWithVotingPower(t *testing.T) {
 	for i, tc := range tcs {
 		tc.vals.IncrementProposerPriority(tc.times)
 
-		assert.Equal(t, tc.wantProposer.Address, SelectProposer(tc.vals, []byte{}, int64(i), 0).Address,
+		assert.Equal(t, tc.wantProposer.Address,
+			tc.vals.SelectProposer([]byte{}, int64(i), 0).Address,
 			"test case: %v",
 			i)
 		for valIdx, val := range tc.vals.Validators {
@@ -609,155 +683,6 @@ func TestSafeSubClip(t *testing.T) {
 }
 
 //-------------------------------------------------------------------
-
-// Check VerifyCommit, VerifyCommitLight and VerifyCommitLightTrusting basic
-// verification.
-func TestValidatorSet_VerifyCommit_All(t *testing.T) {
-	var (
-		privKey = ed25519.GenPrivKey()
-		pubKey  = privKey.PubKey()
-		v1      = NewValidator(pubKey, 1000)
-		vset    = NewValidatorSet([]*Validator{v1})
-
-		chainID = "Lalande21185"
-	)
-
-	vote := examplePrecommit()
-	vote.ValidatorAddress = pubKey.Address()
-	v := vote.ToProto()
-	sig, err := privKey.Sign(VoteSignBytes(chainID, v))
-	require.NoError(t, err)
-	vote.Signature = sig
-
-	commit := NewCommit(vote.Height, vote.Round, vote.BlockID, []CommitSig{vote.CommitSig()})
-
-	vote2 := *vote
-	sig2, err := privKey.Sign(VoteSignBytes("EpsilonEridani", v))
-	require.NoError(t, err)
-	vote2.Signature = sig2
-
-	testCases := []struct {
-		description string
-		chainID     string
-		blockID     BlockID
-		height      int64
-		commit      *Commit
-		expErr      bool
-	}{
-		{"good", chainID, vote.BlockID, vote.Height, commit, false},
-
-		{"wrong signature (#0)", "EpsilonEridani", vote.BlockID, vote.Height, commit, true},
-		{"wrong block ID", chainID, makeBlockIDRandom(), vote.Height, commit, true},
-		{"wrong height", chainID, vote.BlockID, vote.Height - 1, commit, true},
-
-		{"wrong set size: 1 vs 0", chainID, vote.BlockID, vote.Height,
-			NewCommit(vote.Height, vote.Round, vote.BlockID, []CommitSig{}), true},
-
-		{"wrong set size: 1 vs 2", chainID, vote.BlockID, vote.Height,
-			NewCommit(vote.Height, vote.Round, vote.BlockID,
-				[]CommitSig{vote.CommitSig(), {BlockIDFlag: BlockIDFlagAbsent}}), true},
-
-		{"insufficient voting power: got 0, needed more than 666", chainID, vote.BlockID, vote.Height,
-			NewCommit(vote.Height, vote.Round, vote.BlockID, []CommitSig{{BlockIDFlag: BlockIDFlagAbsent}}), true},
-
-		{"wrong signature (#0)", chainID, vote.BlockID, vote.Height,
-			NewCommit(vote.Height, vote.Round, vote.BlockID, []CommitSig{vote2.CommitSig()}), true},
-	}
-
-	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.description, func(t *testing.T) {
-			err := vset.VerifyCommit(tc.chainID, tc.blockID, tc.height, tc.commit)
-			if tc.expErr {
-				if assert.Error(t, err, "VerifyCommit") {
-					assert.Contains(t, err.Error(), tc.description, "VerifyCommit")
-				}
-			} else {
-				assert.NoError(t, err, "VerifyCommit")
-			}
-
-			err = vset.VerifyCommitLight(tc.chainID, tc.blockID, tc.height, tc.commit)
-			if tc.expErr {
-				if assert.Error(t, err, "VerifyCommitLight") {
-					assert.Contains(t, err.Error(), tc.description, "VerifyCommitLight")
-				}
-			} else {
-				assert.NoError(t, err, "VerifyCommitLight")
-			}
-		})
-	}
-}
-
-func TestValidatorSet_VerifyCommit_CheckAllSignatures(t *testing.T) {
-	var (
-		chainID = "test_chain_id"
-		h       = int64(3)
-		blockID = makeBlockIDRandom()
-	)
-
-	voteSet, valSet, vals := randVoteSet(h, 0, tmproto.PrecommitType, 4, 10)
-	commit, err := MakeCommit(blockID, h, 0, voteSet, vals, time.Now())
-	require.NoError(t, err)
-
-	// malleate 4th signature
-	vote := voteSet.GetByIndex(3)
-	v := vote.ToProto()
-	err = vals[3].SignVote("CentaurusA", v)
-	require.NoError(t, err)
-	vote.Signature = v.Signature
-	commit.Signatures[3] = vote.CommitSig()
-
-	err = valSet.VerifyCommit(chainID, blockID, h, commit)
-	if assert.Error(t, err) {
-		assert.Contains(t, err.Error(), "wrong signature (#3)")
-	}
-}
-
-func TestValidatorSet_VerifyCommitLight_ReturnsAsSoonAsMajorityOfVotingPowerSigned(t *testing.T) {
-	var (
-		chainID = "test_chain_id"
-		h       = int64(3)
-		blockID = makeBlockIDRandom()
-	)
-
-	voteSet, valSet, vals := randVoteSet(h, 0, tmproto.PrecommitType, 4, 10)
-	commit, err := MakeCommit(blockID, h, 0, voteSet, vals, time.Now())
-	require.NoError(t, err)
-
-	// malleate 4th signature (3 signatures are enough for 2/3+)
-	vote := voteSet.GetByIndex(3)
-	v := vote.ToProto()
-	err = vals[3].SignVote("CentaurusA", v)
-	require.NoError(t, err)
-	vote.Signature = v.Signature
-	commit.Signatures[3] = vote.CommitSig()
-
-	err = valSet.VerifyCommitLight(chainID, blockID, h, commit)
-	assert.NoError(t, err)
-}
-
-func TestValidatorSet_VerifyCommitLightTrusting_ReturnsAsSoonAsTrustLevelOfVotingPowerSigned(t *testing.T) {
-	var (
-		chainID = "test_chain_id"
-		h       = int64(3)
-		blockID = makeBlockIDRandom()
-	)
-
-	voteSet, valSet, vals := randVoteSet(h, 0, tmproto.PrecommitType, 4, 10)
-	commit, err := MakeCommit(blockID, h, 0, voteSet, vals, time.Now())
-	require.NoError(t, err)
-
-	// malleate 3rd signature (2 signatures are enough for 1/3+ trust level)
-	vote := voteSet.GetByIndex(2)
-	v := vote.ToProto()
-	err = vals[2].SignVote("CentaurusA", v)
-	require.NoError(t, err)
-	vote.Signature = v.Signature
-	commit.Signatures[2] = vote.CommitSig()
-
-	err = valSet.VerifyCommitLightTrusting(chainID, commit, tmmath.Fraction{Numerator: 1, Denominator: 3})
-	assert.NoError(t, err)
-}
 
 func TestEmptySet(t *testing.T) {
 
@@ -1460,62 +1385,6 @@ func TestValSetUpdateOverflowRelated(t *testing.T) {
 			assert.Equal(t, tt.expectedVals, toTestValList(valSet.Validators))
 			verifyValidatorSet(t, valSet)
 		})
-	}
-}
-
-func TestValidatorSet_VerifyCommitLightTrusting(t *testing.T) {
-	var (
-		blockID                       = makeBlockIDRandom()
-		voteSet, originalValset, vals = randVoteSet(1, 1, tmproto.PrecommitType, 6, 1)
-		commit, err                   = MakeCommit(blockID, 1, 1, voteSet, vals, time.Now())
-		newValSet, _                  = RandValidatorSet(2, 1)
-	)
-	require.NoError(t, err)
-
-	testCases := []struct {
-		valSet *ValidatorSet
-		err    bool
-	}{
-		// good
-		0: {
-			valSet: originalValset,
-			err:    false,
-		},
-		// bad - no overlap between validator sets
-		1: {
-			valSet: newValSet,
-			err:    true,
-		},
-		// good - first two are different but the rest of the same -> >1/3
-		2: {
-			valSet: NewValidatorSet(append(newValSet.Validators, originalValset.Validators...)),
-			err:    false,
-		},
-	}
-
-	for _, tc := range testCases {
-		err = tc.valSet.VerifyCommitLightTrusting("test_chain_id", commit,
-			tmmath.Fraction{Numerator: 1, Denominator: 3})
-		if tc.err {
-			assert.Error(t, err)
-		} else {
-			assert.NoError(t, err)
-		}
-	}
-}
-
-func TestValidatorSet_VerifyCommitLightTrustingErrorsOnOverflow(t *testing.T) {
-	var (
-		blockID               = makeBlockIDRandom()
-		voteSet, valSet, vals = randVoteSet(1, 1, tmproto.PrecommitType, 1, MaxTotalVotingPower)
-		commit, err           = MakeCommit(blockID, 1, 1, voteSet, vals, time.Now())
-	)
-	require.NoError(t, err)
-
-	err = valSet.VerifyCommitLightTrusting("test_chain_id", commit,
-		tmmath.Fraction{Numerator: 25, Denominator: 55})
-	if assert.Error(t, err) {
-		assert.Contains(t, err.Error(), "int64 overflow")
 	}
 }
 

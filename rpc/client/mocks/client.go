@@ -756,16 +756,16 @@ func (_m *Client) UnsubscribeAll(ctx context.Context, subscriber string) error {
 	return r0
 }
 
-// Validators provides a mock function with given fields: ctx, height, page, perPage
-func (_m *Client) Validators(ctx context.Context, height *int64, page *int, perPage *int) (*coretypes.ResultValidators, error) {
+// Voters provides a mock function with given fields: ctx, height, page, perPage
+func (_m *Client) Voters(ctx context.Context, height *int64, page *int, perPage *int) (*coretypes.ResultVoters, error) {
 	ret := _m.Called(ctx, height, page, perPage)
 
-	var r0 *coretypes.ResultValidators
-	if rf, ok := ret.Get(0).(func(context.Context, *int64, *int, *int) *coretypes.ResultValidators); ok {
+	var r0 *coretypes.ResultVoters
+	if rf, ok := ret.Get(0).(func(context.Context, *int64, *int, *int) *coretypes.ResultVoters); ok {
 		r0 = rf(ctx, height, page, perPage)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*coretypes.ResultValidators)
+			r0 = ret.Get(0).(*coretypes.ResultVoters)
 		}
 	}
 

@@ -60,9 +60,11 @@ func TestSyncer_SyncAny(t *testing.T) {
 		LastResultsHash: []byte("last_results_hash"),
 		AppHash:         []byte("app_hash"),
 
-		LastValidators: &types.ValidatorSet{},
+		LastVoters:     &types.VoterSet{},
 		Validators:     &types.ValidatorSet{},
+		Voters:         &types.VoterSet{},
 		NextValidators: &types.ValidatorSet{},
+		NextVoters:     &types.VoterSet{},
 
 		ConsensusParams:                  *types.DefaultConsensusParams(),
 		LastHeightConsensusParamsChanged: 1,

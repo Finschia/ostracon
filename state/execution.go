@@ -342,7 +342,7 @@ func getBeginBlockValidatorInfo(block *types.Block, store Store,
 	// Remember that the first LastCommit is intentionally empty, so it makes
 	// sense for LastCommitInfo.Votes to also be empty.
 	if block.Height > initialHeight {
-		lastValSet, err := store.LoadValidators(block.Height - 1)
+		_, lastVoterSet, err := store.LoadValidators(block.Height - 1)
 		if err != nil {
 			panic(err)
 		}
@@ -350,20 +350,20 @@ func getBeginBlockValidatorInfo(block *types.Block, store Store,
 		// Sanity check that commit size matches validator set size - only applies
 		// after first block.
 		var (
-			commitSize = block.LastCommit.Size()
-			valSetLen  = len(lastValSet.Validators)
+			commitSize  = block.LastCommit.Size()
+			voterSetLen = lastVoterSet.Size()
 		)
-		if commitSize != valSetLen {
+		if commitSize != voterSetLen {
 			panic(fmt.Sprintf(
-				"commit size (%d) doesn't match valset length (%d) at height %d\n\n%v\n\n%v",
-				commitSize, valSetLen, block.Height, block.LastCommit.Signatures, lastValSet.Validators,
+				"commit size (%d) doesn't match voterset length (%d) at height %d\n\n%v\n\n%v",
+				commitSize, voterSetLen, block.Height, block.LastCommit.Signatures, lastVoterSet.Voters,
 			))
 		}
 
-		for i, val := range lastValSet.Validators {
+		for i, voter := range lastVoterSet.Voters {
 			commitSig := block.LastCommit.Signatures[i]
 			voteInfos[i] = abci.VoteInfo{
-				Validator:       types.TM2PB.Validator(val),
+				Validator:       types.TM2PB.Validator(voter),
 				SignedLastBlock: !commitSig.Absent(),
 			}
 		}
@@ -410,7 +410,7 @@ func updateState(
 ) (State, error) {
 
 	// Copy the valset so we can apply changes from EndBlock
-	// and update s.LastValidators and s.Validators.
+	// and update s.LastVoters and s.Validators.
 	nValSet := state.NextValidators.Copy()
 
 	// Update the validator set with the latest abciResponses.
@@ -452,6 +452,8 @@ func updateState(
 		return state, fmt.Errorf("error get proof of hash: %v", err)
 	}
 
+	nextVoters := types.SelectVoter(nValSet, proofHash)
+
 	// NOTE: the AppHash has not been populated.
 	// It will be filled on state.Save.
 	return State{
@@ -463,8 +465,10 @@ func updateState(
 		LastBlockTime:                    header.Time,
 		LastProofHash:                    proofHash,
 		NextValidators:                   nValSet,
+		NextVoters:                       nextVoters,
 		Validators:                       state.NextValidators.Copy(),
-		LastValidators:                   state.Validators.Copy(),
+		Voters:                           state.NextVoters.Copy(),
+		LastVoters:                       state.Voters.Copy(),
 		LastHeightValidatorsChanged:      lastHeightValsChanged,
 		ConsensusParams:                  nextParams,
 		LastHeightConsensusParamsChanged: lastHeightParamsChanged,

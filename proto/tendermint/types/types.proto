@@ -70,11 +70,11 @@ message Header {
   bytes data_hash        = 7;  // transactions
 
   // hashes from the app output from the prev block
-  bytes validators_hash      = 8;   // validators for the current block
-  bytes next_validators_hash = 9;   // validators for the next block
-  bytes consensus_hash       = 10;  // consensus params for current block
-  bytes app_hash             = 11;  // state after txs from the previous block
-  bytes last_results_hash    = 12;  // root hash of all results from the txs from the previous block
+  bytes voters_hash       = 8;   // voters for the current block
+  bytes next_voters_hash  = 9;   // voters for the next block
+  bytes consensus_hash    = 10;  // consensus params for current block
+  bytes app_hash          = 11;  // state after txs from the previous block
+  bytes last_results_hash = 12;  // root hash of all results from the txs from the previous block
 
   // consensus info
   bytes evidence_hash    = 13;  // evidence included in the block
@@ -144,8 +144,8 @@ message SignedHeader {
 }
 
 message LightBlock {
-  SignedHeader                  signed_header = 1;
-  tendermint.types.ValidatorSet validator_set = 2;
+  SignedHeader              signed_header = 1;
+  tendermint.types.VoterSet voter_set     = 2;
 }
 
 message BlockMeta {

@@ -77,7 +77,7 @@ func TestEvidencePoolBasic(t *testing.T) {
 		blockStore = &mocks.BlockStore{}
 	)
 
-	valSet, privVals := types.RandValidatorSet(1, 10)
+	valSet, _, privVals := types.RandVoterSet(1, 10)
 
 	blockStore.On("LoadBlockMeta", mock.AnythingOfType("int64")).Return(
 		&types.BlockMeta{Header: types.Header{Time: defaultEvidenceTime}},
@@ -201,7 +201,7 @@ func TestReportConflictingVotes(t *testing.T) {
 	state := pool.State()
 	state.LastBlockHeight++
 	state.LastBlockTime = ev.Time()
-	state.LastValidators = types.NewValidatorSet([]*types.Validator{val})
+	state.LastVoters = types.NewVoterSet([]*types.Validator{val})
 	pool.Update(state, []types.Evidence{})
 
 	// should be able to retrieve evidence from pool
@@ -273,15 +273,15 @@ func TestCheckEvidenceWithLightClientAttack(t *testing.T) {
 		validatorPower int64 = 10
 		height         int64 = 10
 	)
-	conflictingVals, conflictingPrivVals := types.RandValidatorSet(nValidators, validatorPower)
+	conflictingVals, conflictingVoters, conflictingPrivVals := types.RandVoterSet(nValidators, validatorPower)
 	trustedHeader := makeHeaderRandom(height)
 	trustedHeader.Time = defaultEvidenceTime
 
 	conflictingHeader := makeHeaderRandom(height)
-	conflictingHeader.ValidatorsHash = conflictingVals.Hash()
+	conflictingHeader.VotersHash = conflictingVals.Hash()
 
-	trustedHeader.ValidatorsHash = conflictingHeader.ValidatorsHash
-	trustedHeader.NextValidatorsHash = conflictingHeader.NextValidatorsHash
+	trustedHeader.VotersHash = conflictingHeader.VotersHash
+	trustedHeader.NextVotersHash = conflictingHeader.NextVotersHash
 	trustedHeader.ConsensusHash = conflictingHeader.ConsensusHash
 	trustedHeader.AppHash = conflictingHeader.AppHash
 	trustedHeader.LastResultsHash = conflictingHeader.LastResultsHash
@@ -289,7 +289,7 @@ func TestCheckEvidenceWithLightClientAttack(t *testing.T) {
 	// for simplicity we are simulating a duplicate vote attack where all the validators in the
 	// conflictingVals set voted twice
 	blockID := makeBlockID(conflictingHeader.Hash(), 1000, []byte("partshash"))
-	voteSet := types.NewVoteSet(evidenceChainID, height, 1, tmproto.SignedMsgType(2), conflictingVals)
+	voteSet := types.NewVoteSet(evidenceChainID, height, 1, tmproto.SignedMsgType(2), conflictingVoters)
 	commit, err := types.MakeCommit(blockID, height, 1, voteSet, conflictingPrivVals, defaultEvidenceTime)
 	require.NoError(t, err)
 	ev := &types.LightClientAttackEvidence{
@@ -299,6 +299,7 @@ func TestCheckEvidenceWithLightClientAttack(t *testing.T) {
 				Commit: commit,
 			},
 			ValidatorSet: conflictingVals,
+			VoterSet:     conflictingVoters,
 		},
 		CommonHeight:        10,
 		TotalVotingPower:    int64(nValidators) * validatorPower,
@@ -307,7 +308,7 @@ func TestCheckEvidenceWithLightClientAttack(t *testing.T) {
 	}
 
 	trustedBlockID := makeBlockID(trustedHeader.Hash(), 1000, []byte("partshash"))
-	trustedVoteSet := types.NewVoteSet(evidenceChainID, height, 1, tmproto.SignedMsgType(2), conflictingVals)
+	trustedVoteSet := types.NewVoteSet(evidenceChainID, height, 1, tmproto.SignedMsgType(2), conflictingVoters)
 	trustedCommit, err := types.MakeCommit(trustedBlockID, height, 1, trustedVoteSet, conflictingPrivVals,
 		defaultEvidenceTime)
 	require.NoError(t, err)
@@ -401,7 +402,7 @@ func initializeStateFromValidatorSet(valSet *types.ValidatorSet, height int64) s
 		LastBlockTime:               defaultEvidenceTime,
 		Validators:                  valSet,
 		NextValidators:              valSet.Copy(),
-		LastValidators:              valSet,
+		LastVoters:                  types.ToVoterAll(valSet),
 		LastHeightValidatorsChanged: 1,
 		ConsensusParams: tmproto.ConsensusParams{
 			Block: tmproto.BlockParams{
@@ -450,7 +451,7 @@ func initializeBlockStore(db dbm.DB, state sm.State, valAddr []byte) *store.Bloc
 		lastCommit := makeCommit(i-1, valAddr)
 		proof := state.MakeHashMessage(round)
 		block, _ := state.MakeBlock(i, []types.Tx{}, lastCommit, nil,
-			types.SelectProposer(state.Validators, proof, i, round).Address, round, proof)
+			state.Validators.SelectProposer(proof, i, round).Address, round, proof)
 		block.Header.Time = defaultEvidenceTime.Add(time.Duration(i) * time.Minute)
 		block.Header.Version = tmversion.Consensus{Block: version.BlockProtocol, App: 1}
 		const parts = 1

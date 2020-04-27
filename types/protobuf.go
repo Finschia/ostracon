@@ -44,11 +44,11 @@ func (tm2pb) Header(header *Header) tmproto.Header {
 		LastCommitHash: header.LastCommitHash,
 		DataHash:       header.DataHash,
 
-		ValidatorsHash:     header.ValidatorsHash,
-		NextValidatorsHash: header.NextValidatorsHash,
-		ConsensusHash:      header.ConsensusHash,
-		AppHash:            header.AppHash,
-		LastResultsHash:    header.LastResultsHash,
+		VotersHash:      header.VotersHash,
+		NextVotersHash:  header.NextVotersHash,
+		ConsensusHash:   header.ConsensusHash,
+		AppHash:         header.AppHash,
+		LastResultsHash: header.LastResultsHash,
 
 		EvidenceHash:    header.EvidenceHash,
 		ProposerAddress: header.ProposerAddress,

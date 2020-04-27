@@ -1,0 +1,325 @@
+package types
+
+import (
+	"github.com/stretchr/testify/require"
+	"github.com/tendermint/tendermint/crypto/ed25519"
+	tmmath "github.com/tendermint/tendermint/libs/math"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	"math"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/tendermint/tendermint/crypto/vrf"
+	tmtime "github.com/tendermint/tendermint/types/time"
+)
+
+//-------------------------------------------------------------------
+
+// Check VerifyCommit, VerifyCommitLight and VerifyCommitLightTrusting basic
+// verification.
+func TestVoterSet_VerifyCommit_All(t *testing.T) {
+	var (
+		privKey = ed25519.GenPrivKey()
+		pubKey  = privKey.PubKey()
+		v1      = NewValidator(pubKey, 1000)
+		vset    = NewVoterSet([]*Validator{v1})
+
+		chainID = "Lalande21185"
+	)
+
+	vote := examplePrecommit()
+	vote.ValidatorAddress = pubKey.Address()
+	v := vote.ToProto()
+	sig, err := privKey.Sign(VoteSignBytes(chainID, v))
+	require.NoError(t, err)
+	vote.Signature = sig
+
+	commit := NewCommit(vote.Height, vote.Round, vote.BlockID, []CommitSig{vote.CommitSig()})
+
+	vote2 := *vote
+	sig2, err := privKey.Sign(VoteSignBytes("EpsilonEridani", v))
+	require.NoError(t, err)
+	vote2.Signature = sig2
+
+	testCases := []struct {
+		description string
+		chainID     string
+		blockID     BlockID
+		height      int64
+		commit      *Commit
+		expErr      bool
+	}{
+		{"good", chainID, vote.BlockID, vote.Height, commit, false},
+
+		{"wrong signature (#0)", "EpsilonEridani", vote.BlockID, vote.Height, commit, true},
+		{"wrong block ID", chainID, makeBlockIDRandom(), vote.Height, commit, true},
+		{"wrong height", chainID, vote.BlockID, vote.Height - 1, commit, true},
+
+		{"wrong set size: 1 vs 0", chainID, vote.BlockID, vote.Height,
+			NewCommit(vote.Height, vote.Round, vote.BlockID, []CommitSig{}), true},
+
+		{"wrong set size: 1 vs 2", chainID, vote.BlockID, vote.Height,
+			NewCommit(vote.Height, vote.Round, vote.BlockID,
+				[]CommitSig{vote.CommitSig(), {BlockIDFlag: BlockIDFlagAbsent}}), true},
+
+		{"insufficient voting power: got 0, needed more than 666", chainID, vote.BlockID, vote.Height,
+			NewCommit(vote.Height, vote.Round, vote.BlockID, []CommitSig{{BlockIDFlag: BlockIDFlagAbsent}}), true},
+
+		{"wrong signature (#0)", chainID, vote.BlockID, vote.Height,
+			NewCommit(vote.Height, vote.Round, vote.BlockID, []CommitSig{vote2.CommitSig()}), true},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.description, func(t *testing.T) {
+			err := vset.VerifyCommit(tc.chainID, tc.blockID, tc.height, tc.commit)
+			if tc.expErr {
+				if assert.Error(t, err, "VerifyCommit") {
+					assert.Contains(t, err.Error(), tc.description, "VerifyCommit")
+				}
+			} else {
+				assert.NoError(t, err, "VerifyCommit")
+			}
+
+			err = vset.VerifyCommitLight(tc.chainID, tc.blockID, tc.height, tc.commit)
+			if tc.expErr {
+				if assert.Error(t, err, "VerifyCommitLight") {
+					assert.Contains(t, err.Error(), tc.description, "VerifyCommitLight")
+				}
+			} else {
+				assert.NoError(t, err, "VerifyCommitLight")
+			}
+		})
+	}
+}
+
+func TestVoterSet_VerifyCommit_CheckAllSignatures(t *testing.T) {
+	var (
+		chainID = "test_chain_id"
+		h       = int64(3)
+		blockID = makeBlockIDRandom()
+	)
+
+	voteSet, _, voterSet, vals := randVoteSet(h, 0, tmproto.PrecommitType, 4, 10)
+	commit, err := MakeCommit(blockID, h, 0, voteSet, vals, time.Now())
+	require.NoError(t, err)
+
+	// malleate 4th signature
+	vote := voteSet.GetByIndex(3)
+	v := vote.ToProto()
+	err = vals[3].SignVote("CentaurusA", v)
+	require.NoError(t, err)
+	vote.Signature = v.Signature
+	commit.Signatures[3] = vote.CommitSig()
+
+	err = voterSet.VerifyCommit(chainID, blockID, h, commit)
+	if assert.Error(t, err) {
+		assert.Contains(t, err.Error(), "wrong signature (#3)")
+	}
+}
+
+func TestVoterSet_VerifyCommitLight_ReturnsAsSoonAsMajorityOfVotingPowerSigned(t *testing.T) {
+	var (
+		chainID = "test_chain_id"
+		h       = int64(3)
+		blockID = makeBlockIDRandom()
+	)
+
+	voteSet, _, voterSet, vals := randVoteSet(h, 0, tmproto.PrecommitType, 4, 10)
+	commit, err := MakeCommit(blockID, h, 0, voteSet, vals, time.Now())
+	require.NoError(t, err)
+
+	// malleate 4th signature (3 signatures are enough for 2/3+)
+	vote := voteSet.GetByIndex(3)
+	v := vote.ToProto()
+	err = vals[3].SignVote("CentaurusA", v)
+	require.NoError(t, err)
+	vote.Signature = v.Signature
+	commit.Signatures[3] = vote.CommitSig()
+
+	err = voterSet.VerifyCommitLight(chainID, blockID, h, commit)
+	assert.NoError(t, err)
+}
+
+func TestVoterSet_VerifyCommitLightTrusting_ReturnsAsSoonAsTrustLevelOfVotingPowerSigned(t *testing.T) {
+	var (
+		chainID = "test_chain_id"
+		h       = int64(3)
+		blockID = makeBlockIDRandom()
+	)
+
+	voteSet, _, voterSet, vals := randVoteSet(h, 0, tmproto.PrecommitType, 4, 10)
+	commit, err := MakeCommit(blockID, h, 0, voteSet, vals, time.Now())
+	require.NoError(t, err)
+
+	// malleate 3rd signature (2 signatures are enough for 1/3+ trust level)
+	vote := voteSet.GetByIndex(2)
+	v := vote.ToProto()
+	err = vals[2].SignVote("CentaurusA", v)
+	require.NoError(t, err)
+	vote.Signature = v.Signature
+	commit.Signatures[2] = vote.CommitSig()
+
+	err = voterSet.VerifyCommitLightTrusting(chainID, commit, tmmath.Fraction{Numerator: 1, Denominator: 3})
+	assert.NoError(t, err)
+}
+
+func TestValidatorSet_VerifyCommitLightTrusting(t *testing.T) {
+	var (
+		blockID                       = makeBlockIDRandom()
+		voteSet, _, voterSet, vals    = randVoteSet(1, 1, tmproto.PrecommitType, 6, 1)
+		commit, err                   = MakeCommit(blockID, 1, 1, voteSet, vals, time.Now())
+		_, newVoterSet, _             = RandVoterSet(2, 1)
+	)
+	require.NoError(t, err)
+
+	testCases := []struct {
+		voterSet *VoterSet
+		err    bool
+	}{
+		// good
+		0: {
+			voterSet: voterSet,
+			err:    false,
+		},
+		// bad - no overlap between voter sets
+		1: {
+			voterSet: newVoterSet,
+			err:    true,
+		},
+		// good - first two are different but the rest of the same -> >1/3
+		2: {
+			voterSet: NewVoterSet(append(newVoterSet.Voters, voterSet.Voters...)),
+			err:    false,
+		},
+	}
+
+	for _, tc := range testCases {
+		err = tc.voterSet.VerifyCommitLightTrusting("test_chain_id", commit,
+			tmmath.Fraction{Numerator: 1, Denominator: 3})
+		if tc.err {
+			assert.Error(t, err)
+		} else {
+			assert.NoError(t, err)
+		}
+	}
+}
+
+func TestValidatorSet_VerifyCommitLightTrustingErrorsOnOverflow(t *testing.T) {
+	var (
+		blockID                    = makeBlockIDRandom()
+		voteSet, _, voterSet, vals = randVoteSet(1, 1, tmproto.PrecommitType, 1, MaxTotalVotingPower)
+		commit, err                = MakeCommit(blockID, 1, 1, voteSet, vals, time.Now())
+	)
+	require.NoError(t, err)
+
+	err = voterSet.VerifyCommitLightTrusting("test_chain_id", commit,
+		tmmath.Fraction{Numerator: 25, Denominator: 55})
+	if assert.Error(t, err) {
+		assert.Contains(t, err.Error(), "int64 overflow")
+	}
+}
+
+func TestSelectVoter(t *testing.T) {
+	MaxVoters = 29
+	valSet := randValidatorSet(30)
+	for i := 0; i < 10000; i++ {
+		voterSet := SelectVoter(valSet, []byte{byte(i)})
+		assert.True(t, math.Abs(float64(valSet.TotalVotingPower()-voterSet.TotalVotingPower())) <= 10)
+	}
+}
+
+func toGenesisValidators(vals []*Validator) []GenesisValidator {
+	genVals := make([]GenesisValidator, len(vals))
+	for i, val := range vals {
+		genVals[i] = GenesisValidator{Address: val.Address, PubKey: val.PubKey, Power: val.VotingPower, Name: "name"}
+	}
+	return genVals
+}
+
+/**
+The result when we set LoopCount to 10000
+  << min power=100, max power=100, actual average voters=10, max voters=10 >> largest gap: 0.040000
+  << min power=100, max power=100, actual average voters=20, max voters=20 >> largest gap: 0.030000
+  << min power=100, max power=100, actual average voters=29, max voters=29 >> largest gap: 0.010000
+  << min power=100, max power=10000, actual average voters=10, max voters=10 >> largest gap: 0.183673
+  << min power=100, max power=10000, actual average voters=20, max voters=20 >> largest gap: 0.128788
+  << min power=100, max power=10000, actual average voters=28, max voters=29 >> largest gap: 0.304348
+  << min power=100, max power=1000000, actual average voters=10, max voters=10 >> largest gap: 0.093158
+  << min power=100, max power=1000000, actual average voters=20, max voters=20 >> largest gap: 0.094404
+  << min power=100, max power=1000000, actual average voters=28, max voters=29 >> largest gap: 0.194133
+  << min power=100, max power=100000000, actual average voters=10, max voters=10 >> largest gap: 0.076536
+  << min power=100, max power=100000000, actual average voters=20, max voters=20 >> largest gap: 0.076547
+  << min power=100, max power=100000000, actual average voters=29, max voters=29 >> largest gap: 0.147867
+*/
+func TestSelectVoterReasonableVotingPower(t *testing.T) {
+	// Raise LoopCount to get smaller gap over 10000. But large LoopCount takes a lot of time
+	const LoopCount = 100
+	for minMaxRate := 1; minMaxRate <= 1000000; minMaxRate *= 100 {
+		findLargestVotingPowerGap(t, LoopCount, minMaxRate, 10)
+		findLargestVotingPowerGap(t, LoopCount, minMaxRate, 20)
+		findLargestVotingPowerGap(t, LoopCount, minMaxRate, 29)
+	}
+}
+
+func findLargestVotingPowerGap(t *testing.T, loopCount int, minMaxRate int, maxVoters int) {
+	valSet, privMap := randValidatorSetWithMinMax(30, 100, 100*int64(minMaxRate))
+	genDoc := &GenesisDoc{
+		GenesisTime: tmtime.Now(),
+		ChainID:     "tendermint-test",
+		Validators:  toGenesisValidators(valSet.Validators),
+	}
+	hash := genDoc.Hash()
+	MaxVoters = maxVoters
+	accumulation := make(map[string]int64)
+	totalVoters := 0
+	for i := 0; i < loopCount; i++ {
+		voterSet := SelectVoter(valSet, hash)
+		for _, voter := range voterSet.Voters {
+			accumulation[voter.Address.String()] += voter.VotingPower
+		}
+		proposer := valSet.SelectProposer(hash, int64(i), 0)
+		message := MakeRoundHash(hash, int64(i), 0)
+		proof, _ := privMap[proposer.Address.String()].GenerateVRFProof(message)
+		hash, _ = vrf.ProofToHash(proof)
+		totalVoters += voterSet.Size()
+	}
+	largestGap := float64(0)
+	for _, val := range valSet.Validators {
+		acc := accumulation[val.Address.String()] / int64(loopCount)
+		if math.Abs(float64(val.VotingPower-acc))/float64(val.VotingPower) > largestGap {
+			largestGap = math.Abs(float64(val.VotingPower-acc)) / float64(val.VotingPower)
+		}
+	}
+	t.Logf("<< min power=100, max power=%d, actual average voters=%d, max voters=%d >> largest gap: %f",
+		100*minMaxRate, totalVoters/loopCount, maxVoters, largestGap)
+}
+
+/**
+  This test is a test to see the difference between MaxVoters and the actual number of elected voters.
+  This test is to identify the minimum MaxVoters that cannot be selected as much as MaxVoters by fixing MaxSamplingLoopTry.
+  If MaxSamplingLoopTry is very large then actual elected voters is up to MaxVoters,
+  but large MaxSamplingLoopTry takes too much time.
+*/
+func TestSelectVoterMaxVarious(t *testing.T) {
+	hash := 0
+	for minMaxRate := 1; minMaxRate <= 100000000; minMaxRate *= 10000 {
+		t.Logf("<<< min: 100, max: %d >>>", 100*minMaxRate)
+		for validators := 16; validators <= 256; validators *= 4 {
+			for voters := 1; voters <= validators; voters += 10 {
+				MaxVoters = voters
+				valSet, _ := randValidatorSetWithMinMax(validators, 100, 100*int64(minMaxRate))
+				voterSet := SelectVoter(valSet, []byte{byte(hash)})
+				assert.True(t, int(math.Abs(float64(valSet.TotalVotingPower()-voterSet.TotalVotingPower()))) <= voters)
+				if voterSet.Size() < MaxVoters {
+					t.Logf("Cannot elect voters up to MaxVoters: validators=%d, MaxVoters=%d, actual voters=%d",
+						validators, voters, voterSet.Size())
+					break
+				}
+				hash++
+			}
+		}
+	}
+}

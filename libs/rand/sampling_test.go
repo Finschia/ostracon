@@ -9,6 +9,7 @@ import (
 
 type Element struct {
 	ID     uint32
+	Win    uint64
 	Weight uint64
 }
 
@@ -22,6 +23,10 @@ func (e *Element) LessThan(other Candidate) bool {
 		panic("incompatible type")
 	}
 	return e.ID < o.ID
+}
+
+func (e *Element) IncreaseWin() {
+	e.Win++
 }
 
 func TestRandomSamplingWithPriority(t *testing.T) {
@@ -84,10 +89,70 @@ func TestRandomSamplingPanicCase(t *testing.T) {
 	}
 }
 
+func numberOfWinnersAndWins(candidate []Candidate) (winners uint64, totalWins uint64) {
+	for _, c := range candidate {
+		if c.(*Element).Win > 0 {
+			winners++
+			totalWins += c.(*Element).Win
+		}
+	}
+	return
+}
+
+func TestRandomSamplingToMax(t *testing.T) {
+	candidates1 := newCandidates(100, func(i int) uint64 { return uint64(i) })
+	voters1 := RandomSamplingToMax(0, candidates1, 10, sumTotalPriority(candidates1))
+	winners, totalWins := numberOfWinnersAndWins(candidates1)
+	if winners != 10 {
+		t.Errorf(fmt.Sprintf("unexpected sample size: %d", winners))
+	}
+	if voters1 != totalWins {
+		t.Errorf(fmt.Sprintf("unexpected totalWins: %d", voters1))
+	}
+
+	candidates2 := newCandidates(100, func(i int) uint64 { return uint64(i) })
+	_ = RandomSamplingToMax(0, candidates2, 10, sumTotalPriority(candidates2))
+
+	if !sameCandidates(candidates1, candidates2) {
+		t.Error("The two voter sets elected by the same seed are different.")
+	}
+
+	candidates3 := newCandidates(0, func(i int) uint64 { return uint64(i) })
+	voters3 := RandomSamplingToMax(0, candidates3, 0, sumTotalPriority(candidates3))
+	if voters3 != 0 {
+		t.Errorf(fmt.Sprintf("unexpected totalWins: %d", voters3))
+	}
+}
+
+func TestRandomSamplingToMaxPanic(t *testing.T) {
+	type Case struct {
+		Candidates    []Candidate
+		TotalPriority uint64
+	}
+
+	cases := [...]*Case{
+		// specified total priority is greater than actual one
+		{newCandidates(10, func(i int) uint64 { return 1 }), 50000},
+		// limitCandidates is greater than the number of candidates
+		{newCandidates(5, func(i int) uint64 { return 10 }), 5},
+	}
+
+	for i, c := range cases {
+		func() {
+			defer func() {
+				if recover() == nil {
+					t.Errorf("expected panic didn't happen in case %d", i+1)
+				}
+			}()
+			RandomSamplingToMax(0, c.Candidates, 10, c.TotalPriority)
+		}()
+	}
+}
+
 func newCandidates(length int, prio func(int) uint64) (candidates []Candidate) {
 	candidates = make([]Candidate, length)
 	for i := 0; i < length; i++ {
-		candidates[i] = &Element{uint32(i), prio(i)}
+		candidates[i] = &Element{uint32(i), 0, prio(i)}
 	}
 	return
 }
@@ -100,6 +165,9 @@ func sameCandidates(c1 []Candidate, c2 []Candidate) bool {
 	s.Slice(c2, func(i, j int) bool { return c2[i].LessThan(c2[j]) })
 	for i := 0; i < len(c1); i++ {
 		if c1[i].(*Element).ID != c2[i].(*Element).ID {
+			return false
+		}
+		if c1[i].(*Element).Win != c2[i].(*Element).Win {
 			return false
 		}
 	}

@@ -54,8 +54,8 @@ type Store interface {
 	LoadFromDBOrGenesisDoc(*types.GenesisDoc) (State, error)
 	// Load loads the current state of the blockchain
 	Load() (State, error)
-	// LoadValidators loads the validator set at a given height
-	LoadValidators(int64) (*types.ValidatorSet, error)
+	// LoadValidators loads the validator/voter set at a given height
+	LoadValidators(int64) (*types.ValidatorSet, *types.VoterSet, error)
 	// LoadABCIResponses loads the abciResponse for a given height
 	LoadABCIResponses(int64) (*tmstate.ABCIResponses, error)
 	// LoadConsensusParams loads the consensus params for a given height
@@ -163,12 +163,12 @@ func (store dbStore) save(state State, key []byte) error {
 		nextHeight = state.InitialHeight
 		// This extra logic due to Tendermint validator set changes being delayed 1 block.
 		// It may get overwritten due to InitChain validator updates.
-		if err := store.saveValidatorsInfo(nextHeight, nextHeight, state.Validators); err != nil {
+		if err := store.saveValidatorsInfo(nextHeight, nextHeight, []byte{}, state.Validators); err != nil {
 			return err
 		}
 	}
 	// Save next validators.
-	if err := store.saveValidatorsInfo(nextHeight+1, state.LastHeightValidatorsChanged, state.NextValidators); err != nil {
+	if err := store.saveValidatorsInfo(nextHeight+1, state.LastHeightValidatorsChanged, state.LastProofHash, state.NextValidators); err != nil {
 		return err
 	}
 
@@ -184,24 +184,26 @@ func (store dbStore) save(state State, key []byte) error {
 	return nil
 }
 
-// BootstrapState saves a new state, used e.g. by state sync when starting from non-zero height.
+// Bootstrap saves a new state, used e.g. by state sync when starting from non-zero height.
 func (store dbStore) Bootstrap(state State) error {
 	height := state.LastBlockHeight + 1
 	if height == 1 {
 		height = state.InitialHeight
 	}
 
-	if height > 1 && !state.LastValidators.IsNilOrEmpty() {
-		if err := store.saveValidatorsInfo(height-1, height-1, state.LastValidators); err != nil {
+	if height > 1 && !state.LastVoters.IsNilOrEmpty() {
+		// TODO 🏺Can apply empty bytes for the ProofHash corresponding to LastValidators? and LastVoters as LastValidators?
+		vals := types.NewValidatorSet(state.LastVoters.Voters)
+		if err := store.saveValidatorsInfo(height-1, height-1, []byte{}, vals); err != nil {
 			return err
 		}
 	}
 
-	if err := store.saveValidatorsInfo(height, height, state.Validators); err != nil {
+	if err := store.saveValidatorsInfo(height, height, []byte{}, state.Validators); err != nil {
 		return err
 	}
 
-	if err := store.saveValidatorsInfo(height+1, height+1, state.NextValidators); err != nil {
+	if err := store.saveValidatorsInfo(height+1, height+1, state.LastProofHash, state.NextValidators); err != nil {
 		return err
 	}
 
@@ -260,7 +262,7 @@ func (store dbStore) PruneStates(from int64, to int64) error {
 		if keepVals[h] {
 			v, err := loadValidatorsInfo(store.db, h)
 			if err != nil || v.ValidatorSet == nil {
-				vip, err := store.LoadValidators(h)
+				vip, _, err := store.LoadValidators(h)
 				if err != nil {
 					return err
 				}
@@ -414,18 +416,19 @@ func (store dbStore) SaveABCIResponses(height int64, abciResponses *tmstate.ABCI
 
 //-----------------------------------------------------------------------------
 
-// LoadValidators loads the ValidatorSet for a given height.
+// LoadValidators loads the ValidatorSet/VoterSet for a given height.
 // Returns ErrNoValSetForHeight if the validator set can't be found for this height.
-func (store dbStore) LoadValidators(height int64) (*types.ValidatorSet, error) {
+func (store dbStore) LoadValidators(height int64) (*types.ValidatorSet, *types.VoterSet, error) {
 	valInfo, err := loadValidatorsInfo(store.db, height)
 	if err != nil {
-		return nil, ErrNoValSetForHeight{height}
+		return nil, nil, ErrNoValSetForHeight{height}
 	}
 	if valInfo.ValidatorSet == nil {
+		proofHash := valInfo.ProofHash // store proof hash of the height
 		lastStoredHeight := lastStoredHeightFor(height, valInfo.LastHeightChanged)
 		valInfo2, err := loadValidatorsInfo(store.db, lastStoredHeight)
 		if err != nil || valInfo2.ValidatorSet == nil {
-			return nil,
+			return nil, nil,
 				fmt.Errorf("couldn't find validators at height %d (height %d was originally requested): %w",
 					lastStoredHeight,
 					height,
@@ -435,25 +438,25 @@ func (store dbStore) LoadValidators(height int64) (*types.ValidatorSet, error) {
 
 		vs, err := types.ValidatorSetFromProto(valInfo2.ValidatorSet)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		vs.IncrementProposerPriority(tmmath.SafeConvertInt32(height - lastStoredHeight)) // mutate
 		vi2, err := vs.ToProto()
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		valInfo2.ValidatorSet = vi2
 		valInfo = valInfo2
+		valInfo.ProofHash = proofHash // reload proof again
 	}
 
 	vip, err := types.ValidatorSetFromProto(valInfo.ValidatorSet)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-
-	return vip, nil
+	return vip, types.SelectVoter(vip, valInfo.ProofHash), nil
 }
 
 func lastStoredHeightFor(height, lastHeightChanged int64) int64 {
@@ -489,12 +492,13 @@ func loadValidatorsInfo(db dbm.DB, height int64) (*tmstate.ValidatorsInfo, error
 // `height` is the effective height for which the validator is responsible for
 // signing. It should be called from s.Save(), right before the state itself is
 // persisted.
-func (store dbStore) saveValidatorsInfo(height, lastHeightChanged int64, valSet *types.ValidatorSet) error {
+func (store dbStore) saveValidatorsInfo(height, lastHeightChanged int64, proofHash []byte, valSet *types.ValidatorSet) error {
 	if lastHeightChanged > height {
 		return errors.New("lastHeightChanged cannot be greater than ValidatorsInfo height")
 	}
 	valInfo := &tmstate.ValidatorsInfo{
 		LastHeightChanged: lastHeightChanged,
+		ProofHash:         proofHash,
 	}
 	// Only persist validator set if it was updated or checkpoint height (see
 	// valSetCheckpointInterval) is reached.

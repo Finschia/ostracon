@@ -25,24 +25,28 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 		divergenceHeight  = int64(6)
 		primaryHeaders    = make(map[int64]*types.SignedHeader, latestHeight)
 		primaryValidators = make(map[int64]*types.ValidatorSet, latestHeight)
+		primaryVoters     = make(map[int64]*types.VoterSet, latestHeight)
 	)
 
-	witnessHeaders, witnessValidators, chainKeys := genMockNodeWithKeys(chainID, latestHeight, valSize, 2, bTime)
-	witness := mockp.New(chainID, witnessHeaders, witnessValidators)
+	witnessHeaders, witnessValidators, witnessVoters, chainKeys := genMockNodeWithKeys(chainID, latestHeight, valSize, 2, bTime)
+	witness := mockp.New(chainID, witnessHeaders, witnessVoters)
 	forgedKeys := chainKeys[divergenceHeight-1].ChangeKeys(3) // we change 3 out of the 5 validators (still 2/5 remain)
 	forgedVals := forgedKeys.ToValidators(2, 0)
+	forgedVoters := types.ToVoterAll(forgedVals)
 
 	for height := int64(1); height <= latestHeight; height++ {
 		if height < divergenceHeight {
 			primaryHeaders[height] = witnessHeaders[height]
 			primaryValidators[height] = witnessValidators[height]
+			primaryVoters[height] = witnessVoters[height]
 			continue
 		}
 		primaryHeaders[height] = forgedKeys.GenSignedHeader(chainID, height, bTime.Add(time.Duration(height)*time.Minute),
-			nil, forgedVals, forgedVals, hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(forgedKeys))
+			nil, forgedVoters, forgedVoters, hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(forgedKeys))
 		primaryValidators[height] = forgedVals
+		primaryVoters[height] = forgedVoters
 	}
-	primary := mockp.New(chainID, primaryHeaders, primaryValidators)
+	primary := mockp.New(chainID, primaryHeaders, primaryVoters)
 
 	c, err := light.NewClient(
 		ctx,
@@ -72,6 +76,7 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 		ConflictingBlock: &types.LightBlock{
 			SignedHeader: primaryHeaders[10],
 			ValidatorSet: primaryValidators[10],
+			VoterSet:     primaryVoters[10],
 		},
 		CommonHeight: 4,
 	}
@@ -83,6 +88,7 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 		ConflictingBlock: &types.LightBlock{
 			SignedHeader: witnessHeaders[7],
 			ValidatorSet: witnessValidators[7],
+			VoterSet:     witnessVoters[7],
 		},
 		CommonHeight: 4,
 	}
@@ -105,26 +111,29 @@ func TestLightClientAttackEvidence_Equivocation(t *testing.T) {
 			divergenceHeight  = int64(6)
 			primaryHeaders    = make(map[int64]*types.SignedHeader, latestHeight)
 			primaryValidators = make(map[int64]*types.ValidatorSet, latestHeight)
+			primaryVoters     = make(map[int64]*types.VoterSet, latestHeight)
 		)
 		// validators don't change in this network (however we still use a map just for convenience)
-		witnessHeaders, witnessValidators, chainKeys := genMockNodeWithKeys(chainID, latestHeight+2, valSize, 2, bTime)
-		witness := mockp.New(chainID, witnessHeaders, witnessValidators)
+		witnessHeaders, witnessValidators, witnessVoters, chainKeys := genMockNodeWithKeys(chainID, latestHeight+2, valSize, 2, bTime)
+		witness := mockp.New(chainID, witnessHeaders, witnessVoters)
 
 		for height := int64(1); height <= latestHeight; height++ {
 			if height < divergenceHeight {
 				primaryHeaders[height] = witnessHeaders[height]
 				primaryValidators[height] = witnessValidators[height]
+				primaryVoters[height] = witnessVoters[height]
 				continue
 			}
 			// we don't have a network partition so we will make 4/5 (greater than 2/3) malicious and vote again for
 			// a different block (which we do by adding txs)
 			primaryHeaders[height] = chainKeys[height].GenSignedHeader(chainID, height,
 				bTime.Add(time.Duration(height)*time.Minute), []types.Tx{[]byte("abcd")},
-				witnessValidators[height], witnessValidators[height+1], hash("app_hash"),
+				witnessVoters[height], witnessVoters[height+1], hash("app_hash"),
 				hash("cons_hash"), hash("results_hash"), 0, len(chainKeys[height])-1)
 			primaryValidators[height] = witnessValidators[height]
+			primaryVoters[height] = witnessVoters[height]
 		}
-		primary := mockp.New(chainID, primaryHeaders, primaryValidators)
+		primary := mockp.New(chainID, primaryHeaders, primaryVoters)
 
 		c, err := light.NewClient(
 			ctx,
@@ -156,6 +165,7 @@ func TestLightClientAttackEvidence_Equivocation(t *testing.T) {
 			ConflictingBlock: &types.LightBlock{
 				SignedHeader: primaryHeaders[divergenceHeight],
 				ValidatorSet: primaryValidators[divergenceHeight],
+				VoterSet:     primaryVoters[divergenceHeight],
 			},
 			CommonHeight: divergenceHeight,
 		}
@@ -165,6 +175,7 @@ func TestLightClientAttackEvidence_Equivocation(t *testing.T) {
 			ConflictingBlock: &types.LightBlock{
 				SignedHeader: witnessHeaders[divergenceHeight],
 				ValidatorSet: witnessValidators[divergenceHeight],
+				VoterSet:     primaryVoters[divergenceHeight],
 			},
 			CommonHeight: divergenceHeight,
 		}
