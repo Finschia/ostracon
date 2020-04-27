@@ -202,7 +202,7 @@ in the ConsensusParsm in genesis.
 
 ### Go API
 
-See the [CHANGELOG](CHANGELOG.md). These are relatively straight forward.
+See the [CHANGELOG](CHANGELOG_OF_TENDERMINT.md). These are relatively straight forward.
 
 ## v0.30.0
 
@@ -249,7 +249,7 @@ Finally, the proposer selection algorithm continues to evolve. See the
 [work-in-progress
 specification](https://github.com/tendermint/tendermint/pull/3140).
 
-For everything else, please see the [CHANGELOG](./CHANGELOG.md#v0.29.0).
+For everything else, please see the [CHANGELOG](CHANGELOG_OF_TENDERMINT.md#v0.29.0).
 
 ## v0.28.0
 

@@ -59,6 +59,7 @@ commands:
 jobs:
   setup_dependencies:
     executor: golang
+    resource_class: large
     steps:
       - checkout_with_submodules
       - restore_cache:
@@ -117,12 +118,14 @@ jobs:
 
   test_apps:
     executor: golang
+    resource_class: large
     steps:
       - run_test:
           script_path: test/app/test.sh
 
   test_persistence:
     executor: golang
+    resource_class: large
     steps:
       - run_test:
           script_path: test/persist/test_failure_indices.sh
@@ -140,7 +143,7 @@ jobs:
           name: "Restore go module cache"
           keys:
             - go-mod-v2-{{ checksum "go.sum" }}
-      - make_libsodium
+#      - make_libsodium
       - run:
           name: "Run tests"
           command: |
@@ -158,29 +161,28 @@ jobs:
       - store_artifacts:
           path: /tmp/logs
 
-# TODO We need to replace the docker image with the image that adds libsodium library.
-#  localnet:
-#    working_directory: /home/circleci/.go_workspace/src/github.com/tendermint/tendermint
-#    machine:
-#      image: circleci/classic:latest
-#    environment:
-#      GOBIN: /home/circleci/.go_workspace/bin
-#      GOPATH: /home/circleci/.go_workspace/
-#      GOOS: linux
-#      GOARCH: amd64
-#    parallelism: 1
-#    steps:
-#      - checkout_with_submodules
-#      - make_libsodium
-#      - run:
-#          name: run localnet and exit on failure
-#          command: |
-#            set -x
-#            docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang make build-linux
-#            make localnet-start &
-#            ./scripts/localnet-blocks-test.sh 40 5 10 localhost
+  localnet:
+    working_directory: /home/circleci/.go_workspace/src/github.com/tendermint/tendermint
+    machine:
+      image: circleci/classic:latest
+    environment:
+      GOBIN: /home/circleci/.go_workspace/bin
+      GOPATH: /home/circleci/.go_workspace/
+      GOOS: linux
+      GOARCH: amd64
+    parallelism: 1
+    steps:
+      - checkout_with_submodules
+      - run:
+          name: run localnet and exit on failure
+          command: |
+            set -x
+            docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang:1.14.1-alpine /bin/sh -c "apk add --update make && make build-linux"
+            make localnet-start &
+            ./scripts/localnet-blocks-test.sh 40 5 10 localhost
 
   test_p2p:
+    resource_class: xlarge
     environment:
       GOBIN: /home/circleci/.go_workspace/bin
       GOPATH: /home/circleci/.go_workspace
@@ -198,32 +200,6 @@ jobs:
       - run: bash test/p2p/circleci.sh << parameters.ipv >>
       - store_artifacts:
           path: /home/circleci/project/test/p2p/logs
-
-# TODO We need to replace the docker image with the image that adds libsodium library.
-#  upload_coverage:
-#    executor: golang
-#    steps:
-#      - attach_workspace:
-#          at: /tmp/workspace
-#      - restore_cache:
-#          name: "Restore source code cache"
-#          keys:
-#            - go-src-v1-{{ .Revision }}
-#      - checkout
-#      - restore_cache:
-#          name: "Restore go module cache"
-#          keys:
-#            - go-mod-v2-{{ checksum "go.sum" }}
-#      - run:
-#          name: gather
-#          command: |
-#            echo "mode: atomic" > coverage.txt
-#            for prof in $(ls /tmp/workspace/profiles/); do
-#              tail -n +2 /tmp/workspace/profiles/"$prof" >> coverage.txt
-#            done
-#      - run:
-#          name: upload
-#          command: bash .circleci/codecov.sh -f coverage.txt
 
   deploy_docs:
     executor: docs
@@ -298,6 +274,21 @@ jobs:
 #          paths:
 #            - "*.zip"
 #            - "tendermint_linux_amd64"
+
+  lint:
+    executor: golang
+    parallelism: 1
+    steps:
+      - checkout
+      - restore_cache:
+          name: "Restore go modules cache"
+          keys:
+            - go-mod-v1-{{ checksum "go.sum" }}
+      - run:
+          name: "Run linter"
+          command: |
+            curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.23.8
+            make lint
 
   release_artifacts:
     executor: golang
@@ -423,6 +414,7 @@ workflows:
             branches:
               only:
                 - docs-theme-latest
+      - lint
       - setup_dependencies
       - test_abci_apps:
           requires:
@@ -440,16 +432,13 @@ workflows:
       - test_persistence:
           requires:
             - setup_dependencies
-#      - localnet:
-#          requires:
-#            - setup_dependencies
-      - test_p2p
+      - localnet:
+          requires:
+            - setup_dependencies
+#      - test_p2p
       - test_p2p:
             name: test_p2p_ipv6
             ipv: 6
-#      - upload_coverage:
-#          requires:
-#            - test_cover
       - reproducible_builds:
           filters:
             branches:

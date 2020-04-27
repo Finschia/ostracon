@@ -5,17 +5,23 @@ OUTPUT?=build/tendermint
 BUILD_TAGS?='tendermint'
 CGO_OPTPTION=0
 LIBSODIUM_TARGET=
+PREPARE_LIBSODIUM_TARGET=
 ifeq ($(LIBSODIUM), 1)
   BUILD_TAGS='libsodium tendermint'
   CGO_OPTPTION=1
   LIBSODIUM_TARGET=libsodium
+ifneq ($(OS), Windows_NT)
+ifeq ($(shell uname -s), Linux)
+  PREPARE_LIBSODIUM_TARGET=prepare-libsodium-linux
+endif
+endif
 endif
 LIBSODIM_BUILD_TAGS='libsodium tendermint'
 LD_FLAGS = -X github.com/tendermint/tendermint/version.GitCommit=`git rev-parse --short=8 HEAD` -s -w
 BUILD_FLAGS = -mod=readonly -ldflags "$(LD_FLAGS)"
 HTTPS_GIT := https://github.com/tendermint/tendermint.git
 
-all: check $(LIBSODIUM_TARGET) build test install
+all: check build test install
 .PHONY: all
 
 # The below include contains the tools.
@@ -26,15 +32,15 @@ include tests.mk
 ###                                Build Tendermint                        ###
 ###############################################################################
 
-build:
+build: $(LIBSODIUM_TARGET)
 	CGO_ENABLED=$(CGO_OPTION) go build $(BUILD_FLAGS) -tags $(BUILD_TAGS) -o $(OUTPUT) ./cmd/tendermint/
 .PHONY: build
 
-build_c:
+build_c: $(LIBSODIUM_TARGET)
 	CGO_ENABLED=$(CGO_OPTION) go build $(BUILD_FLAGS) -tags "$(BUILD_TAGS) cleveldb" -o $(OUTPUT) ./cmd/tendermint/
 .PHONY: build_c
 
-build_race:
+build_race: $(LIBSODIUM_TARGET)
 	CGO_ENABLED=$(CGO_OPTION) go build -race $(BUILD_FLAGS) -tags $(BUILD_TAGS) -o $(OUTPUT) ./cmd/tendermint
 .PHONY: build_race
 
@@ -90,7 +96,7 @@ install_abci:
 ###                              libsodium                                  ###
 ###############################################################################
 
-prepare_libsodium:
+prepare-libsodium-linux:
 	apt-get update && apt-get -y install libtool libboost-all-dev autoconf build-essential
 .PHONY: prepare_libsodium
 
@@ -165,7 +171,9 @@ fmt:
 
 lint:
 	@echo "--> Running linter"
-	@golangci-lint run
+	sh -c "$(CURDIR)/scripts/current_branch_lint.sh"
+	find . -name '*.go' -type f -not -path "*.git*" | xargs gofmt -d -s
+	go mod verify
 .PHONY: lint
 
 DESTINATION = ./index.html.md
@@ -207,7 +215,7 @@ build-docker:
 ###############################################################################
 
 # Build linux binary on other platforms
-build-linux: tools prepare_libsodium libsodium
+build-linux: tools $(PREPARE_LIBSODIUM_TARGET) $(LIBSODIUM_TARGET)
 	GOOS=linux GOARCH=amd64 $(MAKE) build
 .PHONY: build-linux
 

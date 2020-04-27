@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"time"
 
+	"github.com/tendermint/tendermint/crypto/vrf"
 	"github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
 	"github.com/tendermint/tendermint/version"
@@ -59,6 +60,9 @@ type State struct {
 	LastBlockID     types.BlockID
 	LastBlockTime   time.Time
 
+	// vrf hash from proof
+	LastProofHash []byte
+
 	// LastValidators is used to validate block.LastCommit.
 	// Validators are persisted to the database separately every time they change,
 	// so we can query for historical validator sets.
@@ -82,6 +86,10 @@ type State struct {
 	AppHash []byte
 }
 
+func (state State) MakeHashMessage(round int) []byte {
+	return types.MakeRoundHash(state.LastProofHash, state.LastBlockHeight, round)
+}
+
 // Copy makes a copy of the State for mutating.
 func (state State) Copy() State {
 	return State{
@@ -91,6 +99,8 @@ func (state State) Copy() State {
 		LastBlockHeight: state.LastBlockHeight,
 		LastBlockID:     state.LastBlockID,
 		LastBlockTime:   state.LastBlockTime,
+
+		LastProofHash: state.LastProofHash,
 
 		NextValidators:              state.NextValidators.Copy(),
 		Validators:                  state.Validators.Copy(),
@@ -134,6 +144,8 @@ func (state State) MakeBlock(
 	commit *types.Commit,
 	evidence []types.Evidence,
 	proposerAddress []byte,
+	round int,
+	proof vrf.Proof,
 ) (*types.Block, *types.PartSet) {
 
 	// Build base block with block data.
@@ -154,6 +166,8 @@ func (state State) MakeBlock(
 		state.Validators.Hash(), state.NextValidators.Hash(),
 		state.ConsensusParams.Hash(), state.AppHash, state.LastResultsHash,
 		proposerAddress,
+		round,
+		proof,
 	)
 
 	return block, block.MakePartSet(types.BlockPartSizeBytes)
@@ -227,7 +241,7 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 			validators[i] = types.NewValidator(val.PubKey, val.Power)
 		}
 		validatorSet = types.NewValidatorSet(validators)
-		nextValidatorSet = types.NewValidatorSet(validators).CopyIncrementProposerPriority(1)
+		nextValidatorSet = types.NewValidatorSet(validators)
 	}
 
 	return State{
@@ -237,6 +251,9 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 		LastBlockHeight: 0,
 		LastBlockID:     types.BlockID{},
 		LastBlockTime:   genDoc.GenesisTime,
+
+		// genesis block use the hash of GenesisDoc instead for the `LastProofHash`
+		LastProofHash: genDoc.Hash(),
 
 		NextValidators:              nextValidatorSet,
 		Validators:                  validatorSet,

@@ -2,6 +2,7 @@ package types
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 	"math"
 	"math/big"
@@ -10,7 +11,9 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/crypto/merkle"
+	"github.com/tendermint/tendermint/crypto/tmhash"
 	tmmath "github.com/tendermint/tendermint/libs/math"
+	tmrand "github.com/tendermint/tendermint/libs/rand"
 )
 
 const (
@@ -41,7 +44,6 @@ const (
 type ValidatorSet struct {
 	// NOTE: persisted via reflect, must be exported.
 	Validators []*Validator `json:"validators"`
-	Proposer   *Validator   `json:"proposer"`
 
 	// cached (unexported)
 	totalVotingPower int64
@@ -60,9 +62,6 @@ func NewValidatorSet(valz []*Validator) *ValidatorSet {
 	if err != nil {
 		panic(fmt.Sprintf("cannot create validator set: %s", err))
 	}
-	if len(valz) > 0 {
-		vals.IncrementProposerPriority(1)
-	}
 	return vals
 }
 
@@ -79,6 +78,8 @@ func (vals *ValidatorSet) CopyIncrementProposerPriority(times int) *ValidatorSet
 	return copy
 }
 
+// TODO The current random selection by VRF uses VotingPower, so the processing on ProposerPriority can be removed,
+// TODO but it remains for later verification of random selection based on ProposerPriority.
 // IncrementProposerPriority increments ProposerPriority of each validator and updates the
 // proposer. Panics if validator set is empty.
 // `times` must be positive.
@@ -97,13 +98,10 @@ func (vals *ValidatorSet) IncrementProposerPriority(times int) {
 	vals.RescalePriorities(diffMax)
 	vals.shiftByAvgProposerPriority()
 
-	var proposer *Validator
 	// Call IncrementProposerPriority(1) times times.
 	for i := 0; i < times; i++ {
-		proposer = vals.incrementProposerPriority()
+		_ = vals.incrementProposerPriority()
 	}
-
-	vals.Proposer = proposer
 }
 
 // RescalePriorities rescales the priorities such that the distance between the maximum and minimum
@@ -217,7 +215,6 @@ func validatorListCopy(valsList []*Validator) []*Validator {
 func (vals *ValidatorSet) Copy() *ValidatorSet {
 	return &ValidatorSet{
 		Validators:       validatorListCopy(vals.Validators),
-		Proposer:         vals.Proposer,
 		totalVotingPower: vals.totalVotingPower,
 	}
 }
@@ -285,28 +282,6 @@ func (vals *ValidatorSet) TotalVotingPower() int64 {
 		vals.updateTotalVotingPower()
 	}
 	return vals.totalVotingPower
-}
-
-// GetProposer returns the current proposer. If the validator set is empty, nil
-// is returned.
-func (vals *ValidatorSet) GetProposer() (proposer *Validator) {
-	if len(vals.Validators) == 0 {
-		return nil
-	}
-	if vals.Proposer == nil {
-		vals.Proposer = vals.findProposer()
-	}
-	return vals.Proposer.Copy()
-}
-
-func (vals *ValidatorSet) findProposer() *Validator {
-	var proposer *Validator
-	for _, val := range vals.Validators {
-		if proposer == nil || !bytes.Equal(val.Address, proposer.Address) {
-			proposer = proposer.CompareProposerPriority(val)
-		}
-	}
-	return proposer
 }
 
 // Hash returns the Merkle root hash build using validators (as leaves) in the
@@ -860,13 +835,10 @@ func (vals *ValidatorSet) StringIndented(indent string) string {
 		return false
 	})
 	return fmt.Sprintf(`ValidatorSet{
-%s  Proposer: %v
 %s  Validators:
 %s    %v
 %s}`,
-		indent, vals.GetProposer().String(),
-		indent,
-		indent, strings.Join(valStrings, "\n"+indent+"    "),
+		indent, indent, strings.Join(valStrings, "\n"+indent+"    "),
 		indent)
 
 }
@@ -951,4 +923,61 @@ func safeSubClip(a, b int64) int64 {
 		return math.MaxInt64
 	}
 	return c
+}
+
+// candidate save simple validator data for selecting proposer
+type candidate struct {
+	idx         int
+	address     Address
+	votingPower int64
+}
+
+func (c *candidate) Priority() uint64 {
+	// TODO Is it possible to have a negative VotingPower?
+	if c.votingPower < 0 {
+		return 0
+	}
+	return uint64(c.votingPower)
+}
+
+func (c *candidate) LessThan(other tmrand.Candidate) bool {
+	o, ok := other.(*candidate)
+	if !ok {
+		panic("incompatible type")
+	}
+	return bytes.Compare(c.address, o.address) < 0
+}
+
+func SelectProposer(validators *ValidatorSet, proofHash []byte, height int64, round int) *Validator {
+	if validators.IsNilOrEmpty() {
+		panic("empty validator set")
+	}
+	seed := hashToSeed(MakeRoundHash(proofHash, height, round))
+	candidates := make([]tmrand.Candidate, len(validators.Validators))
+	for i, val := range validators.Validators {
+		candidates[i] = &candidate{idx: i, address: val.Address, votingPower: val.VotingPower}
+	}
+	vals := tmrand.RandomSamplingWithPriority(seed, candidates, 1, uint64(validators.TotalVotingPower()))
+	proposerIdx := vals[0].(*candidate).idx
+	return validators.Validators[proposerIdx]
+}
+
+func hashToSeed(hash []byte) uint64 {
+	for len(hash) < 8 {
+		hash = append(hash, byte(0))
+	}
+	return binary.LittleEndian.Uint64(hash[:8])
+}
+
+// MakeRoundHash combines the VRF hash, block height, and round to create a hash value for each round. This value is
+// used for random sampling of the Proposer.
+func MakeRoundHash(proofHash []byte, height int64, round int) []byte {
+	b := make([]byte, 16)
+	binary.LittleEndian.PutUint64(b, uint64(height))
+	binary.LittleEndian.PutUint64(b[8:], uint64(round))
+	hash := tmhash.New()
+	hash.Write(proofHash)
+	hash.Write(b[:8])
+	hash.Write(b[8:16])
+	return hash.Sum(nil)
 }

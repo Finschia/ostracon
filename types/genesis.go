@@ -98,6 +98,11 @@ func (genDoc *GenesisDoc) ValidateAndComplete() error {
 	return nil
 }
 
+// Hash returns the hash of the GenesisDoc
+func (genDoc *GenesisDoc) Hash() []byte {
+	return cdcEncode(genDoc)
+}
+
 //------------------------------------------------------------
 // Make genesis state from file
 

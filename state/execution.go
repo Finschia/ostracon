@@ -5,6 +5,7 @@ import (
 	"time"
 
 	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/crypto/vrf"
 	"github.com/tendermint/tendermint/libs/fail"
 	"github.com/tendermint/tendermint/libs/log"
 	mempl "github.com/tendermint/tendermint/mempool"
@@ -92,6 +93,8 @@ func (blockExec *BlockExecutor) CreateProposalBlock(
 	height int64,
 	state State, commit *types.Commit,
 	proposerAddr []byte,
+	round int,
+	proof vrf.Proof,
 ) (*types.Block, *types.PartSet) {
 
 	maxBytes := state.ConsensusParams.Block.MaxBytes
@@ -105,15 +108,15 @@ func (blockExec *BlockExecutor) CreateProposalBlock(
 	maxDataBytes := types.MaxDataBytes(maxBytes, state.Validators.Size(), len(evidence))
 	txs := blockExec.mempool.ReapMaxBytesMaxGas(maxDataBytes, maxGas)
 
-	return state.MakeBlock(height, txs, commit, evidence, proposerAddr)
+	return state.MakeBlock(height, txs, commit, evidence, proposerAddr, round, proof)
 }
 
 // ValidateBlock validates the given block against the given state.
 // If the block is invalid, it returns an error.
 // Validation does not mutate state, but does require historical information from the stateDB,
 // ie. to verify evidence from a validator at an old height.
-func (blockExec *BlockExecutor) ValidateBlock(state State, block *types.Block) error {
-	return validateBlock(blockExec.evpool, blockExec.db, state, block)
+func (blockExec *BlockExecutor) ValidateBlock(state State, round int, block *types.Block) error {
+	return validateBlock(blockExec.evpool, blockExec.db, state, round, block)
 }
 
 // ApplyBlock validates the block against the state, executes it against the app,
@@ -123,7 +126,9 @@ func (blockExec *BlockExecutor) ValidateBlock(state State, block *types.Block) e
 // It takes a blockID to avoid recomputing the parts hash.
 func (blockExec *BlockExecutor) ApplyBlock(state State, blockID types.BlockID, block *types.Block) (State, error) {
 
-	if err := blockExec.ValidateBlock(state, block); err != nil {
+	// When doing ApplyBlock, we don't need to check whether the block.Round is same to current round,
+	// so we just put block.Round for the current round parameter
+	if err := blockExec.ValidateBlock(state, block.Round, block); err != nil {
 		return state, ErrInvalidBlock(err)
 	}
 
@@ -422,6 +427,12 @@ func updateState(
 	// TODO: allow app to upgrade version
 	nextVersion := state.Version
 
+	// get proof hash from vrf proof
+	proofHash, err := vrf.ProofToHash(header.Proof.Bytes())
+	if err != nil {
+		return state, fmt.Errorf("error get proof of hash: %v", err)
+	}
+
 	// NOTE: the AppHash has not been populated.
 	// It will be filled on state.Save.
 	return State{
@@ -430,6 +441,7 @@ func updateState(
 		LastBlockHeight:                  header.Height,
 		LastBlockID:                      blockID,
 		LastBlockTime:                    header.Time,
+		LastProofHash:                    proofHash,
 		NextValidators:                   nValSet,
 		Validators:                       state.NextValidators.Copy(),
 		LastValidators:                   state.Validators.Copy(),

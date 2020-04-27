@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"os"
 	"path/filepath"
 	"sort"
@@ -13,6 +14,7 @@ import (
 	"time"
 
 	"github.com/go-kit/kit/log/term"
+	"github.com/tendermint/tendermint/crypto/vrf"
 
 	"path"
 
@@ -162,8 +164,14 @@ func decideProposal(
 	height int64,
 	round int,
 ) (proposal *types.Proposal, block *types.Block) {
+	oldPrivValidator := cs1.privValidator
 	cs1.mtx.Lock()
-	block, blockParts := cs1.createProposalBlock()
+	if !cs1.privValidator.GetPubKey().Equals(vs.PrivValidator.GetPubKey()) {
+		// block creater must be the cs.privValidator
+		cs1.privValidator = vs.PrivValidator
+	}
+	block, blockParts := cs1.createProposalBlock(round)
+	cs1.privValidator = oldPrivValidator
 	validRound := cs1.ValidRound
 	chainID := cs1.state.ChainID
 	cs1.mtx.Unlock()
@@ -379,6 +387,7 @@ func loadPrivValidator(config *cfg.Config) *privval.FilePV {
 func randState(nValidators int) (*State, []*validatorStub) {
 	// Get State
 	state, privVals := randGenesisState(nValidators, false, 10)
+	state.LastProofHash = []byte{2}
 
 	vss := make([]*validatorStub, nValidators)
 
@@ -391,6 +400,45 @@ func randState(nValidators int) (*State, []*validatorStub) {
 	incrementHeight(vss[1:]...)
 
 	return cs, vss
+}
+
+func theOthers(index int) int {
+	const theOtherIndex = math.MaxInt32
+	return theOtherIndex - index
+}
+
+func forceProposer(cs *State, vals []*validatorStub, index []int, height []int64, round []int) {
+	for i := 0; i < 1000; i++ {
+		allMatch := true
+		firstHash := []byte{byte(i)}
+		currentHash := firstHash
+		for j := 0; j < len(index); j++ {
+			var curVal *validatorStub
+			var mustBe bool
+			if index[j] < len(vals) {
+				curVal = vals[index[j]]
+				mustBe = true
+			} else {
+				curVal = vals[theOthers(index[j])]
+				mustBe = false
+			}
+			if curVal.GetPubKey().Equals(types.SelectProposer(cs.Validators, currentHash, height[j], round[j]).PubKey) !=
+				mustBe {
+				allMatch = false
+				break
+			}
+			if j+1 < len(height) && height[j+1] > height[j] {
+				message := types.MakeRoundHash(currentHash, height[j]-1, round[j])
+				proof, _ := curVal.PrivValidator.GenerateVRFProof(message)
+				currentHash, _ = vrf.ProofToHash(proof)
+			}
+		}
+		if allMatch {
+			cs.state.LastProofHash = firstHash
+			return
+		}
+	}
+	panic("no such LastProofHash making index validator to be proposer")
 }
 
 //-------------------------------------------------------------------------------
@@ -630,6 +678,8 @@ func randConsensusNet(nValidators int, testName string, tickerFunc func() Timeou
 	for i := 0; i < nValidators; i++ {
 		stateDB := dbm.NewMemDB() // each state needs its own db
 		state, _ := sm.LoadStateFromDBOrGenesisDoc(stateDB, genDoc)
+		// set the first peer to become the first proposer
+		state.LastProofHash = []byte{2}
 		thisConfig := ResetConfig(fmt.Sprintf("%s_%d", testName, i))
 		configRootDirs = append(configRootDirs, thisConfig.RootDir)
 		for _, opt := range configOpts {
