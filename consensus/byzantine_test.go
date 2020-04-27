@@ -57,7 +57,7 @@ func TestByzantine(t *testing.T) {
 		if i == proposerIdx {
 			// NOTE: Now, test validators are MockPV, which by default doesn't
 			// do any safety checks.
-			css[i].privValidator.(*types.MockPV).DisableChecks()
+			css[i].privValidator.(types.MockPV).DisableChecks()
 			css[i].decideProposal = func(j int) func(int64, int) {
 				return func(height int64, round int) {
 					byzantineDecideProposalFunc(t, height, round, css[j], switches[j])
