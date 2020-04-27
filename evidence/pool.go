@@ -106,8 +106,8 @@ func (evpool *Pool) AddEvidence(evidence types.Evidence) (err error) {
 
 	// fetch the validator and return its voting power as its priority
 	// TODO: something better ?
-	valset, _ := sm.LoadValidators(evpool.stateDB, evidence.Height())
-	_, val := valset.GetByAddress(evidence.Address())
+	voterSet, _ := sm.LoadVoters(evpool.stateDB, evidence.Height())
+	_, val := voterSet.GetByAddress(evidence.Address())
 	priority := val.VotingPower
 
 	added := evpool.store.AddNewEvidence(evidence, priority)

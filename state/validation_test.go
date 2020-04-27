@@ -110,7 +110,7 @@ func TestValidateBlockCommit(t *testing.T) {
 		proposerAddr := types.SelectProposer(state.Validators, []byte{}, height, 0).Address
 		if height > 1 {
 			/*
-				#2589: ensure state.LastValidators.VerifyCommit fails here
+				#2589: ensure state.LastVoters.VerifyCommit fails here
 			*/
 			// should be height-1 instead of height
 			wrongHeightVote, err := types.MakeVote(
@@ -135,7 +135,7 @@ func TestValidateBlockCommit(t *testing.T) {
 			require.True(t, isErrInvalidCommitHeight, "expected ErrInvalidCommitHeight at height %d but got: %v", height, err)
 
 			/*
-				#2589: test len(block.LastCommit.Signatures) == state.LastValidators.Size()
+				#2589: test len(block.LastCommit.Signatures) == state.LastVoters.Size()
 			*/
 			block, _ = state.MakeBlock(height, makeTxs(height), wrongSigsCommit, nil, proposerAddr, 0, proof)
 			err = blockExec.ValidateBlock(state, 0, block)

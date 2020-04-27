@@ -24,6 +24,10 @@ func calcValidatorsKey(height int64) []byte {
 	return []byte(fmt.Sprintf("validatorsKey:%v", height))
 }
 
+func calcVotersKey(height int64) []byte {
+	return []byte(fmt.Sprintf("votersKey:%v", height))
+}
+
 func calcConsensusParamsKey(height int64) []byte {
 	return []byte(fmt.Sprintf("consensusParamsKey:%v", height))
 }
@@ -196,13 +200,13 @@ func (valInfo *ValidatorsInfo) Bytes() []byte {
 // LoadValidators loads the ValidatorSet for a given height.
 // Returns ErrNoValSetForHeight if the validator set can't be found for this height.
 func LoadValidators(db dbm.DB, height int64) (*types.ValidatorSet, error) {
-	valInfo := loadValidatorsInfo(db, height)
+	valInfo := loadValidatorsInfo(db, calcValidatorsKey(height))
 	if valInfo == nil {
 		return nil, ErrNoValSetForHeight{height}
 	}
 	if valInfo.ValidatorSet == nil {
 		lastStoredHeight := lastStoredHeightFor(height, valInfo.LastHeightChanged)
-		valInfo2 := loadValidatorsInfo(db, lastStoredHeight)
+		valInfo2 := loadValidatorsInfo(db, calcValidatorsKey(lastStoredHeight))
 		if valInfo2 == nil || valInfo2.ValidatorSet == nil {
 			panic(
 				fmt.Sprintf("Couldn't find validators at height %d (height %d was originally requested)",
@@ -218,14 +222,24 @@ func LoadValidators(db dbm.DB, height int64) (*types.ValidatorSet, error) {
 	return valInfo.ValidatorSet, nil
 }
 
+func LoadVoters(db dbm.DB, height int64) (*types.ValidatorSet, error) {
+	valInfo := loadValidatorsInfo(db, calcVotersKey(height))
+	if valInfo == nil || valInfo.ValidatorSet == nil {
+		// when valInfo.ValidatorsSet == nil we cannot find voter set from LastHeightChanged
+		return nil, ErrNoValSetForHeight{height}
+	}
+
+	return valInfo.ValidatorSet, nil
+}
+
 func lastStoredHeightFor(height, lastHeightChanged int64) int64 {
 	checkpointHeight := height - height%valSetCheckpointInterval
 	return tmmath.MaxInt64(checkpointHeight, lastHeightChanged)
 }
 
 // CONTRACT: Returned ValidatorsInfo can be mutated.
-func loadValidatorsInfo(db dbm.DB, height int64) *ValidatorsInfo {
-	buf, err := db.Get(calcValidatorsKey(height))
+func loadValidatorsInfo(db dbm.DB, valOrVoterKey []byte) *ValidatorsInfo {
+	buf, err := db.Get(valOrVoterKey)
 	if err != nil {
 		panic(err)
 	}

@@ -63,7 +63,7 @@ type State struct {
 	// vrf hash from proof
 	LastProofHash []byte
 
-	// LastValidators is used to validate block.LastCommit.
+	// LastVoters is used to validate block.LastCommit.
 	// Validators are persisted to the database separately every time they change,
 	// so we can query for historical validator sets.
 	// Note that if s.LastBlockHeight causes a valset change,
@@ -71,7 +71,8 @@ type State struct {
 	// Extra +1 due to nextValSet delay.
 	NextValidators              *types.ValidatorSet
 	Validators                  *types.ValidatorSet
-	LastValidators              *types.ValidatorSet
+	Voters                      *types.ValidatorSet
+	LastVoters                  *types.ValidatorSet
 	LastHeightValidatorsChanged int64
 
 	// Consensus parameters used for validating blocks.
@@ -104,7 +105,8 @@ func (state State) Copy() State {
 
 		NextValidators:              state.NextValidators.Copy(),
 		Validators:                  state.Validators.Copy(),
-		LastValidators:              state.LastValidators.Copy(),
+		Voters:                      state.Voters.Copy(),
+		LastVoters:                  state.LastVoters.Copy(),
 		LastHeightValidatorsChanged: state.LastHeightValidatorsChanged,
 
 		ConsensusParams:                  state.ConsensusParams,
@@ -156,7 +158,7 @@ func (state State) MakeBlock(
 	if height == 1 {
 		timestamp = state.LastBlockTime // genesis time
 	} else {
-		timestamp = MedianTime(commit, state.LastValidators)
+		timestamp = MedianTime(commit, state.LastVoters)
 	}
 
 	// Fill rest of header with state data.
@@ -257,7 +259,8 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 
 		NextValidators:              nextValidatorSet,
 		Validators:                  validatorSet,
-		LastValidators:              types.NewValidatorSet(nil),
+		Voters:                      types.NewValidatorSet(types.SelectVoter(validatorSet, genDoc.Hash(), int64(1))),
+		LastVoters:                  types.NewValidatorSet(nil),
 		LastHeightValidatorsChanged: 1,
 
 		ConsensusParams:                  *genDoc.ConsensusParams,

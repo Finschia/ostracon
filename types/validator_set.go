@@ -952,6 +952,10 @@ func SelectProposer(validators *ValidatorSet, proofHash []byte, height int64, ro
 	return vals[0].(*Validator)
 }
 
+func SelectVoter(validators *ValidatorSet, proofHash []byte, height int64) []*Validator {
+	return validators.Validators
+}
+
 func hashToSeed(hash []byte) uint64 {
 	for len(hash) < 8 {
 		hash = append(hash, byte(0))

@@ -834,7 +834,7 @@ func TestHandshakePanicsIfAppReturnsWrongAppHash(t *testing.T) {
 	const appVersion = 0x0
 	stateDB, state, store := stateAndStore(config, privVal.GetPubKey(), appVersion)
 	genDoc, _ := sm.MakeGenesisDocFromFile(config.GenesisFile())
-	state.LastValidators = state.Validators.Copy()
+	state.LastVoters = state.Validators.Copy()
 	// mode = 0 for committing all the blocks
 	blocks := makeBlocks(3, &state, privVal)
 	store.chain = blocks

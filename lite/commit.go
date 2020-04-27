@@ -15,35 +15,35 @@ import (
 // even in the face of arbitrarily large power changes.
 type FullCommit struct {
 	SignedHeader   types.SignedHeader  `json:"signed_header"`
-	Validators     *types.ValidatorSet `json:"validator_set"`
+	Voters         *types.ValidatorSet `json:"voter_set"`
 	NextValidators *types.ValidatorSet `json:"next_validator_set"`
 }
 
 // NewFullCommit returns a new FullCommit.
-func NewFullCommit(signedHeader types.SignedHeader, valset, nextValset *types.ValidatorSet) FullCommit {
+func NewFullCommit(signedHeader types.SignedHeader, voterSet, nextValset *types.ValidatorSet) FullCommit {
 	return FullCommit{
 		SignedHeader:   signedHeader,
-		Validators:     valset,
+		Voters:         voterSet,
 		NextValidators: nextValset,
 	}
 }
 
 // Validate the components and check for consistency.
-// This also checks to make sure that Validators actually
+// This also checks to make sure that Voters actually
 // signed the SignedHeader.Commit.
-// If > 2/3 did not sign the Commit from fc.Validators, it
+// If > 2/3 did not sign the Commit from fc.Voters, it
 // is not a valid commit!
 func (fc FullCommit) ValidateFull(chainID string) error {
 	// Ensure that Validators exists and matches the header.
-	if fc.Validators.Size() == 0 {
-		return errors.New("need FullCommit.Validators")
+	if fc.Voters.Size() == 0 {
+		return errors.New("need FullCommit.Voters")
 	}
 	if !bytes.Equal(
 		fc.SignedHeader.ValidatorsHash,
-		fc.Validators.Hash()) {
+		fc.Voters.Hash()) {
 		return fmt.Errorf("header has vhash %X but valset hash is %X",
 			fc.SignedHeader.ValidatorsHash,
-			fc.Validators.Hash(),
+			fc.Voters.Hash(),
 		)
 	}
 	// Ensure that NextValidators exists and matches the header.

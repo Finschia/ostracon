@@ -72,7 +72,7 @@ type RoundState struct {
 
 	// Subjective time when +2/3 precommits for Block at Round were found
 	CommitTime         time.Time           `json:"commit_time"`
-	Validators         *types.ValidatorSet `json:"validators"`
+	Voters             *types.ValidatorSet `json:"voters"`
 	Proposer           *types.Validator    `json:"proposer"`
 	Proposal           *types.Proposal     `json:"proposal"`
 	ProposalBlock      *types.Block        `json:"proposal_block"`
@@ -90,7 +90,7 @@ type RoundState struct {
 	Votes                     *HeightVoteSet      `json:"votes"`
 	CommitRound               int                 `json:"commit_round"` //
 	LastCommit                *types.VoteSet      `json:"last_commit"`  // Last precommits at Height-1
-	LastValidators            *types.ValidatorSet `json:"last_validators"`
+	LastVoters                *types.ValidatorSet `json:"last_voters"`
 	TriggeredTimeoutPrecommit bool                `json:"triggered_timeout_precommit"`
 }
 
@@ -113,7 +113,7 @@ func (rs *RoundState) RoundStateSimple() RoundStateSimple {
 	}
 
 	addr := rs.Proposer.Address
-	idx, _ := rs.Validators.GetByAddress(addr)
+	idx, _ := rs.Voters.GetByAddress(addr)
 
 	return RoundStateSimple{
 		HeightRoundStep:   fmt.Sprintf("%d/%d/%d", rs.Height, rs.Round, rs.Step),
@@ -132,7 +132,7 @@ func (rs *RoundState) RoundStateSimple() RoundStateSimple {
 // NewRoundEvent returns the RoundState with proposer information as an event.
 func (rs *RoundState) NewRoundEvent() types.EventDataNewRound {
 	addr := rs.Proposer.Address
-	idx, _ := rs.Validators.GetByAddress(addr)
+	idx, _ := rs.Voters.GetByAddress(addr)
 
 	return types.EventDataNewRound{
 		Height: rs.Height,
@@ -192,12 +192,12 @@ func (rs *RoundState) StringIndented(indent string) string {
 %s  ValidBlock:   %v %v
 %s  Votes:         %v
 %s  LastCommit:    %v
-%s  LastValidators:%v
+%s  LastVoters:%v
 %s}`,
 		indent, rs.Height, rs.Round, rs.Step,
 		indent, rs.StartTime,
 		indent, rs.CommitTime,
-		indent, rs.Validators.StringIndented(indent+"  "),
+		indent, rs.Voters.StringIndented(indent+"  "),
 		indent, rs.Proposer.String(),
 		indent, rs.Proposal,
 		indent, rs.ProposalBlockParts.StringShort(), rs.ProposalBlock.StringShort(),
@@ -207,7 +207,7 @@ func (rs *RoundState) StringIndented(indent string) string {
 		indent, rs.ValidBlockParts.StringShort(), rs.ValidBlock.StringShort(),
 		indent, rs.Votes.StringIndented(indent+"  "),
 		indent, rs.LastCommit.StringShort(),
-		indent, rs.LastValidators.StringIndented(indent+"  "),
+		indent, rs.LastVoters.StringIndented(indent+"  "),
 		indent)
 }
 

@@ -68,6 +68,7 @@ type SignClient interface {
 	BlockResults(height *int64) (*ctypes.ResultBlockResults, error)
 	Commit(height *int64) (*ctypes.ResultCommit, error)
 	Validators(height *int64, page, perPage int) (*ctypes.ResultValidators, error)
+	Voters(height *int64, page, perPage int) (*ctypes.ResultValidators, error)
 	Tx(hash []byte, prove bool) (*ctypes.ResultTx, error)
 	TxSearch(query string, prove bool, page, perPage int) (*ctypes.ResultTxSearch, error)
 }

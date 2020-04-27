@@ -18,6 +18,8 @@ type Provider interface {
 	// Height must be >= 1.
 	ValidatorSet(chainID string, height int64) (*types.ValidatorSet, error)
 
+	VoterSet(chainID string, height int64) (*types.ValidatorSet, error)
+	
 	// Set a logger.
 	SetLogger(logger log.Logger)
 }

@@ -7,6 +7,7 @@ import (
 	rpctypes "github.com/tendermint/tendermint/rpc/lib/types"
 	sm "github.com/tendermint/tendermint/state"
 	"github.com/tendermint/tendermint/types"
+	dbm "github.com/tendermint/tm-db"
 )
 
 // Validators gets the validator set at the given block height.
@@ -15,6 +16,15 @@ import (
 // order for the validators in the set as used in computing their Merkle root.
 // More: https://tendermint.com/rpc/#/Info/validators
 func Validators(ctx *rpctypes.Context, heightPtr *int64, page, perPage int) (*ctypes.ResultValidators, error) {
+	return validators(ctx, heightPtr, page, perPage, sm.LoadValidators)
+}
+
+func Voters(ctx *rpctypes.Context, heightPtr *int64, page, perPage int) (*ctypes.ResultValidators, error) {
+	return validators(ctx, heightPtr, page, perPage, sm.LoadVoters)
+}
+
+func validators(ctx *rpctypes.Context, heightPtr *int64, page, perPage int,
+	loadFunc func(db dbm.DB, height int64) (*types.ValidatorSet, error)) (*ctypes.ResultValidators, error) {
 	// The latest validator that we know is the
 	// NextValidator of the last block.
 	height := consensusState.GetState().LastBlockHeight + 1
@@ -23,7 +33,7 @@ func Validators(ctx *rpctypes.Context, heightPtr *int64, page, perPage int) (*ct
 		return nil, err
 	}
 
-	validators, err := sm.LoadValidators(stateDB, height)
+	validators, err := loadFunc(stateDB, height)
 	if err != nil {
 		return nil, err
 	}

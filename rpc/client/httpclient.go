@@ -376,6 +376,19 @@ func (c *baseRPCClient) Validators(height *int64, page, perPage int) (*ctypes.Re
 	return result, nil
 }
 
+func (c *baseRPCClient) Voters(height *int64, page, perPage int) (*ctypes.ResultValidators, error) {
+	result := new(ctypes.ResultValidators)
+	_, err := c.caller.Call("voters", map[string]interface{}{
+		"height":   height,
+		"page":     page,
+		"per_page": perPage,
+	}, result)
+	if err != nil {
+		return nil, errors.Wrap(err, "Voters")
+	}
+	return result, nil
+}
+
 func (c *baseRPCClient) BroadcastEvidence(ev types.Evidence) (*ctypes.ResultBroadcastEvidence, error) {
 	result := new(ctypes.ResultBroadcastEvidence)
 	_, err := c.caller.Call("broadcast_evidence", map[string]interface{}{"evidence": ev}, result)

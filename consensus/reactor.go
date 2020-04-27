@@ -310,7 +310,7 @@ func (conR *Reactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 		case *VoteMessage:
 			cs := conR.conS
 			cs.mtx.RLock()
-			height, valSize, lastCommitSize := cs.Height, cs.Validators.Size(), cs.LastCommit.Size()
+			height, valSize, lastCommitSize := cs.Height, cs.Voters.Size(), cs.LastCommit.Size()
 			cs.mtx.RUnlock()
 			ps.EnsureVoteBitArrays(height, valSize)
 			ps.EnsureVoteBitArrays(height-1, lastCommitSize)

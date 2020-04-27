@@ -87,10 +87,10 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, round
 			return errors.New("block at height 1 can't have LastCommit signatures")
 		}
 	} else {
-		if len(block.LastCommit.Signatures) != state.LastValidators.Size() {
-			return types.NewErrInvalidCommitSignatures(state.LastValidators.Size(), len(block.LastCommit.Signatures))
+		if len(block.LastCommit.Signatures) != state.LastVoters.Size() {
+			return types.NewErrInvalidCommitSignatures(state.LastVoters.Size(), len(block.LastCommit.Signatures))
 		}
-		err := state.LastValidators.VerifyCommit(
+		err := state.LastVoters.VerifyCommit(
 			state.ChainID, state.LastBlockID, block.Height-1, block.LastCommit)
 		if err != nil {
 			return err
@@ -106,7 +106,7 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, round
 			)
 		}
 
-		medianTime := MedianTime(block.LastCommit, state.LastValidators)
+		medianTime := MedianTime(block.LastCommit, state.LastVoters)
 		if !block.Time.Equal(medianTime) {
 			return fmt.Errorf("invalid block time. Expected %v, got %v",
 				medianTime,
@@ -206,7 +206,7 @@ func VerifyEvidence(stateDB dbm.DB, state State, evidence types.Evidence) error 
 			evidence.Time(), state.LastBlockTime.Add(evidenceParams.MaxAgeDuration))
 	}
 
-	valset, err := LoadValidators(stateDB, evidence.Height())
+	voterSet, err := LoadVoters(stateDB, evidence.Height())
 	if err != nil {
 		// TODO: if err is just that we cant find it cuz we pruned, ignore.
 		// TODO: if its actually bad evidence, punish peer
@@ -220,7 +220,7 @@ func VerifyEvidence(stateDB dbm.DB, state State, evidence types.Evidence) error 
 	// See https://github.com/tendermint/tendermint/issues/3244
 	ev := evidence
 	height, addr := ev.Height(), ev.Address()
-	_, val := valset.GetByAddress(addr)
+	_, val := voterSet.GetByAddress(addr)
 	if val == nil {
 		return fmt.Errorf("address %X was not a validator at height %d", addr, height)
 	}

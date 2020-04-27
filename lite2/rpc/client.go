@@ -303,6 +303,10 @@ func (c *Client) Validators(height *int64, page, perPage int) (*ctypes.ResultVal
 	return c.next.Validators(height, page, perPage)
 }
 
+func (c *Client) Voters(height *int64, page, perPage int) (*ctypes.ResultValidators, error) {
+	return c.next.Voters(height, page, perPage)
+}
+
 func (c *Client) BroadcastEvidence(ev types.Evidence) (*ctypes.ResultBroadcastEvidence, error) {
 	return c.next.BroadcastEvidence(ev)
 }
