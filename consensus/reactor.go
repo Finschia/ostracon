@@ -57,7 +57,7 @@ func NewReactor(consensusState *State, fastSync bool, options ...ReactorOption) 
 		metrics:  NopMetrics(),
 	}
 	conR.updateFastSyncingMetric()
-	conR.BaseReactor = *p2p.NewBaseReactor("Reactor", conR)
+	conR.BaseReactor = *p2p.NewBaseReactor("Consensus", conR)
 
 	for _, option := range options {
 		option(conR)
@@ -98,7 +98,7 @@ func (conR *Reactor) OnStop() {
 
 // SwitchToConsensus switches from fast_sync mode to consensus mode.
 // It resets the state, turns off fast_sync, and starts the consensus state-machine
-func (conR *Reactor) SwitchToConsensus(state sm.State, blocksSynced int) {
+func (conR *Reactor) SwitchToConsensus(state sm.State, blocksSynced uint64) {
 	conR.Logger.Info("SwitchToConsensus")
 	conR.conS.reconstructLastCommit(state)
 	// NOTE: The line below causes broadcastNewRoundStepRoutine() to

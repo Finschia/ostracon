@@ -1,5 +1,142 @@
 # Changelog
 
+## v0.33.3
+
+*April 6, 2020*
+
+This security release fixes:
+
+### Denial of service 1
+
+Tendermint 0.33.2 and earlier does not limit P2P connection requests number.
+For each p2p connection, Tendermint allocates ~0.5MB. Even though this
+memory is garbage collected once the connection is terminated (due to duplicate
+IP or reaching a maximum number of inbound peers), temporary memory spikes can
+lead to OOM (Out-Of-Memory) exceptions.
+
+Tendermint 0.33.3 (and 0.32.10) limits the total number of P2P incoming
+connection requests to to `p2p.max_num_inbound_peers +
+len(p2p.unconditional_peer_ids)`.
+
+Notes:
+
+- Tendermint does not rate limit P2P connection requests per IP (an attacker
+  can saturate all the inbound slots);
+- Tendermint does not rate limit HTTP(S) requests. If you expose any RPC
+  endpoints to the public, please make sure to put in place some protection
+  (https://www.nginx.com/blog/rate-limiting-nginx/). We may implement this in
+  the future ([\#1696](https://github.com/tendermint/tendermint/issues/1696)).
+
+### Denial of service 2
+
+Tendermint 0.33.2 and earlier does not reclaim `activeID` of a peer after it's
+removed in `Mempool` reactor. This does not happen all the time. It only
+happens when a connection fails (for any reason) before the Peer is created and
+added to all reactors. `RemovePeer` is therefore called before `AddPeer`, which
+leads to always growing memory (`activeIDs` map). The `activeIDs` map has a
+maximum size of 65535 and the node will panic if this map reaches the maximum.
+An attacker can create a lot of connection attempts (exploiting Denial of
+service 1), which ultimately will lead to the node panicking.
+
+Tendermint 0.33.3 (and 0.32.10) claims `activeID` for a peer in `InitPeer`,
+which is executed before `MConnection` is started.
+
+Notes:
+
+- `InitPeer` function was added to all reactors to combat a similar issue -
+  [\#3338](https://github.com/tendermint/tendermint/issues/3338);
+- Denial of service 2 is independent of Denial of service 1 and can be executed
+  without it.
+
+**All clients are recommended to upgrade**
+
+Special thanks to [fudongbai](https://hackerone.com/fudongbai) for finding
+and reporting this.
+
+Friendly reminder, we have a [bug bounty
+program](https://hackerone.com/tendermint).
+
+### SECURITY:
+
+- [mempool] Reserve IDs in InitPeer instead of AddPeer (@tessr)
+- [p2p] Limit the number of incoming connections (@melekes)
+
+## v0.33.2
+
+*March 11, 2020*
+
+Special thanks to external contributors on this release:
+@antho1404, @michaelfig, @gterzian, @tau3, @Shivani912
+
+Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermint).
+
+### BREAKING CHANGES:
+
+- CLI/RPC/Config
+  - [cli] [\#4505](https://github.com/tendermint/tendermint/pull/4505) `tendermint lite` sub-command new syntax (@melekes):
+    `lite cosmoshub-3 -p 52.57.29.196:26657 -w public-seed-node.cosmoshub.certus.one:26657
+    --height 962118 --hash 28B97BE9F6DE51AC69F70E0B7BFD7E5C9CD1A595B7DC31AFF27C50D4948`
+
+- Go API
+  - [lite2] [\#4535](https://github.com/tendermint/tendermint/pull/4535) Remove `Start/Stop` (@melekes)
+  - [lite2] [\#4469](https://github.com/tendermint/tendermint/issues/4469) Remove `RemoveNoLongerTrustedHeaders` and `RemoveNoLongerTrustedHeadersPeriod` option (@cmwaters)
+  - [lite2] [\#4473](https://github.com/tendermint/tendermint/issues/4473) Return height as a 2nd param in `TrustedValidatorSet` (@melekes)
+  - [lite2] [\#4536](https://github.com/tendermint/tendermint/pull/4536) `Update` returns a signed header (1st param) (@melekes)
+
+
+### IMPROVEMENTS:
+
+- [blockchain/v2] [\#4361](https://github.com/tendermint/tendermint/pull/4361) Add reactor (@brapse)
+- [cmd] [\#4515](https://github.com/tendermint/tendermint/issues/4515) Change `tendermint debug dump` sub-command archives filename's format (@melekes)
+- [consensus] [\#3583](https://github.com/tendermint/tendermint/issues/3583) Reduce `non-deterministic signature` log noise (@tau3)
+- [examples/kvstore] [\#4507](https://github.com/tendermint/tendermint/issues/4507) ABCI query now returns the proper height (@erikgrinaker)
+- [lite2] [\#4462](https://github.com/tendermint/tendermint/issues/4462) Add `NewHTTPClient` and `NewHTTPClientFromTrustedStore` (@cmwaters)
+- [lite2] [\#4329](https://github.com/tendermint/tendermint/issues/4329) modified bisection to loop (@cmwaters)
+- [lite2] [\#4385](https://github.com/tendermint/tendermint/issues/4385) Disconnect from bad nodes (@melekes)
+- [lite2] [\#4398](https://github.com/tendermint/tendermint/issues/4398) Add `VerifyAdjacent` and `VerifyNonAdjacent` funcs (@cmwaters)
+- [lite2] [\#4426](https://github.com/tendermint/tendermint/issues/4426) Don't save intermediate headers (@cmwaters)
+- [lite2] [\#4464](https://github.com/tendermint/tendermint/issues/4464) Cross-check first header (@cmwaters)
+- [lite2] [\#4470](https://github.com/tendermint/tendermint/issues/4470) Fix inconsistent header-validatorset pairing (@melekes)
+- [lite2] [\#4488](https://github.com/tendermint/tendermint/issues/4488) Allow local clock drift -10 sec. (@melekes)
+- [p2p] [\#4449](https://github.com/tendermint/tendermint/pull/4449) Use `curve25519.X25519()` instead of `ScalarMult` (@erikgrinaker)
+- [types] [\#4417](https://github.com/tendermint/tendermint/issues/4417) **VerifyCommitX() functions should return as soon as +2/3 threshold is reached** (@alessio).
+- [libs/kv] [\#4542](https://github.com/tendermint/tendermint/pull/4542) remove unused type KI64Pair (@tessr)
+
+### BUG FIXES:
+
+- [cmd] [\#4303](https://github.com/tendermint/tendermint/issues/4303) Show useful error when Tendermint is not initialized (@melekes)
+- [cmd] [\#4515](https://github.com/tendermint/tendermint/issues/4515) **Fix `tendermint debug kill` sub-command** (@melekes)
+- [rpc] [\#3935](https://github.com/tendermint/tendermint/issues/3935) **Create buffered subscriptions on `/subscribe`** (@melekes)
+- [rpc] [\#4375](https://github.com/tendermint/tendermint/issues/4375) Stop searching for txs in `/tx_search` upon client timeout (@gterzian)
+- [rpc] [\#4406](https://github.com/tendermint/tendermint/pull/4406) Fix issue with multiple subscriptions on the websocket (@antho1404)
+- [rpc] [\#4432](https://github.com/tendermint/tendermint/issues/4432) Fix `/tx_search` pagination with ordered results (@erikgrinaker)
+- [rpc] [\#4492](https://github.com/tendermint/tendermint/issues/4492) Keep the original subscription "id" field when new RPCs come in (@michaelfig)
+
+
+## v0.33.1
+
+*Feburary 13, 2020*
+
+Special thanks to external contributors on this release:
+@princesinha19
+
+Friendly reminder, we have a [bug bounty
+program](https://hackerone.com/tendermint).
+
+### FEATURES:
+
+- [rpc] [\#3333](https://github.com/tendermint/tendermint/issues/3333) Add `order_by` to `/tx_search` endpoint, allowing to change default ordering from asc to desc (@princesinha19)
+
+### IMPROVEMENTS:
+
+- [proto] [\#4369](https://github.com/tendermint/tendermint/issues/4369) Add [buf](https://buf.build/) for usage with linting and checking if there are breaking changes with the master branch.
+- [proto] [\#4369](https://github.com/tendermint/tendermint/issues/4369) Add `make proto-gen` cmd to generate proto stubs outside of GOPATH.
+
+### BUG FIXES:
+
+- [node] [\#4311](https://github.com/tendermint/tendermint/issues/4311) Use `GRPCMaxOpenConnections` when creating the gRPC server, not `MaxOpenConnections`
+- [rpc] [\#4319](https://github.com/tendermint/tendermint/issues/4319) Check `BlockMeta` is not nil in `/block` & `/block_by_hash`
+
 ## v0.33
 
 Special thanks to external contributors on this release: @mrekucci, @PSalant726, @princesinha19, @greg-szabo, @dongsam, @cuonglm, @jgimeno, @yenkhoon

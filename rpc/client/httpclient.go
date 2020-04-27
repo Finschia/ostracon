@@ -96,6 +96,16 @@ func NewHTTP(remote, wsEndpoint string) (*HTTP, error) {
 	return NewHTTPWithClient(remote, wsEndpoint, httpClient)
 }
 
+// Create timeout enabled http client
+func NewHTTPWithTimeout(remote, wsEndpoint string, timeout uint) (*HTTP, error) {
+	httpClient, err := rpcclient.DefaultHTTPClient(remote)
+	if err != nil {
+		return nil, err
+	}
+	httpClient.Timeout = time.Duration(timeout) * time.Second
+	return NewHTTPWithClient(remote, wsEndpoint, httpClient)
+}
+
 // NewHTTPWithClient allows for setting a custom http client (See NewHTTP).
 // An error is returned on invalid remote. The function panics when remote is nil.
 func NewHTTPWithClient(remote, wsEndpoint string, client *http.Client) (*HTTP, error) {
@@ -123,8 +133,14 @@ func NewHTTPWithClient(remote, wsEndpoint string, client *http.Client) (*HTTP, e
 
 var _ Client = (*HTTP)(nil)
 
+// SetLogger sets a logger.
 func (c *HTTP) SetLogger(l log.Logger) {
 	c.WSEvents.SetLogger(l)
+}
+
+// Remote returns the remote network address in a string form.
+func (c *HTTP) Remote() string {
+	return c.remote
 }
 
 // NewBatch creates a new batch client for this HTTP client.
@@ -348,13 +364,15 @@ func (c *baseRPCClient) Tx(hash []byte, prove bool) (*ctypes.ResultTx, error) {
 	return result, nil
 }
 
-func (c *baseRPCClient) TxSearch(query string, prove bool, page, perPage int) (*ctypes.ResultTxSearch, error) {
+func (c *baseRPCClient) TxSearch(query string, prove bool, page, perPage int, orderBy string) (
+	*ctypes.ResultTxSearch, error) {
 	result := new(ctypes.ResultTxSearch)
 	params := map[string]interface{}{
 		"query":    query,
 		"prove":    prove,
 		"page":     page,
 		"per_page": perPage,
+		"order_by": orderBy,
 	}
 	_, err := c.caller.Call("tx_search", params, result)
 	if err != nil {

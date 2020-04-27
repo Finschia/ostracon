@@ -70,7 +70,7 @@ type SignClient interface {
 	Validators(height *int64, page, perPage int) (*ctypes.ResultValidators, error)
 	Voters(height *int64, page, perPage int) (*ctypes.ResultValidators, error)
 	Tx(hash []byte, prove bool) (*ctypes.ResultTx, error)
-	TxSearch(query string, prove bool, page, perPage int) (*ctypes.ResultTxSearch, error)
+	TxSearch(query string, prove bool, page, perPage int, orderBy string) (*ctypes.ResultTxSearch, error)
 }
 
 // HistoryClient provides access to data from genesis to now in large chunks.

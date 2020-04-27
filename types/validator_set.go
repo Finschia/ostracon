@@ -284,22 +284,6 @@ func (vals *ValidatorSet) TotalVotingPower() int64 {
 	return vals.totalVotingPower
 }
 
-func (v *Validator) Priority() uint64 {
-	// TODO Is it possible to have a negative VotingPower?
-	if v.VotingPower < 0 {
-		return 0
-	}
-	return uint64(v.VotingPower)
-}
-
-func (v *Validator) LessThan(other tmrand.Candidate) bool {
-	o, ok := other.(*Validator)
-	if !ok {
-		panic("incompatible type")
-	}
-	return bytes.Compare(v.Address, o.Address) < 0
-}
-
 // Hash returns the Merkle root hash build using validators (as leaves) in the
 // set.
 func (vals *ValidatorSet) Hash() []byte {
@@ -627,6 +611,7 @@ func (vals *ValidatorSet) VerifyCommit(chainID string, blockID BlockID,
 	}
 
 	talliedVotingPower := int64(0)
+	votingPowerNeeded := vals.TotalVotingPower() * 2 / 3
 	for idx, commitSig := range commit.Signatures {
 		if commitSig.Absent() {
 			continue // OK, some signatures can be absent.
@@ -649,13 +634,15 @@ func (vals *ValidatorSet) VerifyCommit(chainID string, blockID BlockID,
 		// It's OK that the BlockID doesn't match.  We include stray
 		// signatures (~votes for nil) to measure validator availability.
 		// }
+
+		// return as soon as +2/3 of the signatures are verified
+		if talliedVotingPower > votingPowerNeeded {
+			return nil
+		}
 	}
 
-	if got, needed := talliedVotingPower, vals.TotalVotingPower()*2/3; got <= needed {
-		return ErrNotEnoughVotingPowerSigned{Got: got, Needed: needed}
-	}
-
-	return nil
+	// talliedVotingPower <= needed, thus return error
+	return ErrNotEnoughVotingPowerSigned{Got: talliedVotingPower, Needed: votingPowerNeeded}
 }
 
 // VerifyFutureCommit will check to see if the set would be valid with a different
@@ -753,6 +740,7 @@ func (vals *ValidatorSet) VerifyCommitTrusting(chainID string, blockID BlockID,
 	var (
 		talliedVotingPower int64
 		seenVals           = make(map[int]int, len(commit.Signatures)) // validator index -> commit index
+		votingPowerNeeded  = (vals.TotalVotingPower() * trustLevel.Numerator) / trustLevel.Denominator
 	)
 
 	for idx, commitSig := range commit.Signatures {
@@ -786,16 +774,14 @@ func (vals *ValidatorSet) VerifyCommitTrusting(chainID string, blockID BlockID,
 			// It's OK that the BlockID doesn't match.  We include stray
 			// signatures (~votes for nil) to measure validator availability.
 			// }
+
+			if talliedVotingPower > votingPowerNeeded {
+				return nil
+			}
 		}
 	}
 
-	got := talliedVotingPower
-	needed := (vals.TotalVotingPower() * trustLevel.Numerator) / trustLevel.Denominator
-	if got <= needed {
-		return ErrNotEnoughVotingPowerSigned{Got: got, Needed: needed}
-	}
-
-	return nil
+	return ErrNotEnoughVotingPowerSigned{Got: talliedVotingPower, Needed: votingPowerNeeded}
 }
 
 func verifyCommitBasic(commit *Commit, height int64, blockID BlockID) error {
@@ -939,17 +925,41 @@ func safeSubClip(a, b int64) int64 {
 	return c
 }
 
+// candidate save simple validator data for selecting proposer
+type candidate struct {
+	idx         int
+	address     Address
+	votingPower int64
+}
+
+func (c *candidate) Priority() uint64 {
+	// TODO Is it possible to have a negative VotingPower?
+	if c.votingPower < 0 {
+		return 0
+	}
+	return uint64(c.votingPower)
+}
+
+func (c *candidate) LessThan(other tmrand.Candidate) bool {
+	o, ok := other.(*candidate)
+	if !ok {
+		panic("incompatible type")
+	}
+	return bytes.Compare(c.address, o.address) < 0
+}
+
 func SelectProposer(validators *ValidatorSet, proofHash []byte, height int64, round int) *Validator {
 	if validators.IsNilOrEmpty() {
 		panic("empty validator set")
 	}
 	seed := hashToSeed(MakeRoundHash(proofHash, height, round))
 	candidates := make([]tmrand.Candidate, len(validators.Validators))
-	for i := 0; i < len(candidates); i++ {
-		candidates[i] = validators.Validators[i]
+	for i, val := range validators.Validators {
+		candidates[i] = &candidate{idx: i, address: val.Address, votingPower: val.VotingPower}
 	}
 	vals := tmrand.RandomSamplingWithPriority(seed, candidates, 1, uint64(validators.TotalVotingPower()))
-	return vals[0].(*Validator)
+	proposerIdx := vals[0].(*candidate).idx
+	return validators.Validators[proposerIdx]
 }
 
 func SelectVoter(validators *ValidatorSet, proofHash []byte, height int64) []*Validator {

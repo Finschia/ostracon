@@ -1,11 +1,10 @@
-## v0.33.1
+## v0.33.4
 
 \*\*
 
 Special thanks to external contributors on this release:
 
-Friendly reminder, we have a [bug bounty
-program](https://hackerone.com/tendermint).
+Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermint).
 
 ### BREAKING CHANGES:
 
@@ -28,5 +27,3 @@ program](https://hackerone.com/tendermint).
 ### IMPROVEMENTS:
 
 ### BUG FIXES:
-
-

@@ -36,11 +36,11 @@ func genPrivKeys(n int) privKeys {
 // 	return res
 // }
 
-// // Extend adds n more keys (to remove, just take a slice).
-// func (pkz privKeys) Extend(n int) privKeys {
-// 	extra := genPrivKeys(n)
-// 	return append(pkz, extra...)
-// }
+// Extend adds n more keys (to remove, just take a slice).
+func (pkz privKeys) Extend(n int) privKeys {
+	extra := genPrivKeys(n)
+	return append(pkz, extra...)
+}
 
 // // GenSecpPrivKeys produces an array of secp256k1 private keys to generate commits.
 // func GenSecpPrivKeys(n int) privKeys {
@@ -142,6 +142,19 @@ func (pkz privKeys) GenSignedHeader(chainID string, height int64, bTime time.Tim
 	valset, nextValset *types.ValidatorSet, appHash, consHash, resHash []byte, first, last int) *types.SignedHeader {
 
 	header := genHeader(chainID, height, bTime, txs, valset, nextValset, appHash, consHash, resHash)
+	return &types.SignedHeader{
+		Header: header,
+		Commit: pkz.signHeader(header, first, last),
+	}
+}
+
+// GenSignedHeaderLastBlockID calls genHeader and signHeader and combines them into a SignedHeader.
+func (pkz privKeys) GenSignedHeaderLastBlockID(chainID string, height int64, bTime time.Time, txs types.Txs,
+	valset, nextValset *types.ValidatorSet, appHash, consHash, resHash []byte, first, last int,
+	lastBlockID types.BlockID) *types.SignedHeader {
+
+	header := genHeader(chainID, height, bTime, txs, valset, nextValset, appHash, consHash, resHash)
+	header.LastBlockID = lastBlockID
 	return &types.SignedHeader{
 		Header: header,
 		Commit: pkz.signHeader(header, first, last),
