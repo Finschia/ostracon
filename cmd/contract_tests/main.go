@@ -34,16 +34,27 @@ func main() {
 
 	// dredd can not validate optional items
 	h.Before("/genesis > Get Genesis > 200 > application/json", func(t *transaction.Transaction) {
-		makeExpectedGenesis(t)
+		removeOptionalFieldsOfExpected(t, []string{"result.genesis.app_state"})
+	})
+	h.Before("/broadcast_tx_async > Returns right away, with no response. Does not wait for CheckTx nor DeliverTx results. > 200 > application/json", func(t *transaction.Transaction) {
+		removeOptionalFieldsOfExpected(t, []string{"error"})
+	})
+	h.Before("/broadcast_tx_sync > Returns with the response from CheckTx. "+
+		"Does not wait for DeliverTx result. > 200 > application/json", func(t *transaction.Transaction) {
+		removeOptionalFieldsOfExpected(t, []string{"error"})
+	})
+	h.Before("/broadcast_tx_commit > Returns with the responses from CheckTx and DeliverTx. > 200 > application/json", func(t *transaction.Transaction) {
+		removeOptionalFieldsOfExpected(t, []string{"error"})
 	})
 	server.Serve()
 	defer server.Listener.Close()
 }
 
-// add optional field of genesis response, because dredd has bug about OA3
-func makeExpectedGenesis(t *transaction.Transaction) {
+func removeOptionalFieldsOfExpected(t *transaction.Transaction, paths []string) {
 	expected := unmarshaler.UnmarshalJSON(&t.Expected.Body)
-	expected.DeleteProperty("result", "genesis", "app_state")
+	for _, path := range paths {
+		expected.RemoveProperty(strings.Split(path, "."))
+	}
 	newBody, err := json.Marshal(expected.Body)
 	if err != nil {
 		panic(fmt.Sprintf("fail to marshal expected body with %s", err))

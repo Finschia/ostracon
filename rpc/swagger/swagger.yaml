@@ -52,7 +52,7 @@ paths:
           required: true
           schema:
             type: string
-          example: "456"
+          example: "0x343536"
           description: The transaction
       responses:
         200:
@@ -96,7 +96,7 @@ paths:
           required: true
           schema:
             type: string
-          example: "123"
+          example: "0x313233"
           description: The transaction
       responses:
         200:
@@ -138,7 +138,7 @@ paths:
           required: true
           schema:
             type: string
-          example: "785"
+          example: "0x373835"
           description: The transaction
       responses:
         200:
@@ -858,7 +858,7 @@ paths:
           schema:
             type: number
             default: 30
-            example: 30
+          example: 30
         - in: query
           name: order_by
           description: Order in which transactions are sorted ("asc" or "desc"), by height & index. If empty, default sorting will be still applied.
@@ -866,7 +866,7 @@ paths:
           schema:
             type: string
             default: "asc"
-            example: "asc"
+          example: "asc"
       tags:
         - Info
       description: |
