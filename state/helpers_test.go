@@ -46,7 +46,7 @@ func makeAndCommitGoodBlock(
 	evidence []types.Evidence) (sm.State, types.BlockID, *types.Commit, error) {
 	// A good block passes
 	state, blockID, err := makeAndApplyGoodBlock(state,
-		privVals[types.SelectProposer(state.Validators, state.LastProofHash, height, 0).Address.String()],
+		privVals[state.Voters.SelectProposer(state.LastProofHash, height, 0).Address.String()],
 		height, lastCommit, proposerAddr, blockExec, evidence)
 	if err != nil {
 		return state, types.BlockID{}, nil, err
@@ -134,7 +134,7 @@ func makeState(nVals, height int) (sm.State, dbm.DB, map[string]types.PrivValida
 
 	for i := 1; i < height; i++ {
 		s.LastBlockHeight++
-		s.LastVoters = s.Validators.Copy()
+		s.LastVoters = s.Voters.Copy()
 		sm.SaveState(stateDB, s)
 	}
 	return s, stateDB, privVals

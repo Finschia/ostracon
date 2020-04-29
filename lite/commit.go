@@ -14,17 +14,17 @@ import (
 // revert to block-by-block updating of lite Verifier's latest validator set,
 // even in the face of arbitrarily large power changes.
 type FullCommit struct {
-	SignedHeader   types.SignedHeader  `json:"signed_header"`
-	Voters         *types.ValidatorSet `json:"voter_set"`
-	NextValidators *types.ValidatorSet `json:"next_validator_set"`
+	SignedHeader types.SignedHeader `json:"signed_header"`
+	Voters       *types.VoterSet    `json:"voter_set"`
+	NextVoters   *types.VoterSet    `json:"next_validator_set"`
 }
 
 // NewFullCommit returns a new FullCommit.
-func NewFullCommit(signedHeader types.SignedHeader, voterSet, nextValset *types.ValidatorSet) FullCommit {
+func NewFullCommit(signedHeader types.SignedHeader, voterSet, nextVoterSet *types.VoterSet) FullCommit {
 	return FullCommit{
-		SignedHeader:   signedHeader,
-		Voters:         voterSet,
-		NextValidators: nextValset,
+		SignedHeader: signedHeader,
+		Voters:       voterSet,
+		NextVoters:   nextVoterSet,
 	}
 }
 
@@ -39,23 +39,23 @@ func (fc FullCommit) ValidateFull(chainID string) error {
 		return errors.New("need FullCommit.Voters")
 	}
 	if !bytes.Equal(
-		fc.SignedHeader.ValidatorsHash,
+		fc.SignedHeader.VotersHash,
 		fc.Voters.Hash()) {
-		return fmt.Errorf("header has vhash %X but valset hash is %X",
-			fc.SignedHeader.ValidatorsHash,
+		return fmt.Errorf("header has vhash %X but voterSet hash is %X",
+			fc.SignedHeader.VotersHash,
 			fc.Voters.Hash(),
 		)
 	}
 	// Ensure that NextValidators exists and matches the header.
-	if fc.NextValidators.Size() == 0 {
+	if fc.NextVoters.Size() == 0 {
 		return errors.New("need FullCommit.NextValidators")
 	}
 	if !bytes.Equal(
-		fc.SignedHeader.NextValidatorsHash,
-		fc.NextValidators.Hash()) {
-		return fmt.Errorf("header has next vhash %X but next valset hash is %X",
-			fc.SignedHeader.NextValidatorsHash,
-			fc.NextValidators.Hash(),
+		fc.SignedHeader.NextVotersHash,
+		fc.NextVoters.Hash()) {
+		return fmt.Errorf("header has next vhash %X but next voterSet hash is %X",
+			fc.SignedHeader.NextVotersHash,
+			fc.NextVoters.Hash(),
 		)
 	}
 	// Validate the header.
@@ -65,7 +65,7 @@ func (fc FullCommit) ValidateFull(chainID string) error {
 	}
 	// Validate the signatures on the commit.
 	hdr, cmt := fc.SignedHeader.Header, fc.SignedHeader.Commit
-	return fc.Validators.VerifyCommit(
+	return fc.Voters.VerifyCommit(
 		hdr.ChainID, cmt.BlockID,
 		hdr.Height, cmt)
 }

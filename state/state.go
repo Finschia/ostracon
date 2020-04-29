@@ -71,8 +71,9 @@ type State struct {
 	// Extra +1 due to nextValSet delay.
 	NextValidators              *types.ValidatorSet
 	Validators                  *types.ValidatorSet
-	Voters                      *types.ValidatorSet
-	LastVoters                  *types.ValidatorSet
+	NextVoters                  *types.VoterSet
+	Voters                      *types.VoterSet
+	LastVoters                  *types.VoterSet
 	LastHeightValidatorsChanged int64
 
 	// Consensus parameters used for validating blocks.
@@ -104,6 +105,7 @@ func (state State) Copy() State {
 		LastProofHash: state.LastProofHash,
 
 		NextValidators:              state.NextValidators.Copy(),
+		NextVoters:                  state.NextVoters.Copy(),
 		Validators:                  state.Validators.Copy(),
 		Voters:                      state.Voters.Copy(),
 		LastVoters:                  state.LastVoters.Copy(),
@@ -165,7 +167,7 @@ func (state State) MakeBlock(
 	block.Header.Populate(
 		state.Version.Consensus, state.ChainID,
 		timestamp, state.LastBlockID,
-		state.Validators.Hash(), state.NextValidators.Hash(),
+		state.Voters.Hash(), state.NextVoters.Hash(),
 		state.ConsensusParams.Hash(), state.AppHash, state.LastResultsHash,
 		proposerAddress,
 		round,
@@ -179,7 +181,7 @@ func (state State) MakeBlock(
 // corresponding validator set. The computed time is always between timestamps of
 // the votes sent by honest processes, i.e., a faulty processes can not arbitrarily increase or decrease the
 // computed value.
-func MedianTime(commit *types.Commit, validators *types.ValidatorSet) time.Time {
+func MedianTime(commit *types.Commit, voters *types.VoterSet) time.Time {
 	weightedTimes := make([]*tmtime.WeightedTime, len(commit.Signatures))
 	totalVotingPower := int64(0)
 
@@ -187,7 +189,7 @@ func MedianTime(commit *types.Commit, validators *types.ValidatorSet) time.Time 
 		if commitSig.Absent() {
 			continue
 		}
-		_, validator := validators.GetByAddress(commitSig.ValidatorAddress)
+		_, validator := voters.GetByAddress(commitSig.ValidatorAddress)
 		// If there's no condition, TestValidateBlockCommit panics; not needed normally.
 		if validator != nil {
 			totalVotingPower += validator.VotingPower
@@ -258,9 +260,10 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 		LastProofHash: genDoc.Hash(),
 
 		NextValidators:              nextValidatorSet,
+		NextVoters:                  types.SelectVoter(nextValidatorSet, genDoc.Hash(), 1),
 		Validators:                  validatorSet,
-		Voters:                      types.NewValidatorSet(types.SelectVoter(validatorSet, genDoc.Hash(), int64(1))),
-		LastVoters:                  types.NewValidatorSet(nil),
+		Voters:                      types.SelectVoter(validatorSet, []byte{}, 0),
+		LastVoters:                  &types.VoterSet{},
 		LastHeightValidatorsChanged: 1,
 
 		ConsensusParams:                  *genDoc.ConsensusParams,

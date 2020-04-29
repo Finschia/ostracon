@@ -422,7 +422,7 @@ func forceProposer(cs *State, vals []*validatorStub, index []int, height []int64
 				curVal = vals[theOthers(index[j])]
 				mustBe = false
 			}
-			if curVal.GetPubKey().Equals(types.SelectProposer(cs.Validators, currentHash, height[j], round[j]).PubKey) !=
+			if curVal.GetPubKey().Equals(cs.Voters.SelectProposer(currentHash, height[j], round[j]).PubKey) !=
 				mustBe {
 				allMatch = false
 				break

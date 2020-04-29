@@ -428,7 +428,7 @@ func makeTxs(height int64) (txs []types.Tx) {
 func makeBlock(privVal types.PrivValidator, height int64, state sm.State, lastCommit *types.Commit) *types.Block {
 	message := state.MakeHashMessage(0)
 	proof, _ := privVal.GenerateVRFProof(message)
-	proposerAddr := types.SelectProposer(state.Validators, state.LastProofHash, height, 0).Address
+	proposerAddr := state.Voters.SelectProposer(state.LastProofHash, height, 0).Address
 	block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, nil, proposerAddr, 0, proof)
 	return block
 }

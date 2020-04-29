@@ -39,7 +39,7 @@ func TestBlockAddEvidence(t *testing.T) {
 	commit, err := MakeCommit(lastID, h-1, 1, voteSet, vals, time.Now())
 	require.NoError(t, err)
 
-	ev := NewMockEvidence(h, time.Now(), 0, valSet.Validators[0].Address)
+	ev := NewMockEvidence(h, time.Now(), 0, valSet.Voters[0].Address)
 	evList := []Evidence{ev}
 
 	block := MakeBlock(h, txs, commit, evList)
@@ -59,7 +59,7 @@ func TestBlockValidateBasic(t *testing.T) {
 	commit, err := MakeCommit(lastID, h-1, 1, voteSet, vals, time.Now())
 	require.NoError(t, err)
 
-	ev := NewMockEvidence(h, time.Now(), 0, valSet.Validators[0].Address)
+	ev := NewMockEvidence(h, time.Now(), 0, valSet.Voters[0].Address)
 	evList := []Evidence{ev}
 
 	testCases := []struct {
@@ -69,7 +69,7 @@ func TestBlockValidateBasic(t *testing.T) {
 	}{
 		{"Make Block", func(blk *Block) {}, false},
 		{"Make Block w/ proposer Addr", func(blk *Block) {
-			blk.ProposerAddress = SelectProposer(valSet, []byte{}, blk.Height, 0).Address
+			blk.ProposerAddress = valSet.SelectProposer([]byte{}, blk.Height, 0).Address
 		}, false},
 		{"Negative Height", func(blk *Block) { blk.Height = -1 }, true},
 		{"Remove 1/2 the commits", func(blk *Block) {
@@ -93,7 +93,7 @@ func TestBlockValidateBasic(t *testing.T) {
 		i := i
 		t.Run(tc.testName, func(t *testing.T) {
 			block := MakeBlock(h, txs, commit, evList)
-			block.ProposerAddress = SelectProposer(valSet, []byte{}, block.Height, 0).Address
+			block.ProposerAddress = valSet.SelectProposer([]byte{}, block.Height, 0).Address
 			tc.malleateBlock(block)
 			err = block.ValidateBasic()
 			assert.Equal(t, tc.expErr, err != nil, "#%d: %v", i, err)
@@ -124,7 +124,7 @@ func TestBlockMakePartSetWithEvidence(t *testing.T) {
 	commit, err := MakeCommit(lastID, h-1, 1, voteSet, vals, time.Now())
 	require.NoError(t, err)
 
-	ev := NewMockEvidence(h, time.Now(), 0, valSet.Validators[0].Address)
+	ev := NewMockEvidence(h, time.Now(), 0, valSet.Voters[0].Address)
 	evList := []Evidence{ev}
 
 	partSet := MakeBlock(h, []Tx{Tx("Hello World")}, commit, evList).MakePartSet(512)
@@ -141,7 +141,7 @@ func TestBlockHashesTo(t *testing.T) {
 	commit, err := MakeCommit(lastID, h-1, 1, voteSet, vals, time.Now())
 	require.NoError(t, err)
 
-	ev := NewMockEvidence(h, time.Now(), 0, valSet.Validators[0].Address)
+	ev := NewMockEvidence(h, time.Now(), 0, valSet.Voters[0].Address)
 	evList := []Evidence{ev}
 
 	block := MakeBlock(h, []Tx{Tx("Hello World")}, commit, evList)

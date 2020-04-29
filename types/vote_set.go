@@ -63,7 +63,7 @@ type VoteSet struct {
 	height        int64
 	round         int
 	signedMsgType SignedMsgType
-	valSet        *ValidatorSet
+	valSet        *VoterSet
 
 	mtx           sync.Mutex
 	votesBitArray *bits.BitArray
@@ -75,7 +75,7 @@ type VoteSet struct {
 }
 
 // Constructs a new VoteSet struct used to accumulate votes for given height/round.
-func NewVoteSet(chainID string, height int64, round int, signedMsgType SignedMsgType, valSet *ValidatorSet) *VoteSet {
+func NewVoteSet(chainID string, height int64, round int, signedMsgType SignedMsgType, voterSet *VoterSet) *VoteSet {
 	if height == 0 {
 		panic("Cannot make VoteSet for height == 0, doesn't make sense.")
 	}
@@ -84,12 +84,12 @@ func NewVoteSet(chainID string, height int64, round int, signedMsgType SignedMsg
 		height:        height,
 		round:         round,
 		signedMsgType: signedMsgType,
-		valSet:        valSet,
-		votesBitArray: bits.NewBitArray(valSet.Size()),
-		votes:         make([]*Vote, valSet.Size()),
+		valSet:        voterSet,
+		votesBitArray: bits.NewBitArray(voterSet.Size()),
+		votes:         make([]*Vote, voterSet.Size()),
 		sum:           0,
 		maj23:         nil,
-		votesByBlock:  make(map[string]*blockVotes, valSet.Size()),
+		votesByBlock:  make(map[string]*blockVotes, voterSet.Size()),
 		peerMaj23s:    make(map[P2PID]BlockID),
 	}
 }

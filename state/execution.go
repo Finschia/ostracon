@@ -93,7 +93,6 @@ func (blockExec *BlockExecutor) CreateProposalBlock(
 	height int64,
 	state State, commit *types.Commit,
 	proposerAddr []byte,
-	voterSize int,
 	round int,
 	proof vrf.Proof,
 ) (*types.Block, *types.PartSet) {
@@ -106,7 +105,7 @@ func (blockExec *BlockExecutor) CreateProposalBlock(
 	evidence := blockExec.evpool.PendingEvidence(maxNumEvidence)
 
 	// Fetch a limited amount of valid txs
-	maxDataBytes := types.MaxDataBytes(maxBytes, voterSize, len(evidence))
+	maxDataBytes := types.MaxDataBytes(maxBytes, state.Voters.Size(), len(evidence))
 	txs := blockExec.mempool.ReapMaxBytesMaxGas(maxDataBytes, maxGas)
 
 	return state.MakeBlock(height, txs, commit, evidence, proposerAddr, round, proof)
@@ -320,7 +319,7 @@ func getBeginBlockValidatorInfo(block *types.Block, stateDB dbm.DB) (abci.LastCo
 	// Remember that the first LastCommit is intentionally empty, so it makes
 	// sense for LastCommitInfo.Votes to also be empty.
 	if block.Height > 1 {
-		lastVoterSet, err := LoadVoters(stateDB, block.Height-1)
+		_, lastVoterSet, err := LoadValidators(stateDB, block.Height-1)
 		if err != nil {
 			panic(err)
 		}
@@ -334,10 +333,10 @@ func getBeginBlockValidatorInfo(block *types.Block, stateDB dbm.DB) (abci.LastCo
 
 		if commitSize != voterSetLen {
 			panic(fmt.Sprintf("commit size (%d) doesn't match voterset length (%d) at height %d\n\n%v\n\n%v",
-				commitSize, voterSetLen, block.Height, block.LastCommit.Signatures, lastVoterSet.Validators))
+				commitSize, voterSetLen, block.Height, block.LastCommit.Signatures, lastVoterSet.Voters))
 		}
 
-		for i, val := range lastVoterSet.Validators {
+		for i, val := range lastVoterSet.Voters {
 			commitSig := block.LastCommit.Signatures[i]
 			voteInfos[i] = abci.VoteInfo{
 				Validator:       types.TM2PB.Validator(val),
@@ -351,7 +350,7 @@ func getBeginBlockValidatorInfo(block *types.Block, stateDB dbm.DB) (abci.LastCo
 		// We need the validator set. We already did this in validateBlock.
 		// TODO: Should we instead cache the valset in the evidence itself and add
 		// `SetValidatorSet()` and `ToABCI` methods ?
-		voterSet, err := LoadVoters(stateDB, ev.Height())
+		_, voterSet, err := LoadValidators(stateDB, ev.Height())
 		if err != nil {
 			panic(err)
 		}
@@ -435,8 +434,7 @@ func updateState(
 		return state, fmt.Errorf("error get proof of hash: %v", err)
 	}
 
-	valSet := state.NextValidators.Copy()
-	voters := types.NewValidatorSet(types.SelectVoter(valSet, proofHash, header.Height+1))
+	nextVoters := types.SelectVoter(nValSet, proofHash, header.Height+1)
 
 	// NOTE: the AppHash has not been populated.
 	// It will be filled on state.Save.
@@ -448,8 +446,10 @@ func updateState(
 		LastBlockTime:                    header.Time,
 		LastProofHash:                    proofHash,
 		NextValidators:                   nValSet,
-		Validators:                       valSet,
-		LastVoters:                       voters,
+		NextVoters:                       nextVoters,
+		Validators:                       state.NextValidators.Copy(),
+		Voters:                           state.NextVoters.Copy(),
+		LastVoters:                       state.Voters.Copy(),
 		LastHeightValidatorsChanged:      lastHeightValsChanged,
 		ConsensusParams:                  nextParams,
 		LastHeightConsensusParamsChanged: lastHeightParamsChanged,

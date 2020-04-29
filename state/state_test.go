@@ -184,26 +184,27 @@ func TestValidatorSimpleSaveLoad(t *testing.T) {
 	assert := assert.New(t)
 
 	// Can't load anything for height 0.
-	_, err := sm.LoadValidators(stateDB, 0)
+	_, _, err := sm.LoadValidators(stateDB, 0)
 	assert.IsType(sm.ErrNoValSetForHeight{}, err, "expected err at height 0")
 
 	// Should be able to load for height 1.
-	v, err := sm.LoadValidators(stateDB, 1)
+	_, v, err := sm.LoadValidators(stateDB, 1)
 	assert.Nil(err, "expected no err at height 1")
 	assert.Equal(v.Hash(), state.Validators.Hash(), "expected validator hashes to match")
 
 	// Should be able to load for height 2.
-	v, err = sm.LoadValidators(stateDB, 2)
+	_, v, err = sm.LoadValidators(stateDB, 2)
 	assert.Nil(err, "expected no err at height 2")
 	assert.Equal(v.Hash(), state.NextValidators.Hash(), "expected validator hashes to match")
 
 	// Increment height, save; should be able to load for next & next next height.
 	state.LastBlockHeight++
 	nextHeight := state.LastBlockHeight + 1
-	sm.SaveValidatorsInfo(stateDB, nextHeight+1, state.LastHeightValidatorsChanged, state.NextValidators)
-	vp0, err := sm.LoadValidators(stateDB, nextHeight+0)
+	sm.SaveValidatorsInfo(stateDB, nextHeight+1, state.LastHeightValidatorsChanged,
+		state.LastProofHash, state.NextValidators)
+	_, vp0, err := sm.LoadValidators(stateDB, nextHeight+0)
 	assert.Nil(err, "expected no err")
-	vp1, err := sm.LoadValidators(stateDB, nextHeight+1)
+	_, vp1, err := sm.LoadValidators(stateDB, nextHeight+1)
 	assert.Nil(err, "expected no err")
 	assert.Equal(vp0.Hash(), state.Validators.Hash(), "expected validator hashes to match")
 	assert.Equal(vp1.Hash(), state.NextValidators.Hash(), "expected next validator hashes to match")
@@ -238,7 +239,8 @@ func TestOneValidatorChangesSaveLoad(t *testing.T) {
 		state, err = sm.UpdateState(state, blockID, &header, responses, validatorUpdates)
 		require.NoError(t, err)
 		nextHeight := state.LastBlockHeight + 1
-		sm.SaveValidatorsInfo(stateDB, nextHeight+1, state.LastHeightValidatorsChanged, state.NextValidators)
+		sm.SaveValidatorsInfo(stateDB, nextHeight+1, state.LastHeightValidatorsChanged,
+			state.LastProofHash, state.NextValidators)
 	}
 
 	// On each height change, increment the power by one.
@@ -256,7 +258,7 @@ func TestOneValidatorChangesSaveLoad(t *testing.T) {
 	}
 
 	for i, power := range testCases {
-		v, err := sm.LoadValidators(stateDB, int64(i+1+1)) // +1 because vset changes delayed by 1 block.
+		_, v, err := sm.LoadValidators(stateDB, int64(i+1+1)) // +1 because vset changes delayed by 1 block.
 		assert.Nil(t, err, fmt.Sprintf("expected no err at height %d", i))
 		assert.Equal(t, v.Size(), 1, "validator set size is greater than 1: %d", v.Size())
 		_, val := v.GetByIndex(0)
@@ -357,15 +359,16 @@ func genValSetWithPowers(powers []int64) *types.ValidatorSet {
 
 // test a proposer appears as frequently as expected
 func testProposerFreq(t *testing.T, caseNum int, valSet *types.ValidatorSet) {
-	N := valSet.Size()
-	totalPower := valSet.TotalVotingPower()
+	voterSet := types.ToVoterAll(valSet)
+	N := voterSet.Size()
+	totalPower := voterSet.TotalVotingPower()
 
 	// run the proposer selection and track frequencies
 	runMult := 1
 	runs := int(totalPower) * runMult
 	freqs := make([]int, N)
 	for i := 0; i < runs; i++ {
-		prop := types.SelectProposer(valSet, []byte{}, 1, i)
+		prop := voterSet.SelectProposer([]byte{}, 1, i)
 		idx, _ := valSet.GetByAddress(prop.Address)
 		freqs[idx]++
 		valSet.IncrementProposerPriority(1)
@@ -516,7 +519,7 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 	state.NextValidators = state.Validators
 	// we only have one validator:
 	assert.Equal(t, val1PubKey.Address(),
-		types.SelectProposer(state.Validators, []byte{}, state.LastBlockHeight+1, 0).Address)
+		state.Voters.SelectProposer([]byte{}, state.LastBlockHeight+1, 0).Address)
 
 	block := makeBlock(state, state.LastBlockHeight+1)
 	blockID := types.BlockID{Hash: block.Hash(), PartsHeader: block.MakePartSet(testPartSize).Header()}
@@ -710,7 +713,7 @@ func TestLargeGenesisValidator(t *testing.T) {
 		// -> no change in ProposerPrio (stays zero):
 		assert.EqualValues(t, oldState.NextValidators, updatedState.NextValidators)
 		assert.EqualValues(t, 0,
-			types.SelectProposer(updatedState.NextValidators, []byte{}, block.Height, 0).ProposerPriority)
+			types.ToVoterAll(updatedState.NextValidators).SelectProposer([]byte{}, block.Height, 0).ProposerPriority)
 
 		oldState = updatedState
 	}
@@ -808,8 +811,8 @@ func TestLargeGenesisValidator(t *testing.T) {
 		blockID = types.BlockID{Hash: block.Hash(), PartsHeader: block.MakePartSet(testPartSize).Header()}
 		curState, err = sm.UpdateState(curState, blockID, &block.Header, abciResponses, validatorUpdates)
 		require.NoError(t, err)
-		if !bytes.Equal(types.SelectProposer(curState.Validators, []byte{}, int64(count), 0).Address,
-			types.SelectProposer(curState.NextValidators, []byte{}, int64(count+1), 0).Address) {
+		if !bytes.Equal(curState.Voters.SelectProposer([]byte{}, int64(count), 0).Address,
+			types.ToVoterAll(curState.NextValidators).SelectProposer([]byte{}, int64(count+1), 0).Address) {
 			isProposerUnchanged = false
 		}
 		count++
@@ -849,18 +852,18 @@ func TestStoreLoadValidatorsIncrementsProposerPriority(t *testing.T) {
 	tearDown, stateDB, state := setupTestCase(t)
 	defer tearDown(t)
 	state.Validators = genValSet(valSetSize)
-	types.SelectProposer(state.Validators, []byte{}, 1, 0)
+	state.Voters.SelectProposer([]byte{}, 1, 0)
 	state.NextValidators = state.Validators.Copy()
-	types.SelectProposer(state.NextValidators, []byte{}, 2, 0)
+	types.ToVoterAll(state.NextValidators).SelectProposer([]byte{}, 2, 0)
 	sm.SaveState(stateDB, state)
 
 	nextHeight := state.LastBlockHeight + 1
 
-	v0, err := sm.LoadValidators(stateDB, nextHeight)
+	v0, _, err := sm.LoadValidators(stateDB, nextHeight)
 	assert.Nil(t, err)
 	acc0 := v0.Validators[0].ProposerPriority
 
-	v1, err := sm.LoadValidators(stateDB, nextHeight+1)
+	v1, _, err := sm.LoadValidators(stateDB, nextHeight+1)
 	assert.Nil(t, err)
 	acc1 := v1.Validators[0].ProposerPriority
 
@@ -875,9 +878,9 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 	defer tearDown(t)
 	require.Equal(t, int64(0), state.LastBlockHeight)
 	state.Validators = genValSet(valSetSize)
-	types.SelectProposer(state.Validators, []byte{}, 1, 0)
+	state.Voters.SelectProposer([]byte{}, 1, 0)
 	state.NextValidators = state.Validators.Copy()
-	types.SelectProposer(state.NextValidators, []byte{}, 2, 0)
+	types.ToVoterAll(state.NextValidators).SelectProposer([]byte{}, 2, 0)
 	sm.SaveState(stateDB, state)
 
 	_, valOld := state.Validators.GetByIndex(0)
@@ -895,10 +898,11 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 	state, err = sm.UpdateState(state, blockID, &header, responses, validatorUpdates)
 	require.Nil(t, err)
 	nextHeight := state.LastBlockHeight + 1
-	sm.SaveValidatorsInfo(stateDB, nextHeight+1, state.LastHeightValidatorsChanged, state.NextValidators)
+	sm.SaveValidatorsInfo(stateDB, nextHeight+1, state.LastHeightValidatorsChanged,
+		state.LastProofHash, state.NextValidators)
 
 	// Load nextheight, it should be the oldpubkey.
-	v0, err := sm.LoadValidators(stateDB, nextHeight)
+	v0, _, err := sm.LoadValidators(stateDB, nextHeight)
 	assert.Nil(t, err)
 	assert.Equal(t, valSetSize, v0.Size())
 	index, val := v0.GetByAddress(pubkeyOld.Address())
@@ -908,7 +912,7 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 	}
 
 	// Load nextheight+1, it should be the new pubkey.
-	v1, err := sm.LoadValidators(stateDB, nextHeight+1)
+	v1, _, err := sm.LoadValidators(stateDB, nextHeight+1)
 	assert.Nil(t, err)
 	assert.Equal(t, valSetSize, v1.Size())
 	index, val = v1.GetByAddress(pubkey.Address())

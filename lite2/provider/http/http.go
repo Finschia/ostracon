@@ -81,16 +81,16 @@ func (p *http) SignedHeader(height int64) (*types.SignedHeader, error) {
 	return &commit.SignedHeader, nil
 }
 
-// ValidatorSet fetches a ValidatorSet at the given height. Multiple HTTP
+// VoterSet fetches a VoterSet at the given height. Multiple HTTP
 // requests might be required if the validator set size is over 100.
-func (p *http) ValidatorSet(height int64) (*types.ValidatorSet, error) {
+func (p *http) VoterSet(height int64) (*types.VoterSet, error) {
 	h, err := validateHeight(height)
 	if err != nil {
 		return nil, err
 	}
 
 	const maxPerPage = 100
-	res, err := p.client.Validators(h, 0, maxPerPage)
+	res, err := p.client.Voters(h, 0, maxPerPage)
 	if err != nil {
 		// TODO: standartise errors on the RPC side
 		if strings.Contains(err.Error(), "height must be less than or equal") {
@@ -106,7 +106,7 @@ func (p *http) ValidatorSet(height int64) (*types.ValidatorSet, error) {
 
 	// Check if there are more validators.
 	for len(res.Validators) == maxPerPage {
-		res, err = p.client.Validators(h, page, maxPerPage)
+		res, err = p.client.Voters(h, page, maxPerPage)
 		if err != nil {
 			return nil, err
 		}
@@ -116,7 +116,7 @@ func (p *http) ValidatorSet(height int64) (*types.ValidatorSet, error) {
 		page++
 	}
 
-	return types.NewValidatorSet(vals), nil
+	return types.NewVoterSet(vals), nil
 }
 
 func validateHeight(height int64) (*int64, error) {

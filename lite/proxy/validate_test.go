@@ -18,9 +18,9 @@ var (
 )
 
 var hdrHeight11 = types.Header{
-	Height:         11,
-	Time:           testTime1,
-	ValidatorsHash: []byte("Tendermint"),
+	Height:     11,
+	Time:       testTime1,
+	VotersHash: []byte("Tendermint"),
 }
 
 func TestValidateBlock(t *testing.T) {
@@ -143,8 +143,8 @@ func TestValidateBlockMeta(t *testing.T) {
 		{
 			meta: &types.BlockMeta{
 				Header: types.Header{
-					Height:         11,
-					ValidatorsHash: []byte("lite-test"),
+					Height:     11,
+					VotersHash: []byte("lite-test"),
 					// TODO: should be able to use empty time after Amino upgrade
 					Time: testTime1,
 				},
@@ -159,15 +159,15 @@ func TestValidateBlockMeta(t *testing.T) {
 			meta: &types.BlockMeta{
 				Header: types.Header{
 					Height: 11, DataHash: deadBeefHash,
-					ValidatorsHash: []byte("Tendermint"),
-					Time:           testTime1,
+					VotersHash: []byte("Tendermint"),
+					Time:       testTime1,
 				},
 			},
 			signedHeader: types.SignedHeader{
 				Header: &types.Header{
 					Height: 11, DataHash: deadBeefHash,
-					ValidatorsHash: []byte("Tendermint"),
-					Time:           testTime2,
+					VotersHash: []byte("Tendermint"),
+					Time:       testTime2,
 				},
 				Commit: types.NewCommit(11, 0, types.BlockID{Hash: []byte("DEADBEEF")}, nil),
 			},
@@ -178,15 +178,15 @@ func TestValidateBlockMeta(t *testing.T) {
 			meta: &types.BlockMeta{
 				Header: types.Header{
 					Height: 11, DataHash: deadBeefHash,
-					ValidatorsHash: []byte("Tendermint"),
-					Time:           testTime2,
+					VotersHash: []byte("Tendermint"),
+					Time:       testTime2,
 				},
 			},
 			signedHeader: types.SignedHeader{
 				Header: &types.Header{
 					Height: 11, DataHash: deadBeefHash,
-					ValidatorsHash: []byte("Tendermint-x"),
-					Time:           testTime2,
+					VotersHash: []byte("Tendermint-x"),
+					Time:       testTime2,
 				},
 				Commit: types.NewCommit(11, 0, types.BlockID{Hash: []byte("DEADBEEF")}, nil),
 			},

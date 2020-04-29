@@ -14,14 +14,14 @@ func TestBaseCert(t *testing.T) {
 
 	keys := genPrivKeys(4)
 	// 20, 30, 40, 50 - the first 3 don't have 2/3, the last 3 do!
-	vals := keys.ToValidators(20, 10)
+	vals := types.ToVoterAll(keys.ToValidators(20, 10))
 	// and a Verifier based on our known set
 	chainID := "test-static"
 	cert := NewBaseVerifier(chainID, 2, vals)
 
 	cases := []struct {
 		keys        privKeys
-		vals        *types.ValidatorSet
+		vals        *types.VoterSet
 		height      int64
 		first, last int  // who actually signs
 		proper      bool // true -> expect no error
@@ -37,7 +37,7 @@ func TestBaseCert(t *testing.T) {
 		{keys, vals, 4, 0, len(keys) - 1, false, false},
 		// Changing the power a little bit breaks the static validator.
 		// The sigs are enough, but the validator hash is unknown.
-		{keys, keys.ToValidators(20, 11), 5, 0, len(keys), false, true},
+		{keys, types.ToVoterAll(keys.ToValidators(20, 11)), 5, 0, len(keys), false, true},
 	}
 
 	for _, tc := range cases {

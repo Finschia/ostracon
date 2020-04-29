@@ -14,11 +14,9 @@ type Provider interface {
 	// If maxHeight is zero, returns the latest where minHeight <= height.
 	LatestFullCommit(chainID string, minHeight, maxHeight int64) (FullCommit, error)
 
-	// Get the valset that corresponds to chainID and height and return.
+	// Get the voterSet that corresponds to chainID and height and return.
 	// Height must be >= 1.
-	ValidatorSet(chainID string, height int64) (*types.ValidatorSet, error)
-
-	VoterSet(chainID string, height int64) (*types.ValidatorSet, error)
+	VoterSet(chainID string, height int64) (*types.VoterSet, error)
 	
 	// Set a logger.
 	SetLogger(logger log.Logger)

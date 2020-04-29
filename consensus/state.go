@@ -527,7 +527,7 @@ func (cs *State) updateToState(state sm.State) {
 	}
 
 	// Reset fields based on state.
-	validators := state.Validators
+	voters := state.Voters
 	lastPrecommits := (*types.VoteSet)(nil)
 	if cs.CommitRound > -1 && cs.Votes != nil {
 		if !cs.Votes.Precommits(cs.CommitRound).HasTwoThirdsMajority() {
@@ -563,7 +563,7 @@ func (cs *State) updateToState(state sm.State) {
 	cs.ValidRound = -1
 	cs.ValidBlock = nil
 	cs.ValidBlockParts = nil
-	cs.Votes = cstypes.NewHeightVoteSet(state.ChainID, height, validators)
+	cs.Votes = cstypes.NewHeightVoteSet(state.ChainID, height, voters)
 	cs.CommitRound = -1
 	cs.LastCommit = lastPrecommits
 	cs.LastVoters = state.LastVoters
@@ -828,7 +828,7 @@ func (cs *State) enterNewRound(height int64, round int) {
 	logger.Info(fmt.Sprintf("enterNewRound(%v/%v). Current: %v/%v/%v", height, round, cs.Height, cs.Round, cs.Step))
 
 	// Select the current height and round Proposer
-	cs.Proposer = types.SelectProposer(cs.Voters, cs.state.LastProofHash, height, round)
+	cs.Proposer = cs.Voters.SelectProposer(cs.state.LastProofHash, height, round)
 
 	// Setup new round
 	// we don't fire newStep for this step,
@@ -1028,7 +1028,7 @@ func (cs *State) createProposalBlock(round int) (block *types.Block, blockParts 
 		cs.Logger.Error("enterPropose: Cannot generate vrf proof: %s", err.Error())
 		return
 	}
-	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerAddr, cs.Voters.Size(), round, proof)
+	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerAddr, round, proof)
 }
 
 // Enter: `timeoutPropose` after entering Propose.
@@ -1478,14 +1478,14 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 		// after first block.
 		var (
 			commitSize = block.LastCommit.Size()
-			valSetLen  = len(cs.LastVoters.Validators)
+			valSetLen  = len(cs.LastVoters.Voters)
 		)
 		if commitSize != valSetLen {
 			panic(fmt.Sprintf("commit size (%d) doesn't match valset length (%d) at height %d\n\n%v\n\n%v",
-				commitSize, valSetLen, block.Height, block.LastCommit.Signatures, cs.LastVoters.Validators))
+				commitSize, valSetLen, block.Height, block.LastCommit.Signatures, cs.LastVoters.Voters))
 		}
 
-		for i, val := range cs.LastVoters.Validators {
+		for i, val := range cs.LastVoters.Voters {
 			commitSig := block.LastCommit.Signatures[i]
 			if commitSig.Absent() {
 				missingValidators++
@@ -1551,7 +1551,7 @@ func (cs *State) defaultSetProposal(proposal *types.Proposal) error {
 	}
 
 	// If consensus does not enterNewRound yet, cs.Proposer may be nil or prior proposer, so don't use cs.Proposer
-	proposer := types.SelectProposer(cs.Voters, cs.state.LastProofHash, proposal.Height, proposal.Round)
+	proposer := cs.Voters.SelectProposer(cs.state.LastProofHash, proposal.Height, proposal.Round)
 
 	// Verify signature
 	if !proposer.PubKey.VerifyBytes(proposal.SignBytes(cs.state.ChainID), proposal.Signature) {

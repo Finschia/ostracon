@@ -68,16 +68,16 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, round
 			block.LastResultsHash,
 		)
 	}
-	if !bytes.Equal(block.ValidatorsHash, state.Validators.Hash()) {
+	if !bytes.Equal(block.VotersHash, state.Validators.Hash()) {
 		return fmt.Errorf("wrong Block.Header.ValidatorsHash.  Expected %X, got %v",
 			state.Validators.Hash(),
-			block.ValidatorsHash,
+			block.VotersHash,
 		)
 	}
-	if !bytes.Equal(block.NextValidatorsHash, state.NextValidators.Hash()) {
+	if !bytes.Equal(block.NextVotersHash, state.NextValidators.Hash()) {
 		return fmt.Errorf("wrong Block.Header.NextValidatorsHash.  Expected %X, got %v",
 			state.NextValidators.Hash(),
-			block.NextValidatorsHash,
+			block.NextVotersHash,
 		)
 	}
 
@@ -153,10 +153,10 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, round
 
 	// validate proposer
 	if !bytes.Equal(block.ProposerAddress.Bytes(),
-		types.SelectProposer(state.Validators, state.LastProofHash, block.Height, block.Round).Address.Bytes()) {
+		state.Voters.SelectProposer(state.LastProofHash, block.Height, block.Round).Address.Bytes()) {
 		return fmt.Errorf("block.ProposerAddress, %X, is not the proposer %X",
 			block.ProposerAddress,
-			types.SelectProposer(state.Validators, state.LastProofHash, block.Height, block.Round).Address,
+			state.Voters.SelectProposer(state.LastProofHash, block.Height, block.Round).Address,
 		)
 	}
 
@@ -206,7 +206,7 @@ func VerifyEvidence(stateDB dbm.DB, state State, evidence types.Evidence) error 
 			evidence.Time(), state.LastBlockTime.Add(evidenceParams.MaxAgeDuration))
 	}
 
-	voterSet, err := LoadVoters(stateDB, evidence.Height())
+	_, voterSet, err := LoadValidators(stateDB, evidence.Height())
 	if err != nil {
 		// TODO: if err is just that we cant find it cuz we pruned, ignore.
 		// TODO: if its actually bad evidence, punish peer

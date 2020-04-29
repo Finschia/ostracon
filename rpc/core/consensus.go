@@ -16,15 +16,15 @@ import (
 // order for the validators in the set as used in computing their Merkle root.
 // More: https://docs.tendermint.com/master/rpc/#/Info/validators
 func Validators(ctx *rpctypes.Context, heightPtr *int64, page, perPage int) (*ctypes.ResultValidators, error) {
-	return validators(ctx, heightPtr, page, perPage, sm.LoadValidators)
+	return validators(ctx, heightPtr, page, perPage, sm.LoadValidators, true)
 }
 
 func Voters(ctx *rpctypes.Context, heightPtr *int64, page, perPage int) (*ctypes.ResultValidators, error) {
-	return validators(ctx, heightPtr, page, perPage, sm.LoadVoters)
+	return validators(ctx, heightPtr, page, perPage, sm.LoadValidators, false)
 }
 
 func validators(ctx *rpctypes.Context, heightPtr *int64, page, perPage int,
-	loadFunc func(db dbm.DB, height int64) (*types.ValidatorSet, error)) (*ctypes.ResultValidators, error) {
+	loadFunc func(db dbm.DB, height int64) (*types.ValidatorSet, *types.VoterSet, error), isValidators bool) (*ctypes.ResultValidators, error) {
 	// The latest validator that we know is the
 	// NextValidator of the last block.
 	height := consensusState.GetState().LastBlockHeight + 1
@@ -33,12 +33,16 @@ func validators(ctx *rpctypes.Context, heightPtr *int64, page, perPage int,
 		return nil, err
 	}
 
-	validators, err := loadFunc(stateDB, height)
+	validators, voters, err := loadFunc(stateDB, height)
 	if err != nil {
 		return nil, err
 	}
 
-	totalCount := len(validators.Validators)
+	vals := validators.Validators
+	if !isValidators {
+		vals = voters.Voters
+	}
+	totalCount := len(vals)
 	perPage = validatePerPage(perPage)
 	page, err = validatePage(page, perPage, totalCount)
 	if err != nil {
@@ -47,7 +51,7 @@ func validators(ctx *rpctypes.Context, heightPtr *int64, page, perPage int,
 
 	skipCount := validateSkipCount(page, perPage)
 
-	v := validators.Validators[skipCount : skipCount+tmmath.MinInt(perPage, totalCount-skipCount)]
+	v := vals[skipCount : skipCount+tmmath.MinInt(perPage, totalCount-skipCount)]
 
 	return &ctypes.ResultValidators{
 		BlockHeight: height,
