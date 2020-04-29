@@ -355,7 +355,7 @@ func state(nVals int, height int64) (sm.State, dbm.DB, types.PrivValidator) {
 
 	for i := 1; i < int(height); i++ {
 		s.LastBlockHeight++
-		s.LastVoters = s.Validators.Copy()
+		s.LastVoters = s.Voters.Copy()
 		sm.SaveState(stateDB, s)
 	}
 	return s, stateDB, privVal

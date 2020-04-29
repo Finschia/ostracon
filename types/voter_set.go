@@ -104,6 +104,9 @@ func (voters *VoterSet) updateTotalVotingPower() {
 }
 
 func (voters *VoterSet) TotalVotingPower() int64 {
+	if voters.totalVotingPower == 0 {
+		voters.updateTotalVotingPower()
+	}
 	return voters.totalVotingPower
 }
 
@@ -391,19 +394,19 @@ func (voters *VoterSet) SelectProposer(proofHash []byte, height int64, round int
 func SelectVoter(validators *ValidatorSet, proofHash []byte, height int64) *VoterSet {
 	if len(proofHash) == 0 {
 		// height 1 has voter set that is same to validator set
-		result := &VoterSet{ Voters: copyValidatorListShallow(validators.Validators), totalVotingPower: 0 }
+		result := &VoterSet{Voters: copyValidatorListShallow(validators.Validators), totalVotingPower: 0}
 		result.updateTotalVotingPower()
 		return result
 	}
 	// TODO: implement selecting voters
-	result := &VoterSet{ Voters: copyValidatorListShallow(validators.Validators), totalVotingPower: 0 }
+	result := &VoterSet{Voters: copyValidatorListShallow(validators.Validators), totalVotingPower: 0}
 	result.updateTotalVotingPower()
 	return result
 }
 
 // This should be used in only test
 func ToVoterAll(validators *ValidatorSet) *VoterSet {
-	result := &VoterSet{ Voters: copyValidatorListShallow(validators.Validators), totalVotingPower: 0 }
+	result := &VoterSet{Voters: copyValidatorListShallow(validators.Validators), totalVotingPower: 0}
 	result.updateTotalVotingPower()
 	return result
 }

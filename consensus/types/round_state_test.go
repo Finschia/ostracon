@@ -46,7 +46,7 @@ func BenchmarkRoundStateDeepCopy(b *testing.B) {
 			LastBlockID:     blockID,
 			LastCommitHash:  tmrand.Bytes(20),
 			DataHash:        tmrand.Bytes(20),
-			ValidatorsHash:  tmrand.Bytes(20),
+			VotersHash:      tmrand.Bytes(20),
 			ConsensusHash:   tmrand.Bytes(20),
 			AppHash:         tmrand.Bytes(20),
 			LastResultsHash: tmrand.Bytes(20),

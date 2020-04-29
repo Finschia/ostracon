@@ -17,7 +17,7 @@ type Provider interface {
 	// Get the voterSet that corresponds to chainID and height and return.
 	// Height must be >= 1.
 	VoterSet(chainID string, height int64) (*types.VoterSet, error)
-	
+
 	// Set a logger.
 	SetLogger(logger log.Logger)
 }

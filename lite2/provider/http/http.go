@@ -100,18 +100,18 @@ func (p *http) VoterSet(height int64) (*types.VoterSet, error) {
 	}
 
 	var (
-		vals = res.Validators
+		vals = res.Voters
 		page = 1
 	)
 
 	// Check if there are more validators.
-	for len(res.Validators) == maxPerPage {
+	for len(res.Voters) == maxPerPage {
 		res, err = p.client.Voters(h, page, maxPerPage)
 		if err != nil {
 			return nil, err
 		}
-		if len(res.Validators) > 0 {
-			vals = append(vals, res.Validators...)
+		if len(res.Voters) > 0 {
+			vals = append(vals, res.Voters...)
 		}
 		page++
 	}
