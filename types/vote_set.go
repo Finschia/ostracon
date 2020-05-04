@@ -178,7 +178,7 @@ func (voteSet *VoteSet) addVote(vote *Vote) (added bool, err error) {
 	lookupAddr, val := voteSet.valSet.GetByIndex(valIndex)
 	if val == nil {
 		return false, errors.Wrapf(ErrVoteInvalidValidatorIndex,
-			"Cannot find validator %d in valSet of size %d", valIndex, voteSet.valSet.Size())
+			"Cannot find voter %d in valSet of size %d", valIndex, voteSet.valSet.Size())
 	}
 
 	// Ensure that the signer has the right address.
@@ -586,11 +586,11 @@ type blockVotes struct {
 	sum       int64          // vote sum
 }
 
-func newBlockVotes(peerMaj23 bool, numValidators int) *blockVotes {
+func newBlockVotes(peerMaj23 bool, numVoters int) *blockVotes {
 	return &blockVotes{
 		peerMaj23: peerMaj23,
-		bitArray:  bits.NewBitArray(numValidators),
-		votes:     make([]*Vote, numValidators),
+		bitArray:  bits.NewBitArray(numVoters),
+		votes:     make([]*Vote, numVoters),
 		sum:       0,
 	}
 }

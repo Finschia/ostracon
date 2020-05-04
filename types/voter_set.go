@@ -457,10 +457,10 @@ func MakeRoundHash(proofHash []byte, height int64, round int) []byte {
 // RandValidatorSet returns a randomized validator set, useful for testing.
 // NOTE: PrivValidator are in order.
 // UNSTABLE
-func RandVoterSet(numValidators int, votingPower int64) (*VoterSet, []PrivValidator) {
-	valz := make([]*Validator, numValidators)
-	privValidators := make([]PrivValidator, numValidators)
-	for i := 0; i < numValidators; i++ {
+func RandVoterSet(numVoters int, votingPower int64) (*VoterSet, []PrivValidator) {
+	valz := make([]*Validator, numVoters)
+	privValidators := make([]PrivValidator, numVoters)
+	for i := 0; i < numVoters; i++ {
 		val, privValidator := RandValidator(false, votingPower)
 		valz[i] = val
 		privValidators[i] = privValidator

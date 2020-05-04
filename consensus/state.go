@@ -245,6 +245,7 @@ func (cs *State) GetRoundStateSimpleJSON() ([]byte, error) {
 }
 
 // GetValidators returns a copy of the current validators.
+// ValidatorOrVoter: validator
 func (cs *State) GetValidators() (int64, []*types.Validator) {
 	cs.mtx.RLock()
 	defer cs.mtx.RUnlock()
@@ -1463,14 +1464,14 @@ func (cs *State) finalizeCommit(height int64) {
 }
 
 func (cs *State) recordMetrics(height int64, block *types.Block) {
-	cs.metrics.Validators.Set(float64(cs.Voters.Size()))
-	cs.metrics.ValidatorsPower.Set(float64(cs.Voters.TotalVotingPower()))
+	cs.metrics.Voters.Set(float64(cs.Voters.Size()))
+	cs.metrics.VotersPower.Set(float64(cs.Voters.TotalVotingPower()))
 
 	var (
-		missingValidators      int
-		missingValidatorsPower int64
+		missingVoters      int
+		missingVotersPower int64
 	)
-	// height=0 -> MissingValidators and MissingValidatorsPower are both 0.
+	// height=0 -> MissingVoters and MissingVotersPower are both 0.
 	// Remember that the first LastCommit is intentionally empty, so it's not
 	// fair to increment missing validators number.
 	if height > 1 {
@@ -1488,34 +1489,34 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 		for i, val := range cs.LastVoters.Voters {
 			commitSig := block.LastCommit.Signatures[i]
 			if commitSig.Absent() {
-				missingValidators++
-				missingValidatorsPower += val.VotingPower
+				missingVoters++
+				missingVotersPower += val.VotingPower
 			}
 
 			if cs.privValidator != nil && bytes.Equal(val.Address, cs.privValidator.GetPubKey().Address()) {
 				label := []string{
 					"validator_address", val.Address.String(),
 				}
-				cs.metrics.ValidatorPower.With(label...).Set(float64(val.VotingPower))
+				cs.metrics.VoterPower.With(label...).Set(float64(val.VotingPower))
 				if commitSig.ForBlock() {
-					cs.metrics.ValidatorLastSignedHeight.With(label...).Set(float64(height))
+					cs.metrics.VoterLastSignedHeight.With(label...).Set(float64(height))
 				} else {
-					cs.metrics.ValidatorMissedBlocks.With(label...).Add(float64(1))
+					cs.metrics.VoterMissedBlocks.With(label...).Add(float64(1))
 				}
 			}
 		}
 	}
-	cs.metrics.MissingValidators.Set(float64(missingValidators))
-	cs.metrics.MissingValidatorsPower.Set(float64(missingValidatorsPower))
+	cs.metrics.MissingVoters.Set(float64(missingVoters))
+	cs.metrics.MissingVotersPower.Set(float64(missingVotersPower))
 
-	cs.metrics.ByzantineValidators.Set(float64(len(block.Evidence.Evidence)))
-	byzantineValidatorsPower := int64(0)
+	cs.metrics.ByzantineVoters.Set(float64(len(block.Evidence.Evidence)))
+	byzantineVotersPower := int64(0)
 	for _, ev := range block.Evidence.Evidence {
 		if _, val := cs.Voters.GetByAddress(ev.Address()); val != nil {
-			byzantineValidatorsPower += val.VotingPower
+			byzantineVotersPower += val.VotingPower
 		}
 	}
-	cs.metrics.ByzantineValidatorsPower.Set(float64(byzantineValidatorsPower))
+	cs.metrics.ByzantineVotersPower.Set(float64(byzantineVotersPower))
 
 	if height > 1 {
 		lastBlockMeta := cs.blockStore.LoadBlockMeta(height - 1)

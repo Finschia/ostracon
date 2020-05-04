@@ -68,15 +68,15 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, round
 			block.LastResultsHash,
 		)
 	}
-	if !bytes.Equal(block.VotersHash, state.Validators.Hash()) {
-		return fmt.Errorf("wrong Block.Header.ValidatorsHash.  Expected %X, got %v",
-			state.Validators.Hash(),
+	if !bytes.Equal(block.VotersHash, state.Voters.Hash()) {
+		return fmt.Errorf("wrong Block.Header.VotersHash.  Expected %X, got %v",
+			state.Voters.Hash(),
 			block.VotersHash,
 		)
 	}
-	if !bytes.Equal(block.NextVotersHash, state.NextValidators.Hash()) {
-		return fmt.Errorf("wrong Block.Header.NextValidatorsHash.  Expected %X, got %v",
-			state.NextValidators.Hash(),
+	if !bytes.Equal(block.NextVotersHash, state.NextVoters.Hash()) {
+		return fmt.Errorf("wrong Block.Header.NextVotersHash.  Expected %X, got %v",
+			state.NextVoters.Hash(),
 			block.NextVotersHash,
 		)
 	}
@@ -145,7 +145,7 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, round
 	// know what round the block was first proposed. So just check that it's
 	// a legit address and a known validator.
 	if len(block.ProposerAddress) != crypto.AddressSize ||
-		!state.Validators.HasAddress(block.ProposerAddress) {
+		!state.Voters.HasAddress(block.ProposerAddress) {
 		return fmt.Errorf("block.Header.ProposerAddress, %X, is not a validator",
 			block.ProposerAddress,
 		)
@@ -169,7 +169,7 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, round
 
 	// validate vrf proof
 	message := state.MakeHashMessage(block.Round)
-	_, val := state.Validators.GetByAddress(block.ProposerAddress)
+	_, val := state.Voters.GetByAddress(block.ProposerAddress)
 	verified, err := vrf.Verify(val.PubKey.(ed25519.PubKeyEd25519), block.Proof.Bytes(), message)
 	if err != nil {
 		return types.NewErrInvalidProof(fmt.Sprintf(
