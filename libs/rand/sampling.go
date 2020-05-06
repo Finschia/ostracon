@@ -9,6 +9,7 @@ import (
 type Candidate interface {
 	Priority() uint64
 	LessThan(other Candidate) bool
+	IncreaseWin()
 }
 
 const uint64Mask = uint64(0x7FFFFFFFFFFFFFFF)
@@ -63,6 +64,41 @@ func RandomSamplingWithPriority(
 		" or the total priority is less than the actual one; totalPriority=%d, actualTotalPriority=%d,"+
 		" seed=%d, sampleSize=%d, undrawn=%d, threshold[%d]=%d, len(candidates)=%d",
 		totalPriority, actualTotalPriority, seed, sampleSize, undrawn, undrawn, thresholds[undrawn], len(candidates)))
+}
+
+func RandomSamplingToMax(
+	seed uint64, candidates []Candidate, limitCandidates int, totalPriority uint64) int {
+	if len(candidates) < limitCandidates {
+		panic("The number of candidates cannot be less limitCandidate")
+	}
+
+	totalSampling := 0
+	candidates = sort(candidates)
+	var winCandidates map[Candidate]bool
+	for ; len(winCandidates) < limitCandidates; {
+		// calculating [gross weights] × [(0,1] random number]
+		threshold := uint64(float64(nextRandom(&seed)&uint64Mask) / float64(uint64Mask+1) * float64(totalPriority))
+		cumulativePriority := uint64(0)
+		for _, candidate := range candidates {
+			if threshold < cumulativePriority+candidate.Priority() {
+				winCandidates[candidate] = true
+				candidate.IncreaseWin()
+				totalSampling++
+				break
+			}
+			cumulativePriority += candidate.Priority()
+		}
+
+		if cumulativePriority >= totalPriority {
+			actualTotalPriority := uint64(0)
+			for i := 0; i < len(candidates); i++ {
+				actualTotalPriority += candidates[i].Priority()
+			}
+			panic(fmt.Sprintf("Cannot find random sample. totalPriority may be wrong: totalPriority=%d, actualTotalPriority=%d",
+				totalPriority, actualTotalPriority))
+		}
+	}
+	return totalSampling
 }
 
 // SplitMix64

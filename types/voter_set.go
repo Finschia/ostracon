@@ -404,14 +404,20 @@ func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
 	seed := hashToSeed(proofHash)
 	candidates := make([]tmrand.Candidate, len(validators.Validators))
 	for i, val := range validators.Validators {
-		candidates[i] = &candidate{idx: i, val: val}
+		candidates[i] = &candidate{idx: i, win: 0, val: val}
 	}
-	samples := tmrand.RandomSamplingWithPriority(seed, candidates, MaxVoters, uint64(validators.TotalVotingPower()))
-	vals := make([]*Validator, len(samples))
-	for i, sample := range samples {
-		vals[i] = sample.(*candidate).val
+	totalSampling := tmrand.RandomSamplingToMax(seed, candidates, MaxVoters, uint64(validators.TotalVotingPower()))
+	vals := make([]*Validator, MaxVoters)
+	index := 0
+	for _, candi := range candidates {
+		if candi.(*candidate).win > 0 {
+			vals[index] = &Validator{Address: candi.(*candidate).val.Address,
+				PubKey:      candi.(*candidate).val.PubKey,
+				VotingPower: validators.TotalVotingPower() * int64(candi.(*candidate).win) / int64(totalSampling)}
+			index++
+		}
 	}
-	result := &VoterSet{Voters: copyValidatorListShallow(validators.Validators), totalVotingPower: 0}
+	result := &VoterSet{Voters: vals, totalVotingPower: 0}
 	result.updateTotalVotingPower()
 	return result
 }
@@ -426,6 +432,7 @@ func ToVoterAll(validators *ValidatorSet) *VoterSet {
 // candidate save simple validator data for selecting proposer
 type candidate struct {
 	idx int
+	win int
 	val *Validator
 }
 
@@ -443,6 +450,10 @@ func (c *candidate) LessThan(other tmrand.Candidate) bool {
 		panic("incompatible type")
 	}
 	return bytes.Compare(c.val.Address, o.val.Address) < 0
+}
+
+func (c *candidate) IncreaseWin() {
+	c.win++
 }
 
 func hashToSeed(hash []byte) uint64 {
