@@ -256,12 +256,10 @@ localnet-stop:
 # Build hooks for dredd, to skip or add information on some steps
 build-contract-tests-hooks:
 ifeq ($(OS_NAME),"Windows")
-	GOOS=linux GOARCH=amd64go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests.exe ./cmd/contract_tests
+	GOOS=windows GOARCH=amd64 go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests.exe ./cmd/contract_tests
 else ifeq ($(OS_NAME),"Linux")
-	echo "Linux"
-	GOOS=windows GOARCH=amd64 go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests ./cmd/contract_tests
+	GOOS=linux GOARCH=amd64 go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests ./cmd/contract_tests
 else ifeq ($(OS_NAME),"OSX")
-	echo "OSX"
 	GOOS=darwin GOARCH=amd64 go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests ./cmd/contract_tests
 endif
 .PHONY: build-contract-tests-hooks
