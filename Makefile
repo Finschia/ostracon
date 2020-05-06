@@ -6,14 +6,25 @@ BUILD_TAGS?='tendermint'
 CGO_OPTPTION=0
 LIBSODIUM_TARGET=
 PREPARE_LIBSODIUM_TARGET=
+OS_NAME=
+ifeq ($(OS),Windows_NT)
+	OS_NAME="Windows"
+else
+	UNAME_S := $(shell uname -s)
+	ifeq ($(UNAME_S),Linux)
+		OS_NAME="Linux"
+	endif
+	ifeq ($(UNAME_S),Darwin)
+		OS_NAME="OSX"
+	endif
+endif
+
 ifeq ($(LIBSODIUM), 1)
   BUILD_TAGS='libsodium tendermint'
   CGO_OPTPTION=1
   LIBSODIUM_TARGET=libsodium
-ifneq ($(OS), Windows_NT)
-ifeq ($(shell uname -s), Linux)
+ifeq ($(OS_NAME), "Linux")
   PREPARE_LIBSODIUM_TARGET=prepare-libsodium-linux
-endif
 endif
 endif
 LIBSODIM_BUILD_TAGS='libsodium tendermint'
@@ -244,10 +255,14 @@ localnet-stop:
 
 # Build hooks for dredd, to skip or add information on some steps
 build-contract-tests-hooks:
-ifeq ($(OS),Windows_NT)
-	go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests.exe ./cmd/contract_tests
-else
-	go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests ./cmd/contract_tests
+ifeq ($(OS_NAME),"Windows")
+	GOOS=linux GOARCH=amd64go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests.exe ./cmd/contract_tests
+else ifeq ($(OS_NAME),"Linux")
+	echo "Linux"
+	GOOS=windows GOARCH=amd64 go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests ./cmd/contract_tests
+else ifeq ($(OS_NAME),"OSX")
+	echo "OSX"
+	GOOS=darwin GOARCH=amd64 go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests ./cmd/contract_tests
 endif
 .PHONY: build-contract-tests-hooks
 
