@@ -260,7 +260,7 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 		LastProofHash: genDoc.Hash(),
 
 		NextValidators:              nextValidatorSet,
-		NextVoters:                  types.SelectVoter(nextValidatorSet, genDoc.Hash(), 1),
+		NextVoters:                  types.SelectVoter(nextValidatorSet, genDoc.Hash()),
 		Validators:                  validatorSet,
 		Voters:                      types.ToVoterAll(validatorSet),
 		LastVoters:                  &types.VoterSet{},

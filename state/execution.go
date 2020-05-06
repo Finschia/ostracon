@@ -434,7 +434,7 @@ func updateState(
 		return state, fmt.Errorf("error get proof of hash: %v", err)
 	}
 
-	nextVoters := types.SelectVoter(nValSet, proofHash, header.Height+1)
+	nextVoters := types.SelectVoter(nValSet, proofHash)
 
 	// NOTE: the AppHash has not been populated.
 	// It will be filled on state.Save.

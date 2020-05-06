@@ -384,21 +384,33 @@ func (voters *VoterSet) SelectProposer(proofHash []byte, height int64, round int
 	seed := hashToSeed(MakeRoundHash(proofHash, height, round))
 	candidates := make([]tmrand.Candidate, len(voters.Voters))
 	for i, val := range voters.Voters {
-		candidates[i] = &candidate{idx: i, address: val.Address, votingPower: val.VotingPower}
+		candidates[i] = &candidate{idx: i, val: val}
 	}
 	samples := tmrand.RandomSamplingWithPriority(seed, candidates, 1, uint64(voters.TotalVotingPower()))
 	proposerIdx := samples[0].(*candidate).idx
 	return voters.Voters[proposerIdx]
 }
 
-func SelectVoter(validators *ValidatorSet, proofHash []byte, height int64) *VoterSet {
-	if len(proofHash) == 0 {
+func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
+	// TODO: decide MaxVoters; make it to config
+	const MaxVoters = 20
+	if len(proofHash) == 0 || validators.Size() <= MaxVoters {
 		// height 1 has voter set that is same to validator set
 		result := &VoterSet{Voters: copyValidatorListShallow(validators.Validators), totalVotingPower: 0}
 		result.updateTotalVotingPower()
 		return result
 	}
-	// TODO: implement selecting voters
+
+	seed := hashToSeed(proofHash)
+	candidates := make([]tmrand.Candidate, len(validators.Validators))
+	for i, val := range validators.Validators {
+		candidates[i] = &candidate{idx: i, val: val}
+	}
+	samples := tmrand.RandomSamplingWithPriority(seed, candidates, MaxVoters, uint64(validators.TotalVotingPower()))
+	vals := make([]*Validator, len(samples))
+	for i, sample := range samples {
+		vals[i] = sample.(*candidate).val
+	}
 	result := &VoterSet{Voters: copyValidatorListShallow(validators.Validators), totalVotingPower: 0}
 	result.updateTotalVotingPower()
 	return result
@@ -413,17 +425,16 @@ func ToVoterAll(validators *ValidatorSet) *VoterSet {
 
 // candidate save simple validator data for selecting proposer
 type candidate struct {
-	idx         int
-	address     Address
-	votingPower int64
+	idx int
+	val *Validator
 }
 
 func (c *candidate) Priority() uint64 {
 	// TODO Is it possible to have a negative VotingPower?
-	if c.votingPower < 0 {
+	if c.val.VotingPower < 0 {
 		return 0
 	}
-	return uint64(c.votingPower)
+	return uint64(c.val.VotingPower)
 }
 
 func (c *candidate) LessThan(other tmrand.Candidate) bool {
@@ -431,7 +442,7 @@ func (c *candidate) LessThan(other tmrand.Candidate) bool {
 	if !ok {
 		panic("incompatible type")
 	}
-	return bytes.Compare(c.address, o.address) < 0
+	return bytes.Compare(c.val.Address, o.val.Address) < 0
 }
 
 func hashToSeed(hash []byte) uint64 {
@@ -467,5 +478,5 @@ func RandVoterSet(numVoters int, votingPower int64) (*VoterSet, []PrivValidator)
 	}
 	vals := NewValidatorSet(valz)
 	sort.Sort(PrivValidatorsByAddress(privValidators))
-	return SelectVoter(vals, []byte{}, 1), privValidators
+	return SelectVoter(vals, []byte{}), privValidators
 }

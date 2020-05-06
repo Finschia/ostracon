@@ -218,8 +218,7 @@ func LoadValidators(db dbm.DB, height int64) (*types.ValidatorSet, *types.VoterS
 		valInfo.ProofHash = proofHash // reload proof again
 	}
 
-	// height is state.LastBlockHeight + 2, so SelectVoter should use state.LastBlockHeight + 1
-	return valInfo.ValidatorSet, types.SelectVoter(valInfo.ValidatorSet, valInfo.ProofHash, height-1), nil
+	return valInfo.ValidatorSet, types.SelectVoter(valInfo.ValidatorSet, valInfo.ProofHash), nil
 }
 
 func lastStoredHeightFor(height, lastHeightChanged int64) int64 {
