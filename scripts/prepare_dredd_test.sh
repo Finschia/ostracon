@@ -13,8 +13,8 @@ wget https://dl.google.com/go/${GOLANG_FULL}
 tar -C /usr/local -xzf ${GOLANG_FULL}
 export PATH=$PATH:/usr/local/go/bin
 
-echo "Build tendermint"
-make build-linux
+#echo "Build tendermint"
+#make build-linux
 
 echo "Build contract-tests"
 make build-contract-tests-hooks
