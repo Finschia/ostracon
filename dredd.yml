@@ -17,7 +17,7 @@ user: null
 inline-errors: false
 details: false
 method: [GET]
-loglevel: warning
+loglevel: debug
 path: []
 hooks-worker-timeout: 5000
 hooks-worker-connect-timeout: 1500
