@@ -255,6 +255,7 @@ localnet-stop:
 
 # Build hooks for dredd, to skip or add information on some steps
 build-contract-tests-hooks:
+	@go version
 ifeq ($(OS_NAME),"Windows")
 	GOOS=windows GOARCH=amd64 go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests.exe ./cmd/contract_tests/
 else ifeq ($(OS_NAME),"Linux")
