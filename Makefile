@@ -258,7 +258,7 @@ build-contract-tests-hooks:
 ifeq ($(OS_NAME),"Windows")
 	GOOS=windows GOARCH=amd64 go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests.exe ./cmd/contract_tests/
 else ifeq ($(OS_NAME),"Linux")
-	GOOS=linux GOARCH=amd64 go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests ./cmd/contract_tests/
+	GOOS=linux GOARCH=amd64 go build $(BUILD_FLAGS) -o build/contract_tests ./cmd/contract_tests/
 else ifeq ($(OS_NAME),"OSX")
 	GOOS=darwin GOARCH=amd64 go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests ./cmd/contract_tests/
 endif
