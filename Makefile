@@ -276,7 +276,7 @@ build-contract-tests-hooks-linux:
 # The binaries should be built beforehand
 contract-tests:
 	./build/contract_tests -port 61322 &
-	ls -al build
 	dredd
-	kill "$(lsof -i tcp:61322 | tail -n 1 | awk '{print $2}')"
+	./scripts/stop_dredd_test.sh
+
 .PHONY: contract-tests

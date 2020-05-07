@@ -388,8 +388,9 @@ jobs:
             export PATH=~/.local/bin:$PATH
             # install node and dredd
             ./scripts/get_nodejs.sh
+            make build-contract-tests-hooks
             # build the binaries with a proper version of Go
-            docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang:1.14.1-alpine /bin/sh -c "apk add --update make git && make build-linux build-contract-tests-hooks-linux"
+            docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang:1.14.1-alpine /bin/sh -c "apk add --update make git && make build-linux"
             # This docker image works with go 1.7, we can install here the hook handler that contract-tests is going to use
             go get github.com/snikch/goodman/cmd/goodman
             make contract-tests
