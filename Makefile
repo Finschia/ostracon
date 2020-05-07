@@ -268,6 +268,7 @@ build-contract-tests-hooks-linux:
 	uname -a
 	GOOS=linux GOARCH=amd64 go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests ./cmd/contract_tests/
 	ls -al build
+	./build/contract_tests
 
 # Run a nodejs tool to test endpoints against a localnet
 # The command takes care of starting and stopping the network
@@ -276,6 +277,6 @@ build-contract-tests-hooks-linux:
 # The binaries should be built beforehand
 contract-tests:
 	pwd
-	ls build
+	ls -al build
 	dredd
 .PHONY: contract-tests
