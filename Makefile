@@ -265,8 +265,9 @@ endif
 .PHONY: build-contract-tests-hooks
 
 build-contract-tests-hooks-linux:
+	uname -a
 	GOOS=linux GOARCH=amd64 go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests ./cmd/contract_tests/
-	ls build
+	ls -al build
 
 # Run a nodejs tool to test endpoints against a localnet
 # The command takes care of starting and stopping the network
@@ -274,5 +275,7 @@ build-contract-tests-hooks-linux:
 # the two build commands were not added to let this command run from generic containers or machines.
 # The binaries should be built beforehand
 contract-tests:
+	pwd
+	ls build
 	dredd
 .PHONY: contract-tests

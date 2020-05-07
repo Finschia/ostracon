@@ -11,5 +11,5 @@ tar -xzf ~/.local/node/${NODE_FULL}.tar.gz -C ~/.local/node/
 ln -s ~/.local/node/${NODE_FULL}/bin/node ~/.local/bin/node
 ln -s ~/.local/node/${NODE_FULL}/bin/npm ~/.local/bin/npm
 export PATH=~/.local/bin:$PATH
-npm i -g dredd
+npm i -g dredd@13.1.0
 ln -s ~/.local/node/${NODE_FULL}/bin/dredd ~/.local/bin/dredd
