@@ -6,25 +6,14 @@ BUILD_TAGS?='tendermint'
 CGO_OPTPTION=0
 LIBSODIUM_TARGET=
 PREPARE_LIBSODIUM_TARGET=
-OS_NAME=
-ifeq ($(OS),Windows_NT)
-	OS_NAME="Windows"
-else
-	UNAME_S := $(shell uname -s)
-	ifeq ($(UNAME_S),Linux)
-		OS_NAME="Linux"
-	endif
-	ifeq ($(UNAME_S),Darwin)
-		OS_NAME="OSX"
-	endif
-endif
-
 ifeq ($(LIBSODIUM), 1)
   BUILD_TAGS='libsodium tendermint'
   CGO_OPTPTION=1
   LIBSODIUM_TARGET=libsodium
-ifeq ($(OS_NAME), "Linux")
+ifneq ($(OS), Windows_NT)
+ifeq ($(shell uname -s), Linux)
   PREPARE_LIBSODIUM_TARGET=prepare-libsodium-linux
+endif
 endif
 endif
 LIBSODIM_BUILD_TAGS='libsodium tendermint'
@@ -255,21 +244,12 @@ localnet-stop:
 
 # Build hooks for dredd, to skip or add information on some steps
 build-contract-tests-hooks:
-	uname -a
-	@go version
-ifeq ($(OS_NAME),"Windows")
-	GOOS=windows GOARCH=amd64 go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests.exe ./cmd/contract_tests/
-else ifeq ($(OS_NAME),"Linux")
-	GOOS=linux GOARCH=amd64 go build $(BUILD_FLAGS) -o build/contract_tests ./cmd/contract_tests
-else ifeq ($(OS_NAME),"OSX")
-	GOOS=darwin GOARCH=amd64 go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests ./cmd/contract_tests/
+ifeq ($(OS),Windows_NT)
+	go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests.exe ./cmd/contract_tests
+else
+	go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests ./cmd/contract_tests
 endif
 .PHONY: build-contract-tests-hooks
-
-build-contract-tests-hooks-linux:
-	uname -a
-	GOOS=linux GOARCH=amd64 go build $(BUILD_FLAGS) -o build/contract_tests ./cmd/contract_tests/
-	ls -al build
 
 # Run a nodejs tool to test endpoints against a localnet
 # The command takes care of starting and stopping the network
@@ -277,8 +257,5 @@ build-contract-tests-hooks-linux:
 # the two build commands were not added to let this command run from generic containers or machines.
 # The binaries should be built beforehand
 contract-tests:
-	./build/contract_tests -port 61322 &
 	dredd
-	./scripts/stop_dredd_test.sh
-
 .PHONY: contract-tests
