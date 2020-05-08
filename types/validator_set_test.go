@@ -282,6 +282,20 @@ func randValidatorSet(numValidators int) *ValidatorSet {
 	return NewValidatorSet(validators)
 }
 
+func randValidatorWithMinMax(min, max int64) *Validator {
+	val := NewValidator(randPubKey(), min+int64(tmrand.Uint64()%uint64(max)))
+	val.ProposerPriority = min + tmrand.Int64()%max
+	return val
+}
+
+func randValidatorSetWithMinMax(numValidators int, min, max int64) *ValidatorSet {
+	validators := make([]*Validator, numValidators)
+	for i := 0; i < numValidators; i++ {
+		validators[i] = randValidatorWithMinMax(min, max)
+	}
+	return NewValidatorSet(validators)
+}
+
 func (vals *ValidatorSet) toBytes() []byte {
 	bz, err := cdc.MarshalBinaryLengthPrefixed(vals)
 	if err != nil {

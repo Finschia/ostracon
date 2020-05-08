@@ -9,6 +9,7 @@ import (
 
 type Element struct {
 	ID     uint32
+	Win    uint64
 	Weight uint64
 }
 
@@ -22,6 +23,15 @@ func (e *Element) LessThan(other Candidate) bool {
 		panic("incompatible type")
 	}
 	return e.ID < o.ID
+}
+
+func (e *Element) IncreaseWin() {
+	e.Win++
+}
+
+func (e *Element) MultiplyWin(times float64) uint64 {
+	e.Win = uint64(float64(e.Win) * times)
+	return e.Win
 }
 
 func TestRandomSamplingWithPriority(t *testing.T) {
@@ -87,7 +97,7 @@ func TestRandomSamplingPanicCase(t *testing.T) {
 func newCandidates(length int, prio func(int) uint64) (candidates []Candidate) {
 	candidates = make([]Candidate, length)
 	for i := 0; i < length; i++ {
-		candidates[i] = &Element{uint32(i), prio(i)}
+		candidates[i] = &Element{uint32(i), 0, prio(i)}
 	}
 	return
 }

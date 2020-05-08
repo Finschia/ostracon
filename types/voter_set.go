@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 
@@ -13,6 +14,8 @@ import (
 	tmmath "github.com/tendermint/tendermint/libs/math"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 )
+
+var MaxVoters = 20
 
 // VoterSet represent a set of *Validator at a given height.
 type VoterSet struct {
@@ -393,7 +396,6 @@ func (voters *VoterSet) SelectProposer(proofHash []byte, height int64, round int
 
 func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
 	// TODO: decide MaxVoters; make it to config
-	const MaxVoters = 20
 	if len(proofHash) == 0 || validators.Size() <= MaxVoters {
 		// height 1 has voter set that is same to validator set
 		result := &VoterSet{Voters: copyValidatorListShallow(validators.Validators), totalVotingPower: 0}
@@ -407,13 +409,23 @@ func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
 		candidates[i] = &candidate{idx: i, win: 0, val: val}
 	}
 	totalSampling := tmrand.RandomSamplingToMax(seed, candidates, MaxVoters, uint64(validators.TotalVotingPower()))
-	vals := make([]*Validator, MaxVoters)
+	voters := 0
+	for _, candi := range candidates {
+		if candi.(*candidate).win > 0 {
+			voters += 1
+		}
+	}
+
+	vals := make([]*Validator, voters)
 	index := 0
 	for _, candi := range candidates {
 		if candi.(*candidate).win > 0 {
 			vals[index] = &Validator{Address: candi.(*candidate).val.Address,
 				PubKey:      candi.(*candidate).val.PubKey,
-				VotingPower: validators.TotalVotingPower() * int64(candi.(*candidate).win) / int64(totalSampling)}
+				// VotingPower = TotalVotingPower * win / totalSampling : can be overflow
+				VotingPower: validators.TotalVotingPower()/int64(totalSampling)*int64(candi.(*candidate).win) +
+					int64(math.Ceil(float64(validators.TotalVotingPower()%int64(totalSampling))/float64(int64(totalSampling))*
+						float64(candi.(*candidate).win)))}
 			index++
 		}
 	}
@@ -432,7 +444,7 @@ func ToVoterAll(validators *ValidatorSet) *VoterSet {
 // candidate save simple validator data for selecting proposer
 type candidate struct {
 	idx int
-	win int
+	win uint64
 	val *Validator
 }
 
@@ -454,6 +466,11 @@ func (c *candidate) LessThan(other tmrand.Candidate) bool {
 
 func (c *candidate) IncreaseWin() {
 	c.win++
+}
+
+func (c *candidate) MultiplyWin(times float64) uint64 {
+	c.win = uint64(float64(c.win) * times)
+	return c.win
 }
 
 func hashToSeed(hash []byte) uint64 {
