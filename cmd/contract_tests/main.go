@@ -67,7 +67,7 @@ func main() {
 func removeOptionalFieldsOfExpected(t *transaction.Transaction, paths []string) {
 	expected := unmarshaler.UnmarshalJSON(&t.Expected.Body)
 	for _, path := range paths {
-		expected.RemoveProperty(strings.Split(path, "."))
+		expected.DeleteProperty(strings.Split(path, ".")...)
 	}
 	newBody, err := json.Marshal(expected.Body)
 	if err != nil {
