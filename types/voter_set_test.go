@@ -14,7 +14,7 @@ func TestSelectVoter(t *testing.T) {
 	valSet := randValidatorSet(30)
 	for i := 0; i < 10000; i++ {
 		voterSet := SelectVoter(valSet, []byte{byte(i)})
-		assert.True(t, math.Abs(float64(valSet.TotalVotingPower() - voterSet.TotalVotingPower())) <= 10)
+		assert.True(t, math.Abs(float64(valSet.TotalVotingPower()-voterSet.TotalVotingPower())) <= 10)
 	}
 }
 
@@ -80,7 +80,8 @@ func findLargestVotingPowerGap(t *testing.T, loopCount int, minMaxRate int, maxV
 			largestGap = math.Abs(float64(val.VotingPower-acc)) / float64(val.VotingPower)
 		}
 	}
-	t.Logf("<< min power=100, max power=%d, actual average voters=%d, max voters=%d >> largest gap: %f", 100*minMaxRate, totalVoters/loopCount, maxVoters, largestGap)
+	t.Logf("<< min power=100, max power=%d, actual average voters=%d, max voters=%d >> largest gap: %f",
+		100*minMaxRate, totalVoters/loopCount, maxVoters, largestGap)
 }
 
 /**
@@ -92,15 +93,16 @@ func findLargestVotingPowerGap(t *testing.T, loopCount int, minMaxRate int, maxV
 func TestSelectVoterMaxVarious(t *testing.T) {
 	hash := 0
 	for minMaxRate := 1; minMaxRate <= 100000000; minMaxRate *= 10000 {
-		t.Logf("<<< min: 100, max: %d >>>", 100 * minMaxRate)
+		t.Logf("<<< min: 100, max: %d >>>", 100*minMaxRate)
 		for validators := 16; validators <= 256; validators *= 4 {
 			for voters := 1; voters <= validators; voters += 10 {
 				MaxVoters = voters
 				valSet, _ := randValidatorSetWithMinMax(validators, 100, 100*int64(minMaxRate))
 				voterSet := SelectVoter(valSet, []byte{byte(hash)})
-				assert.True(t, int(math.Abs(float64(valSet.TotalVotingPower() - voterSet.TotalVotingPower()))) <= voters)
+				assert.True(t, int(math.Abs(float64(valSet.TotalVotingPower()-voterSet.TotalVotingPower()))) <= voters)
 				if voterSet.Size() < MaxVoters {
-					t.Logf("Cannot elect voters up to MaxVoters: validators=%d, MaxVoters=%d, actual voters=%d", validators, voters, voterSet.Size())
+					t.Logf("Cannot elect voters up to MaxVoters: validators=%d, MaxVoters=%d, actual voters=%d",
+						validators, voters, voterSet.Size())
 					break
 				}
 				hash++

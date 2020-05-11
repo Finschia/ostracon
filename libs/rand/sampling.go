@@ -85,7 +85,7 @@ func RandomSamplingToMax(
 	totalSampling := uint64(0)
 	winCandidates := make(map[Candidate]bool)
 	winners := 0
-	for ; len(winCandidates) < limitCandidates && totalSampling < MaxSamplingLoopTry; {
+	for len(winCandidates) < limitCandidates && totalSampling < MaxSamplingLoopTry {
 		threshold := uint64(float64(nextRandom(&seed)&uint64Mask) / float64(uint64Mask+1) * float64(totalPriority))
 		cumulativePriority := uint64(0)
 		for _, candidate := range candidates {

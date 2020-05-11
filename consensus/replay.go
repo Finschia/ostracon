@@ -312,8 +312,7 @@ func (h *Handshaker) ReplayBlocks(
 			Time:            h.genDoc.GenesisTime,
 			ChainId:         h.genDoc.ChainID,
 			ConsensusParams: csParams,
-			// ValidatorOrVoter: validator
-			Validators:      nextVals,
+			Validators:      nextVals, // ValidatorOrVoter: validator
 			AppStateBytes:   h.genDoc.AppState,
 		}
 		res, err := proxyApp.Consensus().InitChainSync(req)

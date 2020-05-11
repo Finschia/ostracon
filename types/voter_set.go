@@ -421,7 +421,7 @@ func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
 	for _, candi := range candidates {
 		if candi.(*candidate).win > 0 {
 			vals[index] = &Validator{Address: candi.(*candidate).val.Address,
-				PubKey:      candi.(*candidate).val.PubKey,
+				PubKey: candi.(*candidate).val.PubKey,
 				// VotingPower = TotalVotingPower * win / totalSampling : can be overflow
 				VotingPower: validators.TotalVotingPower()/int64(totalSampling)*int64(candi.(*candidate).win) +
 					int64(math.Ceil(float64(validators.TotalVotingPower()%int64(totalSampling))/float64(int64(totalSampling))*
