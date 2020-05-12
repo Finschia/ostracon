@@ -380,20 +380,6 @@ func (voters *VoterSet) StringIndented(indent string) string {
 
 }
 
-func (voters *VoterSet) SelectProposer(proofHash []byte, height int64, round int) *Validator {
-	if voters.IsNilOrEmpty() {
-		panic("empty validator set")
-	}
-	seed := hashToSeed(MakeRoundHash(proofHash, height, round))
-	candidates := make([]tmrand.Candidate, len(voters.Voters))
-	for i, val := range voters.Voters {
-		candidates[i] = &candidate{idx: i, val: val}
-	}
-	samples := tmrand.RandomSamplingWithPriority(seed, candidates, 1, uint64(voters.TotalVotingPower()))
-	proposerIdx := samples[0].(*candidate).idx
-	return voters.Voters[proposerIdx]
-}
-
 func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
 	// TODO: decide MaxVoters; make it to config
 	if len(proofHash) == 0 || validators.Size() <= MaxVoters {
@@ -496,7 +482,7 @@ func MakeRoundHash(proofHash []byte, height int64, round int) []byte {
 // RandValidatorSet returns a randomized validator set, useful for testing.
 // NOTE: PrivValidator are in order.
 // UNSTABLE
-func RandVoterSet(numVoters int, votingPower int64) (*VoterSet, []PrivValidator) {
+func RandVoterSet(numVoters int, votingPower int64) (*ValidatorSet, *VoterSet, []PrivValidator) {
 	valz := make([]*Validator, numVoters)
 	privValidators := make([]PrivValidator, numVoters)
 	for i := 0; i < numVoters; i++ {
@@ -506,5 +492,5 @@ func RandVoterSet(numVoters int, votingPower int64) (*VoterSet, []PrivValidator)
 	}
 	vals := NewValidatorSet(valz)
 	sort.Sort(PrivValidatorsByAddress(privValidators))
-	return SelectVoter(vals, []byte{}), privValidators
+	return vals, SelectVoter(vals, []byte{}), privValidators
 }

@@ -351,7 +351,7 @@ func makeBlock(privVal types.PrivValidator, height int64, state sm.State, lastCo
 	message := state.MakeHashMessage(0)
 	proof, _ := privVal.GenerateVRFProof(message)
 	block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, nil,
-		state.Voters.SelectProposer(state.LastProofHash, height, 0).Address, 0, proof)
+		state.Validators.SelectProposer(state.LastProofHash, height, 0).Address, 0, proof)
 	return block
 }
 

@@ -67,7 +67,7 @@ func TestValidateBlockHeader(t *testing.T) {
 
 	// Build up state for multiple heights
 	for height := int64(1); height < validationTestsStopHeight; height++ {
-		proposerAddr := state.Voters.SelectProposer(state.LastProofHash, height, 0).Address
+		proposerAddr := state.Validators.SelectProposer(state.LastProofHash, height, 0).Address
 		/*
 			Invalid blocks don't pass
 		*/
@@ -107,7 +107,7 @@ func TestValidateBlockCommit(t *testing.T) {
 	badPrivVal := types.NewMockPV()
 
 	for height := int64(1); height < validationTestsStopHeight; height++ {
-		proposerAddr := state.Voters.SelectProposer([]byte{}, height, 0).Address
+		proposerAddr := state.Validators.SelectProposer([]byte{}, height, 0).Address
 		if height > 1 {
 			/*
 				#2589: ensure state.LastVoters.VerifyCommit fails here
@@ -210,7 +210,7 @@ func TestValidateBlockEvidence(t *testing.T) {
 	lastCommit := types.NewCommit(0, 0, types.BlockID{}, nil)
 
 	for height := int64(1); height < validationTestsStopHeight; height++ {
-		proposerAddr := state.Voters.SelectProposer(state.LastProofHash, height, 0).Address
+		proposerAddr := state.Validators.SelectProposer(state.LastProofHash, height, 0).Address
 		proposerIdx, _ := state.Validators.GetByAddress(proposerAddr)
 		goodEvidence := types.NewMockEvidence(height, time.Now(), proposerIdx, proposerAddr)
 		if height > 1 {

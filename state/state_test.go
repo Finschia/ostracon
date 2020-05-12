@@ -368,7 +368,7 @@ func testProposerFreq(t *testing.T, caseNum int, valSet *types.ValidatorSet) {
 	runs := int(totalPower) * runMult
 	freqs := make([]int, N)
 	for i := 0; i < runs; i++ {
-		prop := voterSet.SelectProposer([]byte{}, 1, i)
+		prop := valSet.SelectProposer([]byte{}, 1, i)
 		idx, _ := valSet.GetByAddress(prop.Address)
 		freqs[idx]++
 		valSet.IncrementProposerPriority(1)
@@ -519,7 +519,7 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 	state.NextValidators = state.Validators
 	// we only have one validator:
 	assert.Equal(t, val1PubKey.Address(),
-		state.Voters.SelectProposer([]byte{}, state.LastBlockHeight+1, 0).Address)
+		state.Validators.SelectProposer([]byte{}, state.LastBlockHeight+1, 0).Address)
 
 	block := makeBlock(state, state.LastBlockHeight+1)
 	blockID := types.BlockID{Hash: block.Hash(), PartsHeader: block.MakePartSet(testPartSize).Header()}
@@ -713,7 +713,7 @@ func TestLargeGenesisValidator(t *testing.T) {
 		// -> no change in ProposerPrio (stays zero):
 		assert.EqualValues(t, oldState.NextValidators, updatedState.NextValidators)
 		assert.EqualValues(t, 0,
-			types.ToVoterAll(updatedState.NextValidators).SelectProposer([]byte{}, block.Height, 0).ProposerPriority)
+			updatedState.NextValidators.SelectProposer([]byte{}, block.Height, 0).ProposerPriority)
 
 		oldState = updatedState
 	}
@@ -811,8 +811,8 @@ func TestLargeGenesisValidator(t *testing.T) {
 		blockID = types.BlockID{Hash: block.Hash(), PartsHeader: block.MakePartSet(testPartSize).Header()}
 		curState, err = sm.UpdateState(curState, blockID, &block.Header, abciResponses, validatorUpdates)
 		require.NoError(t, err)
-		if !bytes.Equal(curState.Voters.SelectProposer([]byte{}, int64(count), 0).Address,
-			types.ToVoterAll(curState.NextValidators).SelectProposer([]byte{}, int64(count+1), 0).Address) {
+		if !bytes.Equal(curState.Validators.SelectProposer([]byte{}, int64(count), 0).Address,
+			curState.NextValidators.SelectProposer([]byte{}, int64(count+1), 0).Address) {
 			isProposerUnchanged = false
 		}
 		count++
@@ -852,9 +852,9 @@ func TestStoreLoadValidatorsIncrementsProposerPriority(t *testing.T) {
 	tearDown, stateDB, state := setupTestCase(t)
 	defer tearDown(t)
 	state.Validators = genValSet(valSetSize)
-	state.Voters.SelectProposer([]byte{}, 1, 0)
+	state.Validators.SelectProposer([]byte{}, 1, 0)
 	state.NextValidators = state.Validators.Copy()
-	types.ToVoterAll(state.NextValidators).SelectProposer([]byte{}, 2, 0)
+	state.NextValidators.SelectProposer([]byte{}, 2, 0)
 	sm.SaveState(stateDB, state)
 
 	nextHeight := state.LastBlockHeight + 1
@@ -878,9 +878,9 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 	defer tearDown(t)
 	require.Equal(t, int64(0), state.LastBlockHeight)
 	state.Validators = genValSet(valSetSize)
-	state.Voters.SelectProposer([]byte{}, 1, 0)
+	state.Validators.SelectProposer([]byte{}, 1, 0)
 	state.NextValidators = state.Validators.Copy()
-	types.ToVoterAll(state.NextValidators).SelectProposer([]byte{}, 2, 0)
+	state.NextValidators.SelectProposer([]byte{}, 2, 0)
 	sm.SaveState(stateDB, state)
 
 	_, valOld := state.Validators.GetByIndex(0)

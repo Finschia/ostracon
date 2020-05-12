@@ -88,7 +88,7 @@ func TestBeginBlockValidators(t *testing.T) {
 	for _, tc := range testCases {
 		lastCommit := types.NewCommit(1, 0, prevBlockID, tc.lastCommitSigs)
 
-		proposer := state.Voters.SelectProposer(state.LastProofHash, 1, 0)
+		proposer := state.Validators.SelectProposer(state.LastProofHash, 1, 0)
 		message := state.MakeHashMessage(0)
 		proof, _ := privVals[proposer.Address.String()].GenerateVRFProof(message)
 
@@ -161,7 +161,7 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 	lastCommit := types.NewCommit(9, 0, prevBlockID, commitSigs)
 	for _, tc := range testCases {
 		message := state.MakeHashMessage(0)
-		proposer := state.Voters.SelectProposer(state.LastProofHash, 1, 0)
+		proposer := state.Validators.SelectProposer(state.LastProofHash, 1, 0)
 		proof, _ := privVals[proposer.Address.String()].GenerateVRFProof(message)
 		block, _ := state.MakeBlock(10, makeTxs(2), lastCommit, nil, proposer.Address, 0, proof)
 		block.Time = now

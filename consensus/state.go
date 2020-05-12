@@ -554,6 +554,7 @@ func (cs *State) updateToState(state sm.State) {
 		cs.StartTime = cs.config.Commit(cs.CommitTime)
 	}
 
+	cs.Validators = state.Validators.Copy()
 	cs.Voters = state.Voters.Copy()
 	cs.Proposal = nil
 	cs.ProposalBlock = nil
@@ -829,7 +830,7 @@ func (cs *State) enterNewRound(height int64, round int) {
 	logger.Info(fmt.Sprintf("enterNewRound(%v/%v). Current: %v/%v/%v", height, round, cs.Height, cs.Round, cs.Step))
 
 	// Select the current height and round Proposer
-	cs.Proposer = cs.Voters.SelectProposer(cs.state.LastProofHash, height, round)
+	cs.Proposer = cs.Validators.SelectProposer(cs.state.LastProofHash, height, round)
 
 	// Setup new round
 	// we don't fire newStep for this step,
@@ -1552,7 +1553,7 @@ func (cs *State) defaultSetProposal(proposal *types.Proposal) error {
 	}
 
 	// If consensus does not enterNewRound yet, cs.Proposer may be nil or prior proposer, so don't use cs.Proposer
-	proposer := cs.Voters.SelectProposer(cs.state.LastProofHash, proposal.Height, proposal.Round)
+	proposer := cs.Validators.SelectProposer(cs.state.LastProofHash, proposal.Height, proposal.Round)
 
 	// Verify signature
 	if !proposer.PubKey.VerifyBytes(proposal.SignBytes(cs.state.ChainID), proposal.Signature) {

@@ -67,7 +67,7 @@ func findLargestVotingPowerGap(t *testing.T, loopCount int, minMaxRate int, maxV
 		for _, voter := range voterSet.Voters {
 			accumulation[voter.Address.String()] += voter.VotingPower
 		}
-		proposer := voterSet.SelectProposer(hash, int64(i), 0)
+		proposer := valSet.SelectProposer(hash, int64(i), 0)
 		message := MakeRoundHash(hash, int64(i), 0)
 		proof, _ := privMap[proposer.Address.String()].GenerateVRFProof(message)
 		hash, _ = vrf.ProofToHash(proof)

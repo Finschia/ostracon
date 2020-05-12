@@ -153,10 +153,10 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, round
 
 	// validate proposer
 	if !bytes.Equal(block.ProposerAddress.Bytes(),
-		state.Voters.SelectProposer(state.LastProofHash, block.Height, block.Round).Address.Bytes()) {
+		state.Validators.SelectProposer(state.LastProofHash, block.Height, block.Round).Address.Bytes()) {
 		return fmt.Errorf("block.ProposerAddress, %X, is not the proposer %X",
 			block.ProposerAddress,
-			state.Voters.SelectProposer(state.LastProofHash, block.Height, block.Round).Address,
+			state.Validators.SelectProposer(state.LastProofHash, block.Height, block.Round).Address,
 		)
 	}
 

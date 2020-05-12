@@ -47,10 +47,9 @@ func BenchmarkLoadValidators(b *testing.B) {
 		b.Fatal(err)
 	}
 	state.Validators = genValSet(valSetSize)
-	state.Voters = types.ToVoterAll(state.Validators)
-	state.Voters.SelectProposer([]byte{}, 1, 0)
+	state.Validators.SelectProposer([]byte{}, 1, 0)
 	state.NextValidators = state.Validators.Copy()
-	types.ToVoterAll(state.Validators).SelectProposer([]byte{}, 2, 0)
+	state.Validators.SelectProposer([]byte{}, 2, 0)
 	sm.SaveState(stateDB, state)
 
 	for i := 10; i < 10000000000; i *= 10 { // 10, 100, 1000, ...

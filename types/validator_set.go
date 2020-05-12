@@ -10,6 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/crypto/merkle"
+	tmrand "github.com/tendermint/tendermint/libs/rand"
 )
 
 const (
@@ -593,6 +594,20 @@ func (vals *ValidatorSet) updateWithChangeSet(changes []*Validator, allowDeletes
 // is not changed.
 func (vals *ValidatorSet) UpdateWithChangeSet(changes []*Validator) error {
 	return vals.updateWithChangeSet(changes, true)
+}
+
+func (vals *ValidatorSet) SelectProposer(proofHash []byte, height int64, round int) *Validator {
+	if vals.IsNilOrEmpty() {
+		panic("empty validator set")
+	}
+	seed := hashToSeed(MakeRoundHash(proofHash, height, round))
+	candidates := make([]tmrand.Candidate, len(vals.Validators))
+	for i, val := range vals.Validators {
+		candidates[i] = &candidate{idx: i, val: val}
+	}
+	samples := tmrand.RandomSamplingWithPriority(seed, candidates, 1, uint64(vals.TotalVotingPower()))
+	proposerIdx := samples[0].(*candidate).idx
+	return vals.Validators[proposerIdx]
 }
 
 //----------------

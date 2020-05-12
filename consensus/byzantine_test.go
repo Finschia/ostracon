@@ -178,7 +178,7 @@ func TestByzantine(t *testing.T) {
 
 // find proposer of current height and round from State
 func findProposer(state *State) (int, *types.Validator) {
-	proposer := state.Voters.SelectProposer(state.state.LastProofHash, state.Height, state.Round)
+	proposer := state.Validators.SelectProposer(state.state.LastProofHash, state.Height, state.Round)
 	return state.Voters.GetByAddress(proposer.PubKey.Address())
 }
 

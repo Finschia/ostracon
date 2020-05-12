@@ -35,7 +35,7 @@ func TestBlockAddEvidence(t *testing.T) {
 	lastID := makeBlockIDRandom()
 	h := int64(3)
 
-	voteSet, valSet, vals := randVoteSet(h-1, 1, PrecommitType, 10, 1)
+	voteSet, _, valSet, vals := randVoteSet(h-1, 1, PrecommitType, 10, 1)
 	commit, err := MakeCommit(lastID, h-1, 1, voteSet, vals, time.Now())
 	require.NoError(t, err)
 
@@ -55,11 +55,11 @@ func TestBlockValidateBasic(t *testing.T) {
 	lastID := makeBlockIDRandom()
 	h := int64(3)
 
-	voteSet, valSet, vals := randVoteSet(h-1, 1, PrecommitType, 10, 1)
+	voteSet, valSet, voterSet, vals := randVoteSet(h-1, 1, PrecommitType, 10, 1)
 	commit, err := MakeCommit(lastID, h-1, 1, voteSet, vals, time.Now())
 	require.NoError(t, err)
 
-	ev := NewMockEvidence(h, time.Now(), 0, valSet.Voters[0].Address)
+	ev := NewMockEvidence(h, time.Now(), 0, voterSet.Voters[0].Address)
 	evList := []Evidence{ev}
 
 	testCases := []struct {
@@ -120,11 +120,11 @@ func TestBlockMakePartSetWithEvidence(t *testing.T) {
 	lastID := makeBlockIDRandom()
 	h := int64(3)
 
-	voteSet, valSet, vals := randVoteSet(h-1, 1, PrecommitType, 10, 1)
+	voteSet, _, voterSet, vals := randVoteSet(h-1, 1, PrecommitType, 10, 1)
 	commit, err := MakeCommit(lastID, h-1, 1, voteSet, vals, time.Now())
 	require.NoError(t, err)
 
-	ev := NewMockEvidence(h, time.Now(), 0, valSet.Voters[0].Address)
+	ev := NewMockEvidence(h, time.Now(), 0, voterSet.Voters[0].Address)
 	evList := []Evidence{ev}
 
 	partSet := MakeBlock(h, []Tx{Tx("Hello World")}, commit, evList).MakePartSet(512)
@@ -137,15 +137,15 @@ func TestBlockHashesTo(t *testing.T) {
 
 	lastID := makeBlockIDRandom()
 	h := int64(3)
-	voteSet, valSet, vals := randVoteSet(h-1, 1, PrecommitType, 10, 1)
+	voteSet, _, voterSet, vals := randVoteSet(h-1, 1, PrecommitType, 10, 1)
 	commit, err := MakeCommit(lastID, h-1, 1, voteSet, vals, time.Now())
 	require.NoError(t, err)
 
-	ev := NewMockEvidence(h, time.Now(), 0, valSet.Voters[0].Address)
+	ev := NewMockEvidence(h, time.Now(), 0, voterSet.Voters[0].Address)
 	evList := []Evidence{ev}
 
 	block := MakeBlock(h, []Tx{Tx("Hello World")}, commit, evList)
-	block.VotersHash = valSet.Hash()
+	block.VotersHash = voterSet.Hash()
 	assert.False(t, block.HashesTo([]byte{}))
 	assert.False(t, block.HashesTo([]byte("something else")))
 	assert.True(t, block.HashesTo(block.Hash()))
@@ -210,7 +210,7 @@ func TestNilDataHashDoesntCrash(t *testing.T) {
 func TestCommit(t *testing.T) {
 	lastID := makeBlockIDRandom()
 	h := int64(3)
-	voteSet, _, vals := randVoteSet(h-1, 1, PrecommitType, 10, 1)
+	voteSet, _, _, vals := randVoteSet(h-1, 1, PrecommitType, 10, 1)
 	commit, err := MakeCommit(lastID, h-1, 1, voteSet, vals, time.Now())
 	require.NoError(t, err)
 
@@ -354,7 +354,7 @@ func TestMaxHeaderBytes(t *testing.T) {
 func randCommit(now time.Time) *Commit {
 	lastID := makeBlockIDRandom()
 	h := int64(3)
-	voteSet, _, vals := randVoteSet(h-1, 1, PrecommitType, 10, 1)
+	voteSet, _, _, vals := randVoteSet(h-1, 1, PrecommitType, 10, 1)
 	commit, err := MakeCommit(lastID, h-1, 1, voteSet, vals, now)
 	if err != nil {
 		panic(err)
@@ -433,7 +433,7 @@ func TestCommitToVoteSet(t *testing.T) {
 	lastID := makeBlockIDRandom()
 	h := int64(3)
 
-	voteSet, valSet, vals := randVoteSet(h-1, 1, PrecommitType, 10, 1)
+	voteSet, _, valSet, vals := randVoteSet(h-1, 1, PrecommitType, 10, 1)
 	commit, err := MakeCommit(lastID, h-1, 1, voteSet, vals, time.Now())
 	assert.NoError(t, err)
 
@@ -473,7 +473,7 @@ func TestCommitToVoteSetWithVotesForNilBlock(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		voteSet, valSet, vals := randVoteSet(height-1, round, PrecommitType, tc.numValidators, 1)
+		voteSet, _, valSet, vals := randVoteSet(height-1, round, PrecommitType, tc.numValidators, 1)
 
 		vi := 0
 		for n := range tc.blockIDs {
