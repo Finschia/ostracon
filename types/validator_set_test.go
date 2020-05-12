@@ -264,10 +264,17 @@ func randPubKey() crypto.PubKey {
 	return ed25519.PubKeyEd25519(pubKey)
 }
 
+func max(a, b int64) int64 {
+	if a >= b {
+		return a
+	}
+	return b
+}
+
 func randValidator(totalVotingPower int64) *Validator {
 	// this modulo limits the ProposerPriority/VotingPower to stay in the
 	// bounds of MaxTotalVotingPower minus the already existing voting power:
-	val := NewValidator(randPubKey(), int64(tmrand.Uint64()%uint64((MaxTotalVotingPower-totalVotingPower))))
+	val := NewValidator(randPubKey(), max(int64(tmrand.Uint64()%uint64((MaxTotalVotingPower-totalVotingPower))), 1))
 	val.ProposerPriority = tmrand.Int64() % (MaxTotalVotingPower - totalVotingPower)
 	return val
 }
