@@ -52,7 +52,7 @@ paths:
           required: true
           schema:
             type: string
-            example: "456"
+          example: "0x343536"
           description: The transaction
       responses:
         200:
@@ -96,7 +96,7 @@ paths:
           required: true
           schema:
             type: string
-            example: "123"
+          example: "0x313233"
           description: The transaction
       responses:
         200:
@@ -138,7 +138,7 @@ paths:
           required: true
           schema:
             type: string
-            example: "785"
+          example: "0x373835"
           description: The transaction
       responses:
         200:
@@ -281,7 +281,7 @@ paths:
           required: true
           schema:
             type: string
-            example: tm.event = 'Tx' AND tx.height = 5
+          example: tm.event = 'Tx' AND tx.height = 5
           description: |
             query is a string, which has a form: "condition AND condition ..." (no OR at the
             moment). condition has a form: "key operation operand". key is a string with
@@ -327,7 +327,7 @@ paths:
           required: true
           schema:
             type: string
-            example: tm.event = 'Tx' AND tx.height = 5
+          example: tm.event = 'Tx' AND tx.height = 5
           description: |
             query is a string, which has a form: "condition AND condition ..." (no OR at the
             moment). condition has a form: "key operation operand". key is a string with
@@ -497,13 +497,13 @@ paths:
           description: Minimum block height to return
           schema:
             type: number
-            example: 1
+          example: 1
         - in: query
           name: maxHeight
           description: Maximum block height to return
           schema:
             type: number
-            example: 2
+          example: 2
       tags:
         - Info
       description: |
@@ -531,7 +531,7 @@ paths:
           schema:
             type: number
             default: 0
-            example: 1
+          example: 1
           description: height to return. If no height is provided, it will fetch the latest block.
       tags:
         - Info
@@ -561,7 +561,7 @@ paths:
           required: true
           schema:
             type: string
-            example: "0xD70952032620CC4E2737EB8AC379806359D8E0B17B0488F627997A0B043ABDED"
+          example: "0xD70952032620CC4E2737EB8AC379806359D8E0B17B0488F627997A0B043ABDED"
       tags:
         - Info
       description: |
@@ -590,7 +590,7 @@ paths:
           schema:
             type: number
             default: 0
-            example: 1
+          example: 1
       tags:
         - Info
       description: |
@@ -619,7 +619,7 @@ paths:
           schema:
             type: number
             default: 0
-            example: 1
+          example: 1
       tags:
         - Info
       description: |
@@ -648,7 +648,7 @@ paths:
           schema:
             type: number
             default: 0
-            example: 1
+          example: 1
         - in: query
           name: page
           description: "Page number (1-based)"
@@ -656,15 +656,15 @@ paths:
           schema:
             type: number
             default: 0
-            example: 1
+          example: 1
         - in: query
           name: per_page
           description: "Number of entries per page (max: 100)"
           required: false
           schema:
             type: number
-            example: 30
             default: 30
+          example: 30
       tags:
         - Info
       description: |
@@ -756,7 +756,7 @@ paths:
           schema:
             type: number
             default: 0
-            example: 1
+          example: 1
       tags:
         - Info
       description: |
@@ -784,7 +784,7 @@ paths:
           description: Maximum number of unconfirmed transactions to return
           schema:
             type: number
-            example: 1
+          example: 1
       tags:
         - Info
       description: |
@@ -834,7 +834,7 @@ paths:
           required: true
           schema:
             type: string
-            example: "tx.height=1000"
+          example: "\"tx.height=1000\""
         - in: query
           name: prove
           description: Include proofs of the transactions inclusion in the block
@@ -842,7 +842,7 @@ paths:
           schema:
             type: boolean
             default: false
-            example: true
+          example: true
         - in: query
           name: page
           description: "Page number (1-based)"
@@ -850,7 +850,7 @@ paths:
           schema:
             type: number
             default: 1
-            example: 1
+          example: 1
         - in: query
           name: per_page
           description: "Number of entries per page (max: 100)"
@@ -858,7 +858,7 @@ paths:
           schema:
             type: number
             default: 30
-            example: 30
+          example: 30
         - in: query
           name: order_by
           description: Order in which transactions are sorted ("asc" or "desc"), by height & index. If empty, default sorting will be still applied.
@@ -866,7 +866,7 @@ paths:
           schema:
             type: string
             default: "asc"
-            example: "asc"
+          example: "\"asc\""
       tags:
         - Info
       description: |
@@ -895,15 +895,15 @@ paths:
           required: true
           schema:
             type: string
-            example: "0xD70952032620CC4E2737EB8AC379806359D8E0B17B0488F627997A0B043ABDED"
+          example: "0xD70952032620CC4E2737EB8AC379806359D8E0B17B0488F627997A0B043ABDED"
         - in: query
           name: prove
           description: Include proofs of the transactions inclusion in the block
           required: false
           schema:
             type: boolean
-            example: true
             default: false
+          example: true
       tags:
         - Info
       description: |
@@ -953,30 +953,30 @@ paths:
           required: true
           schema:
             type: string
-            example: "/a/b/c"
+          example: "/a/b/c"
         - in: query
           name: data
           description: Data
           required: true
           schema:
             type: string
-            example: "IHAVENOIDEA"
+          example: "IHAVENOIDEA"
         - in: query
           name: height
           description: Height (0 means latest)
           required: false
           schema:
             type: number
-            example: 1
             default: 0
+          example: 1
         - in: query
           name: prove
           description: Include proofs of the transactions inclusion in the block
           required: false
           schema:
             type: boolean
-            example: true
             default: false
+          example: true
       tags:
         - ABCI
       description: |
@@ -1005,7 +1005,7 @@ paths:
           required: true
           schema:
             type: string
-            example: "JSON_EVIDENCE_Amino_encoded"
+          example: "JSON_EVIDENCE_Amino_encoded"
       tags:
         - Info
       description: |
@@ -1969,11 +1969,15 @@ components:
                     evidence:
                       type: "object"
                       required:
-                        - "max_age"
+                        - "max_age_num_blocks"
+                        - "max_age_duration"
                       properties:
-                        max_age:
+                        max_age_num_blocks:
                           type: "string"
                           example: "100000"
+                        max_age_duration:
+                          type: "string"
+                          example: "172800000000000"
                     validator:
                       type: "object"
                       required:
@@ -2044,6 +2048,7 @@ components:
                 - "start_time"
                 - "commit_time"
                 - "validators"
+                - "proposer"
                 - "proposal"
                 - "proposal_block"
                 - "proposal_block_parts"
@@ -2077,7 +2082,6 @@ components:
                 validators:
                   required:
                     - "validators"
-                    - "proposer"
                   properties:
                     validators:
                       type: "array"
@@ -2105,35 +2109,35 @@ components:
                           proposer_priority:
                             type: "string"
                             example: "-11896414"
-                    proposer:
+                  type: "object"
+                proposer:
+                  required:
+                    - "address"
+                    - "pub_key"
+                    - "voting_power"
+                    - "proposer_priority"
+                  properties:
+                    address:
+                      type: "string"
+                      example: "708FDDCE121CDADA502F2B0252FEF13FDAA31E50"
+                    pub_key:
                       required:
-                        - "address"
-                        - "pub_key"
-                        - "voting_power"
-                        - "proposer_priority"
+                        - "type"
+                        - "value"
                       properties:
-                        address:
+                        type:
                           type: "string"
-                          example: "708FDDCE121CDADA502F2B0252FEF13FDAA31E50"
-                        pub_key:
-                          required:
-                            - "type"
-                            - "value"
-                          properties:
-                            type:
-                              type: "string"
-                              example: "tendermint/PubKeyEd25519"
-                            value:
-                              type: "string"
-                              example: "VNMNfw7mrQBSpEvCtA9ykOe6BoR00RM9b/a9v3vXZhY="
-                          type: "object"
-                        voting_power:
+                          example: "tendermint/PubKeyEd25519"
+                        value:
                           type: "string"
-                          example: "295360"
-                        proposer_priority:
-                          type: "string"
-                          example: "-88886833"
+                          example: "VNMNfw7mrQBSpEvCtA9ykOe6BoR00RM9b/a9v3vXZhY="
                       type: "object"
+                    voting_power:
+                      type: "string"
+                      example: "295360"
+                    proposer_priority:
+                      type: "string"
+                      example: "-88886833"
                   type: "object"
                 locked_round:
                   type: "string"
@@ -2196,7 +2200,6 @@ components:
                 last_validators:
                   required:
                     - "validators"
-                    - "proposer"
                   properties:
                     validators:
                       type: "array"
@@ -2224,35 +2227,6 @@ components:
                           proposer_priority:
                             type: "string"
                             example: "-12136141"
-                    proposer:
-                      required:
-                        - "address"
-                        - "pub_key"
-                        - "voting_power"
-                        - "proposer_priority"
-                      properties:
-                        address:
-                          type: "string"
-                          example: "B00A6323737F321EB0B8D59C6FD497A14B60938A"
-                        pub_key:
-                          required:
-                            - "type"
-                            - "value"
-                          properties:
-                            type:
-                              type: "string"
-                              example: "tendermint/PubKeyEd25519"
-                            value:
-                              type: "string"
-                              example: "cOQZvh/h9ZioSeUMZB/1Vy1Xo5x2sjrVjlE/qHnYifM="
-                          type: "object"
-                        voting_power:
-                          type: "string"
-                          example: "8590153"
-                        proposer_priority:
-                          type: "string"
-                          example: "-79515145"
-                      type: "object"
                   type: "object"
                 triggered_timeout_precommit:
                   type: "boolean"
@@ -2492,11 +2466,15 @@ components:
                 evidence:
                   type: "object"
                   required:
-                    - "max_age"
+                    - "max_age_num_blocks"
+                    - "max_age_duration"
                   properties:
-                    max_age:
+                    max_age_num_blocks:
                       type: "string"
                       example: "100000"
+                    max_age_duration:
+                      type: "string"
+                      example: "172800000000000"
                 validator:
                   type: "object"
                   required:
