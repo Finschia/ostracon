@@ -145,7 +145,7 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, round
 	// know what round the block was first proposed. So just check that it's
 	// a legit address and a known validator.
 	if len(block.ProposerAddress) != crypto.AddressSize ||
-		!state.Voters.HasAddress(block.ProposerAddress) {
+		!state.Validators.HasAddress(block.ProposerAddress) {
 		return fmt.Errorf("block.Header.ProposerAddress, %X, is not a validator",
 			block.ProposerAddress,
 		)
@@ -169,7 +169,7 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, round
 
 	// validate vrf proof
 	message := state.MakeHashMessage(block.Round)
-	_, val := state.Voters.GetByAddress(block.ProposerAddress)
+	_, val := state.Validators.GetByAddress(block.ProposerAddress)
 	verified, err := vrf.Verify(val.PubKey.(ed25519.PubKeyEd25519), block.Proof.Bytes(), message)
 	if err != nil {
 		return types.NewErrInvalidProof(fmt.Sprintf(
@@ -213,8 +213,8 @@ func VerifyEvidence(stateDB dbm.DB, state State, evidence types.Evidence) error 
 		return err
 	}
 
-	// The address must have been an active validator at the height.
-	// NOTE: we will ignore evidence from H if the key was not a validator
+	// The address must have been an active voter at the height.
+	// NOTE: we will ignore evidence from H if the key was not a voter
 	// at H, even if it is a validator at some nearby H'
 	// XXX: this makes lite-client bisection as is unsafe
 	// See https://github.com/tendermint/tendermint/issues/3244
@@ -222,7 +222,7 @@ func VerifyEvidence(stateDB dbm.DB, state State, evidence types.Evidence) error 
 	height, addr := ev.Height(), ev.Address()
 	_, val := voterSet.GetByAddress(addr)
 	if val == nil {
-		return fmt.Errorf("address %X was not a validator at height %d", addr, height)
+		return fmt.Errorf("address %X was not a voter at height %d", addr, height)
 	}
 
 	if err := evidence.Verify(state.ChainID, val.PubKey); err != nil {
