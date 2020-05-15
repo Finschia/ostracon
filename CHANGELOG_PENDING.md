@@ -13,6 +13,7 @@
 - Blockchain Protocol
 
 ### FEATURES:
+- [types] [\#78](https://github.com/line/tendermint/pull/78) Add validators rpc
 
 ### IMPROVEMENTS:
 
