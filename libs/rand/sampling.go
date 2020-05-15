@@ -84,26 +84,26 @@ func RandomSamplingToMax(
 	candidates = sort(candidates)
 	totalSampling := uint64(0)
 	winCandidates := make(map[Candidate]bool)
-	winners := 0
 	for len(winCandidates) < limitCandidates && totalSampling < MaxSamplingLoopTry {
 		threshold := uint64(float64(nextRandom(&seed)&uint64Mask) / float64(uint64Mask+1) * float64(totalPriority))
 		cumulativePriority := uint64(0)
+		found := false
 		for _, candidate := range candidates {
 			if threshold < cumulativePriority+candidate.Priority() {
 				if !winCandidates[candidate] {
-					winners += 1
 					winCandidates[candidate] = true
 				}
 				candidate.IncreaseWin()
 				totalSampling++
+				found = true
 				break
 			}
 			cumulativePriority += candidate.Priority()
 		}
 
-		if cumulativePriority >= totalPriority {
-			panic(fmt.Sprintf("Cannot find random sample. totalPriority may be wrong: totalPriority=%d, actualTotalPriority=%d",
-				totalPriority, sumTotalPriority(candidates)))
+		if !found {
+			panic(fmt.Sprintf("Cannot find random sample. totalPriority may be wrong: totalPriority=%d, "+
+				"actualTotalPriority=%d, threshold=%d", totalPriority, sumTotalPriority(candidates), threshold))
 		}
 	}
 	return totalSampling
