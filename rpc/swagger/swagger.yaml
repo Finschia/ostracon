@@ -637,10 +637,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-  /validators:
+  /voters:
     get:
-      summary: Get validator set at a specified height
-      operationId: validators
+      summary: Get voter set at a specified height
+      operationId: voters
       parameters:
         - in: query
           name: height
@@ -668,14 +668,14 @@ paths:
       tags:
         - Info
       description: |
-        Get Validators.
+        Get Voters.
       responses:
         200:
           description: Commit results.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ValidatorsResponse"
+                $ref: "#/components/schemas/VotersResponse"
         500:
           description: Error
           content:
@@ -1334,10 +1334,10 @@ components:
         data_hash:
           type: string
           example: "970886F99E77ED0D60DA8FCE0447C2676E59F2F77302B0C4AA10E1D02F18EF73"
-        validators_hash:
+        voters_hash:
           type: string
           example: "D658BFD100CA8025CFD3BECFE86194322731D387286FBD26E059115FD5F2BCA0"
-        next_validators_hash:
+        next_voters_hash:
           type: string
           example: "D658BFD100CA8025CFD3BECFE86194322731D387286FBD26E059115FD5F2BCA0"
         consensus_hash:
@@ -1727,8 +1727,8 @@ components:
                     - "last_block_id"
                     - "last_commit_hash"
                     - "data_hash"
-                    - "validators_hash"
-                    - "next_validators_hash"
+                    - "voters_hash"
+                    - "next_voters_hash"
                     - "consensus_hash"
                     - "app_hash"
                     - "last_results_hash"
@@ -1783,10 +1783,10 @@ components:
                     data_hash:
                       type: "string"
                       example: "970886F99E77ED0D60DA8FCE0447C2676E59F2F77302B0C4AA10E1D02F18EF73"
-                    validators_hash:
+                    voters_hash:
                       type: "string"
                       example: "D658BFD100CA8025CFD3BECFE86194322731D387286FBD26E059115FD5F2BCA0"
-                    next_validators_hash:
+                    next_voters_hash:
                       type: "string"
                       example: "D658BFD100CA8025CFD3BECFE86194322731D387286FBD26E059115FD5F2BCA0"
                     consensus_hash:
@@ -1862,7 +1862,7 @@ components:
               type: "boolean"
               example: true
           type: "object"
-    ValidatorsResponse:
+    VotersResponse:
       type: object
       required:
         - "jsonrpc"
@@ -1878,12 +1878,12 @@ components:
         result:
           required:
             - "block_height"
-            - "validators"
+            - "voters"
           properties:
             block_height:
               type: "string"
               example: "55"
-            validators:
+            voters:
               type: "array"
               items:
                 type: "object"
@@ -2047,7 +2047,7 @@ components:
                 - "step"
                 - "start_time"
                 - "commit_time"
-                - "validators"
+                - "voters"
                 - "proposer"
                 - "proposal"
                 - "proposal_block"
@@ -2061,7 +2061,7 @@ components:
                 - "votes"
                 - "commit_round"
                 - "last_commit"
-                - "last_validators"
+                - "last_voters"
                 - "triggered_timeout_precommit"
               properties:
                 height:
@@ -2079,11 +2079,11 @@ components:
                 commit_time:
                   type: "string"
                   example: "2019-08-05T11:28:44.064658805Z"
-                validators:
+                voters:
                   required:
-                    - "validators"
+                    - "voters"
                   properties:
-                    validators:
+                    voters:
                       type: "array"
                       items:
                         type: "object"
@@ -2197,11 +2197,11 @@ components:
                       properties: {}
                       type: "object"
                   type: "object"
-                last_validators:
+                last_voters:
                   required:
-                    - "validators"
+                    - "voters"
                   properties:
-                    validators:
+                    voters:
                       type: "array"
                       items:
                         type: "object"
