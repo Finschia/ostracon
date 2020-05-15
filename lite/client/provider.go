@@ -97,6 +97,31 @@ func (p *provider) fetchLatestCommit(minHeight int64, maxHeight int64) (*ctypes.
 }
 
 // Implements Provider.
+func (p *provider) ValidatorSet(chainID string, height int64) (valset *types.ValidatorSet, err error) {
+	return p.getValidatorSet(chainID, height)
+}
+
+func (p *provider) getValidatorSet(chainID string, height int64) (valset *types.ValidatorSet, err error) {
+	if chainID != p.chainID {
+		err = fmt.Errorf("expected chainID %s, got %s", p.chainID, chainID)
+		return
+	}
+	if height < 1 {
+		err = fmt.Errorf("expected height >= 1, got height %v", height)
+		return
+	}
+
+	var res *ctypes.ResultValidators
+	res, err = p.client.Validators(&height, 0, 0)
+
+	if err != nil {
+		// TODO pass through other types of errors.
+		return nil, lerr.ErrUnknownValidators(chainID, height)
+	}
+	valset = types.NewValidatorSet(res.Validators)
+	return
+}
+
 func (p *provider) VoterSet(chainID string, height int64) (valset *types.VoterSet, err error) {
 	return p.getVoterSet(chainID, height)
 }

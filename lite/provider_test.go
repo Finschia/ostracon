@@ -26,6 +26,9 @@ func (missingProvider) SaveFullCommit(FullCommit) error { return nil }
 func (missingProvider) LatestFullCommit(chainID string, minHeight, maxHeight int64) (FullCommit, error) {
 	return FullCommit{}, lerr.ErrCommitNotFound()
 }
+func (missingProvider) ValidatorSet(chainID string, height int64) (*types.ValidatorSet, error) {
+	return nil, errors.New("missing validator set")
+}
 func (missingProvider) VoterSet(chainID string, height int64) (*types.VoterSet, error) {
 	return nil, errors.New("missing voter set")
 }

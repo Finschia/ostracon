@@ -7,7 +7,6 @@ import (
 	rpctypes "github.com/tendermint/tendermint/rpc/lib/types"
 	sm "github.com/tendermint/tendermint/state"
 	"github.com/tendermint/tendermint/types"
-	dbm "github.com/tendermint/tm-db"
 )
 
 // Validators gets the validator set at the given block height.
@@ -15,12 +14,7 @@ import (
 // Note the voters are sorted by their address - this is the canonical
 // order for the voters in the set as used in computing their Merkle root.
 // More: https://docs.tendermint.com/master/rpc/#/Info/validators
-func Voters(ctx *rpctypes.Context, heightPtr *int64, page, perPage int) (*ctypes.ResultVoters, error) {
-	return voters(ctx, heightPtr, page, perPage, sm.LoadValidators)
-}
-
-func voters(ctx *rpctypes.Context, heightPtr *int64, page, perPage int,
-	loadFunc func(db dbm.DB, height int64) (*types.ValidatorSet, *types.VoterSet, error)) (*ctypes.ResultVoters, error) {
+func Validators(ctx *rpctypes.Context, heightPtr *int64, page, perPage int) (*ctypes.ResultValidators, error) {
 	// The latest validator that we know is the
 	// NextValidator of the last block.
 	height := consensusState.GetState().LastBlockHeight + 1
@@ -29,7 +23,37 @@ func voters(ctx *rpctypes.Context, heightPtr *int64, page, perPage int,
 		return nil, err
 	}
 
-	_, voters, err := loadFunc(stateDB, height)
+	validators, _, err := sm.LoadValidators(stateDB, height)
+	if err != nil {
+		return nil, err
+	}
+
+	totalCount := len(validators.Validators)
+	perPage = validatePerPage(perPage)
+	page, err = validatePage(page, perPage, totalCount)
+	if err != nil {
+		return nil, err
+	}
+
+	skipCount := validateSkipCount(page, perPage)
+
+	v := validators.Validators[skipCount : skipCount+tmmath.MinInt(perPage, totalCount-skipCount)]
+
+	return &ctypes.ResultValidators{
+		BlockHeight: height,
+		Validators:  v}, nil
+}
+
+func Voters(ctx *rpctypes.Context, heightPtr *int64, page, perPage int) (*ctypes.ResultVoters, error) {
+	// The latest validator that we know is the
+	// NextValidator of the last block.
+	height := consensusState.GetState().LastBlockHeight + 1
+	height, err := getHeight(height, heightPtr)
+	if err != nil {
+		return nil, err
+	}
+
+	_, voters, err := sm.LoadValidators(stateDB, height)
 	if err != nil {
 		return nil, err
 	}

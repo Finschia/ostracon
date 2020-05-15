@@ -148,6 +148,37 @@ func (dbp *DBProvider) LatestFullCommit(chainID string, minHeight, maxHeight int
 	return FullCommit{}, lerr.ErrCommitNotFound()
 }
 
+func (dbp *DBProvider) ValidatorSet(chainID string, height int64) (valset *types.ValidatorSet, err error) {
+	return dbp.getValidatorSet(chainID, height)
+}
+
+func (dbp *DBProvider) getValidatorSet(chainID string, height int64) (valset *types.ValidatorSet, err error) {
+	vsBz, err := dbp.db.Get(voterSetKey(chainID, height))
+	if err != nil {
+		return nil, err
+	}
+	if len(vsBz) == 0 {
+		err = lerr.ErrUnknownValidators(chainID, height)
+		return
+	}
+	var voterSet *types.VoterSet
+	err = dbp.cdc.UnmarshalBinaryLengthPrefixed(vsBz, &voterSet)
+	if err != nil {
+		return
+	}
+
+	voterSet.TotalVotingPower()
+	
+	// cannot get validator set in lite
+	// so after getting voter set and convert it to validator set
+	valset = &types.ValidatorSet{
+		Validators: voterSet.Voters,
+	}
+	valset.TotalVotingPower()
+
+	return
+}
+
 func (dbp *DBProvider) VoterSet(chainID string, height int64) (valset *types.VoterSet, err error) {
 	return dbp.getVoterSet(chainID, height)
 }

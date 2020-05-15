@@ -218,7 +218,7 @@ func NewClientFromTrustedStore(
 		return nil, err
 	}
 
-	if err := c.restoreTrustedHeaderAndVals(); err != nil {
+	if err := c.restoreTrustedHeaderAndVoters(); err != nil {
 		return nil, err
 	}
 
@@ -227,7 +227,7 @@ func NewClientFromTrustedStore(
 
 // restoreTrustedHeaderAndVals loads trustedHeader and trustedVals from
 // trustedStore.
-func (c *Client) restoreTrustedHeaderAndVals() error {
+func (c *Client) restoreTrustedHeaderAndVoters() error {
 	lastHeight, err := c.trustedStore.LastSignedHeaderHeight()
 	if err != nil {
 		return errors.Wrap(err, "can't get last trusted header height")
@@ -355,26 +355,26 @@ func (c *Client) initializeWithTrustOptions(options TrustOptions) error {
 	}
 
 	// 2) Fetch and verify the vals.
-	vals, err := c.validatorSetFromPrimary(options.Height)
+	voters, err := c.voterSetFromPrimary(options.Height)
 	if err != nil {
 		return err
 	}
 
-	if !bytes.Equal(h.VotersHash, vals.Hash()) {
+	if !bytes.Equal(h.VotersHash, voters.Hash()) {
 		return errors.Errorf("expected header's validators (%X) to match those that were supplied (%X)",
 			h.VotersHash,
-			vals.Hash(),
+			voters.Hash(),
 		)
 	}
 
 	// Ensure that +2/3 of validators signed correctly.
-	err = vals.VerifyCommit(c.chainID, h.Commit.BlockID, h.Height, h.Commit)
+	err = voters.VerifyCommit(c.chainID, h.Commit.BlockID, h.Height, h.Commit)
 	if err != nil {
 		return errors.Wrap(err, "invalid commit")
 	}
 
 	// 3) Persist both of them and continue.
-	return c.updateTrustedHeaderAndVals(h, vals)
+	return c.updateTrustedHeaderAndVoters(h, voters)
 }
 
 // TrustedHeader returns a trusted header at the given height (0 - the latest).
@@ -400,7 +400,7 @@ func (c *Client) TrustedHeader(height int64) (*types.SignedHeader, error) {
 	return c.trustedStore.SignedHeader(height)
 }
 
-// TrustedValidatorSet returns a trusted validator set at the given height (0 -
+// TrustedVoterSet returns a trusted voter set at the given height (0 -
 // latest). The second return parameter is the height used (useful if 0 was
 // passed; otherwise can be ignored).
 //
@@ -417,7 +417,7 @@ func (c *Client) TrustedHeader(height int64) (*types.SignedHeader, error) {
 //  - header signed by that validator set has not been verified yet
 //
 // Safe for concurrent use by multiple goroutines.
-func (c *Client) TrustedValidatorSet(height int64) (valSet *types.VoterSet, heightUsed int64, err error) {
+func (c *Client) TrustedVoterSet(height int64) (valSet *types.VoterSet, heightUsed int64, err error) {
 	heightUsed, err = c.compareWithLatestHeight(height)
 	if err != nil {
 		return nil, heightUsed, err
@@ -495,7 +495,7 @@ func (c *Client) VerifyHeaderAtHeight(height int64, now time.Time) (*types.Signe
 	}
 
 	// Request the header and the vals.
-	newHeader, newVals, err := c.fetchHeaderAndValsAtHeight(height)
+	newHeader, newVals, err := c.fetchHeaderAndVotersAtHeight(height)
 	if err != nil {
 		return nil, err
 	}
@@ -582,7 +582,7 @@ func (c *Client) verifyHeader(newHeader *types.SignedHeader, newVals *types.Vote
 		return err
 	}
 
-	return c.updateTrustedHeaderAndVals(newHeader, newVals)
+	return c.updateTrustedHeaderAndVoters(newHeader, newVals)
 }
 
 // Primary returns the primary provider.
@@ -636,7 +636,7 @@ func (c *Client) cleanupAfter(height int64) error {
 
 	c.latestTrustedHeader = nil
 	c.latestTrustedVals = nil
-	err := c.restoreTrustedHeaderAndVals()
+	err := c.restoreTrustedHeaderAndVoters()
 	if err != nil {
 		return err
 	}
@@ -665,7 +665,7 @@ func (c *Client) sequence(
 		if height == newHeader.Height { // last header
 			interimHeader, interimVals = newHeader, newVals
 		} else { // intermediate headers
-			interimHeader, interimVals, err = c.fetchHeaderAndValsAtHeight(height)
+			interimHeader, interimVals, err = c.fetchHeaderAndVotersAtHeight(height)
 			if err != nil {
 				return errors.Wrapf(err, "failed to obtain the header #%d", height)
 			}
@@ -710,17 +710,17 @@ func (c *Client) sequence(
 // see VerifyHeader
 func (c *Client) bisection(
 	initiallyTrustedHeader *types.SignedHeader,
-	initiallyTrustedVals *types.VoterSet,
+	initiallyTrustedVoters *types.VoterSet,
 	newHeader *types.SignedHeader,
-	newVals *types.VoterSet,
+	newVoters *types.VoterSet,
 	now time.Time) error {
 
 	var (
 		trustedHeader = initiallyTrustedHeader
-		trustedVals   = initiallyTrustedVals
+		trustedVoters = initiallyTrustedVoters
 
 		interimHeader = newHeader
-		interimVals   = newVals
+		interimVoters = newVoters
 	)
 
 	for {
@@ -730,7 +730,7 @@ func (c *Client) bisection(
 			"newHeight", interimHeader.Height,
 			"newHash", hash2str(interimHeader.Hash()))
 
-		err := Verify(c.chainID, trustedHeader, trustedVals, interimHeader, interimVals, c.trustingPeriod, now,
+		err := Verify(c.chainID, trustedHeader, trustedVoters, interimHeader, interimVoters, c.trustingPeriod, now,
 			c.trustLevel)
 		switch err.(type) {
 		case nil:
@@ -739,13 +739,13 @@ func (c *Client) bisection(
 			}
 
 			// Update the lower bound to the previous upper bound
-			trustedHeader, trustedVals = interimHeader, interimVals
+			trustedHeader, trustedVoters = interimHeader, interimVoters
 			// Update the upper bound to the untrustedHeader
-			interimHeader, interimVals = newHeader, newVals
+			interimHeader, interimVoters = newHeader, newVoters
 
 		case ErrNewValSetCantBeTrusted:
 			pivotHeight := (interimHeader.Height + trustedHeader.Height) / 2
-			interimHeader, interimVals, err = c.fetchHeaderAndValsAtHeight(pivotHeight)
+			interimHeader, interimVoters, err = c.fetchHeaderAndVotersAtHeight(pivotHeight)
 			if err != nil {
 				return err
 			}
@@ -769,7 +769,7 @@ func (c *Client) bisection(
 	}
 }
 
-func (c *Client) updateTrustedHeaderAndVals(h *types.SignedHeader, vals *types.VoterSet) error {
+func (c *Client) updateTrustedHeaderAndVoters(h *types.SignedHeader, vals *types.VoterSet) error {
 	if !bytes.Equal(h.VotersHash, vals.Hash()) {
 		return errors.Errorf("expected validator's hash %X, but got %X", h.VotersHash, vals.Hash())
 	}
@@ -794,12 +794,12 @@ func (c *Client) updateTrustedHeaderAndVals(h *types.SignedHeader, vals *types.V
 
 // fetch header and validators for the given height (0 - latest) from primary
 // provider.
-func (c *Client) fetchHeaderAndValsAtHeight(height int64) (*types.SignedHeader, *types.VoterSet, error) {
+func (c *Client) fetchHeaderAndVotersAtHeight(height int64) (*types.SignedHeader, *types.VoterSet, error) {
 	h, err := c.signedHeaderFromPrimary(height)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "failed to obtain the header #%d", height)
 	}
-	vals, err := c.validatorSetFromPrimary(height)
+	vals, err := c.voterSetFromPrimary(height)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "failed to obtain the vals #%d", height)
 	}
@@ -938,13 +938,13 @@ func (c *Client) Update(now time.Time) (*types.SignedHeader, error) {
 		return nil, nil
 	}
 
-	latestHeader, latestVals, err := c.fetchHeaderAndValsAtHeight(0)
+	latestHeader, latestVoters, err := c.fetchHeaderAndVotersAtHeight(0)
 	if err != nil {
 		return nil, errors.Wrapf(err, "can't get latest header and vals")
 	}
 
 	if latestHeader.Height > lastTrustedHeight {
-		err = c.VerifyHeader(latestHeader, latestVals, now)
+		err = c.VerifyHeader(latestHeader, latestVoters, now)
 		if err != nil {
 			return nil, err
 		}
@@ -1005,7 +1005,7 @@ func (c *Client) signedHeaderFromPrimary(height int64) (*types.SignedHeader, err
 // validatorSetFromPrimary retrieves the VoterSet from the primary provider
 // at the specified height. Handles dropout by the primary provider after 5
 // attempts by replacing it with an alternative provider.
-func (c *Client) validatorSetFromPrimary(height int64) (*types.VoterSet, error) {
+func (c *Client) voterSetFromPrimary(height int64) (*types.VoterSet, error) {
 	for attempt := uint16(1); attempt <= c.maxRetryAttempts; attempt++ {
 		c.providerMutex.Lock()
 		vals, err := c.primary.VoterSet(height)
@@ -1023,7 +1023,7 @@ func (c *Client) validatorSetFromPrimary(height int64) (*types.VoterSet, error) 
 		return nil, err
 	}
 
-	return c.validatorSetFromPrimary(height)
+	return c.voterSetFromPrimary(height)
 }
 
 // exponential backoff (with jitter)

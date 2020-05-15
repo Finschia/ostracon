@@ -316,7 +316,7 @@ func TestClient_Cleanup(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, h)
 
-	valSet, _, err := c.TrustedValidatorSet(1)
+	valSet, _, err := c.TrustedVoterSet(1)
 	assert.Error(t, err)
 	assert.Nil(t, valSet)
 }
@@ -344,7 +344,7 @@ func TestClientRestoresTrustedHeaderAfterStartup1(t *testing.T) {
 		assert.NotNil(t, h)
 		assert.Equal(t, h.Hash(), h1.Hash())
 
-		valSet, _, err := c.TrustedValidatorSet(1)
+		valSet, _, err := c.TrustedVoterSet(1)
 		assert.NoError(t, err)
 		assert.NotNil(t, valSet)
 		if assert.NotNil(t, valSet) {
@@ -391,7 +391,7 @@ func TestClientRestoresTrustedHeaderAfterStartup1(t *testing.T) {
 			assert.Equal(t, h.Hash(), header1.Hash())
 		}
 
-		valSet, _, err := c.TrustedValidatorSet(1)
+		valSet, _, err := c.TrustedVoterSet(1)
 		assert.NoError(t, err)
 		assert.NotNil(t, valSet)
 		if assert.NotNil(t, valSet) {
@@ -428,7 +428,7 @@ func TestClientRestoresTrustedHeaderAfterStartup2(t *testing.T) {
 		assert.NotNil(t, h)
 		assert.Equal(t, h.Hash(), h1.Hash())
 
-		valSet, _, err := c.TrustedValidatorSet(1)
+		valSet, _, err := c.TrustedVoterSet(1)
 		assert.NoError(t, err)
 		assert.NotNil(t, valSet)
 		if assert.NotNil(t, valSet) {
@@ -478,7 +478,7 @@ func TestClientRestoresTrustedHeaderAfterStartup2(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, h)
 
-		valSet, _, err := c.TrustedValidatorSet(1)
+		valSet, _, err := c.TrustedVoterSet(1)
 		assert.Error(t, err)
 		assert.Nil(t, valSet)
 	}
@@ -513,7 +513,7 @@ func TestClientRestoresTrustedHeaderAfterStartup3(t *testing.T) {
 		assert.NotNil(t, h)
 		assert.Equal(t, h.Hash(), h1.Hash())
 
-		valSet, _, err := c.TrustedValidatorSet(1)
+		valSet, _, err := c.TrustedVoterSet(1)
 		assert.NoError(t, err)
 		assert.NotNil(t, valSet)
 		if assert.NotNil(t, valSet) {
@@ -525,7 +525,7 @@ func TestClientRestoresTrustedHeaderAfterStartup3(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, h)
 
-		valSet, _, err = c.TrustedValidatorSet(2)
+		valSet, _, err = c.TrustedVoterSet(2)
 		assert.Error(t, err)
 		assert.Nil(t, valSet)
 	}
@@ -574,7 +574,7 @@ func TestClientRestoresTrustedHeaderAfterStartup3(t *testing.T) {
 		assert.NotNil(t, h)
 		assert.Equal(t, h.Hash(), header1.Hash())
 
-		valSet, _, err := c.TrustedValidatorSet(1)
+		valSet, _, err := c.TrustedVoterSet(1)
 		assert.NoError(t, err)
 		assert.NotNil(t, valSet)
 		if assert.NotNil(t, valSet) {
@@ -586,7 +586,7 @@ func TestClientRestoresTrustedHeaderAfterStartup3(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, h)
 
-		valSet, _, err = c.TrustedValidatorSet(2)
+		valSet, _, err = c.TrustedVoterSet(2)
 		assert.Error(t, err)
 		assert.Nil(t, valSet)
 	}
@@ -610,7 +610,7 @@ func TestClient_Update(t *testing.T) {
 		assert.EqualValues(t, 3, h.Height)
 	}
 
-	valSet, _, err := c.TrustedValidatorSet(3)
+	valSet, _, err := c.TrustedVoterSet(3)
 	assert.NoError(t, err)
 	if assert.NotNil(t, valSet) {
 		assert.Equal(t, h.VotersHash.Bytes(), valSet.Hash())
@@ -652,7 +652,7 @@ func TestClient_Concurrency(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, h)
 
-			vals, _, err := c.TrustedValidatorSet(2)
+			vals, _, err := c.TrustedVoterSet(2)
 			assert.NoError(t, err)
 			assert.NotNil(t, vals)
 		}()
@@ -806,7 +806,7 @@ func TestClient_NewClientFromTrustedStore(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, h.Height)
 
-	valSet, _, err := c.TrustedValidatorSet(1)
+	valSet, _, err := c.TrustedVoterSet(1)
 	assert.NoError(t, err)
 	assert.NotNil(t, valSet)
 	if assert.NotNil(t, valSet) {
@@ -899,7 +899,7 @@ func TestClientTrustedValidatorSet(t *testing.T) {
 	_, err = c.VerifyHeaderAtHeight(2, bTime.Add(2*time.Hour).Add(1*time.Second))
 	require.NoError(t, err)
 
-	valSet, height, err := c.TrustedValidatorSet(0)
+	valSet, height, err := c.TrustedVoterSet(0)
 	assert.NoError(t, err)
 	assert.NotNil(t, valSet)
 	assert.EqualValues(t, 2, height)
