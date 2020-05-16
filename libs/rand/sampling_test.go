@@ -29,11 +29,6 @@ func (e *Element) IncreaseWin() {
 	e.Win++
 }
 
-func (e *Element) MultiplyWin(times float64) uint64 {
-	e.Win = uint64(float64(e.Win) * times)
-	return e.Win
-}
-
 func TestRandomSamplingWithPriority(t *testing.T) {
 	candidates := newCandidates(100, func(i int) uint64 { return uint64(i) })
 

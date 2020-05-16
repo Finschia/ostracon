@@ -10,7 +10,6 @@ type Candidate interface {
 	Priority() uint64
 	LessThan(other Candidate) bool
 	IncreaseWin()
-	MultiplyWin(times float64) uint64
 }
 
 const uint64Mask = uint64(0x7FFFFFFFFFFFFFFF)

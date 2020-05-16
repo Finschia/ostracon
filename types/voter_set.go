@@ -27,6 +27,7 @@ type VoterSet struct {
 }
 
 func NewVoterSet(valz []*Validator) *VoterSet {
+	sort.Sort(ValidatorsByAddress(valz))
 	vals := &VoterSet{Voters: copyValidatorListShallow(valz), totalVotingPower: 0}
 	vals.updateTotalVotingPower()
 	return vals
@@ -415,16 +416,12 @@ func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
 			index++
 		}
 	}
-	result := &VoterSet{Voters: vals, totalVotingPower: 0}
-	result.updateTotalVotingPower()
-	return result
+	return NewVoterSet(vals)
 }
 
 // This should be used in only test
 func ToVoterAll(validators *ValidatorSet) *VoterSet {
-	result := &VoterSet{Voters: copyValidatorListShallow(validators.Validators), totalVotingPower: 0}
-	result.updateTotalVotingPower()
-	return result
+	return NewVoterSet(validators.Validators)
 }
 
 // candidate save simple validator data for selecting proposer
@@ -452,11 +449,6 @@ func (c *candidate) LessThan(other tmrand.Candidate) bool {
 
 func (c *candidate) IncreaseWin() {
 	c.win++
-}
-
-func (c *candidate) MultiplyWin(times float64) uint64 {
-	c.win = uint64(float64(c.win) * times)
-	return c.win
 }
 
 func hashToSeed(hash []byte) uint64 {
