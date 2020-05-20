@@ -50,7 +50,8 @@ func TestUnmarshalElementJSON(t *testing.T) {
 			testJSON2,
 			map[string]interface{}{
 				"key1": float64(119),
-				"sub1": []interface{}{map[string]interface{}{"key2": "value2", "sub2": map[string]interface{}{"key3": []interface{}{"value2"}}}},
+				"sub1": []interface{}{map[string]interface{}{
+					"key2": "value2", "sub2": map[string]interface{}{"key3": []interface{}{"value2"}}}},
 				"sub3": map[string]interface{}{"key4": "value2", "key5": "value2"}},
 		},
 	}
@@ -108,7 +109,8 @@ func TestUnmarshalElementYAML(t *testing.T) {
 			testYAML2,
 			map[string]interface{}{
 				"key1": 119,
-				"sub1": []interface{}{map[string]interface{}{"key2": "value2", "sub2": map[string]interface{}{"key3": []interface{}{"value3"}}}},
+				"sub1": []interface{}{map[string]interface{}{
+					"key2": "value2", "sub2": map[string]interface{}{"key3": []interface{}{"value3"}}}},
 				"sub3": map[string]interface{}{"key4": "value4", "key5": "value5"}},
 		},
 	}
@@ -147,8 +149,10 @@ func TestDeleteProposer(t *testing.T) {
 }
 
 const (
-	testJSON1 = `{"key1":119, "sub1":{"key2":"value2", "sub2":{"key3":"value3"}}, "sub3":{"key4":"value4", "key5":"value5"}}`
-	testJSON2 = `{"key1":119, "sub1":[{"key2":"value2", "sub2":{"key3":["value2"]}}], "sub3":{"key4":"value2", "key5":"value2"}}`
+	testJSON1 = `{"key1":119, "sub1":{"key2":"value2", "sub2":{"key3":"value3"}},
+"sub3":{"key4":"value4", "key5":"value5"}}`
+	testJSON2 = `{"key1":119, "sub1":[{"key2":"value2", "sub2":{"key3":["value2"]}}],
+"sub3":{"key4":"value2", "key5":"value2"}}`
 	testYAML1 = `
 key1: 119
 sub1:

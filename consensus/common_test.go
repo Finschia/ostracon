@@ -196,7 +196,7 @@ func decideProposal(
 	pubKey1, _ := cs1.privValidator.GetPubKey()
 	pubKey2, _ := vs.PrivValidator.GetPubKey()
 	if !pubKey1.Equals(pubKey2) {
-		// block creater must be the cs.privValidator
+		// block creator must be the cs.privValidator
 		cs1.privValidator = vs.PrivValidator
 	}
 	block, blockParts := cs1.createProposalBlock(round)

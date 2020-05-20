@@ -352,18 +352,18 @@ func consensusNewBlock(t *testing.T, height int64, vss []*validatorStub, css []*
 
 	proposerIdx, prop := getProposerIdx(css[0], height, 0)
 	// search idx of proposer in the css
-	proposerIdxOfCss := 0
+	proposerIdxOfCSS := 0
 	for i, cs := range css {
 		pubKey, err := cs.privValidator.GetPubKey()
 		require.NoError(t, err)
 		if prop.PubKey.Equals(pubKey) {
-			proposerIdxOfCss = i
+			proposerIdxOfCSS = i
 			break
 		}
 	}
 
 	// state0 is main started machine (css[0])
-	if proposerIdxOfCss == 0 {
+	if proposerIdxOfCSS == 0 {
 		ensureNewProposal(proposalCH, height, 0)
 		rs := css[0].GetRoundState()
 		for i, voterIdx := range voterList {
@@ -373,7 +373,7 @@ func consensusNewBlock(t *testing.T, height int64, vss []*validatorStub, css []*
 			signAddVotes(css[0], tmproto.PrecommitType, rs.ProposalBlock.Hash(), rs.ProposalBlockParts.Header(), vss[voterIdx])
 		}
 	} else {
-		propBlock, _ := createProposalBlock(css[0], css[proposerIdxOfCss], 0)
+		propBlock, _ := createProposalBlock(css[0], css[proposerIdxOfCSS], 0)
 		propBlockParts := propBlock.MakePartSet(types.BlockPartSizeBytes)
 		blockID := types.BlockID{Hash: propBlock.Hash(), PartSetHeader: propBlockParts.Header()}
 		proposal := types.NewProposal(vss[proposerIdx].Height, 0, -1, blockID)

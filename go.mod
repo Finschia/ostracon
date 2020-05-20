@@ -10,8 +10,8 @@ require (
 	github.com/btcsuite/btcd v0.21.0-beta
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/confio/ics23/go v0.6.3
-	github.com/cosmos/iavl v0.15.3
 	github.com/coniks-sys/coniks-go v0.0.0-20180722014011-11acf4819b71
+	github.com/cosmos/iavl v0.15.3
 	github.com/fortytw2/leaktest v1.3.0
 	github.com/go-kit/kit v0.10.0
 	github.com/go-logfmt/logfmt v0.5.0
@@ -36,6 +36,7 @@ require (
 	github.com/tendermint/tm-db v0.6.4
 	github.com/yahoo/coname v0.0.0-20170609175141-84592ddf8673 // indirect
 	golang.org/x/crypto v0.0.0-20201117144127-c1f2f97bffc9
+	golang.org/x/mod v0.3.0 // indirect
 	golang.org/x/net v0.0.0-20201021035429-f5854403a974
 	google.golang.org/grpc v1.35.0
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
