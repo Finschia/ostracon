@@ -48,7 +48,9 @@ func BenchmarkLoadValidators(b *testing.B) {
 		b.Fatal(err)
 	}
 	state.Validators = genValSet(valSetSize)
-	state.NextValidators = state.Validators.CopyIncrementProposerPriority(1)
+	types.SelectProposer(state.Validators, []byte{}, 1, 0)
+	state.NextValidators = state.Validators.Copy()
+	types.SelectProposer(state.NextValidators, []byte{}, 2, 0)
 	sm.SaveState(stateDB, state)
 
 	for i := 10; i < 10000000000; i *= 10 { // 10, 100, 1000, ...
@@ -96,7 +98,6 @@ func TestPruneStates(t *testing.T) {
 			validator := &types.Validator{Address: []byte{1, 2, 3}, VotingPower: 100}
 			validatorSet := &types.ValidatorSet{
 				Validators: []*types.Validator{validator},
-				Proposer:   validator,
 			}
 			valsChanged := int64(0)
 			paramsChanged := int64(0)

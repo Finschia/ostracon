@@ -1,11 +1,6 @@
-## v0.33.5
-
+## v0.2
 
 \*\*
-
-Special thanks to external contributors on this release:
-
-Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermint).
 
 ### BREAKING CHANGES:
 
@@ -19,8 +14,7 @@ Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermi
 
 ### FEATURES:
 
-
 ### IMPROVEMENTS:
 
-
 ### BUG FIXES:
+- [circleCI] [\#76](https://github.com/line/tendermint/pull/76) Fix contract test job of circleCI

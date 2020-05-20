@@ -4,6 +4,7 @@ import (
 	amino "github.com/tendermint/go-amino"
 
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/vrf"
 	"github.com/tendermint/tendermint/types"
 )
 
@@ -21,6 +22,8 @@ func RegisterRemoteSignerMsg(cdc *amino.Codec) {
 
 	cdc.RegisterConcrete(&PingRequest{}, "tendermint/remotesigner/PingRequest", nil)
 	cdc.RegisterConcrete(&PingResponse{}, "tendermint/remotesigner/PingResponse", nil)
+	cdc.RegisterConcrete(&VRFProofRequest{}, "tendermint/remotesigner/VRFProofRequest", nil)
+	cdc.RegisterConcrete(&VRFProofResponse{}, "tendermint/remotesigner/VRFProofResponse", nil)
 }
 
 // TODO: Add ChainIDRequest
@@ -56,7 +59,18 @@ type SignedProposalResponse struct {
 	Error    *RemoteSignerError
 }
 
-// PingRequest is a request to confirm that the connection is alive.
+// VRFProofRequest is a PrivValidatorSocket message containing a message to generate proof.
+type VRFProofRequest struct {
+	Message []byte
+}
+
+// VRFProofResponse is a PrivValidatorSocket message containing a Proof.
+type VRFProofResponse struct {
+	Proof vrf.Proof
+	Error *RemoteSignerError
+}
+
+// PingRequest is a PrivValidatorSocket message to keep the connection alive.
 type PingRequest struct {
 }
 

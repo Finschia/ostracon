@@ -8,7 +8,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	tmrand "github.com/tendermint/tendermint/libs/rand"
+	"github.com/tendermint/tendermint/crypto/ed25519"
+	"github.com/tendermint/tendermint/crypto/vrf"
+	"github.com/tendermint/tendermint/libs/rand"
 	"github.com/tendermint/tendermint/types"
 )
 
@@ -24,8 +26,9 @@ func getSignerTestCases(t *testing.T) []signerTestCase {
 
 	// Get test cases for each possible dialer (DialTCP / DialUnix / etc)
 	for _, dtc := range getDialerTestCases(t) {
-		chainID := tmrand.Str(12)
-		mockPV := types.NewMockPV()
+		chainID := rand.Str(12)
+		mockKey := ed25519.GenPrivKey()
+		mockPV := types.NewMockPVWithParams(mockKey, false, false)
 
 		// get a pair of signer listener, signer dialer endpoints
 		sl, sd := getMockEndpoints(t, dtc.addr, dtc.dialer)
@@ -104,6 +107,26 @@ func TestSignerProposal(t *testing.T) {
 		require.NoError(t, tc.signerClient.SignProposal(tc.chainID, have))
 
 		assert.Equal(t, want.Signature, have.Signature)
+	}
+}
+
+func TestSignerGenerateVRFProof(t *testing.T) {
+	message := []byte("hello, world")
+	for _, tc := range getSignerTestCases(t) {
+		defer tc.signerServer.Stop()
+		defer tc.signerClient.Close()
+
+		proof, err := tc.signerClient.GenerateVRFProof(message)
+		require.Nil(t, err)
+		_, err = vrf.ProofToHash(proof)
+		require.Nil(t, err)
+		pubKey, err2 := tc.signerClient.GetPubKey()
+		require.NoError(t, err2)
+		pubKeyEd25519, ok := pubKey.(ed25519.PubKeyEd25519)
+		require.True(t, ok)
+		expected, err := vrf.Verify(pubKeyEd25519, proof, message)
+		require.Nil(t, err)
+		assert.True(t, expected)
 	}
 }
 

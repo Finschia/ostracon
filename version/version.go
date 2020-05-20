@@ -5,7 +5,7 @@ var (
 	GitCommit string
 
 	// Version is the built softwares version.
-	Version = TMCoreSemVer
+	Version = TMCoreSemVer + "-" + LINECoreSemVer
 )
 
 func init() {
@@ -22,6 +22,9 @@ const (
 	// automation :)
 
 	TMCoreSemVer = "0.33.4"
+
+	// LINECoreSemVer is the current version of LINE Tendermint Core.
+	LINECoreSemVer = "0.1"
 
 	// ABCISemVer is the semantic version of the ABCI library
 	ABCISemVer  = "0.16.2"

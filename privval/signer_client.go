@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/vrf"
 	"github.com/tendermint/tendermint/types"
 )
 
@@ -130,4 +131,23 @@ func (sc *SignerClient) SignProposal(chainID string, proposal *types.Proposal) e
 	*proposal = *resp.Proposal
 
 	return nil
+}
+
+// GenerateVRFProof requests a remote signer to generate a VRF proof
+func (sc *SignerClient) GenerateVRFProof(message []byte) (vrf.Proof, error) {
+	response, err := sc.endpoint.SendRequest(&VRFProofRequest{Message: message})
+	if err != nil {
+		sc.endpoint.Logger.Error("SignerClient::GenerateVRFProof", "err", err)
+		return nil, err
+	}
+
+	resp, ok := response.(*VRFProofResponse)
+	if !ok {
+		sc.endpoint.Logger.Error("SignerClient::GenerateVRFProof", "err", "response != VRFProofResponse")
+		return nil, ErrUnexpectedResponse
+	}
+	if resp.Error != nil {
+		return nil, resp.Error
+	}
+	return resp.Proof, nil
 }

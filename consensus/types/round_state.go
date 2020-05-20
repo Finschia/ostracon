@@ -73,6 +73,7 @@ type RoundState struct {
 	// Subjective time when +2/3 precommits for Block at Round were found
 	CommitTime         time.Time           `json:"commit_time"`
 	Validators         *types.ValidatorSet `json:"validators"`
+	Proposer           *types.Validator    `json:"proposer"`
 	Proposal           *types.Proposal     `json:"proposal"`
 	ProposalBlock      *types.Block        `json:"proposal_block"`
 	ProposalBlockParts *types.PartSet      `json:"proposal_block_parts"`
@@ -111,7 +112,7 @@ func (rs *RoundState) RoundStateSimple() RoundStateSimple {
 		panic(err)
 	}
 
-	addr := rs.Validators.GetProposer().Address
+	addr := rs.Proposer.Address
 	idx, _ := rs.Validators.GetByAddress(addr)
 
 	return RoundStateSimple{
@@ -130,7 +131,7 @@ func (rs *RoundState) RoundStateSimple() RoundStateSimple {
 
 // NewRoundEvent returns the RoundState with proposer information as an event.
 func (rs *RoundState) NewRoundEvent() types.EventDataNewRound {
-	addr := rs.Validators.GetProposer().Address
+	addr := rs.Proposer.Address
 	idx, _ := rs.Validators.GetByAddress(addr)
 
 	return types.EventDataNewRound{
@@ -182,6 +183,7 @@ func (rs *RoundState) StringIndented(indent string) string {
 %s  StartTime:     %v
 %s  CommitTime:    %v
 %s  Validators:    %v
+%s  Proposer:      %v
 %s  Proposal:      %v
 %s  ProposalBlock: %v %v
 %s  LockedRound:   %v
@@ -196,6 +198,7 @@ func (rs *RoundState) StringIndented(indent string) string {
 		indent, rs.StartTime,
 		indent, rs.CommitTime,
 		indent, rs.Validators.StringIndented(indent+"  "),
+		indent, rs.Proposer.String(),
 		indent, rs.Proposal,
 		indent, rs.ProposalBlockParts.StringShort(), rs.ProposalBlock.StringShort(),
 		indent, rs.LockedRound,

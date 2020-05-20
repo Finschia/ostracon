@@ -41,6 +41,14 @@ func DefaultValidationRequestHandler(
 			res = &SignedProposalResponse{r.Proposal, nil}
 		}
 
+	case *VRFProofRequest:
+		proof, err := privVal.GenerateVRFProof(r.Message)
+		if err != nil {
+			res = &VRFProofResponse{nil, &RemoteSignerError{0, err.Error()}}
+		} else {
+			res = &VRFProofResponse{proof, nil}
+		}
+
 	case *PingRequest:
 		err, res = nil, &PingResponse{}
 

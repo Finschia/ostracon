@@ -67,14 +67,16 @@ func TestValidateBlockHeader(t *testing.T) {
 
 	// Build up state for multiple heights
 	for height := int64(1); height < validationTestsStopHeight; height++ {
-		proposerAddr := state.Validators.GetProposer().Address
+		proposerAddr := types.SelectProposer(state.Validators, state.LastProofHash, height, 0).Address
 		/*
 			Invalid blocks don't pass
 		*/
 		for _, tc := range testCases {
-			block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, nil, proposerAddr)
+			message := state.MakeHashMessage(0)
+			proof, _ := privVals[proposerAddr.String()].GenerateVRFProof(message)
+			block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, nil, proposerAddr, 0, proof)
 			tc.malleateBlock(block)
-			err := blockExec.ValidateBlock(state, block)
+			err := blockExec.ValidateBlock(state, 0, block)
 			require.Error(t, err, tc.name)
 		}
 
@@ -105,7 +107,7 @@ func TestValidateBlockCommit(t *testing.T) {
 	badPrivVal := types.NewMockPV()
 
 	for height := int64(1); height < validationTestsStopHeight; height++ {
-		proposerAddr := state.Validators.GetProposer().Address
+		proposerAddr := types.SelectProposer(state.Validators, []byte{}, height, 0).Address
 		if height > 1 {
 			/*
 				#2589: ensure state.LastValidators.VerifyCommit fails here
@@ -126,16 +128,18 @@ func TestValidateBlockCommit(t *testing.T) {
 				state.LastBlockID,
 				[]types.CommitSig{wrongHeightVote.CommitSig()},
 			)
-			block, _ := state.MakeBlock(height, makeTxs(height), wrongHeightCommit, nil, proposerAddr)
-			err = blockExec.ValidateBlock(state, block)
+			message := state.MakeHashMessage(0)
+			proof, _ := privVals[proposerAddr.String()].GenerateVRFProof(message)
+			block, _ := state.MakeBlock(height, makeTxs(height), wrongHeightCommit, nil, proposerAddr, 0, proof)
+			err = blockExec.ValidateBlock(state, 0, block)
 			_, isErrInvalidCommitHeight := err.(types.ErrInvalidCommitHeight)
 			require.True(t, isErrInvalidCommitHeight, "expected ErrInvalidCommitHeight at height %d but got: %v", height, err)
 
 			/*
 				#2589: test len(block.LastCommit.Signatures) == state.LastValidators.Size()
 			*/
-			block, _ = state.MakeBlock(height, makeTxs(height), wrongSigsCommit, nil, proposerAddr)
-			err = blockExec.ValidateBlock(state, block)
+			block, _ = state.MakeBlock(height, makeTxs(height), wrongSigsCommit, nil, proposerAddr, 0, proof)
+			err = blockExec.ValidateBlock(state, 0, block)
 			_, isErrInvalidCommitSignatures := err.(types.ErrInvalidCommitSignatures)
 			require.True(t, isErrInvalidCommitSignatures,
 				"expected ErrInvalidCommitSignatures at height %d, but got: %v",
@@ -210,7 +214,7 @@ func TestValidateBlockEvidence(t *testing.T) {
 	lastCommit := types.NewCommit(0, 0, types.BlockID{}, nil)
 
 	for height := int64(1); height < validationTestsStopHeight; height++ {
-		proposerAddr := state.Validators.GetProposer().Address
+		proposerAddr := types.SelectProposer(state.Validators, state.LastProofHash, height, 0).Address
 		proposerIdx, _ := state.Validators.GetByAddress(proposerAddr)
 		goodEvidence := types.NewMockEvidence(height, time.Now(), proposerIdx, proposerAddr)
 		if height > 1 {
@@ -225,8 +229,10 @@ func TestValidateBlockEvidence(t *testing.T) {
 			for i := int64(0); i <= maxNumEvidence; i++ {
 				evidence = append(evidence, goodEvidence)
 			}
-			block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, evidence, proposerAddr)
-			err := blockExec.ValidateBlock(state, block)
+			message := state.MakeHashMessage(0)
+			proof, _ := privVals[proposerAddr.String()].GenerateVRFProof(message)
+			block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, evidence, proposerAddr, 0, proof)
+			err := blockExec.ValidateBlock(state, 0, block)
 			_, ok := err.(*types.ErrEvidenceOverflow)
 			require.True(t, ok, "expected error to be of type ErrEvidenceOverflow at height %d", height)
 		}
@@ -268,7 +274,7 @@ func TestValidateFailBlockOnCommittedEvidence(t *testing.T) {
 	alreadyCommittedEvidence := types.NewMockEvidence(height, time.Now(), 0, addr)
 	block.Evidence.Evidence = []types.Evidence{alreadyCommittedEvidence}
 	block.EvidenceHash = block.Evidence.Hash()
-	err := blockExec.ValidateBlock(state, block)
+	err := blockExec.ValidateBlock(state, 0, block)
 
 	require.Error(t, err)
 	require.IsType(t, err, &types.ErrEvidenceInvalid{})

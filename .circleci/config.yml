@@ -16,6 +16,21 @@ executors:
       AWS_REGION: us-east-1
 
 commands:
+  checkout_with_submodules:
+    steps:
+      - checkout
+      - run:
+          name: "Pull Submodules"
+          command: |
+            git submodule init
+            git submodule update
+  make_libsodium:
+    steps:
+      - run:
+          name: "Build and install libsodium"
+          command: |
+            sudo apt-get update && sudo apt-get -y install libtool
+            make libsodium
   run_test:
     parameters:
       script_path:
@@ -27,11 +42,12 @@ commands:
           name: "Restore source code cache"
           keys:
             - go-src-v1-{{ .Revision }}
-      - checkout
+      - checkout_with_submodules
       - restore_cache:
           name: "Restore go modules cache"
           keys:
             - go-mod-v1-{{ checksum "go.sum" }}
+      - make_libsodium
       - run:
           name: "Running test"
           command: |
@@ -40,8 +56,9 @@ commands:
 jobs:
   setup_dependencies:
     executor: golang
+    resource_class: large
     steps:
-      - checkout
+      - checkout_with_submodules
       - restore_cache:
           name: "Restore go modules cache"
           keys:
@@ -55,6 +72,9 @@ jobs:
       - run:
           name: tools
           command: make tools
+      - attach_workspace:
+          at: /tmp/workspace
+      - make_libsodium
       - run:
           name: "Build binaries"
           command: make install install_abci
@@ -75,6 +95,7 @@ jobs:
 
   test_persistence:
     executor: golang
+    resource_class: large
     steps:
       - run_test:
           script_path: test/persist/test_failure_indices.sh
@@ -87,7 +108,7 @@ jobs:
           name: "Restore source code cache"
           keys:
             - go-src-v1-{{ .Revision }}
-      - checkout
+      - checkout_with_submodules
       - restore_cache:
           name: "Restore go module cache"
           keys:
@@ -120,16 +141,17 @@ jobs:
       GOARCH: amd64
     parallelism: 1
     steps:
-      - checkout
+      - checkout_with_submodules
       - run:
           name: run localnet and exit on failure
           command: |
             set -x
-            docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang make build-linux
+            docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang:1.14.1-alpine /bin/sh -c "apk add --update make && make build-linux"
             make localnet-start &
             ./scripts/localnet-blocks-test.sh 40 5 10 localhost
 
   test_p2p:
+    resource_class: xlarge
     environment:
       GOBIN: /home/circleci/.go_workspace/bin
       GOPATH: /home/circleci/.go_workspace
@@ -140,42 +162,18 @@ jobs:
         type: integer
         default: 4
     steps:
-      - checkout
+      - checkout_with_submodules
+      - make_libsodium
       - run: mkdir -p $GOPATH/src/github.com/tendermint
       - run: ln -sf /home/circleci/project $GOPATH/src/github.com/tendermint/tendermint
       - run: bash test/p2p/circleci.sh << parameters.ipv >>
       - store_artifacts:
           path: /home/circleci/project/test/p2p/logs
 
-  upload_coverage:
-    executor: golang
-    steps:
-      - attach_workspace:
-          at: /tmp/workspace
-      - restore_cache:
-          name: "Restore source code cache"
-          keys:
-            - go-src-v1-{{ .Revision }}
-      - checkout
-      - restore_cache:
-          name: "Restore go module cache"
-          keys:
-            - go-mod-v2-{{ checksum "go.sum" }}
-      - run:
-          name: gather
-          command: |
-            echo "mode: atomic" > coverage.txt
-            for prof in $(ls /tmp/workspace/profiles/); do
-              tail -n +2 /tmp/workspace/profiles/"$prof" >> coverage.txt
-            done
-      - run:
-          name: upload
-          command: bash .circleci/codecov.sh -f coverage.txt
-
   deploy_docs:
     executor: docs
     steps:
-      - checkout
+      - checkout_with_submodules
       - run:
           name: "Build docs"
           command: make build-docs
@@ -190,7 +188,7 @@ jobs:
           name: "Restore source code cache"
           keys:
             - go-src-v1-{{ .Revision }}
-      - checkout
+      - checkout_with_submodules
       - run:
           name: Get next release number
           command: |
@@ -215,35 +213,51 @@ jobs:
           paths:
             - "/go/pkg/mod"
 
-  build_artifacts:
+#  build_artifacts:
+#    executor: golang
+#    parallelism: 4
+#    steps:
+#      - restore_cache:
+#          name: "Restore source code cache"
+#          keys:
+#            - go-src-v1-{{ .Revision }}
+#      - checkout_with_submodules
+#      - restore_cache:
+#          name: "Restore release dependencies cache"
+#          keys:
+#            - v2-release-deps-{{ checksum "go.sum" }}
+#      - attach_workspace:
+#          at: /tmp/workspace
+#      - make_libsodium
+#      - run:
+#          name: Build artifact
+#          command: |
+#            # Setting CIRCLE_TAG because we do not tag the release ourselves.
+#            source /tmp/workspace/release-version.source
+#            if test ${CIRCLE_NODE_INDEX:-0} == 0 ;then export GOOS=linux GOARCH=amd64   && export OUTPUT=build/tendermint_${GOOS}_${GOARCH} && make build && python -u scripts/release_management/zip-file.py ;fi
+#            if test ${CIRCLE_NODE_INDEX:-0} == 1 ;then export GOOS=darwin GOARCH=amd64  && export OUTPUT=build/tendermint_${GOOS}_${GOARCH} && make build && python -u scripts/release_management/zip-file.py ;fi
+#            if test ${CIRCLE_NODE_INDEX:-0} == 2 ;then export GOOS=windows GOARCH=amd64 && export OUTPUT=build/tendermint_${GOOS}_${GOARCH} && make build && python -u scripts/release_management/zip-file.py ;fi
+#            if test ${CIRCLE_NODE_INDEX:-0} == 3 ;then export GOOS=linux GOARCH=arm     && export OUTPUT=build/tendermint_${GOOS}_${GOARCH} && make build && python -u scripts/release_management/zip-file.py ;fi
+#      - persist_to_workspace:
+#          root: build
+#          paths:
+#            - "*.zip"
+#            - "tendermint_linux_amd64"
+
+  lint:
     executor: golang
-    parallelism: 4
+    parallelism: 1
     steps:
-      - restore_cache:
-          name: "Restore source code cache"
-          keys:
-            - go-src-v1-{{ .Revision }}
       - checkout
       - restore_cache:
-          name: "Restore release dependencies cache"
+          name: "Restore go modules cache"
           keys:
-            - v2-release-deps-{{ checksum "go.sum" }}
-      - attach_workspace:
-          at: /tmp/workspace
+            - go-mod-v1-{{ checksum "go.sum" }}
       - run:
-          name: Build artifact
+          name: "Run linter"
           command: |
-            # Setting CIRCLE_TAG because we do not tag the release ourselves.
-            source /tmp/workspace/release-version.source
-            if test ${CIRCLE_NODE_INDEX:-0} == 0 ;then export GOOS=linux GOARCH=amd64   && export OUTPUT=build/tendermint_${GOOS}_${GOARCH} && make build && python -u scripts/release_management/zip-file.py ;fi
-            if test ${CIRCLE_NODE_INDEX:-0} == 1 ;then export GOOS=darwin GOARCH=amd64  && export OUTPUT=build/tendermint_${GOOS}_${GOARCH} && make build && python -u scripts/release_management/zip-file.py ;fi
-            if test ${CIRCLE_NODE_INDEX:-0} == 2 ;then export GOOS=windows GOARCH=amd64 && export OUTPUT=build/tendermint_${GOOS}_${GOARCH} && make build && python -u scripts/release_management/zip-file.py ;fi
-            if test ${CIRCLE_NODE_INDEX:-0} == 3 ;then export GOOS=linux GOARCH=arm     && export OUTPUT=build/tendermint_${GOOS}_${GOARCH} && make build && python -u scripts/release_management/zip-file.py ;fi
-      - persist_to_workspace:
-          root: build
-          paths:
-            - "*.zip"
-            - "tendermint_linux_amd64"
+            curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.23.8
+            make lint
 
   release_artifacts:
     executor: golang
@@ -252,7 +266,7 @@ jobs:
           name: "Restore source code cache"
           keys:
             - go-src-v1-{{ .Revision }}
-      - checkout
+      - checkout_with_submodules
       - attach_workspace:
           at: /tmp/workspace
       - run:
@@ -281,7 +295,7 @@ jobs:
     machine:
       image: ubuntu-1604:201903-01
     steps:
-      - checkout
+      - checkout_with_submodules
       - attach_workspace:
           at: /tmp/workspace
       - run:
@@ -300,7 +314,7 @@ jobs:
     steps:
       - attach_workspace:
           at: /tmp/workspace
-      - checkout
+      - checkout_with_submodules
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
@@ -324,31 +338,33 @@ jobs:
       - store_artifacts:
           path: /go/src/github.com/tendermint/tendermint/tendermint-*.tar.gz
 
-  # # Test RPC implementation against the swagger documented specs
-  # contract_tests:
-  #   working_directory: /home/circleci/.go_workspace/src/github.com/tendermint/tendermint
-  #   machine:
-  #     image: circleci/classic:latest
-  #   environment:
-  #     GOBIN: /home/circleci/.go_workspace/bin
-  #     GOPATH: /home/circleci/.go_workspace/
-  #     GOOS: linux
-  #     GOARCH: amd64
-  #   parallelism: 1
-  #   steps:
-  #     - checkout
-  #     - run:
-  #         name: Test RPC endpoints against swagger documentation
-  #         command: |
-  #           set -x
-  #           export PATH=~/.local/bin:$PATH
-  #           # install node and dredd
-  #           ./scripts/get_nodejs.sh
-  #           # build the binaries with a proper version of Go
-  #           docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang make build-linux build-contract-tests-hooks
-  #           # This docker image works with go 1.7, we can install here the hook handler that contract-tests is going to use
-  #           go get github.com/snikch/goodman/cmd/goodman
-  #           make contract-tests
+  contract_tests:
+    working_directory: /home/circleci/.go_workspace/src/github.com/tendermint/tendermint
+    machine:
+      image: circleci/classic:latest
+    environment:
+      GOBIN: /home/circleci/.go_workspace/bin
+      GOPATH: /home/circleci/.go_workspace/
+      GOOS: linux
+      GOARCH: amd64
+    parallelism: 1
+    steps:
+      - checkout_with_submodules
+      - run:
+          name: Test RPC endpoints against swagger documentation
+          command: |
+            set -x
+            export PATH=~/.local/bin:$PATH
+            # install node and dredd
+            ./scripts/get_nodejs.sh
+            # build the binaries with a proper version of Go
+            # Build Tendermint
+            docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang:1.14.1-alpine /bin/sh -c "apk add --update make git && make build-linux"
+            # Build contract-tests
+            docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint ubuntu:20.10 ./scripts/prepare_dredd_test.sh
+            # This docker image works with go 1.7, we can install here the hook handler that contract-tests is going to use
+            go get github.com/snikch/goodman/cmd/goodman
+            make contract-tests
 
 workflows:
   version: 2
@@ -369,6 +385,7 @@ workflows:
             branches:
               only:
                 - docs-staging
+      - lint
       - setup_dependencies
       - test_cover:
           requires:
@@ -379,43 +396,39 @@ workflows:
       - localnet:
           requires:
             - setup_dependencies
-      - test_p2p
       - test_p2p:
-          name: test_p2p_ipv6
-          ipv: 6
-      - upload_coverage:
-          requires:
-            - test_cover
+            name: test_p2p_ipv6
+            ipv: 6
       - reproducible_builds:
           filters:
             branches:
               only:
                 - master
                 - /v[0-9]+\.[0-9]+/
-      # - contract_tests:
-      #     requires:
-      #       - setup_dependencies
+      - contract_tests:
+          requires:
+            - setup_dependencies
 
-  release:
-    jobs:
-      - prepare_build
-      - build_artifacts:
-          requires:
-            - prepare_build
-      - release_artifacts:
-          requires:
-            - prepare_build
-            - build_artifacts
-          filters:
-            branches:
-              only:
-                - /v[0-9]+\.[0-9]+/
-      - release_docker:
-          requires:
-            - prepare_build
-            - build_artifacts
-          filters:
-            branches:
-              only:
-                - /v[0-9]+\.[0-9]+/
-                - master
+#  release:
+#    jobs:
+#      - prepare_build
+#      - build_artifacts:
+#          requires:
+#            - prepare_build
+#      - release_artifacts:
+#          requires:
+#            - prepare_build
+#            - build_artifacts
+#          filters:
+#            branches:
+#              only:
+#                - /v[0-9]+\.[0-9]+/
+#      - release_docker:
+#          requires:
+#            - prepare_build
+#            - build_artifacts
+#          filters:
+#            branches:
+#              only:
+#                - /v[0-9]+\.[0-9]+/
+#                - master

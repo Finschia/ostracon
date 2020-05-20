@@ -123,6 +123,13 @@ func (sio *mockSwitchIo) trySwitchToConsensus(state sm.State, blocksSynced int) 
 	sio.switchedToConsensus = true
 }
 
+// nolint:unused
+func (sio *mockSwitchIo) hasSwitchedToConsensus() bool {
+	sio.mtx.Lock()
+	defer sio.mtx.Unlock()
+	return sio.switchedToConsensus
+}
+
 func (sio *mockSwitchIo) broadcastStatusRequest(base int64, height int64) {
 }
 
@@ -437,8 +444,11 @@ func makeTxs(height int64) (txs []types.Tx) {
 	return txs
 }
 
-func makeBlock(height int64, state sm.State, lastCommit *types.Commit) *types.Block {
-	block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, nil, state.Validators.GetProposer().Address)
+func makeBlock(privVal types.PrivValidator, height int64, state sm.State, lastCommit *types.Commit) *types.Block {
+	message := state.MakeHashMessage(0)
+	proof, _ := privVal.GenerateVRFProof(message)
+	proposerAddr := types.SelectProposer(state.Validators, state.LastProofHash, height, 0).Address
+	block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, nil, proposerAddr, 0, proof)
 	return block
 }
 
@@ -518,7 +528,7 @@ func newReactorStore(
 				lastBlockMeta.BlockID, []types.CommitSig{vote.CommitSig()})
 		}
 
-		thisBlock := makeBlock(blockHeight, state, lastCommit)
+		thisBlock := makeBlock(privVals[0], blockHeight, state, lastCommit)
 
 		thisParts := thisBlock.MakePartSet(types.BlockPartSizeBytes)
 		blockID := types.BlockID{Hash: thisBlock.Hash(), PartsHeader: thisParts.Header()}

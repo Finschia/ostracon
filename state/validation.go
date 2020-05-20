@@ -8,13 +8,15 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/ed25519"
+	"github.com/tendermint/tendermint/crypto/vrf"
 	"github.com/tendermint/tendermint/types"
 )
 
 //-----------------------------------------------------
 // Validate block
 
-func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, block *types.Block) error {
+func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, round int, block *types.Block) error {
 	// Validate internal consistency.
 	if err := block.ValidateBasic(); err != nil {
 		return err
@@ -148,6 +150,35 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, block
 		return fmt.Errorf("block.Header.ProposerAddress, %X, is not a validator",
 			block.ProposerAddress,
 		)
+	}
+
+	// validate proposer
+	if !bytes.Equal(block.ProposerAddress.Bytes(),
+		types.SelectProposer(state.Validators, state.LastProofHash, block.Height, block.Round).Address.Bytes()) {
+		return fmt.Errorf("block.ProposerAddress, %X, is not the proposer %X",
+			block.ProposerAddress,
+			types.SelectProposer(state.Validators, state.LastProofHash, block.Height, block.Round).Address,
+		)
+	}
+
+	// validate round
+	// The block round must be less than or equal to the current round
+	// If some proposer proposes his ValidBlock as a proposal, then the proposal block round is less than current round
+	if block.Round > round {
+		return types.NewErrInvalidRound(round, block.Round)
+	}
+
+	// validate vrf proof
+	message := state.MakeHashMessage(block.Round)
+	_, val := state.Validators.GetByAddress(block.ProposerAddress)
+	verified, err := vrf.Verify(val.PubKey.(ed25519.PubKeyEd25519), block.Proof.Bytes(), message)
+	if err != nil {
+		return types.NewErrInvalidProof(fmt.Sprintf(
+			"verification failed: %s; proof: %v, prevProofHash: %v, height=%d, round=%d, addr: %v",
+			err.Error(), block.Proof, state.LastProofHash, state.LastBlockHeight, block.Round, block.ProposerAddress))
+	} else if !verified {
+		return types.NewErrInvalidProof(fmt.Sprintf("proof: %v, prevProofHash: %v, height=%d, round=%d, addr: %v",
+			block.Proof, state.LastProofHash, state.LastBlockHeight, block.Round, block.ProposerAddress))
 	}
 
 	return nil
