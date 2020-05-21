@@ -66,6 +66,7 @@ func validatorAtHeight(h int64) *types.Validator {
 	privValAddress := pubKey.Address()
 
 	// If we're still at height h, search in the current validator set.
+	// ValidatorOrVoter: validator
 	lastBlockHeight, vals := consensusState.GetValidators()
 	if lastBlockHeight == h {
 		for _, val := range vals {
@@ -77,7 +78,8 @@ func validatorAtHeight(h int64) *types.Validator {
 
 	// If we've moved to the next height, retrieve the validator set from DB.
 	if lastBlockHeight > h {
-		vals, err := sm.LoadValidators(stateDB, h)
+		// ValidatorOrVoter: validator
+		vals, _, err := sm.LoadValidators(stateDB, h)
 		if err != nil {
 			return nil // should not happen
 		}

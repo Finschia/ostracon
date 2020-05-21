@@ -20,17 +20,17 @@ func TestStoreLoadValidators(t *testing.T) {
 	vals := types.NewValidatorSet([]*types.Validator{val})
 
 	// 1) LoadValidators loads validators using a height where they were last changed
-	sm.SaveValidatorsInfo(stateDB, 1, 1, vals)
-	sm.SaveValidatorsInfo(stateDB, 2, 1, vals)
-	loadedVals, err := sm.LoadValidators(stateDB, 2)
+	sm.SaveValidatorsInfo(stateDB, 1, 1, []byte{}, vals)
+	sm.SaveValidatorsInfo(stateDB, 2, 1, []byte{}, vals)
+	loadedVals, _, err := sm.LoadValidators(stateDB, 2)
 	require.NoError(t, err)
 	assert.NotZero(t, loadedVals.Size())
 
 	// 2) LoadValidators loads validators using a checkpoint height
 
-	sm.SaveValidatorsInfo(stateDB, sm.ValSetCheckpointInterval, 1, vals)
+	sm.SaveValidatorsInfo(stateDB, sm.ValSetCheckpointInterval, 1, []byte{}, vals)
 
-	loadedVals, err = sm.LoadValidators(stateDB, sm.ValSetCheckpointInterval)
+	loadedVals, _, err = sm.LoadValidators(stateDB, sm.ValSetCheckpointInterval)
 	require.NoError(t, err)
 	assert.NotZero(t, loadedVals.Size())
 }
@@ -47,18 +47,18 @@ func BenchmarkLoadValidators(b *testing.B) {
 		b.Fatal(err)
 	}
 	state.Validators = genValSet(valSetSize)
-	types.SelectProposer(state.Validators, []byte{}, 1, 0)
+	state.Validators.SelectProposer([]byte{}, 1, 0)
 	state.NextValidators = state.Validators.Copy()
-	types.SelectProposer(state.NextValidators, []byte{}, 2, 0)
+	state.Validators.SelectProposer([]byte{}, 2, 0)
 	sm.SaveState(stateDB, state)
 
 	for i := 10; i < 10000000000; i *= 10 { // 10, 100, 1000, ...
 		i := i
-		sm.SaveValidatorsInfo(stateDB, int64(i), state.LastHeightValidatorsChanged, state.NextValidators)
+		sm.SaveValidatorsInfo(stateDB, int64(i), state.LastHeightValidatorsChanged, []byte{}, state.NextValidators)
 
 		b.Run(fmt.Sprintf("height=%d", i), func(b *testing.B) {
 			for n := 0; n < b.N; n++ {
-				_, err := sm.LoadValidators(stateDB, int64(i))
+				_, _, err := sm.LoadValidators(stateDB, int64(i))
 				if err != nil {
 					b.Fatal(err)
 				}

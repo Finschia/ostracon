@@ -363,48 +363,48 @@ func TestReactorVotingPowerChange(t *testing.T) {
 	val1PubKey := css[0].privValidator.GetPubKey()
 	val1PubKeyABCI := types.TM2PB.PubKey(val1PubKey)
 	updateValidatorTx := kvstore.MakeValSetChangeTx(val1PubKeyABCI, 25)
-	previousTotalVotingPower := css[0].GetRoundState().LastValidators.TotalVotingPower()
+	previousTotalVotingPower := css[0].GetRoundState().LastVoters.TotalVotingPower()
 
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlockWithTx(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 
-	if css[0].GetRoundState().LastValidators.TotalVotingPower() == previousTotalVotingPower {
+	if css[0].GetRoundState().LastVoters.TotalVotingPower() == previousTotalVotingPower {
 		t.Fatalf(
 			"expected voting power to change (before: %d, after: %d)",
 			previousTotalVotingPower,
-			css[0].GetRoundState().LastValidators.TotalVotingPower())
+			css[0].GetRoundState().LastVoters.TotalVotingPower())
 	}
 
 	updateValidatorTx = kvstore.MakeValSetChangeTx(val1PubKeyABCI, 2)
-	previousTotalVotingPower = css[0].GetRoundState().LastValidators.TotalVotingPower()
+	previousTotalVotingPower = css[0].GetRoundState().LastVoters.TotalVotingPower()
 
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlockWithTx(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 
-	if css[0].GetRoundState().LastValidators.TotalVotingPower() == previousTotalVotingPower {
+	if css[0].GetRoundState().LastVoters.TotalVotingPower() == previousTotalVotingPower {
 		t.Fatalf(
 			"expected voting power to change (before: %d, after: %d)",
 			previousTotalVotingPower,
-			css[0].GetRoundState().LastValidators.TotalVotingPower())
+			css[0].GetRoundState().LastVoters.TotalVotingPower())
 	}
 
 	updateValidatorTx = kvstore.MakeValSetChangeTx(val1PubKeyABCI, 26)
-	previousTotalVotingPower = css[0].GetRoundState().LastValidators.TotalVotingPower()
+	previousTotalVotingPower = css[0].GetRoundState().LastVoters.TotalVotingPower()
 
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlockWithTx(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 
-	if css[0].GetRoundState().LastValidators.TotalVotingPower() == previousTotalVotingPower {
+	if css[0].GetRoundState().LastVoters.TotalVotingPower() == previousTotalVotingPower {
 		t.Fatalf(
 			"expected voting power to change (before: %d, after: %d)",
 			previousTotalVotingPower,
-			css[0].GetRoundState().LastValidators.TotalVotingPower())
+			css[0].GetRoundState().LastVoters.TotalVotingPower())
 	}
 }
 
@@ -469,18 +469,18 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 	updateValidatorPubKey1 := css[nVals].privValidator.GetPubKey()
 	updatePubKey1ABCI := types.TM2PB.PubKey(updateValidatorPubKey1)
 	updateValidatorTx1 := kvstore.MakeValSetChangeTx(updatePubKey1ABCI, 25)
-	previousTotalVotingPower := css[nVals].GetRoundState().LastValidators.TotalVotingPower()
+	previousTotalVotingPower := css[nVals].GetRoundState().LastVoters.TotalVotingPower()
 
 	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css, updateValidatorTx1)
 	waitForAndValidateBlockWithTx(t, nPeers, activeVals, blocksSubs, css, updateValidatorTx1)
 	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css)
 	waitForBlockWithUpdatedValsAndValidateIt(t, nPeers, activeVals, blocksSubs, css)
 
-	if css[nVals].GetRoundState().LastValidators.TotalVotingPower() == previousTotalVotingPower {
+	if css[nVals].GetRoundState().LastVoters.TotalVotingPower() == previousTotalVotingPower {
 		t.Errorf(
 			"expected voting power to change (before: %d, after: %d)",
 			previousTotalVotingPower,
-			css[nVals].GetRoundState().LastValidators.TotalVotingPower())
+			css[nVals].GetRoundState().LastVoters.TotalVotingPower())
 	}
 
 	//---------------------------------------------------------------------------

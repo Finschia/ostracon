@@ -57,8 +57,8 @@ func (tm2pb) Header(header *Header) abci.Header {
 		LastCommitHash: header.LastCommitHash,
 		DataHash:       header.DataHash,
 
-		ValidatorsHash:     header.ValidatorsHash,
-		NextValidatorsHash: header.NextValidatorsHash,
+		ValidatorsHash:     header.VotersHash,
+		NextValidatorsHash: header.NextVotersHash,
 		ConsensusHash:      header.ConsensusHash,
 		AppHash:            header.AppHash,
 		LastResultsHash:    header.LastResultsHash,
@@ -149,7 +149,7 @@ func (tm2pb) ConsensusParams(params *ConsensusParams) *abci.ConsensusParams {
 // ABCI Evidence includes information from the past that's not included in the evidence itself
 // so Evidence types stays compact.
 // XXX: panics on nil or unknown pubkey type
-func (tm2pb) Evidence(ev Evidence, valSet *ValidatorSet, evTime time.Time) abci.Evidence {
+func (tm2pb) Evidence(ev Evidence, valSet *VoterSet, evTime time.Time) abci.Evidence {
 	_, val := valSet.GetByAddress(ev.Address())
 	if val == nil {
 		// should already have checked this

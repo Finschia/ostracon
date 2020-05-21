@@ -9,6 +9,7 @@ import (
 type Candidate interface {
 	Priority() uint64
 	LessThan(other Candidate) bool
+	IncreaseWin()
 }
 
 const uint64Mask = uint64(0x7FFFFFFFFFFFFFFF)
@@ -63,6 +64,55 @@ func RandomSamplingWithPriority(
 		" or the total priority is less than the actual one; totalPriority=%d, actualTotalPriority=%d,"+
 		" seed=%d, sampleSize=%d, undrawn=%d, threshold[%d]=%d, len(candidates)=%d",
 		totalPriority, actualTotalPriority, seed, sampleSize, undrawn, undrawn, thresholds[undrawn], len(candidates)))
+}
+
+const MaxSamplingLoopTry = 1000
+
+// `RandomSamplingToMax` elects voters among candidates so it updates wins of candidates
+// Voters can be elected by a maximum `limitCandidates`.
+// However, if the likely candidates are less than the `limitCandidates`,
+// the number of voters may be less than the `limitCandidates`.
+// This is to prevent falling into an infinite loop.
+func RandomSamplingToMax(
+	seed uint64, candidates []Candidate, limitCandidates int, totalPriority uint64) uint64 {
+
+	if len(candidates) < limitCandidates {
+		panic("The number of candidates cannot be less limitCandidate")
+	}
+
+	candidates = sort(candidates)
+	totalSampling := uint64(0)
+	winCandidates := make(map[Candidate]bool)
+	for len(winCandidates) < limitCandidates && totalSampling < MaxSamplingLoopTry {
+		threshold := uint64(float64(nextRandom(&seed)&uint64Mask) / float64(uint64Mask+1) * float64(totalPriority))
+		cumulativePriority := uint64(0)
+		found := false
+		for _, candidate := range candidates {
+			if threshold < cumulativePriority+candidate.Priority() {
+				if !winCandidates[candidate] {
+					winCandidates[candidate] = true
+				}
+				candidate.IncreaseWin()
+				totalSampling++
+				found = true
+				break
+			}
+			cumulativePriority += candidate.Priority()
+		}
+
+		if !found {
+			panic(fmt.Sprintf("Cannot find random sample. totalPriority may be wrong: totalPriority=%d, "+
+				"actualTotalPriority=%d, threshold=%d", totalPriority, sumTotalPriority(candidates), threshold))
+		}
+	}
+	return totalSampling
+}
+
+func sumTotalPriority(candidates []Candidate) (sum uint64) {
+	for _, candi := range candidates {
+		sum += candi.Priority()
+	}
+	return
 }
 
 // SplitMix64

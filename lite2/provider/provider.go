@@ -22,14 +22,14 @@ type Provider interface {
 	// error is returned.
 	SignedHeader(height int64) (*types.SignedHeader, error)
 
-	// ValidatorSet returns the ValidatorSet that corresponds to height.
+	// VoterSet returns the VoterSet that corresponds to height.
 	//
 	// 0 - the latest.
 	// height must be >= 0.
 	//
-	// If the provider fails to fetch the ValidatorSet due to the IO or other
+	// If the provider fails to fetch the VoterSet due to the IO or other
 	// issues, an error will be returned.
-	// If there's no ValidatorSet for the given height, ErrValidatorSetNotFound
+	// If there's no VoterSet for the given height, ErrValidatorSetNotFound
 	// error is returned.
-	ValidatorSet(height int64) (*types.ValidatorSet, error)
+	VoterSet(height int64) (*types.VoterSet, error)
 }
