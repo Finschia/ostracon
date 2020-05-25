@@ -152,7 +152,7 @@ func (dbp *DBProvider) VoterSet(chainID string, height int64) (valset *types.Vot
 	return dbp.getVoterSet(chainID, height)
 }
 
-func (dbp *DBProvider) getVoterSet(chainID string, height int64) (valset *types.VoterSet, err error) {
+func (dbp *DBProvider) getVoterSet(chainID string, height int64) (voterSet *types.VoterSet, err error) {
 	vsBz, err := dbp.db.Get(voterSetKey(chainID, height))
 	if err != nil {
 		return nil, err
@@ -161,7 +161,7 @@ func (dbp *DBProvider) getVoterSet(chainID string, height int64) (valset *types.
 		err = lerr.ErrUnknownValidators(chainID, height)
 		return
 	}
-	err = dbp.cdc.UnmarshalBinaryLengthPrefixed(vsBz, &valset)
+	err = dbp.cdc.UnmarshalBinaryLengthPrefixed(vsBz, &voterSet)
 	if err != nil {
 		return
 	}
@@ -169,8 +169,8 @@ func (dbp *DBProvider) getVoterSet(chainID string, height int64) (valset *types.
 	// To test deep equality.  This makes it easier to test for e.g. voterSet
 	// equivalence using assert.Equal (tests for deep equality) in our tests,
 	// which also tests for unexported/private field equivalence.
-	valset.TotalVotingPower()
-
+	voterSet.TotalVotingPower()
+	voterSet.TotalStakingPower()
 	return
 }
 

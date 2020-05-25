@@ -271,20 +271,20 @@ func max(a, b int64) int64 {
 	return b
 }
 
-func randValidator(totalVotingPower int64) *Validator {
+func randValidator(totalStakingPower int64) *Validator {
 	// this modulo limits the ProposerPriority/StakingPower to stay in the
 	// bounds of MaxTotalStakingPower minus the already existing voting power:
-	val := NewValidator(randPubKey(), max(int64(tmrand.Uint64()%uint64((MaxTotalStakingPower-totalVotingPower))), 1))
-	val.ProposerPriority = tmrand.Int64() % (MaxTotalStakingPower - totalVotingPower)
+	val := NewValidator(randPubKey(), max(int64(tmrand.Uint64()%uint64((MaxTotalStakingPower-totalStakingPower))), 1))
+	val.ProposerPriority = tmrand.Int64() % (MaxTotalStakingPower - totalStakingPower)
 	return val
 }
 
 func randValidatorSet(numValidators int) *ValidatorSet {
 	validators := make([]*Validator, numValidators)
-	totalVotingPower := int64(0)
+	totalStakingPower := int64(0)
 	for i := 0; i < numValidators; i++ {
-		validators[i] = randValidator(totalVotingPower)
-		totalVotingPower += validators[i].StakingPower
+		validators[i] = randValidator(totalStakingPower)
+		totalStakingPower += validators[i].StakingPower
 	}
 	return NewValidatorSet(validators)
 }
@@ -325,7 +325,7 @@ func (vals *ValidatorSet) fromBytes(b []byte) {
 
 //-------------------------------------------------------------------
 
-func TestValidatorSetTotalVotingPowerPanicsOnOverflow(t *testing.T) {
+func TestValidatorSetTotalStakingPowerPanicsOnOverflow(t *testing.T) {
 	// NewValidatorSet calls IncrementProposerPriority which calls TotalStakingPower()
 	// which should panic on overflows:
 	shouldPanic := func() {
@@ -416,7 +416,7 @@ func TestAveragingInIncrementProposerPriority(t *testing.T) {
 	}
 }
 
-func TestAveragingInIncrementProposerPriorityWithVotingPower(t *testing.T) {
+func TestAveragingInIncrementProposerPriorityWithStakingPower(t *testing.T) {
 	// Other than TestAveragingInIncrementProposerPriority this is a more complete test showing
 	// how each ProposerPriority changes in relation to the validator's voting power respectively.
 	// average is zero in each round:
@@ -573,7 +573,7 @@ func TestValidatorSetVerifyCommit(t *testing.T) {
 	privKey := ed25519.GenPrivKey()
 	pubKey := privKey.PubKey()
 	v1 := NewValidator(pubKey, 1000)
-	vset := NewVoterSet([]*Validator{v1})
+	vset := ToVoterAll(NewValidatorSet([]*Validator{v1}))
 
 	// good
 	var (

@@ -12,11 +12,16 @@ import (
 // Volatile state for each Validator
 // NOTE: The ProposerPriority is not included in Validator.Hash();
 // make sure to update that method if changes are made here
+// StakingPower is the potential voting power proportional to the amount of stake,
+// and VotingPower is the actual voting power granted by the election process.
+// StakingPower is durable and can be changed by staking txs.
+// VotingPower is volatile and can be changed at every height.
 type Validator struct {
 	Address      Address       `json:"address"`
 	PubKey       crypto.PubKey `json:"pub_key"`
 	StakingPower int64         `json:"staking_power"`
 
+	VotingPower      int64 `json:"voting_power"`
 	ProposerPriority int64 `json:"proposer_priority"`
 }
 
@@ -25,6 +30,7 @@ func NewValidator(pubKey crypto.PubKey, stakingPower int64) *Validator {
 		Address:          pubKey.Address(),
 		PubKey:           pubKey,
 		StakingPower:     stakingPower,
+		VotingPower:      0,
 		ProposerPriority: 0,
 	}
 }

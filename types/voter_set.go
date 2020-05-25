@@ -23,12 +23,14 @@ type VoterSet struct {
 	Voters []*Validator `json:"voters"`
 
 	// cached (unexported)
-	totalVotingPower int64
+	totalVotingPower  int64
+	totalStakingPower int64
 }
 
 func NewVoterSet(valz []*Validator) *VoterSet {
 	sort.Sort(ValidatorsByAddress(valz))
 	vals := &VoterSet{Voters: copyValidatorListShallow(valz), totalVotingPower: 0}
+	vals.updateTotalStakingPower()
 	vals.updateTotalVotingPower()
 	return vals
 }
@@ -95,7 +97,7 @@ func (voters *VoterSet) updateTotalVotingPower() {
 	sum := int64(0)
 	for _, val := range voters.Voters {
 		// mind overflow
-		sum = safeAddClip(sum, val.StakingPower)
+		sum = safeAddClip(sum, val.VotingPower)
 		if sum > MaxTotalStakingPower {
 			panic(fmt.Sprintf(
 				"Total voting power should be guarded to not exceed %v; got: %v",
@@ -107,11 +109,34 @@ func (voters *VoterSet) updateTotalVotingPower() {
 	voters.totalVotingPower = sum
 }
 
+func (voters *VoterSet) updateTotalStakingPower() {
+	sum := int64(0)
+	for _, val := range voters.Voters {
+		// mind overflow
+		sum = safeAddClip(sum, val.StakingPower)
+		if sum > MaxTotalStakingPower {
+			panic(fmt.Sprintf(
+				"Total voting power should be guarded to not exceed %v; got: %v",
+				MaxTotalStakingPower,
+				sum))
+		}
+	}
+
+	voters.totalStakingPower = sum
+}
+
 func (voters *VoterSet) TotalVotingPower() int64 {
 	if voters.totalVotingPower == 0 {
 		voters.updateTotalVotingPower()
 	}
 	return voters.totalVotingPower
+}
+
+func (voters *VoterSet) TotalStakingPower() int64 {
+	if voters.totalStakingPower == 0 {
+		voters.updateTotalStakingPower()
+	}
+	return voters.totalStakingPower
 }
 
 // Hash returns the Merkle root hash build using validators (as leaves) in the
@@ -156,7 +181,7 @@ func (voters *VoterSet) VerifyCommit(chainID string, blockID BlockID,
 		}
 		// Good!
 		if blockID.Equals(commitSig.BlockID(commit.BlockID)) {
-			talliedVotingPower += val.StakingPower
+			talliedVotingPower += val.VotingPower
 		}
 		// else {
 		// It's OK that the BlockID doesn't match.  We include stray
@@ -235,7 +260,7 @@ func (voters *VoterSet) VerifyFutureCommit(newSet *VoterSet, chainID string,
 		}
 		// Good!
 		if blockID.Equals(commitSig.BlockID(commit.BlockID)) {
-			oldVotingPower += val.StakingPower
+			oldVotingPower += val.VotingPower
 		}
 		// else {
 		// It's OK that the BlockID doesn't match.  We include stray
@@ -296,7 +321,7 @@ func (voters *VoterSet) VerifyCommitTrusting(chainID string, blockID BlockID,
 
 			// Good!
 			if blockID.Equals(commitSig.BlockID(commit.BlockID)) {
-				talliedVotingPower += val.StakingPower
+				talliedVotingPower += val.VotingPower
 			}
 			// else {
 			// It's OK that the BlockID doesn't match.  We include stray
@@ -385,9 +410,7 @@ func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
 	// TODO: decide MaxVoters; make it to config
 	if len(proofHash) == 0 || validators.Size() <= MaxVoters {
 		// height 1 has voter set that is same to validator set
-		result := &VoterSet{Voters: copyValidatorListShallow(validators.Validators), totalVotingPower: 0}
-		result.updateTotalVotingPower()
-		return result
+		return ToVoterAll(validators)
 	}
 
 	seed := hashToSeed(proofHash)
@@ -408,9 +431,10 @@ func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
 	for _, candi := range candidates {
 		if candi.(*candidate).win > 0 {
 			vals[index] = &Validator{Address: candi.(*candidate).val.Address,
-				PubKey: candi.(*candidate).val.PubKey,
+				PubKey:       candi.(*candidate).val.PubKey,
+				StakingPower: candi.(*candidate).val.StakingPower,
 				// StakingPower = TotalStakingPower * win / totalSampling : can be overflow
-				StakingPower: validators.TotalStakingPower()/int64(totalSampling)*int64(candi.(*candidate).win) +
+				VotingPower: validators.TotalStakingPower()/int64(totalSampling)*int64(candi.(*candidate).win) +
 					int64(math.Ceil(float64(validators.TotalStakingPower()%int64(totalSampling))/float64(int64(totalSampling))*
 						float64(candi.(*candidate).win)))}
 			index++
@@ -421,7 +445,20 @@ func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
 
 // This should be used in only test
 func ToVoterAll(validators *ValidatorSet) *VoterSet {
-	return NewVoterSet(validators.Validators)
+	newVoters := make([]*Validator, validators.Size())
+	for i, val := range validators.Validators {
+		newVoters[i] = &Validator{
+			Address:          val.Address,
+			PubKey:           val.PubKey,
+			StakingPower:     val.StakingPower,
+			VotingPower:      val.StakingPower,
+			ProposerPriority: val.ProposerPriority,
+		}
+	}
+	voters := NewVoterSet(newVoters)
+	voters.updateTotalVotingPower()
+	voters.updateTotalStakingPower()
+	return voters
 }
 
 // candidate save simple validator data for selecting proposer
