@@ -45,7 +45,7 @@ func initializeValidatorState___(valAddr []byte, height int64) dbm.DB {
 
 	// create validator set and state
 	vals := []*types.Validator{
-		{Address: valAddr, VotingPower: 1},
+		{Address: valAddr, StakingPower: 1},
 	}
 	state := sm.State{
 		LastBlockHeight:             0,
@@ -433,7 +433,7 @@ func initializeStateFromValidatorSet(valSet *types.ValidatorSet, height int64) s
 func initializeValidatorState(privVal types.PrivValidator, height int64) sm.Store {
 
 	pubKey, _ := privVal.GetPubKey()
-	validator := &types.Validator{Address: pubKey.Address(), VotingPower: 10, PubKey: pubKey}
+	validator := &types.Validator{Address: pubKey.Address(), StakingPower: 10, PubKey: pubKey}
 
 	// create validator set and state
 	valSet := &types.ValidatorSet{

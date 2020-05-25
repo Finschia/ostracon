@@ -58,7 +58,7 @@ func (tm2pb) Header(header *Header) tmproto.Header {
 func (tm2pb) Validator(val *Validator) abci.Validator {
 	return abci.Validator{
 		Address: val.PubKey.Address(),
-		Power:   val.VotingPower,
+		Power:   val.StakingPower,
 	}
 }
 
@@ -84,7 +84,7 @@ func (tm2pb) ValidatorUpdate(val *Validator) abci.ValidatorUpdate {
 	}
 	return abci.ValidatorUpdate{
 		PubKey: pk,
-		Power:  val.VotingPower,
+		Power:  val.StakingPower,
 	}
 }
 

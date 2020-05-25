@@ -107,16 +107,16 @@ func (voters *VoterSet) Copy() *VoterSet {
 }
 
 // Forces recalculation of the set's total voting power.
-// Panics if total voting power is bigger than MaxTotalVotingPower.
+// Panics if total voting power is bigger than MaxTotalStakingPower.
 func (voters *VoterSet) updateTotalVotingPower() {
 	sum := int64(0)
 	for _, val := range voters.Voters {
 		// mind overflow
-		sum = safeAddClip(sum, val.VotingPower)
-		if sum > MaxTotalVotingPower {
+		sum = safeAddClip(sum, val.StakingPower)
+		if sum > MaxTotalStakingPower {
 			panic(fmt.Sprintf(
 				"Total voting power should be guarded to not exceed %v; got: %v",
-				MaxTotalVotingPower,
+				MaxTotalStakingPower,
 				sum))
 		}
 	}
@@ -185,7 +185,7 @@ func (voters *VoterSet) VerifyCommit(chainID string, blockID BlockID,
 		}
 		// Good!
 		if commitSig.ForBlock() {
-			talliedVotingPower += voter.VotingPower
+			talliedVotingPower += voter.StakingPower
 		}
 		// else {
 		// It's OK. We include stray signatures (~votes for nil) to measure
@@ -240,7 +240,7 @@ func (voters *VoterSet) VerifyCommitLight(chainID string, blockID BlockID,
 			return fmt.Errorf("wrong signature (#%d): %X", idx, commitSig.Signature)
 		}
 
-		talliedVotingPower += voter.VotingPower
+		talliedVotingPower += voter.StakingPower
 
 		// return as soon as +2/3 of the signatures are verified
 		if talliedVotingPower > votingPowerNeeded {
@@ -301,7 +301,7 @@ func (voters *VoterSet) VerifyCommitLightTrusting(chainID string, commit *Commit
 				return fmt.Errorf("wrong signature (#%d): %X", idx, commitSig.Signature)
 			}
 
-			talliedVotingPower += voter.VotingPower
+			talliedVotingPower += voter.StakingPower
 
 			if talliedVotingPower > votingPowerNeeded {
 				return nil
@@ -384,7 +384,7 @@ func (voters *VoterSet) ToProto() (*tmproto.VoterSet, error) {
 	}
 	vp.Validators = valsProto
 
-	vp.TotalVotingPower = voters.totalVotingPower
+	vp.TotalStakingPower = voters.totalVotingPower
 
 	return vp, nil
 }
@@ -408,7 +408,7 @@ func VoterSetFromProto(vp *tmproto.VoterSet) (*VoterSet, error) {
 	}
 	voters.Voters = valsProto
 
-	voters.totalVotingPower = vp.GetTotalVotingPower()
+	voters.totalVotingPower = vp.GetTotalStakingPower()
 
 	return voters, voters.ValidateBasic()
 }
@@ -427,7 +427,7 @@ func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
 	for i, val := range validators.Validators {
 		candidates[i] = &candidate{idx: i, win: 0, val: val}
 	}
-	totalSampling := tmrand.RandomSamplingToMax(seed, candidates, MaxVoters, uint64(validators.TotalVotingPower()))
+	totalSampling := tmrand.RandomSamplingToMax(seed, candidates, MaxVoters, uint64(validators.TotalStakingPower()))
 	voters := 0
 	for _, candi := range candidates {
 		if candi.(*candidate).win > 0 {
@@ -441,9 +441,9 @@ func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
 		if candi.(*candidate).win > 0 {
 			vals[index] = &Validator{Address: candi.(*candidate).val.Address,
 				PubKey: candi.(*candidate).val.PubKey,
-				// VotingPower = TotalVotingPower * win / totalSampling : can be overflow
-				VotingPower: validators.TotalVotingPower()/int64(totalSampling)*int64(candi.(*candidate).win) +
-					int64(math.Ceil(float64(validators.TotalVotingPower()%int64(totalSampling))/float64(int64(totalSampling))*
+				// StakingPower = TotalStakingPower * win / totalSampling : can be overflow
+				StakingPower: validators.TotalStakingPower()/int64(totalSampling)*int64(candi.(*candidate).win) +
+					int64(math.Ceil(float64(validators.TotalStakingPower()%int64(totalSampling))/float64(int64(totalSampling))*
 						float64(candi.(*candidate).win)))}
 			index++
 		}
@@ -464,11 +464,11 @@ type candidate struct {
 }
 
 func (c *candidate) Priority() uint64 {
-	// TODO Is it possible to have a negative VotingPower?
-	if c.val.VotingPower < 0 {
+	// TODO Is it possible to have a negative StakingPower?
+	if c.val.StakingPower < 0 {
 		return 0
 	}
-	return uint64(c.val.VotingPower)
+	return uint64(c.val.StakingPower)
 }
 
 func (c *candidate) LessThan(other tmrand.Candidate) bool {

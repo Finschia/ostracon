@@ -102,9 +102,9 @@ func (evpool *Pool) verify(evidence types.Evidence) error {
 				return fmt.Errorf("evidence contained a different byzantine validator address to the one we were expecting."+
 					"Expected %v, got %v", val.Address, ev.ByzantineValidators[idx].Address)
 			}
-			if ev.ByzantineValidators[idx].VotingPower != val.VotingPower {
+			if ev.ByzantineValidators[idx].StakingPower != val.StakingPower {
 				return fmt.Errorf("evidence contained a byzantine validator with a different power to the one we were expecting."+
-					"Expected %d, got %d", val.VotingPower, ev.ByzantineValidators[idx].VotingPower)
+					"Expected %d, got %d", val.StakingPower, ev.ByzantineValidators[idx].StakingPower)
 			}
 		}
 
@@ -202,9 +202,9 @@ func VerifyDuplicateVote(e *types.DuplicateVoteEvidence, chainID string, voterSe
 	}
 
 	// validator voting power and total voting power must match
-	if val.VotingPower != e.ValidatorPower {
+	if val.StakingPower != e.ValidatorPower {
 		return fmt.Errorf("validator power from evidence and our voter set does not match (%d != %d)",
-			e.ValidatorPower, val.VotingPower)
+			e.ValidatorPower, val.StakingPower)
 	}
 	if voterSet.TotalVotingPower() != e.TotalVotingPower {
 		return fmt.Errorf("total voting power from the evidence and our voter set does not match (%d != %d)",

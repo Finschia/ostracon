@@ -1576,7 +1576,7 @@ func (cs *State) pruneBlocks(retainHeight int64) (uint64, error) {
 
 func (cs *State) recordMetrics(height int64, block *types.Block) {
 	cs.metrics.Voters.Set(float64(cs.Validators.Size()))
-	cs.metrics.VotersPower.Set(float64(cs.Validators.TotalVotingPower()))
+	cs.metrics.VotersPower.Set(float64(cs.Validators.TotalStakingPower()))
 
 	var (
 		missingValidators      int
@@ -1611,14 +1611,14 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 			commitSig := block.LastCommit.Signatures[i]
 			if commitSig.Absent() {
 				missingValidators++
-				missingValidatorsPower += val.VotingPower
+				missingValidatorsPower += val.StakingPower
 			}
 
 			if bytes.Equal(val.Address, address) {
 				label := []string{
 					"validator_address", val.Address.String(),
 				}
-				cs.metrics.VoterPower.With(label...).Set(float64(val.VotingPower))
+				cs.metrics.VoterPower.With(label...).Set(float64(val.StakingPower))
 				if commitSig.ForBlock() {
 					cs.metrics.VoterLastSignedHeight.With(label...).Set(float64(height))
 				} else {
@@ -1640,7 +1640,7 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 		if dve, ok := ev.(*types.DuplicateVoteEvidence); ok {
 			if _, val := cs.Validators.GetByAddress(dve.VoteA.ValidatorAddress); val != nil {
 				byzantineValidatorsCount++
-				byzantineValidatorsPower += val.VotingPower
+				byzantineValidatorsPower += val.StakingPower
 			}
 		}
 	}

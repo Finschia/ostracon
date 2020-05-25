@@ -212,7 +212,7 @@ func TestValidatorSet_VerifyCommitLightTrusting(t *testing.T) {
 func TestValidatorSet_VerifyCommitLightTrustingErrorsOnOverflow(t *testing.T) {
 	var (
 		blockID                    = makeBlockIDRandom()
-		voteSet, _, voterSet, vals = randVoteSet(1, 1, tmproto.PrecommitType, 1, MaxTotalVotingPower)
+		voteSet, _, voterSet, vals = randVoteSet(1, 1, tmproto.PrecommitType, 1, MaxTotalStakingPower)
 		commit, err                = MakeCommit(blockID, 1, 1, voteSet, vals, time.Now())
 	)
 	require.NoError(t, err)
@@ -229,14 +229,14 @@ func TestSelectVoter(t *testing.T) {
 	valSet := randValidatorSet(30)
 	for i := 0; i < 10000; i++ {
 		voterSet := SelectVoter(valSet, []byte{byte(i)})
-		assert.True(t, math.Abs(float64(valSet.TotalVotingPower()-voterSet.TotalVotingPower())) <= 10)
+		assert.True(t, math.Abs(float64(valSet.TotalStakingPower()-voterSet.TotalVotingPower())) <= 10)
 	}
 }
 
 func toGenesisValidators(vals []*Validator) []GenesisValidator {
 	genVals := make([]GenesisValidator, len(vals))
 	for i, val := range vals {
-		genVals[i] = GenesisValidator{Address: val.Address, PubKey: val.PubKey, Power: val.VotingPower, Name: "name"}
+		genVals[i] = GenesisValidator{Address: val.Address, PubKey: val.PubKey, Power: val.StakingPower, Name: "name"}
 	}
 	return genVals
 }
@@ -280,7 +280,7 @@ func findLargestVotingPowerGap(t *testing.T, loopCount int, minMaxRate int, maxV
 	for i := 0; i < loopCount; i++ {
 		voterSet := SelectVoter(valSet, hash)
 		for _, voter := range voterSet.Voters {
-			accumulation[voter.Address.String()] += voter.VotingPower
+			accumulation[voter.Address.String()] += voter.StakingPower
 		}
 		proposer := valSet.SelectProposer(hash, int64(i), 0)
 		message := MakeRoundHash(hash, int64(i), 0)
@@ -291,8 +291,8 @@ func findLargestVotingPowerGap(t *testing.T, loopCount int, minMaxRate int, maxV
 	largestGap := float64(0)
 	for _, val := range valSet.Validators {
 		acc := accumulation[val.Address.String()] / int64(loopCount)
-		if math.Abs(float64(val.VotingPower-acc))/float64(val.VotingPower) > largestGap {
-			largestGap = math.Abs(float64(val.VotingPower-acc)) / float64(val.VotingPower)
+		if math.Abs(float64(val.StakingPower-acc))/float64(val.StakingPower) > largestGap {
+			largestGap = math.Abs(float64(val.StakingPower-acc)) / float64(val.StakingPower)
 		}
 	}
 	t.Logf("<< min power=100, max power=%d, actual average voters=%d, max voters=%d >> largest gap: %f",
@@ -314,7 +314,7 @@ func TestSelectVoterMaxVarious(t *testing.T) {
 				MaxVoters = voters
 				valSet, _ := randValidatorSetWithMinMax(validators, 100, 100*int64(minMaxRate))
 				voterSet := SelectVoter(valSet, []byte{byte(hash)})
-				assert.True(t, int(math.Abs(float64(valSet.TotalVotingPower()-voterSet.TotalVotingPower()))) <= voters)
+				assert.True(t, int(math.Abs(float64(valSet.TotalStakingPower()-voterSet.TotalVotingPower()))) <= voters)
 				if voterSet.Size() < MaxVoters {
 					t.Logf("Cannot elect voters up to MaxVoters: validators=%d, MaxVoters=%d, actual voters=%d",
 						validators, voters, voterSet.Size())

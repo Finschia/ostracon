@@ -261,7 +261,7 @@ func TestOneValidatorChangesSaveLoad(t *testing.T) {
 	highestHeight := changeHeights[N-1] + 5
 	changeIndex := 0
 	_, val := state.Validators.GetByIndex(0)
-	power := val.VotingPower
+	power := val.StakingPower
 	var err error
 	var validatorUpdates []*types.Validator
 	for i := int64(1); i < highestHeight; i++ {
@@ -282,7 +282,7 @@ func TestOneValidatorChangesSaveLoad(t *testing.T) {
 	// On each height change, increment the power by one.
 	testCases := make([]int64, highestHeight)
 	changeIndex = 0
-	power = val.VotingPower
+	power = val.StakingPower
 	for i := int64(1); i < highestHeight+1; i++ {
 		// We get to the height after a change height use the next pubkey (note
 		// our counter starts at 0 this time).
@@ -299,7 +299,7 @@ func TestOneValidatorChangesSaveLoad(t *testing.T) {
 		assert.Equal(t, v.Size(), 1, "validator set size is greater than 1: %d", v.Size())
 		_, val := v.GetByIndex(0)
 
-		assert.Equal(t, val.VotingPower, power, fmt.Sprintf(`unexpected powerat
+		assert.Equal(t, val.StakingPower, power, fmt.Sprintf(`unexpected powerat
                 height %d`, i))
 	}
 }
@@ -414,7 +414,7 @@ func testProposerFreq(t *testing.T, caseNum int, valSet *types.ValidatorSet) {
 	// assert frequencies match expected (max off by 1)
 	for i, freq := range freqs {
 		_, val := valSet.GetByIndex(int32(i))
-		expectFreq := int(val.VotingPower) * runMult
+		expectFreq := int(val.StakingPower) * runMult
 		gotFreq := freq
 		abs := int(math.Abs(float64(expectFreq - gotFreq)))
 
@@ -438,7 +438,7 @@ func TestProposerPriorityDoesNotGetResetToZero(t *testing.T) {
 	defer tearDown(t)
 	val1VotingPower := int64(10)
 	val1PubKey := ed25519.GenPrivKey().PubKey()
-	val1 := &types.Validator{Address: val1PubKey.Address(), PubKey: val1PubKey, VotingPower: val1VotingPower}
+	val1 := &types.Validator{Address: val1PubKey.Address(), PubKey: val1PubKey, StakingPower: val1VotingPower}
 
 	state.Validators = types.NewValidatorSet([]*types.Validator{val1})
 	state.NextValidators = state.Validators
@@ -500,7 +500,7 @@ func TestProposerPriorityDoesNotGetResetToZero(t *testing.T) {
 	assert.Equal(t, wantVal2Prio, addedVal2.ProposerPriority)
 
 	// Updating a validator does not reset the ProposerPriority to zero:
-	// 1. Add - Val2 VotingPower change to 1 =>
+	// 1. Add - Val2 StakingPower change to 1 =>
 	updatedVotingPowVal2 := int64(1)
 	updateVal := abci.ValidatorUpdate{PubKey: fvp, Power: updatedVotingPowVal2}
 	validatorUpdates, err = types.PB2TM.ValidatorUpdates([]abci.ValidatorUpdate{updateVal})
@@ -523,7 +523,7 @@ func TestProposerPriorityDoesNotGetResetToZero(t *testing.T) {
 	wantVal2Prio = prevVal2.ProposerPriority
 	// scale to diffMax = 22 = 2 * tvp, diff=39-(-38)=77
 	// new totalPower
-	totalPower := updatedVal1.VotingPower + updatedVal2.VotingPower
+	totalPower := updatedVal1.StakingPower + updatedVal2.StakingPower
 	dist := wantVal2Prio - wantVal1Prio
 	// ratio := (dist + 2*totalPower - 1) / 2*totalPower = 98/22 = 4
 	ratio := (dist + 2*totalPower - 1) / (2 * totalPower)
@@ -535,9 +535,9 @@ func TestProposerPriorityDoesNotGetResetToZero(t *testing.T) {
 	// 4. IncrementProposerPriority() ->
 	// v1(10):-9+10, v2(1):9+1 -> v2 proposer so subsract tvp(11)
 	// v1(10):1, v2(1):-1
-	wantVal2Prio += updatedVal2.VotingPower // 10 -> prop
-	wantVal1Prio += updatedVal1.VotingPower // 1
-	wantVal2Prio -= totalPower              // -1
+	wantVal2Prio += updatedVal2.StakingPower // 10 -> prop
+	wantVal1Prio += updatedVal1.StakingPower // 1
+	wantVal2Prio -= totalPower               // -1
 
 	assert.Equal(t, wantVal2Prio, updatedVal2.ProposerPriority)
 	assert.Equal(t, wantVal1Prio, updatedVal1.ProposerPriority)
@@ -553,7 +553,7 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 	defer tearDown(t)
 	val1VotingPower := int64(10)
 	val1PubKey := ed25519.GenPrivKey().PubKey()
-	val1 := &types.Validator{Address: val1PubKey.Address(), PubKey: val1PubKey, VotingPower: val1VotingPower}
+	val1 := &types.Validator{Address: val1PubKey.Address(), PubKey: val1PubKey, StakingPower: val1VotingPower}
 
 	// reset state validators to above validator
 	state.Validators = types.NewValidatorSet([]*types.Validator{val1})
@@ -725,13 +725,13 @@ func TestLargeGenesisValidator(t *testing.T) {
 	tearDown, _, state := setupTestCase(t)
 	defer tearDown(t)
 
-	genesisVotingPower := types.MaxTotalVotingPower / 1000
+	genesisVotingPower := types.MaxTotalStakingPower / 1000
 	genesisPubKey := ed25519.GenPrivKey().PubKey()
 	// fmt.Println("genesis addr: ", genesisPubKey.Address())
 	genesisVal := &types.Validator{
-		Address:     genesisPubKey.Address(),
-		PubKey:      genesisPubKey,
-		VotingPower: genesisVotingPower,
+		Address:      genesisPubKey.Address(),
+		PubKey:       genesisPubKey,
+		StakingPower: genesisVotingPower,
 	}
 	// reset state validators to above validator
 	state.Validators = types.NewValidatorSet([]*types.Validator{genesisVal})
@@ -755,7 +755,7 @@ func TestLargeGenesisValidator(t *testing.T) {
 
 		updatedState, err := sm.UpdateState(oldState, blockID, &block.Header, abciResponses, validatorUpdates)
 		require.NoError(t, err)
-		// no changes in voting power (ProposerPrio += VotingPower == Voting in 1st round; than shiftByAvg == 0,
+		// no changes in voting power (ProposerPrio += StakingPower == Voting in 1st round; than shiftByAvg == 0,
 		// than -Total == -Voting)
 		// -> no change in ProposerPrio (stays zero):
 		assert.EqualValues(t, oldState.NextValidators, updatedState.NextValidators)

@@ -305,7 +305,7 @@ func (evpool *Pool) fastCheck(ev types.Evidence) bool {
 			if !bytes.Equal(byzValsCopy[idx].Address, val.Address) {
 				return false
 			}
-			if byzValsCopy[idx].VotingPower != val.VotingPower {
+			if byzValsCopy[idx].StakingPower != val.StakingPower {
 				return false
 			}
 		}

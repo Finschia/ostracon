@@ -67,7 +67,7 @@ func NewDuplicateVoteEvidence(vote1, vote2 *Vote, blockTime time.Time, voterSet 
 		VoteA:            voteA,
 		VoteB:            voteB,
 		TotalVotingPower: voterSet.TotalVotingPower(),
-		ValidatorPower:   val.VotingPower,
+		ValidatorPower:   val.StakingPower,
 		Timestamp:        blockTime,
 	}
 }
