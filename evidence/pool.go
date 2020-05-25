@@ -108,7 +108,7 @@ func (evpool *Pool) AddEvidence(evidence types.Evidence) (err error) {
 	// TODO: something better ?
 	valSet, _, _ := sm.LoadValidators(evpool.stateDB, evidence.Height())
 	_, val := valSet.GetByAddress(evidence.Address())
-	priority := val.VotingPower
+	priority := val.StakingPower
 
 	added := evpool.store.AddNewEvidence(evidence, priority)
 	if !added {

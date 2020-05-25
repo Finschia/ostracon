@@ -13,18 +13,18 @@ import (
 // NOTE: The ProposerPriority is not included in Validator.Hash();
 // make sure to update that method if changes are made here
 type Validator struct {
-	Address     Address       `json:"address"`
-	PubKey      crypto.PubKey `json:"pub_key"`
-	VotingPower int64         `json:"voting_power"`
+	Address      Address       `json:"address"`
+	PubKey       crypto.PubKey `json:"pub_key"`
+	StakingPower int64         `json:"staking_power"`
 
 	ProposerPriority int64 `json:"proposer_priority"`
 }
 
-func NewValidator(pubKey crypto.PubKey, votingPower int64) *Validator {
+func NewValidator(pubKey crypto.PubKey, stakingPower int64) *Validator {
 	return &Validator{
 		Address:          pubKey.Address(),
 		PubKey:           pubKey,
-		VotingPower:      votingPower,
+		StakingPower:     stakingPower,
 		ProposerPriority: 0,
 	}
 }
@@ -66,7 +66,7 @@ func (v *Validator) String() string {
 	return fmt.Sprintf("Validator{%v %v VP:%v A:%v}",
 		v.Address,
 		v.PubKey,
-		v.VotingPower,
+		v.StakingPower,
 		v.ProposerPriority)
 }
 
@@ -74,7 +74,7 @@ func (v *Validator) String() string {
 func ValidatorListString(vals []*Validator) string {
 	chunks := make([]string, len(vals))
 	for i, val := range vals {
-		chunks[i] = fmt.Sprintf("%s:%d", val.Address, val.VotingPower)
+		chunks[i] = fmt.Sprintf("%s:%d", val.Address, val.StakingPower)
 	}
 
 	return strings.Join(chunks, ",")
@@ -86,11 +86,11 @@ func ValidatorListString(vals []*Validator) string {
 // which changes every round.
 func (v *Validator) Bytes() []byte {
 	return cdcEncode(struct {
-		PubKey      crypto.PubKey
-		VotingPower int64
+		PubKey       crypto.PubKey
+		StakingPower int64
 	}{
 		v.PubKey,
-		v.VotingPower,
+		v.StakingPower,
 	})
 }
 
@@ -101,11 +101,11 @@ func (v *Validator) Bytes() []byte {
 // UNSTABLE
 func RandValidator(randPower bool, minPower int64) (*Validator, PrivValidator) {
 	privVal := NewMockPV()
-	votePower := minPower
+	stakingPower := minPower
 	if randPower {
-		votePower += int64(tmrand.Uint32())
+		stakingPower += int64(tmrand.Uint32())
 	}
 	pubKey := privVal.GetPubKey()
-	val := NewValidator(pubKey, votePower)
+	val := NewValidator(pubKey, stakingPower)
 	return val, privVal
 }

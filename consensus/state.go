@@ -1491,14 +1491,14 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 			commitSig := block.LastCommit.Signatures[i]
 			if commitSig.Absent() {
 				missingVoters++
-				missingVotersPower += val.VotingPower
+				missingVotersPower += val.StakingPower
 			}
 
 			if cs.privValidator != nil && bytes.Equal(val.Address, cs.privValidator.GetPubKey().Address()) {
 				label := []string{
 					"validator_address", val.Address.String(),
 				}
-				cs.metrics.VoterPower.With(label...).Set(float64(val.VotingPower))
+				cs.metrics.VoterPower.With(label...).Set(float64(val.StakingPower))
 				if commitSig.ForBlock() {
 					cs.metrics.VoterLastSignedHeight.With(label...).Set(float64(height))
 				} else {
@@ -1514,7 +1514,7 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 	byzantineVotersPower := int64(0)
 	for _, ev := range block.Evidence.Evidence {
 		if _, val := cs.Voters.GetByAddress(ev.Address()); val != nil {
-			byzantineVotersPower += val.VotingPower
+			byzantineVotersPower += val.StakingPower
 		}
 	}
 	cs.metrics.ByzantineVotersPower.Set(float64(byzantineVotersPower))
