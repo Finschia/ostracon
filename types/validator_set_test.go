@@ -3,6 +3,7 @@ package types
 import (
 	"bytes"
 	"fmt"
+	tmtime "github.com/tendermint/tendermint/types/time"
 	"math"
 	"math/big"
 	"sort"
@@ -363,20 +364,20 @@ func randPubKey() crypto.PubKey {
 	return ed25519.PubKey(tmrand.Bytes(32))
 }
 
-func randValidator(totalVotingPower int64) *Validator {
-	// this modulo limits the ProposerPriority/VotingPower to stay in the
+func randValidator(totalStakingPower int64) *Validator {
+	// this modulo limits the ProposerPriority/StakingPower to stay in the
 	// bounds of MaxTotalVotingPower minus the already existing voting power:
-	val := NewValidator(randPubKey(), int64(tmrand.Uint64()%uint64(MaxTotalStakingPower-totalVotingPower)))
-	val.ProposerPriority = tmrand.Int64() % (MaxTotalStakingPower - totalVotingPower)
+	val := NewValidator(randPubKey(), int64(tmrand.Uint64()%uint64(MaxTotalStakingPower-totalStakingPower)))
+	val.ProposerPriority = tmrand.Int64() % (MaxTotalStakingPower - totalStakingPower)
 	return val
 }
 
 func randValidatorSet(numValidators int) *ValidatorSet {
 	validators := make([]*Validator, numValidators)
-	totalVotingPower := int64(0)
+	totalStakingPower := int64(0)
 	for i := 0; i < numValidators; i++ {
-		validators[i] = randValidator(totalVotingPower)
-		totalVotingPower += validators[i].StakingPower
+		validators[i] = randValidator(totalStakingPower)
+		totalStakingPower += validators[i].StakingPower
 	}
 	return NewValidatorSet(validators)
 }
@@ -432,7 +433,7 @@ func (vals *ValidatorSet) fromBytes(b []byte) *ValidatorSet {
 
 //-------------------------------------------------------------------
 
-func TestValidatorSetTotalVotingPowerPanicsOnOverflow(t *testing.T) {
+func TestValidatorSetTotalStakingPowerPanicsOnOverflow(t *testing.T) {
 	// NewValidatorSet calls IncrementProposerPriority which calls TotalStakingPower()
 	// which should panic on overflows:
 	shouldPanic := func() {
@@ -523,7 +524,7 @@ func TestAveragingInIncrementProposerPriority(t *testing.T) {
 	}
 }
 
-func TestAveragingInIncrementProposerPriorityWithVotingPower(t *testing.T) {
+func TestAveragingInIncrementProposerPriorityWithStakingPower(t *testing.T) {
 	// Other than TestAveragingInIncrementProposerPriority this is a more complete test showing
 	// how each ProposerPriority changes in relation to the validator's voting power respectively.
 	// average is zero in each round:
@@ -675,6 +676,64 @@ func TestSafeSubClip(t *testing.T) {
 }
 
 //-------------------------------------------------------------------
+
+func TestValidatorSetVerifyCommit(t *testing.T) {
+	privKey := ed25519.GenPrivKey()
+	pubKey := privKey.PubKey()
+	v1 := NewValidator(pubKey, 1000)
+	vset := ToVoterAll(NewValidatorSet([]*Validator{v1}))
+
+	// good
+	var (
+		chainID = "mychainID"
+		blockID = makeBlockIDRandom()
+		height  = int64(5)
+	)
+	vote := &Vote{
+		ValidatorAddress: v1.Address,
+		ValidatorIndex:   0,
+		Height:           height,
+		Round:            0,
+		Timestamp:        tmtime.Now(),
+		Type:             tmproto.PrecommitType,
+		BlockID:          blockID,
+	}
+	sig, err := privKey.Sign(VoteSignBytes(chainID, vote.ToProto()))
+	assert.NoError(t, err)
+	vote.Signature = sig
+	commit := NewCommit(vote.Height, vote.Round, blockID, []CommitSig{vote.CommitSig()})
+
+	// bad
+	var (
+		badChainID = "notmychainID"
+		badBlockID = BlockID{Hash: []byte("goodbye")}
+		badHeight  = height + 1
+		badCommit  = NewCommit(badHeight, 0, blockID, []CommitSig{{BlockIDFlag: BlockIDFlagAbsent}})
+	)
+
+	// test some error cases
+	// TODO: test more cases!
+	cases := []struct {
+		chainID string
+		blockID BlockID
+		height  int64
+		commit  *Commit
+	}{
+		{badChainID, blockID, height, commit},
+		{chainID, badBlockID, height, commit},
+		{chainID, blockID, badHeight, commit},
+		{chainID, blockID, height, badCommit},
+	}
+
+	for i, c := range cases {
+		err := vset.VerifyCommit(c.chainID, c.blockID, c.height, c.commit)
+		assert.NotNil(t, err, i)
+	}
+
+	// test a good one
+	err = vset.VerifyCommit(chainID, blockID, height, commit)
+	assert.Nil(t, err)
+}
 
 func TestEmptySet(t *testing.T) {
 

@@ -256,17 +256,17 @@ The result when we set LoopCount to 10000
   << min power=100, max power=100000000, actual average voters=20, max voters=20 >> largest gap: 0.076547
   << min power=100, max power=100000000, actual average voters=29, max voters=29 >> largest gap: 0.147867
 */
-func TestSelectVoterReasonableVotingPower(t *testing.T) {
+func TestSelectVoterReasonableStakingPower(t *testing.T) {
 	// Raise LoopCount to get smaller gap over 10000. But large LoopCount takes a lot of time
 	const LoopCount = 100
 	for minMaxRate := 1; minMaxRate <= 1000000; minMaxRate *= 100 {
-		findLargestVotingPowerGap(t, LoopCount, minMaxRate, 10)
-		findLargestVotingPowerGap(t, LoopCount, minMaxRate, 20)
-		findLargestVotingPowerGap(t, LoopCount, minMaxRate, 29)
+		findLargestStakingPowerGap(t, LoopCount, minMaxRate, 10)
+		findLargestStakingPowerGap(t, LoopCount, minMaxRate, 20)
+		findLargestStakingPowerGap(t, LoopCount, minMaxRate, 29)
 	}
 }
 
-func findLargestVotingPowerGap(t *testing.T, loopCount int, minMaxRate int, maxVoters int) {
+func findLargestStakingPowerGap(t *testing.T, loopCount int, minMaxRate int, maxVoters int) {
 	valSet, privMap := randValidatorSetWithMinMax(30, 100, 100*int64(minMaxRate))
 	genDoc := &GenesisDoc{
 		GenesisTime: tmtime.Now(),
