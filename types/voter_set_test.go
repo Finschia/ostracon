@@ -10,11 +10,19 @@ import (
 )
 
 func TestSelectVoter(t *testing.T) {
-	MaxVoters = 29
+	MinVoters = 29
+	MinTotalVotingPowerRate = 1
 	valSet := randValidatorSet(30)
 	for i := 0; i < 10000; i++ {
 		voterSet := SelectVoter(valSet, []byte{byte(i)})
-		assert.True(t, math.Abs(float64(valSet.TotalStakingPower()-voterSet.TotalVotingPower())) <= 10)
+		assert.True(t, voterSet.Size() >= 29)
+		if voterSet.totalVotingPower <= 0 {
+			for j := 0; j < voterSet.Size(); j++ {
+				// TODO solve this problem!!!
+				t.Logf("voter voting power = %d", voterSet.Voters[j].VotingPower)
+			}
+		}
+		assert.True(t, voterSet.TotalVotingPower() > 0)
 	}
 }
 
@@ -59,7 +67,7 @@ func findLargestStakingPowerGap(t *testing.T, loopCount int, minMaxRate int, max
 		Validators:  toGenesisValidators(valSet.Validators),
 	}
 	hash := genDoc.Hash()
-	MaxVoters = maxVoters
+	MinVoters = maxVoters
 	accumulation := make(map[string]int64)
 	totalVoters := 0
 	for i := 0; i < loopCount; i++ {
@@ -96,11 +104,10 @@ func TestSelectVoterMaxVarious(t *testing.T) {
 		t.Logf("<<< min: 100, max: %d >>>", 100*minMaxRate)
 		for validators := 16; validators <= 256; validators *= 4 {
 			for voters := 1; voters <= validators; voters += 10 {
-				MaxVoters = voters
+				MinVoters = voters
 				valSet, _ := randValidatorSetWithMinMax(validators, 100, 100*int64(minMaxRate))
 				voterSet := SelectVoter(valSet, []byte{byte(hash)})
-				assert.True(t, int(math.Abs(float64(valSet.TotalStakingPower()-voterSet.TotalVotingPower()))) <= voters)
-				if voterSet.Size() < MaxVoters {
+				if voterSet.Size() < MinVoters {
 					t.Logf("Cannot elect voters up to MaxVoters: validators=%d, MaxVoters=%d, actual voters=%d",
 						validators, voters, voterSet.Size())
 					break
