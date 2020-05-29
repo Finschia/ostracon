@@ -246,6 +246,7 @@ func (cs *State) GetRoundStateSimpleJSON() ([]byte, error) {
 }
 
 // GetValidators returns a copy of the current validators.
+// ValidatorOrVoter: validator
 func (cs *State) GetValidators() (int64, []*types.Validator) {
 	cs.mtx.RLock()
 	defer cs.mtx.RUnlock()
@@ -494,7 +495,7 @@ func (cs *State) reconstructLastCommit(state sm.State) {
 		panic(fmt.Sprintf("Failed to reconstruct LastCommit: seen commit for height %v not found",
 			state.LastBlockHeight))
 	}
-	lastPrecommits := types.CommitToVoteSet(state.ChainID, seenCommit, state.LastValidators)
+	lastPrecommits := types.CommitToVoteSet(state.ChainID, seenCommit, state.LastVoters)
 	if !lastPrecommits.HasTwoThirdsMajority() {
 		panic("Failed to reconstruct LastCommit: Does not have +2/3 maj")
 	}
@@ -532,7 +533,7 @@ func (cs *State) updateToState(state sm.State) {
 	}
 
 	// Reset fields based on state.
-	validators := state.Validators
+	voters := state.Voters
 	lastPrecommits := (*types.VoteSet)(nil)
 	if cs.CommitRound > -1 && cs.Votes != nil {
 		if !cs.Votes.Precommits(cs.CommitRound).HasTwoThirdsMajority() {
@@ -558,7 +559,8 @@ func (cs *State) updateToState(state sm.State) {
 		cs.StartTime = cs.config.Commit(cs.CommitTime)
 	}
 
-	cs.Validators = validators
+	cs.Validators = state.Validators.Copy()
+	cs.Voters = state.Voters.Copy()
 	cs.Proposal = nil
 	cs.ProposalBlock = nil
 	cs.ProposalBlockParts = nil
@@ -568,10 +570,10 @@ func (cs *State) updateToState(state sm.State) {
 	cs.ValidRound = -1
 	cs.ValidBlock = nil
 	cs.ValidBlockParts = nil
-	cs.Votes = cstypes.NewHeightVoteSet(state.ChainID, height, validators)
+	cs.Votes = cstypes.NewHeightVoteSet(state.ChainID, height, voters)
 	cs.CommitRound = -1
 	cs.LastCommit = lastPrecommits
-	cs.LastValidators = state.LastValidators
+	cs.LastVoters = state.LastVoters
 	cs.TriggeredTimeoutPrecommit = false
 
 	cs.state = state
@@ -833,7 +835,7 @@ func (cs *State) enterNewRound(height int64, round int) {
 	logger.Info(fmt.Sprintf("enterNewRound(%v/%v). Current: %v/%v/%v", height, round, cs.Height, cs.Round, cs.Step))
 
 	// Select the current height and round Proposer
-	cs.Proposer = types.SelectProposer(cs.Validators, cs.state.LastProofHash, height, round)
+	cs.Proposer = cs.Validators.SelectProposer(cs.state.LastProofHash, height, round)
 
 	// Setup new round
 	// we don't fire newStep for this step,
@@ -935,7 +937,7 @@ func (cs *State) enterPropose(height int64, round int) {
 	address := pubKey.Address()
 
 	// if not a validator, we're done
-	if !cs.Validators.HasAddress(address) {
+	if !cs.Voters.HasAddress(address) {
 		logger.Debug("This node is not a validator", "addr", address, "vals", cs.Validators)
 		return
 	}
@@ -1519,14 +1521,14 @@ func (cs *State) pruneBlocks(retainHeight int64) (uint64, error) {
 }
 
 func (cs *State) recordMetrics(height int64, block *types.Block) {
-	cs.metrics.Validators.Set(float64(cs.Validators.Size()))
-	cs.metrics.ValidatorsPower.Set(float64(cs.Validators.TotalVotingPower()))
+	cs.metrics.Voters.Set(float64(cs.Voters.Size()))
+	cs.metrics.VotersPower.Set(float64(cs.Voters.TotalVotingPower()))
 
 	var (
-		missingValidators      int
-		missingValidatorsPower int64
+		missingVoters      int
+		missingVotersPower int64
 	)
-	// height=0 -> MissingValidators and MissingValidatorsPower are both 0.
+	// height=0 -> MissingVoters and MissingVotersPower are both 0.
 	// Remember that the first LastCommit is intentionally empty, so it's not
 	// fair to increment missing validators number.
 	if height > 1 {
@@ -1534,18 +1536,18 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 		// after first block.
 		var (
 			commitSize = block.LastCommit.Size()
-			valSetLen  = len(cs.LastValidators.Validators)
+			valSetLen  = len(cs.LastVoters.Voters)
 		)
 		if commitSize != valSetLen {
 			panic(fmt.Sprintf("commit size (%d) doesn't match valset length (%d) at height %d\n\n%v\n\n%v",
-				commitSize, valSetLen, block.Height, block.LastCommit.Signatures, cs.LastValidators.Validators))
+				commitSize, valSetLen, block.Height, block.LastCommit.Signatures, cs.LastVoters.Voters))
 		}
 
-		for i, val := range cs.LastValidators.Validators {
+		for i, val := range cs.LastVoters.Voters {
 			commitSig := block.LastCommit.Signatures[i]
 			if commitSig.Absent() {
-				missingValidators++
-				missingValidatorsPower += val.VotingPower
+				missingVoters++
+				missingVotersPower += val.VotingPower
 			}
 
 			if cs.privValidator != nil {
@@ -1560,27 +1562,27 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 					label := []string{
 						"validator_address", val.Address.String(),
 					}
-					cs.metrics.ValidatorPower.With(label...).Set(float64(val.VotingPower))
+					cs.metrics.VoterPower.With(label...).Set(float64(val.VotingPower))
 					if commitSig.ForBlock() {
-						cs.metrics.ValidatorLastSignedHeight.With(label...).Set(float64(height))
+						cs.metrics.VoterLastSignedHeight.With(label...).Set(float64(height))
 					} else {
-						cs.metrics.ValidatorMissedBlocks.With(label...).Add(float64(1))
+						cs.metrics.VoterMissedBlocks.With(label...).Add(float64(1))
 					}
 				}
 			}
 		}
 	}
-	cs.metrics.MissingValidators.Set(float64(missingValidators))
-	cs.metrics.MissingValidatorsPower.Set(float64(missingValidatorsPower))
+	cs.metrics.MissingVoters.Set(float64(missingVoters))
+	cs.metrics.MissingVotersPower.Set(float64(missingVotersPower))
 
-	cs.metrics.ByzantineValidators.Set(float64(len(block.Evidence.Evidence)))
-	byzantineValidatorsPower := int64(0)
+	cs.metrics.ByzantineVoters.Set(float64(len(block.Evidence.Evidence)))
+	byzantineVotersPower := int64(0)
 	for _, ev := range block.Evidence.Evidence {
-		if _, val := cs.Validators.GetByAddress(ev.Address()); val != nil {
-			byzantineValidatorsPower += val.VotingPower
+		if _, val := cs.Voters.GetByAddress(ev.Address()); val != nil {
+			byzantineVotersPower += val.VotingPower
 		}
 	}
-	cs.metrics.ByzantineValidatorsPower.Set(float64(byzantineValidatorsPower))
+	cs.metrics.ByzantineVotersPower.Set(float64(byzantineVotersPower))
 
 	if height > 1 {
 		lastBlockMeta := cs.blockStore.LoadBlockMeta(height - 1)
@@ -1618,7 +1620,7 @@ func (cs *State) defaultSetProposal(proposal *types.Proposal) error {
 	}
 
 	// If consensus does not enterNewRound yet, cs.Proposer may be nil or prior proposer, so don't use cs.Proposer
-	proposer := types.SelectProposer(cs.Validators, cs.state.LastProofHash, proposal.Height, proposal.Round)
+	proposer := cs.Validators.SelectProposer(cs.state.LastProofHash, proposal.Height, proposal.Round)
 
 	// Verify signature
 	if !proposer.PubKey.VerifyBytes(proposal.SignBytes(cs.state.ChainID), proposal.Signature) {
@@ -1928,7 +1930,7 @@ func (cs *State) signVote(
 		return nil, errors.Wrap(err, "can't get pubkey")
 	}
 	addr := pubKey.Address()
-	valIdx, _ := cs.Validators.GetByAddress(addr)
+	valIdx, _ := cs.Voters.GetByAddress(addr)
 
 	vote := &types.Vote{
 		ValidatorAddress: addr,
@@ -1977,7 +1979,7 @@ func (cs *State) signAddVote(msgType types.SignedMsgType, hash []byte, header ty
 	}
 
 	// If the node not in the validator set, do nothing.
-	if !cs.Validators.HasAddress(pubKey.Address()) {
+	if !cs.Voters.HasAddress(pubKey.Address()) {
 		return nil
 	}
 

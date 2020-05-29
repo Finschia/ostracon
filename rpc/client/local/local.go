@@ -153,8 +153,8 @@ func (c *Local) Commit(height *int64) (*ctypes.ResultCommit, error) {
 	return core.Commit(c.ctx, height)
 }
 
-func (c *Local) Validators(height *int64, page, perPage int) (*ctypes.ResultValidators, error) {
-	return core.Validators(c.ctx, height, page, perPage)
+func (c *Local) Voters(height *int64, page, perPage int) (*ctypes.ResultVoters, error) {
+	return core.Voters(c.ctx, height, page, perPage)
 }
 
 func (c *Local) Tx(hash []byte, prove bool) (*ctypes.ResultTx, error) {

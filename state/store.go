@@ -105,10 +105,10 @@ func saveState(db dbm.DB, state State, key []byte) {
 		// This extra logic due to Tendermint validator set changes being delayed 1 block.
 		// It may get overwritten due to InitChain validator updates.
 		lastHeightVoteChanged := int64(1)
-		saveValidatorsInfo(db, nextHeight, lastHeightVoteChanged, state.Validators)
+		saveValidatorsInfo(db, nextHeight, lastHeightVoteChanged, []byte{}, state.Validators)
 	}
 	// Save next validators.
-	saveValidatorsInfo(db, nextHeight+1, state.LastHeightValidatorsChanged, state.NextValidators)
+	saveValidatorsInfo(db, nextHeight+1, state.LastHeightValidatorsChanged, state.LastProofHash, state.NextValidators)
 	// Save next consensus params.
 	saveConsensusParamsInfo(db, nextHeight, state.LastHeightConsensusParamsChanged, state.ConsensusParams)
 	db.SetSync(key, state.Bytes())
@@ -140,7 +140,7 @@ func PruneStates(db dbm.DB, from int64, to int64) error {
 	if from >= to {
 		return fmt.Errorf("from height %v must be lower than to height %v", from, to)
 	}
-	valInfo := loadValidatorsInfo(db, to)
+	valInfo := loadValidatorsInfo(db, calcValidatorsKey(to))
 	if valInfo == nil {
 		return fmt.Errorf("validators at height %v not found", to)
 	}
@@ -171,9 +171,9 @@ func PruneStates(db dbm.DB, from int64, to int64) error {
 		// params, otherwise they will panic if they're retrieved directly (instead of
 		// indirectly via a LastHeightChanged pointer).
 		if keepVals[h] {
-			v := loadValidatorsInfo(db, h)
+			v := loadValidatorsInfo(db, calcValidatorsKey(h))
 			if v.ValidatorSet == nil {
-				v.ValidatorSet, err = LoadValidators(db, h)
+				v.ValidatorSet, _, err = LoadValidators(db, h)
 				if err != nil {
 					return err
 				}
@@ -283,6 +283,7 @@ func SaveABCIResponses(db dbm.DB, height int64, abciResponses *ABCIResponses) {
 type ValidatorsInfo struct {
 	ValidatorSet      *types.ValidatorSet
 	LastHeightChanged int64
+	ProofHash         []byte
 }
 
 // Bytes serializes the ValidatorsInfo using go-amino.
@@ -290,16 +291,17 @@ func (valInfo *ValidatorsInfo) Bytes() []byte {
 	return cdc.MustMarshalBinaryBare(valInfo)
 }
 
-// LoadValidators loads the ValidatorSet for a given height.
+// LoadValidators loads the VoterSet for a given height.
 // Returns ErrNoValSetForHeight if the validator set can't be found for this height.
-func LoadValidators(db dbm.DB, height int64) (*types.ValidatorSet, error) {
-	valInfo := loadValidatorsInfo(db, height)
+func LoadValidators(db dbm.DB, height int64) (*types.ValidatorSet, *types.VoterSet, error) {
+	valInfo := loadValidatorsInfo(db, calcValidatorsKey(height))
 	if valInfo == nil {
-		return nil, ErrNoValSetForHeight{height}
+		return nil, nil, ErrNoValSetForHeight{height}
 	}
 	if valInfo.ValidatorSet == nil {
+		proofHash := valInfo.ProofHash // store proof hash of the height
 		lastStoredHeight := lastStoredHeightFor(height, valInfo.LastHeightChanged)
-		valInfo2 := loadValidatorsInfo(db, lastStoredHeight)
+		valInfo2 := loadValidatorsInfo(db, calcValidatorsKey(lastStoredHeight))
 		if valInfo2 == nil || valInfo2.ValidatorSet == nil {
 			panic(
 				fmt.Sprintf("Couldn't find validators at height %d (height %d was originally requested)",
@@ -310,9 +312,10 @@ func LoadValidators(db dbm.DB, height int64) (*types.ValidatorSet, error) {
 		}
 		valInfo2.ValidatorSet.IncrementProposerPriority(int(height - lastStoredHeight)) // mutate
 		valInfo = valInfo2
+		valInfo.ProofHash = proofHash // reload proof again
 	}
 
-	return valInfo.ValidatorSet, nil
+	return valInfo.ValidatorSet, types.SelectVoter(valInfo.ValidatorSet, valInfo.ProofHash), nil
 }
 
 func lastStoredHeightFor(height, lastHeightChanged int64) int64 {
@@ -321,8 +324,8 @@ func lastStoredHeightFor(height, lastHeightChanged int64) int64 {
 }
 
 // CONTRACT: Returned ValidatorsInfo can be mutated.
-func loadValidatorsInfo(db dbm.DB, height int64) *ValidatorsInfo {
-	buf, err := db.Get(calcValidatorsKey(height))
+func loadValidatorsInfo(db dbm.DB, valKey []byte) *ValidatorsInfo {
+	buf, err := db.Get(valKey)
 	if err != nil {
 		panic(err)
 	}
@@ -347,12 +350,13 @@ func loadValidatorsInfo(db dbm.DB, height int64) *ValidatorsInfo {
 // `height` is the effective height for which the validator is responsible for
 // signing. It should be called from s.Save(), right before the state itself is
 // persisted.
-func saveValidatorsInfo(db dbm.DB, height, lastHeightChanged int64, valSet *types.ValidatorSet) {
+func saveValidatorsInfo(db dbm.DB, height, lastHeightChanged int64, proofHash []byte, valSet *types.ValidatorSet) {
 	if lastHeightChanged > height {
 		panic("LastHeightChanged cannot be greater than ValidatorsInfo height")
 	}
 	valInfo := &ValidatorsInfo{
 		LastHeightChanged: lastHeightChanged,
+		ProofHash:         proofHash,
 	}
 	// Only persist validator set if it was updated or checkpoint height (see
 	// valSetCheckpointInterval) is reached.

@@ -27,8 +27,8 @@ func (missingProvider) SaveFullCommit(FullCommit) error { return nil }
 func (missingProvider) LatestFullCommit(chainID string, minHeight, maxHeight int64) (FullCommit, error) {
 	return FullCommit{}, lerr.ErrCommitNotFound()
 }
-func (missingProvider) ValidatorSet(chainID string, height int64) (*types.ValidatorSet, error) {
-	return nil, errors.New("missing validator set")
+func (missingProvider) VoterSet(chainID string, height int64) (*types.VoterSet, error) {
+	return nil, errors.New("missing voter set")
 }
 func (missingProvider) SetLogger(_ log.Logger) {}
 
@@ -55,7 +55,7 @@ func checkProvider(t *testing.T, p PersistentProvider, chainID, app string) {
 	// Make a bunch of full commits.
 	fcz := make([]FullCommit, count)
 	for i := 0; i < count; i++ {
-		vals := keys.ToValidators(10, int64(count/2))
+		vals := types.ToVoterAll(keys.ToValidators(10, int64(count/2)))
 		h := int64(20 + 10*i)
 		fcz[i] = keys.GenFullCommit(chainID, h, nil, vals, vals, appHash, []byte("params"), []byte("results"), 0, 5)
 	}
@@ -73,8 +73,8 @@ func checkProvider(t *testing.T, p PersistentProvider, chainID, app string) {
 		fc2, err := p.LatestFullCommit(chainID, fc.Height(), fc.Height())
 		assert.Nil(err)
 		assert.Equal(fc.SignedHeader, fc2.SignedHeader)
-		assert.Equal(fc.Validators, fc2.Validators)
-		assert.Equal(fc.NextValidators, fc2.NextValidators)
+		assert.Equal(fc.Voters, fc2.Voters)
+		assert.Equal(fc.NextVoters, fc2.NextVoters)
 	}
 
 	// Make sure we get the last hash if we overstep.
@@ -119,7 +119,7 @@ func TestMultiLatestFullCommit(t *testing.T) {
 
 	// Set a bunch of full commits.
 	for i := 0; i < count; i++ {
-		vals := keys.ToValidators(10, int64(count/2))
+		vals := types.ToVoterAll(keys.ToValidators(10, int64(count/2)))
 		h := int64(10 * (i + 1))
 		fc := keys.GenFullCommit(chainID, h, nil, vals, vals, appHash, []byte("params"), []byte("results"), 0, 5)
 		err := p2.SaveFullCommit(fc)

@@ -28,6 +28,6 @@ func (p *deadMock) SignedHeader(height int64) (*types.SignedHeader, error) {
 	return nil, errors.New("no response from provider")
 }
 
-func (p *deadMock) ValidatorSet(height int64) (*types.ValidatorSet, error) {
+func (p *deadMock) VoterSet(height int64) (*types.VoterSet, error) {
 	return nil, errors.New("no response from provider")
 }

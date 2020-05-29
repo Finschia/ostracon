@@ -33,7 +33,7 @@ func TestProto3Compatibility(t *testing.T) {
 		},
 		LastCommitHash: []byte("commit hash"),
 		DataHash:       []byte("data hash"),
-		ValidatorsHash: []byte("validators hash"),
+		VotersHash:     []byte("voters hash"),
 	}
 	aminoHeader := Header{
 		ChainID: "cosmos",
@@ -48,7 +48,7 @@ func TestProto3Compatibility(t *testing.T) {
 		},
 		LastCommitHash: []byte("commit hash"),
 		DataHash:       []byte("data hash"),
-		ValidatorsHash: []byte("validators hash"),
+		VotersHash:     []byte("voters hash"),
 	}
 	ab, err := cdc.MarshalBinaryBare(aminoHeader)
 	assert.NoError(t, err, "unexpected error")
@@ -64,7 +64,7 @@ func TestProto3Compatibility(t *testing.T) {
 		Time:           &proto3.Timestamp{Seconds: seconds, Nanos: nanos},
 		LastCommitHash: []byte("commit hash"),
 		DataHash:       []byte("data hash"),
-		ValidatorsHash: []byte("validators hash"),
+		VotersHash:     []byte("voters hash"),
 	}
 	emptyLastBlockAm := Header{
 		ChainID:        "cosmos",
@@ -72,7 +72,7 @@ func TestProto3Compatibility(t *testing.T) {
 		Time:           tm,
 		LastCommitHash: []byte("commit hash"),
 		DataHash:       []byte("data hash"),
-		ValidatorsHash: []byte("validators hash"),
+		VotersHash:     []byte("voters hash"),
 	}
 
 	ab, err = cdc.MarshalBinaryBare(emptyLastBlockAm)

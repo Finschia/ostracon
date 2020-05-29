@@ -2,7 +2,6 @@ package types
 
 import (
 	"bytes"
-	"encoding/binary"
 	"fmt"
 	"math"
 	"math/big"
@@ -12,8 +11,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/tendermint/tendermint/crypto/merkle"
-	"github.com/tendermint/tendermint/crypto/tmhash"
-	tmmath "github.com/tendermint/tendermint/libs/math"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 )
 
@@ -32,7 +29,7 @@ const (
 	PriorityWindowSizeFactor = 2
 )
 
-// ValidatorSet represent a set of *Validator at a given height.
+// VoterSet represent a set of *Validator at a given height.
 // The validators can be fetched by address or index.
 // The index is in order of .Address, so the indices are fixed
 // for all rounds of a given blockchain height - ie. the validators
@@ -50,9 +47,9 @@ type ValidatorSet struct {
 	totalVotingPower int64
 }
 
-// NewValidatorSet initializes a ValidatorSet by copying over the
+// NewValidatorSet initializes a VoterSet by copying over the
 // values from `valz`, a list of Validators. If valz is nil or empty,
-// the new ValidatorSet will have an empty list of Validators.
+// the new VoterSet will have an empty list of Validators.
 // The addresses of validators in `valz` must be unique otherwise the
 // function panics.
 // Note the validator set size has an implied limit equal to that of the MaxVotesCount -
@@ -212,7 +209,7 @@ func validatorListCopy(valsList []*Validator) []*Validator {
 	return valsCopy
 }
 
-// Copy each validator into a new ValidatorSet.
+// Copy each validator into a new VoterSet.
 func (vals *ValidatorSet) Copy() *ValidatorSet {
 	return &ValidatorSet{
 		Validators:       validatorListCopy(vals.Validators),
@@ -243,7 +240,7 @@ func (vals *ValidatorSet) GetByAddress(address []byte) (index int, val *Validato
 
 // GetByIndex returns the validator's address and validator itself by index.
 // It returns nil values if index is less than 0 or greater or equal to
-// len(ValidatorSet.Validators).
+// len(VoterSet.Validators).
 func (vals *ValidatorSet) GetByIndex(index int) (address []byte, val *Validator) {
 	if index < 0 || index >= len(vals.Validators) {
 		return nil, nil
@@ -600,223 +597,18 @@ func (vals *ValidatorSet) UpdateWithChangeSet(changes []*Validator) error {
 	return vals.updateWithChangeSet(changes, true)
 }
 
-// VerifyCommit verifies +2/3 of the set had signed the given commit.
-func (vals *ValidatorSet) VerifyCommit(chainID string, blockID BlockID,
-	height int64, commit *Commit) error {
-
-	if vals.Size() != len(commit.Signatures) {
-		return NewErrInvalidCommitSignatures(vals.Size(), len(commit.Signatures))
+func (vals *ValidatorSet) SelectProposer(proofHash []byte, height int64, round int) *Validator {
+	if vals.IsNilOrEmpty() {
+		panic("empty validator set")
 	}
-	if err := verifyCommitBasic(commit, height, blockID); err != nil {
-		return err
+	seed := hashToSeed(MakeRoundHash(proofHash, height, round))
+	candidates := make([]tmrand.Candidate, len(vals.Validators))
+	for i, val := range vals.Validators {
+		candidates[i] = &candidate{idx: i, val: val}
 	}
-
-	talliedVotingPower := int64(0)
-	votingPowerNeeded := vals.TotalVotingPower() * 2 / 3
-	for idx, commitSig := range commit.Signatures {
-		if commitSig.Absent() {
-			continue // OK, some signatures can be absent.
-		}
-
-		// The vals and commit have a 1-to-1 correspondance.
-		// This means we don't need the validator address or to do any lookup.
-		val := vals.Validators[idx]
-
-		// Validate signature.
-		voteSignBytes := commit.VoteSignBytes(chainID, idx)
-		if !val.PubKey.VerifyBytes(voteSignBytes, commitSig.Signature) {
-			return fmt.Errorf("wrong signature (#%d): %X", idx, commitSig.Signature)
-		}
-		// Good!
-		if blockID.Equals(commitSig.BlockID(commit.BlockID)) {
-			talliedVotingPower += val.VotingPower
-		}
-		// else {
-		// It's OK that the BlockID doesn't match.  We include stray
-		// signatures (~votes for nil) to measure validator availability.
-		// }
-
-		// return as soon as +2/3 of the signatures are verified
-		if talliedVotingPower > votingPowerNeeded {
-			return nil
-		}
-	}
-
-	// talliedVotingPower <= needed, thus return error
-	return ErrNotEnoughVotingPowerSigned{Got: talliedVotingPower, Needed: votingPowerNeeded}
-}
-
-// VerifyFutureCommit will check to see if the set would be valid with a different
-// validator set.
-//
-// vals is the old validator set that we know.  Over 2/3 of the power in old
-// signed this block.
-//
-// In Tendermint, 1/3 of the voting power can halt or fork the chain, but 1/3
-// can't make arbitrary state transitions.  You still need > 2/3 Byzantine to
-// make arbitrary state transitions.
-//
-// To preserve this property in the light client, we also require > 2/3 of the
-// old vals to sign the future commit at H, that way we preserve the property
-// that if they weren't being truthful about the validator set at H (block hash
-// -> vals hash) or about the app state (block hash -> app hash) we can slash
-// > 2/3.  Otherwise, the lite client isn't providing the same security
-// guarantees.
-//
-// Even if we added a slashing condition that if you sign a block header with
-// the wrong validator set, then we would only need > 1/3 of signatures from
-// the old vals on the new commit, it wouldn't be sufficient because the new
-// vals can be arbitrary and commit some arbitrary app hash.
-//
-// newSet is the validator set that signed this block.  Only votes from new are
-// sufficient for 2/3 majority in the new set as well, for it to be a valid
-// commit.
-//
-// NOTE: This doesn't check whether the commit is a future commit, because the
-// current height isn't part of the ValidatorSet.  Caller must check that the
-// commit height is greater than the height for this validator set.
-func (vals *ValidatorSet) VerifyFutureCommit(newSet *ValidatorSet, chainID string,
-	blockID BlockID, height int64, commit *Commit) error {
-	oldVals := vals
-
-	// Commit must be a valid commit for newSet.
-	err := newSet.VerifyCommit(chainID, blockID, height, commit)
-	if err != nil {
-		return err
-	}
-
-	// Check old voting power.
-	oldVotingPower := int64(0)
-	seen := map[int]bool{}
-
-	for idx, commitSig := range commit.Signatures {
-		if commitSig.Absent() {
-			continue // OK, some signatures can be absent.
-		}
-
-		// See if this validator is in oldVals.
-		oldIdx, val := oldVals.GetByAddress(commitSig.ValidatorAddress)
-		if val == nil || seen[oldIdx] {
-			continue // missing or double vote...
-		}
-		seen[oldIdx] = true
-
-		// Validate signature.
-		voteSignBytes := commit.VoteSignBytes(chainID, idx)
-		if !val.PubKey.VerifyBytes(voteSignBytes, commitSig.Signature) {
-			return errors.Errorf("wrong signature (#%d): %X", idx, commitSig.Signature)
-		}
-		// Good!
-		if blockID.Equals(commitSig.BlockID(commit.BlockID)) {
-			oldVotingPower += val.VotingPower
-		}
-		// else {
-		// It's OK that the BlockID doesn't match.  We include stray
-		// signatures (~votes for nil) to measure validator availability.
-		// }
-	}
-
-	if got, needed := oldVotingPower, oldVals.TotalVotingPower()*2/3; got <= needed {
-		return ErrNotEnoughVotingPowerSigned{Got: got, Needed: needed}
-	}
-	return nil
-}
-
-// VerifyCommitTrusting verifies that trustLevel ([1/3, 1]) of the validator
-// set signed this commit.
-// NOTE the given validators do not necessarily correspond to the validator set
-// for this commit, but there may be some intersection.
-func (vals *ValidatorSet) VerifyCommitTrusting(chainID string, blockID BlockID,
-	height int64, commit *Commit, trustLevel tmmath.Fraction) error {
-
-	if trustLevel.Numerator*3 < trustLevel.Denominator || // < 1/3
-		trustLevel.Numerator > trustLevel.Denominator { // > 1
-		panic(fmt.Sprintf("trustLevel must be within [1/3, 1], given %v", trustLevel))
-	}
-
-	if err := verifyCommitBasic(commit, height, blockID); err != nil {
-		return err
-	}
-
-	var (
-		talliedVotingPower int64
-		seenVals           = make(map[int]int, len(commit.Signatures)) // validator index -> commit index
-		votingPowerNeeded  = (vals.TotalVotingPower() * trustLevel.Numerator) / trustLevel.Denominator
-	)
-
-	for idx, commitSig := range commit.Signatures {
-		if commitSig.Absent() {
-			continue // OK, some signatures can be absent.
-		}
-
-		// We don't know the validators that committed this block, so we have to
-		// check for each vote if its validator is already known.
-		valIdx, val := vals.GetByAddress(commitSig.ValidatorAddress)
-
-		if val != nil {
-			// check for double vote of validator on the same commit
-			if firstIndex, ok := seenVals[valIdx]; ok {
-				secondIndex := idx
-				return errors.Errorf("double vote from %v (%d and %d)", val, firstIndex, secondIndex)
-			}
-			seenVals[valIdx] = idx
-
-			// Validate signature.
-			voteSignBytes := commit.VoteSignBytes(chainID, idx)
-			if !val.PubKey.VerifyBytes(voteSignBytes, commitSig.Signature) {
-				return errors.Errorf("wrong signature (#%d): %X", idx, commitSig.Signature)
-			}
-
-			// Good!
-			if blockID.Equals(commitSig.BlockID(commit.BlockID)) {
-				talliedVotingPower += val.VotingPower
-			}
-			// else {
-			// It's OK that the BlockID doesn't match.  We include stray
-			// signatures (~votes for nil) to measure validator availability.
-			// }
-
-			if talliedVotingPower > votingPowerNeeded {
-				return nil
-			}
-		}
-	}
-
-	return ErrNotEnoughVotingPowerSigned{Got: talliedVotingPower, Needed: votingPowerNeeded}
-}
-
-func verifyCommitBasic(commit *Commit, height int64, blockID BlockID) error {
-	if err := commit.ValidateBasic(); err != nil {
-		return err
-	}
-	if height != commit.Height {
-		return NewErrInvalidCommitHeight(height, commit.Height)
-	}
-	if !blockID.Equals(commit.BlockID) {
-		return fmt.Errorf("invalid commit -- wrong block ID: want %v, got %v",
-			blockID, commit.BlockID)
-	}
-	return nil
-}
-
-//-----------------
-
-// IsErrNotEnoughVotingPowerSigned returns true if err is
-// ErrNotEnoughVotingPowerSigned.
-func IsErrNotEnoughVotingPowerSigned(err error) bool {
-	_, ok := errors.Cause(err).(ErrNotEnoughVotingPowerSigned)
-	return ok
-}
-
-// ErrNotEnoughVotingPowerSigned is returned when not enough validators signed
-// a commit.
-type ErrNotEnoughVotingPowerSigned struct {
-	Got    int64
-	Needed int64
-}
-
-func (e ErrNotEnoughVotingPowerSigned) Error() string {
-	return fmt.Sprintf("invalid commit -- insufficient voting power: got %d, needed more than %d", e.Got, e.Needed)
+	samples := tmrand.RandomSamplingWithPriority(seed, candidates, 1, uint64(vals.TotalVotingPower()))
+	proposerIdx := samples[0].(*candidate).idx
+	return vals.Validators[proposerIdx]
 }
 
 //----------------
@@ -825,17 +617,17 @@ func (vals *ValidatorSet) String() string {
 	return vals.StringIndented("")
 }
 
-// StringIndented returns an intended string representation of ValidatorSet.
+// StringIndented returns an intended string representation of VoterSet.
 func (vals *ValidatorSet) StringIndented(indent string) string {
 	if vals == nil {
-		return "nil-ValidatorSet"
+		return "nil-VoterSet"
 	}
 	var valStrings []string
 	vals.Iterate(func(index int, val *Validator) bool {
 		valStrings = append(valStrings, val.String())
 		return false
 	})
-	return fmt.Sprintf(`ValidatorSet{
+	return fmt.Sprintf(`VoterSet{
 %s  Validators:
 %s    %v
 %s}`,
@@ -924,61 +716,4 @@ func safeSubClip(a, b int64) int64 {
 		return math.MaxInt64
 	}
 	return c
-}
-
-// candidate save simple validator data for selecting proposer
-type candidate struct {
-	idx         int
-	address     Address
-	votingPower int64
-}
-
-func (c *candidate) Priority() uint64 {
-	// TODO Is it possible to have a negative VotingPower?
-	if c.votingPower < 0 {
-		return 0
-	}
-	return uint64(c.votingPower)
-}
-
-func (c *candidate) LessThan(other tmrand.Candidate) bool {
-	o, ok := other.(*candidate)
-	if !ok {
-		panic("incompatible type")
-	}
-	return bytes.Compare(c.address, o.address) < 0
-}
-
-func SelectProposer(validators *ValidatorSet, proofHash []byte, height int64, round int) *Validator {
-	if validators.IsNilOrEmpty() {
-		panic("empty validator set")
-	}
-	seed := hashToSeed(MakeRoundHash(proofHash, height, round))
-	candidates := make([]tmrand.Candidate, len(validators.Validators))
-	for i, val := range validators.Validators {
-		candidates[i] = &candidate{idx: i, address: val.Address, votingPower: val.VotingPower}
-	}
-	vals := tmrand.RandomSamplingWithPriority(seed, candidates, 1, uint64(validators.TotalVotingPower()))
-	proposerIdx := vals[0].(*candidate).idx
-	return validators.Validators[proposerIdx]
-}
-
-func hashToSeed(hash []byte) uint64 {
-	for len(hash) < 8 {
-		hash = append(hash, byte(0))
-	}
-	return binary.LittleEndian.Uint64(hash[:8])
-}
-
-// MakeRoundHash combines the VRF hash, block height, and round to create a hash value for each round. This value is
-// used for random sampling of the Proposer.
-func MakeRoundHash(proofHash []byte, height int64, round int) []byte {
-	b := make([]byte, 16)
-	binary.LittleEndian.PutUint64(b, uint64(height))
-	binary.LittleEndian.PutUint64(b[8:], uint64(round))
-	hash := tmhash.New()
-	hash.Write(proofHash)
-	hash.Write(b[:8])
-	hash.Write(b[8:16])
-	return hash.Sum(nil)
 }

@@ -356,8 +356,8 @@ func (c *Client) TxSearch(query string, prove bool, page, perPage int, orderBy s
 //
 // WARNING: only full validator sets are verified (when length of validators is
 // less than +perPage+. +perPage+ default is 30, max is 100).
-func (c *Client) Validators(height *int64, page, perPage int) (*ctypes.ResultValidators, error) {
-	res, err := c.next.Validators(height, page, perPage)
+func (c *Client) Validators(height *int64, page, perPage int) (*ctypes.ResultVoters, error) {
+	res, err := c.next.Voters(height, page, perPage)
 	if err != nil {
 		return nil, err
 	}
@@ -375,13 +375,17 @@ func (c *Client) Validators(height *int64, page, perPage int) (*ctypes.ResultVal
 
 	// Verify validators.
 	if res.Count <= res.Total {
-		if rH, tH := types.NewValidatorSet(res.Validators).Hash(), h.ValidatorsHash; !bytes.Equal(rH, tH) {
+		if rH, tH := types.NewVoterSet(res.Voters).Hash(), h.VotersHash; !bytes.Equal(rH, tH) {
 			return nil, fmt.Errorf("validators %X does not match with trusted validators %X",
 				rH, tH)
 		}
 	}
 
 	return res, nil
+}
+
+func (c *Client) Voters(height *int64, page, perPage int) (*ctypes.ResultVoters, error) {
+	return c.next.Voters(height, page, perPage)
 }
 
 func (c *Client) BroadcastEvidence(ev types.Evidence) (*ctypes.ResultBroadcastEvidence, error) {

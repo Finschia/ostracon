@@ -313,7 +313,7 @@ func (h *Handshaker) ReplayBlocks(
 			Time:            h.genDoc.GenesisTime,
 			ChainId:         h.genDoc.ChainID,
 			ConsensusParams: csParams,
-			Validators:      nextVals,
+			Validators:      nextVals, // ValidatorOrVoter: validator
 			AppStateBytes:   h.genDoc.AppState,
 		}
 		res, err := proxyApp.Consensus().InitChainSync(req)
@@ -329,7 +329,10 @@ func (h *Handshaker) ReplayBlocks(
 					return nil, err
 				}
 				state.Validators = types.NewValidatorSet(vals)
+				state.Voters = types.ToVoterAll(state.Validators)
+				// Should sync it with MakeGenesisState()
 				state.NextValidators = types.NewValidatorSet(vals)
+				state.NextVoters = types.SelectVoter(state.NextValidators, h.genDoc.Hash())
 			} else if len(h.genDoc.Validators) == 0 {
 				// If validator set is not set in genesis and still empty after InitChain, exit.
 				return nil, fmt.Errorf("validator set is nil in genesis and still empty after InitChain")
