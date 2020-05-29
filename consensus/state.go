@@ -1812,6 +1812,16 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 		}
 
 		selectedAsVoter := false
+		if cs.privValidator != nil {
+			pubkey, err := cs.privValidator.GetPubKey()
+			if err != nil {
+				// Metrics won't be updated, but it's not critical.
+				cs.Logger.Error("Error on retrieval of pubkey", "err", err)
+			} else {
+				address = pubkey.Address()
+			}
+		}
+
 		for i, val := range cs.LastVoters.Voters {
 			commitSig := block.LastCommit.Signatures[i]
 			if commitSig.Absent() {
