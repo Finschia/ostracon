@@ -69,6 +69,14 @@ func (pkz privKeys) ToValidators(init, inc int64) *types.ValidatorSet {
 	return types.NewValidatorSet(res)
 }
 
+func (pkz privKeys) ToVoters(init, inc int64) *types.VoterSet {
+	res := make([]*types.Validator, len(pkz))
+	for i, k := range pkz {
+		res[i] = types.NewValidator(k.PubKey(), init+int64(i)*inc)
+	}
+	return types.NewVoterSet(res)
+}
+
 // signHeader properly signs the header with all keys from first to last exclusive.
 func (pkz privKeys) signHeader(header *types.Header, first, last int) *types.Commit {
 	commitSigs := make([]types.CommitSig, len(pkz))
@@ -177,11 +185,11 @@ func GenMockNode(
 	bTime time.Time) (
 	string,
 	map[int64]*types.SignedHeader,
-	map[int64]*types.ValidatorSet) {
+	map[int64]*types.VoterSet) {
 
 	var (
 		headers         = make(map[int64]*types.SignedHeader, blockSize)
-		valset          = make(map[int64]*types.ValidatorSet, blockSize)
+		voterSet        = make(map[int64]*types.VoterSet, blockSize)
 		keys            = genPrivKeys(valSize)
 		totalVariation  = valVariation
 		valVariationInt int
@@ -194,11 +202,11 @@ func GenMockNode(
 
 	// genesis header and vals
 	lastHeader := keys.GenSignedHeader(chainID, 1, bTime.Add(1*time.Minute), nil,
-		keys.ToValidators(2, 2), newKeys.ToValidators(2, 2), []byte("app_hash"), []byte("cons_hash"),
+		keys.ToVoters(2, 2), newKeys.ToVoters(2, 2), []byte("app_hash"), []byte("cons_hash"),
 		[]byte("results_hash"), 0, len(keys))
 	currentHeader := lastHeader
 	headers[1] = currentHeader
-	valset[1] = keys.ToValidators(2, 2)
+	voterSet[1] = keys.ToVoters(2, 2)
 	keys = newKeys
 
 	for height := int64(2); height <= blockSize; height++ {
@@ -208,13 +216,13 @@ func GenMockNode(
 		newKeys = keys.ChangeKeys(valVariationInt)
 		currentHeader = keys.GenSignedHeaderLastBlockID(chainID, height, bTime.Add(time.Duration(height)*time.Minute),
 			nil,
-			keys.ToValidators(2, 2), newKeys.ToValidators(2, 2), []byte("app_hash"), []byte("cons_hash"),
+			keys.ToVoters(2, 2), newKeys.ToVoters(2, 2), []byte("app_hash"), []byte("cons_hash"),
 			[]byte("results_hash"), 0, len(keys), types.BlockID{Hash: lastHeader.Hash()})
 		headers[height] = currentHeader
-		valset[height] = keys.ToValidators(2, 2)
+		voterSet[height] = keys.ToVoters(2, 2)
 		lastHeader = currentHeader
 		keys = newKeys
 	}
 
-	return chainID, headers, valset
+	return chainID, headers, voterSet
 }
