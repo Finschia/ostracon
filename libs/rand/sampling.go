@@ -73,8 +73,9 @@ func moveWinnerToLast(candidates []Candidate, winner int) {
 	candidates[len(candidates)-1] = winnerCandidate
 }
 
-// `RandomSamplingWithoutReplacement` elects winners among candidates without replacement so it updates rewards of winners.
-// This function continues to elect winners until the both of two conditions(samplingThreshold, priorityRateThreshold) are met.
+// `RandomSamplingWithoutReplacement` elects winners among candidates without replacement
+// so it updates rewards of winners. This function continues to elect winners until the both of two
+// conditions(samplingThreshold, priorityRateThreshold) are met.
 func RandomSamplingWithoutReplacement(
 	seed uint64, candidates []Candidate, samplingThreshold int, priorityRateThreshold float64, rewardUnit uint64) (
 	winners []Candidate) {
@@ -91,7 +92,8 @@ func RandomSamplingWithoutReplacement(
 	totalPriority := sumTotalPriority(candidates)
 	priorityThreshold := uint64(math.Ceil(float64(totalPriority) * priorityRateThreshold))
 	if priorityThreshold > totalPriority {
-		// This can be possible because of float64's precision when priorityRateThreshold is 1 and totalPriority is very big
+		// This can be possible because of float64's precision
+		// when priorityRateThreshold is 1 and totalPriority is very big
 		priorityThreshold = totalPriority
 	}
 	candidates = sort(candidates)
@@ -99,7 +101,8 @@ func RandomSamplingWithoutReplacement(
 	losersPriorities := make([]uint64, len(candidates))
 	winnerNum := 0
 	for winnerNum < samplingThreshold || winnersPriority < priorityThreshold {
-		threshold := uint64(float64(nextRandom(&seed)&uint64Mask) / float64(uint64Mask+1) * float64(totalPriority-winnersPriority))
+		threshold := uint64(float64(nextRandom(&seed)&uint64Mask) /
+			float64(uint64Mask+1) * float64(totalPriority-winnersPriority))
 		cumulativePriority := uint64(0)
 		found := false
 		for i, candidate := range candidates[:len(candidates)-winnerNum] {
@@ -131,7 +134,7 @@ func RandomSamplingWithoutReplacement(
 		// voter.Priority()*rewardUnit can be overflow, so we multiply voter.Priority() and rewardProportion at first
 		winner.Reward(rewardUnit + uint64((float64(winner.Priority())*compensationRewardProportions[i])*float64(rewardUnit)))
 	}
-	return
+	return winners
 }
 
 func sumTotalPriority(candidates []Candidate) (sum uint64) {

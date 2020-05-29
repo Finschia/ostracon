@@ -109,11 +109,11 @@ func (v *Validator) Priority() uint64 {
 }
 
 func (v *Validator) LessThan(other tmrand.Candidate) bool {
-	_, ok := other.(*Validator)
+	o, ok := other.(*Validator)
 	if !ok {
 		panic("incompatible type")
 	}
-	return bytes.Compare(v.Address, v.Address) < 0
+	return bytes.Compare(v.Address, o.Address) < 0
 }
 
 func (v *Validator) Reward(rewards uint64) {
