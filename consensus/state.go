@@ -1607,6 +1607,7 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 		var (
 			commitSize = block.LastCommit.Size()
 			valSetLen  = len(cs.LastVoters.Voters)
+			address    types.Address
 		)
 		if commitSize != valSetLen {
 			panic(fmt.Sprintf("commit size (%d) doesn't match valset length (%d) at height %d\n\n%v\n\n%v",
@@ -1614,6 +1615,16 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 		}
 
 		selectedAsVoter := false
+		if cs.privValidator != nil {
+			pubkey, err := cs.privValidator.GetPubKey()
+			if err != nil {
+				// Metrics won't be updated, but it's not critical.
+				cs.Logger.Error("Error on retrieval of pubkey", "err", err)
+			} else {
+				address = pubkey.Address()
+			}
+		}
+
 		for i, val := range cs.LastVoters.Voters {
 			commitSig := block.LastCommit.Signatures[i]
 			if commitSig.Absent() {
@@ -1621,24 +1632,16 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 				missingVotersPower += val.VotingPower
 			}
 
-			if cs.privValidator != nil {
-				pubKey, err := cs.privValidator.GetPubKey()
-				if err != nil {
-					// Metrics won't be updated, but it's not critical.
-					cs.Logger.Error("Error on retrival of pubkey", "err", err)
-					continue
+			if bytes.Equal(val.Address, address) {
+				label := []string{
+					"validator_address", val.Address.String(),
 				}
-				if bytes.Equal(val.Address, pubKey.Address()) {
-					label := []string{
-						"validator_address", val.Address.String(),
-					}
-					cs.metrics.VoterPower.With(label...).Set(float64(val.VotingPower))
-					selectedAsVoter = true
-					if commitSig.ForBlock() {
-						cs.metrics.VoterLastSignedHeight.With(label...).Set(float64(height))
-					} else {
-						cs.metrics.VoterMissedBlocks.With(label...).Add(float64(1))
-					}
+				cs.metrics.VoterPower.With(label...).Set(float64(val.VotingPower))
+				selectedAsVoter = true
+				if commitSig.ForBlock() {
+					cs.metrics.VoterLastSignedHeight.With(label...).Set(float64(height))
+				} else {
+					cs.metrics.VoterMissedBlocks.With(label...).Add(float64(1))
 				}
 			}
 		}

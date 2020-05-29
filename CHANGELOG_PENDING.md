@@ -27,3 +27,5 @@
 - [encoding/decoding] [\#159](https://github.com/line/tendermint/pull/159) Extend the maximum number of characters that can be decoded to 200 characters
 
 ### BUG FIXES:
+
+- [consensus] [\#4895](https://github.com/tendermint/tendermint/pull/4895) Cache the address of the validator to reduce querying a remote KMS (@joe-bowman)
