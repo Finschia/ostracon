@@ -179,6 +179,26 @@ func ValidatorFromProto(vp *tmproto.Validator) (*Validator, error) {
 	return v, nil
 }
 
+// for implement Candidate of rand package
+func (v *Validator) Priority() uint64 {
+	if v.StakingPower < 0 {
+		panic(fmt.Sprintf("staking power is negative: %d", v.StakingPower))
+	}
+	return uint64(v.StakingPower)
+}
+
+func (v *Validator) LessThan(other tmrand.Candidate) bool {
+	_, ok := other.(*Validator)
+	if !ok {
+		panic("incompatible type")
+	}
+	return bytes.Compare(v.Address, v.Address) < 0
+}
+
+func (v *Validator) Reward(rewards uint64) {
+	v.VotingPower = int64(rewards)
+}
+
 //----------------------------------------
 // RandValidator
 

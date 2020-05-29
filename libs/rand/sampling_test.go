@@ -5,16 +5,18 @@ import (
 	"math"
 	s "sort"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type Element struct {
-	ID     uint32
-	Win    uint64
-	Weight uint64
+	id     uint32
+	reward uint64
+	weight uint64
 }
 
 func (e *Element) Priority() uint64 {
-	return e.Weight
+	return e.weight
 }
 
 func (e *Element) LessThan(other Candidate) bool {
@@ -22,11 +24,11 @@ func (e *Element) LessThan(other Candidate) bool {
 	if !ok {
 		panic("incompatible type")
 	}
-	return e.ID < o.ID
+	return e.id < o.id
 }
 
-func (e *Element) IncreaseWin() {
-	e.Win++
+func (e *Element) Reward(reward uint64) {
+	e.reward += reward
 }
 
 func TestRandomSamplingWithPriority(t *testing.T) {
@@ -52,7 +54,7 @@ func TestRandomSamplingWithPriority(t *testing.T) {
 	for i := 0; i < 100000; i++ {
 		elected = RandomSamplingWithPriority(uint64(i), candidates, 10, uint64(len(candidates)))
 		for _, e := range elected {
-			counts[e.(*Element).ID]++
+			counts[e.(*Element).id]++
 		}
 	}
 	expected := float64(1) / float64(100)
@@ -89,52 +91,136 @@ func TestRandomSamplingPanicCase(t *testing.T) {
 	}
 }
 
-func numberOfWinnersAndWins(candidate []Candidate) (winners uint64, totalWins uint64) {
+func resetReward(candidate []Candidate) {
 	for _, c := range candidate {
-		if c.(*Element).Win > 0 {
-			winners++
-			totalWins += c.(*Element).Win
-		}
-	}
-	return
-}
-
-func TestRandomSamplingToMax(t *testing.T) {
-	candidates1 := newCandidates(100, func(i int) uint64 { return uint64(i) })
-	voters1 := RandomSamplingToMax(0, candidates1, 10, sumTotalPriority(candidates1))
-	winners, totalWins := numberOfWinnersAndWins(candidates1)
-	if winners != 10 {
-		t.Errorf(fmt.Sprintf("unexpected sample size: %d", winners))
-	}
-	if voters1 != totalWins {
-		t.Errorf(fmt.Sprintf("unexpected totalWins: %d", voters1))
-	}
-
-	candidates2 := newCandidates(100, func(i int) uint64 { return uint64(i) })
-	_ = RandomSamplingToMax(0, candidates2, 10, sumTotalPriority(candidates2))
-
-	if !sameCandidates(candidates1, candidates2) {
-		t.Error("The two voter sets elected by the same seed are different.")
-	}
-
-	candidates3 := newCandidates(0, func(i int) uint64 { return uint64(i) })
-	voters3 := RandomSamplingToMax(0, candidates3, 0, sumTotalPriority(candidates3))
-	if voters3 != 0 {
-		t.Errorf(fmt.Sprintf("unexpected totalWins: %d", voters3))
+		c.(*Element).reward = 0
 	}
 }
 
-func TestRandomSamplingToMaxPanic(t *testing.T) {
+func totalReward(candidate []Candidate) uint64 {
+	total := uint64(0)
+	for _, candi := range candidate {
+		total += candi.(*Element).reward
+	}
+	return total
+}
+
+func TestRandomSamplingWithoutReplacement1Candidate(t *testing.T) {
+	candidates := newCandidates(1, func(i int) uint64 { return uint64(1000 * (i + 1)) })
+
+	winners := RandomSamplingWithoutReplacement(0, candidates, 1, 1, 1000)
+	assert.True(t, len(winners) == 1)
+	assert.True(t, candidates[0] == winners[0])
+	assert.True(t, winners[0].(*Element).reward == 1000)
+	resetReward(candidates)
+
+	winners2 := RandomSamplingWithoutReplacement(0, candidates, 1, 0.5, 1000)
+	assert.True(t, len(winners2) == 1)
+	assert.True(t, candidates[0] == winners2[0])
+	assert.True(t, winners2[0].(*Element).reward == 1000)
+	resetReward(candidates)
+
+	winners3 := RandomSamplingWithoutReplacement(0, candidates, 0, 0.5, 1000)
+	assert.True(t, len(winners3) == 1)
+	assert.True(t, candidates[0] == winners3[0])
+	assert.True(t, winners3[0].(*Element).reward == 1000)
+	resetReward(candidates)
+
+	winners4 := RandomSamplingWithoutReplacement(0, candidates, 0, 0, 1000)
+	assert.True(t, len(winners4) == 0)
+	resetReward(candidates)
+}
+
+// test samplingThreshold
+func TestRandomSamplingWithoutReplacementSamplingThreshold(t *testing.T) {
+	candidates := newCandidates(100, func(i int) uint64 { return uint64(1000 * (i + 1)) })
+
+	for i := 1; i <= 100; i++ {
+		winners := RandomSamplingWithoutReplacement(0, candidates, i, 0.001, 1000)
+		assert.True(t, len(winners) == i)
+		resetReward(candidates)
+	}
+}
+
+// test priorityRateThrshold
+func TestRandomSamplingWithoutReplacementPriorityRateThrshold(t *testing.T) {
+	candidates := newCandidates(100, func(i int) uint64 { return uint64(1000) })
+
+	for i := 1; i <= 100; i++ {
+		winners := RandomSamplingWithoutReplacement(0, candidates, 1, 0.01*float64(i), 1000)
+		assert.True(t, sumTotalPriority(winners) >= uint64(math.Ceil(0.01*float64(i)*float64(sumTotalPriority(candidates)))))
+		resetReward(candidates)
+	}
+}
+
+// test random election should be deterministic
+func TestRandomSamplingWithoutReplacementDeterministic(t *testing.T) {
+	candidates1 := newCandidates(100, func(i int) uint64 { return uint64(i + 1) })
+	candidates2 := newCandidates(100, func(i int) uint64 { return uint64(i + 1) })
+	for i := 1; i <= 100; i++ {
+		winners1 := RandomSamplingWithoutReplacement(uint64(i), candidates1, 50, 0.5, 1000)
+		winners2 := RandomSamplingWithoutReplacement(uint64(i), candidates2, 50, 0.5, 1000)
+		sameCandidates(winners1, winners2)
+		resetReward(candidates1)
+		resetReward(candidates2)
+	}
+}
+
+func accumulateAndResetReward(candidate []Candidate, acc []uint64) {
+	for i, c := range candidate {
+		acc[i] += c.(*Element).reward
+		c.(*Element).reward = 0
+	}
+}
+
+// test reward fairness
+func TestRandomSamplingWithoutReplacementReward(t *testing.T) {
+	candidates := newCandidates(100, func(i int) uint64 { return uint64(i + 1) })
+
+	accumulatedRewards := make([]uint64, 100)
+	for i := 0; i < 100000; i++ {
+		// 20 samplingThreshold is minimum to pass this test
+		// If samplingThreshold is less than 20, the result says the reward is not fair
+		RandomSamplingWithoutReplacement(uint64(i), candidates, 20, 0.2, 10)
+		accumulateAndResetReward(candidates, accumulatedRewards)
+	}
+	for i := 0; i < 99; i++ {
+		assert.True(t, accumulatedRewards[i] < accumulatedRewards[i+1])
+	}
+
+	accumulatedRewards = make([]uint64, 100)
+	for i := 0; i < 50000; i++ {
+		RandomSamplingWithoutReplacement(uint64(i), candidates, 50, 0.5, 10)
+		accumulateAndResetReward(candidates, accumulatedRewards)
+	}
+	for i := 0; i < 99; i++ {
+		assert.True(t, accumulatedRewards[i] < accumulatedRewards[i+1])
+	}
+
+	accumulatedRewards = make([]uint64, 100)
+	for i := 0; i < 10000; i++ {
+		RandomSamplingWithoutReplacement(uint64(i), candidates, 100, 1, 10)
+		accumulateAndResetReward(candidates, accumulatedRewards)
+	}
+	for i := 0; i < 99; i++ {
+		assert.True(t, accumulatedRewards[i] < accumulatedRewards[i+1])
+	}
+}
+
+func TestRandomSamplingWithoutReplacementPanic(t *testing.T) {
 	type Case struct {
-		Candidates    []Candidate
-		TotalPriority uint64
+		Candidates            []Candidate
+		SamplingThreshold     int
+		PriorityRateThreshold float64
 	}
 
 	cases := [...]*Case{
-		// specified total priority is greater than actual one
-		{newCandidates(10, func(i int) uint64 { return 1 }), 50000},
-		// limitCandidates is greater than the number of candidates
-		{newCandidates(5, func(i int) uint64 { return 10 }), 5},
+		// samplingThreshold is greater than the number of candidates
+		{newCandidates(9, func(i int) uint64 { return 10 }), 10, 0.5},
+		// priorityRateThreshold is greater than 1
+		{newCandidates(10, func(i int) uint64 { return 10 }), 10, 1.01},
+		// a candidate priority is 0
+		{newCandidates(10, func(i int) uint64 { return uint64(i) }), 10, 0.99},
 	}
 
 	for i, c := range cases {
@@ -144,7 +230,7 @@ func TestRandomSamplingToMaxPanic(t *testing.T) {
 					t.Errorf("expected panic didn't happen in case %d", i+1)
 				}
 			}()
-			RandomSamplingToMax(0, c.Candidates, 10, c.TotalPriority)
+			RandomSamplingWithoutReplacement(0, c.Candidates, c.SamplingThreshold, c.PriorityRateThreshold, 1000)
 		}()
 	}
 }
@@ -164,10 +250,10 @@ func sameCandidates(c1 []Candidate, c2 []Candidate) bool {
 	s.Slice(c1, func(i, j int) bool { return c1[i].LessThan(c1[j]) })
 	s.Slice(c2, func(i, j int) bool { return c2[i].LessThan(c2[j]) })
 	for i := 0; i < len(c1); i++ {
-		if c1[i].(*Element).ID != c2[i].(*Element).ID {
+		if c1[i].(*Element).id != c2[i].(*Element).id {
 			return false
 		}
-		if c1[i].(*Element).Win != c2[i].(*Element).Win {
+		if c1[i].(*Element).reward != c2[i].(*Element).reward {
 			return false
 		}
 	}
