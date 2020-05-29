@@ -97,14 +97,6 @@ func resetReward(candidate []Candidate) {
 	}
 }
 
-func totalReward(candidate []Candidate) uint64 {
-	total := uint64(0)
-	for _, candi := range candidate {
-		total += candi.(*Element).reward
-	}
-	return total
-}
-
 func TestRandomSamplingWithoutReplacement1Candidate(t *testing.T) {
 	candidates := newCandidates(1, func(i int) uint64 { return uint64(1000 * (i + 1)) })
 
