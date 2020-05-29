@@ -72,6 +72,14 @@ func (pkz privKeys) ToValidators(init, inc int64) *types.ValidatorSet {
 	return types.NewValidatorSet(res)
 }
 
+func (pkz privKeys) ToVoters(init, inc int64) *types.VoterSet {
+	res := make([]*types.Validator, len(pkz))
+	for i, k := range pkz {
+		res[i] = types.NewValidator(k.PubKey(), init+int64(i)*inc)
+	}
+	return types.NewVoterSet(res)
+}
+
 // signHeader properly signs the header with all keys from first to last exclusive.
 func (pkz privKeys) signHeader(header *types.Header, voterSet *types.VoterSet, first, last int) *types.Commit {
 	commitSigs := make([]types.CommitSig, len(pkz))
