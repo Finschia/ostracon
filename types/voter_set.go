@@ -431,7 +431,7 @@ func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
 	voters := 0
 	for _, candi := range candidates {
 		if candi.(*candidate).win > 0 {
-			voters += 1
+			voters++
 		}
 	}
 
