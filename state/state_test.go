@@ -726,7 +726,9 @@ func TestLargeGenesisValidator(t *testing.T) {
 	// see: https://github.com/tendermint/tendermint/issues/2960
 	firstAddedValPubKey := ed25519.GenPrivKey().PubKey()
 	firstAddedValStakingPower := int64(10)
-	firstAddedVal := abci.ValidatorUpdate{PubKey: types.TM2PB.PubKey(firstAddedValPubKey), Power: firstAddedValStakingPower}
+	firstAddedVal := abci.ValidatorUpdate{
+		PubKey: types.TM2PB.PubKey(firstAddedValPubKey),
+		Power:  firstAddedValStakingPower}
 	validatorUpdates, err := types.PB2TM.ValidatorUpdates([]abci.ValidatorUpdate{firstAddedVal})
 	assert.NoError(t, err)
 	abciResponses := &sm.ABCIResponses{
