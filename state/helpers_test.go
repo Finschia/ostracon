@@ -70,7 +70,7 @@ func makeAndApplyGoodBlock(state sm.State, privVal types.PrivValidator, height i
 	}
 	blockID := types.BlockID{Hash: block.Hash(),
 		PartsHeader: types.PartSetHeader{Total: 3, Hash: tmrand.Bytes(32)}}
-	state, err := blockExec.ApplyBlock(state, blockID, block)
+	state, _, err := blockExec.ApplyBlock(state, blockID, block)
 	if err != nil {
 		return state, types.BlockID{}, err
 	}
@@ -147,12 +147,13 @@ func makeBlock(state sm.State, height int64) *types.Block {
 func makeBlockWithPrivVal(state sm.State, privVal types.PrivValidator, height int64) *types.Block {
 	message := state.MakeHashMessage(0)
 	proof, _ := privVal.GenerateVRFProof(message)
+	pubKey, _ := privVal.GetPubKey()
 	block, _ := state.MakeBlock(
 		height,
 		makeTxs(state.LastBlockHeight),
 		new(types.Commit),
 		nil,
-		privVal.GetPubKey().Address(),
+		pubKey.Address(),
 		0,
 		proof,
 	)

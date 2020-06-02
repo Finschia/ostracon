@@ -10,8 +10,11 @@ import (
 	"strings"
 	"testing"
 	"testing/quick"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	tmmath "github.com/tendermint/tendermint/libs/math"
@@ -291,7 +294,8 @@ func randValidatorSet(numValidators int) *ValidatorSet {
 
 func randValidatorWithMinMax(min, max int64) (*Validator, PrivValidator) {
 	privVal := NewMockPV()
-	val := NewValidator(privVal.GetPubKey(), min+int64(tmrand.Uint64()%uint64(1+max-min)))
+	pubKey, _ := privVal.GetPubKey()
+	val := NewValidator(pubKey, min+int64(tmrand.Uint64()%uint64(1+max-min)))
 	val.ProposerPriority = min + tmrand.Int64()%max
 	return val, privVal
 }
@@ -514,14 +518,14 @@ func TestAveragingInIncrementProposerPriorityWithStakingPower(t *testing.T) {
 			[]int64{
 				0 + 10*vp0 - 8*total, // after 10 iters this is mostest again
 				0 + 10*vp1 - total,   // after 6 iters this val is "mostest" once and not in between
-				0 + 10*vp2 - total},  // in between 10 iters this val is "mostest" once
+				0 + 10*vp2 - total}, // in between 10 iters this val is "mostest" once
 			10,
 			vals.Validators[0]},
 		10: {
 			vals.Copy(),
 			[]int64{
 				0 + 11*vp0 - 9*total,
-				0 + 11*vp1 - total,  // after 6 iters this val is "mostest" once and not in between
+				0 + 11*vp1 - total, // after 6 iters this val is "mostest" once and not in between
 				0 + 11*vp2 - total}, // after 10 iters this val is "mostest" once
 			11,
 			vals.Validators[0]},
@@ -533,6 +537,7 @@ func TestAveragingInIncrementProposerPriorityWithStakingPower(t *testing.T) {
 			tc.vals.SelectProposer([]byte{}, int64(i), 0).Address,
 			"test case: %v",
 			i)
+
 		for valIdx, val := range tc.vals.Validators {
 			assert.Equal(t,
 				tc.wantProposerPrioritys[valIdx],
@@ -1310,6 +1315,51 @@ func TestValSetUpdateOverflowRelated(t *testing.T) {
 			verifyValidatorSet(t, valSet)
 		})
 	}
+}
+
+func TestVerifyCommitTrusting(t *testing.T) {
+	var (
+		blockID                                      = makeBlockIDRandom()
+		voteSet, _, originalVoterSet, privValidators = randVoteSet(1, 1, PrecommitType, 6, 1)
+		commit, err                                  = MakeCommit(blockID, 1, 1, voteSet, privValidators, time.Now())
+		_, newVoterSet, _                            = RandVoterSet(2, 1)
+	)
+	require.NoError(t, err)
+
+	testCases := []struct {
+		//valSet *ValidatorSet
+		voterSet *VoterSet
+		err      bool
+	}{
+		// good
+		0: {
+			//valSet: originalValset,
+			voterSet: originalVoterSet,
+			err:      false,
+		},
+		// bad - no overlap between validator sets
+		1: {
+			voterSet: newVoterSet,
+			err:      true,
+		},
+		// good - first two are different but the rest of the same -> >1/3
+		2: {
+			//voterSet: NewValidatorSet(append(newValSet.Validators, originalValset.Validators...)),
+			voterSet: NewVoterSet(append(newVoterSet.Voters, originalVoterSet.Voters...)),
+			err:      false,
+		},
+	}
+
+	for _, tc := range testCases {
+		err = tc.voterSet.VerifyCommitTrusting("test_chain_id", blockID, commit.Height, commit,
+			tmmath.Fraction{Numerator: 1, Denominator: 3})
+		if tc.err {
+			assert.Error(t, err)
+		} else {
+			assert.NoError(t, err)
+		}
+	}
+
 }
 
 //---------------------

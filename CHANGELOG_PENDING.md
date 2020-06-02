@@ -8,9 +8,9 @@
 
 - Apps
 
-- Go API
+- P2P Protocol
 
-- Blockchain Protocol
+- Go API
 
 ### FEATURES:
 
