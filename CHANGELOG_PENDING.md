@@ -22,6 +22,10 @@ Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermi
 
 ### FEATURES
 
+  - [types] [\#83](https://github.com/line/tendermint/pull/83) Add `StakingPower` to `Validator`
+  - [consensus] [\#83](https://github.com/line/tendermint/pull/83) Change calculation of `VotingPower`
+
+### FEATURES:
 - [rpc] [\#78](https://github.com/line/tendermint/pull/78) Add `Voters` rpc
 - [types] [\#83](https://github.com/line/tendermint/pull/83) Add `StakingPower` to `Validator`
 - [consensus] [\#83](https://github.com/line/tendermint/pull/83) Change calculation of `VotingPower`
