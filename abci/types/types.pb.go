@@ -16205,7 +16205,7 @@ func (m *Evidence) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 5:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field TotalStakingPower", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field TotalVotingPower", wireType)
 			}
 			m.TotalVotingPower = 0
 			for shift := uint(0); ; shift += 7 {
