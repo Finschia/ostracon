@@ -376,26 +376,26 @@ func (c *Client) initializeWithTrustOptions(options TrustOptions) error {
 	}
 
 	// 2) Fetch and verify the vals.
-	vals, err := c.validatorSetFromPrimary(options.Height)
+	voters, err := c.validatorSetFromPrimary(options.Height)
 	if err != nil {
 		return err
 	}
 
-	if !bytes.Equal(h.VotersHash, vals.Hash()) {
+	if !bytes.Equal(h.VotersHash, voters.Hash()) {
 		return fmt.Errorf("expected header's validators (%X) to match those that were supplied (%X)",
 			h.VotersHash,
-			vals.Hash(),
+			voters.Hash(),
 		)
 	}
 
 	// Ensure that +2/3 of validators signed correctly.
-	err = vals.VerifyCommit(c.chainID, h.Commit.BlockID, h.Height, h.Commit)
+	err = voters.VerifyCommit(c.chainID, h.Commit.BlockID, h.Height, h.Commit)
 	if err != nil {
 		return fmt.Errorf("invalid commit: %w", err)
 	}
 
 	// 3) Persist both of them and continue.
-	return c.updateTrustedHeaderAndVals(h, vals)
+	return c.updateTrustedHeaderAndVals(h, voters)
 }
 
 // TrustedHeader returns a trusted header at the given height (0 - the latest).

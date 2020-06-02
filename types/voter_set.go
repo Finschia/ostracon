@@ -32,7 +32,7 @@ type VoterSet struct {
 
 func NewVoterSet(valz []*Validator) *VoterSet {
 	sort.Sort(ValidatorsByAddress(valz))
-	vals := &VoterSet{Voters: copyValidatorListShallow(valz), totalVotingPower: 0}
+	vals := &VoterSet{Voters: copyValidatorListForVoter(valz), totalVotingPower: 0}
 	vals.updateTotalStakingPower()
 	vals.updateTotalVotingPower()
 	return vals
@@ -83,6 +83,15 @@ func (voters *VoterSet) Size() int {
 func copyValidatorListShallow(vals []*Validator) []*Validator {
 	result := make([]*Validator, len(vals))
 	copy(result, vals)
+	return result
+}
+
+func copyValidatorListForVoter(vals []*Validator) []*Validator {
+	result := make([]*Validator, len(vals))
+	for i, v := range vals {
+		result[i] = v.Copy()
+		result[i].VotingPower = v.StakingPower
+	}
 	return result
 }
 
