@@ -11,7 +11,7 @@ import (
 
 func TestSelectVoter(t *testing.T) {
 	MinVoters = 29
-	MinTotalVotingPowerRate = 1
+	MinTotalVotingPowerPercent = 100
 	valSet := randValidatorSet(30)
 	for i := 0; i < 10000; i++ {
 		voterSet := SelectVoter(valSet, []byte{byte(i)})

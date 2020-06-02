@@ -15,9 +15,9 @@ import (
 )
 
 var (
-	MinVoters               = 20
-	MinTotalVotingPowerRate = 0.6
-	VotingPowerUnit         = uint64(10000)
+	MinVoters                  = 20
+	MinTotalVotingPowerPercent = uint(60)
+	VotingPowerUnit            = uint64(10000)
 )
 
 // VoterSet represent a set of *Validator at a given height.
@@ -410,8 +410,30 @@ func (voters *VoterSet) StringIndented(indent string) string {
 
 }
 
+type candidate struct {
+	priority uint64
+	val      *Validator
+}
+
+// for implement Candidate of rand package
+func (c *candidate) Priority() uint64 {
+	return c.priority
+}
+
+func (c *candidate) LessThan(other tmrand.Candidate) bool {
+	o, ok := other.(*candidate)
+	if !ok {
+		panic("incompatible type")
+	}
+	return bytes.Compare(c.val.Address, o.val.Address) < 0
+}
+
+func (c *candidate) SetWinPoint(winPoint uint64) {
+	c.val.VotingPower = int64(winPoint)
+}
+
 func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
-	// TODO: decide MaxVoters; make it to config
+	// TODO: decide MinVoters, MinTotalVotingPowerPercent; make it to config
 	if len(proofHash) == 0 || validators.Size() <= MinVoters {
 		// height 1 has voter set that is same to validator set
 		return ToVoterAll(validators)
@@ -419,15 +441,26 @@ func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
 
 	seed := hashToSeed(proofHash)
 	candidates := make([]tmrand.Candidate, len(validators.Validators))
+	totalPriority := uint64(0)
 	for i, val := range validators.Validators {
-		candidates[i] = val.Copy()
+		candidates[i] = &candidate{
+			priority: uint64(val.StakingPower),
+			val:      val.Copy(),
+		}
+		totalPriority += candidates[i].Priority()
 	}
 
-	winners := tmrand.RandomSamplingWithoutReplacement(seed, candidates, MinVoters, MinTotalVotingPowerRate,
+	if totalPriority > tmrand.MaxFloat64Significant {
+		scale := float64(totalPriority) / float64(tmrand.MaxFloat64Significant)
+		for _, candi := range candidates {
+			candi.(*candidate).priority = uint64(float64(candi.(*candidate).priority) / scale)
+		}
+	}
+	winners := tmrand.RandomSamplingWithoutReplacement(seed, candidates, MinVoters, MinTotalVotingPowerPercent,
 		VotingPowerUnit)
 	voters := make([]*Validator, len(winners))
 	for i, winner := range winners {
-		voters[i] = winner.(*Validator)
+		voters[i] = winner.(*candidate).val
 	}
 	return NewVoterSet(voters)
 }
