@@ -2,7 +2,6 @@ package rand
 
 import (
 	"fmt"
-	"math"
 	s "sort"
 )
 
@@ -10,10 +9,13 @@ import (
 type Candidate interface {
 	Priority() uint64
 	LessThan(other Candidate) bool
-	Reward(rewards uint64)
+	SetWinPoint(winPoint uint64)
 }
 
-const uint64Mask = uint64(0x7FFFFFFFFFFFFFFF)
+const (
+	// Casting a larger number than this as float64 can result in that lower bytes can be truncated
+	MaxFloat64Significant = uint64(0x1FFFFFFFFFFFFF)
+)
 
 // Select a specified number of candidates randomly from the candidate set based on each priority. This function is
 // deterministic and will produce the same result for the same input.
@@ -34,7 +36,7 @@ func RandomSamplingWithPriority(
 	thresholds := make([]uint64, sampleSize)
 	for i := 0; i < sampleSize; i++ {
 		// calculating [gross weights] × [(0,1] random number]
-		thresholds[i] = uint64(float64(nextRandom(&seed)&uint64Mask) / float64(uint64Mask+1) * float64(totalPriority))
+		thresholds[i] = randomThreshold(&seed, totalPriority)
 	}
 	s.Slice(thresholds, func(i, j int) bool { return thresholds[i] < thresholds[j] })
 
@@ -73,36 +75,40 @@ func moveWinnerToLast(candidates []Candidate, winner int) {
 	candidates[len(candidates)-1] = winnerCandidate
 }
 
+func randomThreshold(seed *uint64, total uint64) uint64 {
+	return uint64(float64(nextRandom(seed)&MaxFloat64Significant) /
+		float64(MaxFloat64Significant+1) * float64(total))
+}
+
 // `RandomSamplingWithoutReplacement` elects winners among candidates without replacement
 // so it updates rewards of winners. This function continues to elect winners until the both of two
-// conditions(samplingThreshold, priorityRateThreshold) are met.
+// conditions(minSamplingCount, minPriorityPercent) are met.
 func RandomSamplingWithoutReplacement(
-	seed uint64, candidates []Candidate, samplingThreshold int, priorityRateThreshold float64, rewardUnit uint64) (
+	seed uint64, candidates []Candidate, minSamplingCount int, minPriorityPercent uint, winPointUnit uint64) (
 	winners []Candidate) {
 
-	if len(candidates) < samplingThreshold {
-		panic(fmt.Sprintf("The number of candidates(%d) cannot be less samplingThreshold %d",
-			len(candidates), samplingThreshold))
+	if len(candidates) < minSamplingCount {
+		panic(fmt.Sprintf("The number of candidates(%d) cannot be less minSamplingCount %d",
+			len(candidates), minSamplingCount))
 	}
 
-	if priorityRateThreshold > 1 {
-		panic(fmt.Sprintf("priorityRateThreshold cannot be greater than 1.0: %f", priorityRateThreshold))
+	if minPriorityPercent > 100 {
+		panic(fmt.Sprintf("minPriorityPercent must be equal or less than 100: %d", minPriorityPercent))
 	}
 
 	totalPriority := sumTotalPriority(candidates)
-	priorityThreshold := uint64(math.Ceil(float64(totalPriority) * priorityRateThreshold))
-	if priorityThreshold > totalPriority {
-		// This can be possible because of float64's precision
-		// when priorityRateThreshold is 1 and totalPriority is very big
-		priorityThreshold = totalPriority
+	if totalPriority > MaxFloat64Significant {
+		// totalPriority will be casting to float64, so it must be less than 0x1FFFFFFFFFFFFF(53bits)
+		panic(fmt.Sprintf("total priority cannot exceed %d: %d", MaxFloat64Significant, totalPriority))
 	}
+
+	priorityThreshold := totalPriority * uint64(minPriorityPercent) / 100
 	candidates = sort(candidates)
 	winnersPriority := uint64(0)
 	losersPriorities := make([]uint64, len(candidates))
 	winnerNum := 0
-	for winnerNum < samplingThreshold || winnersPriority < priorityThreshold {
-		threshold := uint64(float64(nextRandom(&seed)&uint64Mask) /
-			float64(uint64Mask+1) * float64(totalPriority-winnersPriority))
+	for winnerNum < minSamplingCount || winnersPriority < priorityThreshold {
+		threshold := randomThreshold(&seed, totalPriority-winnersPriority)
 		cumulativePriority := uint64(0)
 		found := false
 		for i, candidate := range candidates[:len(candidates)-winnerNum] {
@@ -118,21 +124,19 @@ func RandomSamplingWithoutReplacement(
 		}
 
 		if !found {
-			panic(fmt.Sprintf("Cannot find random sample. winnerNum=%d, samplingThreshold=%d, "+
+			panic(fmt.Sprintf("Cannot find random sample. winnerNum=%d, minSamplingCount=%d, "+
 				"winnersPriority=%d, priorityThreshold=%d, totalPriority=%d, threshold=%d",
-				winnerNum, samplingThreshold, winnersPriority, priorityThreshold, totalPriority, threshold))
+				winnerNum, minSamplingCount, winnersPriority, priorityThreshold, totalPriority, threshold))
 		}
 	}
-
-	compensationRewardProportions := make([]float64, winnerNum)
+	compensationProportions := make([]float64, winnerNum)
 	for i := winnerNum - 2; i >= 0; i-- { // last winner doesn't get compensation reward
-		compensationRewardProportions[i] = compensationRewardProportions[i+1] + 1/float64(losersPriorities[i])
+		compensationProportions[i] = compensationProportions[i+1] + 1/float64(losersPriorities[i])
 	}
 	winners = candidates[len(candidates)-winnerNum:]
 	for i, winner := range winners {
-		// TODO protect overflow and verify the accuracy of the calculations.
-		// voter.Priority()*rewardUnit can be overflow, so we multiply voter.Priority() and rewardProportion at first
-		winner.Reward(rewardUnit + uint64((float64(winner.Priority())*compensationRewardProportions[i])*float64(rewardUnit)))
+		winner.SetWinPoint(winPointUnit +
+			uint64(float64(winner.Priority())*compensationProportions[i]*float64(winPointUnit)))
 	}
 	return winners
 }
@@ -144,7 +148,7 @@ func sumTotalPriority(candidates []Candidate) (sum uint64) {
 		}
 		sum += candi.Priority()
 	}
-	return
+	return sum
 }
 
 // SplitMix64

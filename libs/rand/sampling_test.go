@@ -10,9 +10,9 @@ import (
 )
 
 type Element struct {
-	id     uint32
-	reward uint64
-	weight uint64
+	id       uint32
+	winPoint uint64
+	weight   uint64
 }
 
 func (e *Element) Priority() uint64 {
@@ -27,8 +27,8 @@ func (e *Element) LessThan(other Candidate) bool {
 	return e.id < o.id
 }
 
-func (e *Element) Reward(reward uint64) {
-	e.reward += reward
+func (e *Element) SetWinPoint(winPoint uint64) {
+	e.winPoint += winPoint
 }
 
 func TestRandomSamplingWithPriority(t *testing.T) {
@@ -91,36 +91,36 @@ func TestRandomSamplingPanicCase(t *testing.T) {
 	}
 }
 
-func resetReward(candidate []Candidate) {
+func resetWinPoint(candidate []Candidate) {
 	for _, c := range candidate {
-		c.(*Element).reward = 0
+		c.(*Element).winPoint = 0
 	}
 }
 
 func TestRandomSamplingWithoutReplacement1Candidate(t *testing.T) {
 	candidates := newCandidates(1, func(i int) uint64 { return uint64(1000 * (i + 1)) })
 
-	winners := RandomSamplingWithoutReplacement(0, candidates, 1, 1, 1000)
+	winners := RandomSamplingWithoutReplacement(0, candidates, 1, 100, 1000)
 	assert.True(t, len(winners) == 1)
 	assert.True(t, candidates[0] == winners[0])
-	assert.True(t, winners[0].(*Element).reward == 1000)
-	resetReward(candidates)
+	assert.True(t, winners[0].(*Element).winPoint == 1000)
+	resetWinPoint(candidates)
 
-	winners2 := RandomSamplingWithoutReplacement(0, candidates, 1, 0.5, 1000)
+	winners2 := RandomSamplingWithoutReplacement(0, candidates, 1, 50, 1000)
 	assert.True(t, len(winners2) == 1)
 	assert.True(t, candidates[0] == winners2[0])
-	assert.True(t, winners2[0].(*Element).reward == 1000)
-	resetReward(candidates)
+	assert.True(t, winners2[0].(*Element).winPoint == 1000)
+	resetWinPoint(candidates)
 
-	winners3 := RandomSamplingWithoutReplacement(0, candidates, 0, 0.5, 1000)
+	winners3 := RandomSamplingWithoutReplacement(0, candidates, 0, 50, 1000)
 	assert.True(t, len(winners3) == 1)
 	assert.True(t, candidates[0] == winners3[0])
-	assert.True(t, winners3[0].(*Element).reward == 1000)
-	resetReward(candidates)
+	assert.True(t, winners3[0].(*Element).winPoint == 1000)
+	resetWinPoint(candidates)
 
 	winners4 := RandomSamplingWithoutReplacement(0, candidates, 0, 0, 1000)
 	assert.True(t, len(winners4) == 0)
-	resetReward(candidates)
+	resetWinPoint(candidates)
 }
 
 // test samplingThreshold
@@ -128,9 +128,9 @@ func TestRandomSamplingWithoutReplacementSamplingThreshold(t *testing.T) {
 	candidates := newCandidates(100, func(i int) uint64 { return uint64(1000 * (i + 1)) })
 
 	for i := 1; i <= 100; i++ {
-		winners := RandomSamplingWithoutReplacement(0, candidates, i, 0.001, 1000)
+		winners := RandomSamplingWithoutReplacement(0, candidates, i, 1, 1000)
 		assert.True(t, len(winners) == i)
-		resetReward(candidates)
+		resetWinPoint(candidates)
 	}
 }
 
@@ -138,10 +138,10 @@ func TestRandomSamplingWithoutReplacementSamplingThreshold(t *testing.T) {
 func TestRandomSamplingWithoutReplacementPriorityRateThrshold(t *testing.T) {
 	candidates := newCandidates(100, func(i int) uint64 { return uint64(1000) })
 
-	for i := 1; i <= 100; i++ {
-		winners := RandomSamplingWithoutReplacement(0, candidates, 1, 0.01*float64(i), 1000)
-		assert.True(t, sumTotalPriority(winners) >= uint64(math.Ceil(0.01*float64(i)*float64(sumTotalPriority(candidates)))))
-		resetReward(candidates)
+	for i := 7; i <= 100; i++ {
+		winners := RandomSamplingWithoutReplacement(0, candidates, 1, uint(i), 1000)
+		assert.True(t, sumTotalPriority(winners) >= uint64(0.01*float64(i)*float64(sumTotalPriority(candidates))))
+		resetWinPoint(candidates)
 	}
 }
 
@@ -150,18 +150,18 @@ func TestRandomSamplingWithoutReplacementDeterministic(t *testing.T) {
 	candidates1 := newCandidates(100, func(i int) uint64 { return uint64(i + 1) })
 	candidates2 := newCandidates(100, func(i int) uint64 { return uint64(i + 1) })
 	for i := 1; i <= 100; i++ {
-		winners1 := RandomSamplingWithoutReplacement(uint64(i), candidates1, 50, 0.5, 1000)
-		winners2 := RandomSamplingWithoutReplacement(uint64(i), candidates2, 50, 0.5, 1000)
+		winners1 := RandomSamplingWithoutReplacement(uint64(i), candidates1, 50, 50, 1000)
+		winners2 := RandomSamplingWithoutReplacement(uint64(i), candidates2, 50, 50, 1000)
 		sameCandidates(winners1, winners2)
-		resetReward(candidates1)
-		resetReward(candidates2)
+		resetWinPoint(candidates1)
+		resetWinPoint(candidates2)
 	}
 }
 
 func accumulateAndResetReward(candidate []Candidate, acc []uint64) {
 	for i, c := range candidate {
-		acc[i] += c.(*Element).reward
-		c.(*Element).reward = 0
+		acc[i] += c.(*Element).winPoint
+		c.(*Element).winPoint = 0
 	}
 }
 
@@ -171,9 +171,9 @@ func TestRandomSamplingWithoutReplacementReward(t *testing.T) {
 
 	accumulatedRewards := make([]uint64, 100)
 	for i := 0; i < 100000; i++ {
-		// 20 samplingThreshold is minimum to pass this test
-		// If samplingThreshold is less than 20, the result says the reward is not fair
-		RandomSamplingWithoutReplacement(uint64(i), candidates, 20, 0.2, 10)
+		// 23 samplingThreshold is minimum to pass this test
+		// If samplingThreshold is less than 23, the result says the reward is not fair
+		RandomSamplingWithoutReplacement(uint64(i), candidates, 23, 23, 10)
 		accumulateAndResetReward(candidates, accumulatedRewards)
 	}
 	for i := 0; i < 99; i++ {
@@ -182,7 +182,7 @@ func TestRandomSamplingWithoutReplacementReward(t *testing.T) {
 
 	accumulatedRewards = make([]uint64, 100)
 	for i := 0; i < 50000; i++ {
-		RandomSamplingWithoutReplacement(uint64(i), candidates, 50, 0.5, 10)
+		RandomSamplingWithoutReplacement(uint64(i), candidates, 50, 50, 10)
 		accumulateAndResetReward(candidates, accumulatedRewards)
 	}
 	for i := 0; i < 99; i++ {
@@ -191,7 +191,7 @@ func TestRandomSamplingWithoutReplacementReward(t *testing.T) {
 
 	accumulatedRewards = make([]uint64, 100)
 	for i := 0; i < 10000; i++ {
-		RandomSamplingWithoutReplacement(uint64(i), candidates, 100, 1, 10)
+		RandomSamplingWithoutReplacement(uint64(i), candidates, 100, 100, 10)
 		accumulateAndResetReward(candidates, accumulatedRewards)
 	}
 	for i := 0; i < 99; i++ {
@@ -203,16 +203,16 @@ func TestRandomSamplingWithoutReplacementPanic(t *testing.T) {
 	type Case struct {
 		Candidates            []Candidate
 		SamplingThreshold     int
-		PriorityRateThreshold float64
+		PriorityRateThreshold uint
 	}
 
 	cases := [...]*Case{
 		// samplingThreshold is greater than the number of candidates
-		{newCandidates(9, func(i int) uint64 { return 10 }), 10, 0.5},
+		{newCandidates(9, func(i int) uint64 { return 10 }), 10, 50},
 		// priorityRateThreshold is greater than 1
-		{newCandidates(10, func(i int) uint64 { return 10 }), 10, 1.01},
+		{newCandidates(10, func(i int) uint64 { return 10 }), 10, 101},
 		// a candidate priority is 0
-		{newCandidates(10, func(i int) uint64 { return uint64(i) }), 10, 0.99},
+		{newCandidates(10, func(i int) uint64 { return uint64(i) }), 10, 99},
 	}
 
 	for i, c := range cases {
@@ -245,7 +245,7 @@ func sameCandidates(c1 []Candidate, c2 []Candidate) bool {
 		if c1[i].(*Element).id != c2[i].(*Element).id {
 			return false
 		}
-		if c1[i].(*Element).reward != c2[i].(*Element).reward {
+		if c1[i].(*Element).winPoint != c2[i].(*Element).winPoint {
 			return false
 		}
 	}

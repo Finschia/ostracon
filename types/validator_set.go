@@ -644,10 +644,13 @@ func (vals *ValidatorSet) SelectProposer(proofHash []byte, height int64, round i
 	seed := hashToSeed(MakeRoundHash(proofHash, height, round))
 	candidates := make([]tmrand.Candidate, len(vals.Validators))
 	for i, val := range vals.Validators {
-		candidates[i] = val
+		candidates[i] = &candidate{
+			priority: uint64(val.StakingPower),
+			val:      val, // don't need to assign the copy
+		}
 	}
 	samples := tmrand.RandomSamplingWithPriority(seed, candidates, 1, uint64(vals.TotalStakingPower()))
-	return samples[0].(*Validator)
+	return samples[0].(*candidate).val
 }
 
 //----------------
