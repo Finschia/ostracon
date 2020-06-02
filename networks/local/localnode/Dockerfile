@@ -3,7 +3,7 @@ MAINTAINER Greg Szabo <greg@tendermint.com>
 
 RUN apk update && \
     apk upgrade && \
-    apk --no-cache add curl jq file
+    apk --no-cache add curl jq file gcc libc-dev build-base
 
 VOLUME [ /tendermint ]
 WORKDIR /tendermint

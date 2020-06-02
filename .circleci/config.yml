@@ -31,6 +31,12 @@ commands:
           command: |
             sudo apt-get update && sudo apt-get -y install libtool
             make libsodium
+  setup_bls_library_build:
+    steps:
+      - run:
+          name: "Install build tools to build BLS library"
+          command: |
+            sudo apt-get update && sudo apt-get -y install gcc
   run_test:
     parameters:
       script_path:
@@ -48,6 +54,7 @@ commands:
           keys:
             - go-mod-v1-{{ checksum "go.sum" }}
       - make_libsodium
+      - setup_bls_library_build
       - run:
           name: "Running test"
           command: |
@@ -74,6 +81,7 @@ jobs:
       - attach_workspace:
           at: /tmp/workspace
       - make_libsodium
+      - setup_bls_library_build
       - run:
           name: "Build binaries"
           command: make install install_abci
@@ -167,7 +175,7 @@ jobs:
           name: run localnet and exit on failure
           command: |
             set -x
-            docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang:1.14.1-alpine /bin/sh -c "apk add --update make && make build-linux"
+            docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang:1.14.1-alpine /bin/sh -c "apk add --update git make gcc libc-dev build-base && make build"
             make localnet-start &
             ./scripts/localnet-blocks-test.sh 40 5 10 localhost
 
@@ -181,6 +189,7 @@ jobs:
     steps:
       - checkout_with_submodules
       - make_libsodium
+      - setup_bls_library_build
       - run: mkdir -p $GOPATH/src/github.com/tendermint
       - run: ln -sf /home/circleci/project $GOPATH/src/github.com/tendermint/tendermint
       - run: bash test/p2p/circleci.sh
@@ -379,7 +388,7 @@ jobs:
   #           ./scripts/get_nodejs.sh
   #           # build the binaries with a proper version of Go
   #           # Build Tendermint
-  #           docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang:1.14.1-alpine /bin/sh -c "apk add --update make git && make build-linux"
+  #           docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang:1.14.1-alpine /bin/sh -c "apk add --update git make gcc libc-dev build-base && make build"
   #           # Build contract-tests
   #           docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint ubuntu:20.10 ./scripts/prepare_dredd_test.sh
   #           # This docker image works with go 1.7, we can install here the hook handler that contract-tests is going to use

@@ -4,4 +4,3 @@ all:
 	docker build --tag tendermint/localnode localnode
 
 .PHONY: all
-

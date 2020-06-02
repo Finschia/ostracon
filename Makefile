@@ -243,8 +243,8 @@ build-docker: build-linux
 ###############################################################################
 
 # Build linux binary on other platforms
-build-linux: tools $(PREPARE_LIBSODIUM_TARGET) $(LIBSODIUM_TARGET)
-	GOOS=linux GOARCH=amd64 $(MAKE) build
+build-linux:
+	docker run --rm -v `pwd`:/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang:1.14.1-alpine /bin/sh -c "apk add --update git make gcc libc-dev build-base && make build"
 .PHONY: build-linux
 
 build-docker-localnode:
