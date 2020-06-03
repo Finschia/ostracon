@@ -201,7 +201,7 @@ func TestReportConflictingVotes(t *testing.T) {
 	state := pool.State()
 	state.LastBlockHeight++
 	state.LastBlockTime = ev.Time()
-	state.LastVoters = types.NewVoterSet([]*types.Validator{val})
+	state.LastVoters = types.ToVoterAll([]*types.Validator{val})
 	pool.Update(state, []types.Evidence{})
 
 	// should be able to retrieve evidence from pool
@@ -402,9 +402,9 @@ func initializeStateFromValidatorSet(valSet *types.ValidatorSet, height int64) s
 		LastBlockTime:               defaultEvidenceTime,
 		Validators:                  valSet,
 		NextValidators:              valSet.Copy(),
-		Voters:                      types.ToVoterAll(valSet),
-		LastVoters:                  types.ToVoterAll(valSet),
-		NextVoters:                  types.ToVoterAll(valSet),
+		Voters:                      types.ToVoterAll(valSet.Validators),
+		LastVoters:                  types.ToVoterAll(valSet.Validators),
+		NextVoters:                  types.ToVoterAll(valSet.Validators),
 		LastHeightValidatorsChanged: 1,
 		ConsensusParams: tmproto.ConsensusParams{
 			Block: tmproto.BlockParams{

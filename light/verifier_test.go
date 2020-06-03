@@ -26,7 +26,7 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 	var (
 		keys = genPrivKeys(4)
 		// 20, 30, 40, 50 - the first 3 don't have 2/3, the last 3 do!
-		voters   = types.ToVoterAll(keys.ToValidators(20, 10))
+		voters   = types.ToVoterAll(keys.ToValidators(20, 10).Validators)
 		bTime, _ = time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
 		header   = keys.GenSignedHeader(chainID, lastHeight, bTime, nil, voters, voters,
 			hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys))
@@ -123,9 +123,9 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 		// voters does not match with what we have -> error
 		8: {
 			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil,
-				types.ToVoterAll(keys.ToValidators(10, 1)), voters, hash("app_hash"), hash("cons_hash"),
+				types.ToVoterAll(keys.ToValidators(10, 1).Validators), voters, hash("app_hash"), hash("cons_hash"),
 				hash("results_hash"), 0, len(keys)),
-			types.ToVoterAll(keys.ToValidators(10, 1)),
+			types.ToVoterAll(keys.ToValidators(10, 1).Validators),
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
 			nil,
@@ -135,7 +135,7 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 		9: {
 			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil, voters, voters,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys)),
-			types.ToVoterAll(keys.ToValidators(10, 1)),
+			types.ToVoterAll(keys.ToValidators(10, 1).Validators),
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
 			nil,
@@ -145,7 +145,7 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 		10: {
 			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil, voters, voters,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys)),
-			types.ToVoterAll(keys.ToValidators(10, 1)),
+			types.ToVoterAll(keys.ToValidators(10, 1).Validators),
 			1 * time.Hour,
 			bTime.Add(1 * time.Hour),
 			nil,
@@ -179,22 +179,22 @@ func TestVerifyNonAdjacentHeaders(t *testing.T) {
 	var (
 		keys = genPrivKeys(4)
 		// 20, 30, 40, 50 - the first 3 don't have 2/3, the last 3 do!
-		voters   = types.ToVoterAll(keys.ToValidators(20, 10))
+		voters   = types.ToVoterAll(keys.ToValidators(20, 10).Validators)
 		bTime, _ = time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
 		header   = keys.GenSignedHeader(chainID, lastHeight, bTime, nil, voters, voters,
 			hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys))
 
 		// 30, 40, 50
 		twoThirds       = keys[1:]
-		twoThirdsVoters = types.ToVoterAll(twoThirds.ToValidators(30, 10))
+		twoThirdsVoters = types.ToVoterAll(twoThirds.ToValidators(30, 10).Validators)
 
 		// 50
 		oneThird       = keys[len(keys)-1:]
-		oneThirdVoters = types.ToVoterAll(oneThird.ToValidators(50, 10))
+		oneThirdVoters = types.ToVoterAll(oneThird.ToValidators(50, 10).Validators)
 
 		// 20
 		lessThanOneThird       = keys[0:1]
-		lessThanOneThirdVoters = types.ToVoterAll(lessThanOneThird.ToValidators(20, 10))
+		lessThanOneThirdVoters = types.ToVoterAll(lessThanOneThird.ToValidators(20, 10).Validators)
 	)
 
 	testCases := []struct {
@@ -295,7 +295,7 @@ func TestVerifyReturnsErrorIfTrustLevelIsInvalid(t *testing.T) {
 	var (
 		keys = genPrivKeys(4)
 		// 20, 30, 40, 50 - the first 3 don't have 2/3, the last 3 do!
-		voters   = types.ToVoterAll(keys.ToValidators(20, 10))
+		voters   = types.ToVoterAll(keys.ToValidators(20, 10).Validators)
 		bTime, _ = time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
 		header   = keys.GenSignedHeader(chainID, lastHeight, bTime, nil, voters, voters,
 			hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys))
