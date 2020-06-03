@@ -363,7 +363,7 @@ func genValSetWithPowers(powers []int64) *types.ValidatorSet {
 func testProposerFreq(t *testing.T, caseNum int, valSet *types.ValidatorSet) {
 	voterSet := types.ToVoterAll(valSet)
 	N := voterSet.Size()
-	totalPower := voterSet.TotalStakingPower()
+	totalPower := voterSet.TotalVotingPower()
 
 	// run the proposer selection and track frequencies
 	runMult := 1
