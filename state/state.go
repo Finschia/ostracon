@@ -387,9 +387,9 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 		LastProofHash: genDoc.Hash(),
 
 		NextValidators:              nextValidatorSet,
-		Validators:                  validatorSet,
-		Voters:                      types.SelectVoter(validatorSet, genDoc.Hash()),
 		NextVoters:                  types.SelectVoter(nextValidatorSet, genDoc.Hash()),
+		Validators:                  validatorSet,
+		Voters:                      types.ToVoterAll(validatorSet.Validators),
 		LastVoters:                  &types.VoterSet{}, // XXX Need to be the same
 		LastHeightValidatorsChanged: 1,
 

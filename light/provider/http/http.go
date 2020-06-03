@@ -163,7 +163,7 @@ func (p *http) voterSet(ctx context.Context, height *int64) (*types.ValidatorSet
 	if err != nil {
 		return nil, nil, provider.ErrBadLightBlock{Reason: err}
 	}
-	return valSet, types.ToVoterAll(voterSet), nil
+	return valSet, types.WrapValidatorsToVoterSet(voterSet.Validators), nil
 }
 
 func (p *http) signedHeader(ctx context.Context, height *int64) (*types.SignedHeader, error) {

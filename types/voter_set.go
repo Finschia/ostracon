@@ -32,11 +32,11 @@ type VoterSet struct {
 	totalVotingPower  int64
 }
 
-func NewVoterSet(valz []*Validator) *VoterSet {
-	sort.Sort(ValidatorsByAddress(valz))
-	vals := &VoterSet{Voters: copyValidatorListForVoter(valz), totalVotingPower: 0}
-	vals.updateTotalVotingPower()
-	return vals
+func WrapValidatorsToVoterSet(vals []*Validator) *VoterSet {
+	sort.Sort(ValidatorsByAddress(vals)) 		// TODO 🏺 Should we sort by VotingPower in v0.34?
+	voterSet := &VoterSet{Voters: vals, totalVotingPower: 0}
+	voterSet.updateTotalVotingPower()
+	return voterSet
 }
 
 func (voters *VoterSet) ValidateBasic() error {
@@ -451,7 +451,7 @@ func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
 	// TODO: decide MinVoters, MinTotalVotingPowerPercent; make it to config
 	if len(proofHash) == 0 || validators.Size() <= MinVoters {
 		// height 1 has voter set that is same to validator set
-		return ToVoterAll(validators)
+		return ToVoterAll(validators.Validators)
 	}
 
 	seed := hashToSeed(proofHash)
@@ -477,13 +477,13 @@ func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
 	for i, winner := range winners {
 		voters[i] = winner.(*candidate).val
 	}
-	return NewVoterSet(voters)
+	return WrapValidatorsToVoterSet(voters)
 }
 
 // This should be used in only test
-func ToVoterAll(validators *ValidatorSet) *VoterSet {
-	newVoters := make([]*Validator, validators.Size())
-	for i, val := range validators.Validators {
+func ToVoterAll(validators []*Validator) *VoterSet {
+	newVoters := make([]*Validator, len(validators))
+	for i, val := range validators {
 		newVoters[i] = &Validator{
 			Address:          val.Address,
 			PubKey:           val.PubKey,
@@ -492,9 +492,8 @@ func ToVoterAll(validators *ValidatorSet) *VoterSet {
 			ProposerPriority: val.ProposerPriority,
 		}
 	}
-	voters := NewVoterSet(newVoters)
-	voters.updateTotalVotingPower()
-	return voters
+	sort.Sort(ValidatorsByAddress(newVoters))
+	return WrapValidatorsToVoterSet(newVoters)
 }
 
 func hashToSeed(hash []byte) uint64 {

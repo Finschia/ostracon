@@ -396,7 +396,7 @@ func genValSetWithPowers(powers []int64) *types.ValidatorSet {
 
 // test a proposer appears as frequently as expected
 func testProposerFreq(t *testing.T, caseNum int, valSet *types.ValidatorSet) {
-	voterSet := types.ToVoterAll(valSet)
+	voterSet := types.ToVoterAll(valSet.Validators)
 	N := voterSet.Size()
 	totalPower := voterSet.TotalVotingPower()
 

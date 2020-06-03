@@ -682,7 +682,7 @@ func TestValidatorSetVerifyCommit(t *testing.T) {
 	privKey := ed25519.GenPrivKey()
 	pubKey := privKey.PubKey()
 	v1 := NewValidator(pubKey, 1000)
-	vset := ToVoterAll(NewValidatorSet([]*Validator{v1}))
+	vset := ToVoterAll([]*Validator{v1})
 
 	// good
 	var (

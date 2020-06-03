@@ -77,7 +77,7 @@ func (pkz privKeys) ToVoters(init, inc int64) *types.VoterSet {
 	for i, k := range pkz {
 		res[i] = types.NewValidator(k.PubKey(), init+int64(i)*inc)
 	}
-	return types.NewVoterSet(res)
+	return types.ToVoterAll(res)
 }
 
 // signHeader properly signs the header with all keys from first to last exclusive.
@@ -211,12 +211,12 @@ func genMockNodeWithKeys(
 
 	// genesis header and vals
 	lastHeader := keys.GenSignedHeader(chainID, 1, bTime.Add(1*time.Minute), nil,
-		types.ToVoterAll(keys.ToValidators(2, 0)), types.ToVoterAll(newKeys.ToValidators(2, 0)),
+		types.ToVoterAll(keys.ToValidators(2, 0).Validators), types.ToVoterAll(newKeys.ToValidators(2, 0).Validators),
 		hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys))
 	currentHeader := lastHeader
 	headers[1] = currentHeader
 	valset[1] = keys.ToValidators(2, 0)
-	voterset[1] = types.ToVoterAll(valset[1])
+	voterset[1] = types.ToVoterAll(valset[1].Validators)
 	keys = newKeys
 
 	for height := int64(2); height <= blockSize; height++ {
@@ -226,11 +226,11 @@ func genMockNodeWithKeys(
 		newKeys = keys.ChangeKeys(valVariationInt)
 		currentHeader = keys.GenSignedHeaderLastBlockID(chainID, height, bTime.Add(time.Duration(height)*time.Minute),
 			nil,
-			types.ToVoterAll(keys.ToValidators(2, 0)), types.ToVoterAll(newKeys.ToValidators(2, 0)),
+			types.ToVoterAll(keys.ToValidators(2, 0).Validators), types.ToVoterAll(newKeys.ToValidators(2, 0).Validators),
 			hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys), types.BlockID{Hash: lastHeader.Hash()})
 		headers[height] = currentHeader
 		valset[height] = keys.ToValidators(2, 0)
-		voterset[height] = types.ToVoterAll(valset[height])
+		voterset[height] = types.ToVoterAll(valset[height].Validators)
 		lastHeader = currentHeader
 		keys = newKeys
 		keymap[height+1] = keys

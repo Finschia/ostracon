@@ -557,7 +557,7 @@ func NewMockDuplicateVoteEvidenceWithValidator(height int64, time time.Time,
 	vB := voteB.ToProto()
 	_ = pv.SignVote(chainID, vB)
 	voteB.Signature = vB.Signature
-	return NewDuplicateVoteEvidence(voteA, voteB, time, NewVoterSet([]*Validator{val}))
+	return NewDuplicateVoteEvidence(voteA, voteB, time, ToVoterAll([]*Validator{val}))
 }
 
 func makeMockVote(height int64, round, index int32, addr Address,
