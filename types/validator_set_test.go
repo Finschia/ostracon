@@ -578,7 +578,7 @@ func TestValidatorSetVerifyCommit(t *testing.T) {
 	privKey := ed25519.GenPrivKey()
 	pubKey := privKey.PubKey()
 	v1 := NewValidator(pubKey, 1000)
-	vset := ToVoterAll(NewValidatorSet([]*Validator{v1}))
+	vset := ToVoterAll([]*Validator{v1})
 
 	// good
 	var (
@@ -1344,8 +1344,8 @@ func TestVerifyCommitTrusting(t *testing.T) {
 		},
 		// good - first two are different but the rest of the same -> >1/3
 		2: {
-			//voterSet: NewValidatorSet(append(newValSet.Validators, originalValset.Validators...)),
-			voterSet: NewVoterSet(append(newVoterSet.Voters, originalVoterSet.Voters...)),
+			//voterSet: WrapValidatorsToVoterSet(append(newValSet.Validators, originalValset.Validators...)),
+			voterSet: WrapValidatorsToVoterSet(append(newVoterSet.Voters, originalVoterSet.Voters...)),
 			err:      false,
 		},
 	}

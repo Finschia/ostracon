@@ -123,7 +123,7 @@ func (p *http) VoterSet(height int64) (*types.VoterSet, error) {
 		page++
 	}
 
-	return types.NewVoterSet(vals), nil
+	return types.WrapValidatorsToVoterSet(vals), nil
 }
 
 func validateHeight(height int64) (*int64, error) {

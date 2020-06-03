@@ -329,7 +329,7 @@ func (h *Handshaker) ReplayBlocks(
 					return nil, err
 				}
 				state.Validators = types.NewValidatorSet(vals)
-				state.Voters = types.ToVoterAll(state.Validators)
+				state.Voters = types.ToVoterAll(state.Validators.Validators)
 				// Should sync it with MakeGenesisState()
 				state.NextValidators = types.NewValidatorSet(vals)
 				state.NextVoters = types.SelectVoter(state.NextValidators, h.genDoc.Hash())
