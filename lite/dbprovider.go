@@ -171,7 +171,6 @@ func (dbp *DBProvider) getVoterSet(chainID string, height int64) (voterSet *type
 	// equivalence using assert.Equal (tests for deep equality) in our tests,
 	// which also tests for unexported/private field equivalence.
 	voterSet.TotalVotingPower()
-	voterSet.TotalStakingPower()
 	return
 }
 
