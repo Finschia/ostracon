@@ -8,5 +8,5 @@ jobs:
       - uses: docker-practice/actions-setup-docker@master
       - name: lint
         run: make proto-lint
-      - name: check-breakage
-        run: make proto-check-breaking-ci
+#      - name: check-breakage
+#        run: make proto-check-breaking-ci
