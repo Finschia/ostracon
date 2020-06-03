@@ -26,7 +26,7 @@ type VoterSet struct {
 	Voters []*Validator `json:"voters"`
 
 	// cached (unexported)
-	totalVotingPower  int64
+	totalVotingPower int64
 }
 
 func WrapValidatorsToVoterSet(vals []*Validator) *VoterSet {
@@ -96,8 +96,8 @@ func copyValidatorListForVoter(vals []*Validator) []*Validator {
 // VoterSet.Copy() copies validator list shallow
 func (voters *VoterSet) Copy() *VoterSet {
 	return &VoterSet{
-		Voters:            copyValidatorListShallow(voters.Voters),
-		totalVotingPower:  voters.totalVotingPower,
+		Voters:           copyValidatorListShallow(voters.Voters),
+		totalVotingPower: voters.totalVotingPower,
 	}
 }
 
