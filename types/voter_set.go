@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
+	"github.com/datastream/probab/dst"
 	"github.com/pkg/errors"
 
 	"github.com/tendermint/tendermint/crypto/merkle"
@@ -522,4 +524,22 @@ func RandVoterSet(numVoters int, votingPower int64) (*ValidatorSet, *VoterSet, [
 	vals := NewValidatorSet(valz)
 	sort.Sort(PrivValidatorsByAddress(privValidators))
 	return vals, SelectVoter(vals, []byte{}), privValidators
+}
+
+// CalNumOfVoterToElect calculate the number of voter to elect and return the number.
+func CalNumOfVoterToElect(n int64, byzantineRatio float64, accuracy float64) int64 {
+	if byzantineRatio < 0 || byzantineRatio > 1 || accuracy < 0 || accuracy > 1 {
+		panic("byzantineRatio and accuracy should be the float between 0 and 1")
+	}
+	byzantine := int64(math.Floor(float64(n) * byzantineRatio))
+
+	for i := int64(1); i <= n; i++ {
+		q := dst.HypergeometricQtlFor(n, byzantine, i, accuracy)
+		p := q / float64(i)
+		if p < 0.33 {
+			return i
+		}
+	}
+
+	return n
 }

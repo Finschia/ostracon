@@ -360,3 +360,18 @@ func TestSelectVoterMaxVarious(t *testing.T) {
 		}
 	}
 }
+
+func TestCalVotersNum(t *testing.T) {
+	total := int64(200)
+	byzantine := 0.2
+	accuracy := 0.99999
+	selection := CalNumOfVoterToElect(total, byzantine, accuracy)
+	assert.Equal(t, selection, int64(88))
+
+	total = int64(100)
+	selection = CalNumOfVoterToElect(total, byzantine, accuracy)
+	assert.Equal(t, selection, int64(58))
+
+	assert.Panics(t, func() { CalNumOfVoterToElect(total, 0.3, 10) })
+	assert.Panics(t, func() { CalNumOfVoterToElect(total, 1.1, 0.9999) })
+}
