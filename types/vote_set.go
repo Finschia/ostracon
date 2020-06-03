@@ -175,8 +175,8 @@ func (voteSet *VoteSet) addVote(vote *Vote) (added bool, err error) {
 	}
 
 	// Ensure that signer is a validator.
-	lookupAddr, val := voteSet.voterSet.GetByIndex(valIndex)
-	if val == nil {
+	lookupAddr, voter := voteSet.voterSet.GetByIndex(valIndex)
+	if voter == nil {
 		return false, errors.Wrapf(ErrVoteInvalidValidatorIndex,
 			"Cannot find voter %d in voterSet of size %d", valIndex, voteSet.voterSet.Size())
 	}
@@ -198,14 +198,14 @@ func (voteSet *VoteSet) addVote(vote *Vote) (added bool, err error) {
 	}
 
 	// Check signature.
-	if err := vote.Verify(voteSet.chainID, val.PubKey); err != nil {
-		return false, errors.Wrapf(err, "Failed to verify vote with ChainID %s and PubKey %s", voteSet.chainID, val.PubKey)
+	if err := vote.Verify(voteSet.chainID, voter.PubKey); err != nil {
+		return false, errors.Wrapf(err, "Failed to verify vote with ChainID %s and PubKey %s", voteSet.chainID, voter.PubKey)
 	}
 
 	// Add vote and get conflicting vote if any.
-	added, conflicting := voteSet.addVerifiedVote(vote, blockKey, val.StakingPower)
+	added, conflicting := voteSet.addVerifiedVote(vote, blockKey, voter.VotingPower)
 	if conflicting != nil {
-		return added, NewConflictingVoteError(val, conflicting, vote)
+		return added, NewConflictingVoteError(voter, conflicting, vote)
 	}
 	if !added {
 		panic("Expected to add non-conflicting vote")

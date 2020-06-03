@@ -10,7 +10,7 @@ import (
 )
 
 // Volatile state for each Validator
-// NOTE: The ProposerPriority is not included in Validator.Hash();
+// NOTE: The ProposerPriority, VotingPower is not included in Validator.Hash();
 // make sure to update that method if changes are made here
 // StakingPower is the potential voting power proportional to the amount of stake,
 // and VotingPower is the actual voting power granted by the election process.
