@@ -101,15 +101,6 @@ func copyValidatorListShallow(vals []*Validator) []*Validator {
 	return result
 }
 
-func copyValidatorListForVoter(vals []*Validator) []*Validator {
-	result := make([]*Validator, len(vals))
-	for i, v := range vals {
-		result[i] = v.Copy()
-		result[i].VotingPower = v.StakingPower
-	}
-	return result
-}
-
 // VoterSet.Copy() copies validator list shallow
 func (voters *VoterSet) Copy() *VoterSet {
 	return &VoterSet{
