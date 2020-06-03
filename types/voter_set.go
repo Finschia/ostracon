@@ -30,13 +30,11 @@ type VoterSet struct {
 
 	// cached (unexported)
 	totalVotingPower  int64
-	totalStakingPower int64
 }
 
 func NewVoterSet(valz []*Validator) *VoterSet {
 	sort.Sort(ValidatorsByAddress(valz))
 	vals := &VoterSet{Voters: copyValidatorListForVoter(valz), totalVotingPower: 0}
-	vals.updateTotalStakingPower()
 	vals.updateTotalVotingPower()
 	return vals
 }
@@ -116,7 +114,6 @@ func copyValidatorListForVoter(vals []*Validator) []*Validator {
 func (voters *VoterSet) Copy() *VoterSet {
 	return &VoterSet{
 		Voters:            copyValidatorListShallow(voters.Voters),
-		totalStakingPower: voters.totalStakingPower,
 		totalVotingPower:  voters.totalVotingPower,
 	}
 }
@@ -139,34 +136,11 @@ func (voters *VoterSet) updateTotalVotingPower() {
 	voters.totalVotingPower = sum
 }
 
-func (voters *VoterSet) updateTotalStakingPower() {
-	sum := int64(0)
-	for _, val := range voters.Voters {
-		// mind overflow
-		sum = safeAddClip(sum, val.StakingPower)
-		if sum > MaxTotalStakingPower {
-			panic(fmt.Sprintf(
-				"Total voting power should be guarded to not exceed %v; got: %v",
-				MaxTotalStakingPower,
-				sum))
-		}
-	}
-
-	voters.totalStakingPower = sum
-}
-
 func (voters *VoterSet) TotalVotingPower() int64 {
 	if voters.totalVotingPower == 0 {
 		voters.updateTotalVotingPower()
 	}
 	return voters.totalVotingPower
-}
-
-func (voters *VoterSet) TotalStakingPower() int64 {
-	if voters.totalStakingPower == 0 {
-		voters.updateTotalStakingPower()
-	}
-	return voters.totalStakingPower
 }
 
 // Hash returns the Merkle root hash build using voters (as leaves) in the
@@ -519,7 +493,6 @@ func ToVoterAll(validators *ValidatorSet) *VoterSet {
 		}
 	}
 	voters := NewVoterSet(newVoters)
-	voters.updateTotalStakingPower()
 	voters.updateTotalVotingPower()
 	return voters
 }
