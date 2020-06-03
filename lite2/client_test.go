@@ -24,7 +24,7 @@ const (
 
 var (
 	keys     = genPrivKeys(4)
-	vals     = types.ToVoterAll(keys.ToValidators(20, 10))
+	vals     = types.ToVoterAll(keys.ToValidators(20, 10).Validators)
 	bTime, _ = time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
 	h1       = keys.GenSignedHeader(chainID, 1, bTime, nil, vals, vals,
 		[]byte("app_hash"), []byte("cons_hash"), []byte("results_hash"), 0, len(keys))
@@ -64,7 +64,7 @@ var (
 
 func TestClient_SequentialVerification(t *testing.T) {
 	newKeys := genPrivKeys(4)
-	newVals := types.ToVoterAll(newKeys.ToValidators(10, 1))
+	newVals := types.ToVoterAll(newKeys.ToValidators(10, 1).Validators)
 
 	testCases := []struct {
 		name         string
@@ -178,11 +178,11 @@ func TestClient_SequentialVerification(t *testing.T) {
 func TestClient_SkippingVerification(t *testing.T) {
 	// required for 2nd test case
 	newKeys := genPrivKeys(4)
-	newVals := types.ToVoterAll(newKeys.ToValidators(10, 1))
+	newVals := types.ToVoterAll(newKeys.ToValidators(10, 1).Validators)
 
 	// 1/3+ of vals, 2/3- of newVals
 	transitKeys := keys.Extend(3)
-	transitVals := types.ToVoterAll(transitKeys.ToValidators(10, 1))
+	transitVals := types.ToVoterAll(transitKeys.ToValidators(10, 1).Validators)
 
 	testCases := []struct {
 		name         string

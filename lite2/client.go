@@ -376,7 +376,7 @@ func (c *Client) initializeWithTrustOptions(options TrustOptions) error {
 	}
 
 	// 2) Fetch and verify the vals.
-	voters, err := c.validatorSetFromPrimary(options.Height)
+	voters, err := c.voterSetFromPrimary(options.Height)
 	if err != nil {
 		return err
 	}
@@ -872,7 +872,7 @@ func (c *Client) fetchHeaderAndValsAtHeight(height int64) (*types.SignedHeader, 
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to obtain the header #%d: %w", height, err)
 	}
-	vals, err := c.validatorSetFromPrimary(height)
+	vals, err := c.voterSetFromPrimary(height)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to obtain the vals #%d: %w", height, err)
 	}
@@ -1083,13 +1083,13 @@ func (c *Client) signedHeaderFromPrimary(height int64) (*types.SignedHeader, err
 // validatorSetFromPrimary retrieves the VoterSet from the primary provider
 // at the specified height. Handles dropout by the primary provider after 5
 // attempts by replacing it with an alternative provider.
-func (c *Client) validatorSetFromPrimary(height int64) (*types.VoterSet, error) {
+func (c *Client) voterSetFromPrimary(height int64) (*types.VoterSet, error) {
 	for attempt := uint16(1); attempt <= c.maxRetryAttempts; attempt++ {
 		c.providerMutex.Lock()
-		vals, err := c.primary.VoterSet(height)
+		voters, err := c.primary.VoterSet(height)
 		c.providerMutex.Unlock()
 		if err == nil || err == provider.ErrValidatorSetNotFound {
-			return vals, err
+			return voters, err
 		}
 		c.logger.Error("Failed to get validator set from primary", "attempt", attempt, "err", err)
 		time.Sleep(backoffTimeout(attempt))
@@ -1101,7 +1101,7 @@ func (c *Client) validatorSetFromPrimary(height int64) (*types.VoterSet, error) 
 		return nil, err
 	}
 
-	return c.validatorSetFromPrimary(height)
+	return c.voterSetFromPrimary(height)
 }
 
 // exponential backoff (with jitter)
