@@ -118,8 +118,8 @@ func (voters *VoterSet) updateTotalVotingPower() {
 }
 
 func (voters *VoterSet) TotalVotingPower() int64 {
-	if voters.totalVotingPower == 0 && voters.Size() > 0 {
-		panic("VoterSet total voting power cannot be 0")
+	if voters.totalVotingPower == 0 {
+		voters.updateTotalVotingPower()
 	}
 	return voters.totalVotingPower
 }
