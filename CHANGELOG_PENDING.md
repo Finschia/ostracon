@@ -15,10 +15,13 @@ Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermi
 - P2P Protocol
 
 - Go API
-
+    - [types] [\#83](https://github.com/line/tendermint/pull/83) Add `StakingPower` to `Validator`
+    - [consensus] [\#83](https://github.com/line/tendermint/pull/83) Change calculation of `VotingPower`
 - Blockchain Protocol
 
 ### FEATURES
+- [rpc] [\#78](https://github.com/line/tendermint/pull/78) Add `Voters` rpc
+- [consensus] [\#83](https://github.com/line/tendermint/pull/83) Selection voters using random sampling without replacement
 
 ### IMPROVEMENTS
 
