@@ -672,8 +672,10 @@ func ensureVote(voteCh <-chan tmpubsub.Message, height int64, round int,
 }
 
 func ensureNewEventOnChannel(ch <-chan tmpubsub.Message) {
+	consensusLogger().Info(fmt.Sprintf("waiting event: %v", tmtime.Now()))
 	select {
 	case <-time.After(ensureTimeout):
+		consensusLogger().Info(fmt.Sprintf("timed out: %v", tmtime.Now()))
 		panic("Timeout expired while waiting for new activity on the channel")
 	case <-ch:
 	}
