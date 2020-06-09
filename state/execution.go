@@ -130,11 +130,14 @@ func (blockExec *BlockExecutor) ApplyBlock(
 	state State, blockID types.BlockID, block *types.Block,
 ) (State, int64, error) {
 
+	blockExec.logger.Info("before validate block")
+
 	// When doing ApplyBlock, we don't need to check whether the block.Round is same to current round,
 	// so we just put block.Round for the current round parameter
 	if err := blockExec.ValidateBlock(state, block.Round, block); err != nil {
 		return state, 0, ErrInvalidBlock(err)
 	}
+	blockExec.logger.Info("after validate block")
 
 	startTime := time.Now().UnixNano()
 	abciResponses, err := execBlockOnProxyApp(blockExec.logger, blockExec.proxyApp, block, blockExec.db)
@@ -263,6 +266,8 @@ func execBlockOnProxyApp(
 	txIndex := 0
 	abciResponses := NewABCIResponses(block)
 
+	logger.Info("execute block begin")
+
 	// Execute transactions and get hash.
 	proxyCb := func(req *abci.Request, res *abci.Response) {
 		if r, ok := res.Value.(*abci.Response_DeliverTx); ok {
@@ -280,10 +285,12 @@ func execBlockOnProxyApp(
 			txIndex++
 		}
 	}
+	logger.Info("execute block step-1")
 	proxyAppConn.SetResponseCallback(proxyCb)
 
 	commitInfo, byzVals := getBeginBlockValidatorInfo(block, stateDB)
 
+	logger.Info("execute block step-2")
 	// Begin block
 	var err error
 	abciResponses.BeginBlock, err = proxyAppConn.BeginBlockSync(abci.RequestBeginBlock{
@@ -292,6 +299,7 @@ func execBlockOnProxyApp(
 		LastCommitInfo:      commitInfo,
 		ByzantineValidators: byzVals,
 	})
+	logger.Info("execute block step-3")
 	if err != nil {
 		logger.Error("Error in proxyAppConn.BeginBlock", "err", err)
 		return nil, err
@@ -305,6 +313,7 @@ func execBlockOnProxyApp(
 		}
 	}
 
+	logger.Info("execute block step-4")
 	// End block.
 	abciResponses.EndBlock, err = proxyAppConn.EndBlockSync(abci.RequestEndBlock{Height: block.Height})
 	if err != nil {
