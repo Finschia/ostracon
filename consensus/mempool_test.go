@@ -24,7 +24,7 @@ func assertMempool(txn txNotifier) mempl.Mempool {
 }
 
 func TestMempoolNoProgressUntilTxsAvailable(t *testing.T) {
-	config := ResetConfig("consensus_mempool_txs_available_test")
+	config := ResetConfig("consensus_mempool_txs_available_test.")
 	defer os.RemoveAll(config.RootDir)
 	config.Consensus.CreateEmptyBlocks = false
 	state, privVals := randGenesisState(1, false, 10)
