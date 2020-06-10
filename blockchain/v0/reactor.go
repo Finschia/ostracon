@@ -339,7 +339,8 @@ FOR_LOOP:
 			} else {
 				bcR.pool.PopRequest()
 
-				bcR.Logger.Info(fmt.Sprintf("********* bc(%s) height=%d, block=%d *********", bcR.id, bcR.store.Height(), first.Height))
+				bcR.Logger.Info(fmt.Sprintf("********* bc(%s) height=%d, block=%d *********",
+					bcR.id, bcR.store.Height(), first.Height))
 
 				// TODO: batch saves so we dont persist to disk every block
 				bcR.store.SaveBlock(first, firstParts, second.LastCommit)
