@@ -194,6 +194,8 @@ func TestBadBlockStopsPeer(t *testing.T) {
 	maxBlockHeight := int64(148)
 
 	otherChain := newBlockchainReactor(log.TestingLogger(), genDoc, privVals, maxBlockHeight)
+	otherChain.reactor.id = "bad"
+
 	defer func() {
 		otherChain.reactor.Stop()
 		otherChain.app.Stop()
@@ -202,9 +204,13 @@ func TestBadBlockStopsPeer(t *testing.T) {
 	reactorPairs := make([]BlockchainReactorPair, 4)
 
 	reactorPairs[0] = newBlockchainReactor(log.TestingLogger(), genDoc, privVals, maxBlockHeight)
+	reactorPairs[0].reactor.id = "r1"
 	reactorPairs[1] = newBlockchainReactor(log.TestingLogger(), genDoc, privVals, 0)
+	reactorPairs[0].reactor.id = "r2"
 	reactorPairs[2] = newBlockchainReactor(log.TestingLogger(), genDoc, privVals, 0)
+	reactorPairs[0].reactor.id = "r3"
 	reactorPairs[3] = newBlockchainReactor(log.TestingLogger(), genDoc, privVals, 0)
+	reactorPairs[0].reactor.id = "r4"
 
 	switches := p2p.MakeConnectedSwitches(config.P2P, 4, func(i int, s *p2p.Switch) *p2p.Switch {
 		s.AddReactor("BLOCKCHAIN", reactorPairs[i].reactor)
@@ -234,6 +240,7 @@ func TestBadBlockStopsPeer(t *testing.T) {
 	reactorPairs[3].reactor.store = otherChain.reactor.store
 
 	lastReactorPair := newBlockchainReactor(log.TestingLogger(), genDoc, privVals, 0)
+	lastReactorPair.reactor.id = "r5"
 	reactorPairs = append(reactorPairs, lastReactorPair)
 
 	switches = append(switches, p2p.MakeConnectedSwitches(config.P2P, 1, func(i int, s *p2p.Switch) *p2p.Switch {
