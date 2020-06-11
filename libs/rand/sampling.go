@@ -2,6 +2,8 @@ package rand
 
 import (
 	"fmt"
+	"math"
+	"math/big"
 	s "sort"
 )
 
@@ -9,13 +11,8 @@ import (
 type Candidate interface {
 	Priority() uint64
 	LessThan(other Candidate) bool
-	SetWinPoint(winPoint uint64)
+	SetWinPoint(winPoint int64)
 }
-
-const (
-	// Casting a larger number than this as float64 can result in that lower bytes can be truncated
-	MaxFloat64Significant = uint64(0x1FFFFFFFFFFFFF)
-)
 
 // Select a specified number of candidates randomly from the candidate set based on each priority. This function is
 // deterministic and will produce the same result for the same input.
@@ -75,16 +72,31 @@ func moveWinnerToLast(candidates []Candidate, winner int) {
 	candidates[len(candidates)-1] = winnerCandidate
 }
 
+const uint64Mask = uint64(0x7FFFFFFFFFFFFFFF)
+
+var divider *big.Int
+
+func init() {
+	divider = big.NewInt(int64(uint64Mask))
+	divider.Add(divider, big.NewInt(1))
+}
+
 func randomThreshold(seed *uint64, total uint64) uint64 {
-	return uint64(float64(nextRandom(seed)&MaxFloat64Significant) /
-		float64(MaxFloat64Significant+1) * float64(total))
+	if int64(total) < 0 {
+		panic(fmt.Sprintf("total priority is overflow: %d", total))
+	}
+	totalBig := big.NewInt(int64(total))
+	a := big.NewInt(int64(nextRandom(seed) & uint64Mask))
+	a.Mul(a, totalBig)
+	a.Div(a, divider)
+	return a.Uint64()
 }
 
 // `RandomSamplingWithoutReplacement` elects winners among candidates without replacement
 // so it updates rewards of winners. This function continues to elect winners until the both of two
 // conditions(minSamplingCount, minPriorityPercent) are met.
 func RandomSamplingWithoutReplacement(
-	seed uint64, candidates []Candidate, minSamplingCount int, minPriorityPercent uint, winPointUnit uint64) (
+	seed uint64, candidates []Candidate, minSamplingCount int, winPointUnit uint64) (
 	winners []Candidate) {
 
 	if len(candidates) < minSamplingCount {
@@ -92,22 +104,12 @@ func RandomSamplingWithoutReplacement(
 			len(candidates), minSamplingCount))
 	}
 
-	if minPriorityPercent > 100 {
-		panic(fmt.Sprintf("minPriorityPercent must be equal or less than 100: %d", minPriorityPercent))
-	}
-
 	totalPriority := sumTotalPriority(candidates)
-	if totalPriority > MaxFloat64Significant {
-		// totalPriority will be casting to float64, so it must be less than 0x1FFFFFFFFFFFFF(53bits)
-		panic(fmt.Sprintf("total priority cannot exceed %d: %d", MaxFloat64Significant, totalPriority))
-	}
-
-	priorityThreshold := totalPriority * uint64(minPriorityPercent) / 100
 	candidates = sort(candidates)
 	winnersPriority := uint64(0)
 	losersPriorities := make([]uint64, len(candidates))
 	winnerNum := 0
-	for winnerNum < minSamplingCount || winnersPriority < priorityThreshold {
+	for winnerNum < minSamplingCount {
 		if totalPriority-winnersPriority == 0 {
 			// it's possible if some candidates have zero priority
 			// if then, we can't elect voter any more; we should holt electing not to fall in infinity loop
@@ -130,8 +132,8 @@ func RandomSamplingWithoutReplacement(
 
 		if !found {
 			panic(fmt.Sprintf("Cannot find random sample. winnerNum=%d, minSamplingCount=%d, "+
-				"winnersPriority=%d, priorityThreshold=%d, totalPriority=%d, threshold=%d",
-				winnerNum, minSamplingCount, winnersPriority, priorityThreshold, totalPriority, threshold))
+				"winnersPriority=%d, totalPriority=%d, threshold=%d",
+				winnerNum, minSamplingCount, winnersPriority, totalPriority, threshold))
 		}
 	}
 	compensationProportions := make([]float64, winnerNum)
@@ -139,9 +141,29 @@ func RandomSamplingWithoutReplacement(
 		compensationProportions[i] = compensationProportions[i+1] + 1/float64(losersPriorities[i])
 	}
 	winners = candidates[len(candidates)-winnerNum:]
+	winPoints := make([]float64, len(winners))
+	downscaleNeeded := false
 	for i, winner := range winners {
-		winner.SetWinPoint(winPointUnit +
-			uint64(float64(winner.Priority())*compensationProportions[i]*float64(winPointUnit)))
+		winPoints[i] = float64(winPointUnit) +
+			float64(winner.Priority())*compensationProportions[i]*float64(winPointUnit)
+		if int64(winPoints[i]) < 0 {
+			downscaleNeeded = true
+		}
+	}
+	for downscaleNeeded {
+		downscaleNeeded = false
+		for i := range winPoints {
+			winPoints[i] = winPoints[i] / 10
+			if int64(winPoints[i]) < 0 {
+				downscaleNeeded = true
+			}
+		}
+	}
+	for i, winner := range winners {
+		if winPoints[i] > math.MaxInt64 || winPoints[i] < 0 {
+			panic(fmt.Sprintf("winPoint is invalid: %f", winPoints[i]))
+		}
+		winner.SetWinPoint(int64(winPoints[i]))
 	}
 	return winners
 }

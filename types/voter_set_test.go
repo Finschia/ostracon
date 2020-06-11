@@ -9,13 +9,23 @@ import (
 	tmtime "github.com/tendermint/tendermint/types/time"
 )
 
+func countZeroStakingPower(vals []*Validator) int {
+	count := 0
+	for _, v := range vals {
+		if v.StakingPower == 0 {
+			count++
+		}
+	}
+	return count
+}
+
 func TestSelectVoter(t *testing.T) {
 	MinVoters = 29
-	MinTotalVotingPowerPercent = 100
 	valSet := randValidatorSet(30)
+	zeroVals := countZeroStakingPower(valSet.Validators)
 	for i := 0; i < 10000; i++ {
 		voterSet := SelectVoter(valSet, []byte{byte(i)})
-		assert.True(t, voterSet.Size() >= 29)
+		assert.True(t, voterSet.Size() >= 29-zeroVals)
 		if voterSet.totalVotingPower <= 0 {
 			for j := 0; j < voterSet.Size(); j++ {
 				// TODO solve this problem!!!
@@ -24,6 +34,24 @@ func TestSelectVoter(t *testing.T) {
 		}
 		assert.True(t, voterSet.TotalVotingPower() > 0)
 	}
+}
+
+func TestToVoterAll(t *testing.T) {
+	valSet := randValidatorSet(30)
+	vals := valSet.Validators
+	vals[0].StakingPower = 0
+	vals[5].StakingPower = 0
+	vals[28].StakingPower = 0
+	zeroRemovedVoters := ToVoterAll(vals)
+	assert.True(t, zeroRemovedVoters.Size() == 27)
+
+	valSet = randValidatorSet(3)
+	vals = valSet.Validators
+	vals[0].StakingPower = 0
+	vals[1].StakingPower = 0
+	vals[2].StakingPower = 0
+	zeroRemovedVoters = ToVoterAll(vals)
+	assert.True(t, zeroRemovedVoters.Size() == 0)
 }
 
 func toGenesisValidators(vals []*Validator) []GenesisValidator {
