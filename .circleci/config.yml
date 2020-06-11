@@ -102,6 +102,7 @@ jobs:
 
   test_cover:
     executor: golang
+    resource_class: large
     parallelism: 4
     steps:
       - restore_cache:
