@@ -450,6 +450,10 @@ func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
 func ToVoterAll(validators []*Validator) *VoterSet {
 	newVoters := make([]*Validator, len(validators))
 	for i, val := range validators {
+		if val.StakingPower == 0 {
+			// remove the validator with the staking power of 0 from the voter set
+			continue
+		}
 		newVoters[i] = &Validator{
 			Address:          val.Address,
 			PubKey:           val.PubKey,
