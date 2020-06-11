@@ -158,6 +158,23 @@ func TestRandomSamplingWithoutReplacementDeterministic(t *testing.T) {
 	}
 }
 
+func TestRandomSamplingWithoutReplacementIncludingZeroStakingPower(t *testing.T) {
+	// first candidate's priority is 0
+	candidates1 := newCandidates(100, func(i int) uint64 { return uint64(i) })
+	winners1 := RandomSamplingWithoutReplacement(0, candidates1, 100, 100, 1000)
+	assert.True(t, len(winners1) == 99)
+
+	candidates2 := newCandidates(100, func(i int) uint64 {
+		if i < 10 {
+			return 0
+		} else {
+			return uint64(i)
+		}
+	})
+	winners2 := RandomSamplingWithoutReplacement(0, candidates2, 95, 95, 1000)
+	assert.True(t, len(winners2) == 90)
+}
+
 func accumulateAndResetReward(candidate []Candidate, acc []uint64) {
 	for i, c := range candidate {
 		acc[i] += c.(*Element).winPoint
@@ -211,8 +228,6 @@ func TestRandomSamplingWithoutReplacementPanic(t *testing.T) {
 		{newCandidates(9, func(i int) uint64 { return 10 }), 10, 50},
 		// priorityRateThreshold is greater than 1
 		{newCandidates(10, func(i int) uint64 { return 10 }), 10, 101},
-		// a candidate priority is 0
-		{newCandidates(10, func(i int) uint64 { return uint64(i) }), 10, 99},
 	}
 
 	for i, c := range cases {

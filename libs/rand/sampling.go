@@ -108,6 +108,11 @@ func RandomSamplingWithoutReplacement(
 	losersPriorities := make([]uint64, len(candidates))
 	winnerNum := 0
 	for winnerNum < minSamplingCount || winnersPriority < priorityThreshold {
+		if totalPriority-winnersPriority == 0 {
+			// it's possible if some candidates have zero priority
+			// if then, we can't elect voter any more; we should holt electing not to fall in infinity loop
+			break
+		}
 		threshold := randomThreshold(&seed, totalPriority-winnersPriority)
 		cumulativePriority := uint64(0)
 		found := false
@@ -143,12 +148,12 @@ func RandomSamplingWithoutReplacement(
 
 func sumTotalPriority(candidates []Candidate) (sum uint64) {
 	for _, candi := range candidates {
-		if candi.Priority() == 0 {
-			panic("candidate(%d) priority must not be 0")
-		}
 		sum += candi.Priority()
 	}
-	return sum
+	if sum == 0 {
+		panic("all candidates have zero priority")
+	}
+	return
 }
 
 // SplitMix64
