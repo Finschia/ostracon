@@ -18,9 +18,8 @@ import (
 )
 
 var (
-	MinVoters                  = 20
-	MinTotalVotingPowerPercent = uint(60)
-	VotingPowerUnit            = uint64(10000)
+	MinVoters       = 20
+	VotingPowerUnit = uint64(10000)
 )
 
 // VoterSet represent a set of *Validator at a given height.
@@ -125,6 +124,7 @@ func (voters *VoterSet) updateTotalVotingPower() {
 			// mind overflow
 			sum = safeAddClip(sum, val.VotingPower)
 			if sum > MaxTotalStakingPower {
+				sum = 0
 				needSum = true
 				voters.downscaleVotingPower()
 				break
@@ -441,8 +441,11 @@ func (c *candidate) LessThan(other tmrand.Candidate) bool {
 	return bytes.Compare(c.val.Address, o.val.Address) < 0
 }
 
-func (c *candidate) SetWinPoint(winPoint uint64) {
-	c.val.VotingPower = int64(winPoint)
+func (c *candidate) SetWinPoint(winPoint int64) {
+	if winPoint < 0 {
+		panic(fmt.Sprintf("VotingPower must not be negative: %d", winPoint))
+	}
+	c.val.VotingPower = winPoint
 }
 
 func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
@@ -454,23 +457,14 @@ func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
 
 	seed := hashToSeed(proofHash)
 	candidates := make([]tmrand.Candidate, len(validators.Validators))
-	totalPriority := uint64(0)
 	for i, val := range validators.Validators {
 		candidates[i] = &candidate{
 			priority: uint64(val.StakingPower),
 			val:      val.Copy(),
 		}
-		totalPriority += candidates[i].Priority()
 	}
 
-	if totalPriority > tmrand.MaxFloat64Significant {
-		scale := float64(totalPriority) / float64(tmrand.MaxFloat64Significant)
-		for _, candi := range candidates {
-			candi.(*candidate).priority = uint64(float64(candi.(*candidate).priority) / scale)
-		}
-	}
-	winners := tmrand.RandomSamplingWithoutReplacement(seed, candidates, MinVoters, MinTotalVotingPowerPercent,
-		VotingPowerUnit)
+	winners := tmrand.RandomSamplingWithoutReplacement(seed, candidates, MinVoters, VotingPowerUnit)
 	voters := make([]*Validator, len(winners))
 	for i, winner := range winners {
 		voters[i] = winner.(*candidate).val
@@ -478,21 +472,27 @@ func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
 	return WrapValidatorsToVoterSet(voters)
 }
 
-// This should be used in only test
 func ToVoterAll(validators []*Validator) *VoterSet {
 	newVoters := make([]*Validator, len(validators))
-	for i, val := range validators {
+	voterCount := 0
+	for _, val := range validators {
 		if val.StakingPower == 0 {
 			// remove the validator with the staking power of 0 from the voter set
 			continue
 		}
-		newVoters[i] = &Validator{
+		newVoters[voterCount] = &Validator{
 			Address:          val.Address,
 			PubKey:           val.PubKey,
 			StakingPower:     val.StakingPower,
 			VotingPower:      val.StakingPower,
 			ProposerPriority: val.ProposerPriority,
 		}
+		voterCount++
+	}
+	if voterCount < len(newVoters) {
+		zeroRemoved := make([]*Validator, voterCount)
+		copy(zeroRemoved, newVoters[:voterCount])
+		newVoters = zeroRemoved
 	}
 	sort.Sort(ValidatorsByAddress(newVoters))
 	return WrapValidatorsToVoterSet(newVoters)

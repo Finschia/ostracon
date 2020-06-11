@@ -32,7 +32,7 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 	witness := mockp.New(chainID, witnessHeaders, witnessVoters)
 	forgedKeys := chainKeys[divergenceHeight-1].ChangeKeys(3) // we change 3 out of the 5 validators (still 2/5 remain)
 	forgedVals := forgedKeys.ToValidators(2, 0)
-	forgedVoters := types.ToVoterAll(forgedVals)
+	forgedVoters := types.ToVoterAll(forgedVals.Validators)
 
 	for height := int64(1); height <= latestHeight; height++ {
 		if height < divergenceHeight {

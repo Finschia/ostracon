@@ -30,7 +30,7 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 	conflictingVals, err := types.ValidatorSetFromExistingValidators(append(commonVals.Validators, newVal))
 	require.NoError(t, err)
 	conflictingVoters, err := types.ValidatorSetFromExistingValidators(append(commonVoters.Voters, newVal))
-	conflictingVoterSet := types.ToVoterAll(conflictingVoters)
+	conflictingVoterSet := types.ToVoterAll(conflictingVoters.Validators)
 	conflictingPrivVals := append(commonPrivVals, newPrivVal)
 
 	commonHeader := makeHeaderRandom(4)
@@ -302,7 +302,7 @@ type voteData struct {
 func TestVerifyDuplicateVoteEvidence(t *testing.T) {
 	val := types.NewMockPV()
 	val2 := types.NewMockPV()
-	valSet := types.NewVoterSet([]*types.Validator{val.ExtractIntoValidator(1)})
+	valSet := types.WrapValidatorsToVoterSet([]*types.Validator{val.ExtractIntoValidator(1)})
 
 	blockID := makeBlockID([]byte("blockhash"), 1000, []byte("partshash"))
 	blockID2 := makeBlockID([]byte("blockhash2"), 1000, []byte("partshash"))

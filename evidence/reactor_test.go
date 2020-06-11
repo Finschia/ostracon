@@ -375,7 +375,7 @@ func TestEvidenceVectors(t *testing.T) {
 		StakingPower: 10,
 	}
 
-	voterSet := types.NewVoterSet([]*types.Validator{val})
+	voterSet := types.WrapValidatorsToVoterSet([]*types.Validator{val})
 
 	dupl := types.NewDuplicateVoteEvidence(
 		exampleVote(1),

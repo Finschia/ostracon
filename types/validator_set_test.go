@@ -223,10 +223,11 @@ func TestProposerSelection1(t *testing.T) {
 		val := vset.SelectProposer([]byte{}, int64(i), 0)
 		proposers = append(proposers, string(val.Address))
 	}
-	expected := `foo foo foo baz bar foo baz baz foo foo baz bar foo foo foo foo bar foo foo foo bar foo foo foo bar ` +
-		`baz foo foo bar baz foo bar baz bar foo foo foo bar foo foo bar bar foo foo bar foo baz bar foo foo baz foo ` +
-		`baz foo baz foo foo bar foo bar baz foo foo baz foo foo foo foo bar baz foo baz foo baz foo foo bar baz foo ` +
-		`baz foo foo baz foo baz foo baz foo baz foo foo foo foo foo bar bar foo bar foo`
+	expected := `foo foo foo foo bar bar foo bar foo baz bar foo baz baz baz foo foo bar foo bar baz bar foo baz foo ` +
+		`foo baz foo foo baz foo foo baz bar foo foo foo baz foo baz baz bar foo foo foo foo baz bar bar bar bar foo ` +
+		`foo foo baz foo foo foo foo foo foo baz foo foo baz bar bar foo bar foo foo baz bar foo foo baz foo foo baz ` +
+		`foo foo bar foo foo baz foo foo foo bar foo foo baz baz foo foo bar baz foo baz`
+
 	if expected != strings.Join(proposers, " ") {
 		t.Errorf("expected sequence of proposers was\n%v\nbut got \n%v", expected, strings.Join(proposers, " "))
 	}
@@ -241,24 +242,24 @@ func TestProposerSelection2(t *testing.T) {
 	val0, val1, val2 := newValidator(addr0, 100), newValidator(addr1, 100), newValidator(addr2, 100)
 	valList := []*Validator{val0, val1, val2}
 	vals := NewValidatorSet(valList)
-	expected := []int{1, 1, 0, 1, 2, 0, 2, 2, 0, 0, 1, 2, 0, 1, 1}
+	expected := []int{0, 1, 0, 0, 2, 2, 0, 2, 1, 2, 2, 1, 2, 2, 2}
 	for i := 0; i < len(valList)*5; i++ {
 		prop := vals.SelectProposer([]byte{}, int64(i), 0)
 		if bytesToInt(prop.Address) != expected[i] {
 			t.Fatalf("(%d): Expected %d. Got %d", i, expected[i], bytesToInt(prop.Address))
 		}
 	}
-	verifyWinningRate(t, vals, 50000, 0.01)
+	verifyWinningRate(t, vals, 10000, 0.01)
 
 	// One validator has more than the others
 	*val2 = *newValidator(addr2, 400)
 	vals = NewValidatorSet(valList)
-	verifyWinningRate(t, vals, 50000, 0.01)
+	verifyWinningRate(t, vals, 10000, 0.01)
 
 	// One validator has more than the others
 	*val2 = *newValidator(addr2, 401)
 	vals = NewValidatorSet(valList)
-	verifyWinningRate(t, vals, 100000, 0.01)
+	verifyWinningRate(t, vals, 10000, 0.01)
 
 	// each validator should be the proposer a proportional number of times
 	val0, val1, val2 = newValidator(addr0, 4), newValidator(addr1, 5), newValidator(addr2, 3)
@@ -272,7 +273,7 @@ func TestProposerSelection2(t *testing.T) {
 	}
 	fmt.Printf("%v\n", propCount)
 
-	if propCount[0] != 40038 {
+	if propCount[0] != 40257 {
 		t.Fatalf(
 			"Expected prop count for validator with 4/12 of voting power to be %d/%d. Got %d/%d",
 			40038,
@@ -281,7 +282,7 @@ func TestProposerSelection2(t *testing.T) {
 			10000*N,
 		)
 	}
-	if propCount[1] != 50077 {
+	if propCount[1] != 50017 {
 		t.Fatalf(
 			"Expected prop count for validator with 5/12 of voting power to be %d/%d. Got %d/%d",
 			50077,
@@ -290,7 +291,7 @@ func TestProposerSelection2(t *testing.T) {
 			10000*N,
 		)
 	}
-	if propCount[2] != 29885 {
+	if propCount[2] != 29726 {
 		t.Fatalf(
 			"Expected prop count for validator with 3/12 of voting power to be %d/%d. Got %d/%d",
 			29885,
@@ -365,11 +366,22 @@ func randPubKey() crypto.PubKey {
 	return ed25519.PubKey(tmrand.Bytes(32))
 }
 
+func defendLimit(a int64) int64 {
+	if a <= 0 {
+		return 1
+	}
+	if a > MaxTotalStakingPower/8 {
+		a = MaxTotalStakingPower / 8
+	}
+	return a
+}
+
 func randValidator(totalStakingPower int64) *Validator {
 	// this modulo limits the ProposerPriority/StakingPower to stay in the
-	// bounds of MaxTotalVotingPower minus the already existing voting power:
-	val := NewValidator(randPubKey(), int64(tmrand.Uint64()%uint64(MaxTotalStakingPower-totalStakingPower)))
-	val.ProposerPriority = tmrand.Int64() % (MaxTotalStakingPower - totalStakingPower)
+	// bounds of MaxTotalStakingPower minus the already existing voting power:
+	stakingPower := defendLimit(int64(tmrand.Uint64() % uint64(MaxTotalStakingPower-totalStakingPower)))
+	val := NewValidator(randPubKey(), stakingPower)
+	val.ProposerPriority = stakingPower
 	return val
 }
 
@@ -593,7 +605,7 @@ func TestAveragingInIncrementProposerPriorityWithStakingPower(t *testing.T) {
 				0 + 6*vp1 - total,   // mostest once up to here
 				0 + 6*vp2},
 			6,
-			vals.Validators[0]},
+			vals.Validators[2]},
 		6: {
 			vals.Copy(),
 			[]int64{
@@ -609,7 +621,7 @@ func TestAveragingInIncrementProposerPriorityWithStakingPower(t *testing.T) {
 				0 + 8*vp1 - total,
 				0 + 8*vp2},
 			8,
-			vals.Validators[0]},
+			vals.Validators[2]},
 		8: {
 			vals.Copy(),
 			[]int64{
@@ -633,7 +645,7 @@ func TestAveragingInIncrementProposerPriorityWithStakingPower(t *testing.T) {
 				0 + 11*vp1 - total,  // after 6 iters this val is "mostest" once and not in between
 				0 + 11*vp2 - total}, // after 10 iters this val is "mostest" once
 			11,
-			vals.Validators[0]},
+			vals.Validators[1]},
 	}
 	for i, tc := range tcs {
 		tc.vals.IncrementProposerPriority(tc.times)
