@@ -167,9 +167,8 @@ func TestRandomSamplingWithoutReplacementIncludingZeroStakingPower(t *testing.T)
 	candidates2 := newCandidates(100, func(i int) uint64 {
 		if i < 10 {
 			return 0
-		} else {
-			return uint64(i)
 		}
+		return uint64(i)
 	})
 	winners2 := RandomSamplingWithoutReplacement(0, candidates2, 95, 95, 1000)
 	assert.True(t, len(winners2) == 90)
