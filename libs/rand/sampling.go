@@ -153,7 +153,7 @@ func RandomSamplingWithoutReplacement(
 	for downscaleNeeded {
 		downscaleNeeded = false
 		for i := range winPoints {
-			winPoints[i] = winPoints[i] / 10
+			winPoints[i] /= 10
 			if int64(winPoints[i]) < 0 {
 				downscaleNeeded = true
 			}
