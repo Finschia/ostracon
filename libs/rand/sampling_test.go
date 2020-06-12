@@ -3,6 +3,7 @@ package rand
 import (
 	"fmt"
 	"math"
+	"math/rand"
 	s "sort"
 	"testing"
 
@@ -159,6 +160,39 @@ func accumulateAndResetReward(candidate []Candidate, acc []uint64) {
 	for i, c := range candidate {
 		acc[i] += uint64(c.(*Element).winPoint)
 		c.(*Element).winPoint = 0
+	}
+}
+
+func TestDivider(t *testing.T) {
+	assert.True(t, divider.Uint64() == uint64Mask+1)
+}
+
+func TestRandomThreshold(t *testing.T) {
+	loopCount := 100000
+
+	// randomThreshold() should not return a value greater than total.
+	for i := 0; i < loopCount; i++ {
+		seed := rand.Uint64()
+		total := rand.Int63()
+		random := randomThreshold(&seed, uint64(total))
+		assert.True(t, random < uint64(total))
+	}
+
+	// test randomness
+	total := math.MaxInt64
+	bitHit := make([]int, 63)
+	for i := 0; i < loopCount; i++ {
+		seed := rand.Uint64()
+		random := randomThreshold(&seed, uint64(total))
+		for j := 0; j < 63; j++ {
+			if random&(1<<j) > 0 {
+				bitHit[j]++
+			}
+		}
+	}
+	// all bit hit count should be near at loopCount/2
+	for i := 0; i < len(bitHit); i++ {
+		assert.True(t, math.Abs(float64(bitHit[i])-float64(loopCount/2))/float64(loopCount/2) < 0.01)
 	}
 }
 
