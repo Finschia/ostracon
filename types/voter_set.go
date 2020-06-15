@@ -19,7 +19,6 @@ import (
 
 var (
 	MinVoters       = 20
-	VotingPowerUnit = uint64(10000)
 )
 
 // VoterSet represent a set of *Validator at a given height.
@@ -464,7 +463,7 @@ func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
 		}
 	}
 
-	winners := tmrand.RandomSamplingWithoutReplacement(seed, candidates, MinVoters, VotingPowerUnit)
+	winners := tmrand.RandomSamplingWithoutReplacement(seed, candidates, MinVoters)
 	voters := make([]*Validator, len(winners))
 	for i, winner := range winners {
 		voters[i] = winner.(*candidate).val
