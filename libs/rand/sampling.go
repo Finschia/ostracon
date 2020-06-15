@@ -96,8 +96,7 @@ func randomThreshold(seed *uint64, total uint64) uint64 {
 // so it updates rewards of winners. This function continues to elect winners until the both of two
 // conditions(minSamplingCount, minPriorityPercent) are met.
 func RandomSamplingWithoutReplacement(
-	seed uint64, candidates []Candidate, minSamplingCount int, winPointUnit uint64) (
-	winners []Candidate) {
+	seed uint64, candidates []Candidate, minSamplingCount int) (winners []Candidate) {
 
 	if len(candidates) < minSamplingCount {
 		panic(fmt.Sprintf("The number of candidates(%d) cannot be less minSamplingCount %d",
@@ -142,28 +141,16 @@ func RandomSamplingWithoutReplacement(
 	}
 	winners = candidates[len(candidates)-winnerNum:]
 	winPoints := make([]float64, len(winners))
-	downscaleNeeded := false
+	totalWinPoint := float64(0)
 	for i, winner := range winners {
-		winPoints[i] = float64(winPointUnit) +
-			float64(winner.Priority())*compensationProportions[i]*float64(winPointUnit)
-		if int64(winPoints[i]) < 0 {
-			downscaleNeeded = true
-		}
-	}
-	for downscaleNeeded {
-		downscaleNeeded = false
-		for i := range winPoints {
-			winPoints[i] /= 10
-			if int64(winPoints[i]) < 0 {
-				downscaleNeeded = true
-			}
-		}
+		winPoints[i] = 1 + float64(winner.Priority())*compensationProportions[i]
+		totalWinPoint += winPoints[i]
 	}
 	for i, winner := range winners {
 		if winPoints[i] > math.MaxInt64 || winPoints[i] < 0 {
 			panic(fmt.Sprintf("winPoint is invalid: %f", winPoints[i]))
 		}
-		winner.SetWinPoint(int64(winPoints[i]))
+		winner.SetWinPoint(int64(float64(totalPriority) * winPoints[i] / totalWinPoint))
 	}
 	return winners
 }

@@ -101,17 +101,17 @@ func resetWinPoint(candidate []Candidate) {
 func TestRandomSamplingWithoutReplacement1Candidate(t *testing.T) {
 	candidates := newCandidates(1, func(i int) uint64 { return uint64(1000 * (i + 1)) })
 
-	winners := RandomSamplingWithoutReplacement(0, candidates, 1, 1000)
+	winners := RandomSamplingWithoutReplacement(0, candidates, 1)
 	assert.True(t, len(winners) == 1)
 	assert.True(t, candidates[0] == winners[0])
 	assert.True(t, winners[0].(*Element).winPoint == 1000)
 	resetWinPoint(candidates)
 
-	winners2 := RandomSamplingWithoutReplacement(0, candidates, 0, 1000)
+	winners2 := RandomSamplingWithoutReplacement(0, candidates, 0)
 	assert.True(t, len(winners2) == 0)
 	resetWinPoint(candidates)
 
-	winners4 := RandomSamplingWithoutReplacement(0, candidates, 0, 1000)
+	winners4 := RandomSamplingWithoutReplacement(0, candidates, 0)
 	assert.True(t, len(winners4) == 0)
 	resetWinPoint(candidates)
 }
@@ -121,10 +121,30 @@ func TestRandomSamplingWithoutReplacementSamplingThreshold(t *testing.T) {
 	candidates := newCandidates(100, func(i int) uint64 { return uint64(1000 * (i + 1)) })
 
 	for i := 1; i <= 100; i++ {
-		winners := RandomSamplingWithoutReplacement(0, candidates, i, 1000)
+		winners := RandomSamplingWithoutReplacement(0, candidates, i)
 		assert.True(t, len(winners) == i)
 		resetWinPoint(candidates)
 	}
+}
+
+// test downscale of win point cases
+func TestRandomSamplingWithoutReplacementDownscale(t *testing.T) {
+	candidates := newCandidates(10, func(i int) uint64 {
+		if i == 0 {
+			return math.MaxInt64 >> 1
+		}
+		if i == 1 {
+			return 1 << 55
+		}
+		if i == 3 {
+			return 1 << 54
+		}
+		if i == 4 {
+			return 1 << 53
+		}
+		return uint64(i)
+	})
+	RandomSamplingWithoutReplacement(0, candidates, 5)
 }
 
 // test random election should be deterministic
@@ -132,8 +152,8 @@ func TestRandomSamplingWithoutReplacementDeterministic(t *testing.T) {
 	candidates1 := newCandidates(100, func(i int) uint64 { return uint64(i + 1) })
 	candidates2 := newCandidates(100, func(i int) uint64 { return uint64(i + 1) })
 	for i := 1; i <= 100; i++ {
-		winners1 := RandomSamplingWithoutReplacement(uint64(i), candidates1, 50, 1000)
-		winners2 := RandomSamplingWithoutReplacement(uint64(i), candidates2, 50, 1000)
+		winners1 := RandomSamplingWithoutReplacement(uint64(i), candidates1, 50)
+		winners2 := RandomSamplingWithoutReplacement(uint64(i), candidates2, 50)
 		sameCandidates(winners1, winners2)
 		resetWinPoint(candidates1)
 		resetWinPoint(candidates2)
@@ -143,7 +163,7 @@ func TestRandomSamplingWithoutReplacementDeterministic(t *testing.T) {
 func TestRandomSamplingWithoutReplacementIncludingZeroStakingPower(t *testing.T) {
 	// first candidate's priority is 0
 	candidates1 := newCandidates(100, func(i int) uint64 { return uint64(i) })
-	winners1 := RandomSamplingWithoutReplacement(0, candidates1, 100, 1000)
+	winners1 := RandomSamplingWithoutReplacement(0, candidates1, 100)
 	assert.True(t, len(winners1) == 99)
 
 	candidates2 := newCandidates(100, func(i int) uint64 {
@@ -152,7 +172,7 @@ func TestRandomSamplingWithoutReplacementIncludingZeroStakingPower(t *testing.T)
 		}
 		return uint64(i)
 	})
-	winners2 := RandomSamplingWithoutReplacement(0, candidates2, 95, 1000)
+	winners2 := RandomSamplingWithoutReplacement(0, candidates2, 95)
 	assert.True(t, len(winners2) == 90)
 }
 
@@ -217,9 +237,9 @@ func TestRandomSamplingWithoutReplacementReward(t *testing.T) {
 
 	accumulatedRewards := make([]uint64, 100)
 	for i := 0; i < 100000; i++ {
-		// 24 samplingThreshold is minimum to pass this test
-		// If samplingThreshold is less than 24, the result says the reward is not fair
-		RandomSamplingWithoutReplacement(uint64(i), candidates, 24, 10)
+		// 25 samplingThreshold is minimum to pass this test
+		// If samplingThreshold is less than 25, the result says the reward is not fair
+		RandomSamplingWithoutReplacement(uint64(i), candidates, 25)
 		accumulateAndResetReward(candidates, accumulatedRewards)
 	}
 	for i := 0; i < 99; i++ {
@@ -228,7 +248,7 @@ func TestRandomSamplingWithoutReplacementReward(t *testing.T) {
 
 	accumulatedRewards = make([]uint64, 100)
 	for i := 0; i < 50000; i++ {
-		RandomSamplingWithoutReplacement(uint64(i), candidates, 50, 10)
+		RandomSamplingWithoutReplacement(uint64(i), candidates, 50)
 		accumulateAndResetReward(candidates, accumulatedRewards)
 	}
 	for i := 0; i < 99; i++ {
@@ -237,12 +257,105 @@ func TestRandomSamplingWithoutReplacementReward(t *testing.T) {
 
 	accumulatedRewards = make([]uint64, 100)
 	for i := 0; i < 10000; i++ {
-		RandomSamplingWithoutReplacement(uint64(i), candidates, 100, 10)
+		RandomSamplingWithoutReplacement(uint64(i), candidates, 100)
 		accumulateAndResetReward(candidates, accumulatedRewards)
 	}
 	for i := 0; i < 99; i++ {
 		assert.True(t, accumulatedRewards[i] < accumulatedRewards[i+1])
 	}
+}
+
+/**
+conditions for fair reward
+1. even staking power(less difference between min staking and max staking)
+2. large total staking(a small total staking power makes a large error when converting float into int)
+3. many sampling count
+4. loop count
+*/
+func TestRandomSamplingWithoutReplacementEquity(t *testing.T) {
+	loopCount := 10000
+
+	// good condition
+	candidates := newCandidates(100, func(i int) uint64 { return 1000000 + rand.Uint64()&0xFFFFF })
+	accumulatedRewards := make([]uint64, 100)
+	for i := 0; i < loopCount; i++ {
+		RandomSamplingWithoutReplacement(uint64(i), candidates, 99)
+		accumulateAndResetReward(candidates, accumulatedRewards)
+	}
+	for i := 0; i < 99; i++ {
+		rewardPerStakingDiff :=
+			math.Abs(float64(accumulatedRewards[i])/float64(candidates[i].Priority())/float64(loopCount) - 1)
+		assert.True(t, rewardPerStakingDiff < 0.01)
+	}
+
+	// violation of condition 1
+	candidates = newCandidates(100, func(i int) uint64 { return rand.Uint64() & 0xFFFFFFFFF })
+	accumulatedRewards = make([]uint64, 100)
+	for i := 0; i < loopCount; i++ {
+		RandomSamplingWithoutReplacement(uint64(i), candidates, 99)
+		accumulateAndResetReward(candidates, accumulatedRewards)
+	}
+	maxRewardPerStakingDiff := float64(0)
+	for i := 0; i < 99; i++ {
+		rewardPerStakingDiff :=
+			math.Abs(float64(accumulatedRewards[i])/float64(candidates[i].Priority())/float64(loopCount) - 1)
+		if maxRewardPerStakingDiff < rewardPerStakingDiff {
+			maxRewardPerStakingDiff = rewardPerStakingDiff
+		}
+	}
+	t.Logf("[! condition 1] max reward per staking difference: %f", maxRewardPerStakingDiff)
+
+	// violation of condition 2
+	candidates = newCandidates(100, func(i int) uint64 { return uint64(1 + i) })
+	accumulatedRewards = make([]uint64, 100)
+	for i := 0; i < loopCount; i++ {
+		RandomSamplingWithoutReplacement(uint64(i), candidates, 99)
+		accumulateAndResetReward(candidates, accumulatedRewards)
+	}
+	maxRewardPerStakingDiff = float64(0)
+	for i := 0; i < 99; i++ {
+		rewardPerStakingDiff :=
+			math.Abs(float64(accumulatedRewards[i])/float64(candidates[i].Priority())/float64(loopCount) - 1)
+		if maxRewardPerStakingDiff < rewardPerStakingDiff {
+			maxRewardPerStakingDiff = rewardPerStakingDiff
+		}
+	}
+	t.Logf("[! condition 2] max reward per staking difference: %f", maxRewardPerStakingDiff)
+
+	// violation of condition 3
+	candidates = newCandidates(100, func(i int) uint64 { return 1000000 + rand.Uint64()&0xFFFFF })
+	accumulatedRewards = make([]uint64, 100)
+	for i := 0; i < loopCount; i++ {
+		RandomSamplingWithoutReplacement(uint64(i), candidates, 10)
+		accumulateAndResetReward(candidates, accumulatedRewards)
+	}
+	maxRewardPerStakingDiff = float64(0)
+	for i := 0; i < 99; i++ {
+		rewardPerStakingDiff :=
+			math.Abs(float64(accumulatedRewards[i])/float64(candidates[i].Priority())/float64(loopCount) - 1)
+		if maxRewardPerStakingDiff < rewardPerStakingDiff {
+			maxRewardPerStakingDiff = rewardPerStakingDiff
+		}
+	}
+	t.Logf("[! condition 3] max reward per staking difference: %f", maxRewardPerStakingDiff)
+
+	// violation of condition 4
+	loopCount = 100
+	candidates = newCandidates(100, func(i int) uint64 { return 1000000 + rand.Uint64()&0xFFFFF })
+	accumulatedRewards = make([]uint64, 100)
+	for i := 0; i < loopCount; i++ {
+		RandomSamplingWithoutReplacement(uint64(i), candidates, 99)
+		accumulateAndResetReward(candidates, accumulatedRewards)
+	}
+	maxRewardPerStakingDiff = float64(0)
+	for i := 0; i < 99; i++ {
+		rewardPerStakingDiff :=
+			math.Abs(float64(accumulatedRewards[i])/float64(candidates[i].Priority())/float64(loopCount) - 1)
+		if maxRewardPerStakingDiff < rewardPerStakingDiff {
+			maxRewardPerStakingDiff = rewardPerStakingDiff
+		}
+	}
+	t.Logf("[! condition 4] max reward per staking difference: %f", maxRewardPerStakingDiff)
 }
 
 func TestRandomSamplingWithoutReplacementPanic(t *testing.T) {
@@ -263,7 +376,7 @@ func TestRandomSamplingWithoutReplacementPanic(t *testing.T) {
 					t.Errorf("expected panic didn't happen in case %d", i+1)
 				}
 			}()
-			RandomSamplingWithoutReplacement(0, c.Candidates, c.SamplingThreshold, 1000)
+			RandomSamplingWithoutReplacement(0, c.Candidates, c.SamplingThreshold)
 		}()
 	}
 }
