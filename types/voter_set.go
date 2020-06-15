@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	MinVoters       = 20
+	MinVoters = 20
 )
 
 // VoterSet represent a set of *Validator at a given height.
