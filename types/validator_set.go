@@ -291,7 +291,7 @@ func (vals *ValidatorSet) updateTotalStakingPower() {
 		sum = safeAddClip(sum, val.StakingPower)
 		if sum > MaxTotalStakingPower {
 			panic(fmt.Sprintf(
-				"Total voting power should be guarded to not exceed %v; got: %v",
+				"Total staking power should be guarded to not exceed %v; got: %v",
 				MaxTotalStakingPower,
 				sum))
 		}

@@ -107,27 +107,19 @@ func (voters *VoterSet) Copy() *VoterSet {
 	}
 }
 
-func (voters *VoterSet) downscaleVotingPower() {
-	for _, v := range voters.Voters {
-		v.VotingPower = int64(float64(v.VotingPower) / 10)
-	}
-}
-
 // Forces recalculation of the set's total voting power.
 // Panics if total voting power is bigger than MaxTotalStakingPower.
 func (voters *VoterSet) updateTotalVotingPower() {
 	sum := int64(0)
-	for needSum := true; needSum; {
-		needSum = false
-		for _, val := range voters.Voters {
-			// mind overflow
-			sum = safeAddClip(sum, val.VotingPower)
-			if sum > MaxTotalStakingPower {
-				sum = 0
-				needSum = true
-				voters.downscaleVotingPower()
-				break
-			}
+	for _, val := range voters.Voters {
+		// mind overflow
+		sum = safeAddClip(sum, val.VotingPower)
+		// total voting power cannot be exceed total staking power that cannot be exceed MaxTotalStakingPower
+		if sum > MaxTotalStakingPower {
+			panic(fmt.Sprintf(
+				"Total voting power should be guarded to not exceed %v; got: %v",
+				MaxTotalStakingPower,
+				sum))
 		}
 	}
 	voters.totalVotingPower = sum
