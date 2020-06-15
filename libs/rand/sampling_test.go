@@ -288,6 +288,10 @@ func TestRandomSamplingWithoutReplacementEquity(t *testing.T) {
 		assert.True(t, rewardPerStakingDiff < 0.01)
 	}
 
+	// =======================================================================================================
+	// The codes below are not test codes to verify logic,
+	// but codes to find out what parameters are that weaken the equity of rewards.
+
 	// violation of condition 1
 	candidates = newCandidates(100, func(i int) uint64 { return rand.Uint64() & 0xFFFFFFFFF })
 	accumulatedRewards = make([]uint64, 100)
