@@ -306,7 +306,7 @@ func TestRandomSamplingWithoutReplacementEquity(t *testing.T) {
 	t.Logf("[! condition 1] max reward per staking difference: %f", maxRewardPerStakingDiff)
 
 	// violation of condition 2
-	candidates = newCandidates(100, func(i int) uint64 { return uint64(1 + i) })
+	candidates = newCandidates(100, func(i int) uint64 { return rand.Uint64() & 0xFFFFF })
 	accumulatedRewards = make([]uint64, 100)
 	for i := 0; i < loopCount; i++ {
 		RandomSamplingWithoutReplacement(uint64(i), candidates, 99)
