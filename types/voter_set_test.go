@@ -234,6 +234,25 @@ func countZeroStakingPower(vals []*Validator) int {
 	return count
 }
 
+func TestMaxStakingPowerTest(t *testing.T) {
+	large := MaxTotalStakingPower
+	maxDiff := int64(0)
+	for i := 0; i < 8; i++ {
+		for j := 0; j < 3; j++ {
+			testNum := (large - int64(i)) >> j
+			casted := int64(float64(testNum))
+			t.Logf("org=%d, casting=%d", testNum, casted)
+			if maxDiff < casted-testNum {
+				maxDiff = casted - testNum
+			}
+		}
+	}
+	t.Logf("max difference=%d", maxDiff)
+	stakingPower := MaxTotalStakingPower - 1
+	votingPower := int64(float64(stakingPower) * 0.1 * 10)
+	assert.True(t, votingPower <= MaxTotalStakingPower+maxDiff)
+}
+
 func TestSelectVoter(t *testing.T) {
 	MinVoters = 29
 	valSet := randValidatorSet(30)

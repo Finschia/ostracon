@@ -114,11 +114,10 @@ func (voters *VoterSet) updateTotalVotingPower() {
 	for _, val := range voters.Voters {
 		// mind overflow
 		sum = safeAddClip(sum, val.VotingPower)
-		// total voting power cannot be exceed total staking power that cannot be exceed MaxTotalStakingPower
-		if sum > MaxTotalStakingPower {
+		if sum > MaxTotalVotingPower {
 			panic(fmt.Sprintf(
 				"Total voting power should be guarded to not exceed %v; got: %v",
-				MaxTotalStakingPower,
+				MaxTotalVotingPower,
 				sum))
 		}
 	}

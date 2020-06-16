@@ -22,6 +22,23 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
+func TestMaxVotingPowerTest(t *testing.T) {
+	large := MaxTotalStakingPower
+	maxDiff := int64(0)
+	for i := 0; i < 8; i++ {
+		for j := 0; j < 8; j++ {
+			testNum := (large - int64(i)) >> j
+			casted := int64(float64(testNum))
+			t.Logf("org=%d, casting=%d", testNum, casted)
+			if maxDiff < casted-testNum {
+				maxDiff = casted - testNum
+			}
+		}
+	}
+	t.Logf("max difference=%d", maxDiff)
+	assert.True(t, MaxTotalStakingPower+maxDiff <= MaxTotalVotingPower)
+}
+
 func TestValidatorSetBasic(t *testing.T) {
 	// empty or nil validator lists are allowed,
 	// but attempting to IncrementProposerPriority on them will panic.

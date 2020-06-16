@@ -24,6 +24,17 @@ const (
 	// and leaves room for defensive purposes.
 	MaxTotalStakingPower = int64(math.MaxInt64) / 8
 
+	// MaxTotalVotingPower should be same to MaxTotalStakingPower theoretically,
+	// but the value can be higher when it is type-casted as float64
+	// because of the number of valid digits of float64.
+	// This phenomenon occurs in the following computations.
+	//
+	// `winner.SetWinPoint(int64(float64(totalPriority) * winPoints[i] / totalWinPoint))` lib/rand/sampling.go
+	//
+	// MaxTotalVotingPower can be as large as MaxTotalStakingPower+8.
+	// Please refer TestMaxVotingPowerTest for this.
+	MaxTotalVotingPower = MaxTotalStakingPower + 8
+
 	// PriorityWindowSizeFactor - is a constant that when multiplied with the
 	// total voting power gives the maximum allowed distance between validator
 	// priorities.
