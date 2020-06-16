@@ -74,7 +74,7 @@ func (pkz privKeys) ToVoters(init, inc int64) *types.VoterSet {
 	for i, k := range pkz {
 		res[i] = types.NewValidator(k.PubKey(), init+int64(i)*inc)
 	}
-	return types.NewVoterSet(res)
+	return types.ToVoterAll(res)
 }
 
 // signHeader properly signs the header with all keys from first to last exclusive.

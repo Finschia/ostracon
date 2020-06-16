@@ -33,8 +33,8 @@ func TestInquirerValidPath(t *testing.T) {
 	count := 50
 	fcz := make([]FullCommit, count)
 	for i := 0; i < count; i++ {
-		vals := types.ToVoterAll(keys.ToValidators(vote, 0))
-		nextVals := types.ToVoterAll(nkeys.ToValidators(vote, 0))
+		vals := types.ToVoterAll(keys.ToValidators(vote, 0).Validators)
+		nextVals := types.ToVoterAll(nkeys.ToValidators(vote, 0).Validators)
 		h := int64(1 + i)
 		appHash := []byte(fmt.Sprintf("h=%d", h))
 		fcz[i] = keys.GenFullCommit(
@@ -89,9 +89,9 @@ func TestDynamicVerify(t *testing.T) {
 	chainID := "dynamic-verifier"
 	power := int64(10)
 	keys1 := genPrivKeys(5)
-	vals1 := types.ToVoterAll(keys1.ToValidators(power, 0))
+	vals1 := types.ToVoterAll(keys1.ToValidators(power, 0).Validators)
 	keys2 := genPrivKeys(5)
-	vals2 := types.ToVoterAll(keys2.ToValidators(power, 0))
+	vals2 := types.ToVoterAll(keys2.ToValidators(power, 0).Validators)
 
 	// make some commits with the first
 	for i := 0; i < n1; i++ {
@@ -154,8 +154,8 @@ func TestInquirerVerifyHistorical(t *testing.T) {
 	consHash := []byte("special-params")
 	fcz := make([]FullCommit, count)
 	for i := 0; i < count; i++ {
-		vals := types.ToVoterAll(keys.ToValidators(vote, 0))
-		nextVals := types.ToVoterAll(nkeys.ToValidators(vote, 0))
+		vals := types.ToVoterAll(keys.ToValidators(vote, 0).Validators)
+		nextVals := types.ToVoterAll(nkeys.ToValidators(vote, 0).Validators)
 		h := int64(1 + i)
 		appHash := []byte(fmt.Sprintf("h=%d", h))
 		resHash := []byte(fmt.Sprintf("res=%d", h))
@@ -237,8 +237,8 @@ func TestConcurrencyInquirerVerify(t *testing.T) {
 	consHash := []byte("special-params")
 	fcz := make([]FullCommit, count)
 	for i := 0; i < count; i++ {
-		vals := types.ToVoterAll(keys.ToValidators(vote, 0))
-		nextVals := types.ToVoterAll(nkeys.ToValidators(vote, 0))
+		vals := types.ToVoterAll(keys.ToValidators(vote, 0).Validators)
+		nextVals := types.ToVoterAll(nkeys.ToValidators(vote, 0).Validators)
 		h := int64(1 + i)
 		appHash := []byte(fmt.Sprintf("h=%d", h))
 		resHash := []byte(fmt.Sprintf("res=%d", h))

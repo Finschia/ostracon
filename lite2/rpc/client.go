@@ -375,7 +375,7 @@ func (c *Client) Validators(height *int64, page, perPage int) (*ctypes.ResultVot
 
 	// Verify validators.
 	if res.Count <= res.Total {
-		if rH, tH := types.NewVoterSet(res.Voters).Hash(), h.VotersHash; !bytes.Equal(rH, tH) {
+		if rH, tH := types.WrapValidatorsToVoterSet(res.Voters).Hash(), h.VotersHash; !bytes.Equal(rH, tH) {
 			return nil, fmt.Errorf("validators %X does not match with trusted validators %X",
 				rH, tH)
 		}

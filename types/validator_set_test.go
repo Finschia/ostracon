@@ -22,6 +22,23 @@ import (
 	tmtime "github.com/tendermint/tendermint/types/time"
 )
 
+func TestMaxVotingPowerTest(t *testing.T) {
+	large := MaxTotalStakingPower
+	maxDiff := int64(0)
+	for i := 0; i < 8; i++ {
+		for j := 0; j < 8; j++ {
+			testNum := (large - int64(i)) >> j
+			casted := int64(float64(testNum))
+			t.Logf("org=%d, casting=%d", testNum, casted)
+			if maxDiff < casted-testNum {
+				maxDiff = casted - testNum
+			}
+		}
+	}
+	t.Logf("max difference=%d", maxDiff)
+	assert.True(t, MaxTotalStakingPower+maxDiff <= MaxTotalVotingPower)
+}
+
 func TestValidatorSetBasic(t *testing.T) {
 	// empty or nil validator lists are allowed,
 	// but attempting to IncrementProposerPriority on them will panic.
@@ -48,11 +65,11 @@ func TestValidatorSetBasic(t *testing.T) {
 	assert.Nil(t, addr)
 	assert.Nil(t, val)
 	assert.Zero(t, vset.Size())
-	assert.Equal(t, int64(0), vset.TotalVotingPower())
+	assert.Equal(t, int64(0), vset.TotalStakingPower())
 	assert.Nil(t, vset.Hash())
 
 	// add
-	val = randValidator(vset.TotalVotingPower())
+	val = randValidator(vset.TotalStakingPower())
 	assert.NoError(t, vset.UpdateWithChangeSet([]*Validator{val}))
 
 	assert.True(t, vset.HasAddress(val.Address))
@@ -61,17 +78,17 @@ func TestValidatorSetBasic(t *testing.T) {
 	addr, _ = vset.GetByIndex(0)
 	assert.Equal(t, []byte(val.Address), addr)
 	assert.Equal(t, 1, vset.Size())
-	assert.Equal(t, val.VotingPower, vset.TotalVotingPower())
+	assert.Equal(t, val.StakingPower, vset.TotalStakingPower())
 	assert.NotNil(t, vset.Hash())
 	assert.NotPanics(t, func() { vset.IncrementProposerPriority(1) })
 	assert.Equal(t, val.Address,
 		vset.SelectProposer([]byte{}, 1, 0).Address)
 
 	// update
-	val = randValidator(vset.TotalVotingPower())
+	val = randValidator(vset.TotalStakingPower())
 	assert.NoError(t, vset.UpdateWithChangeSet([]*Validator{val}))
 	_, val = vset.GetByAddress(val.Address)
-	val.VotingPower += 100
+	val.StakingPower += 100
 	proposerPriority := val.ProposerPriority
 
 	val.ProposerPriority = 0
@@ -160,7 +177,7 @@ func verifyWinningRate(t *testing.T, vals *ValidatorSet, tries int, error float6
 	}
 
 	for i := 0; i < len(actual); i++ {
-		expected := float64(vals.Validators[i].VotingPower) / float64(vals.TotalVotingPower())
+		expected := float64(vals.Validators[i].StakingPower) / float64(vals.TotalStakingPower())
 		if math.Abs(expected-actual[i]) > expected*error {
 			t.Errorf("The winning rate is too far off from expected: %f ∉ %f±%f",
 				actual[i], expected, expected*error)
@@ -183,6 +200,7 @@ func TestProposerSelection1(t *testing.T) {
 		`foo baz foo foo baz foo foo baz bar foo foo foo baz foo baz baz bar foo foo foo foo baz bar bar bar bar foo ` +
 		`foo foo baz foo foo foo foo foo foo baz foo foo baz bar bar foo bar foo foo baz bar foo foo baz foo foo baz ` +
 		`foo foo bar foo foo baz foo foo foo bar foo foo baz baz foo foo bar baz foo baz`
+
 	if expected != strings.Join(proposers, " ") {
 		t.Errorf("expected sequence of proposers was\n%v\nbut got \n%v", expected, strings.Join(proposers, " "))
 	}
@@ -214,7 +232,7 @@ func TestProposerSelection2(t *testing.T) {
 	// One validator has more than the others
 	*val2 = *newValidator(addr2, 401)
 	vals = NewValidatorSet(valList)
-	verifyWinningRate(t, vals, 100000, 0.01)
+	verifyWinningRate(t, vals, 10000, 0.01)
 
 	// each validator should be the proposer a proportional number of times
 	val0, val1, val2 = newValidator(addr0, 4), newValidator(addr1, 5), newValidator(addr2, 3)
@@ -226,12 +244,12 @@ func TestProposerSelection2(t *testing.T) {
 		prop := vals.SelectProposer([]byte{}, int64(i), 0)
 		propCount[bytesToInt(prop.Address)]++
 	}
-	fmt.Printf("%v", propCount)
+	fmt.Printf("%v\n", propCount)
 
 	if propCount[0] != 40257 {
 		t.Fatalf(
 			"Expected prop count for validator with 4/12 of voting power to be %d/%d. Got %d/%d",
-			40185,
+			40038,
 			10000*N,
 			propCount[0],
 			10000*N,
@@ -240,7 +258,7 @@ func TestProposerSelection2(t *testing.T) {
 	if propCount[1] != 50017 {
 		t.Fatalf(
 			"Expected prop count for validator with 5/12 of voting power to be %d/%d. Got %d/%d",
-			40185,
+			50077,
 			10000*N,
 			propCount[1],
 			10000*N,
@@ -249,7 +267,7 @@ func TestProposerSelection2(t *testing.T) {
 	if propCount[2] != 29726 {
 		t.Fatalf(
 			"Expected prop count for validator with 3/12 of voting power to be %d/%d. Got %d/%d",
-			40185,
+			29885,
 			10000*N,
 			propCount[2],
 			10000*N,
@@ -258,7 +276,7 @@ func TestProposerSelection2(t *testing.T) {
 }
 
 func newValidator(address []byte, power int64) *Validator {
-	return &Validator{Address: address, VotingPower: power, PubKey: randPubKey()}
+	return &Validator{Address: address, StakingPower: power, PubKey: randPubKey()}
 }
 
 func randPubKey() crypto.PubKey {
@@ -267,27 +285,31 @@ func randPubKey() crypto.PubKey {
 	return ed25519.PubKeyEd25519(pubKey)
 }
 
-func max(a, b int64) int64 {
-	if a >= b {
-		return a
+func defendLimit(a int64) int64 {
+	if a <= 0 {
+		return 1
 	}
-	return b
+	if a > MaxTotalStakingPower/8 {
+		a = MaxTotalStakingPower / 8
+	}
+	return a
 }
 
-func randValidator(totalVotingPower int64) *Validator {
-	// this modulo limits the ProposerPriority/VotingPower to stay in the
-	// bounds of MaxTotalVotingPower minus the already existing voting power:
-	val := NewValidator(randPubKey(), max(int64(tmrand.Uint64()%uint64((MaxTotalVotingPower-totalVotingPower))), 1))
-	val.ProposerPriority = tmrand.Int64() % (MaxTotalVotingPower - totalVotingPower)
+func randValidator(totalStakingPower int64) *Validator {
+	// this modulo limits the ProposerPriority/StakingPower to stay in the
+	// bounds of MaxTotalStakingPower minus the already existing voting power:
+	stakingPower := defendLimit(int64(tmrand.Uint64() % uint64(MaxTotalStakingPower-totalStakingPower)))
+	val := NewValidator(randPubKey(), stakingPower)
+	val.ProposerPriority = stakingPower
 	return val
 }
 
 func randValidatorSet(numValidators int) *ValidatorSet {
 	validators := make([]*Validator, numValidators)
-	totalVotingPower := int64(0)
+	totalStakingPower := int64(0)
 	for i := 0; i < numValidators; i++ {
-		validators[i] = randValidator(totalVotingPower)
-		totalVotingPower += validators[i].VotingPower
+		validators[i] = randValidator(totalStakingPower)
+		totalStakingPower += validators[i].StakingPower
 	}
 	return NewValidatorSet(validators)
 }
@@ -329,14 +351,14 @@ func (vals *ValidatorSet) fromBytes(b []byte) {
 
 //-------------------------------------------------------------------
 
-func TestValidatorSetTotalVotingPowerPanicsOnOverflow(t *testing.T) {
-	// NewValidatorSet calls IncrementProposerPriority which calls TotalVotingPower()
+func TestValidatorSetTotalStakingPowerPanicsOnOverflow(t *testing.T) {
+	// NewValidatorSet calls IncrementProposerPriority which calls TotalStakingPower()
 	// which should panic on overflows:
 	shouldPanic := func() {
 		NewValidatorSet([]*Validator{
-			{Address: []byte("a"), VotingPower: math.MaxInt64, ProposerPriority: 0},
-			{Address: []byte("b"), VotingPower: math.MaxInt64, ProposerPriority: 0},
-			{Address: []byte("c"), VotingPower: math.MaxInt64, ProposerPriority: 0},
+			{Address: []byte("a"), StakingPower: math.MaxInt64, ProposerPriority: 0},
+			{Address: []byte("b"), StakingPower: math.MaxInt64, ProposerPriority: 0},
+			{Address: []byte("c"), StakingPower: math.MaxInt64, ProposerPriority: 0},
 		})
 	}
 
@@ -420,7 +442,7 @@ func TestAveragingInIncrementProposerPriority(t *testing.T) {
 	}
 }
 
-func TestAveragingInIncrementProposerPriorityWithVotingPower(t *testing.T) {
+func TestAveragingInIncrementProposerPriorityWithStakingPower(t *testing.T) {
 	// Other than TestAveragingInIncrementProposerPriority this is a more complete test showing
 	// how each ProposerPriority changes in relation to the validator's voting power respectively.
 	// average is zero in each round:
@@ -430,9 +452,9 @@ func TestAveragingInIncrementProposerPriorityWithVotingPower(t *testing.T) {
 	total := vp0 + vp1 + vp2
 	avg := (vp0 + vp1 + vp2 - total) / 3
 	vals := ValidatorSet{Validators: []*Validator{
-		{Address: []byte{0}, ProposerPriority: 0, VotingPower: vp0},
-		{Address: []byte{1}, ProposerPriority: 0, VotingPower: vp1},
-		{Address: []byte{2}, ProposerPriority: 0, VotingPower: vp2}}}
+		{Address: []byte{0}, ProposerPriority: 0, StakingPower: vp0},
+		{Address: []byte{1}, ProposerPriority: 0, StakingPower: vp1},
+		{Address: []byte{2}, ProposerPriority: 0, StakingPower: vp2}}}
 	tcs := []struct {
 		vals                  *ValidatorSet
 		wantProposerPrioritys []int64
@@ -443,7 +465,7 @@ func TestAveragingInIncrementProposerPriorityWithVotingPower(t *testing.T) {
 		0: {
 			vals.Copy(),
 			[]int64{
-				// Acumm+VotingPower-Avg:
+				// Acumm+StakingPower-Avg:
 				0 + vp0 - total - avg, // mostest will be subtracted by total voting power (12)
 				0 + vp1,
 				0 + vp2},
@@ -477,7 +499,7 @@ func TestAveragingInIncrementProposerPriorityWithVotingPower(t *testing.T) {
 			vals.Copy(),
 			[]int64{
 				0 + 4*(vp0-total) + vp0, // 4 iters was mostest
-				0 + 5*vp1 - total,       // now this val is mostest for the 1st time (hence -12==totalVotingPower)
+				0 + 5*vp1 - total,       // now this val is mostest for the 1st time (hence -12==totalStakingPower)
 				0 + 5*vp2},
 			5,
 			vals.Validators[2]},
@@ -518,14 +540,14 @@ func TestAveragingInIncrementProposerPriorityWithVotingPower(t *testing.T) {
 			[]int64{
 				0 + 10*vp0 - 8*total, // after 10 iters this is mostest again
 				0 + 10*vp1 - total,   // after 6 iters this val is "mostest" once and not in between
-				0 + 10*vp2 - total}, // in between 10 iters this val is "mostest" once
+				0 + 10*vp2 - total},  // in between 10 iters this val is "mostest" once
 			10,
 			vals.Validators[0]},
 		10: {
 			vals.Copy(),
 			[]int64{
 				0 + 11*vp0 - 9*total,
-				0 + 11*vp1 - total, // after 6 iters this val is "mostest" once and not in between
+				0 + 11*vp1 - total,  // after 6 iters this val is "mostest" once and not in between
 				0 + 11*vp2 - total}, // after 10 iters this val is "mostest" once
 			11,
 			vals.Validators[1]},
@@ -578,7 +600,7 @@ func TestValidatorSetVerifyCommit(t *testing.T) {
 	privKey := ed25519.GenPrivKey()
 	pubKey := privKey.PubKey()
 	v1 := NewValidator(pubKey, 1000)
-	vset := NewVoterSet([]*Validator{v1})
+	vset := ToVoterAll([]*Validator{v1})
 
 	// good
 	var (
@@ -732,11 +754,11 @@ func verifyValidatorSet(t *testing.T, valSet *ValidatorSet) {
 	assert.Equal(t, len(valSet.Validators), cap(valSet.Validators))
 
 	// verify that the set's total voting power has been updated
-	tvp := valSet.totalVotingPower
-	valSet.updateTotalVotingPower()
-	expectedTvp := valSet.TotalVotingPower()
+	tvp := valSet.totalStakingPower
+	valSet.updateTotalStakingPower()
+	expectedTvp := valSet.TotalStakingPower()
 	assert.Equal(t, expectedTvp, tvp,
-		"expected TVP %d. Got %d, valSet=%s", expectedTvp, tvp, valSet)
+		"expected TVP %d. Got %d, voterSet=%s", expectedTvp, tvp, valSet)
 
 	// verify that validator priorities are centered
 	valsCount := int64(len(valSet.Validators))
@@ -754,7 +776,7 @@ func toTestValList(valList []*Validator) []testVal {
 	testList := make([]testVal, len(valList))
 	for i, val := range valList {
 		testList[i].name = string(val.Address)
-		testList[i].power = val.VotingPower
+		testList[i].power = val.StakingPower
 	}
 	return testList
 }
@@ -846,7 +868,7 @@ func TestValSetUpdatesDuplicateEntries(t *testing.T) {
 }
 
 func TestValSetUpdatesOverflows(t *testing.T) {
-	maxVP := MaxTotalVotingPower
+	maxVP := MaxTotalStakingPower
 	testCases := []valSetErrTestCase{
 		{ // single update leading to overflow
 			testValSet(2, 10),
@@ -954,7 +976,7 @@ func TestValSetUpdatesBasicTestsExecute(t *testing.T) {
 		// is changed in the list of validators previously passed as parameter to UpdateWithChangeSet.
 		// this is to make sure copies of the validators are made by UpdateWithChangeSet.
 		if len(valList) > 0 {
-			valList[0].VotingPower++
+			valList[0].StakingPower++
 			assert.Equal(t, toTestValList(valListCopy), toTestValList(valSet.Validators), "test %v", i)
 
 		}
@@ -1250,39 +1272,39 @@ func TestValSetUpdateOverflowRelated(t *testing.T) {
 	testCases := []testVSetCfg{
 		{
 			name:         "1 no false overflow error messages for updates",
-			startVals:    []testVal{{"v1", 1}, {"v2", MaxTotalVotingPower - 1}},
-			updatedVals:  []testVal{{"v1", MaxTotalVotingPower - 1}, {"v2", 1}},
-			expectedVals: []testVal{{"v1", MaxTotalVotingPower - 1}, {"v2", 1}},
+			startVals:    []testVal{{"v1", 1}, {"v2", MaxTotalStakingPower - 1}},
+			updatedVals:  []testVal{{"v1", MaxTotalStakingPower - 1}, {"v2", 1}},
+			expectedVals: []testVal{{"v1", MaxTotalStakingPower - 1}, {"v2", 1}},
 			wantErr:      false,
 		},
 		{
 			// this test shows that it is important to apply the updates in the order of the change in power
 			// i.e. apply first updates with decreases in power, v2 change in this case.
 			name:         "2 no false overflow error messages for updates",
-			startVals:    []testVal{{"v1", 1}, {"v2", MaxTotalVotingPower - 1}},
-			updatedVals:  []testVal{{"v1", MaxTotalVotingPower/2 - 1}, {"v2", MaxTotalVotingPower / 2}},
-			expectedVals: []testVal{{"v1", MaxTotalVotingPower/2 - 1}, {"v2", MaxTotalVotingPower / 2}},
+			startVals:    []testVal{{"v1", 1}, {"v2", MaxTotalStakingPower - 1}},
+			updatedVals:  []testVal{{"v1", MaxTotalStakingPower/2 - 1}, {"v2", MaxTotalStakingPower / 2}},
+			expectedVals: []testVal{{"v1", MaxTotalStakingPower/2 - 1}, {"v2", MaxTotalStakingPower / 2}},
 			wantErr:      false,
 		},
 		{
 			name:         "3 no false overflow error messages for deletes",
-			startVals:    []testVal{{"v1", MaxTotalVotingPower - 2}, {"v2", 1}, {"v3", 1}},
+			startVals:    []testVal{{"v1", MaxTotalStakingPower - 2}, {"v2", 1}, {"v3", 1}},
 			deletedVals:  []testVal{{"v1", 0}},
-			addedVals:    []testVal{{"v4", MaxTotalVotingPower - 2}},
-			expectedVals: []testVal{{"v2", 1}, {"v3", 1}, {"v4", MaxTotalVotingPower - 2}},
+			addedVals:    []testVal{{"v4", MaxTotalStakingPower - 2}},
+			expectedVals: []testVal{{"v2", 1}, {"v3", 1}, {"v4", MaxTotalStakingPower - 2}},
 			wantErr:      false,
 		},
 		{
 			name: "4 no false overflow error messages for adds, updates and deletes",
 			startVals: []testVal{
-				{"v1", MaxTotalVotingPower / 4}, {"v2", MaxTotalVotingPower / 4},
-				{"v3", MaxTotalVotingPower / 4}, {"v4", MaxTotalVotingPower / 4}},
+				{"v1", MaxTotalStakingPower / 4}, {"v2", MaxTotalStakingPower / 4},
+				{"v3", MaxTotalStakingPower / 4}, {"v4", MaxTotalStakingPower / 4}},
 			deletedVals: []testVal{{"v2", 0}},
 			updatedVals: []testVal{
-				{"v1", MaxTotalVotingPower/2 - 2}, {"v3", MaxTotalVotingPower/2 - 3}, {"v4", 2}},
+				{"v1", MaxTotalStakingPower/2 - 2}, {"v3", MaxTotalStakingPower/2 - 3}, {"v4", 2}},
 			addedVals: []testVal{{"v5", 3}},
 			expectedVals: []testVal{
-				{"v1", MaxTotalVotingPower/2 - 2}, {"v3", MaxTotalVotingPower/2 - 3}, {"v4", 2}, {"v5", 3}},
+				{"v1", MaxTotalStakingPower/2 - 2}, {"v3", MaxTotalStakingPower/2 - 3}, {"v4", 2}, {"v5", 3}},
 			wantErr: false,
 		},
 		{
@@ -1291,9 +1313,9 @@ func TestValSetUpdateOverflowRelated(t *testing.T) {
 				{"v1", 1}, {"v2", 1}, {"v3", 1}, {"v4", 1}, {"v5", 1},
 				{"v6", 1}, {"v7", 1}, {"v8", 1}, {"v9", 1}},
 			updatedVals: []testVal{
-				{"v1", MaxTotalVotingPower}, {"v2", MaxTotalVotingPower}, {"v3", MaxTotalVotingPower},
-				{"v4", MaxTotalVotingPower}, {"v5", MaxTotalVotingPower}, {"v6", MaxTotalVotingPower},
-				{"v7", MaxTotalVotingPower}, {"v8", MaxTotalVotingPower}, {"v9", 8}},
+				{"v1", MaxTotalStakingPower}, {"v2", MaxTotalStakingPower}, {"v3", MaxTotalStakingPower},
+				{"v4", MaxTotalStakingPower}, {"v5", MaxTotalStakingPower}, {"v6", MaxTotalStakingPower},
+				{"v7", MaxTotalStakingPower}, {"v8", MaxTotalStakingPower}, {"v9", 8}},
 			expectedVals: []testVal{
 				{"v1", 1}, {"v2", 1}, {"v3", 1}, {"v4", 1}, {"v5", 1},
 				{"v6", 1}, {"v7", 1}, {"v8", 1}, {"v9", 1}},
@@ -1344,8 +1366,8 @@ func TestVerifyCommitTrusting(t *testing.T) {
 		},
 		// good - first two are different but the rest of the same -> >1/3
 		2: {
-			//voterSet: NewValidatorSet(append(newValSet.Validators, originalValset.Validators...)),
-			voterSet: NewVoterSet(append(newVoterSet.Voters, originalVoterSet.Voters...)),
+			//voterSet: WrapValidatorsToVoterSet(append(newValSet.Validators, originalValset.Validators...)),
+			voterSet: WrapValidatorsToVoterSet(append(newVoterSet.Voters, originalVoterSet.Voters...)),
 			err:      false,
 		},
 	}

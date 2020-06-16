@@ -50,11 +50,11 @@ func SequentialVerification() Option {
 }
 
 // SkippingVerification option configures the light client to skip headers as
-// long as {trustLevel} of the old validator set signed the new header. The
+// long as {trustLevel} of the old voter set signed the new header. The
 // bisection algorithm from the specification is used for finding the minimal
 // "trust path".
 //
-// trustLevel - fraction of the old validator set (in terms of voting power),
+// trustLevel - fraction of the old voter set (in terms of voting power),
 // which must sign the new header in order for us to trust it. NOTE this only
 // applies to non-adjacent headers. For adjacent headers, sequential
 // verification is used.
@@ -65,9 +65,9 @@ func SkippingVerification(trustLevel tmmath.Fraction) Option {
 	}
 }
 
-// PruningSize option sets the maximum amount of headers & validator set pairs
+// PruningSize option sets the maximum amount of headers & voter set pairs
 // that the light client stores. When Prune() is run, all headers (along with
-// the associated validator sets) that are earlier than the h amount of headers
+// the associated voter sets) that are earlier than the h amount of headers
 // will be removed from the store. Default: 1000. A pruning size of 0 will not
 // prune the lite client at all.
 func PruningSize(h uint16) Option {
@@ -132,8 +132,8 @@ type Client struct {
 	trustedStore store.Store
 	// Highest trusted header from the store (height=H).
 	latestTrustedHeader *types.SignedHeader
-	// Highest validator set from the store (height=H).
-	latestTrustedVals *types.VoterSet
+	// Highest voter set from the store (height=H).
+	latestTrustedVoters *types.VoterSet
 
 	// See RemoveNoLongerTrustedHeadersPeriod option
 	pruningSize uint16
@@ -262,13 +262,13 @@ func (c *Client) restoreTrustedHeaderAndVals() error {
 
 		trustedVals, err := c.trustedStore.VoterSet(lastHeight)
 		if err != nil {
-			return fmt.Errorf("can't get last trusted validators: %w", err)
+			return fmt.Errorf("can't get last trusted voters: %w", err)
 		}
 
 		c.latestTrustedHeader = trustedHeader
-		c.latestTrustedVals = trustedVals
+		c.latestTrustedVoters = trustedVals
 
-		c.logger.Info("Restored trusted header and vals", "height", lastHeight)
+		c.logger.Info("Restored trusted header and voters", "height", lastHeight)
 	}
 
 	return nil
@@ -375,32 +375,32 @@ func (c *Client) initializeWithTrustOptions(options TrustOptions) error {
 		return err
 	}
 
-	// 2) Fetch and verify the vals.
-	vals, err := c.validatorSetFromPrimary(options.Height)
+	// 2) Fetch and verify the voters.
+	voters, err := c.voterSetFromPrimary(options.Height)
 	if err != nil {
 		return err
 	}
 
-	if !bytes.Equal(h.VotersHash, vals.Hash()) {
-		return fmt.Errorf("expected header's validators (%X) to match those that were supplied (%X)",
+	if !bytes.Equal(h.VotersHash, voters.Hash()) {
+		return fmt.Errorf("expected header's voters (%X) to match those that were supplied (%X)",
 			h.VotersHash,
-			vals.Hash(),
+			voters.Hash(),
 		)
 	}
 
-	// Ensure that +2/3 of validators signed correctly.
-	err = vals.VerifyCommit(c.chainID, h.Commit.BlockID, h.Height, h.Commit)
+	// Ensure that +2/3 of voters signed correctly.
+	err = voters.VerifyCommit(c.chainID, h.Commit.BlockID, h.Height, h.Commit)
 	if err != nil {
 		return fmt.Errorf("invalid commit: %w", err)
 	}
 
 	// 3) Persist both of them and continue.
-	return c.updateTrustedHeaderAndVals(h, vals)
+	return c.updateTrustedHeaderAndVals(h, voters)
 }
 
 // TrustedHeader returns a trusted header at the given height (0 - the latest).
 //
-// Headers along with validator sets, which can't be trusted anymore, are
+// Headers along with voter sets, which can't be trusted anymore, are
 // removed once a day (can be changed with RemoveNoLongerTrustedHeadersPeriod
 // option).
 // .
@@ -421,13 +421,13 @@ func (c *Client) TrustedHeader(height int64) (*types.SignedHeader, error) {
 	return c.trustedStore.SignedHeader(height)
 }
 
-// TrustedVoterSet returns a trusted validator set at the given height (0 -
+// TrustedVoterSet returns a trusted voter set at the given height (0 -
 // latest). The second return parameter is the height used (useful if 0 was
 // passed; otherwise can be ignored).
 //
 // height must be >= 0.
 //
-// Headers along with validator sets are
+// Headers along with voter sets are
 // removed once a day (can be changed with RemoveNoLongerTrustedHeadersPeriod
 // option).
 //
@@ -435,7 +435,7 @@ func (c *Client) TrustedHeader(height int64) (*types.SignedHeader, error) {
 //  - there are some issues with the trusted store, although that should not
 //  happen normally;
 //  - negative height is passed;
-//  - header signed by that validator set has not been verified yet
+//  - header signed by that voter set has not been verified yet
 //
 // Safe for concurrent use by multiple goroutines.
 func (c *Client) TrustedVoterSet(height int64) (valSet *types.VoterSet, heightUsed int64, err error) {
@@ -471,7 +471,7 @@ func (c *Client) compareWithLatestHeight(height int64) (int64, error) {
 	return height, nil
 }
 
-// VerifyHeaderAtHeight fetches header and validators at the given height
+// VerifyHeaderAtHeight fetches header and voters at the given height
 // and calls VerifyHeader. It returns header immediately if such exists in
 // trustedStore (no verification is needed).
 //
@@ -505,12 +505,12 @@ func (c *Client) VerifyHeaderAtHeight(height int64, now time.Time) (*types.Signe
 // immediately if newHeader exists in trustedStore (no verification is
 // needed). Else it performs one of the two types of verification:
 //
-// SequentialVerification: verifies that 2/3 of the trusted validator set has
+// SequentialVerification: verifies that 2/3 of the trusted voter set has
 // signed the new header. If the headers are not adjacent, **all** intermediate
 // headers will be requested. Intermediate headers are not saved to database.
 //
 // SkippingVerification(trustLevel): verifies that {trustLevel} of the trusted
-// validator set has signed the new header. If it's not the case and the
+// voter set has signed the new header. If it's not the case and the
 // headers are not adjacent, bisection is performed and necessary (not all)
 // intermediate headers will be requested. See the specification for details.
 // Intermediate headers are not saved to database.
@@ -561,7 +561,7 @@ func (c *Client) verifyHeader(newHeader *types.SignedHeader, newVals *types.Vote
 		case sequential:
 			err = c.sequence(c.latestTrustedHeader, newHeader, newVals, now)
 		case skipping:
-			err = c.bisection(c.latestTrustedHeader, c.latestTrustedVals, newHeader, newVals, now)
+			err = c.bisection(c.latestTrustedHeader, c.latestTrustedVoters, newHeader, newVals, now)
 		default:
 			panic(fmt.Sprintf("Unknown verification mode: %b", c.verificationMode))
 		}
@@ -598,7 +598,7 @@ func (c *Client) verifyHeader(newHeader *types.SignedHeader, newVals *types.Vote
 			} else {
 				closestVotorSet, _, err = c.TrustedVoterSet(closestHeader.Height)
 				if err != nil {
-					return fmt.Errorf("can't get validator set at height %d: %w", closestHeader.Height, err)
+					return fmt.Errorf("can't get voter set at height %d: %w", closestHeader.Height, err)
 				}
 				err = c.bisection(closestHeader, closestVotorSet, newHeader, newVals, now)
 			}
@@ -801,16 +801,16 @@ func (c *Client) Witnesses() []provider.Provider {
 	return c.witnesses
 }
 
-// Cleanup removes all the data (headers and validator sets) stored. Note: the
+// Cleanup removes all the data (headers and voter sets) stored. Note: the
 // client must be stopped at this point.
 func (c *Client) Cleanup() error {
 	c.logger.Info("Removing all the data")
 	c.latestTrustedHeader = nil
-	c.latestTrustedVals = nil
+	c.latestTrustedVoters = nil
 	return c.trustedStore.Prune(0)
 }
 
-// cleanupAfter deletes all headers & validator sets after +height+. It also
+// cleanupAfter deletes all headers & voter sets after +height+. It also
 // resets latestTrustedHeader to the latest header.
 func (c *Client) cleanupAfter(height int64) error {
 	prevHeight := c.latestTrustedHeader.Height
@@ -825,7 +825,7 @@ func (c *Client) cleanupAfter(height int64) error {
 
 		err = c.trustedStore.DeleteSignedHeaderAndValidatorSet(h.Height)
 		if err != nil {
-			c.logger.Error("can't remove a trusted header & validator set", "err", err,
+			c.logger.Error("can't remove a trusted header & voter set", "err", err,
 				"height", h.Height)
 		}
 
@@ -833,7 +833,7 @@ func (c *Client) cleanupAfter(height int64) error {
 	}
 
 	c.latestTrustedHeader = nil
-	c.latestTrustedVals = nil
+	c.latestTrustedVoters = nil
 	err := c.restoreTrustedHeaderAndVals()
 	if err != nil {
 		return err
@@ -842,12 +842,12 @@ func (c *Client) cleanupAfter(height int64) error {
 	return nil
 }
 
-func (c *Client) updateTrustedHeaderAndVals(h *types.SignedHeader, vals *types.VoterSet) error {
-	if !bytes.Equal(h.VotersHash, vals.Hash()) {
-		return fmt.Errorf("expected validator's hash %X, but got %X", h.VotersHash, vals.Hash())
+func (c *Client) updateTrustedHeaderAndVals(h *types.SignedHeader, voters *types.VoterSet) error {
+	if !bytes.Equal(h.VotersHash, voters.Hash()) {
+		return fmt.Errorf("expected voter's hash %X, but got %X", h.VotersHash, voters.Hash())
 	}
 
-	if err := c.trustedStore.SaveSignedHeaderAndValidatorSet(h, vals); err != nil {
+	if err := c.trustedStore.SaveSignedHeaderAndValidatorSet(h, voters); err != nil {
 		return fmt.Errorf("failed to save trusted header: %w", err)
 	}
 
@@ -859,20 +859,20 @@ func (c *Client) updateTrustedHeaderAndVals(h *types.SignedHeader, vals *types.V
 
 	if c.latestTrustedHeader == nil || h.Height > c.latestTrustedHeader.Height {
 		c.latestTrustedHeader = h
-		c.latestTrustedVals = vals
+		c.latestTrustedVoters = voters
 	}
 
 	return nil
 }
 
-// fetch header and validators for the given height (0 - latest) from primary
+// fetch header and voters for the given height (0 - latest) from primary
 // provider.
 func (c *Client) fetchHeaderAndValsAtHeight(height int64) (*types.SignedHeader, *types.VoterSet, error) {
 	h, err := c.signedHeaderFromPrimary(height)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to obtain the header #%d: %w", height, err)
 	}
-	vals, err := c.validatorSetFromPrimary(height)
+	vals, err := c.voterSetFromPrimary(height)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to obtain the vals #%d: %w", height, err)
 	}
@@ -956,7 +956,7 @@ func (c *Client) compareNewHeaderWithWitnesses(h *types.SignedHeader) error {
 			}
 
 			if !bytes.Equal(h.Hash(), altH.Hash()) {
-				if err = c.latestTrustedVals.VerifyCommitTrusting(c.chainID, altH.Commit.BlockID,
+				if err = c.latestTrustedVoters.VerifyCommitTrusting(c.chainID, altH.Commit.BlockID,
 					altH.Height, altH.Commit, c.trustLevel); err != nil {
 					c.logger.Error("Witness sent us incorrect header", "err", err, "witness", witness)
 					witnessesToRemove = append(witnessesToRemove, i)
@@ -1080,18 +1080,18 @@ func (c *Client) signedHeaderFromPrimary(height int64) (*types.SignedHeader, err
 	return c.signedHeaderFromPrimary(height)
 }
 
-// validatorSetFromPrimary retrieves the VoterSet from the primary provider
+// voterSetFromPrimary retrieves the VoterSet from the primary provider
 // at the specified height. Handles dropout by the primary provider after 5
 // attempts by replacing it with an alternative provider.
-func (c *Client) validatorSetFromPrimary(height int64) (*types.VoterSet, error) {
+func (c *Client) voterSetFromPrimary(height int64) (*types.VoterSet, error) {
 	for attempt := uint16(1); attempt <= c.maxRetryAttempts; attempt++ {
 		c.providerMutex.Lock()
-		vals, err := c.primary.VoterSet(height)
+		voters, err := c.primary.VoterSet(height)
 		c.providerMutex.Unlock()
 		if err == nil || err == provider.ErrValidatorSetNotFound {
-			return vals, err
+			return voters, err
 		}
-		c.logger.Error("Failed to get validator set from primary", "attempt", attempt, "err", err)
+		c.logger.Error("Failed to get voter set from primary", "attempt", attempt, "err", err)
 		time.Sleep(backoffTimeout(attempt))
 	}
 
@@ -1101,7 +1101,7 @@ func (c *Client) validatorSetFromPrimary(height int64) (*types.VoterSet, error) 
 		return nil, err
 	}
 
-	return c.validatorSetFromPrimary(height)
+	return c.voterSetFromPrimary(height)
 }
 
 // exponential backoff (with jitter)

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"math"
 	"sort"
 	"strings"
 
@@ -15,7 +14,9 @@ import (
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 )
 
-var MaxVoters = 20
+var (
+	MinVoters = 20
+)
 
 // VoterSet represent a set of *Validator at a given height.
 type VoterSet struct {
@@ -26,11 +27,11 @@ type VoterSet struct {
 	totalVotingPower int64
 }
 
-func NewVoterSet(valz []*Validator) *VoterSet {
-	sort.Sort(ValidatorsByAddress(valz))
-	vals := &VoterSet{Voters: copyValidatorListShallow(valz), totalVotingPower: 0}
-	vals.updateTotalVotingPower()
-	return vals
+func WrapValidatorsToVoterSet(vals []*Validator) *VoterSet {
+	sort.Sort(ValidatorsByAddress(vals))
+	voterSet := &VoterSet{Voters: vals, totalVotingPower: 0}
+	voterSet.updateTotalVotingPower()
+	return voterSet
 }
 
 // IsNilOrEmpty returns true if validator set is nil or empty.
@@ -90,7 +91,7 @@ func (voters *VoterSet) Copy() *VoterSet {
 }
 
 // Forces recalculation of the set's total voting power.
-// Panics if total voting power is bigger than MaxTotalVotingPower.
+// Panics if total voting power is bigger than MaxTotalStakingPower.
 func (voters *VoterSet) updateTotalVotingPower() {
 	sum := int64(0)
 	for _, val := range voters.Voters {
@@ -103,7 +104,6 @@ func (voters *VoterSet) updateTotalVotingPower() {
 				sum))
 		}
 	}
-
 	voters.totalVotingPower = sum
 }
 
@@ -381,62 +381,14 @@ func (voters *VoterSet) StringIndented(indent string) string {
 
 }
 
-func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
-	// TODO: decide MaxVoters; make it to config
-	if len(proofHash) == 0 || validators.Size() <= MaxVoters {
-		// height 1 has voter set that is same to validator set
-		result := &VoterSet{Voters: copyValidatorListShallow(validators.Validators), totalVotingPower: 0}
-		result.updateTotalVotingPower()
-		return result
-	}
-
-	seed := hashToSeed(proofHash)
-	candidates := make([]tmrand.Candidate, len(validators.Validators))
-	for i, val := range validators.Validators {
-		candidates[i] = &candidate{idx: i, win: 0, val: val}
-	}
-	totalSampling := tmrand.RandomSamplingToMax(seed, candidates, MaxVoters, uint64(validators.TotalVotingPower()))
-	voters := 0
-	for _, candi := range candidates {
-		if candi.(*candidate).win > 0 {
-			voters++
-		}
-	}
-
-	vals := make([]*Validator, voters)
-	index := 0
-	for _, candi := range candidates {
-		if candi.(*candidate).win > 0 {
-			vals[index] = &Validator{Address: candi.(*candidate).val.Address,
-				PubKey: candi.(*candidate).val.PubKey,
-				// VotingPower = TotalVotingPower * win / totalSampling : can be overflow
-				VotingPower: validators.TotalVotingPower()/int64(totalSampling)*int64(candi.(*candidate).win) +
-					int64(math.Ceil(float64(validators.TotalVotingPower()%int64(totalSampling))/float64(int64(totalSampling))*
-						float64(candi.(*candidate).win)))}
-			index++
-		}
-	}
-	return NewVoterSet(vals)
-}
-
-// This should be used in only test
-func ToVoterAll(validators *ValidatorSet) *VoterSet {
-	return NewVoterSet(validators.Validators)
-}
-
-// candidate save simple validator data for selecting proposer
 type candidate struct {
-	idx int
-	win uint64
-	val *Validator
+	priority uint64
+	val      *Validator
 }
 
+// for implement Candidate of rand package
 func (c *candidate) Priority() uint64 {
-	// TODO Is it possible to have a negative VotingPower?
-	if c.val.VotingPower < 0 {
-		return 0
-	}
-	return uint64(c.val.VotingPower)
+	return c.priority
 }
 
 func (c *candidate) LessThan(other tmrand.Candidate) bool {
@@ -447,8 +399,61 @@ func (c *candidate) LessThan(other tmrand.Candidate) bool {
 	return bytes.Compare(c.val.Address, o.val.Address) < 0
 }
 
-func (c *candidate) IncreaseWin() {
-	c.win++
+func (c *candidate) SetWinPoint(winPoint int64) {
+	if winPoint < 0 {
+		panic(fmt.Sprintf("VotingPower must not be negative: %d", winPoint))
+	}
+	c.val.VotingPower = winPoint
+}
+
+func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
+	// TODO: decide MinVoters, MinTotalVotingPowerPercent; make it to config
+	if len(proofHash) == 0 || validators.Size() <= MinVoters {
+		// height 1 has voter set that is same to validator set
+		return ToVoterAll(validators.Validators)
+	}
+
+	seed := hashToSeed(proofHash)
+	candidates := make([]tmrand.Candidate, len(validators.Validators))
+	for i, val := range validators.Validators {
+		candidates[i] = &candidate{
+			priority: uint64(val.StakingPower),
+			val:      val.Copy(),
+		}
+	}
+
+	winners := tmrand.RandomSamplingWithoutReplacement(seed, candidates, MinVoters)
+	voters := make([]*Validator, len(winners))
+	for i, winner := range winners {
+		voters[i] = winner.(*candidate).val
+	}
+	return WrapValidatorsToVoterSet(voters)
+}
+
+func ToVoterAll(validators []*Validator) *VoterSet {
+	newVoters := make([]*Validator, len(validators))
+	voterCount := 0
+	for _, val := range validators {
+		if val.StakingPower == 0 {
+			// remove the validator with the staking power of 0 from the voter set
+			continue
+		}
+		newVoters[voterCount] = &Validator{
+			Address:          val.Address,
+			PubKey:           val.PubKey,
+			StakingPower:     val.StakingPower,
+			VotingPower:      val.StakingPower,
+			ProposerPriority: val.ProposerPriority,
+		}
+		voterCount++
+	}
+	if voterCount < len(newVoters) {
+		zeroRemoved := make([]*Validator, voterCount)
+		copy(zeroRemoved, newVoters[:voterCount])
+		newVoters = zeroRemoved
+	}
+	sort.Sort(ValidatorsByAddress(newVoters))
+	return WrapValidatorsToVoterSet(newVoters)
 }
 
 func hashToSeed(hash []byte) uint64 {
