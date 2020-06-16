@@ -31,9 +31,11 @@ const (
 	//
 	// `winner.SetWinPoint(int64(float64(totalPriority) * winPoints[i] / totalWinPoint))` lib/rand/sampling.go
 	//
-	// MaxTotalVotingPower can be as large as MaxTotalStakingPower+8.
+	// MaxTotalVotingPower can be as large as MaxTotalStakingPower+alpha
+	// but I don't know the exact alpha. 1000 seems to be enough by some examination.
 	// Please refer TestMaxVotingPowerTest for this.
-	MaxTotalVotingPower = MaxTotalStakingPower + 8
+	// TODO: 1000 is temporary limit, we should remove float calculation and then we can fix this limit
+	MaxTotalVotingPower = MaxTotalStakingPower + 1000
 
 	// PriorityWindowSizeFactor - is a constant that when multiplied with the
 	// total voting power gives the maximum allowed distance between validator
