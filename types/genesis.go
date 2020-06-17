@@ -34,12 +34,19 @@ type GenesisValidator struct {
 	Name    string        `json:"name"`
 }
 
+type VoterParams struct {
+	VoterElectionThreshold int `json:"voter_election_threshold"`
+	ByzantinePercentage    int `json:"byzantine_percentage"`
+	AccuracyPrecision      int `json:"accuracy_precision"`
+}
+
 // GenesisDoc defines the initial conditions for a tendermint blockchain, in particular its validator set.
 type GenesisDoc struct {
 	GenesisTime     time.Time          `json:"genesis_time"`
 	ChainID         string             `json:"chain_id"`
 	ConsensusParams *ConsensusParams   `json:"consensus_params,omitempty"`
 	Validators      []GenesisValidator `json:"validators,omitempty"`
+	VoterParams     *VoterParams       `json:"voter_params,omitempty"`
 	AppHash         tmbytes.HexBytes   `json:"app_hash"`
 	AppState        json.RawMessage    `json:"app_state,omitempty"`
 }
@@ -76,6 +83,12 @@ func (genDoc *GenesisDoc) ValidateAndComplete() error {
 	if genDoc.ConsensusParams == nil {
 		genDoc.ConsensusParams = DefaultConsensusParams()
 	} else if err := genDoc.ConsensusParams.Validate(); err != nil {
+		return err
+	}
+
+	if genDoc.VoterParams == nil {
+		genDoc.VoterParams = DefaultVoterParams()
+	} else if err := genDoc.VoterParams.Validate(); err != nil {
 		return err
 	}
 

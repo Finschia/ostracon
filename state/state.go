@@ -14,7 +14,9 @@ import (
 
 // database keys
 var (
-	stateKey = []byte("stateKey")
+	stateKey          = []byte("stateKey")
+	voterParams       *types.VoterParams
+	voterParamsSealed = false
 )
 
 //-----------------------------------------------------------------------------
@@ -86,6 +88,21 @@ type State struct {
 
 	// the latest AppHash we've received from calling abci.Commit()
 	AppHash []byte
+}
+
+func GetVoterParams() *types.VoterParams {
+	if !voterParamsSealed {
+		panic("VoterParams is not set yet")
+	}
+	return voterParams
+}
+
+func SetVoterParams(initalVoterParams *types.VoterParams) {
+	if voterParamsSealed {
+		panic("VoterParams is already set")
+	}
+	voterParams = initalVoterParams
+	voterParamsSealed = true
 }
 
 func (state State) MakeHashMessage(round int) []byte {
@@ -260,7 +277,7 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 		LastProofHash: genDoc.Hash(),
 
 		NextValidators:              nextValidatorSet,
-		NextVoters:                  types.SelectVoter(nextValidatorSet, genDoc.Hash()),
+		NextVoters:                  types.SelectVoter(nextValidatorSet, genDoc.Hash(), genDoc.VoterParams),
 		Validators:                  validatorSet,
 		Voters:                      types.ToVoterAll(validatorSet.Validators),
 		LastVoters:                  &types.VoterSet{},

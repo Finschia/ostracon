@@ -315,7 +315,7 @@ func LoadValidators(db dbm.DB, height int64) (*types.ValidatorSet, *types.VoterS
 		valInfo.ProofHash = proofHash // reload proof again
 	}
 
-	return valInfo.ValidatorSet, types.SelectVoter(valInfo.ValidatorSet, valInfo.ProofHash), nil
+	return valInfo.ValidatorSet, types.SelectVoter(valInfo.ValidatorSet, valInfo.ProofHash, voterParams), nil
 }
 
 func lastStoredHeightFor(height, lastHeightChanged int64) int64 {
