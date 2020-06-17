@@ -55,7 +55,7 @@ func checkProvider(t *testing.T, p PersistentProvider, chainID, app string) {
 	// Make a bunch of full commits.
 	fcz := make([]FullCommit, count)
 	for i := 0; i < count; i++ {
-		vals := types.ToVoterAll(keys.ToValidators(10, int64(count/2)))
+		vals := types.ToVoterAll(keys.ToValidators(10, int64(count/2)).Validators)
 		h := int64(20 + 10*i)
 		fcz[i] = keys.GenFullCommit(chainID, h, nil, vals, vals, appHash, []byte("params"), []byte("results"), 0, 5)
 	}
@@ -119,7 +119,7 @@ func TestMultiLatestFullCommit(t *testing.T) {
 
 	// Set a bunch of full commits.
 	for i := 0; i < count; i++ {
-		vals := types.ToVoterAll(keys.ToValidators(10, int64(count/2)))
+		vals := types.ToVoterAll(keys.ToValidators(10, int64(count/2)).Validators)
 		h := int64(10 * (i + 1))
 		fc := keys.GenFullCommit(chainID, h, nil, vals, vals, appHash, []byte("params"), []byte("results"), 0, 5)
 		err := p2.SaveFullCommit(fc)

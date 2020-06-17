@@ -192,8 +192,8 @@ func MedianTime(commit *types.Commit, voters *types.VoterSet) time.Time {
 		_, validator := voters.GetByAddress(commitSig.ValidatorAddress)
 		// If there's no condition, TestValidateBlockCommit panics; not needed normally.
 		if validator != nil {
-			totalVotingPower += validator.VotingPower
-			weightedTimes[i] = tmtime.NewWeightedTime(commitSig.Timestamp, validator.VotingPower)
+			totalVotingPower += validator.StakingPower
+			weightedTimes[i] = tmtime.NewWeightedTime(commitSig.Timestamp, validator.StakingPower)
 		}
 	}
 
@@ -262,7 +262,7 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 		NextValidators:              nextValidatorSet,
 		NextVoters:                  types.SelectVoter(nextValidatorSet, genDoc.Hash()),
 		Validators:                  validatorSet,
-		Voters:                      types.ToVoterAll(validatorSet),
+		Voters:                      types.ToVoterAll(validatorSet.Validators),
 		LastVoters:                  &types.VoterSet{},
 		LastHeightValidatorsChanged: 1,
 

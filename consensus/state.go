@@ -205,7 +205,7 @@ func StateMetrics(metrics *Metrics) StateOption {
 // String returns a string.
 func (cs *State) String() string {
 	// better not to access shared variables
-	return "ConsensusState" //(H:%v R:%v S:%v", cs.Height, cs.Round, cs.Step)
+	return "ConsensusState" // (H:%v R:%v S:%v", cs.Height, cs.Round, cs.Step)
 }
 
 // GetState returns a copy of the chain state.
@@ -1557,7 +1557,6 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 					cs.Logger.Error("Error on retrival of pubkey", "err", err)
 					continue
 				}
-
 				if bytes.Equal(val.Address, pubKey.Address()) {
 					label := []string{
 						"validator_address", val.Address.String(),

@@ -50,9 +50,10 @@ func Status(ctx *rpctypes.Context) (*ctypes.ResultStatus, error) {
 		latestBlockTimeNano = latestBlockMeta.Header.Time.UnixNano()
 	}
 
-	var votingPower int64
+	var stakingPower int64
+
 	if val := validatorAtHeight(latestHeight); val != nil {
-		votingPower = val.VotingPower
+		stakingPower = val.StakingPower
 	}
 
 	result := &ctypes.ResultStatus{
@@ -69,9 +70,9 @@ func Status(ctx *rpctypes.Context) (*ctypes.ResultStatus, error) {
 			CatchingUp:          consensusReactor.FastSync(),
 		},
 		ValidatorInfo: ctypes.ValidatorInfo{
-			Address:     pubKey.Address(),
-			PubKey:      pubKey,
-			VotingPower: votingPower,
+			Address:      pubKey.Address(),
+			PubKey:       pubKey,
+			StakingPower: stakingPower,
 		},
 	}
 

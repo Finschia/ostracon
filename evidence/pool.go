@@ -113,7 +113,7 @@ func (evpool *Pool) AddEvidence(evidence types.Evidence) error {
 		return err
 	}
 	_, val := valSet.GetByAddress(evidence.Address())
-	priority := val.VotingPower
+	priority := val.StakingPower
 
 	_, err = evpool.store.AddNewEvidence(evidence, priority)
 	if err != nil {

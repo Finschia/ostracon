@@ -119,7 +119,7 @@ func (p *provider) getVoterSet(chainID string, height int64) (valset *types.Vote
 		// TODO pass through other types of errors.
 		return nil, lerr.ErrUnknownValidators(chainID, height)
 	}
-	valset = types.NewVoterSet(res.Voters)
+	valset = types.WrapValidatorsToVoterSet(res.Voters)
 	return
 }
 

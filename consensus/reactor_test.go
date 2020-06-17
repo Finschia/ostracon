@@ -335,7 +335,7 @@ func TestReactorRecordsVotesAndBlockParts(t *testing.T) {
 //-------------------------------------------------------------
 // ensure we can make blocks despite cycling a validator set
 
-func TestReactorVotingPowerChange(t *testing.T) {
+func TestReactorStakingPowerChange(t *testing.T) {
 	nVals := 4
 	logger := log.TestingLogger()
 	css, cleanup := randConsensusNet(
@@ -377,7 +377,7 @@ func TestReactorVotingPowerChange(t *testing.T) {
 
 	if css[0].GetRoundState().LastVoters.TotalVotingPower() == previousTotalVotingPower {
 		t.Fatalf(
-			"expected voting power to change (before: %d, after: %d)",
+			"expected staking power to change (before: %d, after: %d)",
 			previousTotalVotingPower,
 			css[0].GetRoundState().LastVoters.TotalVotingPower())
 	}
@@ -486,7 +486,7 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 
 	if css[nVals].GetRoundState().LastVoters.TotalVotingPower() == previousTotalVotingPower {
 		t.Errorf(
-			"expected voting power to change (before: %d, after: %d)",
+			"expected staking power to change (before: %d, after: %d)",
 			previousTotalVotingPower,
 			css[nVals].GetRoundState().LastVoters.TotalVotingPower())
 	}

@@ -313,7 +313,7 @@ func TestUpdateValidators(t *testing.T) {
 				assert.NoError(t, err)
 				require.Equal(t, tc.resultingSet.Size(), tc.currentSet.Size())
 
-				assert.Equal(t, tc.resultingSet.TotalVotingPower(), tc.currentSet.TotalVotingPower())
+				assert.Equal(t, tc.resultingSet.TotalStakingPower(), tc.currentSet.TotalStakingPower())
 
 				assert.Equal(t, tc.resultingSet.Validators[0].Address, tc.currentSet.Validators[0].Address)
 				if tc.resultingSet.Size() > 1 {
@@ -382,7 +382,7 @@ func TestEndBlockValidatorUpdates(t *testing.T) {
 		require.True(t, ok, "Expected event of type EventDataValidatorSetUpdates, got %T", msg.Data())
 		if assert.NotEmpty(t, event.ValidatorUpdates) {
 			assert.Equal(t, pubkey, event.ValidatorUpdates[0].PubKey)
-			assert.EqualValues(t, 10, event.ValidatorUpdates[0].VotingPower)
+			assert.EqualValues(t, 10, event.ValidatorUpdates[0].StakingPower)
 		}
 	case <-updatesSub.Cancelled():
 		t.Fatalf("updatesSub was cancelled (reason: %v)", updatesSub.Err())
