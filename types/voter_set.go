@@ -535,8 +535,7 @@ func CalNumOfVoterToElect(n int64, byzantineRatio float64, accuracy float64) int
 
 	for i := int64(1); i <= n; i++ {
 		q := dst.HypergeometricQtlFor(n, byzantine, i, accuracy)
-		p := q / float64(i)
-		if p < 0.33 {
+		if int64(q)*3 < i {
 			return i
 		}
 	}
