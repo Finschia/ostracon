@@ -456,7 +456,7 @@ func (store dbStore) LoadValidators(height int64) (*types.ValidatorSet, *types.V
 	if err != nil {
 		return nil, nil, err
 	}
-	return vip, types.SelectVoter(vip, valInfo.ProofHash), nil
+	return vip, types.SelectVoter(vip, valInfo.ProofHash, voterParams), nil
 }
 
 func lastStoredHeightFor(height, lastHeightChanged int64) int64 {

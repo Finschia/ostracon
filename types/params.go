@@ -19,6 +19,10 @@ const (
 
 	// MaxBlockPartsCount is the maximum number of block parts.
 	MaxBlockPartsCount = (MaxBlockSizeBytes / BlockPartSizeBytes) + 1
+
+	DefaultVoterElectionThreshold = 33
+	DefaultByzantinePercentage    = 20
+	DefaultAccuracyPrecision      = 5
 )
 
 // DefaultConsensusParams returns a default ConsensusParams.
@@ -29,6 +33,29 @@ func DefaultConsensusParams() *tmproto.ConsensusParams {
 		Validator: DefaultValidatorParams(),
 		Version:   DefaultVersionParams(),
 	}
+}
+
+// DefaultVoterParams returns a default VoterParams.
+func DefaultVoterParams() *VoterParams {
+	return &VoterParams{
+		VoterElectionThreshold: DefaultVoterElectionThreshold,
+		ByzantinePercentage:    DefaultByzantinePercentage,
+		AccuracyPrecision:      DefaultAccuracyPrecision}
+}
+
+func (params *VoterParams) Validate() error {
+	if params.VoterElectionThreshold < 0 {
+		return fmt.Errorf("VoterElectionThreshold must be greater than or equal to 0. Got %d",
+			params.VoterElectionThreshold)
+	}
+	if params.ByzantinePercentage <= 0 || params.ByzantinePercentage >= 100 {
+		return fmt.Errorf("ByzantinePercentage must be in between 1 and 99. Got %d",
+			params.ByzantinePercentage)
+	}
+	if params.AccuracyPrecision <= 0 {
+		return fmt.Errorf("AccuracyPrecision must be greater than 0. Got %d", params.AccuracyPrecision)
+	}
+	return nil
 }
 
 // DefaultBlockParams returns a default BlockParams.

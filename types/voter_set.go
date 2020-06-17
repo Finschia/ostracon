@@ -19,10 +19,6 @@ import (
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 )
 
-var (
-	MinVoters = 20
-)
-
 // VoterSet represent a set of *Validator at a given height.
 type VoterSet struct {
 	// NOTE: persisted via reflect, must be exported.
@@ -440,9 +436,9 @@ func (c *candidate) SetWinPoint(winPoint int64) {
 	c.val.VotingPower = winPoint
 }
 
-func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
+func SelectVoter(validators *ValidatorSet, proofHash []byte, voterParams *VoterParams) *VoterSet {
 	// TODO: decide MinVoters, MinTotalVotingPowerPercent; make it to config
-	if len(proofHash) == 0 || validators.Size() <= MinVoters {
+	if len(proofHash) == 0 || validators.Size() <= voterParams.VoterElectionThreshold {
 		// height 1 has voter set that is same to validator set
 		return ToVoterAll(validators.Validators)
 	}
@@ -456,7 +452,7 @@ func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
 		}
 	}
 
-	winners := tmrand.RandomSamplingWithoutReplacement(seed, candidates, MinVoters)
+	winners := tmrand.RandomSamplingWithoutReplacement(seed, candidates, voterParams.VoterElectionThreshold)
 	voters := make([]*Validator, len(winners))
 	for i, winner := range winners {
 		voters[i] = winner.(*candidate).val
@@ -523,7 +519,7 @@ func RandVoterSet(numVoters int, votingPower int64) (*ValidatorSet, *VoterSet, [
 	}
 	vals := NewValidatorSet(valz)
 	sort.Sort(PrivValidatorsByAddress(privValidators))
-	return vals, SelectVoter(vals, []byte{}), privValidators
+	return vals, SelectVoter(vals, []byte{}, DefaultVoterParams()), privValidators
 }
 
 // CalNumOfVoterToElect calculate the number of voter to elect and return the number.
