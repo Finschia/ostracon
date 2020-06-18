@@ -12,11 +12,9 @@ import (
 	"github.com/tendermint/tendermint/version"
 )
 
-// database keys
 var (
+	// database keys
 	stateKey          = []byte("stateKey")
-	voterParams       *types.VoterParams
-	voterParamsSealed = false
 )
 
 //-----------------------------------------------------------------------------
@@ -55,7 +53,8 @@ type State struct {
 	Version Version
 
 	// immutable
-	ChainID string
+	ChainID     string
+	VoterParams *types.VoterParams
 
 	// LastBlockHeight=0 at genesis (ie. block(H=0) does not exist)
 	LastBlockHeight int64
@@ -90,21 +89,6 @@ type State struct {
 	AppHash []byte
 }
 
-func GetVoterParams() *types.VoterParams {
-	if !voterParamsSealed {
-		panic("VoterParams is not set yet")
-	}
-	return voterParams
-}
-
-func SetVoterParams(initalVoterParams *types.VoterParams) {
-	if voterParamsSealed {
-		panic("VoterParams is already set")
-	}
-	voterParams = initalVoterParams
-	voterParamsSealed = true
-}
-
 func (state State) MakeHashMessage(round int) []byte {
 	return types.MakeRoundHash(state.LastProofHash, state.LastBlockHeight, round)
 }
@@ -112,8 +96,9 @@ func (state State) MakeHashMessage(round int) []byte {
 // Copy makes a copy of the State for mutating.
 func (state State) Copy() State {
 	return State{
-		Version: state.Version,
-		ChainID: state.ChainID,
+		Version:     state.Version,
+		ChainID:     state.ChainID,
+		VoterParams: state.VoterParams,
 
 		LastBlockHeight: state.LastBlockHeight,
 		LastBlockID:     state.LastBlockID,
@@ -266,9 +251,10 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 	}
 
 	return State{
-		Version: initStateVersion,
-		ChainID: genDoc.ChainID,
-
+		Version:     initStateVersion,
+		ChainID:     genDoc.ChainID,
+		VoterParams: genDoc.VoterParams,
+		
 		LastBlockHeight: 0,
 		LastBlockID:     types.BlockID{},
 		LastBlockTime:   genDoc.GenesisTime,

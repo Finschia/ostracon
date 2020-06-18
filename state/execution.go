@@ -137,7 +137,8 @@ func (blockExec *BlockExecutor) ApplyBlock(
 	}
 
 	startTime := time.Now().UnixNano()
-	abciResponses, err := execBlockOnProxyApp(blockExec.logger, blockExec.proxyApp, block, blockExec.db)
+	abciResponses, err := execBlockOnProxyApp(blockExec.logger, blockExec.proxyApp, block, blockExec.db,
+		state.VoterParams)
 	endTime := time.Now().UnixNano()
 	blockExec.metrics.BlockProcessingTime.Observe(float64(endTime-startTime) / 1000000)
 	if err != nil {
@@ -257,6 +258,7 @@ func execBlockOnProxyApp(
 	proxyAppConn proxy.AppConnConsensus,
 	block *types.Block,
 	stateDB dbm.DB,
+	voterParams *types.VoterParams,
 ) (*ABCIResponses, error) {
 	var validTxs, invalidTxs = 0, 0
 
@@ -282,7 +284,7 @@ func execBlockOnProxyApp(
 	}
 	proxyAppConn.SetResponseCallback(proxyCb)
 
-	commitInfo, byzVals := getBeginBlockValidatorInfo(block, stateDB)
+	commitInfo, byzVals := getBeginBlockValidatorInfo(block, stateDB, voterParams)
 
 	// Begin block
 	var err error
@@ -317,13 +319,14 @@ func execBlockOnProxyApp(
 	return abciResponses, nil
 }
 
-func getBeginBlockValidatorInfo(block *types.Block, stateDB dbm.DB) (abci.LastCommitInfo, []abci.Evidence) {
+func getBeginBlockValidatorInfo(block *types.Block, stateDB dbm.DB, voterParams *types.VoterParams) (
+	abci.LastCommitInfo, []abci.Evidence) {
 	voteInfos := make([]abci.VoteInfo, block.LastCommit.Size())
 	// block.Height=1 -> LastCommitInfo.Votes are empty.
 	// Remember that the first LastCommit is intentionally empty, so it makes
 	// sense for LastCommitInfo.Votes to also be empty.
 	if block.Height > 1 {
-		_, lastVoterSet, err := LoadValidators(stateDB, block.Height-1)
+		lastVoterSet, err := LoadVoters(stateDB, block.Height-1, voterParams)
 		if err != nil {
 			panic(err)
 		}
@@ -354,7 +357,7 @@ func getBeginBlockValidatorInfo(block *types.Block, stateDB dbm.DB) (abci.LastCo
 		// We need the validator set. We already did this in validateBlock.
 		// TODO: Should we instead cache the valset in the evidence itself and add
 		// `SetValidatorSet()` and `ToABCI` methods ?
-		_, voterSet, err := LoadValidators(stateDB, ev.Height())
+		voterSet, err := LoadVoters(stateDB, ev.Height(), voterParams)
 		if err != nil {
 			panic(err)
 		}
@@ -438,13 +441,14 @@ func updateState(
 		return state, fmt.Errorf("error get proof of hash: %v", err)
 	}
 
-	nextVoters := types.SelectVoter(nValSet, proofHash, voterParams)
+	nextVoters := types.SelectVoter(nValSet, proofHash, state.VoterParams)
 
 	// NOTE: the AppHash has not been populated.
 	// It will be filled on state.Save.
 	return State{
 		Version:                          nextVersion,
 		ChainID:                          state.ChainID,
+		VoterParams:                      state.VoterParams,
 		LastBlockHeight:                  header.Height,
 		LastBlockID:                      blockID,
 		LastBlockTime:                    header.Time,
@@ -509,8 +513,9 @@ func ExecCommitBlock(
 	block *types.Block,
 	logger log.Logger,
 	stateDB dbm.DB,
+	voterParams *types.VoterParams,
 ) ([]byte, error) {
-	_, err := execBlockOnProxyApp(logger, appConnConsensus, block, stateDB)
+	_, err := execBlockOnProxyApp(logger, appConnConsensus, block, stateDB, voterParams)
 	if err != nil {
 		logger.Error("Error executing block on proxy app", "height", block.Height, "err", err)
 		return nil, err

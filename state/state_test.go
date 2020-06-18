@@ -185,16 +185,16 @@ func TestValidatorSimpleSaveLoad(t *testing.T) {
 	assert := assert.New(t)
 
 	// Can't load anything for height 0.
-	_, _, err := sm.LoadValidators(stateDB, 0)
+	_, err := sm.LoadVoters(stateDB, 0, state.VoterParams)
 	assert.IsType(sm.ErrNoValSetForHeight{}, err, "expected err at height 0")
 
 	// Should be able to load for height 1.
-	_, v, err := sm.LoadValidators(stateDB, 1)
+	v, err := sm.LoadVoters(stateDB, 1, state.VoterParams)
 	assert.Nil(err, "expected no err at height 1")
 	assert.Equal(v.Hash(), state.Validators.Hash(), "expected validator hashes to match")
 
 	// Should be able to load for height 2.
-	_, v, err = sm.LoadValidators(stateDB, 2)
+	v, err = sm.LoadVoters(stateDB, 2, state.VoterParams)
 	assert.Nil(err, "expected no err at height 2")
 	assert.Equal(v.Hash(), state.NextValidators.Hash(), "expected validator hashes to match")
 
@@ -203,9 +203,9 @@ func TestValidatorSimpleSaveLoad(t *testing.T) {
 	nextHeight := state.LastBlockHeight + 1
 	sm.SaveValidatorsInfo(stateDB, nextHeight+1, state.LastHeightValidatorsChanged,
 		state.LastProofHash, state.NextValidators)
-	_, vp0, err := sm.LoadValidators(stateDB, nextHeight+0)
+	vp0, err := sm.LoadVoters(stateDB, nextHeight+0, state.VoterParams)
 	assert.Nil(err, "expected no err")
-	_, vp1, err := sm.LoadValidators(stateDB, nextHeight+1)
+	vp1, err := sm.LoadVoters(stateDB, nextHeight+1, state.VoterParams)
 	assert.Nil(err, "expected no err")
 	assert.Equal(vp0.Hash(), state.Validators.Hash(), "expected validator hashes to match")
 	assert.Equal(vp1.Hash(), state.NextValidators.Hash(), "expected next validator hashes to match")
@@ -259,7 +259,7 @@ func TestOneValidatorChangesSaveLoad(t *testing.T) {
 	}
 
 	for i, power := range testCases {
-		_, v, err := sm.LoadValidators(stateDB, int64(i+1+1)) // +1 because vset changes delayed by 1 block.
+		v, err := sm.LoadVoters(stateDB, int64(i+1+1), state.VoterParams) // +1 because vset changes delayed by 1 block.
 		assert.Nil(t, err, fmt.Sprintf("expected no err at height %d", i))
 		assert.Equal(t, v.Size(), 1, "validator set size is greater than 1: %d", v.Size())
 		_, val := v.GetByIndex(0)
@@ -863,11 +863,11 @@ func TestStoreLoadValidatorsIncrementsProposerPriority(t *testing.T) {
 
 	nextHeight := state.LastBlockHeight + 1
 
-	v0, _, err := sm.LoadValidators(stateDB, nextHeight)
+	v0, err := sm.LoadValidators(stateDB, nextHeight)
 	assert.Nil(t, err)
 	acc0 := v0.Validators[0].ProposerPriority
 
-	v1, _, err := sm.LoadValidators(stateDB, nextHeight+1)
+	v1, err := sm.LoadValidators(stateDB, nextHeight+1)
 	assert.Nil(t, err)
 	acc1 := v1.Validators[0].ProposerPriority
 
@@ -906,7 +906,7 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 		state.LastProofHash, state.NextValidators)
 
 	// Load nextheight, it should be the oldpubkey.
-	v0, _, err := sm.LoadValidators(stateDB, nextHeight)
+	v0, err := sm.LoadValidators(stateDB, nextHeight)
 	assert.Nil(t, err)
 	assert.Equal(t, valSetSize, v0.Size())
 	index, val := v0.GetByAddress(pubkeyOld.Address())
@@ -916,7 +916,7 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 	}
 
 	// Load nextheight+1, it should be the new pubkey.
-	v1, _, err := sm.LoadValidators(stateDB, nextHeight+1)
+	v1, err := sm.LoadValidators(stateDB, nextHeight+1)
 	assert.Nil(t, err)
 	assert.Equal(t, valSetSize, v1.Size())
 	index, val = v1.GetByAddress(pubkey.Address())
