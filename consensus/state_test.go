@@ -1886,7 +1886,7 @@ func TestStateFullRoundWithSelectedVoter(t *testing.T) {
 	cs, vss := randStateWithVoterParams(10, &types.VoterParams{
 		VoterElectionThreshold:          5,
 		MaxByzantineTolerancePercentage: 20,
-		AccuracyPrecision:               1})
+		AccuracyPrecision:               2})
 	vss[0].Height = 1
 	vssMap := makeVssMap(vss)
 	height, round := cs.Height, cs.Round
@@ -1906,7 +1906,7 @@ func TestStateFullRoundWithSelectedVoter(t *testing.T) {
 		setProposerPrivVal(cs, vssMap)
 		newBlock, blockParts := cs.createProposalBlock(round)
 		proposal := types.NewProposal(cs.Height, round, -1, types.BlockID{
-			newBlock.Hash(), blockParts.Header()})
+			Hash: newBlock.Hash(), PartsHeader: blockParts.Header()})
 		if err := cs.privValidator.SignProposal(config.ChainID(), proposal); err != nil {
 			t.Fatal("failed to sign bad proposal", err)
 		}
@@ -1952,7 +1952,7 @@ func TestStateFullRoundWithSelectedVoter(t *testing.T) {
 		setProposerPrivVal(cs, vssMap)
 		newBlock, blockParts := cs.createProposalBlock(round)
 		proposal := types.NewProposal(cs.Height, round, -1, types.BlockID{
-			newBlock.Hash(), blockParts.Header()})
+			Hash: newBlock.Hash(), PartsHeader: blockParts.Header()})
 		if err := cs.privValidator.SignProposal(config.ChainID(), proposal); err != nil {
 			t.Fatal("failed to sign bad proposal", err)
 		}
