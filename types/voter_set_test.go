@@ -306,6 +306,7 @@ func findLargestStakingPowerGap(t *testing.T, loopCount int, minMaxRate int, max
 	genDoc := &GenesisDoc{
 		GenesisTime: tmtime.Now(),
 		ChainID:     "tendermint-test",
+		VoterParams: DefaultVoterParams(),
 		Validators:  toGenesisValidators(valSet.Validators),
 	}
 	hash := genDoc.Hash()
@@ -415,7 +416,7 @@ func electVotersForLoop(t *testing.T, hash []byte, valSet *ValidatorSet, privMap
 	for i := 0; i < loopCount; i++ {
 		voterSet := SelectVoter(valSet, hash, &VoterParams{1, byzantinePercent, accuracy})
 		byzantineThreshold := int64(float64(voterSet.TotalVotingPower())*0.33) + 1
-		if byzantinesPower(voterSet.Voters, byzantines) > byzantineThreshold {
+		if byzantinesPower(voterSet.Voters, byzantines) >= byzantineThreshold {
 			byzantineFault++
 		}
 		totalVoters += voterSet.Size()
