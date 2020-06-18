@@ -433,6 +433,7 @@ func (cs *State) SetProposalAndBlock(
 	parts *types.PartSet,
 	peerID p2p.ID,
 ) error {
+	cs.Logger.Info(fmt.Sprintf("************ set proposal and block: %x", block.Hash()))
 	if err := cs.SetProposal(proposal, peerID); err != nil {
 		return err
 	}
@@ -938,9 +939,10 @@ func (cs *State) enterPropose(height int64, round int) {
 
 	// if not a validator, we're done
 	if !cs.Voters.HasAddress(address) {
-		logger.Debug("This node is not a validator", "addr", address, "vals", cs.Voters)
+		logger.Debug("This node is not elected as a voter", "addr", address, "vals", cs.Voters)
 		return
 	}
+	logger.Debug("This node is elected as a voter")
 
 	if cs.isProposer(address) {
 		logger.Info("enterPropose: Our turn to propose",
