@@ -433,7 +433,6 @@ func (cs *State) SetProposalAndBlock(
 	parts *types.PartSet,
 	peerID p2p.ID,
 ) error {
-	cs.Logger.Info(fmt.Sprintf("************ set proposal and block: %x", block.Hash()))
 	if err := cs.SetProposal(proposal, peerID); err != nil {
 		return err
 	}
