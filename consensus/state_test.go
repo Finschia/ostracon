@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto"
 	"testing"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 
 	"github.com/tendermint/tendermint/abci/example/counter"
 	cstypes "github.com/tendermint/tendermint/consensus/types"
+	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	"github.com/tendermint/tendermint/libs/log"
 	tmpubsub "github.com/tendermint/tendermint/libs/pubsub"
@@ -2088,55 +2088,131 @@ func makeVssMap(vss []*validatorStub) map[crypto.PubKey]*validatorStub {
 	return vssMap
 }
 
-func TestStateFullRoundWithSelectedVoter(t *testing.T) {
-	cs, vss := randState(10)
-	vssMap := makeVssMap(vss)
-	cs.state.VoterParams = &types.VoterParams{5, 20, 1}
-	height, round := cs.Height, cs.Round
+func votersPrivVals(voterSet *types.VoterSet, vssMap map[crypto.PubKey]*validatorStub) []*validatorStub {
+	totalVotingPower := voterSet.TotalVotingPower()
+	votingPower := int64(0)
+	voters := 0
+	for i, v := range voterSet.Voters {
+		vssMap[v.PubKey].Index = int32(i)
+		if votingPower < totalVotingPower*2/3+1 {
+			votingPower += v.VotingPower
+			voters++
+		}
+	}
+	result := make([]*validatorStub, voters)
+	for i := 0; i < voters; i++ {
+		result[i] = vssMap[voterSet.Voters[i].PubKey]
+	}
+	return result
+}
 
-	// NOTE: buffer capacity of 0 ensures we can validate prevote and last commit
-	// before consensus can move to the next height (and cause a race condition)
-	cs.eventBus.Stop()
-	eventBus := types.NewEventBusWithBufferCapacity(0)
-	eventBus.SetLogger(log.TestingLogger().With("module", "events"))
-	cs.SetEventBus(eventBus)
-	eventBus.Start()
+func TestStateFullRoundWithSelectedVoter(t *testing.T) {
+	cs, vss := randStateWithVoterParams(10, &types.VoterParams{
+		VoterElectionThreshold: 5,
+		ByzantinePercentage:    20,
+		AccuracyPrecision:      1})
+	vss[0].Height = 1
+	vssMap := makeVssMap(vss)
+	height, round := cs.Height, cs.Round
 
 	voteCh := subscribeUnBuffered(cs.eventBus, types.EventQueryVote)
 	propCh := subscribe(cs.eventBus, types.EventQueryCompleteProposal)
 	newRoundCh := subscribe(cs.eventBus, types.EventQueryNewRound)
-
-	setProposerPrivVal(cs, vssMap)
+	newBlockCh := subscribe(cs.eventBus, types.EventQueryNewBlock)
 
 	startTestRound(cs, height, round)
+
+	// height 1
 	ensureNewRound(newRoundCh, height, round)
-	ensureNewProposal(propCh, height, round)
+	privPubKey, _ := cs.privValidator.GetPubKey()
+	if !cs.isProposer(privPubKey.Address()) {
+		orgPrivVal := cs.privValidator
+		setProposerPrivVal(cs, vssMap)
+		newBlock, blockParts := cs.createProposalBlock(round)
+		proposal := types.NewProposal(cs.Height, round, -1, types.BlockID{
+			newBlock.Hash(), blockParts.Header()})
+		if err := cs.privValidator.SignProposal(config.ChainID(), proposal.ToProto()); err != nil {
+			t.Fatal("failed to sign bad proposal", err)
+		}
+		// set the proposal block
+		if err := cs.SetProposalAndBlock(proposal, newBlock, blockParts, "some peer"); err != nil {
+			t.Fatal(err)
+		}
+		blockID := types.BlockID{Hash: newBlock.Hash(), PartSetHeader: blockParts.Header()}
+		ensureProposal(propCh, height, round, blockID)
+		cs.privValidator = orgPrivVal
+	} else {
+		ensureNewProposal(propCh, height, round)
+	}
 
 	propBlock := cs.GetRoundState().ProposalBlock
-	voters := types.SelectVoter(cs.Validators, cs.state.LastProofHash, cs.state.VoterParams)
-	for _, v := range voters.Voters {
-		signAddVotes(cs, types.PrevoteType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
-			vssMap[v.PubKey])
-	}
+	voters := cs.Voters
+	voterPrivVals := votersPrivVals(voters, vssMap)
+	signAddVotes(cs, tmproto.PrevoteType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
+		voterPrivVals...)
 
-	for _, v := range voters.Voters {
+	for range voterPrivVals {
 		ensurePrevote(voteCh, height, round) // wait for prevote
-		validatePrevote(t, cs, round, vssMap[v.PubKey], propBlock.Hash())
 	}
 
-	for _, v := range voters.Voters {
-		signAddVotes(cs, types.PrecommitType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
-			vssMap[v.PubKey])
-	}
+	signAddVotes(cs, tmproto.PrecommitType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
+		voterPrivVals...)
 
-	for _, v := range voters.Voters {
+	for range voterPrivVals {
 		ensurePrecommit(voteCh, height, round) // wait for precommit
-		validatePrecommit(t, cs, round, 0, vssMap[v.PubKey], propBlock.Hash(), propBlock.Hash())
 	}
+
+	ensureNewBlock(newBlockCh, height)
+
+	// height 2
+	incrementHeight(vss...)
+
+	ensureNewRound(newRoundCh, height+1, 0)
+
+	height = cs.Height
+	privPubKey, _ = cs.privValidator.GetPubKey()
+	if !cs.isProposer(privPubKey.Address()) {
+		orgPrivVal := cs.privValidator
+		setProposerPrivVal(cs, vssMap)
+		newBlock, blockParts := cs.createProposalBlock(round)
+		proposal := types.NewProposal(cs.Height, round, -1, types.BlockID{
+			newBlock.Hash(), blockParts.Header()})
+		if err := cs.privValidator.SignProposal(config.ChainID(), proposal.ToProto()); err != nil {
+			t.Fatal("failed to sign bad proposal", err)
+		}
+		// set the proposal block
+		if err := cs.SetProposalAndBlock(proposal, newBlock, blockParts, "some peer"); err != nil {
+			t.Fatal(err)
+		}
+		blockID := types.BlockID{Hash: newBlock.Hash(), PartSetHeader: blockParts.Header()}
+		ensureProposal(propCh, height, round, blockID)
+		cs.privValidator = orgPrivVal
+	} else {
+		ensureNewProposal(propCh, height, round)
+	}
+
+	propBlock = cs.GetRoundState().ProposalBlock
+	voters = cs.Voters
+	voterPrivVals = votersPrivVals(voters, vssMap)
+
+	signAddVotes(cs, tmproto.PrevoteType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
+		voterPrivVals...)
+
+	for range voterPrivVals {
+		ensurePrevote(voteCh, height, round) // wait for prevote
+	}
+
+	signAddVotes(cs, tmproto.PrecommitType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
+		voterPrivVals...)
+
+	for range voterPrivVals {
+		ensurePrecommit(voteCh, height, round) // wait for precommit
+	}
+
+	ensureNewBlock(newBlockCh, height)
+
+	//setProposerPrivVal(cs, vssMap)
 
 	// we're going to roll right into new height
 	ensureNewRound(newRoundCh, height+1, 0)
-	for _, v := range voters.Voters {
-		validateLastPrecommit(t, cs, vssMap[v.PubKey], propBlock.Hash())
-	}
 }

@@ -131,7 +131,7 @@ func TestReactorWithEvidence(t *testing.T) {
 	// to unroll unwieldy abstractions. Here we duplicate the code from:
 	// css := randConsensusNet(N, "consensus_reactor_test", newMockTickerFunc(true), newCounter)
 
-	genDoc, privVals := randGenesisDoc(nValidators, false, 30)
+	genDoc, privVals := randGenesisDoc(nValidators, false, 30, nil)
 	css := make([]*State, nValidators)
 	logger := consensusLogger()
 	for i := 0; i < nValidators; i++ {
