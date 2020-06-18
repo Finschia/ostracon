@@ -2108,9 +2108,9 @@ func votersPrivVals(voterSet *types.VoterSet, vssMap map[crypto.PubKey]*validato
 
 func TestStateFullRoundWithSelectedVoter(t *testing.T) {
 	cs, vss := randStateWithVoterParams(10, &types.VoterParams{
-		VoterElectionThreshold: 5,
-		ByzantinePercentage:    20,
-		AccuracyPrecision:      1})
+		VoterElectionThreshold:          5,
+		MaxByzantineTolerancePercentage: 20,
+		AccuracyPrecision:               1})
 	vss[0].Height = 1
 	vssMap := makeVssMap(vss)
 	height, round := cs.Height, cs.Round

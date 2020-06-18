@@ -36,9 +36,12 @@ type GenesisValidator struct {
 }
 
 type VoterParams struct {
-	VoterElectionThreshold int `json:"voter_election_threshold"`
-	ByzantinePercentage    int `json:"byzantine_percentage"`
-	AccuracyPrecision      int `json:"accuracy_precision"`
+	VoterElectionThreshold          int `json:"voter_election_threshold"`
+	MaxByzantineTolerancePercentage int `json:"max_byzantine_tolerance_percentage"`
+
+	// As a unit of precision, if it is 1, it is 0.9, and if it is 2, it is 0.99.
+	// The default is 5, with a precision of 0.99999.
+	AccuracyPrecision int `json:"accuracy_precision"`
 }
 
 // GenesisDoc defines the initial conditions for a tendermint blockchain, in particular its validator set.

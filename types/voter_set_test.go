@@ -498,3 +498,20 @@ func TestCalVotersNum2(t *testing.T) {
 	electVotersForLoop(t, hash, valSet, privMap, byzantines, loopCount, byzantinePercent, 4)
 	electVotersForLoop(t, hash, valSet, privMap, byzantines, loopCount, byzantinePercent, 5)
 }
+
+func TestAccuracyFromAccuracyPrecision(t *testing.T) {
+	assert.True(t, accuracyFromAccuracyPrecision(2) == 0.99)
+	assert.True(t, accuracyFromAccuracyPrecision(3) == 0.999)
+	assert.True(t, accuracyFromAccuracyPrecision(4) == 0.9999)
+	assert.True(t, accuracyFromAccuracyPrecision(5) == 0.99999)
+	assert.True(t, accuracyFromAccuracyPrecision(6) == 0.999999)
+	assert.True(t, accuracyFromAccuracyPrecision(7) == 0.9999999)
+	assert.True(t, accuracyFromAccuracyPrecision(8) == 0.99999999)
+	assert.True(t, accuracyFromAccuracyPrecision(9) == 0.999999999)
+	assert.True(t, accuracyFromAccuracyPrecision(10) == 0.9999999999)
+	assert.True(t, accuracyFromAccuracyPrecision(11) == 0.99999999999)
+	assert.True(t, accuracyFromAccuracyPrecision(12) == 0.999999999999)
+	assert.True(t, accuracyFromAccuracyPrecision(13) == 0.9999999999999)
+	assert.True(t, accuracyFromAccuracyPrecision(14) == 0.99999999999999)
+	assert.True(t, accuracyFromAccuracyPrecision(15) == 0.999999999999999)
+}
