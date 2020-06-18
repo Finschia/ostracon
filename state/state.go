@@ -14,7 +14,7 @@ import (
 
 var (
 	// database keys
-	stateKey          = []byte("stateKey")
+	stateKey = []byte("stateKey")
 )
 
 //-----------------------------------------------------------------------------
@@ -254,7 +254,7 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 		Version:     initStateVersion,
 		ChainID:     genDoc.ChainID,
 		VoterParams: genDoc.VoterParams,
-		
+
 		LastBlockHeight: 0,
 		LastBlockID:     types.BlockID{},
 		LastBlockTime:   genDoc.GenesisTime,
