@@ -139,7 +139,7 @@ func (blockExec *BlockExecutor) ApplyBlock(
 
 	startTime := time.Now().UnixNano()
 	abciResponses, err := execBlockOnProxyApp(
-		blockExec.logger, blockExec.proxyApp, block, blockExec.store, state.InitialHeight,
+		blockExec.logger, blockExec.proxyApp, block, blockExec.store, state.InitialHeight, state.VoterParams,
 	)
 	endTime := time.Now().UnixNano()
 	blockExec.metrics.BlockProcessingTime.Observe(float64(endTime-startTime) / 1000000)
@@ -263,6 +263,7 @@ func execBlockOnProxyApp(
 	block *types.Block,
 	store Store,
 	initialHeight int64,
+	voterParams *types.VoterParams,
 ) (*tmstate.ABCIResponses, error) {
 	var validTxs, invalidTxs = 0, 0
 
@@ -291,7 +292,7 @@ func execBlockOnProxyApp(
 	}
 	proxyAppConn.SetResponseCallback(proxyCb)
 
-	commitInfo := getBeginBlockValidatorInfo(block, store, initialHeight)
+	commitInfo := getBeginBlockValidatorInfo(block, store, initialHeight, voterParams)
 
 	byzVals := make([]abci.Evidence, 0)
 	for _, evidence := range block.Evidence.Evidence {
@@ -336,13 +337,13 @@ func execBlockOnProxyApp(
 }
 
 func getBeginBlockValidatorInfo(block *types.Block, store Store,
-	initialHeight int64) abci.LastCommitInfo {
+	initialHeight int64, voterParams *types.VoterParams) abci.LastCommitInfo {
 	voteInfos := make([]abci.VoteInfo, block.LastCommit.Size())
 	// Initial block -> LastCommitInfo.Votes are empty.
 	// Remember that the first LastCommit is intentionally empty, so it makes
 	// sense for LastCommitInfo.Votes to also be empty.
 	if block.Height > initialHeight {
-		_, lastVoterSet, err := store.LoadValidators(block.Height - 1)
+		lastVoterSet, err := store.LoadVoters(block.Height-1, voterParams)
 		if err != nil {
 			panic(err)
 		}
@@ -452,7 +453,7 @@ func updateState(
 		return state, fmt.Errorf("error get proof of hash: %v", err)
 	}
 
-	nextVoters := types.SelectVoter(nValSet, proofHash, voterParams)
+	nextVoters := types.SelectVoter(nValSet, proofHash, state.VoterParams)
 
 	// NOTE: the AppHash has not been populated.
 	// It will be filled on state.Save.
@@ -460,6 +461,7 @@ func updateState(
 		Version:                          nextVersion,
 		ChainID:                          state.ChainID,
 		InitialHeight:                    state.InitialHeight,
+		VoterParams:                      state.VoterParams,
 		LastBlockHeight:                  header.Height,
 		LastBlockID:                      blockID,
 		LastBlockTime:                    header.Time,
@@ -545,8 +547,9 @@ func ExecCommitBlock(
 	logger log.Logger,
 	store Store,
 	initialHeight int64,
+	voterParams *types.VoterParams,
 ) ([]byte, error) {
-	_, err := execBlockOnProxyApp(logger, appConnConsensus, block, store, initialHeight)
+	_, err := execBlockOnProxyApp(logger, appConnConsensus, block, store, initialHeight, voterParams)
 	if err != nil {
 		logger.Error("failed executing block on proxy app", "height", block.Height, "err", err)
 		return nil, err

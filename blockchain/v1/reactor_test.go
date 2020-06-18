@@ -180,7 +180,6 @@ func (conR *consensusReactorTest) SwitchToConsensus(state sm.State, blocksSynced
 }
 
 func TestFastSyncNoBlockResponse(t *testing.T) {
-
 	config = cfg.ResetTestRoot("blockchain_new_reactor_test")
 	defer os.RemoveAll(config.RootDir)
 	genDoc, privVals := randGenesisDoc(1, false, 30)

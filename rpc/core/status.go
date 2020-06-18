@@ -75,7 +75,7 @@ func Status(ctx *rpctypes.Context) (*ctypes.ResultStatus, error) {
 }
 
 func validatorAtHeight(h int64) *types.Validator {
-	vals, _, err := env.StateStore.LoadValidators(h)
+	vals, err := env.StateStore.LoadValidators(h)
 	if err != nil {
 		return nil
 	}

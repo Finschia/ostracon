@@ -51,7 +51,7 @@ func (evpool *Pool) verify(evidence types.Evidence) error {
 	// apply the evidence-specific verification logic
 	switch ev := evidence.(type) {
 	case *types.DuplicateVoteEvidence:
-		_, voterSet, err := evpool.stateDB.LoadValidators(evidence.Height())
+		voterSet, err := evpool.stateDB.LoadVoters(evidence.Height(), state.VoterParams)
 		if err != nil {
 			return err
 		}
@@ -62,7 +62,7 @@ func (evpool *Pool) verify(evidence types.Evidence) error {
 		if err != nil {
 			return err
 		}
-		_, commonVoters, err := evpool.stateDB.LoadValidators(evidence.Height())
+		commonVoters, err := evpool.stateDB.LoadVoters(evidence.Height(), state.VoterParams)
 		if err != nil {
 			return err
 		}

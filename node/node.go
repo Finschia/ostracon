@@ -635,9 +635,6 @@ func NewNode(config *cfg.Config,
 		return nil, err
 	}
 
-	// initialize voter params globally
-	sm.SetVoterParams(genDoc.VoterParams)
-
 	// Create the proxyApp and establish connections to the ABCI app (consensus, mempool, query).
 	proxyApp, err := createAndStartProxyAppConns(clientCreator, logger)
 	if err != nil {

@@ -141,7 +141,7 @@ func (_m *Store) LoadFromDBOrGenesisFile(_a0 string) (state.State, error) {
 }
 
 // LoadValidators provides a mock function with given fields: _a0
-func (_m *Store) LoadValidators(_a0 int64) (*tenderminttypes.ValidatorSet, *tenderminttypes.VoterSet, error) {
+func (_m *Store) LoadValidators(_a0 int64) (*tenderminttypes.ValidatorSet, error) {
 	ret := _m.Called(_a0)
 
 	var r0 *tenderminttypes.ValidatorSet
@@ -153,23 +153,37 @@ func (_m *Store) LoadValidators(_a0 int64) (*tenderminttypes.ValidatorSet, *tend
 		}
 	}
 
-	var r1 *tenderminttypes.VoterSet
-	if rf, ok := ret.Get(1).(func(int64) *tenderminttypes.VoterSet); ok {
+	var r1 error
+	if rf, ok := ret.Get(1).(func(int64) error); ok {
 		r1 = rf(_a0)
 	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*tenderminttypes.VoterSet)
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// LoadVoters provides a mock function with given fields: _a0, _a1
+func (_m *Store) LoadVoters(_a0 int64, _a1 *tenderminttypes.VoterParams) (*tenderminttypes.VoterSet, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *tenderminttypes.VoterSet
+	if rf, ok := ret.Get(0).(func(int64, *tenderminttypes.VoterParams) *tenderminttypes.VoterSet); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*tenderminttypes.VoterSet)
 		}
 	}
 
-	var r2 error
-	if rf, ok := ret.Get(2).(func(int64) error); ok {
-		r2 = rf(_a0)
+	var r1 error
+	if rf, ok := ret.Get(1).(func(int64, *tenderminttypes.VoterParams) error); ok {
+		r1 = rf(_a0, _a1)
 	} else {
-		r2 = ret.Error(2)
+		r1 = ret.Error(1)
 	}
 
-	return r0, r1, r2
+	return r0, r1
 }
 
 // PruneStates provides a mock function with given fields: _a0, _a1

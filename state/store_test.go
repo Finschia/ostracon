@@ -32,7 +32,7 @@ func TestStoreLoadValidators(t *testing.T) {
 	require.NoError(t, err)
 	err = sm.SaveValidatorsInfo(stateDB, 2, 1, []byte{}, vals)
 	require.NoError(t, err)
-	loadedVals, _, err := stateStore.LoadValidators(2)
+	loadedVals, err := stateStore.LoadValidators(2)
 	require.NoError(t, err)
 	assert.NotZero(t, loadedVals.Size())
 
@@ -41,7 +41,7 @@ func TestStoreLoadValidators(t *testing.T) {
 	err = sm.SaveValidatorsInfo(stateDB, sm.ValSetCheckpointInterval, 1, []byte{}, vals)
 	require.NoError(t, err)
 
-	loadedVals, _, err = stateStore.LoadValidators(sm.ValSetCheckpointInterval)
+	loadedVals, err = stateStore.LoadValidators(sm.ValSetCheckpointInterval)
 	require.NoError(t, err)
 	assert.NotZero(t, loadedVals.Size())
 }
@@ -76,7 +76,7 @@ func BenchmarkLoadValidators(b *testing.B) {
 
 		b.Run(fmt.Sprintf("height=%d", i), func(b *testing.B) {
 			for n := 0; n < b.N; n++ {
-				_, _, err := stateStore.LoadValidators(int64(i))
+				_, err := stateStore.LoadValidators(int64(i))
 				if err != nil {
 					b.Fatal(err)
 				}
@@ -171,11 +171,10 @@ func TestPruneStates(t *testing.T) {
 			expectABCI := sliceToMap(tc.expectABCI)
 
 			for h := int64(1); h <= tc.makeHeights; h++ {
-				vals, votes, err := stateStore.LoadValidators(h)
+				vals, err := stateStore.LoadValidators(h)
 				if expectVals[h] {
 					require.NoError(t, err, "validators height %v", h)
 					require.NotNil(t, vals)
-					require.NotNil(t, votes)
 				} else {
 					require.Error(t, err, "validators height %v", h)
 					require.Equal(t, sm.ErrNoValSetForHeight{Height: h}, err)
