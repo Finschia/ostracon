@@ -8,6 +8,9 @@ Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermi
 
 ### BREAKING CHANGES
 
+- State
+  - [state] [\#92](https://github.com/line/tendermint/pull/92) Genesis state
+  
 - CLI/RPC/Config
 
 - Apps
@@ -22,6 +25,7 @@ Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermi
 ### FEATURES
 - [rpc] [\#78](https://github.com/line/tendermint/pull/78) Add `Voters` rpc
 - [consensus] [\#83](https://github.com/line/tendermint/pull/83) Selection voters using random sampling without replacement
+- [consensus] [\#92](https://github.com/line/tendermint/pull/92) Apply calculation of voter count
 
 ### IMPROVEMENTS
 
