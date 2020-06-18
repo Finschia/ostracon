@@ -234,19 +234,68 @@ func countZeroStakingPower(vals []*Validator) int {
 	return count
 }
 
-func TestSelectVoter(t *testing.T) {
-	valSet := randValidatorSet(30)
-	zeroVals := countZeroStakingPower(valSet.Validators)
-	for i := 0; i < 10000; i++ {
-		voterSet := SelectVoter(valSet, []byte{byte(i)}, &VoterParams{29, 20, 5})
-		assert.True(t, voterSet.Size() >= 29-zeroVals)
-		if voterSet.totalVotingPower <= 0 {
-			for j := 0; j < voterSet.Size(); j++ {
-				// TODO solve this problem!!!
-				t.Logf("voter voting power = %d", voterSet.Voters[j].VotingPower)
+func verifyVoterSetSame(t *testing.T, vset1, vset2 *VoterSet) {
+	assert.True(t, vset1.Size() == vset2.Size())
+	for i, v1 := range vset1.Voters {
+		v2 := vset2.Voters[i]
+		assert.True(t, v1.Address.String() == v2.Address.String())
+		assert.True(t, v1.VotingPower == v2.VotingPower)
+		assert.True(t, v1.StakingPower == v2.StakingPower)
+	}
+}
+
+func verifyVoterSetDifferent(t *testing.T, vset1, vset2 *VoterSet) {
+	result := vset1.Size() != vset2.Size()
+	if !result {
+		for i, v1 := range vset1.Voters {
+			v2 := vset2.Voters[i]
+			if v1.Address.String() != v2.Address.String() ||
+				v1.StakingPower != v2.StakingPower ||
+				v1.VotingPower != v2.VotingPower {
+				result = true
+				break
 			}
 		}
-		assert.True(t, voterSet.TotalVotingPower() > 0)
+	}
+	assert.True(t, result)
+}
+
+func TestSelectVoter(t *testing.T) {
+	valSet := randValidatorSet(30)
+	valSet.Validators[0].StakingPower = 0
+
+	zeroVals := countZeroStakingPower(valSet.Validators)
+	genDoc := &GenesisDoc{
+		GenesisTime: tmtime.Now(),
+		ChainID:     "tendermint-test",
+		VoterParams: &VoterParams{10, 20, 1},
+		Validators:  toGenesisValidators(valSet.Validators),
+	}
+	hash := genDoc.Hash()
+
+	// verifying determinism
+	voterSet1 := SelectVoter(valSet, hash, genDoc.VoterParams)
+	voterSet2 := SelectVoter(valSet, hash, genDoc.VoterParams)
+	verifyVoterSetSame(t, voterSet1, voterSet2)
+
+	// verifying randomness
+	hash[0] = (hash[0] & 0xFE) | (^(hash[0] & 0x01) & 0x01) // reverse 1 bit of hash
+	voterSet3 := SelectVoter(valSet, hash, genDoc.VoterParams)
+	verifyVoterSetDifferent(t, voterSet1, voterSet3)
+
+	// verifying zero-staking removed
+	assert.True(t, countZeroStakingPower(voterSet1.Voters) == 0)
+
+	// case that all validators are voters
+	voterSet := SelectVoter(valSet, hash, &VoterParams{30, 1, 1})
+	assert.True(t, voterSet.Size() == 30-zeroVals)
+	voterSet = SelectVoter(valSet, nil, genDoc.VoterParams)
+	assert.True(t, voterSet.Size() == 30-zeroVals)
+
+	// test VoterElectionThreshold
+	for i := 1; i < 100; i++ {
+		voterSet := SelectVoter(valSet, hash, &VoterParams{15, i, 1})
+		assert.True(t, voterSet.Size() >= 15)
 	}
 }
 

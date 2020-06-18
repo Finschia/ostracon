@@ -447,9 +447,7 @@ func accuracyFromAccuracyPrecision(precision int) float64 {
 }
 
 func SelectVoter(validators *ValidatorSet, proofHash []byte, voterParams *VoterParams) *VoterSet {
-	// TODO: decide MinVoters, MinTotalVotingPowerPercent; make it to config
 	if len(proofHash) == 0 || validators.Size() <= voterParams.VoterElectionThreshold {
-		// height 1 has voter set that is same to validator set
 		return ToVoterAll(validators.Validators)
 	}
 
@@ -541,7 +539,8 @@ func RandVoterSet(numVoters int, votingPower int64) (*ValidatorSet, *VoterSet, [
 // CalNumOfVoterToElect calculate the number of voter to elect and return the number.
 func CalNumOfVoterToElect(n int64, byzantineRatio float64, accuracy float64) int64 {
 	if byzantineRatio < 0 || byzantineRatio > 1 || accuracy < 0 || accuracy > 1 {
-		panic("byzantineRatio and accuracy should be the float between 0 and 1")
+		panic(fmt.Sprintf("byzantineRatio and accuracy should be the float between 0 and 1. Got: %f",
+			byzantineRatio))
 	}
 	byzantine := int64(math.Floor(float64(n) * byzantineRatio))
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/tendermint/tendermint/crypto"
 	"testing"
 	"time"
 
@@ -2068,4 +2069,74 @@ func subscribeUnBuffered(eventBus *types.EventBus, q tmpubsub.Query) <-chan tmpu
 		panic(fmt.Sprintf("failed to subscribe %s to %v", testSubscriber, q))
 	}
 	return sub.Out()
+}
+
+func setProposerPrivVal(cs *State, vssMap map[crypto.PubKey]*validatorStub) {
+	proposer := cs.Validators.SelectProposer(cs.state.LastProofHash, cs.Height, cs.Round).PubKey
+	cs.privValidator = vssMap[proposer]
+	if cs.privValidator == nil {
+		panic("Cannot find proposer among vss")
+	}
+}
+
+func makeVssMap(vss []*validatorStub) map[crypto.PubKey]*validatorStub {
+	vssMap := make(map[crypto.PubKey]*validatorStub)
+	for _, pv := range vss {
+		pubKey, _ := pv.GetPubKey()
+		vssMap[pubKey] = pv
+	}
+	return vssMap
+}
+
+func TestStateFullRoundWithSelectedVoter(t *testing.T) {
+	cs, vss := randState(10)
+	vssMap := makeVssMap(vss)
+	cs.state.VoterParams = &types.VoterParams{5, 20, 1}
+	height, round := cs.Height, cs.Round
+
+	// NOTE: buffer capacity of 0 ensures we can validate prevote and last commit
+	// before consensus can move to the next height (and cause a race condition)
+	cs.eventBus.Stop()
+	eventBus := types.NewEventBusWithBufferCapacity(0)
+	eventBus.SetLogger(log.TestingLogger().With("module", "events"))
+	cs.SetEventBus(eventBus)
+	eventBus.Start()
+
+	voteCh := subscribeUnBuffered(cs.eventBus, types.EventQueryVote)
+	propCh := subscribe(cs.eventBus, types.EventQueryCompleteProposal)
+	newRoundCh := subscribe(cs.eventBus, types.EventQueryNewRound)
+
+	setProposerPrivVal(cs, vssMap)
+
+	startTestRound(cs, height, round)
+	ensureNewRound(newRoundCh, height, round)
+	ensureNewProposal(propCh, height, round)
+
+	propBlock := cs.GetRoundState().ProposalBlock
+	voters := types.SelectVoter(cs.Validators, cs.state.LastProofHash, cs.state.VoterParams)
+	for _, v := range voters.Voters {
+		signAddVotes(cs, types.PrevoteType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
+			vssMap[v.PubKey])
+	}
+
+	for _, v := range voters.Voters {
+		ensurePrevote(voteCh, height, round) // wait for prevote
+		validatePrevote(t, cs, round, vssMap[v.PubKey], propBlock.Hash())
+	}
+
+	for _, v := range voters.Voters {
+		signAddVotes(cs, types.PrecommitType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
+			vssMap[v.PubKey])
+	}
+
+	for _, v := range voters.Voters {
+		ensurePrecommit(voteCh, height, round) // wait for precommit
+		validatePrecommit(t, cs, round, 0, vssMap[v.PubKey], propBlock.Hash(), propBlock.Hash())
+	}
+
+	// we're going to roll right into new height
+	ensureNewRound(newRoundCh, height+1, 0)
+	for _, v := range voters.Voters {
+		validateLastPrecommit(t, cs, vssMap[v.PubKey], propBlock.Hash())
+	}
 }

@@ -1085,9 +1085,10 @@ func (cs *State) enterPropose(height int64, round int32) {
 
 	// if not a validator, we're done
 	if !cs.Voters.HasAddress(address) {
-		logger.Debug("node is not a validator", "addr", address, "voters", cs.Voters)
+		logger.Debug("node is not elected as a voter", "addr", address, "voters", cs.Voters)
 		return
 	}
+	logger.Debug("This node is elected as a voter")
 
 	if cs.isProposer(address) {
 		logger.Debug("propose step; our turn to propose", "proposer", address)
