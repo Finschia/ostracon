@@ -20,9 +20,9 @@ const (
 	// MaxBlockPartsCount is the maximum number of block parts.
 	MaxBlockPartsCount = (MaxBlockSizeBytes / BlockPartSizeBytes) + 1
 
-	DefaultVoterElectionThreshold = 33
-	DefaultByzantinePercentage    = 20
-	DefaultAccuracyPrecision      = 5
+	DefaultVoterElectionThreshold          = 33
+	DefaultMaxByzantineTolerancePercentage = 20
+	DefaultAccuracyPrecision               = 5 // 5 is 0.99999
 )
 
 // ConsensusParams contains consensus critical parameters that determine the
@@ -75,9 +75,9 @@ func DefaultConsensusParams() *ConsensusParams {
 // DefaultVoterParams returns a default VoterParams.
 func DefaultVoterParams() *VoterParams {
 	return &VoterParams{
-		VoterElectionThreshold: DefaultVoterElectionThreshold,
-		ByzantinePercentage:    DefaultByzantinePercentage,
-		AccuracyPrecision:      DefaultAccuracyPrecision}
+		VoterElectionThreshold:          DefaultVoterElectionThreshold,
+		MaxByzantineTolerancePercentage: DefaultMaxByzantineTolerancePercentage,
+		AccuracyPrecision:               DefaultAccuracyPrecision}
 }
 
 func (params *VoterParams) Validate() error {
@@ -85,12 +85,12 @@ func (params *VoterParams) Validate() error {
 		return errors.Errorf("VoterElectionThreshold must be greater than or equal to 0. Got %d",
 			params.VoterElectionThreshold)
 	}
-	if params.ByzantinePercentage <= 0 || params.ByzantinePercentage >= 100 {
-		return errors.Errorf("ByzantinePercentage must be in between 1 and 99. Got %d",
-			params.ByzantinePercentage)
+	if params.MaxByzantineTolerancePercentage <= 0 || params.MaxByzantineTolerancePercentage >= 100 {
+		return errors.Errorf("MaxByzantineTolerancePercentage must be in between 1 and 99. Got %d",
+			params.MaxByzantineTolerancePercentage)
 	}
-	if params.AccuracyPrecision <= 0 {
-		return errors.Errorf("AccuracyPrecision must be greater than 0. Got %d", params.AccuracyPrecision)
+	if params.AccuracyPrecision <= 1 || params.AccuracyPrecision > 15 {
+		return errors.Errorf("AccuracyPrecision must be in 2~15(including). Got %d", params.AccuracyPrecision)
 	}
 	return nil
 }
