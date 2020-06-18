@@ -2,7 +2,6 @@ package rand
 
 import (
 	"fmt"
-	"math"
 	"math/big"
 	s "sort"
 )
@@ -74,6 +73,12 @@ func moveWinnerToLast(candidates []Candidate, winner int) {
 
 const uint64Mask = uint64(0x7FFFFFFFFFFFFFFF)
 
+// precisionForSelection is a value to be corrected to increase precision when calculating voting power as an integer.
+const precisionForSelection = uint64(1000)
+
+// precisionCorrectionForSelection is a value corrected for accuracy of voting power
+const precisionCorrectionForSelection = uint64(1000)
+
 var divider *big.Int
 
 func init() {
@@ -92,9 +97,6 @@ func randomThreshold(seed *uint64, total uint64) uint64 {
 	return a.Uint64()
 }
 
-// `RandomSamplingWithoutReplacement` elects winners among candidates without replacement
-// so it updates rewards of winners. This function continues to elect winners until the both of two
-// conditions(minSamplingCount, minPriorityPercent) are met.
 func RandomSamplingWithoutReplacement(
 	seed uint64, candidates []Candidate, minSamplingCount int) (winners []Candidate) {
 
@@ -135,22 +137,16 @@ func RandomSamplingWithoutReplacement(
 				winnerNum, minSamplingCount, winnersPriority, totalPriority, threshold))
 		}
 	}
-	compensationProportions := make([]float64, winnerNum)
-	for i := winnerNum - 2; i >= 0; i-- { // last winner doesn't get compensation reward
-		compensationProportions[i] = compensationProportions[i+1] + 1/float64(losersPriorities[i])
+	correction := totalPriority * precisionForSelection
+	compensationProportions := make([]uint64, winnerNum)
+	for i := winnerNum - 2; i >= 0; i-- {
+		compensationProportions[i] = compensationProportions[i+1] + correction/losersPriorities[i]
 	}
 	winners = candidates[len(candidates)-winnerNum:]
-	winPoints := make([]float64, len(winners))
-	totalWinPoint := float64(0)
+	winPoints := make([]uint64, len(winners))
 	for i, winner := range winners {
-		winPoints[i] = 1 + float64(winner.Priority())*compensationProportions[i]
-		totalWinPoint += winPoints[i]
-	}
-	for i, winner := range winners {
-		if winPoints[i] > math.MaxInt64 || winPoints[i] < 0 {
-			panic(fmt.Sprintf("winPoint is invalid: %f", winPoints[i]))
-		}
-		winner.SetWinPoint(int64(float64(totalPriority) * winPoints[i] / totalWinPoint))
+		winPoints[i] = correction + winner.Priority()*compensationProportions[i]
+		winner.SetWinPoint(int64(winPoints[i] / (correction / precisionCorrectionForSelection)))
 	}
 	return winners
 }
