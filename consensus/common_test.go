@@ -855,7 +855,8 @@ func randGenesisDoc(numValidators int, randPower bool, minPower int64, voterPara
 	}, privValidators
 }
 
-func randGenesisState(numValidators int, randPower bool, minPower int64, voterParams *types.VoterParams) (sm.State, []types.PrivValidator) {
+func randGenesisState(numValidators int, randPower bool, minPower int64, voterParams *types.VoterParams) (
+	sm.State, []types.PrivValidator) {
 	genDoc, privValidators := randGenesisDoc(numValidators, randPower, minPower, voterParams)
 	s0, _ := sm.MakeGenesisState(genDoc)
 	return s0, privValidators
