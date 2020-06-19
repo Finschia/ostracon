@@ -21,7 +21,7 @@ const (
 	MaxBlockPartsCount = (MaxBlockSizeBytes / BlockPartSizeBytes) + 1
 
 	DefaultVoterElectionThreshold          = 33
-	DefaultMaxByzantineTolerancePercentage = 20
+	DefaultMaxTolerableByzantinePercentage = 20
 	DefaultAccuracyPrecision               = 5 // 5 is 0.99999
 )
 
@@ -39,7 +39,7 @@ func DefaultConsensusParams() *tmproto.ConsensusParams {
 func DefaultVoterParams() *VoterParams {
 	return &VoterParams{
 		VoterElectionThreshold:          DefaultVoterElectionThreshold,
-		MaxByzantineTolerancePercentage: DefaultMaxByzantineTolerancePercentage,
+		MaxTolerableByzantinePercentage: DefaultMaxTolerableByzantinePercentage,
 		AccuracyPrecision:               DefaultAccuracyPrecision}
 }
 
@@ -48,9 +48,9 @@ func (params *VoterParams) Validate() error {
 		return fmt.Errorf("VoterElectionThreshold must be greater than or equal to 0. Got %d",
 			params.VoterElectionThreshold)
 	}
-	if params.MaxByzantineTolerancePercentage <= 0 || params.MaxByzantineTolerancePercentage >= 100 {
-		return fmt.Errorf("MaxByzantineTolerancePercentage must be in between 1 and 99. Got %d",
-			params.MaxByzantineTolerancePercentage)
+	if params.MaxTolerableByzantinePercentage <= 0 || params.MaxTolerableByzantinePercentage >= 34 {
+		return fmt.Errorf("MaxTolerableByzantinePercentage must be in between 1 and 33. Got %d",
+			params.MaxTolerableByzantinePercentage)
 	}
 	if params.AccuracyPrecision <= 1 || params.AccuracyPrecision > 15 {
 		return fmt.Errorf("AccuracyPrecision must be in between 2 and 15. Got %d", params.AccuracyPrecision)

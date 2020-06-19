@@ -2127,7 +2127,7 @@ func createProposalBlockByOther(cs *State, other *validatorStub, round int32) (
 func TestStateFullRoundWithSelectedVoter(t *testing.T) {
 	cs, vss := randStateWithVoterParams(10, &types.VoterParams{
 		VoterElectionThreshold:          5,
-		MaxByzantineTolerancePercentage: 20,
+		MaxTolerableByzantinePercentage: 20,
 		AccuracyPrecision:               2})
 	vss[0].Height = 1
 	vssMap := makeVssMap(vss)

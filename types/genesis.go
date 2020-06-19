@@ -37,7 +37,7 @@ type GenesisValidator struct {
 
 type VoterParams struct {
 	VoterElectionThreshold          int `json:"voter_election_threshold"`
-	MaxByzantineTolerancePercentage int `json:"max_byzantine_tolerance_percentage"`
+	MaxTolerableByzantinePercentage int `json:"max_tolerable_byzantine_percentage"`
 
 	// As a unit of precision, if it is 1, it is 0.9, and if it is 2, it is 0.99.
 	// The default is 5, with a precision of 0.99999.

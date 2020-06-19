@@ -456,7 +456,7 @@ func SelectVoter(validators *ValidatorSet, proofHash []byte, voterParams *VoterP
 		}
 	}
 
-	minVoters := CalNumOfVoterToElect(int64(len(candidates)), float64(voterParams.MaxByzantineTolerancePercentage)/100,
+	minVoters := CalNumOfVoterToElect(int64(len(candidates)), float64(voterParams.MaxTolerableByzantinePercentage)/100,
 		accuracyFromAccuracyPrecision(voterParams.AccuracyPrecision))
 	if minVoters > math.MaxInt32 {
 		panic("CalNumOfVoterToElect is overflow for MaxInt32")
