@@ -22,7 +22,7 @@ const (
 
 	DefaultVoterElectionThreshold          = 33
 	DefaultMaxTolerableByzantinePercentage = 20
-	DefaultAccuracyPrecision               = 5 // 5 is 0.99999
+	DefaultElectionPrecision               = 5 // 5 is 0.99999
 )
 
 // DefaultConsensusParams returns a default ConsensusParams.
@@ -40,7 +40,7 @@ func DefaultVoterParams() *VoterParams {
 	return &VoterParams{
 		VoterElectionThreshold:          DefaultVoterElectionThreshold,
 		MaxTolerableByzantinePercentage: DefaultMaxTolerableByzantinePercentage,
-		AccuracyPrecision:               DefaultAccuracyPrecision}
+		ElectionPrecision:               DefaultElectionPrecision}
 }
 
 func (params *VoterParams) Validate() error {
@@ -52,8 +52,8 @@ func (params *VoterParams) Validate() error {
 		return fmt.Errorf("MaxTolerableByzantinePercentage must be in between 1 and 33. Got %d",
 			params.MaxTolerableByzantinePercentage)
 	}
-	if params.AccuracyPrecision <= 1 || params.AccuracyPrecision > 15 {
-		return fmt.Errorf("AccuracyPrecision must be in between 2 and 15. Got %d", params.AccuracyPrecision)
+	if params.ElectionPrecision <= 1 || params.ElectionPrecision > 15 {
+		return fmt.Errorf("ElectionPrecision must be in between 2 and 15. Got %d", params.ElectionPrecision)
 	}
 	return nil
 }

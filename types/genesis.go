@@ -41,7 +41,7 @@ type VoterParams struct {
 
 	// As a unit of precision, if it is 1, it is 0.9, and if it is 2, it is 0.99.
 	// The default is 5, with a precision of 0.99999.
-	AccuracyPrecision int `json:"accuracy_precision"`
+	ElectionPrecision int `json:"election_precision"`
 }
 
 // GenesisDoc defines the initial conditions for a tendermint blockchain, in particular its validator set.

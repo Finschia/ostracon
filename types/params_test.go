@@ -155,49 +155,49 @@ func TestVoterParamsValidate(t *testing.T) {
 		{
 			VoterElectionThreshold:          -1,
 			MaxTolerableByzantinePercentage: 1,
-			AccuracyPrecision:               2,
+			ElectionPrecision:               2,
 		},
 		{
 			VoterElectionThreshold:          0,
 			MaxTolerableByzantinePercentage: 0,
-			AccuracyPrecision:               2,
+			ElectionPrecision:               2,
 		},
 		{
 			VoterElectionThreshold:          0,
 			MaxTolerableByzantinePercentage: 34,
-			AccuracyPrecision:               2,
+			ElectionPrecision:               2,
 		},
 		{
 			VoterElectionThreshold:          0,
 			MaxTolerableByzantinePercentage: 33,
-			AccuracyPrecision:               1,
+			ElectionPrecision:               1,
 		},
 		{
 			VoterElectionThreshold:          0,
 			MaxTolerableByzantinePercentage: 33,
-			AccuracyPrecision:               17,
+			ElectionPrecision:               17,
 		},
 	}
 	normalCases := []VoterParams{
 		{
 			VoterElectionThreshold:          0,
 			MaxTolerableByzantinePercentage: 1,
-			AccuracyPrecision:               2,
+			ElectionPrecision:               2,
 		},
 		{
 			VoterElectionThreshold:          99999999,
 			MaxTolerableByzantinePercentage: 1,
-			AccuracyPrecision:               2,
+			ElectionPrecision:               2,
 		},
 		{
 			VoterElectionThreshold:          0,
 			MaxTolerableByzantinePercentage: 33,
-			AccuracyPrecision:               2,
+			ElectionPrecision:               2,
 		},
 		{
 			VoterElectionThreshold:          0,
 			MaxTolerableByzantinePercentage: 1,
-			AccuracyPrecision:               15,
+			ElectionPrecision:               15,
 		},
 	}
 	for _, tc := range errorCases {

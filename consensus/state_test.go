@@ -2143,7 +2143,7 @@ func TestStateFullRoundWithSelectedVoter(t *testing.T) {
 	cs, vss := randStateWithVoterParams(10, &types.VoterParams{
 		VoterElectionThreshold:          5,
 		MaxTolerableByzantinePercentage: 20,
-		AccuracyPrecision:               2})
+		ElectionPrecision:               2})
 	vss[0].Height = 1 // this is needed because of `incrementHeight(vss[1:]...)` of randStateWithVoterParams()
 	vssMap := makeVssMap(vss)
 	height, round := cs.Height, cs.Round

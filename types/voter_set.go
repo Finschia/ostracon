@@ -436,7 +436,7 @@ func (c *candidate) SetWinPoint(winPoint int64) {
 	c.val.VotingPower = winPoint
 }
 
-func accuracyFromAccuracyPrecision(precision int) float64 {
+func accuracyFromElectionPrecision(precision int) float64 {
 	base := math.Pow10(precision)
 	result := (base - 1) / base
 	return result
@@ -457,7 +457,7 @@ func SelectVoter(validators *ValidatorSet, proofHash []byte, voterParams *VoterP
 	}
 
 	minVoters := CalNumOfVoterToElect(int64(len(candidates)), float64(voterParams.MaxTolerableByzantinePercentage)/100,
-		accuracyFromAccuracyPrecision(voterParams.AccuracyPrecision))
+		accuracyFromElectionPrecision(voterParams.ElectionPrecision))
 	if minVoters > math.MaxInt32 {
 		panic("CalNumOfVoterToElect is overflow for MaxInt32")
 	}

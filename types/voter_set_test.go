@@ -475,9 +475,9 @@ func electVotersForLoop(t *testing.T, hash []byte, valSet *ValidatorSet, privMap
 		proof, _ := privMap[proposer.Address.String()].GenerateVRFProof(message)
 		hash, _ = vrf.ProofToHash(proof)
 	}
-	t.Logf("[accuracy=%f] voters=%d, fault=%d, avg byzantines=%f", accuracyFromAccuracyPrecision(accuracy),
+	t.Logf("[accuracy=%f] voters=%d, fault=%d, avg byzantines=%f", accuracyFromElectionPrecision(accuracy),
 		totalVoters/loopCount, byzantineFault, float64(totalByzantines)/float64(loopCount))
-	assert.True(t, float64(byzantineFault) < float64(loopCount)*(1.0-accuracyFromAccuracyPrecision(accuracy)))
+	assert.True(t, float64(byzantineFault) < float64(loopCount)*(1.0-accuracyFromElectionPrecision(accuracy)))
 }
 
 func TestCalVotersNum2(t *testing.T) {
@@ -499,19 +499,19 @@ func TestCalVotersNum2(t *testing.T) {
 	electVotersForLoop(t, hash, valSet, privMap, byzantines, loopCount, byzantinePercent, 5)
 }
 
-func TestAccuracyFromAccuracyPrecision(t *testing.T) {
-	assert.True(t, accuracyFromAccuracyPrecision(2) == 0.99)
-	assert.True(t, accuracyFromAccuracyPrecision(3) == 0.999)
-	assert.True(t, accuracyFromAccuracyPrecision(4) == 0.9999)
-	assert.True(t, accuracyFromAccuracyPrecision(5) == 0.99999)
-	assert.True(t, accuracyFromAccuracyPrecision(6) == 0.999999)
-	assert.True(t, accuracyFromAccuracyPrecision(7) == 0.9999999)
-	assert.True(t, accuracyFromAccuracyPrecision(8) == 0.99999999)
-	assert.True(t, accuracyFromAccuracyPrecision(9) == 0.999999999)
-	assert.True(t, accuracyFromAccuracyPrecision(10) == 0.9999999999)
-	assert.True(t, accuracyFromAccuracyPrecision(11) == 0.99999999999)
-	assert.True(t, accuracyFromAccuracyPrecision(12) == 0.999999999999)
-	assert.True(t, accuracyFromAccuracyPrecision(13) == 0.9999999999999)
-	assert.True(t, accuracyFromAccuracyPrecision(14) == 0.99999999999999)
-	assert.True(t, accuracyFromAccuracyPrecision(15) == 0.999999999999999)
+func TestAccuracyFromElectionPrecision(t *testing.T) {
+	assert.True(t, accuracyFromElectionPrecision(2) == 0.99)
+	assert.True(t, accuracyFromElectionPrecision(3) == 0.999)
+	assert.True(t, accuracyFromElectionPrecision(4) == 0.9999)
+	assert.True(t, accuracyFromElectionPrecision(5) == 0.99999)
+	assert.True(t, accuracyFromElectionPrecision(6) == 0.999999)
+	assert.True(t, accuracyFromElectionPrecision(7) == 0.9999999)
+	assert.True(t, accuracyFromElectionPrecision(8) == 0.99999999)
+	assert.True(t, accuracyFromElectionPrecision(9) == 0.999999999)
+	assert.True(t, accuracyFromElectionPrecision(10) == 0.9999999999)
+	assert.True(t, accuracyFromElectionPrecision(11) == 0.99999999999)
+	assert.True(t, accuracyFromElectionPrecision(12) == 0.999999999999)
+	assert.True(t, accuracyFromElectionPrecision(13) == 0.9999999999999)
+	assert.True(t, accuracyFromElectionPrecision(14) == 0.99999999999999)
+	assert.True(t, accuracyFromElectionPrecision(15) == 0.999999999999999)
 }
