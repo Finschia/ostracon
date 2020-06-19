@@ -39,8 +39,13 @@ func TestByzantinePrevoteEquivocation(t *testing.T) {
 	testName := "consensus_byzantine_test"
 	tickerFunc := newMockTickerFunc(true)
 	appFunc := newCounter
+	params := &types.VoterParams{
+		VoterElectionThreshold:          5,
+		MaxByzantineTolerancePercentage: 20,
+		AccuracyPrecision:               2,
+	}
 
-	genDoc, privVals := randGenesisDoc(nValidators, false, 30)
+	genDoc, privVals := randGenesisDoc(nValidators, false, 30, params)
 	css := make([]*State, nValidators)
 
 	for i := 0; i < nValidators; i++ {
