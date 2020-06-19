@@ -2085,7 +2085,7 @@ func votersPrivVals(voterSet *types.VoterSet, vssMap map[crypto.PubKey]*validato
 	votingPower := int64(0)
 	voters := 0
 	for i, v := range voterSet.Voters {
-		vssMap[v.PubKey].Index = int32(i)
+		vssMap[v.PubKey].Index = int32(i) // NOTE: re-indexing for new voters
 		if votingPower < totalVotingPower*2/3+1 {
 			votingPower += v.VotingPower
 			voters++
@@ -2124,12 +2124,27 @@ func createProposalBlockByOther(cs *State, other *validatorStub, round int32) (
 	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerAddr, round, proof)
 }
 
+func proposeBlock(t *testing.T, cs *State, round int32, vssMap map[crypto.PubKey]*validatorStub) types.BlockID {
+	newBlock, blockParts := createProposalBlockByOther(cs, vssMap[cs.Proposer.PubKey], round)
+	proposal := types.NewProposal(cs.Height, round, -1, types.BlockID{
+		Hash: newBlock.Hash(), PartSetHeader: blockParts.Header()})
+	if err := vssMap[cs.Proposer.PubKey].SignProposal(config.ChainID(), proposal.ToProto()); err != nil {
+		t.Fatal("failed to sign bad proposal", err)
+	}
+
+	// set the proposal block
+	if err := cs.SetProposalAndBlock(proposal, newBlock, blockParts, "some peer"); err != nil {
+		t.Fatal(err)
+	}
+	return types.BlockID{Hash: newBlock.Hash(), PartSetHeader: blockParts.Header()}
+}
+
 func TestStateFullRoundWithSelectedVoter(t *testing.T) {
 	cs, vss := randStateWithVoterParams(10, &types.VoterParams{
 		VoterElectionThreshold:          5,
 		MaxTolerableByzantinePercentage: 20,
 		AccuracyPrecision:               2})
-	vss[0].Height = 1
+	vss[0].Height = 1 // this is needed because of `incrementHeight(vss[1:]...)` of randStateWithVoterParams()
 	vssMap := makeVssMap(vss)
 	height, round := cs.Height, cs.Round
 
@@ -2144,18 +2159,7 @@ func TestStateFullRoundWithSelectedVoter(t *testing.T) {
 	ensureNewRound(newRoundCh, height, round)
 	privPubKey, _ := cs.privValidator.GetPubKey()
 	if !cs.isProposer(privPubKey.Address()) {
-		newBlock, blockParts := createProposalBlockByOther(cs, vssMap[cs.Proposer.PubKey], round)
-		proposal := types.NewProposal(cs.Height, round, -1, types.BlockID{
-			Hash: newBlock.Hash(), PartSetHeader: blockParts.Header()})
-		if err := vssMap[cs.Proposer.PubKey].SignProposal(config.ChainID(), proposal.ToProto()); err != nil {
-			t.Fatal("failed to sign bad proposal", err)
-		}
-
-		// set the proposal block
-		if err := cs.SetProposalAndBlock(proposal, newBlock, blockParts, "some peer"); err != nil {
-			t.Fatal(err)
-		}
-		blockID := types.BlockID{Hash: newBlock.Hash(), PartSetHeader: blockParts.Header()}
+		blockID := proposeBlock(t, cs, round, vssMap)
 		ensureProposal(propCh, height, round, blockID)
 	} else {
 		ensureNewProposal(propCh, height, round)
@@ -2188,17 +2192,7 @@ func TestStateFullRoundWithSelectedVoter(t *testing.T) {
 	height = cs.Height
 	privPubKey, _ = cs.privValidator.GetPubKey()
 	if !cs.isProposer(privPubKey.Address()) {
-		newBlock, blockParts := createProposalBlockByOther(cs, vssMap[cs.Proposer.PubKey], round)
-		proposal := types.NewProposal(cs.Height, round, -1, types.BlockID{
-			Hash: newBlock.Hash(), PartSetHeader: blockParts.Header()})
-		if err := vssMap[cs.Proposer.PubKey].SignProposal(config.ChainID(), proposal.ToProto()); err != nil {
-			t.Fatal("failed to sign bad proposal", err)
-		}
-		// set the proposal block
-		if err := cs.SetProposalAndBlock(proposal, newBlock, blockParts, "some peer"); err != nil {
-			t.Fatal(err)
-		}
-		blockID := types.BlockID{Hash: newBlock.Hash(), PartSetHeader: blockParts.Header()}
+		blockID := proposeBlock(t, cs, round, vssMap)
 		ensureProposal(propCh, height, round, blockID)
 	} else {
 		ensureNewProposal(propCh, height, round)
