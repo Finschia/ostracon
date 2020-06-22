@@ -951,10 +951,11 @@ func (cs *State) enterPropose(height int64, round int) {
 			"privValidator",
 			cs.privValidator)
 
-		// if not a validator, we're done
-		if !cs.Voters.HasAddress(address) {
-			logger.Debug("This node is not elected as a voter", "addr", address, "vals", cs.Voters)
-		}
+	}
+
+	if !cs.Voters.HasAddress(address) {
+		logger.Debug("This node is not elected as a voter")
+	} else {
 		logger.Debug("This node is elected as a voter")
 	}
 }
