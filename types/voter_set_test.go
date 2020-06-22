@@ -385,7 +385,8 @@ func findLargestStakingPowerGap(t *testing.T, loopCount int, minMaxRate int, max
 
 /**
   This test is a test to see the difference between MaxVoters and the actual number of elected voters.
-  This test is to identify the minimum MaxVoters that cannot be selected as much as MaxVoters by fixing MaxSamplingLoopTry.
+  This test is to identify the minimum MaxVoters that cannot be selected as much as MaxVoters by fixing
+	MaxSamplingLoopTry.
   If MaxSamplingLoopTry is very large then actual elected voters is up to MaxVoters,
   but large MaxSamplingLoopTry takes too much time.
 */

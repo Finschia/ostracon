@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gogo/protobuf/proto"
+
 	dbm "github.com/tendermint/tm-db"
 
 	tmsync "github.com/tendermint/tendermint/libs/sync"

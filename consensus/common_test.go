@@ -833,7 +833,12 @@ func getSwitchIndex(switches []*p2p.Switch, peer p2p.Peer) int {
 //-------------------------------------------------------------------------------
 // genesis
 
-func randGenesisDoc(numValidators int, randPower bool, minPower int64, voterParams *types.VoterParams) (*types.GenesisDoc, []types.PrivValidator) {
+func randGenesisDoc(
+	numValidators int,
+	randPower bool,
+	minPower int64,
+	voterParams *types.VoterParams,
+) (*types.GenesisDoc, []types.PrivValidator) {
 	validators := make([]types.GenesisValidator, numValidators)
 	privValidators := make([]types.PrivValidator, numValidators)
 	for i := 0; i < numValidators; i++ {
