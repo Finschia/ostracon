@@ -12,8 +12,8 @@ import (
 	"github.com/tendermint/tendermint/version"
 )
 
-// database keys
 var (
+	// database keys
 	stateKey = []byte("stateKey")
 )
 
@@ -53,7 +53,8 @@ type State struct {
 	Version Version
 
 	// immutable
-	ChainID string
+	ChainID     string
+	VoterParams *types.VoterParams
 
 	// LastBlockHeight=0 at genesis (ie. block(H=0) does not exist)
 	LastBlockHeight int64
@@ -95,8 +96,9 @@ func (state State) MakeHashMessage(round int) []byte {
 // Copy makes a copy of the State for mutating.
 func (state State) Copy() State {
 	return State{
-		Version: state.Version,
-		ChainID: state.ChainID,
+		Version:     state.Version,
+		ChainID:     state.ChainID,
+		VoterParams: state.VoterParams,
 
 		LastBlockHeight: state.LastBlockHeight,
 		LastBlockID:     state.LastBlockID,
@@ -249,8 +251,9 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 	}
 
 	return State{
-		Version: initStateVersion,
-		ChainID: genDoc.ChainID,
+		Version:     initStateVersion,
+		ChainID:     genDoc.ChainID,
+		VoterParams: genDoc.VoterParams,
 
 		LastBlockHeight: 0,
 		LastBlockID:     types.BlockID{},
@@ -260,7 +263,7 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 		LastProofHash: genDoc.Hash(),
 
 		NextValidators:              nextValidatorSet,
-		NextVoters:                  types.SelectVoter(nextValidatorSet, genDoc.Hash()),
+		NextVoters:                  types.SelectVoter(nextValidatorSet, genDoc.Hash(), genDoc.VoterParams),
 		Validators:                  validatorSet,
 		Voters:                      types.ToVoterAll(validatorSet.Validators),
 		LastVoters:                  &types.VoterSet{},

@@ -23,7 +23,7 @@ func TestStoreLoadValidators(t *testing.T) {
 	// 1) LoadValidators loads validators using a height where they were last changed
 	sm.SaveValidatorsInfo(stateDB, 1, 1, []byte{}, vals)
 	sm.SaveValidatorsInfo(stateDB, 2, 1, []byte{}, vals)
-	loadedVals, _, err := sm.LoadValidators(stateDB, 2)
+	loadedVals, err := sm.LoadValidators(stateDB, 2)
 	require.NoError(t, err)
 	assert.NotZero(t, loadedVals.Size())
 
@@ -31,7 +31,7 @@ func TestStoreLoadValidators(t *testing.T) {
 
 	sm.SaveValidatorsInfo(stateDB, sm.ValSetCheckpointInterval, 1, []byte{}, vals)
 
-	loadedVals, _, err = sm.LoadValidators(stateDB, sm.ValSetCheckpointInterval)
+	loadedVals, err = sm.LoadValidators(stateDB, sm.ValSetCheckpointInterval)
 	require.NoError(t, err)
 	assert.NotZero(t, loadedVals.Size())
 }
@@ -59,7 +59,7 @@ func BenchmarkLoadValidators(b *testing.B) {
 
 		b.Run(fmt.Sprintf("height=%d", i), func(b *testing.B) {
 			for n := 0; n < b.N; n++ {
-				_, _, err := sm.LoadValidators(stateDB, int64(i))
+				_, err := sm.LoadValidators(stateDB, int64(i))
 				if err != nil {
 					b.Fatal(err)
 				}
@@ -145,7 +145,7 @@ func TestPruneStates(t *testing.T) {
 			expectABCI := sliceToMap(tc.expectABCI)
 
 			for h := int64(1); h <= tc.makeHeights; h++ {
-				vals, _, err := sm.LoadValidators(db, h)
+				vals, err := sm.LoadValidators(db, h)
 				if expectVals[h] {
 					require.NoError(t, err, "validators height %v", h)
 					require.NotNil(t, vals)
