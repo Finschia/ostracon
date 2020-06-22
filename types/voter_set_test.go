@@ -19,20 +19,68 @@ func countZeroStakingPower(vals []*Validator) int {
 	return count
 }
 
-func TestSelectVoter(t *testing.T) {
-	MinVoters = 29
-	valSet := randValidatorSet(30)
-	zeroVals := countZeroStakingPower(valSet.Validators)
-	for i := 0; i < 10000; i++ {
-		voterSet := SelectVoter(valSet, []byte{byte(i)})
-		assert.True(t, voterSet.Size() >= 29-zeroVals)
-		if voterSet.totalVotingPower <= 0 {
-			for j := 0; j < voterSet.Size(); j++ {
-				// TODO solve this problem!!!
-				t.Logf("voter voting power = %d", voterSet.Voters[j].VotingPower)
+func verifyVoterSetSame(t *testing.T, vset1, vset2 *VoterSet) {
+	assert.True(t, vset1.Size() == vset2.Size())
+	for i, v1 := range vset1.Voters {
+		v2 := vset2.Voters[i]
+		assert.True(t, v1.Address.String() == v2.Address.String())
+		assert.True(t, v1.VotingPower == v2.VotingPower)
+		assert.True(t, v1.StakingPower == v2.StakingPower)
+	}
+}
+
+func verifyVoterSetDifferent(t *testing.T, vset1, vset2 *VoterSet) {
+	result := vset1.Size() != vset2.Size()
+	if !result {
+		for i, v1 := range vset1.Voters {
+			v2 := vset2.Voters[i]
+			if v1.Address.String() != v2.Address.String() ||
+				v1.StakingPower != v2.StakingPower ||
+				v1.VotingPower != v2.VotingPower {
+				result = true
+				break
 			}
 		}
-		assert.True(t, voterSet.TotalVotingPower() > 0)
+	}
+	assert.True(t, result)
+}
+
+func TestSelectVoter(t *testing.T) {
+	valSet := randValidatorSet(30)
+	valSet.Validators[0].StakingPower = 0
+
+	zeroVals := countZeroStakingPower(valSet.Validators)
+	genDoc := &GenesisDoc{
+		GenesisTime: tmtime.Now(),
+		ChainID:     "tendermint-test",
+		VoterParams: &VoterParams{10, 20, 1},
+		Validators:  toGenesisValidators(valSet.Validators),
+	}
+	hash := genDoc.Hash()
+
+	// verifying determinism
+	voterSet1 := SelectVoter(valSet, hash, genDoc.VoterParams)
+	voterSet2 := SelectVoter(valSet, hash, genDoc.VoterParams)
+	verifyVoterSetSame(t, voterSet1, voterSet2)
+
+	// verifying randomness
+	hash[0] = (hash[0] & 0xFE) | (^(hash[0] & 0x01) & 0x01) // reverse 1 bit of hash
+	voterSet3 := SelectVoter(valSet, hash, genDoc.VoterParams)
+	verifyVoterSetDifferent(t, voterSet1, voterSet3)
+
+	// verifying zero-staking removed
+	assert.True(t, countZeroStakingPower(voterSet1.Voters) == 0)
+
+	// case that all validators are voters
+	voterSet := SelectVoter(valSet, hash, &VoterParams{30, 1, 1})
+	assert.True(t, voterSet.Size() == 30-zeroVals)
+	voterSet = SelectVoter(valSet, nil, genDoc.VoterParams)
+	assert.True(t, voterSet.Size() == 30-zeroVals)
+
+	// test VoterElectionThreshold
+	for i := 1; i < 100; i++ {
+		voterSet := SelectVoter(valSet, hash, &VoterParams{15, i, 1})
+		assert.True(t, voterSet.Size() >= 15)
 	}
 }
 
@@ -92,14 +140,14 @@ func findLargestStakingPowerGap(t *testing.T, loopCount int, minMaxRate int, max
 	genDoc := &GenesisDoc{
 		GenesisTime: tmtime.Now(),
 		ChainID:     "tendermint-test",
+		VoterParams: DefaultVoterParams(),
 		Validators:  toGenesisValidators(valSet.Validators),
 	}
 	hash := genDoc.Hash()
-	MinVoters = maxVoters
 	accumulation := make(map[string]int64)
 	totalVoters := 0
 	for i := 0; i < loopCount; i++ {
-		voterSet := SelectVoter(valSet, hash)
+		voterSet := SelectVoter(valSet, hash, genDoc.VoterParams)
 		for _, voter := range voterSet.Voters {
 			accumulation[voter.Address.String()] += voter.StakingPower
 		}
@@ -132,10 +180,9 @@ func TestSelectVoterMaxVarious(t *testing.T) {
 		t.Logf("<<< min: 100, max: %d >>>", 100*minMaxRate)
 		for validators := 16; validators <= 256; validators *= 4 {
 			for voters := 1; voters <= validators; voters += 10 {
-				MinVoters = voters
 				valSet, _ := randValidatorSetWithMinMax(validators, 100, 100*int64(minMaxRate))
-				voterSet := SelectVoter(valSet, []byte{byte(hash)})
-				if voterSet.Size() < MinVoters {
+				voterSet := SelectVoter(valSet, []byte{byte(hash)}, &VoterParams{voters, 20, 5})
+				if voterSet.Size() < voters {
 					t.Logf("Cannot elect voters up to MaxVoters: validators=%d, MaxVoters=%d, actual voters=%d",
 						validators, voters, voterSet.Size())
 					break
@@ -159,4 +206,97 @@ func TestCalVotersNum(t *testing.T) {
 
 	assert.Panics(t, func() { CalNumOfVoterToElect(total, 0.3, 10) })
 	assert.Panics(t, func() { CalNumOfVoterToElect(total, 1.1, 0.9999) })
+}
+
+func makeByzantine(valSet *ValidatorSet, rate float64) map[string]bool {
+	result := make(map[string]bool)
+	byzantinePower := int64(0)
+	threshold := int64(float64(valSet.TotalStakingPower()) * rate)
+	for _, v := range valSet.Validators {
+		if byzantinePower+v.StakingPower > threshold {
+			break
+		}
+		result[v.Address.String()] = true
+		byzantinePower += v.StakingPower
+	}
+	return result
+}
+
+func byzantinesPower(voters []*Validator, byzantines map[string]bool) int64 {
+	power := int64(0)
+	for _, v := range voters {
+		if byzantines[v.Address.String()] {
+			power += v.VotingPower
+		}
+	}
+	return power
+}
+
+func countByzantines(voters []*Validator, byzantines map[string]bool) int {
+	count := 0
+	for _, v := range voters {
+		if byzantines[v.Address.String()] {
+			count++
+		}
+	}
+	return count
+}
+
+func electVotersForLoop(t *testing.T, hash []byte, valSet *ValidatorSet, privMap map[string]PrivValidator,
+	byzantines map[string]bool, loopCount int, byzantinePercent, accuracy int) {
+	byzantineFault := 0
+	totalVoters := 0
+	totalByzantines := 0
+	for i := 0; i < loopCount; i++ {
+		voterSet := SelectVoter(valSet, hash, &VoterParams{1, byzantinePercent, accuracy})
+		byzantineThreshold := int64(float64(voterSet.TotalVotingPower())*0.33) + 1
+		if byzantinesPower(voterSet.Voters, byzantines) >= byzantineThreshold {
+			byzantineFault++
+		}
+		totalVoters += voterSet.Size()
+		totalByzantines += countByzantines(voterSet.Voters, byzantines)
+		proposer := valSet.SelectProposer(hash, int64(i), 0)
+		message := MakeRoundHash(hash, int64(i), 0)
+		proof, _ := privMap[proposer.Address.String()].GenerateVRFProof(message)
+		hash, _ = vrf.ProofToHash(proof)
+	}
+	t.Logf("[accuracy=%f] voters=%d, fault=%d, avg byzantines=%f", accuracyFromElectionPrecision(accuracy),
+		totalVoters/loopCount, byzantineFault, float64(totalByzantines)/float64(loopCount))
+	assert.True(t, float64(byzantineFault) < float64(loopCount)*(1.0-accuracyFromElectionPrecision(accuracy)))
+}
+
+func TestCalVotersNum2(t *testing.T) {
+	valSet, privMap := randValidatorSetWithMinMax(100, 100, 10000)
+	byzantinePercent := 20
+	byzantines := makeByzantine(valSet, float64(byzantinePercent)/100)
+	genDoc := &GenesisDoc{
+		GenesisTime: tmtime.Now(),
+		ChainID:     "tendermint-test",
+		Validators:  toGenesisValidators(valSet.Validators),
+	}
+	hash := genDoc.Hash()
+
+	loopCount := 1000
+	electVotersForLoop(t, hash, valSet, privMap, byzantines, loopCount, byzantinePercent, 1)
+	electVotersForLoop(t, hash, valSet, privMap, byzantines, loopCount, byzantinePercent, 2)
+	electVotersForLoop(t, hash, valSet, privMap, byzantines, loopCount, byzantinePercent, 3)
+	electVotersForLoop(t, hash, valSet, privMap, byzantines, loopCount, byzantinePercent, 4)
+	electVotersForLoop(t, hash, valSet, privMap, byzantines, loopCount, byzantinePercent, 5)
+}
+
+func TestAccuracyFromElectionPrecision(t *testing.T) {
+	assert.True(t, accuracyFromElectionPrecision(2) == 0.99)
+	assert.True(t, accuracyFromElectionPrecision(3) == 0.999)
+	assert.True(t, accuracyFromElectionPrecision(4) == 0.9999)
+	assert.True(t, accuracyFromElectionPrecision(5) == 0.99999)
+	assert.True(t, accuracyFromElectionPrecision(6) == 0.999999)
+	assert.True(t, accuracyFromElectionPrecision(7) == 0.9999999)
+	assert.True(t, accuracyFromElectionPrecision(8) == 0.99999999)
+	assert.True(t, accuracyFromElectionPrecision(9) == 0.999999999)
+	assert.True(t, accuracyFromElectionPrecision(10) == 0.9999999999)
+	assert.True(t, accuracyFromElectionPrecision(11) == 0.99999999999)
+	assert.True(t, accuracyFromElectionPrecision(12) == 0.999999999999)
+	assert.True(t, accuracyFromElectionPrecision(13) == 0.9999999999999)
+	assert.True(t, accuracyFromElectionPrecision(14) == 0.99999999999999)
+	assert.True(t, accuracyFromElectionPrecision(15) == 0.999999999999999)
 }

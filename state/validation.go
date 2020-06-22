@@ -208,7 +208,7 @@ func VerifyEvidence(stateDB dbm.DB, state State, evidence types.Evidence) error 
 		)
 	}
 
-	_, voterSet, err := LoadValidators(stateDB, evidence.Height())
+	voterSet, err := LoadVoters(stateDB, evidence.Height(), state.VoterParams)
 	if err != nil {
 		// TODO: if err is just that we cant find it cuz we pruned, ignore.
 		// TODO: if its actually bad evidence, punish peer

@@ -936,12 +936,7 @@ func (cs *State) enterPropose(height int64, round int) {
 	}
 	address := pubKey.Address()
 
-	// if not a validator, we're done
-	if !cs.Voters.HasAddress(address) {
-		logger.Debug("This node is not a validator", "addr", address, "vals", cs.Voters)
-		return
-	}
-
+	// I'm a proposer, but I might not be a voter
 	if cs.isProposer(address) {
 		logger.Info("enterPropose: Our turn to propose",
 			"proposer",
@@ -955,6 +950,13 @@ func (cs *State) enterPropose(height int64, round int) {
 			cs.Proposer.Address,
 			"privValidator",
 			cs.privValidator)
+
+	}
+
+	if !cs.Voters.HasAddress(address) {
+		logger.Debug("This node is not elected as a voter")
+	} else {
+		logger.Debug("This node is elected as a voter")
 	}
 }
 
@@ -1462,9 +1464,7 @@ func (cs *State) finalizeCommit(height int64) {
 	var err error
 	var retainHeight int64
 	stateCopy, retainHeight, err = cs.blockExec.ApplyBlock(
-		stateCopy,
-		types.BlockID{Hash: block.Hash(), PartsHeader: blockParts.Header()},
-		block)
+		stateCopy, types.BlockID{Hash: block.Hash(), PartsHeader: blockParts.Header()}, block)
 	if err != nil {
 		cs.Logger.Error("Error on ApplyBlock. Did the application crash? Please restart tendermint", "err", err)
 		err := tmos.Kill()

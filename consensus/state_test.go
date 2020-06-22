@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	cstypes "github.com/tendermint/tendermint/consensus/types"
+	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/libs/log"
 	tmpubsub "github.com/tendermint/tendermint/libs/pubsub"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
@@ -1844,4 +1845,155 @@ func subscribeUnBuffered(eventBus *types.EventBus, q tmpubsub.Query) <-chan tmpu
 		panic(fmt.Sprintf("failed to subscribe %s to %v", testSubscriber, q))
 	}
 	return sub.Out()
+}
+
+func makeVssMap(vss []*validatorStub) map[crypto.PubKey]*validatorStub {
+	vssMap := make(map[crypto.PubKey]*validatorStub)
+	for _, pv := range vss {
+		pubKey, _ := pv.GetPubKey()
+		vssMap[pubKey] = pv
+	}
+	return vssMap
+}
+
+func votersPrivVals(voterSet *types.VoterSet, vssMap map[crypto.PubKey]*validatorStub) []*validatorStub {
+	totalVotingPower := voterSet.TotalVotingPower()
+	votingPower := int64(0)
+	voters := 0
+	for i, v := range voterSet.Voters {
+		vssMap[v.PubKey].Index = i // NOTE: re-indexing for new voters
+		if votingPower < totalVotingPower*2/3+1 {
+			votingPower += v.VotingPower
+			voters++
+		}
+	}
+	result := make([]*validatorStub, voters)
+	for i := 0; i < voters; i++ {
+		result[i] = vssMap[voterSet.Voters[i].PubKey]
+	}
+	return result
+}
+
+func createProposalBlockByOther(cs *State, other *validatorStub, round int) (
+	block *types.Block, blockParts *types.PartSet) {
+	var commit *types.Commit
+	switch {
+	case cs.Height == 1:
+		commit = types.NewCommit(0, 0, types.BlockID{}, nil)
+	case cs.LastCommit.HasTwoThirdsMajority():
+		commit = cs.LastCommit.MakeCommit()
+	default:
+		return
+	}
+
+	pubKey, err := other.GetPubKey()
+	if err != nil {
+		return
+	}
+	proposerAddr := pubKey.Address()
+	message := cs.state.MakeHashMessage(round)
+
+	proof, err := other.GenerateVRFProof(message)
+	if err != nil {
+		return
+	}
+	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerAddr, round, proof)
+}
+
+func proposeBlock(t *testing.T, cs *State, round int, vssMap map[crypto.PubKey]*validatorStub) types.BlockID {
+	newBlock, blockParts := createProposalBlockByOther(cs, vssMap[cs.Proposer.PubKey], round)
+	proposal := types.NewProposal(cs.Height, round, -1, types.BlockID{
+		Hash: newBlock.Hash(), PartsHeader: blockParts.Header()})
+	if err := vssMap[cs.Proposer.PubKey].SignProposal(config.ChainID(), proposal); err != nil {
+		t.Fatal("failed to sign bad proposal", err)
+	}
+
+	// set the proposal block
+	if err := cs.SetProposalAndBlock(proposal, newBlock, blockParts, "some peer"); err != nil {
+		t.Fatal(err)
+	}
+	return types.BlockID{Hash: newBlock.Hash(), PartsHeader: blockParts.Header()}
+}
+
+func TestStateFullRoundWithSelectedVoter(t *testing.T) {
+	cs, vss := randStateWithVoterParams(10, &types.VoterParams{
+		VoterElectionThreshold:          5,
+		MaxTolerableByzantinePercentage: 20,
+		ElectionPrecision:               2})
+	vss[0].Height = 1 // this is needed because of `incrementHeight(vss[1:]...)` of randStateWithVoterParams()
+	vssMap := makeVssMap(vss)
+	height, round := cs.Height, cs.Round
+
+	voteCh := subscribeUnBuffered(cs.eventBus, types.EventQueryVote)
+	propCh := subscribe(cs.eventBus, types.EventQueryCompleteProposal)
+	newRoundCh := subscribe(cs.eventBus, types.EventQueryNewRound)
+	newBlockCh := subscribe(cs.eventBus, types.EventQueryNewBlock)
+
+	startTestRound(cs, height, round)
+
+	// height 1
+	ensureNewRound(newRoundCh, height, round)
+	privPubKey, _ := cs.privValidator.GetPubKey()
+	if !cs.isProposer(privPubKey.Address()) {
+		blockID := proposeBlock(t, cs, round, vssMap)
+		ensureProposal(propCh, height, round, blockID)
+	} else {
+		ensureNewProposal(propCh, height, round)
+	}
+
+	propBlock := cs.GetRoundState().ProposalBlock
+	voters := cs.Voters
+	voterPrivVals := votersPrivVals(voters, vssMap)
+	signAddVotes(cs, types.PrevoteType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
+		voterPrivVals...)
+
+	for range voterPrivVals {
+		ensurePrevote(voteCh, height, round) // wait for prevote
+	}
+
+	signAddVotes(cs, types.PrecommitType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
+		voterPrivVals...)
+
+	for range voterPrivVals {
+		ensurePrecommit(voteCh, height, round) // wait for precommit
+	}
+
+	ensureNewBlock(newBlockCh, height)
+
+	// height 2
+	incrementHeight(vss...)
+
+	ensureNewRound(newRoundCh, height+1, 0)
+
+	height = cs.Height
+	privPubKey, _ = cs.privValidator.GetPubKey()
+	if !cs.isProposer(privPubKey.Address()) {
+		blockID := proposeBlock(t, cs, round, vssMap)
+		ensureProposal(propCh, height, round, blockID)
+	} else {
+		ensureNewProposal(propCh, height, round)
+	}
+
+	propBlock = cs.GetRoundState().ProposalBlock
+	voters = cs.Voters
+	voterPrivVals = votersPrivVals(voters, vssMap)
+
+	signAddVotes(cs, types.PrevoteType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
+		voterPrivVals...)
+
+	for range voterPrivVals {
+		ensurePrevote(voteCh, height, round) // wait for prevote
+	}
+
+	signAddVotes(cs, types.PrecommitType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
+		voterPrivVals...)
+
+	for range voterPrivVals {
+		ensurePrecommit(voteCh, height, round) // wait for precommit
+	}
+
+	ensureNewBlock(newBlockCh, height)
+
+	// we're going to roll right into new height
+	ensureNewRound(newRoundCh, height+1, 0)
 }
