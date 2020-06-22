@@ -41,8 +41,8 @@ func TestByzantinePrevoteEquivocation(t *testing.T) {
 	appFunc := newCounter
 	params := &types.VoterParams{
 		VoterElectionThreshold:          5,
-		MaxByzantineTolerancePercentage: 20,
-		AccuracyPrecision:               2,
+		MaxTolerableByzantinePercentage: 20,
+		ElectionPrecision:               2,
 	}
 
 	genDoc, privVals := randGenesisDoc(nValidators, false, 30, params)

@@ -43,17 +43,17 @@ func DefaultVoterParams() *VoterParams {
 		ElectionPrecision:               DefaultElectionPrecision}
 }
 
-func (params *VoterParams) Validate() error {
-	if params.VoterElectionThreshold < 0 {
+func (vp *VoterParams) Validate() error {
+	if vp.VoterElectionThreshold < 0 {
 		return fmt.Errorf("VoterElectionThreshold must be greater than or equal to 0. Got %d",
-			params.VoterElectionThreshold)
+			vp.VoterElectionThreshold)
 	}
-	if params.MaxTolerableByzantinePercentage <= 0 || params.MaxTolerableByzantinePercentage >= 34 {
+	if vp.MaxTolerableByzantinePercentage <= 0 || vp.MaxTolerableByzantinePercentage >= 34 {
 		return fmt.Errorf("MaxTolerableByzantinePercentage must be in between 1 and 33. Got %d",
-			params.MaxTolerableByzantinePercentage)
+			vp.MaxTolerableByzantinePercentage)
 	}
-	if params.ElectionPrecision <= 1 || params.ElectionPrecision > 15 {
-		return fmt.Errorf("ElectionPrecision must be in between 2 and 15. Got %d", params.ElectionPrecision)
+	if vp.ElectionPrecision <= 1 || vp.ElectionPrecision > 15 {
+		return fmt.Errorf("ElectionPrecision must be in between 2 and 15. Got %d", vp.ElectionPrecision)
 	}
 	return nil
 }

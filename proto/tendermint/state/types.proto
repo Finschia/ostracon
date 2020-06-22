@@ -84,7 +84,14 @@ message State {
   bytes last_proof_hash = 1000;
 
   // before and after the round voter set
-  tendermint.types.VoterSet voters      = 1001;
-  tendermint.types.VoterSet next_voters = 1002;
-  tendermint.types.VoterSet last_voters = 1003;
+  tendermint.types.VoterSet voters       = 1001;
+  tendermint.types.VoterSet next_voters  = 1002;
+  tendermint.types.VoterSet last_voters  = 1003;
+  VoterParams               voter_params = 1004;
+}
+
+message VoterParams {
+  int32 VoterElectionThreshold          = 1001;
+  int32 MaxTolerableByzantinePercentage = 1002;
+  int32 ElectionPrecision               = 1003;
 }

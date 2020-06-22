@@ -12,6 +12,7 @@ import (
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	tmos "github.com/tendermint/tendermint/libs/os"
+	tmprotostate "github.com/tendermint/tendermint/proto/tendermint/state"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
 )
@@ -42,6 +43,28 @@ type VoterParams struct {
 	// As a unit of precision, if it is 1, it is 0.9, and if it is 2, it is 0.99.
 	// The default is 5, with a precision of 0.99999.
 	ElectionPrecision int `json:"election_precision"`
+}
+
+func (vp *VoterParams) ToProto() *tmprotostate.VoterParams {
+	if vp == nil {
+		return nil
+	}
+	return &tmprotostate.VoterParams{
+		VoterElectionThreshold:          int32(vp.VoterElectionThreshold),
+		MaxTolerableByzantinePercentage: int32(vp.MaxTolerableByzantinePercentage),
+		ElectionPrecision:               int32(vp.ElectionPrecision),
+	}
+}
+
+func VoterParamsFromProto(pb *tmprotostate.VoterParams) *VoterParams {
+	if pb == nil {
+		return nil
+	}
+	return &VoterParams{
+		VoterElectionThreshold:          int(pb.VoterElectionThreshold),
+		MaxTolerableByzantinePercentage: int(pb.MaxTolerableByzantinePercentage),
+		ElectionPrecision:               int(pb.ElectionPrecision),
+	}
 }
 
 // GenesisDoc defines the initial conditions for a tendermint blockchain, in particular its validator set.
