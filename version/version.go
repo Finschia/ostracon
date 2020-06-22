@@ -20,7 +20,7 @@ func init() {
 
 const (
 	// LINECoreSemVer is the current version of LINE Tendermint Core.
-	LINECoreSemVer = "0.1"
+	LINECoreSemVer = "0.2"
 
 	// ABCISemVer is the semantic version of the ABCI library
 	ABCISemVer = "0.17.0"
