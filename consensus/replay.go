@@ -337,10 +337,9 @@ func (h *Handshaker) ReplayBlocks(
 					return nil, err
 				}
 				state.Validators = types.NewValidatorSet(vals)
-				state.Voters = types.ToVoterAll(state.Validators.Validators)
+				state.Voters = types.SelectVoter(state.Validators, h.genDoc.Hash(), state.VoterParams)
 				// Should sync it with MakeGenesisState()
 				state.NextValidators = types.NewValidatorSet(vals)
-				state.NextVoters = types.SelectVoter(state.NextValidators, h.genDoc.Hash(), state.VoterParams)
 			} else if len(h.genDoc.Validators) == 0 {
 				// If validator set is not set in genesis and still empty after InitChain, exit.
 				return nil, fmt.Errorf("validator set is nil in genesis and still empty after InitChain")

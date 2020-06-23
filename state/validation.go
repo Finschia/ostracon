@@ -78,10 +78,16 @@ func validateBlock(state State, round int32, block *types.Block) error {
 			block.VotersHash,
 		)
 	}
-	if !bytes.Equal(block.NextVotersHash, state.NextVoters.Hash()) {
-		return fmt.Errorf("wrong Block.Header.NextVotersHash.  Expected %X, got %v",
-			state.NextVoters.Hash(),
-			block.NextVotersHash,
+	if !bytes.Equal(block.ValidatorsHash, state.Validators.Hash()) {
+		return fmt.Errorf("wrong Block.Header.ValidatorsHash.  Expected %X, got %v",
+			state.Validators.Hash(),
+			block.ValidatorsHash,
+		)
+	}
+	if !bytes.Equal(block.NextValidatorsHash, state.NextValidators.Hash()) {
+		return fmt.Errorf("wrong Block.Header.NextValidatorsHash.  Expected %X, got %v",
+			state.NextValidators.Hash(),
+			block.NextValidatorsHash,
 		)
 	}
 

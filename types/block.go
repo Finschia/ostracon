@@ -28,7 +28,7 @@ const (
 	// MaxHeaderBytes is a maximum header size.
 	// NOTE: Because app hash can be of arbitrary size, the header is therefore not
 	// capped in size and thus this number should be seen as a soft max
-	MaxHeaderBytes int64 = 626
+	MaxHeaderBytes int64 = 661
 
 	// MaxOverheadForBlock - maximum overhead to encode a block (up to
 	// MaxBlockSizeBytes in size) not including it's parts except Data.
@@ -339,10 +339,11 @@ type Header struct {
 	DataHash       tmbytes.HexBytes `json:"data_hash"`        // transactions
 
 	// hashes from the app output from the prev block
-	VotersHash     tmbytes.HexBytes `json:"voters_hash"`      // voters for the current block
-	NextVotersHash tmbytes.HexBytes `json:"next_voters_hash"` // voters for the next block
-	ConsensusHash  tmbytes.HexBytes `json:"consensus_hash"`   // consensus params for current block
-	AppHash        tmbytes.HexBytes `json:"app_hash"`         // state after txs from the previous block
+	VotersHash         tmbytes.HexBytes `json:"voters_hash"`          // voters for the current block
+	ValidatorsHash     tmbytes.HexBytes `json:"validators_hash"`      // validators for the current block
+	NextValidatorsHash tmbytes.HexBytes `json:"next_validators_hash"` // validators for the next block
+	ConsensusHash      tmbytes.HexBytes `json:"consensus_hash"`       // consensus params for current block
+	AppHash            tmbytes.HexBytes `json:"app_hash"`             // state after txs from the previous block
 	// root hash of all results from the txs from the previous block
 	LastResultsHash tmbytes.HexBytes `json:"last_results_hash"`
 
@@ -360,7 +361,7 @@ type Header struct {
 func (h *Header) Populate(
 	version tmversion.Consensus, chainID string,
 	timestamp time.Time, lastBlockID BlockID,
-	votersHash, nextVotersHash []byte,
+	votersHash, validatorsHash, nextValidatorsHash []byte,
 	consensusHash, appHash, lastResultsHash []byte,
 	proposerAddress Address,
 	round int32,
@@ -371,7 +372,8 @@ func (h *Header) Populate(
 	h.Time = timestamp
 	h.LastBlockID = lastBlockID
 	h.VotersHash = votersHash
-	h.NextVotersHash = nextVotersHash
+	h.ValidatorsHash = validatorsHash
+	h.NextValidatorsHash = nextValidatorsHash
 	h.ConsensusHash = consensusHash
 	h.AppHash = appHash
 	h.LastResultsHash = lastResultsHash
@@ -427,7 +429,7 @@ func (h Header) ValidateBasic() error {
 		return fmt.Errorf("wrong ValidatorsHash: %v", err)
 	}
 	// TODO When we add `Header.ValidatorsHash` in a future commit, we have to add a similar check here.
-	if err := ValidateHash(h.NextVotersHash); err != nil {
+	if err := ValidateHash(h.NextValidatorsHash); err != nil {
 		return fmt.Errorf("wrong NextValidatorsHash: %v", err)
 	}
 	if err := ValidateHash(h.ConsensusHash); err != nil {
@@ -475,7 +477,8 @@ func (h *Header) Hash() tmbytes.HexBytes {
 		cdcEncode(h.LastCommitHash),
 		cdcEncode(h.DataHash),
 		cdcEncode(h.VotersHash),
-		cdcEncode(h.NextVotersHash),
+		cdcEncode(h.ValidatorsHash),
+		cdcEncode(h.NextValidatorsHash),
 		cdcEncode(h.ConsensusHash),
 		cdcEncode(h.AppHash),
 		cdcEncode(h.LastResultsHash),
@@ -500,7 +503,7 @@ func (h *Header) StringIndented(indent string) string {
 %s  LastBlockID:    %v
 %s  LastCommit:     %v
 %s  Data:           %v
-%s  Validators:     %v
+%s  Voters:         %v
 %s  NextValidators: %v
 %s  App:            %v
 %s  Consensus:      %v
@@ -518,7 +521,7 @@ func (h *Header) StringIndented(indent string) string {
 		indent, h.LastCommitHash,
 		indent, h.DataHash,
 		indent, h.VotersHash,
-		indent, h.NextVotersHash,
+		indent, h.NextValidatorsHash,
 		indent, h.AppHash,
 		indent, h.ConsensusHash,
 		indent, h.LastResultsHash,
@@ -536,22 +539,23 @@ func (h *Header) ToProto() *tmproto.Header {
 	}
 
 	return &tmproto.Header{
-		Version:         h.Version,
-		ChainID:         h.ChainID,
-		Height:          h.Height,
-		Time:            h.Time,
-		LastBlockId:     h.LastBlockID.ToProto(),
-		VotersHash:      h.VotersHash,
-		NextVotersHash:  h.NextVotersHash,
-		ConsensusHash:   h.ConsensusHash,
-		AppHash:         h.AppHash,
-		DataHash:        h.DataHash,
-		EvidenceHash:    h.EvidenceHash,
-		LastResultsHash: h.LastResultsHash,
-		LastCommitHash:  h.LastCommitHash,
-		ProposerAddress: h.ProposerAddress,
-		Round:           h.Round,
-		Proof:           h.Proof,
+		Version:            h.Version,
+		ChainID:            h.ChainID,
+		Height:             h.Height,
+		Time:               h.Time,
+		LastBlockId:        h.LastBlockID.ToProto(),
+		ValidatorsHash:     h.ValidatorsHash,
+		NextValidatorsHash: h.NextValidatorsHash,
+		ConsensusHash:      h.ConsensusHash,
+		AppHash:            h.AppHash,
+		DataHash:           h.DataHash,
+		EvidenceHash:       h.EvidenceHash,
+		LastResultsHash:    h.LastResultsHash,
+		LastCommitHash:     h.LastCommitHash,
+		ProposerAddress:    h.ProposerAddress,
+		Round:              h.Round,
+		Proof:              h.Proof,
+		VotersHash:         h.VotersHash,
 	}
 }
 
@@ -575,8 +579,8 @@ func HeaderFromProto(ph *tmproto.Header) (Header, error) {
 	h.Time = ph.Time
 	h.Height = ph.Height
 	h.LastBlockID = *bi
-	h.VotersHash = ph.VotersHash
-	h.NextVotersHash = ph.NextVotersHash
+	h.ValidatorsHash = ph.ValidatorsHash
+	h.NextValidatorsHash = ph.NextValidatorsHash
 	h.ConsensusHash = ph.ConsensusHash
 	h.AppHash = ph.AppHash
 	h.DataHash = ph.DataHash
@@ -586,6 +590,7 @@ func HeaderFromProto(ph *tmproto.Header) (Header, error) {
 	h.ProposerAddress = ph.ProposerAddress
 	h.Round = ph.Round
 	h.Proof = ph.Proof
+	h.VotersHash = ph.VotersHash
 
 	return *h, h.ValidateBasic()
 }

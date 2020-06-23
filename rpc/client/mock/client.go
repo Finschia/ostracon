@@ -170,6 +170,10 @@ func (c Client) Commit(ctx context.Context, height *int64) (*ctypes.ResultCommit
 	return core.Commit(&rpctypes.Context{}, height)
 }
 
+func (c Client) Validators(ctx context.Context, height *int64, page, perPage *int) (*ctypes.ResultValidators, error) {
+	return core.Validators(&rpctypes.Context{}, height, page, perPage)
+}
+
 func (c Client) Voters(ctx context.Context, height *int64, page, perPage *int) (*ctypes.ResultVoters, error) {
 	return core.Voters(&rpctypes.Context{}, height, page, perPage)
 }

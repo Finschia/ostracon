@@ -299,6 +299,33 @@ func TestSelectVoter(t *testing.T) {
 	}
 }
 
+func zeroIncluded(valSet *ValidatorSet) bool {
+	for _, v := range valSet.Validators {
+		if v.StakingPower == 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func areSame(a *ValidatorSet, b *VoterSet) bool {
+	if a.Size() != b.Size() {
+		return false
+	}
+	for i, v := range a.Validators {
+		if !v.PubKey.Equals(b.Voters[i].PubKey) {
+			return false
+		}
+		if v.Address.String() != b.Voters[i].Address.String() {
+			return false
+		}
+		if v.StakingPower != b.Voters[i].StakingPower {
+			return false
+		}
+	}
+	return true
+}
+
 func TestToVoterAll(t *testing.T) {
 	valSet := randValidatorSet(30)
 	vals := valSet.Validators
@@ -315,6 +342,15 @@ func TestToVoterAll(t *testing.T) {
 	vals[2].StakingPower = 0
 	zeroRemovedVoters = ToVoterAll(vals)
 	assert.True(t, zeroRemovedVoters.Size() == 0)
+
+	for i := 0; i < 100; i++ {
+		valSet = randValidatorSet(10)
+		if zeroIncluded(valSet) {
+			continue
+		}
+		voters := ToVoterAll(valSet.Validators)
+		assert.True(t, areSame(valSet, voters), "[%d] %+v != %+v", i, valSet, voters)
+	}
 }
 
 func toGenesisValidators(vals []*Validator) []GenesisValidator {

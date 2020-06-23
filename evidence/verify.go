@@ -62,6 +62,10 @@ func (evpool *Pool) verify(evidence types.Evidence) error {
 		if err != nil {
 			return err
 		}
+		commonVals, err := evpool.stateDB.LoadValidators(evidence.Height())
+		if err != nil {
+			return err
+		}
 		commonVoters, err := evpool.stateDB.LoadVoters(evidence.Height(), state.VoterParams)
 		if err != nil {
 			return err
@@ -75,8 +79,8 @@ func (evpool *Pool) verify(evidence types.Evidence) error {
 			}
 		}
 
-		err = VerifyLightClientAttack(ev, commonHeader, trustedHeader, commonVoters, state.LastBlockTime,
-			state.ConsensusParams.Evidence.MaxAgeDuration)
+		err = VerifyLightClientAttack(ev, commonHeader, trustedHeader, commonVals, commonVoters, state.LastBlockTime,
+			state.ConsensusParams.Evidence.MaxAgeDuration, state.VoterParams)
 		if err != nil {
 			return err
 		}
@@ -121,12 +125,12 @@ func (evpool *Pool) verify(evidence types.Evidence) error {
 //       the conflicting header's commit
 //     - the nodes trusted header at the same height as the conflicting header has a different hash
 func VerifyLightClientAttack(e *types.LightClientAttackEvidence, commonHeader, trustedHeader *types.SignedHeader,
-	commonVoters *types.VoterSet, now time.Time, trustPeriod time.Duration) error {
+	commonVals *types.ValidatorSet, commonVoters *types.VoterSet, now time.Time, trustPeriod time.Duration, voterParams *types.VoterParams) error {
 	// In the case of lunatic attack we need to perform a single verification jump between the
 	// common header and the conflicting one
 	if commonHeader.Height != trustedHeader.Height {
-		err := light.Verify(commonHeader, commonVoters, e.ConflictingBlock.SignedHeader, e.ConflictingBlock.VoterSet,
-			trustPeriod, now, 0*time.Second, light.DefaultTrustLevel)
+		err := light.Verify(commonHeader, commonVals, e.ConflictingBlock.SignedHeader, e.ConflictingBlock.ValidatorSet,
+			trustPeriod, now, 0*time.Second, light.DefaultTrustLevel, voterParams)
 		if err != nil {
 			return fmt.Errorf("skipping verification from common to conflicting header failed: %w", err)
 		}
@@ -245,7 +249,7 @@ func getSignedHeader(blockStore BlockStore, height int64) (*types.SignedHeader, 
 // If not, it is an invalid header and constitutes a lunatic attack.
 func isInvalidHeader(trusted, conflicting *types.Header) bool {
 	return !bytes.Equal(trusted.VotersHash, conflicting.VotersHash) ||
-		!bytes.Equal(trusted.NextVotersHash, conflicting.NextVotersHash) ||
+		!bytes.Equal(trusted.NextValidatorsHash, conflicting.NextValidatorsHash) ||
 		!bytes.Equal(trusted.ConsensusHash, conflicting.ConsensusHash) ||
 		!bytes.Equal(trusted.AppHash, conflicting.AppHash) ||
 		!bytes.Equal(trusted.LastResultsHash, conflicting.LastResultsHash)

@@ -26,21 +26,28 @@ const (
 var (
 	ctx      = context.Background()
 	keys     = genPrivKeys(4)
-	voters   = types.ToVoterAll(keys.ToValidators(20, 10).Validators)
+	vals     = keys.ToValidators(20, 10)
+	voters   = types.ToVoterAll(vals.Validators)
 	bTime, _ = time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
-	h1       = keys.GenSignedHeader(chainID, 1, bTime, nil, voters, voters,
+	h1       = keys.GenSignedHeader(chainID, 1, bTime, nil, voters, vals, vals,
 		hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys))
 	// 3/3 signed
-	h2 = keys.GenSignedHeaderLastBlockID(chainID, 2, bTime.Add(30*time.Minute), nil, voters, voters,
+	h2 = keys.GenSignedHeaderLastBlockID(chainID, 2, bTime.Add(30*time.Minute), nil, voters, vals, vals,
 		hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys), types.BlockID{Hash: h1.Hash()})
 	// 3/3 signed
-	h3 = keys.GenSignedHeaderLastBlockID(chainID, 3, bTime.Add(1*time.Hour), nil, voters, voters,
+	h3 = keys.GenSignedHeaderLastBlockID(chainID, 3, bTime.Add(1*time.Hour), nil, voters, vals, vals,
 		hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys), types.BlockID{Hash: h2.Hash()})
 	trustPeriod  = 4 * time.Hour
 	trustOptions = light.TrustOptions{
 		Period: 4 * time.Hour,
 		Height: 1,
 		Hash:   h1.Hash(),
+	}
+	valSet = map[int64]*types.ValidatorSet{
+		1: vals,
+		2: vals,
+		3: vals,
+		4: vals,
 	}
 	voterSet = map[int64]*types.VoterSet{
 		1: voters,
@@ -60,6 +67,7 @@ var (
 	fullNode = mockp.New(
 		chainID,
 		headerSet,
+		valSet,
 		voterSet,
 	)
 	deadNode      = mockp.NewDeadMock(chainID)
@@ -113,18 +121,22 @@ func TestValidateTrustOptions(t *testing.T) {
 }
 
 func TestMock(t *testing.T) {
-	l, _ := fullNode.LightBlock(ctx, 3)
-	assert.Equal(t, int64(3), l.Height)
+	l, err := fullNode.LightBlock(ctx, 3)
+	if assert.NoError(t, err) {
+		assert.Equal(t, int64(3), l.Height)
+	}
 }
 
 func TestClient_SequentialVerification(t *testing.T) {
 	newKeys := genPrivKeys(4)
-	newVoters := types.ToVoterAll(newKeys.ToValidators(10, 1).Validators)
-	_, differentVoters, _ := types.RandVoterSet(10, 100)
+	newVals := newKeys.ToValidators(10, 1)
+	newVoters := types.ToVoterAll(newVals.Validators)
+	differentVals, differentVoters, _ := types.RandVoterSet(10, 100)
 
 	testCases := []struct {
 		name         string
 		otherHeaders map[int64]*types.SignedHeader // all except ^
+		vals         map[int64]*types.ValidatorSet
 		voters       map[int64]*types.VoterSet
 		initErr      bool
 		verifyErr    bool
@@ -132,6 +144,7 @@ func TestClient_SequentialVerification(t *testing.T) {
 		{
 			"good",
 			headerSet,
+			valSet,
 			voterSet,
 			false,
 			false,
@@ -140,8 +153,11 @@ func TestClient_SequentialVerification(t *testing.T) {
 			"bad: different first header",
 			map[int64]*types.SignedHeader{
 				// different header
-				1: keys.GenSignedHeader(chainID, 1, bTime.Add(1*time.Hour), nil, voters, voters,
+				1: keys.GenSignedHeader(chainID, 1, bTime.Add(1*time.Hour), nil, voters, vals, vals,
 					hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys)),
+			},
+			map[int64]*types.ValidatorSet{
+				1: vals,
 			},
 			map[int64]*types.VoterSet{
 				1: voters,
@@ -152,6 +168,9 @@ func TestClient_SequentialVerification(t *testing.T) {
 		{
 			"bad: no first signed header",
 			map[int64]*types.SignedHeader{},
+			map[int64]*types.ValidatorSet{
+				1: differentVals,
+			},
 			map[int64]*types.VoterSet{
 				1: differentVoters,
 			},
@@ -162,6 +181,9 @@ func TestClient_SequentialVerification(t *testing.T) {
 			"bad: different first voter set",
 			map[int64]*types.SignedHeader{
 				1: h1,
+			},
+			map[int64]*types.ValidatorSet{
+				1: differentVals,
 			},
 			map[int64]*types.VoterSet{
 				1: differentVoters,
@@ -175,12 +197,13 @@ func TestClient_SequentialVerification(t *testing.T) {
 				// trusted header
 				1: h1,
 				// interim header (1/3 signed)
-				2: keys.GenSignedHeader(chainID, 2, bTime.Add(1*time.Hour), nil, voters, voters,
+				2: keys.GenSignedHeader(chainID, 2, bTime.Add(1*time.Hour), nil, voters, vals, vals,
 					hash("app_hash"), hash("cons_hash"), hash("results_hash"), len(keys)-1, len(keys)),
 				// last header (3/3 signed)
-				3: keys.GenSignedHeader(chainID, 3, bTime.Add(2*time.Hour), nil, voters, voters,
+				3: keys.GenSignedHeader(chainID, 3, bTime.Add(2*time.Hour), nil, voters, vals, vals,
 					hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys)),
 			},
+			valSet,
 			voterSet,
 			false,
 			true,
@@ -191,12 +214,13 @@ func TestClient_SequentialVerification(t *testing.T) {
 				// trusted header
 				1: h1,
 				// interim header (3/3 signed)
-				2: keys.GenSignedHeader(chainID, 2, bTime.Add(1*time.Hour), nil, voters, voters,
+				2: keys.GenSignedHeader(chainID, 2, bTime.Add(1*time.Hour), nil, voters, vals, vals,
 					hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys)),
 				// last header (1/3 signed)
-				3: keys.GenSignedHeader(chainID, 3, bTime.Add(2*time.Hour), nil, voters, voters,
+				3: keys.GenSignedHeader(chainID, 3, bTime.Add(2*time.Hour), nil, voters, vals, vals,
 					hash("app_hash"), hash("cons_hash"), hash("results_hash"), len(keys)-1, len(keys)),
 			},
+			valSet,
 			voterSet,
 			false,
 			true,
@@ -204,6 +228,11 @@ func TestClient_SequentialVerification(t *testing.T) {
 		{
 			"bad: different voter set at height 3",
 			headerSet,
+			map[int64]*types.ValidatorSet{
+				1: vals,
+				2: vals,
+				3: newVals,
+			},
 			map[int64]*types.VoterSet{
 				1: voters,
 				2: voters,
@@ -224,14 +253,17 @@ func TestClient_SequentialVerification(t *testing.T) {
 				mockp.New(
 					chainID,
 					tc.otherHeaders,
+					tc.vals,
 					tc.voters,
 				),
 				[]provider.Provider{mockp.New(
 					chainID,
 					tc.otherHeaders,
+					tc.vals,
 					tc.voters,
 				)},
 				dbs.New(dbm.NewMemDB(), chainID),
+				types.DefaultVoterParams(),
 				light.SequentialVerification(),
 				light.Logger(log.TestingLogger()),
 			)
@@ -256,15 +288,18 @@ func TestClient_SequentialVerification(t *testing.T) {
 func TestClient_SkippingVerification(t *testing.T) {
 	// required for 2nd test case
 	newKeys := genPrivKeys(4)
-	newVoters := types.ToVoterAll(newKeys.ToValidators(10, 1).Validators)
+	newVals := newKeys.ToValidators(10, 1)
+	newVoters := types.ToVoterAll(newVals.Validators)
 
 	// 1/3+ of voters, 2/3- of newVoters
 	transitKeys := keys.Extend(3)
-	transitVoters := types.ToVoterAll(transitKeys.ToValidators(10, 1).Validators)
+	transitVals := transitKeys.ToValidators(10, 1)
+	transitVoters := types.ToVoterAll(transitVals.Validators)
 
 	testCases := []struct {
 		name         string
 		otherHeaders map[int64]*types.SignedHeader // all except ^
+		vals         map[int64]*types.ValidatorSet
 		voters       map[int64]*types.VoterSet
 		initErr      bool
 		verifyErr    bool
@@ -277,6 +312,7 @@ func TestClient_SkippingVerification(t *testing.T) {
 				// last header (3/3 signed)
 				3: h3,
 			},
+			valSet,
 			voterSet,
 			false,
 			false,
@@ -286,8 +322,13 @@ func TestClient_SkippingVerification(t *testing.T) {
 			map[int64]*types.SignedHeader{
 				// trusted header
 				1: h1,
-				3: transitKeys.GenSignedHeader(chainID, 3, bTime.Add(2*time.Hour), nil, transitVoters, transitVoters,
+				3: transitKeys.GenSignedHeader(chainID, 3, bTime.Add(2*time.Hour), nil, transitVoters, transitVals, transitVals,
 					hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(transitKeys)),
+			},
+			map[int64]*types.ValidatorSet{
+				1: vals,
+				2: vals,
+				3: transitVals,
 			},
 			map[int64]*types.VoterSet{
 				1: voters,
@@ -303,11 +344,16 @@ func TestClient_SkippingVerification(t *testing.T) {
 				// trusted header
 				1: h1,
 				// interim header (3/3 signed)
-				2: keys.GenSignedHeader(chainID, 2, bTime.Add(1*time.Hour), nil, voters, newVoters,
+				2: keys.GenSignedHeader(chainID, 2, bTime.Add(1*time.Hour), nil, voters, vals, newVals,
 					hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys)),
 				// last header (0/4 of the original voter set signed)
-				3: newKeys.GenSignedHeader(chainID, 3, bTime.Add(2*time.Hour), nil, newVoters, newVoters,
+				3: newKeys.GenSignedHeader(chainID, 3, bTime.Add(2*time.Hour), nil, newVoters, newVals, newVals,
 					hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(newKeys)),
+			},
+			map[int64]*types.ValidatorSet{
+				1: vals,
+				2: vals,
+				3: newVals,
 			},
 			map[int64]*types.VoterSet{
 				1: voters,
@@ -323,11 +369,16 @@ func TestClient_SkippingVerification(t *testing.T) {
 				// trusted header
 				1: h1,
 				// last header (0/4 of the original val set signed)
-				2: keys.GenSignedHeader(chainID, 2, bTime.Add(1*time.Hour), nil, voters, newVoters,
+				2: keys.GenSignedHeader(chainID, 2, bTime.Add(1*time.Hour), nil, voters, vals, newVals,
 					hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, 0),
 				// last header (0/4 of the original val set signed)
-				3: newKeys.GenSignedHeader(chainID, 3, bTime.Add(2*time.Hour), nil, newVoters, newVoters,
+				3: newKeys.GenSignedHeader(chainID, 3, bTime.Add(2*time.Hour), nil, newVoters, newVals, newVals,
 					hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(newKeys)),
+			},
+			map[int64]*types.ValidatorSet{
+				1: vals,
+				2: vals,
+				3: newVals,
 			},
 			map[int64]*types.VoterSet{
 				1: voters,
@@ -349,14 +400,17 @@ func TestClient_SkippingVerification(t *testing.T) {
 				mockp.New(
 					chainID,
 					tc.otherHeaders,
+					tc.vals,
 					tc.voters,
 				),
 				[]provider.Provider{mockp.New(
 					chainID,
 					tc.otherHeaders,
+					tc.vals,
 					tc.voters,
 				)},
 				dbs.New(dbm.NewMemDB(), chainID),
+				types.DefaultVoterParams(),
 				light.SkippingVerification(light.DefaultTrustLevel),
 				light.Logger(log.TestingLogger()),
 			)
@@ -395,6 +449,7 @@ func TestClientLargeBisectionVerification(t *testing.T) {
 		veryLargeFullNode,
 		[]provider.Provider{veryLargeFullNode},
 		dbs.New(dbm.NewMemDB(), chainID),
+		types.DefaultVoterParams(),
 		light.SkippingVerification(light.DefaultTrustLevel),
 	)
 	require.NoError(t, err)
@@ -417,6 +472,7 @@ func TestClientBisectionBetweenTrustedHeaders(t *testing.T) {
 		fullNode,
 		[]provider.Provider{fullNode},
 		dbs.New(dbm.NewMemDB(), chainID),
+		types.DefaultVoterParams(),
 		light.SkippingVerification(light.DefaultTrustLevel),
 	)
 	require.NoError(t, err)
@@ -441,6 +497,7 @@ func TestClient_Cleanup(t *testing.T) {
 		fullNode,
 		[]provider.Provider{fullNode},
 		dbs.New(dbm.NewMemDB(), chainID),
+		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 	)
 	require.NoError(t, err)
@@ -471,6 +528,7 @@ func TestClientRestoresTrustedHeaderAfterStartup1(t *testing.T) {
 			fullNode,
 			[]provider.Provider{fullNode},
 			trustedStore,
+			types.DefaultVoterParams(),
 			light.Logger(log.TestingLogger()),
 		)
 		require.NoError(t, err)
@@ -489,7 +547,7 @@ func TestClientRestoresTrustedHeaderAfterStartup1(t *testing.T) {
 		require.NoError(t, err)
 
 		// header1 != h1
-		header1 := keys.GenSignedHeader(chainID, 1, bTime.Add(1*time.Hour), nil, voters, voters,
+		header1 := keys.GenSignedHeader(chainID, 1, bTime.Add(1*time.Hour), nil, voters, vals, vals,
 			hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys))
 
 		primary := mockp.New(
@@ -498,6 +556,7 @@ func TestClientRestoresTrustedHeaderAfterStartup1(t *testing.T) {
 				// trusted header
 				1: header1,
 			},
+			valSet,
 			voterSet,
 		)
 
@@ -512,6 +571,7 @@ func TestClientRestoresTrustedHeaderAfterStartup1(t *testing.T) {
 			primary,
 			[]provider.Provider{primary},
 			trustedStore,
+			types.DefaultVoterParams(),
 			light.Logger(log.TestingLogger()),
 		)
 		require.NoError(t, err)
@@ -544,6 +604,7 @@ func TestClientRestoresTrustedHeaderAfterStartup2(t *testing.T) {
 			fullNode,
 			[]provider.Provider{fullNode},
 			trustedStore,
+			types.DefaultVoterParams(),
 			light.Logger(log.TestingLogger()),
 		)
 		require.NoError(t, err)
@@ -564,10 +625,10 @@ func TestClientRestoresTrustedHeaderAfterStartup2(t *testing.T) {
 		require.NoError(t, err)
 
 		// header1 != header
-		diffHeader1 := keys.GenSignedHeader(chainID, 1, bTime.Add(1*time.Hour), nil, voters, voters,
+		diffHeader1 := keys.GenSignedHeader(chainID, 1, bTime.Add(1*time.Hour), nil, voters, vals, vals,
 			hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys))
 
-		diffHeader2 := keys.GenSignedHeader(chainID, 2, bTime.Add(2*time.Hour), nil, voters, voters,
+		diffHeader2 := keys.GenSignedHeader(chainID, 2, bTime.Add(2*time.Hour), nil, voters, vals, vals,
 			hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys))
 
 		primary := mockp.New(
@@ -576,6 +637,7 @@ func TestClientRestoresTrustedHeaderAfterStartup2(t *testing.T) {
 				1: diffHeader1,
 				2: diffHeader2,
 			},
+			valSet,
 			voterSet,
 		)
 
@@ -590,6 +652,7 @@ func TestClientRestoresTrustedHeaderAfterStartup2(t *testing.T) {
 			primary,
 			[]provider.Provider{primary},
 			trustedStore,
+			types.DefaultVoterParams(),
 			light.Logger(log.TestingLogger()),
 		)
 		require.NoError(t, err)
@@ -620,6 +683,7 @@ func TestClientRestoresTrustedHeaderAfterStartup3(t *testing.T) {
 			fullNode,
 			[]provider.Provider{fullNode},
 			trustedStore,
+			types.DefaultVoterParams(),
 			light.Logger(log.TestingLogger()),
 		)
 		require.NoError(t, err)
@@ -649,10 +713,10 @@ func TestClientRestoresTrustedHeaderAfterStartup3(t *testing.T) {
 		require.NoError(t, err)
 
 		// header1 != header
-		header1 := keys.GenSignedHeader(chainID, 1, bTime.Add(1*time.Hour), nil, voters, voters,
+		header1 := keys.GenSignedHeader(chainID, 1, bTime.Add(1*time.Hour), nil, voters, vals, vals,
 			hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys))
 
-		header2 := keys.GenSignedHeader(chainID, 2, bTime.Add(2*time.Hour), nil, voters, voters,
+		header2 := keys.GenSignedHeader(chainID, 2, bTime.Add(2*time.Hour), nil, voters, vals, vals,
 			hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys))
 		err = trustedStore.SaveLightBlock(&types.LightBlock{
 			SignedHeader: header2,
@@ -665,6 +729,7 @@ func TestClientRestoresTrustedHeaderAfterStartup3(t *testing.T) {
 			map[int64]*types.SignedHeader{
 				1: header1,
 			},
+			valSet,
 			voterSet,
 		)
 
@@ -679,6 +744,7 @@ func TestClientRestoresTrustedHeaderAfterStartup3(t *testing.T) {
 			primary,
 			[]provider.Provider{primary},
 			trustedStore,
+			types.DefaultVoterParams(),
 			light.Logger(log.TestingLogger()),
 		)
 		require.NoError(t, err)
@@ -705,6 +771,7 @@ func TestClient_Update(t *testing.T) {
 		fullNode,
 		[]provider.Provider{fullNode},
 		dbs.New(dbm.NewMemDB(), chainID),
+		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 	)
 	require.NoError(t, err)
@@ -726,6 +793,7 @@ func TestClient_Concurrency(t *testing.T) {
 		fullNode,
 		[]provider.Provider{fullNode},
 		dbs.New(dbm.NewMemDB(), chainID),
+		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 	)
 	require.NoError(t, err)
@@ -767,6 +835,7 @@ func TestClientReplacesPrimaryWithWitnessIfPrimaryIsUnavailable(t *testing.T) {
 		deadNode,
 		[]provider.Provider{fullNode, fullNode},
 		dbs.New(dbm.NewMemDB(), chainID),
+		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 		light.MaxRetryAttempts(1),
 	)
@@ -793,6 +862,7 @@ func TestClient_BackwardsVerification(t *testing.T) {
 			largeFullNode,
 			[]provider.Provider{largeFullNode},
 			dbs.New(dbm.NewMemDB(), chainID),
+			types.DefaultVoterParams(),
 			light.Logger(log.TestingLogger()),
 		)
 		require.NoError(t, err)
@@ -841,10 +911,11 @@ func TestClient_BackwardsVerification(t *testing.T) {
 					chainID,
 					map[int64]*types.SignedHeader{
 						1: h1,
-						2: keys.GenSignedHeader(chainID, 1, bTime.Add(30*time.Minute), nil, voters, voters,
+						2: keys.GenSignedHeader(chainID, 1, bTime.Add(30*time.Minute), nil, voters, vals, vals,
 							hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys)),
 						3: h3,
 					},
+					valSet,
 					voterSet,
 				),
 			},
@@ -854,10 +925,11 @@ func TestClient_BackwardsVerification(t *testing.T) {
 					chainID,
 					map[int64]*types.SignedHeader{
 						1: h1,
-						2: keys.GenSignedHeader(chainID, 2, bTime.Add(30*time.Minute), nil, voters, voters,
+						2: keys.GenSignedHeader(chainID, 2, bTime.Add(30*time.Minute), nil, voters, vals, vals,
 							hash("app_hash2"), hash("cons_hash23"), hash("results_hash30"), 0, len(keys)),
 						3: h3,
 					},
+					valSet,
 					voterSet,
 				),
 			},
@@ -875,6 +947,7 @@ func TestClient_BackwardsVerification(t *testing.T) {
 				tc.provider,
 				[]provider.Provider{tc.provider},
 				dbs.New(dbm.NewMemDB(), chainID),
+				types.DefaultVoterParams(),
 				light.Logger(log.TestingLogger()),
 			)
 			require.NoError(t, err, idx)
@@ -897,6 +970,7 @@ func TestClient_NewClientFromTrustedStore(t *testing.T) {
 		deadNode,
 		[]provider.Provider{deadNode},
 		db,
+		types.DefaultVoterParams(),
 	)
 	require.NoError(t, err)
 
@@ -913,9 +987,13 @@ func TestClientRemovesWitnessIfItSendsUsIncorrectHeader(t *testing.T) {
 		chainID,
 		map[int64]*types.SignedHeader{
 			1: h1,
-			2: keys.GenSignedHeaderLastBlockID(chainID, 2, bTime.Add(30*time.Minute), nil, voters, voters,
+			2: keys.GenSignedHeaderLastBlockID(chainID, 2, bTime.Add(30*time.Minute), nil, voters, vals, vals,
 				hash("app_hash2"), hash("cons_hash"), hash("results_hash"),
 				len(keys), len(keys), types.BlockID{Hash: h1.Hash()}),
+		},
+		map[int64]*types.ValidatorSet{
+			1: vals,
+			2: vals,
 		},
 		map[int64]*types.VoterSet{
 			1: voters,
@@ -928,6 +1006,10 @@ func TestClientRemovesWitnessIfItSendsUsIncorrectHeader(t *testing.T) {
 		map[int64]*types.SignedHeader{
 			1: h1,
 			2: h2,
+		},
+		map[int64]*types.ValidatorSet{
+			1: vals,
+			2: vals,
 		},
 		map[int64]*types.VoterSet{
 			1: voters,
@@ -945,6 +1027,7 @@ func TestClientRemovesWitnessIfItSendsUsIncorrectHeader(t *testing.T) {
 		fullNode,
 		[]provider.Provider{badProvider1, badProvider2},
 		dbs.New(dbm.NewMemDB(), chainID),
+		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 		light.MaxRetryAttempts(1),
 	)
@@ -969,17 +1052,22 @@ func TestClientRemovesWitnessIfItSendsUsIncorrectHeader(t *testing.T) {
 }
 
 func TestClient_TrustedValidatorSet(t *testing.T) {
-	_, differentVoters, _ := types.RandVoterSet(10, 100)
+	differentVals, differentVoters, _ := types.RandVoterSet(10, 100)
 	badVoterSetNode := mockp.New(
 		chainID,
 		map[int64]*types.SignedHeader{
 			1: h1,
 			// 3/3 signed, but voter set at height 2 below is invalid -> witness
 			// should be removed.
-			2: keys.GenSignedHeaderLastBlockID(chainID, 2, bTime.Add(30*time.Minute), nil, voters, voters,
+			2: keys.GenSignedHeaderLastBlockID(chainID, 2, bTime.Add(30*time.Minute), nil, voters, vals, vals,
 				hash("app_hash2"), hash("cons_hash"), hash("results_hash"),
 				0, len(keys), types.BlockID{Hash: h1.Hash()}),
 			3: h3,
+		},
+		map[int64]*types.ValidatorSet{
+			1: vals,
+			2: differentVals,
+			3: differentVals,
 		},
 		map[int64]*types.VoterSet{
 			1: voters,
@@ -995,6 +1083,7 @@ func TestClient_TrustedValidatorSet(t *testing.T) {
 		fullNode,
 		[]provider.Provider{badVoterSetNode, fullNode},
 		dbs.New(dbm.NewMemDB(), chainID),
+		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 	)
 	require.NoError(t, err)
@@ -1013,6 +1102,7 @@ func TestClientPrunesHeadersAndValidatorSets(t *testing.T) {
 		fullNode,
 		[]provider.Provider{fullNode},
 		dbs.New(dbm.NewMemDB(), chainID),
+		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 		light.PruningSize(1),
 	)
@@ -1029,22 +1119,32 @@ func TestClientPrunesHeadersAndValidatorSets(t *testing.T) {
 }
 
 func TestClientEnsureValidHeadersAndValSets(t *testing.T) {
+	emptyValidatorSet := &types.ValidatorSet{
+		Validators: nil,
+	}
 	emptyVoterSet := &types.VoterSet{
 		Voters: nil,
 	}
 
 	testCases := []struct {
 		headers map[int64]*types.SignedHeader
+		vals    map[int64]*types.ValidatorSet
 		voters  map[int64]*types.VoterSet
 		err     bool
 	}{
 		{
 			headerSet,
+			valSet,
 			voterSet,
 			false,
 		},
 		{
 			headerSet,
+			map[int64]*types.ValidatorSet{
+				1: vals,
+				2: vals,
+				3: nil,
+			},
 			map[int64]*types.VoterSet{
 				1: voters,
 				2: voters,
@@ -1058,11 +1158,17 @@ func TestClientEnsureValidHeadersAndValSets(t *testing.T) {
 				2: h2,
 				3: nil,
 			},
+			valSet,
 			voterSet,
 			true,
 		},
 		{
 			headerSet,
+			map[int64]*types.ValidatorSet{
+				1: vals,
+				2: vals,
+				3: emptyValidatorSet,
+			},
 			map[int64]*types.VoterSet{
 				1: voters,
 				2: voters,
@@ -1076,6 +1182,7 @@ func TestClientEnsureValidHeadersAndValSets(t *testing.T) {
 		badNode := mockp.New(
 			chainID,
 			tc.headers,
+			tc.vals,
 			tc.voters,
 		)
 		c, err := light.NewClient(
@@ -1085,6 +1192,7 @@ func TestClientEnsureValidHeadersAndValSets(t *testing.T) {
 			badNode,
 			[]provider.Provider{badNode, badNode},
 			dbs.New(dbm.NewMemDB(), chainID),
+			types.DefaultVoterParams(),
 			light.MaxRetryAttempts(1),
 		)
 		require.NoError(t, err)

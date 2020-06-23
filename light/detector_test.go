@@ -29,7 +29,7 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 	)
 
 	witnessHeaders, witnessValidators, witnessVoters, chainKeys := genMockNodeWithKeys(chainID, latestHeight, valSize, 2, bTime)
-	witness := mockp.New(chainID, witnessHeaders, witnessVoters)
+	witness := mockp.New(chainID, witnessHeaders, witnessValidators, witnessVoters)
 	forgedKeys := chainKeys[divergenceHeight-1].ChangeKeys(3) // we change 3 out of the 5 validators (still 2/5 remain)
 	forgedVals := forgedKeys.ToValidators(2, 0)
 	forgedVoters := types.ToVoterAll(forgedVals.Validators)
@@ -42,11 +42,11 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 			continue
 		}
 		primaryHeaders[height] = forgedKeys.GenSignedHeader(chainID, height, bTime.Add(time.Duration(height)*time.Minute),
-			nil, forgedVoters, forgedVoters, hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(forgedKeys))
+			nil, forgedVoters, forgedVals, forgedVals, hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(forgedKeys))
 		primaryValidators[height] = forgedVals
 		primaryVoters[height] = forgedVoters
 	}
-	primary := mockp.New(chainID, primaryHeaders, primaryVoters)
+	primary := mockp.New(chainID, primaryHeaders, primaryValidators, primaryVoters)
 
 	c, err := light.NewClient(
 		ctx,
@@ -59,6 +59,7 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 		primary,
 		[]provider.Provider{witness},
 		dbs.New(dbm.NewMemDB(), chainID),
+		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 		light.MaxRetryAttempts(1),
 	)
@@ -115,7 +116,7 @@ func TestLightClientAttackEvidence_Equivocation(t *testing.T) {
 		)
 		// validators don't change in this network (however we still use a map just for convenience)
 		witnessHeaders, witnessValidators, witnessVoters, chainKeys := genMockNodeWithKeys(chainID, latestHeight+2, valSize, 2, bTime)
-		witness := mockp.New(chainID, witnessHeaders, witnessVoters)
+		witness := mockp.New(chainID, witnessHeaders, witnessValidators, witnessVoters)
 
 		for height := int64(1); height <= latestHeight; height++ {
 			if height < divergenceHeight {
@@ -128,12 +129,12 @@ func TestLightClientAttackEvidence_Equivocation(t *testing.T) {
 			// a different block (which we do by adding txs)
 			primaryHeaders[height] = chainKeys[height].GenSignedHeader(chainID, height,
 				bTime.Add(time.Duration(height)*time.Minute), []types.Tx{[]byte("abcd")},
-				witnessVoters[height], witnessVoters[height+1], hash("app_hash"),
+				witnessVoters[height], witnessValidators[height], witnessValidators[height+1], hash("app_hash"),
 				hash("cons_hash"), hash("results_hash"), 0, len(chainKeys[height])-1)
 			primaryValidators[height] = witnessValidators[height]
 			primaryVoters[height] = witnessVoters[height]
 		}
-		primary := mockp.New(chainID, primaryHeaders, primaryVoters)
+		primary := mockp.New(chainID, primaryHeaders, primaryValidators, primaryVoters)
 
 		c, err := light.NewClient(
 			ctx,
@@ -146,6 +147,7 @@ func TestLightClientAttackEvidence_Equivocation(t *testing.T) {
 			primary,
 			[]provider.Provider{witness},
 			dbs.New(dbm.NewMemDB(), chainID),
+			types.DefaultVoterParams(),
 			light.Logger(log.TestingLogger()),
 			light.MaxRetryAttempts(1),
 			verificationOption,
@@ -203,6 +205,7 @@ func TestClientDivergentTraces1(t *testing.T) {
 		primary,
 		[]provider.Provider{witness},
 		dbs.New(dbm.NewMemDB(), chainID),
+		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 		light.MaxRetryAttempts(1),
 	)
@@ -227,6 +230,7 @@ func TestClientDivergentTraces2(t *testing.T) {
 		primary,
 		[]provider.Provider{deadNode, deadNode, primary},
 		dbs.New(dbm.NewMemDB(), chainID),
+		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 		light.MaxRetryAttempts(1),
 	)
@@ -240,16 +244,17 @@ func TestClientDivergentTraces2(t *testing.T) {
 // 3. witness has the same first header, but different second header
 // => creation should succeed, but the verification should fail
 func TestClientDivergentTraces3(t *testing.T) {
-	_, primaryHeaders, primaryVals := genMockNode(chainID, 10, 5, 2, bTime)
-	primary := mockp.New(chainID, primaryHeaders, primaryVals)
+	_, primaryHeaders, primaryVals, primaryVoters := genMockNode(chainID, 10, 5, 2, bTime)
+	primary := mockp.New(chainID, primaryHeaders, primaryVals, primaryVoters)
 
 	firstBlock, err := primary.LightBlock(ctx, 1)
 	require.NoError(t, err)
 
-	_, mockHeaders, mockVals := genMockNode(chainID, 10, 5, 2, bTime)
+	_, mockHeaders, mockVals, mockVoters := genMockNode(chainID, 10, 5, 2, bTime)
 	mockHeaders[1] = primaryHeaders[1]
 	mockVals[1] = primaryVals[1]
-	witness := mockp.New(chainID, mockHeaders, mockVals)
+	mockVoters[1] = primaryVoters[1]
+	witness := mockp.New(chainID, mockHeaders, mockVals, mockVoters)
 
 	c, err := light.NewClient(
 		ctx,
@@ -262,6 +267,7 @@ func TestClientDivergentTraces3(t *testing.T) {
 		primary,
 		[]provider.Provider{witness},
 		dbs.New(dbm.NewMemDB(), chainID),
+		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 		light.MaxRetryAttempts(1),
 	)

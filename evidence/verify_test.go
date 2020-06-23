@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/coniks-sys/coniks-go/crypto/vrf"
+
 	"github.com/stretchr/testify/mock"
 
 	"github.com/stretchr/testify/assert"
@@ -79,19 +81,19 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 	}
 
 	// good pass -> no error
-	err = evidence.VerifyLightClientAttack(ev, commonSignedHeader, trustedSignedHeader, commonVoters,
-		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour)
+	err = evidence.VerifyLightClientAttack(ev, commonSignedHeader, trustedSignedHeader, commonVals, commonVoters,
+		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour, types.DefaultVoterParams())
 	assert.NoError(t, err)
 
 	// trusted and conflicting hashes are the same -> an error should be returned
-	err = evidence.VerifyLightClientAttack(ev, commonSignedHeader, ev.ConflictingBlock.SignedHeader, commonVoters,
-		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour)
+	err = evidence.VerifyLightClientAttack(ev, commonSignedHeader, ev.ConflictingBlock.SignedHeader, commonVals, commonVoters,
+		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour, types.DefaultVoterParams())
 	assert.Error(t, err)
 
 	// evidence with different total validator power should fail
 	ev.TotalVotingPower = 1
-	err = evidence.VerifyLightClientAttack(ev, commonSignedHeader, trustedSignedHeader, commonVoters,
-		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour)
+	err = evidence.VerifyLightClientAttack(ev, commonSignedHeader, trustedSignedHeader, commonVals, commonVoters,
+		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour, types.DefaultVoterParams())
 	assert.Error(t, err)
 	ev.TotalVotingPower = 20
 
@@ -99,8 +101,10 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 		LastBlockTime:   defaultEvidenceTime.Add(2 * time.Hour),
 		LastBlockHeight: 11,
 		ConsensusParams: *types.DefaultConsensusParams(),
+		VoterParams:     types.DefaultVoterParams(),
 	}
 	stateStore := &smmocks.Store{}
+	stateStore.On("LoadValidators", int64(4)).Return(commonVals, nil)
 	stateStore.On("LoadVoters", int64(4), mock.AnythingOfType("*types.VoterParams")).Return(commonVoters, nil)
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
@@ -142,7 +146,7 @@ func TestVerifyLightClientAttack_Equivocation(t *testing.T) {
 	conflictingHeader.VotersHash = conflictingVoters.Hash()
 
 	trustedHeader.VotersHash = conflictingHeader.VotersHash
-	trustedHeader.NextVotersHash = conflictingHeader.NextVotersHash
+	trustedHeader.NextValidatorsHash = conflictingHeader.NextValidatorsHash
 	trustedHeader.ConsensusHash = conflictingHeader.ConsensusHash
 	trustedHeader.AppHash = conflictingHeader.AppHash
 	trustedHeader.LastResultsHash = conflictingHeader.LastResultsHash
@@ -178,23 +182,23 @@ func TestVerifyLightClientAttack_Equivocation(t *testing.T) {
 	}
 
 	// good pass -> no error
-	err = evidence.VerifyLightClientAttack(ev, trustedSignedHeader, trustedSignedHeader, conflictingVoters,
-		defaultEvidenceTime.Add(1*time.Minute), 2*time.Hour)
+	err = evidence.VerifyLightClientAttack(ev, trustedSignedHeader, trustedSignedHeader, conflictingVals, conflictingVoters,
+		defaultEvidenceTime.Add(1*time.Minute), 2*time.Hour, types.DefaultVoterParams())
 	assert.NoError(t, err)
 
 	// trusted and conflicting hashes are the same -> an error should be returned
-	err = evidence.VerifyLightClientAttack(ev, trustedSignedHeader, ev.ConflictingBlock.SignedHeader, conflictingVoters,
-		defaultEvidenceTime.Add(1*time.Minute), 2*time.Hour)
+	err = evidence.VerifyLightClientAttack(ev, trustedSignedHeader, ev.ConflictingBlock.SignedHeader, conflictingVals, conflictingVoters,
+		defaultEvidenceTime.Add(1*time.Minute), 2*time.Hour, types.DefaultVoterParams())
 	assert.Error(t, err)
 
 	// conflicting header has different next validators hash which should have been correctly derived from
 	// the previous round
-	ev.ConflictingBlock.Header.NextVotersHash = crypto.CRandBytes(tmhash.Size)
-	err = evidence.VerifyLightClientAttack(ev, trustedSignedHeader, trustedSignedHeader, nil,
-		defaultEvidenceTime.Add(1*time.Minute), 2*time.Hour)
+	ev.ConflictingBlock.Header.NextValidatorsHash = crypto.CRandBytes(tmhash.Size)
+	err = evidence.VerifyLightClientAttack(ev, trustedSignedHeader, trustedSignedHeader, nil, nil,
+		defaultEvidenceTime.Add(1*time.Minute), 2*time.Hour, types.DefaultVoterParams())
 	assert.Error(t, err)
 	// revert next validators hash
-	ev.ConflictingBlock.Header.NextVotersHash = trustedHeader.NextVotersHash
+	ev.ConflictingBlock.Header.NextValidatorsHash = trustedHeader.NextValidatorsHash
 
 	state := sm.State{
 		LastBlockTime:   defaultEvidenceTime.Add(1 * time.Minute),
@@ -202,6 +206,7 @@ func TestVerifyLightClientAttack_Equivocation(t *testing.T) {
 		ConsensusParams: *types.DefaultConsensusParams(),
 	}
 	stateStore := &smmocks.Store{}
+	stateStore.On("LoadValidators", int64(10)).Return(conflictingVals, nil)
 	stateStore.On("LoadVoters", int64(10), mock.AnythingOfType("*types.VoterParams")).Return(conflictingVoters, nil)
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
@@ -227,7 +232,7 @@ func TestVerifyLightClientAttack_Amnesia(t *testing.T) {
 	conflictingHeader.VotersHash = conflictingVoters.Hash()
 	trustedHeader := makeHeaderRandom(10)
 	trustedHeader.VotersHash = conflictingHeader.VotersHash
-	trustedHeader.NextVotersHash = conflictingHeader.NextVotersHash
+	trustedHeader.NextValidatorsHash = conflictingHeader.NextValidatorsHash
 	trustedHeader.AppHash = conflictingHeader.AppHash
 	trustedHeader.ConsensusHash = conflictingHeader.ConsensusHash
 	trustedHeader.LastResultsHash = conflictingHeader.LastResultsHash
@@ -263,13 +268,13 @@ func TestVerifyLightClientAttack_Amnesia(t *testing.T) {
 	}
 
 	// good pass -> no error
-	err = evidence.VerifyLightClientAttack(ev, trustedSignedHeader, trustedSignedHeader, conflictingVoters,
-		defaultEvidenceTime.Add(1*time.Minute), 2*time.Hour)
+	err = evidence.VerifyLightClientAttack(ev, trustedSignedHeader, trustedSignedHeader, conflictingVals, conflictingVoters,
+		defaultEvidenceTime.Add(1*time.Minute), 2*time.Hour, types.DefaultVoterParams())
 	assert.NoError(t, err)
 
 	// trusted and conflicting hashes are the same -> an error should be returned
-	err = evidence.VerifyLightClientAttack(ev, trustedSignedHeader, ev.ConflictingBlock.SignedHeader, conflictingVoters,
-		defaultEvidenceTime.Add(1*time.Minute), 2*time.Hour)
+	err = evidence.VerifyLightClientAttack(ev, trustedSignedHeader, ev.ConflictingBlock.SignedHeader, conflictingVals, conflictingVoters,
+		defaultEvidenceTime.Add(1*time.Minute), 2*time.Hour, types.DefaultVoterParams())
 	assert.Error(t, err)
 
 	state := sm.State{
@@ -278,6 +283,7 @@ func TestVerifyLightClientAttack_Amnesia(t *testing.T) {
 		ConsensusParams: *types.DefaultConsensusParams(),
 	}
 	stateStore := &smmocks.Store{}
+	stateStore.On("LoadValidators", int64(10)).Return(conflictingVals, nil)
 	stateStore.On("LoadVoters", int64(10), mock.AnythingOfType("*types.VoterParams")).Return(conflictingVoters, nil)
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
@@ -422,20 +428,21 @@ func makeVote(
 
 func makeHeaderRandom(height int64) *types.Header {
 	return &types.Header{
-		Version:         tmversion.Consensus{Block: version.BlockProtocol, App: 1},
-		ChainID:         evidenceChainID,
-		Height:          height,
-		Time:            defaultEvidenceTime,
-		LastBlockID:     makeBlockID([]byte("headerhash"), 1000, []byte("partshash")),
-		LastCommitHash:  crypto.CRandBytes(tmhash.Size),
-		DataHash:        crypto.CRandBytes(tmhash.Size),
-		VotersHash:      crypto.CRandBytes(tmhash.Size),
-		NextVotersHash:  crypto.CRandBytes(tmhash.Size),
-		ConsensusHash:   crypto.CRandBytes(tmhash.Size),
-		AppHash:         crypto.CRandBytes(tmhash.Size),
-		LastResultsHash: crypto.CRandBytes(tmhash.Size),
-		EvidenceHash:    crypto.CRandBytes(tmhash.Size),
-		ProposerAddress: crypto.CRandBytes(crypto.AddressSize),
+		Version:            tmversion.Consensus{Block: version.BlockProtocol, App: 1},
+		ChainID:            evidenceChainID,
+		Height:             height,
+		Time:               defaultEvidenceTime,
+		LastBlockID:        makeBlockID([]byte("headerhash"), 1000, []byte("partshash")),
+		LastCommitHash:     crypto.CRandBytes(tmhash.Size),
+		DataHash:           crypto.CRandBytes(tmhash.Size),
+		VotersHash:         crypto.CRandBytes(tmhash.Size),
+		NextValidatorsHash: crypto.CRandBytes(tmhash.Size),
+		ConsensusHash:      crypto.CRandBytes(tmhash.Size),
+		AppHash:            crypto.CRandBytes(tmhash.Size),
+		LastResultsHash:    crypto.CRandBytes(tmhash.Size),
+		EvidenceHash:       crypto.CRandBytes(tmhash.Size),
+		ProposerAddress:    crypto.CRandBytes(crypto.AddressSize),
+		Proof:              crypto.CRandBytes(vrf.ProofSize),
 	}
 }
 

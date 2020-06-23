@@ -68,7 +68,6 @@ type State struct {
 	// Extra +1 due to nextValSet delay.
 	NextValidators              *types.ValidatorSet
 	Validators                  *types.ValidatorSet
-	NextVoters                  *types.VoterSet
 	Voters                      *types.VoterSet
 	LastVoters                  *types.VoterSet
 	LastHeightValidatorsChanged int64
@@ -105,7 +104,6 @@ func (state State) Copy() State {
 		LastProofHash: state.LastProofHash,
 
 		NextValidators:              state.NextValidators.Copy(),
-		NextVoters:                  state.NextVoters.Copy(),
 		Validators:                  state.Validators.Copy(),
 		Voters:                      state.Voters.Copy(),
 		LastVoters:                  state.LastVoters.Copy(),
@@ -166,6 +164,7 @@ func (state *State) ToProto() (*tmstate.State, error) {
 		return nil, err
 	}
 	sm.Validators = vals
+
 	voters, err := state.Voters.ToProto()
 	if err != nil {
 		return nil, err
@@ -177,18 +176,15 @@ func (state *State) ToProto() (*tmstate.State, error) {
 		return nil, err
 	}
 	sm.NextValidators = nVals
-	nVoters, err := state.NextVoters.ToProto()
-	if err != nil {
-		return nil, err
-	}
-	sm.NextVoters = nVoters
 
-	if state.LastBlockHeight >= 1 { // At Block 1 LastValidators is nil
+	if state.LastBlockHeight >= 1 { // At Block 1 LastVoters is nil
 		lVoters, err := state.LastVoters.ToProto()
 		if err != nil {
 			return nil, err
 		}
 		sm.LastVoters = lVoters
+	} else {
+		sm.LastVoters = nil
 	}
 
 	sm.LastHeightValidatorsChanged = state.LastHeightValidatorsChanged
@@ -228,6 +224,7 @@ func StateFromProto(pb *tmstate.State) (*State, error) { //nolint:golint
 		return nil, err
 	}
 	state.Validators = vals
+
 	voters, err := types.VoterSetFromProto(pb.Voters)
 	if err != nil {
 		return nil, err
@@ -239,20 +236,15 @@ func StateFromProto(pb *tmstate.State) (*State, error) { //nolint:golint
 		return nil, err
 	}
 	state.NextValidators = nVals
-	nVoters, err := types.VoterSetFromProto(pb.NextVoters)
-	if err != nil {
-		return nil, err
-	}
-	state.NextVoters = nVoters
 
-	if state.LastBlockHeight >= 1 { // At Block 1 LastValidators is nil
+	if state.LastBlockHeight >= 1 { // At Block 1 LastVoters is nil
 		lVoters, err := types.VoterSetFromProto(pb.LastVoters)
 		if err != nil {
 			return nil, err
 		}
 		state.LastVoters = lVoters
 	} else {
-		state.LastVoters = &types.VoterSet{} // XXX Need to be the same
+		state.LastVoters = &types.VoterSet{Voters: []*types.Validator{}} // XXX Need to be the same
 	}
 
 	state.LastHeightValidatorsChanged = pb.LastHeightValidatorsChanged
@@ -297,7 +289,7 @@ func (state State) MakeBlock(
 	block.Header.Populate(
 		state.Version.Consensus, state.ChainID,
 		timestamp, state.LastBlockID,
-		state.Voters.Hash(), state.NextVoters.Hash(),
+		state.Voters.Hash(), state.Validators.Hash(), state.NextValidators.Hash(),
 		types.HashConsensusParams(state.ConsensusParams), state.AppHash, state.LastResultsHash,
 		proposerAddress,
 		round,
@@ -392,10 +384,9 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 		LastProofHash: genDoc.Hash(),
 
 		NextValidators:              nextValidatorSet,
-		NextVoters:                  types.SelectVoter(nextValidatorSet, genDoc.Hash(), genDoc.VoterParams),
 		Validators:                  validatorSet,
-		Voters:                      types.ToVoterAll(validatorSet.Validators),
-		LastVoters:                  &types.VoterSet{}, // XXX Need to be the same
+		Voters:                      types.SelectVoter(validatorSet, genDoc.Hash(), genDoc.VoterParams),
+		LastVoters:                  &types.VoterSet{Voters: []*types.Validator{}}, // LastVoters don't exist if LastBlockHeight==0; XXX Need to be the same
 		LastHeightValidatorsChanged: 1,
 
 		ConsensusParams:                  *genDoc.ConsensusParams,

@@ -284,7 +284,7 @@ func (l *LightClientAttackEvidence) GetByzantineValidators(commonVals *VoterSet,
 // If not, it is an invalid header and constitutes a lunatic attack.
 func (l *LightClientAttackEvidence) ConflictingHeaderIsInvalid(trustedHeader *Header) bool {
 	return !bytes.Equal(trustedHeader.VotersHash, l.ConflictingBlock.VotersHash) ||
-		!bytes.Equal(trustedHeader.NextVotersHash, l.ConflictingBlock.NextVotersHash) ||
+		!bytes.Equal(trustedHeader.NextValidatorsHash, l.ConflictingBlock.NextValidatorsHash) ||
 		!bytes.Equal(trustedHeader.ConsensusHash, l.ConflictingBlock.ConsensusHash) ||
 		!bytes.Equal(trustedHeader.AppHash, l.ConflictingBlock.AppHash) ||
 		!bytes.Equal(trustedHeader.LastResultsHash, l.ConflictingBlock.LastResultsHash)

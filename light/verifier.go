@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/tendermint/tendermint/crypto/vrf"
+
 	tmmath "github.com/tendermint/tendermint/libs/math"
 	"github.com/tendermint/tendermint/types"
 )
@@ -31,13 +33,14 @@ var (
 // future.
 func VerifyNonAdjacent(
 	trustedHeader *types.SignedHeader, // height=X
-	trustedVoters *types.VoterSet, // height=X or height=X+1
+	trustedVals *types.ValidatorSet, // height=X or height=X+1
 	untrustedHeader *types.SignedHeader, // height=Y
-	untrustedVoters *types.VoterSet, // height=Y
+	untrustedVals *types.ValidatorSet, // height=Y
 	trustingPeriod time.Duration,
 	now time.Time,
 	maxClockDrift time.Duration,
-	trustLevel tmmath.Fraction) error {
+	trustLevel tmmath.Fraction,
+	voterParams *types.VoterParams) error {
 
 	if untrustedHeader.Height == trustedHeader.Height+1 {
 		return errors.New("headers must be non adjacent in height")
@@ -47,7 +50,19 @@ func VerifyNonAdjacent(
 		return ErrOldHeaderExpired{trustedHeader.Time.Add(trustingPeriod), now}
 	}
 
-	if err := verifyNewHeaderAndVals(
+	proofHash, err := vrf.ProofToHash(trustedHeader.Proof.Bytes())
+	if err != nil {
+		return errors.New(fmt.Sprintf("invalid proof: %s", err.Error()))
+	}
+	trustedVoters := types.SelectVoter(trustedVals, proofHash, voterParams)
+
+	proofHash, err = vrf.ProofToHash(untrustedHeader.Proof.Bytes())
+	if err != nil {
+		return errors.New(fmt.Sprintf("invalid proof: %s", err.Error()))
+	}
+	untrustedVoters := types.SelectVoter(untrustedVals, proofHash, voterParams)
+
+	if err := verifyNewHeaderAndVoters(
 		untrustedHeader, untrustedVoters,
 		trustedHeader,
 		now, maxClockDrift); err != nil {
@@ -55,7 +70,7 @@ func VerifyNonAdjacent(
 	}
 
 	// Ensure that +`trustLevel` (default 1/3) or more of last trusted validators signed correctly.
-	err := trustedVoters.VerifyCommitLightTrusting(trustedHeader.ChainID, untrustedHeader.Commit, trustLevel)
+	err = trustedVoters.VerifyCommitLightTrusting(trustedHeader.ChainID, untrustedHeader.Commit, trustLevel)
 	if err != nil {
 		switch e := err.(type) {
 		case types.ErrNotEnoughVotingPowerSigned:
@@ -93,10 +108,11 @@ func VerifyNonAdjacent(
 func VerifyAdjacent(
 	trustedHeader *types.SignedHeader, // height=X
 	untrustedHeader *types.SignedHeader, // height=X+1
-	untrustedVoters *types.VoterSet, // height=X+1
+	untrustedVals *types.ValidatorSet, // height=X+1
 	trustingPeriod time.Duration,
 	now time.Time,
-	maxClockDrift time.Duration) error {
+	maxClockDrift time.Duration,
+	voterParams *types.VoterParams) error {
 
 	if untrustedHeader.Height != trustedHeader.Height+1 {
 		return errors.New("headers must be adjacent in height")
@@ -106,7 +122,12 @@ func VerifyAdjacent(
 		return ErrOldHeaderExpired{trustedHeader.Time.Add(trustingPeriod), now}
 	}
 
-	if err := verifyNewHeaderAndVals(
+	proofHash, err := vrf.ProofToHash(untrustedHeader.Proof.Bytes())
+	if err != nil {
+		return errors.New(fmt.Sprintf("invalid proof: %s", err.Error()))
+	}
+	untrustedVoters := types.SelectVoter(untrustedVals, proofHash, voterParams)
+	if err := verifyNewHeaderAndVoters(
 		untrustedHeader, untrustedVoters,
 		trustedHeader,
 		now, maxClockDrift); err != nil {
@@ -114,9 +135,9 @@ func VerifyAdjacent(
 	}
 
 	// Check the validator hashes are the same
-	if !bytes.Equal(untrustedHeader.VotersHash, trustedHeader.NextVotersHash) {
+	if !bytes.Equal(untrustedHeader.ValidatorsHash, trustedHeader.NextValidatorsHash) {
 		err := fmt.Errorf("expected old header next validators (%X) to match those from new header (%X)",
-			trustedHeader.NextVotersHash,
+			trustedHeader.NextValidatorsHash,
 			untrustedHeader.VotersHash,
 		)
 		return err
@@ -134,23 +155,24 @@ func VerifyAdjacent(
 // Verify combines both VerifyAdjacent and VerifyNonAdjacent functions.
 func Verify(
 	trustedHeader *types.SignedHeader, // height=X
-	trustedVoters *types.VoterSet, // height=X or height=X+1
+	trustedVals *types.ValidatorSet, // height=X or height=X+1
 	untrustedHeader *types.SignedHeader, // height=Y
-	untrustedVoters *types.VoterSet, // height=Y
+	untrustedVals *types.ValidatorSet, // height=Y
 	trustingPeriod time.Duration,
 	now time.Time,
 	maxClockDrift time.Duration,
-	trustLevel tmmath.Fraction) error {
+	trustLevel tmmath.Fraction,
+	voterParams *types.VoterParams) error {
 
 	if untrustedHeader.Height != trustedHeader.Height+1 {
-		return VerifyNonAdjacent(trustedHeader, trustedVoters, untrustedHeader, untrustedVoters,
-			trustingPeriod, now, maxClockDrift, trustLevel)
+		return VerifyNonAdjacent(trustedHeader, trustedVals, untrustedHeader, untrustedVals,
+			trustingPeriod, now, maxClockDrift, trustLevel, voterParams)
 	}
 
-	return VerifyAdjacent(trustedHeader, untrustedHeader, untrustedVoters, trustingPeriod, now, maxClockDrift)
+	return VerifyAdjacent(trustedHeader, untrustedHeader, untrustedVals, trustingPeriod, now, maxClockDrift, voterParams)
 }
 
-func verifyNewHeaderAndVals(
+func verifyNewHeaderAndVoters(
 	untrustedHeader *types.SignedHeader,
 	untrustedVoters *types.VoterSet,
 	trustedHeader *types.SignedHeader,
@@ -181,7 +203,7 @@ func verifyNewHeaderAndVals(
 	}
 
 	if !bytes.Equal(untrustedHeader.VotersHash, untrustedVoters.Hash()) {
-		return fmt.Errorf("expected new header validators (%X) to match those that were supplied (%X) at height %d",
+		return fmt.Errorf("expected new header voters (%X) to match those that were supplied (%X) at height %d",
 			untrustedHeader.VotersHash,
 			untrustedVoters.Hash(),
 			untrustedHeader.Height,

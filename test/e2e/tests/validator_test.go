@@ -40,7 +40,7 @@ func TestValidator_Sets(t *testing.T) {
 			validators := []*types.Validator{}
 			perPage := 100
 			for page := 1; ; page++ {
-				resp, err := client.Voters(ctx, &(h), &(page), &perPage)
+				resp, err := client.Validators(ctx, &(h), &(page), &perPage)
 				require.NoError(t, err)
 				validators = append(validators, resp.Validators...)
 				if len(validators) == resp.Total {

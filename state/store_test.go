@@ -134,6 +134,7 @@ func TestPruneStates(t *testing.T) {
 					LastBlockHeight: h - 1,
 					Validators:      validatorSet,
 					NextValidators:  validatorSet,
+					Voters:          types.ToVoterAll(validatorSet.Validators),
 					ConsensusParams: tmproto.ConsensusParams{
 						Block: tmproto.BlockParams{MaxBytes: 10e6},
 					},

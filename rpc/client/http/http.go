@@ -489,6 +489,30 @@ func (c *baseRPCClient) TxSearch(
 	return result, nil
 }
 
+func (c *baseRPCClient) Validators(
+	ctx context.Context,
+	height *int64,
+	page,
+	perPage *int,
+) (*ctypes.ResultValidators, error) {
+	result := new(ctypes.ResultValidators)
+	params := make(map[string]interface{})
+	if page != nil {
+		params["page"] = page
+	}
+	if perPage != nil {
+		params["per_page"] = perPage
+	}
+	if height != nil {
+		params["height"] = height
+	}
+	_, err := c.caller.Call(ctx, "validators", params, result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 func (c *baseRPCClient) Voters(
 	ctx context.Context,
 	height *int64,

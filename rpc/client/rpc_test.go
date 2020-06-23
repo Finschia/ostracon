@@ -173,18 +173,24 @@ func TestGenesisAndValidators(t *testing.T) {
 
 		// get the current validators
 		h := int64(1)
-		vals, err := c.Voters(context.Background(), &h, nil, nil)
+		vals, err := c.Validators(context.Background(), &h, nil, nil)
 		require.Nil(t, err, "%d: %+v", i, err)
 		require.Equal(t, 1, len(vals.Validators))
 		require.Equal(t, 1, vals.Count)
 		require.Equal(t, 1, vals.Total)
-		require.Equal(t, 1, len(vals.VoterIndices))
-		require.Equal(t, 0, vals.VoterIndices[0])
 		val := vals.Validators[0]
+		voters, err := c.Voters(context.Background(), &h, nil, nil)
+		require.Nil(t, err, "%d: %+v", i, err)
+		require.Equal(t, 1, len(voters.Voters))
+		require.Equal(t, 1, voters.Count)
+		require.Equal(t, 1, voters.Total)
+		voter := voters.Voters[0]
 
 		// make sure the current set is also the genesis set
 		assert.Equal(t, gval.Power, val.StakingPower)
 		assert.Equal(t, gval.PubKey, val.PubKey)
+		assert.Equal(t, gval.Power, voter.StakingPower)
+		assert.Equal(t, gval.PubKey, voter.PubKey)
 	}
 }
 

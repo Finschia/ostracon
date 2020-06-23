@@ -453,7 +453,8 @@ func updateState(
 		return state, fmt.Errorf("error get proof of hash: %v", err)
 	}
 
-	nextVoters := types.SelectVoter(nValSet, proofHash, state.VoterParams)
+	validators := state.NextValidators.Copy()
+	voters := types.SelectVoter(validators, proofHash, state.VoterParams)
 
 	// NOTE: the AppHash has not been populated.
 	// It will be filled on state.Save.
@@ -467,9 +468,8 @@ func updateState(
 		LastBlockTime:                    header.Time,
 		LastProofHash:                    proofHash,
 		NextValidators:                   nValSet,
-		NextVoters:                       nextVoters,
-		Validators:                       state.NextValidators.Copy(),
-		Voters:                           state.NextVoters.Copy(),
+		Validators:                       validators,
+		Voters:                           voters,
 		LastVoters:                       state.Voters.Copy(),
 		LastHeightValidatorsChanged:      lastHeightValsChanged,
 		ConsensusParams:                  nextParams,

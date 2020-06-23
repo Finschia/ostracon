@@ -236,6 +236,7 @@ func TestValidatorSimpleSaveLoad(t *testing.T) {
 	// Increment height, save; should be able to load for next & next next height.
 	state.LastBlockHeight++
 	nextHeight := state.LastBlockHeight + 1
+	state.LastVoters = types.ToVoterAll(state.Validators.Validators) // The LastVoter cannot be nil or empty if LastBlockHash!=0
 	err = statestore.Save(state)
 	require.NoError(t, err)
 	vp0, err := statestore.LoadVoters(nextHeight+0, state.VoterParams)
@@ -1078,7 +1079,7 @@ func TestStateProto(t *testing.T) {
 		tt := tt
 		pbs, err := tt.state.ToProto()
 		if !tt.expPass1 {
-			assert.Error(t, err)
+			assert.Error(t, err, tt.testName)
 		} else {
 			assert.NoError(t, err, tt.testName)
 		}

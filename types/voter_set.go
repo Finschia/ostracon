@@ -57,18 +57,20 @@ func (voters *VoterSet) IsNilOrEmpty() bool {
 // HasAddress returns true if address given is in the validator set, false -
 // otherwise.
 func (voters *VoterSet) HasAddress(address []byte) bool {
-	idx := sort.Search(len(voters.Voters), func(i int) bool {
-		return bytes.Compare(address, voters.Voters[i].Address) <= 0
-	})
-	return idx < len(voters.Voters) && bytes.Equal(voters.Voters[idx].Address, address)
+	for _, voter := range voters.Voters {
+		if bytes.Equal(voter.Address, address) {
+			return true
+		}
+	}
+	return false
 }
 
 // GetByAddress returns an index of the validator with address and validator
 // itself if found. Otherwise, -1 and nil are returned.
 func (voters *VoterSet) GetByAddress(address []byte) (index int32, val *Validator) {
-	for idx, val := range voters.Voters {
-		if bytes.Equal(val.Address, address) {
-			return int32(idx), val.Copy()
+	for idx, voter := range voters.Voters {
+		if bytes.Equal(voter.Address, address) {
+			return int32(idx), voter.Copy()
 		}
 	}
 	return -1, nil
@@ -468,28 +470,21 @@ func SelectVoter(validators *ValidatorSet, proofHash []byte, voterParams *VoterP
 }
 
 func ToVoterAll(validators []*Validator) *VoterSet {
-	newVoters := make([]*Validator, len(validators))
-	voterCount := 0
+	newVoters := make([]*Validator, 0, len(validators))
 	for _, val := range validators {
 		if val.StakingPower == 0 {
 			// remove the validator with the staking power of 0 from the voter set
 			continue
 		}
-		newVoters[voterCount] = &Validator{
+		newVoters = append(newVoters, &Validator{
 			Address:          val.Address,
 			PubKey:           val.PubKey,
 			StakingPower:     val.StakingPower,
 			VotingPower:      val.StakingPower,
 			ProposerPriority: val.ProposerPriority,
-		}
-		voterCount++
+		})
 	}
-	if voterCount < len(newVoters) {
-		zeroRemoved := make([]*Validator, voterCount)
-		copy(zeroRemoved, newVoters[:voterCount])
-		newVoters = zeroRemoved
-	}
-	return WrapValidatorsToVoterSet(newVoters)
+	return WrapValidatorsToVoterSet(newVoters) // They will be sorted in this function.
 }
 
 func hashToSeed(hash []byte) uint64 {

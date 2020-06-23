@@ -139,6 +139,8 @@ type Client struct {
 
 	quit chan struct{}
 
+	voterParams *types.VoterParams
+
 	logger log.Logger
 }
 
@@ -159,13 +161,14 @@ func NewClient(
 	primary provider.Provider,
 	witnesses []provider.Provider,
 	trustedStore store.Store,
+	voterParams *types.VoterParams,
 	options ...Option) (*Client, error) {
 
 	if err := trustOptions.ValidateBasic(); err != nil {
 		return nil, fmt.Errorf("invalid TrustOptions: %w", err)
 	}
 
-	c, err := NewClientFromTrustedStore(chainID, trustOptions.Period, primary, witnesses, trustedStore, options...)
+	c, err := NewClientFromTrustedStore(chainID, trustOptions.Period, primary, witnesses, trustedStore, voterParams, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -196,6 +199,7 @@ func NewClientFromTrustedStore(
 	primary provider.Provider,
 	witnesses []provider.Provider,
 	trustedStore store.Store,
+	voterParams *types.VoterParams,
 	options ...Option) (*Client, error) {
 
 	c := &Client{
@@ -211,6 +215,7 @@ func NewClientFromTrustedStore(
 		pruningSize:      defaultPruningSize,
 		confirmationFn:   func(action string) bool { return true },
 		quit:             make(chan struct{}),
+		voterParams:      voterParams,
 		logger:           log.NewNopLogger(),
 	}
 
@@ -620,8 +625,8 @@ func (c *Client) verifySequential(
 			"newHeight", interimBlock.Height,
 			"newHash", interimBlock.Hash())
 
-		err = VerifyAdjacent(verifiedBlock.SignedHeader, interimBlock.SignedHeader, interimBlock.VoterSet,
-			c.trustingPeriod, now, c.maxClockDrift)
+		err = VerifyAdjacent(verifiedBlock.SignedHeader, interimBlock.SignedHeader, interimBlock.ValidatorSet,
+			c.trustingPeriod, now, c.maxClockDrift, c.voterParams)
 		if err != nil {
 			err := ErrVerificationFailed{From: verifiedBlock.Height, To: interimBlock.Height, Reason: err}
 
@@ -711,8 +716,8 @@ func (c *Client) verifySkipping(
 			"newHeight", blockCache[depth].Height,
 			"newHash", blockCache[depth].Hash())
 
-		err := Verify(verifiedBlock.SignedHeader, verifiedBlock.VoterSet, blockCache[depth].SignedHeader,
-			blockCache[depth].VoterSet, c.trustingPeriod, now, c.maxClockDrift, c.trustLevel)
+		err := Verify(verifiedBlock.SignedHeader, verifiedBlock.ValidatorSet, blockCache[depth].SignedHeader,
+			blockCache[depth].ValidatorSet, c.trustingPeriod, now, c.maxClockDrift, c.trustLevel, c.voterParams)
 		switch err.(type) {
 		case nil:
 			// Have we verified the last header

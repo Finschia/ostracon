@@ -31,6 +31,7 @@ import (
 
 // Client wraps most important rpc calls a client would make if you want to
 // listen for events, test if it also implements events.EventSwitch.
+//go:generate mockery --case underscore --name Client
 type Client interface {
 	service.Service
 	ABCIClient
@@ -68,6 +69,7 @@ type SignClient interface {
 	BlockByHash(ctx context.Context, hash []byte) (*ctypes.ResultBlock, error)
 	BlockResults(ctx context.Context, height *int64) (*ctypes.ResultBlockResults, error)
 	Commit(ctx context.Context, height *int64) (*ctypes.ResultCommit, error)
+	Validators(ctx context.Context, height *int64, page, perPage *int) (*ctypes.ResultValidators, error)
 	Voters(ctx context.Context, height *int64, page, perPage *int) (*ctypes.ResultVoters, error)
 	Tx(ctx context.Context, hash []byte, prove bool) (*ctypes.ResultTx, error)
 	TxSearch(ctx context.Context, query string, prove bool, page, perPage *int,

@@ -244,20 +244,20 @@ func makeVote(
 
 func makeHeaderRandom() *Header {
 	return &Header{
-		Version:         tmversion.Consensus{Block: version.BlockProtocol, App: 1},
-		ChainID:         tmrand.Str(12),
-		Height:          int64(tmrand.Uint16()) + 1,
-		Time:            time.Now(),
-		LastBlockID:     makeBlockIDRandom(),
-		LastCommitHash:  crypto.CRandBytes(tmhash.Size),
-		DataHash:        crypto.CRandBytes(tmhash.Size),
-		VotersHash:      crypto.CRandBytes(tmhash.Size),
-		NextVotersHash:  crypto.CRandBytes(tmhash.Size),
-		ConsensusHash:   crypto.CRandBytes(tmhash.Size),
-		AppHash:         crypto.CRandBytes(tmhash.Size),
-		LastResultsHash: crypto.CRandBytes(tmhash.Size),
-		EvidenceHash:    crypto.CRandBytes(tmhash.Size),
-		ProposerAddress: crypto.CRandBytes(crypto.AddressSize),
+		Version:            tmversion.Consensus{Block: version.BlockProtocol, App: 1},
+		ChainID:            tmrand.Str(12),
+		Height:             int64(tmrand.Uint16()) + 1,
+		Time:               time.Now(),
+		LastBlockID:        makeBlockIDRandom(),
+		LastCommitHash:     crypto.CRandBytes(tmhash.Size),
+		DataHash:           crypto.CRandBytes(tmhash.Size),
+		VotersHash:         crypto.CRandBytes(tmhash.Size),
+		NextValidatorsHash: crypto.CRandBytes(tmhash.Size),
+		ConsensusHash:      crypto.CRandBytes(tmhash.Size),
+		AppHash:            crypto.CRandBytes(tmhash.Size),
+		LastResultsHash:    crypto.CRandBytes(tmhash.Size),
+		EvidenceHash:       crypto.CRandBytes(tmhash.Size),
+		ProposerAddress:    crypto.CRandBytes(crypto.AddressSize),
 	}
 }
 

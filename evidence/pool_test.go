@@ -282,7 +282,7 @@ func TestCheckEvidenceWithLightClientAttack(t *testing.T) {
 	conflictingHeader.VotersHash = conflictingVals.Hash()
 
 	trustedHeader.VotersHash = conflictingHeader.VotersHash
-	trustedHeader.NextVotersHash = conflictingHeader.NextVotersHash
+	trustedHeader.NextValidatorsHash = conflictingHeader.NextValidatorsHash
 	trustedHeader.ConsensusHash = conflictingHeader.ConsensusHash
 	trustedHeader.AppHash = conflictingHeader.AppHash
 	trustedHeader.LastResultsHash = conflictingHeader.LastResultsHash
@@ -407,7 +407,6 @@ func initializeStateFromValidatorSet(valSet *types.ValidatorSet, height int64) s
 		NextValidators:              valSet.Copy(),
 		Voters:                      types.ToVoterAll(valSet.Validators),
 		LastVoters:                  types.ToVoterAll(valSet.Validators),
-		NextVoters:                  types.ToVoterAll(valSet.Validators),
 		LastHeightValidatorsChanged: 1,
 		ConsensusParams: tmproto.ConsensusParams{
 			Block: tmproto.BlockParams{

@@ -142,20 +142,20 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 	privVal := privVals[state.Validators.Validators[0].Address.String()]
 	blockID := makeBlockID([]byte("headerhash"), 1000, []byte("partshash"))
 	header := &types.Header{
-		Version:         tmversion.Consensus{Block: version.BlockProtocol, App: 1},
-		ChainID:         state.ChainID,
-		Height:          10,
-		Time:            defaultEvidenceTime,
-		LastBlockID:     blockID,
-		LastCommitHash:  crypto.CRandBytes(tmhash.Size),
-		DataHash:        crypto.CRandBytes(tmhash.Size),
-		VotersHash:      state.Validators.Hash(),
-		NextVotersHash:  state.Validators.Hash(),
-		ConsensusHash:   crypto.CRandBytes(tmhash.Size),
-		AppHash:         crypto.CRandBytes(tmhash.Size),
-		LastResultsHash: crypto.CRandBytes(tmhash.Size),
-		EvidenceHash:    crypto.CRandBytes(tmhash.Size),
-		ProposerAddress: crypto.CRandBytes(crypto.AddressSize),
+		Version:            tmversion.Consensus{Block: version.BlockProtocol, App: 1},
+		ChainID:            state.ChainID,
+		Height:             10,
+		Time:               defaultEvidenceTime,
+		LastBlockID:        blockID,
+		LastCommitHash:     crypto.CRandBytes(tmhash.Size),
+		DataHash:           crypto.CRandBytes(tmhash.Size),
+		VotersHash:         state.Validators.Hash(),
+		NextValidatorsHash: state.Validators.Hash(),
+		ConsensusHash:      crypto.CRandBytes(tmhash.Size),
+		AppHash:            crypto.CRandBytes(tmhash.Size),
+		LastResultsHash:    crypto.CRandBytes(tmhash.Size),
+		EvidenceHash:       crypto.CRandBytes(tmhash.Size),
+		ProposerAddress:    crypto.CRandBytes(crypto.AddressSize),
 	}
 
 	// we don't need to worry about validating the evidence as long as they pass validate basic

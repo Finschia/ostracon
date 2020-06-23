@@ -192,15 +192,18 @@ func decideProposal(
 	round int32,
 ) (proposal *types.Proposal, block *types.Block) {
 	oldPrivValidator := cs1.privValidator
+	oldPrivValidatorPubKey := cs1.privValidatorPubKey
 	cs1.mtx.Lock()
 	pubKey1, _ := cs1.privValidator.GetPubKey()
 	pubKey2, _ := vs.PrivValidator.GetPubKey()
 	if !pubKey1.Equals(pubKey2) {
 		// block creator must be the cs.privValidator
 		cs1.privValidator = vs.PrivValidator
+		cs1.privValidatorPubKey = pubKey2
 	}
 	block, blockParts := cs1.createProposalBlock(round)
 	cs1.privValidator = oldPrivValidator
+	cs1.privValidatorPubKey = oldPrivValidatorPubKey
 	validRound := cs1.ValidRound
 	chainID := cs1.state.ChainID
 	cs1.mtx.Unlock()
@@ -253,7 +256,8 @@ func validatePrevote(t *testing.T, cs *State, round int32, privVal *validatorStu
 		}
 	} else {
 		if !bytes.Equal(vote.BlockID.Hash, blockHash) {
-			panic(fmt.Sprintf("Expected prevote to be for %X, got %X", blockHash, vote.BlockID.Hash))
+			panic(fmt.Sprintf("Expected prevote to be for %X, got %X; address=%X, prevotes=%+v, vote=%+v, blockId=%+v",
+				blockHash, vote.BlockID.Hash, address, prevotes, vote, vote.BlockID))
 		}
 	}
 }

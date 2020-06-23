@@ -8,7 +8,58 @@ import (
 	"github.com/tendermint/tendermint/types"
 )
 
-// Voters gets the validator set at the given block height.
+// Validators gets the validators set at the given block height.
+//
+// If no height is provided, it will fetch the latest validator set. Note the
+// voters are sorted by their voting power - this is the canonical order
+// for the voters in the set as used in computing their Merkle root.
+//
+// More: https://docs.tendermint.com/master/rpc/#/Info/validators
+func Validators(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *int) (*ctypes.ResultValidators, error) {
+
+	// The latest validator that we know is the NextValidator of the last block.
+	height, err := getHeight(latestUncommittedHeight(), heightPtr)
+	if err != nil {
+		return nil, err
+	}
+
+	vals, err := env.StateStore.LoadValidators(height)
+	if err != nil {
+		return nil, err
+	}
+
+	voters, err := env.StateStore.LoadVoters(height, env.ConsensusState.GetState().VoterParams)
+	if err != nil {
+		return nil, err
+	}
+
+	totalCount := len(vals.Validators)
+	perPage := validatePerPage(perPagePtr)
+	page, err := validatePage(pagePtr, perPage, totalCount)
+	if err != nil {
+		return nil, err
+	}
+
+	skipCount := validateSkipCount(page, perPage)
+
+	v := vals.Validators[skipCount : skipCount+tmmath.MinInt(perPage, totalCount-skipCount)]
+
+	// Retrieve to the indices where selected as Voters in Validators.
+	votersIndices := make([]int32, 0, len(v))
+	for i := range v {
+		idx, _ := voters.GetByAddress(v[i].Address)
+		votersIndices = append(votersIndices, idx)
+	}
+
+	return &ctypes.ResultValidators{
+		BlockHeight:  height,
+		Validators:   v,
+		VoterIndices: votersIndices,
+		Count:        len(v),
+		Total:        totalCount}, nil
+}
+
+// Voters gets the voters set at the given block height.
 //
 // If no height is provided, it will fetch the latest validator set. Note the
 // voters are sorted by their voting power - this is the canonical order
@@ -31,12 +82,12 @@ func voters(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *int,
 		return nil, err
 	}
 
-	voters, err := loadFunc(height, env.ConsensusState.GetState().VoterParams)
+	vals, err := loadFunc(height, env.ConsensusState.GetState().VoterParams)
 	if err != nil {
 		return nil, err
 	}
 
-	totalCount := len(voters.Voters)
+	totalCount := len(vals.Voters)
 	perPage := validatePerPage(perPagePtr)
 	page, err := validatePage(pagePtr, perPage, totalCount)
 	if err != nil {
@@ -45,21 +96,13 @@ func voters(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *int,
 
 	skipCount := validateSkipCount(page, perPage)
 
-	v := voters.Voters[skipCount : skipCount+tmmath.MinInt(perPage, totalCount-skipCount)]
-
-	voterIndices := make([]int, 0)
-	for i := range v {
-		if j, _ := voters.GetByAddress(v[i].Address); j >= 0 {
-			voterIndices = append(voterIndices, int(j))
-		}
-	}
+	v := vals.Voters[skipCount : skipCount+tmmath.MinInt(perPage, totalCount-skipCount)]
 
 	return &ctypes.ResultVoters{
-		BlockHeight:  height,
-		Validators:   v,
-		VoterIndices: voterIndices,
-		Count:        len(v),
-		Total:        totalCount}, nil
+		BlockHeight: height,
+		Voters:      v,
+		Count:       len(v),
+		Total:       totalCount}, nil
 }
 
 // DumpConsensusState dumps consensus state.

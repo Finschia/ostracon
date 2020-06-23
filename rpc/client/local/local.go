@@ -169,6 +169,10 @@ func (c *Local) Commit(ctx context.Context, height *int64) (*ctypes.ResultCommit
 	return core.Commit(c.ctx, height)
 }
 
+func (c *Local) Validators(ctx context.Context, height *int64, page, perPage *int) (*ctypes.ResultValidators, error) {
+	return core.Validators(c.ctx, height, page, perPage)
+}
+
 func (c *Local) Voters(ctx context.Context, height *int64, page, perPage *int) (*ctypes.ResultVoters, error) {
 	return core.Voters(c.ctx, height, page, perPage)
 }

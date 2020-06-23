@@ -114,20 +114,20 @@ func TestSignedHeaderValidateBasic(t *testing.T) {
 	chainID := "𠜎"
 	timestamp := time.Date(math.MaxInt64, 0, 0, 0, 0, 0, math.MaxInt64, time.UTC)
 	h := Header{
-		Version:         tmversion.Consensus{Block: version.BlockProtocol, App: math.MaxInt64},
-		ChainID:         chainID,
-		Height:          commit.Height,
-		Time:            timestamp,
-		LastBlockID:     commit.BlockID,
-		LastCommitHash:  commit.Hash(),
-		DataHash:        commit.Hash(),
-		VotersHash:      commit.Hash(),
-		NextVotersHash:  commit.Hash(),
-		ConsensusHash:   commit.Hash(),
-		AppHash:         commit.Hash(),
-		LastResultsHash: commit.Hash(),
-		EvidenceHash:    commit.Hash(),
-		ProposerAddress: crypto.AddressHash([]byte("proposer_address")),
+		Version:            tmversion.Consensus{Block: version.BlockProtocol, App: math.MaxInt64},
+		ChainID:            chainID,
+		Height:             commit.Height,
+		Time:               timestamp,
+		LastBlockID:        commit.BlockID,
+		LastCommitHash:     commit.Hash(),
+		DataHash:           commit.Hash(),
+		VotersHash:         commit.Hash(),
+		NextValidatorsHash: commit.Hash(),
+		ConsensusHash:      commit.Hash(),
+		AppHash:            commit.Hash(),
+		LastResultsHash:    commit.Hash(),
+		EvidenceHash:       commit.Hash(),
+		ProposerAddress:    crypto.AddressHash([]byte("proposer_address")),
 	}
 
 	validSignedHeader := SignedHeader{Header: &h, Commit: commit}

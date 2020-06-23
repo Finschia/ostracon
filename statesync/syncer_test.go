@@ -64,7 +64,7 @@ func TestSyncer_SyncAny(t *testing.T) {
 		Validators:     &types.ValidatorSet{},
 		Voters:         &types.VoterSet{},
 		NextValidators: &types.ValidatorSet{},
-		NextVoters:     &types.VoterSet{},
+		VoterParams:    types.DefaultVoterParams(),
 
 		ConsensusParams:                  *types.DefaultConsensusParams(),
 		LastHeightConsensusParamsChanged: 1,

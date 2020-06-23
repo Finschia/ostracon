@@ -114,9 +114,9 @@ func (p *http) voterSet(ctx context.Context, height *int64) (*types.ValidatorSet
 		total   = -1
 	)
 
-	for len(vals) != total && page <= maxPages {
+	for len(voters) != total && page <= maxPages {
 		for attempt := 1; attempt <= maxRetryAttempts; attempt++ {
-			res, err := p.client.Voters(ctx, height, &page, &perPage)
+			res, err := p.client.Validators(ctx, height, &page, &perPage)
 			if err != nil {
 				// TODO: standardize errors on the RPC side
 				if regexpMissingHeight.MatchString(err.Error()) {
@@ -147,8 +147,8 @@ func (p *http) voterSet(ctx context.Context, height *int64) (*types.ValidatorSet
 
 			total = res.Total
 			vals = append(vals, res.Validators...)
-			for _, index := range res.VoterIndices {
-				voters = append(voters, res.Validators[index])
+			for i := range res.VoterIndices {
+				voters = append(voters, res.Validators[res.VoterIndices[i]])
 			}
 			page++
 			break
@@ -159,11 +159,7 @@ func (p *http) voterSet(ctx context.Context, height *int64) (*types.ValidatorSet
 	if err != nil {
 		return nil, nil, provider.ErrBadLightBlock{Reason: err}
 	}
-	voterSet, err := types.ValidatorSetFromExistingValidators(voters)
-	if err != nil {
-		return nil, nil, provider.ErrBadLightBlock{Reason: err}
-	}
-	return valSet, types.WrapValidatorsToVoterSet(voterSet.Validators), nil
+	return valSet, types.WrapValidatorsToVoterSet(voters), nil
 }
 
 func (p *http) signedHeader(ctx context.Context, height *int64) (*types.SignedHeader, error) {
