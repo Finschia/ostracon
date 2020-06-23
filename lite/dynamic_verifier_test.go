@@ -33,13 +33,14 @@ func TestInquirerValidPath(t *testing.T) {
 	count := 50
 	fcz := make([]FullCommit, count)
 	for i := 0; i < count; i++ {
-		vals := types.ToVoterAll(keys.ToValidators(vote, 0).Validators)
-		nextVals := types.ToVoterAll(nkeys.ToValidators(vote, 0).Validators)
+		vals := types.NewValidatorSet(keys.ToValidators(vote, 0).Validators)
+		nextVals := types.NewValidatorSet(nkeys.ToValidators(vote, 0).Validators)
+		voters := types.ToVoterAll(vals.Validators)
 		h := int64(1 + i)
 		appHash := []byte(fmt.Sprintf("h=%d", h))
 		fcz[i] = keys.GenFullCommit(
 			chainID, h, nil,
-			vals, nextVals,
+			voters, vals, nextVals,
 			appHash, consHash, resHash, 0, len(keys))
 		// Extend the keys by 1 each time.
 		keys = nkeys
@@ -49,7 +50,10 @@ func TestInquirerValidPath(t *testing.T) {
 	// Initialize a Verifier with the initial state.
 	err := trust.SaveFullCommit(fcz[0])
 	require.Nil(err)
-	cert := NewDynamicVerifier(chainID, trust, source)
+	cert := NewDynamicVerifier(chainID, trust, source, &types.VoterParams{
+		VoterElectionThreshold:          100,
+		MaxTolerableByzantinePercentage: 1,
+		ElectionPrecision:               2})
 	cert.SetLogger(log.TestingLogger())
 
 	// This should fail validation:
@@ -89,21 +93,23 @@ func TestDynamicVerify(t *testing.T) {
 	chainID := "dynamic-verifier"
 	power := int64(10)
 	keys1 := genPrivKeys(5)
-	vals1 := types.ToVoterAll(keys1.ToValidators(power, 0).Validators)
+	vals1 := types.NewValidatorSet(keys1.ToValidators(power, 0).Validators)
 	keys2 := genPrivKeys(5)
-	vals2 := types.ToVoterAll(keys2.ToValidators(power, 0).Validators)
+	vals2 := types.NewValidatorSet(keys2.ToValidators(power, 0).Validators)
+	voters1 := types.ToVoterAll(vals1.Validators)
+	voters2 := types.ToVoterAll(vals2.Validators)
 
 	// make some commits with the first
 	for i := 0; i < n1; i++ {
-		fcz[i] = makeFullCommit(int64(i), keys1, vals1, vals1, chainID)
+		fcz[i] = makeFullCommit(int64(i), keys1, voters1, vals1, vals1, chainID)
 	}
 
 	// update the val set
-	fcz[n1] = makeFullCommit(int64(n1), keys1, vals1, vals2, chainID)
+	fcz[n1] = makeFullCommit(int64(n1), keys1, voters1, vals1, vals2, chainID)
 
 	// make some commits with the new one
 	for i := n1 + 1; i < nCommits; i++ {
-		fcz[i] = makeFullCommit(int64(i), keys2, vals2, vals2, chainID)
+		fcz[i] = makeFullCommit(int64(i), keys2, voters2, vals2, vals2, chainID)
 	}
 
 	// Save everything in the source
@@ -114,7 +120,7 @@ func TestDynamicVerify(t *testing.T) {
 	// Initialize a Verifier with the initial state.
 	err := trust.SaveFullCommit(fcz[0])
 	require.Nil(t, err)
-	ver := NewDynamicVerifier(chainID, trust, source)
+	ver := NewDynamicVerifier(chainID, trust, source, types.DefaultVoterParams())
 	ver.SetLogger(log.TestingLogger())
 
 	// fetch the latest from the source
@@ -127,14 +133,15 @@ func TestDynamicVerify(t *testing.T) {
 
 }
 
-func makeFullCommit(height int64, keys privKeys, vals, nextVals *types.VoterSet, chainID string) FullCommit {
+func makeFullCommit(height int64, keys privKeys, voters *types.VoterSet, vals, nextVals *types.ValidatorSet,
+	chainID string) FullCommit {
 	height++
 	consHash := []byte("special-params")
 	appHash := []byte(fmt.Sprintf("h=%d", height))
 	resHash := []byte(fmt.Sprintf("res=%d", height))
 	return keys.GenFullCommit(
 		chainID, height, nil,
-		vals, nextVals,
+		voters, vals, nextVals,
 		appHash, consHash, resHash, 0, len(keys))
 }
 
@@ -154,14 +161,15 @@ func TestInquirerVerifyHistorical(t *testing.T) {
 	consHash := []byte("special-params")
 	fcz := make([]FullCommit, count)
 	for i := 0; i < count; i++ {
-		vals := types.ToVoterAll(keys.ToValidators(vote, 0).Validators)
-		nextVals := types.ToVoterAll(nkeys.ToValidators(vote, 0).Validators)
+		vals := types.NewValidatorSet(keys.ToValidators(vote, 0).Validators)
+		nextVals := types.NewValidatorSet(nkeys.ToValidators(vote, 0).Validators)
+		voters := types.ToVoterAll(vals.Validators)
 		h := int64(1 + i)
 		appHash := []byte(fmt.Sprintf("h=%d", h))
 		resHash := []byte(fmt.Sprintf("res=%d", h))
 		fcz[i] = keys.GenFullCommit(
 			chainID, h, nil,
-			vals, nextVals,
+			voters, vals, nextVals,
 			appHash, consHash, resHash, 0, len(keys))
 		// Extend the keys by 1 each time.
 		keys = nkeys
@@ -171,7 +179,7 @@ func TestInquirerVerifyHistorical(t *testing.T) {
 	// Initialize a Verifier with the initial state.
 	err := trust.SaveFullCommit(fcz[0])
 	require.Nil(err)
-	cert := NewDynamicVerifier(chainID, trust, source)
+	cert := NewDynamicVerifier(chainID, trust, source, types.DefaultVoterParams())
 	cert.SetLogger(log.TestingLogger())
 
 	// Store a few full commits as trust.
@@ -237,14 +245,15 @@ func TestConcurrencyInquirerVerify(t *testing.T) {
 	consHash := []byte("special-params")
 	fcz := make([]FullCommit, count)
 	for i := 0; i < count; i++ {
-		vals := types.ToVoterAll(keys.ToValidators(vote, 0).Validators)
-		nextVals := types.ToVoterAll(nkeys.ToValidators(vote, 0).Validators)
+		vals := types.NewValidatorSet(keys.ToValidators(vote, 0).Validators)
+		nextVals := types.NewValidatorSet(nkeys.ToValidators(vote, 0).Validators)
+		voters := types.ToVoterAll(vals.Validators)
 		h := int64(1 + i)
 		appHash := []byte(fmt.Sprintf("h=%d", h))
 		resHash := []byte(fmt.Sprintf("res=%d", h))
 		fcz[i] = keys.GenFullCommit(
 			chainID, h, nil,
-			vals, nextVals,
+			voters, vals, nextVals,
 			appHash, consHash, resHash, 0, len(keys))
 		// Extend the keys by 1 each time.
 		keys = nkeys
@@ -254,7 +263,7 @@ func TestConcurrencyInquirerVerify(t *testing.T) {
 	// Initialize a Verifier with the initial state.
 	err := trust.SaveFullCommit(fcz[0])
 	require.Nil(err)
-	cert := NewDynamicVerifier(chainID, trust, source)
+	cert := NewDynamicVerifier(chainID, trust, source, types.DefaultVoterParams())
 	cert.SetLogger(log.TestingLogger())
 
 	err = source.SaveFullCommit(fcz[7])

@@ -2,6 +2,7 @@ package lite_test
 
 import (
 	"fmt"
+	"github.com/tendermint/tendermint/types"
 	"io/ioutil"
 	stdlog "log"
 	"os"
@@ -59,6 +60,7 @@ func ExampleClient_Update() {
 		primary,
 		[]provider.Provider{primary}, // NOTE: primary should not be used here
 		dbs.New(db, chainID),
+		types.DefaultVoterParams(),
 		// Logger(log.TestingLogger()),
 	)
 	if err != nil {
@@ -128,6 +130,7 @@ func ExampleClient_VerifyHeaderAtHeight() {
 		primary,
 		[]provider.Provider{primary}, // NOTE: primary should not be used here
 		dbs.New(db, chainID),
+		types.DefaultVoterParams(),
 		// Logger(log.TestingLogger()),
 	)
 	if err != nil {

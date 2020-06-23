@@ -21,7 +21,7 @@ import (
 
 const (
 	// MaxHeaderBytes is a maximum header size (including amino overhead).
-	MaxHeaderBytes int64 = 632
+	MaxHeaderBytes int64 = 666
 
 	// MaxAminoOverheadForBlock - maximum amino overhead to encode a block (up to
 	// MaxBlockSizeBytes in size) not including it's parts except Data.
@@ -108,8 +108,8 @@ func (b *Block) ValidateBasic() error {
 	if err := ValidateHash(b.VotersHash); err != nil {
 		return fmt.Errorf("wrong Header.VotersHash: %v", err)
 	}
-	if err := ValidateHash(b.NextVotersHash); err != nil {
-		return fmt.Errorf("wrong Header.NextVotersHash: %v", err)
+	if err := ValidateHash(b.NextValidatorsHash); err != nil {
+		return fmt.Errorf("wrong Header.NextValidatorsHash: %v", err)
 	}
 	if err := ValidateHash(b.ConsensusHash); err != nil {
 		return fmt.Errorf("wrong Header.ConsensusHash: %v", err)
@@ -336,10 +336,11 @@ type Header struct {
 	DataHash       tmbytes.HexBytes `json:"data_hash"`        // transactions
 
 	// hashes from the app output from the prev block
-	VotersHash     tmbytes.HexBytes `json:"voters_hash"`      // voters for the current block
-	NextVotersHash tmbytes.HexBytes `json:"next_voters_hash"` // voters for the next block
-	ConsensusHash  tmbytes.HexBytes `json:"consensus_hash"`   // consensus params for current block
-	AppHash        tmbytes.HexBytes `json:"app_hash"`         // state after txs from the previous block
+	VotersHash         tmbytes.HexBytes `json:"voters_hash"`          // voters for the current block
+	ValidatorsHash     tmbytes.HexBytes `json:"validators_hash"`      // validators for the current block
+	NextValidatorsHash tmbytes.HexBytes `json:"next_validators_hash"` // validators for the next block
+	ConsensusHash      tmbytes.HexBytes `json:"consensus_hash"`       // consensus params for current block
+	AppHash            tmbytes.HexBytes `json:"app_hash"`             // state after txs from the previous block
 	// root hash of all results from the txs from the previous block
 	LastResultsHash tmbytes.HexBytes `json:"last_results_hash"`
 
@@ -357,7 +358,7 @@ type Header struct {
 func (h *Header) Populate(
 	version version.Consensus, chainID string,
 	timestamp time.Time, lastBlockID BlockID,
-	votersHash, nextVotersHash []byte,
+	votersHash, validatorsHash, nextValidatorsHash []byte,
 	consensusHash, appHash, lastResultsHash []byte,
 	proposerAddress Address,
 	round int,
@@ -368,7 +369,8 @@ func (h *Header) Populate(
 	h.Time = timestamp
 	h.LastBlockID = lastBlockID
 	h.VotersHash = votersHash
-	h.NextVotersHash = nextVotersHash
+	h.ValidatorsHash = validatorsHash
+	h.NextValidatorsHash = nextValidatorsHash
 	h.ConsensusHash = consensusHash
 	h.AppHash = appHash
 	h.LastResultsHash = lastResultsHash
@@ -396,7 +398,8 @@ func (h *Header) Hash() tmbytes.HexBytes {
 		cdcEncode(h.LastCommitHash),
 		cdcEncode(h.DataHash),
 		cdcEncode(h.VotersHash),
-		cdcEncode(h.NextVotersHash),
+		cdcEncode(h.ValidatorsHash),
+		cdcEncode(h.NextValidatorsHash),
 		cdcEncode(h.ConsensusHash),
 		cdcEncode(h.AppHash),
 		cdcEncode(h.LastResultsHash),
@@ -421,7 +424,7 @@ func (h *Header) StringIndented(indent string) string {
 %s  LastBlockID:    %v
 %s  LastCommit:     %v
 %s  Data:           %v
-%s  Validators:     %v
+%s  Voters:         %v
 %s  NextValidators: %v
 %s  App:            %v
 %s  Consensus:      %v
@@ -439,7 +442,7 @@ func (h *Header) StringIndented(indent string) string {
 		indent, h.LastCommitHash,
 		indent, h.DataHash,
 		indent, h.VotersHash,
-		indent, h.NextVotersHash,
+		indent, h.NextValidatorsHash,
 		indent, h.AppHash,
 		indent, h.ConsensusHash,
 		indent, h.LastResultsHash,

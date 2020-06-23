@@ -57,8 +57,8 @@ func (tm2pb) Header(header *Header) abci.Header {
 		LastCommitHash: header.LastCommitHash,
 		DataHash:       header.DataHash,
 
-		ValidatorsHash:     header.VotersHash,
-		NextValidatorsHash: header.NextVotersHash,
+		VotersHash:         header.VotersHash,
+		NextValidatorsHash: header.NextValidatorsHash,
 		ConsensusHash:      header.ConsensusHash,
 		AppHash:            header.AppHash,
 		LastResultsHash:    header.LastResultsHash,

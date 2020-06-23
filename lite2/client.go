@@ -3,6 +3,7 @@ package lite
 import (
 	"bytes"
 	"fmt"
+	"github.com/tendermint/tendermint/crypto/vrf"
 	"math/rand"
 	"sync"
 	"time"
@@ -132,8 +133,8 @@ type Client struct {
 	trustedStore store.Store
 	// Highest trusted header from the store (height=H).
 	latestTrustedHeader *types.SignedHeader
-	// Highest voter set from the store (height=H).
-	latestTrustedVoters *types.VoterSet
+	// Highest validator set from the store (height=H).
+	latestTrustedValidators *types.ValidatorSet
 
 	// See RemoveNoLongerTrustedHeadersPeriod option
 	pruningSize uint16
@@ -143,6 +144,8 @@ type Client struct {
 	//nolint:unused,structcheck
 	routinesWaitGroup sync.WaitGroup
 	quit              chan struct{}
+
+	voterParams *types.VoterParams
 
 	logger log.Logger
 }
@@ -162,13 +165,15 @@ func NewClient(
 	primary provider.Provider,
 	witnesses []provider.Provider,
 	trustedStore store.Store,
+	voterParams *types.VoterParams,
 	options ...Option) (*Client, error) {
 
 	if err := trustOptions.ValidateBasic(); err != nil {
 		return nil, fmt.Errorf("invalid TrustOptions: %w", err)
 	}
 
-	c, err := NewClientFromTrustedStore(chainID, trustOptions.Period, primary, witnesses, trustedStore, options...)
+	c, err := NewClientFromTrustedStore(chainID, trustOptions.Period, primary, witnesses, trustedStore, voterParams,
+		options...)
 	if err != nil {
 		return nil, err
 	}
@@ -199,6 +204,7 @@ func NewClientFromTrustedStore(
 	primary provider.Provider,
 	witnesses []provider.Provider,
 	trustedStore store.Store,
+	voterParams *types.VoterParams,
 	options ...Option) (*Client, error) {
 
 	c := &Client{
@@ -214,6 +220,7 @@ func NewClientFromTrustedStore(
 		pruningSize:      defaultPruningSize,
 		confirmationFn:   func(action string) bool { return true },
 		quit:             make(chan struct{}),
+		voterParams:      voterParams,
 		logger:           log.NewNopLogger(),
 	}
 
@@ -260,15 +267,15 @@ func (c *Client) restoreTrustedHeaderAndVals() error {
 			return fmt.Errorf("can't get last trusted header: %w", err)
 		}
 
-		trustedVals, err := c.trustedStore.VoterSet(lastHeight)
+		trustedVals, err := c.trustedStore.ValidatorSet(lastHeight)
 		if err != nil {
-			return fmt.Errorf("can't get last trusted voters: %w", err)
+			return fmt.Errorf("can't get last trusted validators: %w", err)
 		}
 
 		c.latestTrustedHeader = trustedHeader
-		c.latestTrustedVoters = trustedVals
+		c.latestTrustedValidators = trustedVals
 
-		c.logger.Info("Restored trusted header and voters", "height", lastHeight)
+		c.logger.Info("Restored trusted header and validators", "height", lastHeight)
 	}
 
 	return nil
@@ -376,17 +383,23 @@ func (c *Client) initializeWithTrustOptions(options TrustOptions) error {
 	}
 
 	// 2) Fetch and verify the voters.
-	voters, err := c.voterSetFromPrimary(options.Height)
+	vals, err := c.validatorSetFromPrimary(options.Height)
 	if err != nil {
 		return err
 	}
 
-	if !bytes.Equal(h.VotersHash, voters.Hash()) {
-		return fmt.Errorf("expected header's voters (%X) to match those that were supplied (%X)",
-			h.VotersHash,
-			voters.Hash(),
+	if !bytes.Equal(h.ValidatorsHash, vals.Hash()) {
+		return fmt.Errorf("expected header's validators (%X) to match those that were supplied (%X)",
+			h.ValidatorsHash,
+			vals.Hash(),
 		)
 	}
+
+	proofHash, err := vrf.ProofToHash(h.Proof.Bytes())
+	if err != nil {
+		return fmt.Errorf("invalid proof: %w", err)
+	}
+	voters := types.SelectVoter(vals, proofHash, c.voterParams)
 
 	// Ensure that +2/3 of voters signed correctly.
 	err = voters.VerifyCommit(c.chainID, h.Commit.BlockID, h.Height, h.Commit)
@@ -395,7 +408,7 @@ func (c *Client) initializeWithTrustOptions(options TrustOptions) error {
 	}
 
 	// 3) Persist both of them and continue.
-	return c.updateTrustedHeaderAndVals(h, voters)
+	return c.updateTrustedHeaderAndValidators(h, vals)
 }
 
 // TrustedHeader returns a trusted header at the given height (0 - the latest).
@@ -438,12 +451,12 @@ func (c *Client) TrustedHeader(height int64) (*types.SignedHeader, error) {
 //  - header signed by that voter set has not been verified yet
 //
 // Safe for concurrent use by multiple goroutines.
-func (c *Client) TrustedVoterSet(height int64) (valSet *types.VoterSet, heightUsed int64, err error) {
+func (c *Client) TrustedValidatorSet(height int64) (valSet *types.ValidatorSet, heightUsed int64, err error) {
 	heightUsed, err = c.compareWithLatestHeight(height)
 	if err != nil {
 		return nil, heightUsed, err
 	}
-	valSet, err = c.trustedStore.VoterSet(heightUsed)
+	valSet, err = c.trustedStore.ValidatorSet(heightUsed)
 	if err != nil {
 		return nil, heightUsed, err
 	}
@@ -471,7 +484,7 @@ func (c *Client) compareWithLatestHeight(height int64) (int64, error) {
 	return height, nil
 }
 
-// VerifyHeaderAtHeight fetches header and voters at the given height
+// VerifyHeaderAtHeight fetches header and validators at the given height
 // and calls VerifyHeader. It returns header immediately if such exists in
 // trustedStore (no verification is needed).
 //
@@ -479,7 +492,8 @@ func (c *Client) compareWithLatestHeight(height int64) (int64, error) {
 //
 // It returns provider.ErrSignedHeaderNotFound if header is not found by
 // primary.
-func (c *Client) VerifyHeaderAtHeight(height int64, now time.Time) (*types.SignedHeader, error) {
+func (c *Client) VerifyHeaderAtHeight(height int64, now time.Time) (
+	*types.SignedHeader, error) {
 	if height <= 0 {
 		return nil, errors.New("negative or zero height")
 	}
@@ -529,7 +543,7 @@ func (c *Client) VerifyHeaderAtHeight(height int64, now time.Time) (*types.Signe
 // If, at any moment, SignedHeader or VoterSet are not found by the primary
 // provider, provider.ErrSignedHeaderNotFound /
 // provider.ErrValidatorSetNotFound error is returned.
-func (c *Client) VerifyHeader(newHeader *types.SignedHeader, newVals *types.VoterSet, now time.Time) error {
+func (c *Client) VerifyHeader(newHeader *types.SignedHeader, newVals *types.ValidatorSet, now time.Time) error {
 	if newHeader.Height <= 0 {
 		return errors.New("negative or zero height")
 	}
@@ -549,7 +563,7 @@ func (c *Client) VerifyHeader(newHeader *types.SignedHeader, newVals *types.Vote
 	return c.verifyHeader(newHeader, newVals, now)
 }
 
-func (c *Client) verifyHeader(newHeader *types.SignedHeader, newVals *types.VoterSet, now time.Time) error {
+func (c *Client) verifyHeader(newHeader *types.SignedHeader, newVals *types.ValidatorSet, now time.Time) error {
 	c.logger.Info("VerifyHeader", "height", newHeader.Height, "hash", hash2str(newHeader.Hash()),
 		"vals", hash2str(newVals.Hash()))
 
@@ -561,7 +575,7 @@ func (c *Client) verifyHeader(newHeader *types.SignedHeader, newVals *types.Vote
 		case sequential:
 			err = c.sequence(c.latestTrustedHeader, newHeader, newVals, now)
 		case skipping:
-			err = c.bisection(c.latestTrustedHeader, c.latestTrustedVoters, newHeader, newVals, now)
+			err = c.bisection(c.latestTrustedHeader, c.latestTrustedValidators, newHeader, newVals, now)
 		default:
 			panic(fmt.Sprintf("Unknown verification mode: %b", c.verificationMode))
 		}
@@ -592,15 +606,15 @@ func (c *Client) verifyHeader(newHeader *types.SignedHeader, newVals *types.Vote
 			if err != nil {
 				return fmt.Errorf("can't get signed header before height %d: %w", newHeader.Height, err)
 			}
-			var closestVotorSet *types.VoterSet
+			var closestValidatorSet *types.ValidatorSet
 			if c.verificationMode == sequential || HeaderExpired(closestHeader, c.trustingPeriod, now) {
 				err = c.backwards(c.latestTrustedHeader, newHeader, now)
 			} else {
-				closestVotorSet, _, err = c.TrustedVoterSet(closestHeader.Height)
+				closestValidatorSet, _, err = c.TrustedValidatorSet(closestHeader.Height)
 				if err != nil {
 					return fmt.Errorf("can't get voter set at height %d: %w", closestHeader.Height, err)
 				}
-				err = c.bisection(closestHeader, closestVotorSet, newHeader, newVals, now)
+				err = c.bisection(closestHeader, closestValidatorSet, newHeader, newVals, now)
 			}
 		}
 	}
@@ -615,21 +629,21 @@ func (c *Client) verifyHeader(newHeader *types.SignedHeader, newVals *types.Vote
 	}
 
 	// 5) Once verified, save and return
-	return c.updateTrustedHeaderAndVals(newHeader, newVals)
+	return c.updateTrustedHeaderAndValidators(newHeader, newVals)
 }
 
 // see VerifyHeader
 func (c *Client) sequence(
 	initiallyTrustedHeader *types.SignedHeader,
 	newHeader *types.SignedHeader,
-	newVals *types.VoterSet,
+	newVals *types.ValidatorSet,
 	now time.Time) error {
 
 	var (
 		trustedHeader = initiallyTrustedHeader
 
 		interimHeader *types.SignedHeader
-		interimVals   *types.VoterSet
+		interimVals   *types.ValidatorSet
 
 		err error
 	)
@@ -653,7 +667,7 @@ func (c *Client) sequence(
 			"newHash", hash2str(interimHeader.Hash()))
 
 		err = VerifyAdjacent(c.chainID, trustedHeader, interimHeader, interimVals,
-			c.trustingPeriod, now, c.maxClockDrift)
+			c.trustingPeriod, now, c.maxClockDrift, c.voterParams)
 		if err != nil {
 			err = fmt.Errorf("verify adjacent from #%d to #%d failed: %w",
 				trustedHeader.Height, interimHeader.Height, err)
@@ -688,14 +702,14 @@ func (c *Client) sequence(
 // the light client does not need to ask for all the same headers again.
 func (c *Client) bisection(
 	initiallyTrustedHeader *types.SignedHeader,
-	initiallyTrustedVals *types.VoterSet,
+	initiallyTrustedVals *types.ValidatorSet,
 	newHeader *types.SignedHeader,
-	newVals *types.VoterSet,
+	newVals *types.ValidatorSet,
 	now time.Time) error {
 
 	type headerSet struct {
 		sh     *types.SignedHeader
-		valSet *types.VoterSet
+		valSet *types.ValidatorSet
 	}
 
 	var (
@@ -714,7 +728,7 @@ func (c *Client) bisection(
 			"newHash", hash2str(headerCache[depth].sh.Hash()))
 
 		err := Verify(c.chainID, trustedHeader, trustedVals, headerCache[depth].sh, headerCache[depth].valSet,
-			c.trustingPeriod, now, c.maxClockDrift, c.trustLevel)
+			c.trustingPeriod, now, c.maxClockDrift, c.trustLevel, c.voterParams)
 		switch err.(type) {
 		case nil:
 			// Have we verified the last header
@@ -806,7 +820,7 @@ func (c *Client) Witnesses() []provider.Provider {
 func (c *Client) Cleanup() error {
 	c.logger.Info("Removing all the data")
 	c.latestTrustedHeader = nil
-	c.latestTrustedVoters = nil
+	c.latestTrustedValidators = nil
 	return c.trustedStore.Prune(0)
 }
 
@@ -833,7 +847,7 @@ func (c *Client) cleanupAfter(height int64) error {
 	}
 
 	c.latestTrustedHeader = nil
-	c.latestTrustedVoters = nil
+	c.latestTrustedValidators = nil
 	err := c.restoreTrustedHeaderAndVals()
 	if err != nil {
 		return err
@@ -842,12 +856,12 @@ func (c *Client) cleanupAfter(height int64) error {
 	return nil
 }
 
-func (c *Client) updateTrustedHeaderAndVals(h *types.SignedHeader, voters *types.VoterSet) error {
-	if !bytes.Equal(h.VotersHash, voters.Hash()) {
-		return fmt.Errorf("expected voter's hash %X, but got %X", h.VotersHash, voters.Hash())
+func (c *Client) updateTrustedHeaderAndValidators(h *types.SignedHeader, valSet *types.ValidatorSet) error {
+	if !bytes.Equal(h.ValidatorsHash, valSet.Hash()) {
+		return fmt.Errorf("expected validator's hash %X, but got %X", h.ValidatorsHash, valSet.Hash())
 	}
 
-	if err := c.trustedStore.SaveSignedHeaderAndValidatorSet(h, voters); err != nil {
+	if err := c.trustedStore.SaveSignedHeaderAndValidatorSet(h, valSet); err != nil {
 		return fmt.Errorf("failed to save trusted header: %w", err)
 	}
 
@@ -859,7 +873,7 @@ func (c *Client) updateTrustedHeaderAndVals(h *types.SignedHeader, voters *types
 
 	if c.latestTrustedHeader == nil || h.Height > c.latestTrustedHeader.Height {
 		c.latestTrustedHeader = h
-		c.latestTrustedVoters = voters
+		c.latestTrustedValidators = valSet
 	}
 
 	return nil
@@ -867,12 +881,12 @@ func (c *Client) updateTrustedHeaderAndVals(h *types.SignedHeader, voters *types
 
 // fetch header and voters for the given height (0 - latest) from primary
 // provider.
-func (c *Client) fetchHeaderAndValsAtHeight(height int64) (*types.SignedHeader, *types.VoterSet, error) {
+func (c *Client) fetchHeaderAndValsAtHeight(height int64) (*types.SignedHeader, *types.ValidatorSet, error) {
 	h, err := c.signedHeaderFromPrimary(height)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to obtain the header #%d: %w", height, err)
 	}
-	vals, err := c.voterSetFromPrimary(height)
+	vals, err := c.validatorSetFromPrimary(height)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to obtain the vals #%d: %w", height, err)
 	}
@@ -956,7 +970,12 @@ func (c *Client) compareNewHeaderWithWitnesses(h *types.SignedHeader) error {
 			}
 
 			if !bytes.Equal(h.Hash(), altH.Hash()) {
-				if err = c.latestTrustedVoters.VerifyCommitTrusting(c.chainID, altH.Commit.BlockID,
+				proofHash, err := vrf.ProofToHash(altH.Proof.Bytes())
+				if err != nil {
+					c.logger.Error("Witness sent us incorrect header; invalid proof", "err", err)
+				}
+				voters := types.SelectVoter(c.latestTrustedValidators, proofHash, c.voterParams)
+				if err = voters.VerifyCommitTrusting(c.chainID, altH.Commit.BlockID,
 					altH.Height, altH.Commit, c.trustLevel); err != nil {
 					c.logger.Error("Witness sent us incorrect header", "err", err, "witness", witness)
 					witnessesToRemove = append(witnessesToRemove, i)
@@ -1080,16 +1099,16 @@ func (c *Client) signedHeaderFromPrimary(height int64) (*types.SignedHeader, err
 	return c.signedHeaderFromPrimary(height)
 }
 
-// voterSetFromPrimary retrieves the VoterSet from the primary provider
+// validatorSetFromPrimary retrieves the ValidatorSet from the primary provider
 // at the specified height. Handles dropout by the primary provider after 5
 // attempts by replacing it with an alternative provider.
-func (c *Client) voterSetFromPrimary(height int64) (*types.VoterSet, error) {
+func (c *Client) validatorSetFromPrimary(height int64) (*types.ValidatorSet, error) {
 	for attempt := uint16(1); attempt <= c.maxRetryAttempts; attempt++ {
 		c.providerMutex.Lock()
-		voters, err := c.primary.VoterSet(height)
+		valSet, err := c.primary.ValidatorSet(height)
 		c.providerMutex.Unlock()
 		if err == nil || err == provider.ErrValidatorSetNotFound {
-			return voters, err
+			return valSet, err
 		}
 		c.logger.Error("Failed to get voter set from primary", "attempt", attempt, "err", err)
 		time.Sleep(backoffTimeout(attempt))
@@ -1101,7 +1120,7 @@ func (c *Client) voterSetFromPrimary(height int64) (*types.VoterSet, error) {
 		return nil, err
 	}
 
-	return c.voterSetFromPrimary(height)
+	return c.validatorSetFromPrimary(height)
 }
 
 // exponential backoff (with jitter)

@@ -17,12 +17,48 @@ import (
 // voters in the set as used in computing their Merkle root.
 //
 // More: https://docs.tendermint.com/master/rpc/#/Info/validators
+func Validators(ctx *rpctypes.Context, heightPtr *int64, page, perPage int) (*ctypes.ResultValidators, error) {
+	return validators(ctx, heightPtr, page, perPage, sm.LoadValidators)
+}
+
+func validators(ctx *rpctypes.Context, heightPtr *int64, page, perPage int,
+	loadFunc func(db dbm.DB, height int64) (*types.ValidatorSet, error)) (
+	*ctypes.ResultValidators, error) {
+	// The latest validator that we know is the
+	// NextValidator of the last block.
+	height := consensusState.GetState().LastBlockHeight + 1
+	height, err := getHeight(blockStore.Base(), height, heightPtr)
+	if err != nil {
+		return nil, err
+	}
+
+	vals, err := loadFunc(stateDB, height)
+	if err != nil {
+		return nil, err
+	}
+
+	totalCount := len(vals.Validators)
+	perPage = validatePerPage(perPage)
+	page, err = validatePage(page, perPage, totalCount)
+	if err != nil {
+		return nil, err
+	}
+
+	skipCount := validateSkipCount(page, perPage)
+
+	v := vals.Validators[skipCount : skipCount+tmmath.MinInt(perPage, totalCount-skipCount)]
+
+	return &ctypes.ResultValidators{
+		BlockHeight: height,
+		Validators:  v}, nil
+}
+
 func Voters(ctx *rpctypes.Context, heightPtr *int64, page, perPage int) (*ctypes.ResultVoters, error) {
 	return voters(ctx, heightPtr, page, perPage, sm.LoadVoters)
 }
 
 func voters(ctx *rpctypes.Context, heightPtr *int64, page, perPage int,
-	loadFunc func(db dbm.DB, height int64, voterParams *types.VoterParams) (*types.VoterSet, error)) (
+	loadFunc func(db dbm.DB, height int64, voterParam *types.VoterParams) (*types.VoterSet, error)) (
 	*ctypes.ResultVoters, error) {
 	// The latest validator that we know is the
 	// NextValidator of the last block.
@@ -32,12 +68,12 @@ func voters(ctx *rpctypes.Context, heightPtr *int64, page, perPage int,
 		return nil, err
 	}
 
-	voters, err := loadFunc(stateDB, height, consensusState.GetState().VoterParams)
+	vals, err := loadFunc(stateDB, height, consensusState.GetState().VoterParams)
 	if err != nil {
 		return nil, err
 	}
 
-	totalCount := len(voters.Voters)
+	totalCount := len(vals.Voters)
 	perPage = validatePerPage(perPage)
 	page, err = validatePage(page, perPage, totalCount)
 	if err != nil {
@@ -46,7 +82,7 @@ func voters(ctx *rpctypes.Context, heightPtr *int64, page, perPage int,
 
 	skipCount := validateSkipCount(page, perPage)
 
-	v := voters.Voters[skipCount : skipCount+tmmath.MinInt(perPage, totalCount-skipCount)]
+	v := vals.Voters[skipCount : skipCount+tmmath.MinInt(perPage, totalCount-skipCount)]
 
 	return &ctypes.ResultVoters{
 		BlockHeight: height,

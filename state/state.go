@@ -72,7 +72,6 @@ type State struct {
 	// Extra +1 due to nextValSet delay.
 	NextValidators              *types.ValidatorSet
 	Validators                  *types.ValidatorSet
-	NextVoters                  *types.VoterSet
 	Voters                      *types.VoterSet
 	LastVoters                  *types.VoterSet
 	LastHeightValidatorsChanged int64
@@ -107,7 +106,6 @@ func (state State) Copy() State {
 		LastProofHash: state.LastProofHash,
 
 		NextValidators:              state.NextValidators.Copy(),
-		NextVoters:                  state.NextVoters.Copy(),
 		Validators:                  state.Validators.Copy(),
 		Voters:                      state.Voters.Copy(),
 		LastVoters:                  state.LastVoters.Copy(),
@@ -169,7 +167,7 @@ func (state State) MakeBlock(
 	block.Header.Populate(
 		state.Version.Consensus, state.ChainID,
 		timestamp, state.LastBlockID,
-		state.Voters.Hash(), state.NextVoters.Hash(),
+		state.Voters.Hash(), state.Validators.Hash(), state.NextValidators.Hash(),
 		state.ConsensusParams.Hash(), state.AppHash, state.LastResultsHash,
 		proposerAddress,
 		round,
@@ -263,9 +261,8 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 		LastProofHash: genDoc.Hash(),
 
 		NextValidators:              nextValidatorSet,
-		NextVoters:                  types.SelectVoter(nextValidatorSet, genDoc.Hash(), genDoc.VoterParams),
 		Validators:                  validatorSet,
-		Voters:                      types.ToVoterAll(validatorSet.Validators),
+		Voters:                      types.SelectVoter(validatorSet, genDoc.Hash(), genDoc.VoterParams),
 		LastVoters:                  &types.VoterSet{},
 		LastHeightValidatorsChanged: 1,
 

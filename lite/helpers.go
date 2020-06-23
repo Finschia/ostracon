@@ -4,7 +4,9 @@ import (
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
+	"github.com/tendermint/tendermint/crypto/vrf"
 
+	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
 )
@@ -56,7 +58,7 @@ func (pkz privKeys) ExtendSecp(n int) privKeys {
 	return append(pkz, extra...)
 }
 
-// ToValidators produces a voterSet from the set of keys.
+// ToValidators produces a validatorSet from the set of keys.
 // The first key has weight `init` and it increases by `inc` every step
 // so we can have all the same weight, or a simple linear distribution
 // (should be enough for testing).
@@ -77,6 +79,7 @@ func (pkz privKeys) signHeader(header *types.Header, first, last int) *types.Com
 
 	// We need this list to keep the ordering.
 	vset := pkz.ToValidators(1, 0)
+	voters := types.ToVoterAll(vset.Validators)
 
 	blockID := types.BlockID{
 		Hash:        header.Hash(),
@@ -85,16 +88,16 @@ func (pkz privKeys) signHeader(header *types.Header, first, last int) *types.Com
 
 	// Fill in the votes we want.
 	for i := first; i < last && i < len(pkz); i++ {
-		vote := makeVote(header, vset, pkz[i], blockID)
+		vote := makeVote(header, voters, pkz[i], blockID)
 		commitSigs[vote.ValidatorIndex] = vote.CommitSig()
 	}
 
 	return types.NewCommit(header.Height, 1, blockID, commitSigs)
 }
 
-func makeVote(header *types.Header, valset *types.ValidatorSet, key crypto.PrivKey, blockID types.BlockID) *types.Vote {
+func makeVote(header *types.Header, voterSet *types.VoterSet, key crypto.PrivKey, blockID types.BlockID) *types.Vote {
 	addr := key.PubKey().Address()
-	idx, _ := valset.GetByAddress(addr)
+	idx, _ := voterSet.GetByAddress(addr)
 	vote := &types.Vote{
 		ValidatorAddress: addr,
 		ValidatorIndex:   idx,
@@ -117,7 +120,12 @@ func makeVote(header *types.Header, valset *types.ValidatorSet, key crypto.PrivK
 }
 
 func genHeader(chainID string, height int64, txs types.Txs,
-	valset, nextValset *types.VoterSet, appHash, consHash, resHash []byte) *types.Header {
+	voterSet *types.VoterSet, valSet, nextValSet *types.ValidatorSet, appHash, consHash, resHash []byte) *types.Header {
+
+	secret := [64]byte{}
+	privateKey := ed25519.GenPrivKeyFromSecret(secret[:])
+	message := []byte("hello, world")
+	proof, _ := vrf.Prove(privateKey, message)
 
 	return &types.Header{
 		ChainID: chainID,
@@ -125,20 +133,23 @@ func genHeader(chainID string, height int64, txs types.Txs,
 		Time:    tmtime.Now(),
 		// LastBlockID
 		// LastCommitHash
-		VotersHash:      valset.Hash(),
-		NextVotersHash:  nextValset.Hash(),
-		DataHash:        txs.Hash(),
-		AppHash:         appHash,
-		ConsensusHash:   consHash,
-		LastResultsHash: resHash,
+		VotersHash:         voterSet.Hash(),
+		ValidatorsHash:     valSet.Hash(),
+		NextValidatorsHash: nextValSet.Hash(),
+		DataHash:           txs.Hash(),
+		AppHash:            appHash,
+		Proof:              tmbytes.HexBytes(proof),
+		ConsensusHash:      consHash,
+		LastResultsHash:    resHash,
 	}
 }
 
 // GenSignedHeader calls genHeader and signHeader and combines them into a SignedHeader.
 func (pkz privKeys) GenSignedHeader(chainID string, height int64, txs types.Txs,
-	valset, nextValset *types.VoterSet, appHash, consHash, resHash []byte, first, last int) types.SignedHeader {
+	voterSet *types.VoterSet, valSet, nextValSet *types.ValidatorSet, appHash, consHash, resHash []byte,
+	first, last int) types.SignedHeader {
 
-	header := genHeader(chainID, height, txs, valset, nextValset, appHash, consHash, resHash)
+	header := genHeader(chainID, height, txs, voterSet, valSet, nextValSet, appHash, consHash, resHash)
 	check := types.SignedHeader{
 		Header: header,
 		Commit: pkz.signHeader(header, first, last),
@@ -148,12 +159,13 @@ func (pkz privKeys) GenSignedHeader(chainID string, height int64, txs types.Txs,
 
 // GenFullCommit calls genHeader and signHeader and combines them into a FullCommit.
 func (pkz privKeys) GenFullCommit(chainID string, height int64, txs types.Txs,
-	valset, nextValset *types.VoterSet, appHash, consHash, resHash []byte, first, last int) FullCommit {
+	voterSet *types.VoterSet, valSet, nextValSet *types.ValidatorSet, appHash, consHash, resHash []byte,
+	first, last int) FullCommit {
 
-	header := genHeader(chainID, height, txs, valset, nextValset, appHash, consHash, resHash)
+	header := genHeader(chainID, height, txs, voterSet, valSet, nextValSet, appHash, consHash, resHash)
 	commit := types.SignedHeader{
 		Header: header,
 		Commit: pkz.signHeader(header, first, last),
 	}
-	return NewFullCommit(commit, valset, nextValset)
+	return NewFullCommit(commit, valSet, nextValSet)
 }

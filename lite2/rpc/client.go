@@ -45,7 +45,10 @@ func NewClient(next rpcclient.Client, lc *lite.Client) *Client {
 
 func (c *Client) OnStart() error {
 	if !c.next.IsRunning() {
-		return c.next.Start()
+		err := c.next.Start()
+		if err != nil {
+			return nil
+		}
 	}
 	return nil
 }
@@ -356,8 +359,8 @@ func (c *Client) TxSearch(query string, prove bool, page, perPage int, orderBy s
 //
 // WARNING: only full validator sets are verified (when length of validators is
 // less than +perPage+. +perPage+ default is 30, max is 100).
-func (c *Client) Validators(height *int64, page, perPage int) (*ctypes.ResultVoters, error) {
-	res, err := c.next.Voters(height, page, perPage)
+func (c *Client) Validators(height *int64, page, perPage int) (*ctypes.ResultValidators, error) {
+	res, err := c.next.Validators(height, page, perPage)
 	if err != nil {
 		return nil, err
 	}
@@ -375,7 +378,7 @@ func (c *Client) Validators(height *int64, page, perPage int) (*ctypes.ResultVot
 
 	// Verify validators.
 	if res.Count <= res.Total {
-		if rH, tH := types.WrapValidatorsToVoterSet(res.Voters).Hash(), h.VotersHash; !bytes.Equal(rH, tH) {
+		if rH, tH := types.NewValidatorSet(res.Validators).Hash(), h.ValidatorsHash; !bytes.Equal(rH, tH) {
 			return nil, fmt.Errorf("validators %X does not match with trusted validators %X",
 				rH, tH)
 		}
@@ -385,7 +388,31 @@ func (c *Client) Validators(height *int64, page, perPage int) (*ctypes.ResultVot
 }
 
 func (c *Client) Voters(height *int64, page, perPage int) (*ctypes.ResultVoters, error) {
-	return c.next.Voters(height, page, perPage)
+	res, err := c.next.Voters(height, page, perPage)
+	if err != nil {
+		return nil, err
+	}
+
+	// Validate res.
+	if res.BlockHeight <= 0 {
+		return nil, errNegOrZeroHeight
+	}
+
+	// Update the light client if we're behind.
+	h, err := c.updateLiteClientIfNeededTo(res.BlockHeight)
+	if err != nil {
+		return nil, err
+	}
+
+	// Verify voters.
+	if res.Count <= res.Total {
+		if rH, tH := types.WrapValidatorsToVoterSet(res.Voters).Hash(), h.VotersHash; !bytes.Equal(rH, tH) {
+			return nil, fmt.Errorf("voters %X does not match with trusted voters %X",
+				rH, tH)
+		}
+	}
+
+	return res, nil
 }
 
 func (c *Client) BroadcastEvidence(ev types.Evidence) (*ctypes.ResultBroadcastEvidence, error) {

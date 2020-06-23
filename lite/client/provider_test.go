@@ -51,7 +51,7 @@ func TestProvider(t *testing.T) {
 	assert.True(sh < 5000)
 
 	// let's check this is valid somehow
-	assert.Nil(fc.ValidateFull(chainID))
+	assert.Nil(fc.ValidateFull(chainID, types.DefaultVoterParams()))
 
 	// historical queries now work :)
 	lower := sh - 5
