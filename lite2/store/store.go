@@ -5,13 +5,13 @@ import "github.com/tendermint/tendermint/types"
 // Store is anything that can persistenly store headers.
 type Store interface {
 	// SaveSignedHeaderAndValidatorSet saves a SignedHeader (h: sh.Height) and a
-	// ValidatorSet (h: sh.Height).
+	// VoterSet (h: sh.Height).
 	//
 	// height must be > 0.
-	SaveSignedHeaderAndValidatorSet(sh *types.SignedHeader, valSet *types.ValidatorSet) error
+	SaveSignedHeaderAndValidatorSet(sh *types.SignedHeader, valSet *types.VoterSet) error
 
 	// DeleteSignedHeaderAndValidatorSet deletes SignedHeader (h: height) and
-	// ValidatorSet (h: height).
+	// VoterSet (h: height).
 	//
 	// height must be > 0.
 	DeleteSignedHeaderAndValidatorSet(height int64) error
@@ -24,12 +24,12 @@ type Store interface {
 	// If SignedHeader is not found, ErrSignedHeaderNotFound is returned.
 	SignedHeader(height int64) (*types.SignedHeader, error)
 
-	// ValidatorSet returns the ValidatorSet that corresponds to height.
+	// VoterSet returns the VoterSet that corresponds to height.
 	//
 	// height must be > 0.
 	//
-	// If ValidatorSet is not found, ErrValidatorSetNotFound is returned.
-	ValidatorSet(height int64) (*types.ValidatorSet, error)
+	// If VoterSet is not found, ErrValidatorSetNotFound is returned.
+	VoterSet(height int64) (*types.VoterSet, error)
 
 	// LastSignedHeaderHeight returns the last (newest) SignedHeader height.
 	//
@@ -41,10 +41,10 @@ type Store interface {
 	// If the store is empty, -1 and nil error are returned.
 	FirstSignedHeaderHeight() (int64, error)
 
-	// SignedHeaderAfter returns the SignedHeader after the certain height.
+	// SignedHeaderBefore returns the SignedHeader before a certain height.
 	//
 	// height must be > 0 && <= LastSignedHeaderHeight.
-	SignedHeaderAfter(height int64) (*types.SignedHeader, error)
+	SignedHeaderBefore(height int64) (*types.SignedHeader, error)
 
 	// Prune removes headers & the associated validator sets when Store reaches a
 	// defined size (number of header & validator set pairs).

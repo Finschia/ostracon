@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	dbm "github.com/tendermint/tm-db"
+
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/vrf"
 	"github.com/tendermint/tendermint/libs/fail"
@@ -11,7 +13,6 @@ import (
 	mempl "github.com/tendermint/tendermint/mempool"
 	"github.com/tendermint/tendermint/proxy"
 	"github.com/tendermint/tendermint/types"
-	dbm "github.com/tendermint/tm-db"
 )
 
 //-----------------------------------------------------------------------------
@@ -105,7 +106,7 @@ func (blockExec *BlockExecutor) CreateProposalBlock(
 	evidence := blockExec.evpool.PendingEvidence(maxNumEvidence)
 
 	// Fetch a limited amount of valid txs
-	maxDataBytes := types.MaxDataBytes(maxBytes, state.Validators.Size(), len(evidence))
+	maxDataBytes := types.MaxDataBytes(maxBytes, state.Voters.Size(), len(evidence))
 	txs := blockExec.mempool.ReapMaxBytesMaxGas(maxDataBytes, maxGas)
 
 	return state.MakeBlock(height, txs, commit, evidence, proposerAddr, round, proof)
@@ -121,23 +122,27 @@ func (blockExec *BlockExecutor) ValidateBlock(state State, round int, block *typ
 
 // ApplyBlock validates the block against the state, executes it against the app,
 // fires the relevant events, commits the app, and saves the new state and responses.
+// It returns the new state and the block height to retain (pruning older blocks).
 // It's the only function that needs to be called
 // from outside this package to process and commit an entire block.
 // It takes a blockID to avoid recomputing the parts hash.
-func (blockExec *BlockExecutor) ApplyBlock(state State, blockID types.BlockID, block *types.Block) (State, error) {
+func (blockExec *BlockExecutor) ApplyBlock(
+	state State, blockID types.BlockID, block *types.Block,
+) (State, int64, error) {
 
 	// When doing ApplyBlock, we don't need to check whether the block.Round is same to current round,
 	// so we just put block.Round for the current round parameter
 	if err := blockExec.ValidateBlock(state, block.Round, block); err != nil {
-		return state, ErrInvalidBlock(err)
+		return state, 0, ErrInvalidBlock(err)
 	}
 
 	startTime := time.Now().UnixNano()
-	abciResponses, err := execBlockOnProxyApp(blockExec.logger, blockExec.proxyApp, block, blockExec.db)
+	abciResponses, err := execBlockOnProxyApp(blockExec.logger, blockExec.proxyApp, block, blockExec.db,
+		state.VoterParams)
 	endTime := time.Now().UnixNano()
 	blockExec.metrics.BlockProcessingTime.Observe(float64(endTime-startTime) / 1000000)
 	if err != nil {
-		return state, ErrProxyAppConn(err)
+		return state, 0, ErrProxyAppConn(err)
 	}
 
 	fail.Fail() // XXX
@@ -151,11 +156,11 @@ func (blockExec *BlockExecutor) ApplyBlock(state State, blockID types.BlockID, b
 	abciValUpdates := abciResponses.EndBlock.ValidatorUpdates
 	err = validateValidatorUpdates(abciValUpdates, state.ConsensusParams.Validator)
 	if err != nil {
-		return state, fmt.Errorf("error in validator updates: %v", err)
+		return state, 0, fmt.Errorf("error in validator updates: %v", err)
 	}
 	validatorUpdates, err := types.PB2TM.ValidatorUpdates(abciValUpdates)
 	if err != nil {
-		return state, err
+		return state, 0, err
 	}
 	if len(validatorUpdates) > 0 {
 		blockExec.logger.Info("Updates to validators", "updates", types.ValidatorListString(validatorUpdates))
@@ -164,13 +169,13 @@ func (blockExec *BlockExecutor) ApplyBlock(state State, blockID types.BlockID, b
 	// Update the state with the block and responses.
 	state, err = updateState(state, blockID, &block.Header, abciResponses, validatorUpdates)
 	if err != nil {
-		return state, fmt.Errorf("commit failed for application: %v", err)
+		return state, 0, fmt.Errorf("commit failed for application: %v", err)
 	}
 
 	// Lock mempool, commit app state, update mempoool.
-	appHash, err := blockExec.Commit(state, block, abciResponses.DeliverTxs)
+	appHash, retainHeight, err := blockExec.Commit(state, block, abciResponses.DeliverTxs)
 	if err != nil {
-		return state, fmt.Errorf("commit failed for application: %v", err)
+		return state, 0, fmt.Errorf("commit failed for application: %v", err)
 	}
 
 	// Update evpool with the block and state.
@@ -188,12 +193,12 @@ func (blockExec *BlockExecutor) ApplyBlock(state State, blockID types.BlockID, b
 	// NOTE: if we crash between Commit and Save, events wont be fired during replay
 	fireEvents(blockExec.logger, blockExec.eventBus, block, abciResponses, validatorUpdates)
 
-	return state, nil
+	return state, retainHeight, nil
 }
 
 // Commit locks the mempool, runs the ABCI Commit message, and updates the
 // mempool.
-// It returns the result of calling abci.Commit (the AppHash), and an error.
+// It returns the result of calling abci.Commit (the AppHash) and the height to retain (if any).
 // The Mempool must be locked during commit and update because state is
 // typically reset on Commit and old txs must be replayed against committed
 // state before new txs are run in the mempool, lest they be invalid.
@@ -201,7 +206,7 @@ func (blockExec *BlockExecutor) Commit(
 	state State,
 	block *types.Block,
 	deliverTxResponses []*abci.ResponseDeliverTx,
-) ([]byte, error) {
+) ([]byte, int64, error) {
 	blockExec.mempool.Lock()
 	defer blockExec.mempool.Unlock()
 
@@ -210,7 +215,7 @@ func (blockExec *BlockExecutor) Commit(
 	err := blockExec.mempool.FlushAppConn()
 	if err != nil {
 		blockExec.logger.Error("Client error during mempool.FlushAppConn", "err", err)
-		return nil, err
+		return nil, 0, err
 	}
 
 	// Commit block, get hash back
@@ -220,7 +225,7 @@ func (blockExec *BlockExecutor) Commit(
 			"Client error during proxyAppConn.CommitSync",
 			"err", err,
 		)
-		return nil, err
+		return nil, 0, err
 	}
 	// ResponseCommit has no error code - just data
 
@@ -240,7 +245,7 @@ func (blockExec *BlockExecutor) Commit(
 		TxPostCheck(state),
 	)
 
-	return res.Data, err
+	return res.Data, res.RetainHeight, err
 }
 
 //---------------------------------------------------------
@@ -253,6 +258,7 @@ func execBlockOnProxyApp(
 	proxyAppConn proxy.AppConnConsensus,
 	block *types.Block,
 	stateDB dbm.DB,
+	voterParams *types.VoterParams,
 ) (*ABCIResponses, error) {
 	var validTxs, invalidTxs = 0, 0
 
@@ -278,7 +284,7 @@ func execBlockOnProxyApp(
 	}
 	proxyAppConn.SetResponseCallback(proxyCb)
 
-	commitInfo, byzVals := getBeginBlockValidatorInfo(block, stateDB)
+	commitInfo, byzVals := getBeginBlockValidatorInfo(block, stateDB, voterParams)
 
 	// Begin block
 	var err error
@@ -313,13 +319,14 @@ func execBlockOnProxyApp(
 	return abciResponses, nil
 }
 
-func getBeginBlockValidatorInfo(block *types.Block, stateDB dbm.DB) (abci.LastCommitInfo, []abci.Evidence) {
+func getBeginBlockValidatorInfo(block *types.Block, stateDB dbm.DB, voterParams *types.VoterParams) (
+	abci.LastCommitInfo, []abci.Evidence) {
 	voteInfos := make([]abci.VoteInfo, block.LastCommit.Size())
 	// block.Height=1 -> LastCommitInfo.Votes are empty.
 	// Remember that the first LastCommit is intentionally empty, so it makes
 	// sense for LastCommitInfo.Votes to also be empty.
 	if block.Height > 1 {
-		lastValSet, err := LoadValidators(stateDB, block.Height-1)
+		lastVoterSet, err := LoadVoters(stateDB, block.Height-1, voterParams)
 		if err != nil {
 			panic(err)
 		}
@@ -327,15 +334,16 @@ func getBeginBlockValidatorInfo(block *types.Block, stateDB dbm.DB) (abci.LastCo
 		// Sanity check that commit size matches validator set size - only applies
 		// after first block.
 		var (
-			commitSize = block.LastCommit.Size()
-			valSetLen  = len(lastValSet.Validators)
+			commitSize  = block.LastCommit.Size()
+			voterSetLen = lastVoterSet.Size()
 		)
-		if commitSize != valSetLen {
-			panic(fmt.Sprintf("commit size (%d) doesn't match valset length (%d) at height %d\n\n%v\n\n%v",
-				commitSize, valSetLen, block.Height, block.LastCommit.Signatures, lastValSet.Validators))
+
+		if commitSize != voterSetLen {
+			panic(fmt.Sprintf("commit size (%d) doesn't match voterset length (%d) at height %d\n\n%v\n\n%v",
+				commitSize, voterSetLen, block.Height, block.LastCommit.Signatures, lastVoterSet.Voters))
 		}
 
-		for i, val := range lastValSet.Validators {
+		for i, val := range lastVoterSet.Voters {
 			commitSig := block.LastCommit.Signatures[i]
 			voteInfos[i] = abci.VoteInfo{
 				Validator:       types.TM2PB.Validator(val),
@@ -349,11 +357,11 @@ func getBeginBlockValidatorInfo(block *types.Block, stateDB dbm.DB) (abci.LastCo
 		// We need the validator set. We already did this in validateBlock.
 		// TODO: Should we instead cache the valset in the evidence itself and add
 		// `SetValidatorSet()` and `ToABCI` methods ?
-		valset, err := LoadValidators(stateDB, ev.Height())
+		voterSet, err := LoadVoters(stateDB, ev.Height(), voterParams)
 		if err != nil {
 			panic(err)
 		}
-		byzVals[i] = types.TM2PB.Evidence(ev, valset, block.Time)
+		byzVals[i] = types.TM2PB.Evidence(ev, voterSet, block.Time)
 	}
 
 	return abci.LastCommitInfo{
@@ -393,7 +401,7 @@ func updateState(
 ) (State, error) {
 
 	// Copy the valset so we can apply changes from EndBlock
-	// and update s.LastValidators and s.Validators.
+	// and update s.LastVoters and s.Validators.
 	nValSet := state.NextValidators.Copy()
 
 	// Update the validator set with the latest abciResponses.
@@ -433,18 +441,23 @@ func updateState(
 		return state, fmt.Errorf("error get proof of hash: %v", err)
 	}
 
+	nextVoters := types.SelectVoter(nValSet, proofHash, state.VoterParams)
+
 	// NOTE: the AppHash has not been populated.
 	// It will be filled on state.Save.
 	return State{
 		Version:                          nextVersion,
 		ChainID:                          state.ChainID,
+		VoterParams:                      state.VoterParams,
 		LastBlockHeight:                  header.Height,
 		LastBlockID:                      blockID,
 		LastBlockTime:                    header.Time,
 		LastProofHash:                    proofHash,
 		NextValidators:                   nValSet,
+		NextVoters:                       nextVoters,
 		Validators:                       state.NextValidators.Copy(),
-		LastValidators:                   state.Validators.Copy(),
+		Voters:                           state.NextVoters.Copy(),
+		LastVoters:                       state.Voters.Copy(),
 		LastHeightValidatorsChanged:      lastHeightValsChanged,
 		ConsensusParams:                  nextParams,
 		LastHeightConsensusParamsChanged: lastHeightParamsChanged,
@@ -500,8 +513,9 @@ func ExecCommitBlock(
 	block *types.Block,
 	logger log.Logger,
 	stateDB dbm.DB,
+	voterParams *types.VoterParams,
 ) ([]byte, error) {
-	_, err := execBlockOnProxyApp(logger, appConnConsensus, block, stateDB)
+	_, err := execBlockOnProxyApp(logger, appConnConsensus, block, stateDB, voterParams)
 	if err != nil {
 		logger.Error("Error executing block on proxy app", "height", block.Height, "err", err)
 		return nil, err

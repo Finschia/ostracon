@@ -29,7 +29,7 @@ func newProcessorContext(st blockStore, ex blockApplier, s state.State) *pContex
 }
 
 func (pc *pContext) applyBlock(blockID types.BlockID, block *types.Block) error {
-	newState, err := pc.applier.ApplyBlock(pc.state, blockID, block)
+	newState, _, err := pc.applier.ApplyBlock(pc.state, blockID, block)
 	pc.state = newState
 	return err
 }
@@ -39,7 +39,7 @@ func (pc pContext) tmState() state.State {
 }
 
 func (pc pContext) verifyCommit(chainID string, blockID types.BlockID, height int64, commit *types.Commit) error {
-	return pc.state.Validators.VerifyCommit(chainID, blockID, height, commit)
+	return pc.state.Voters.VerifyCommit(chainID, blockID, height, commit)
 }
 
 func (pc *pContext) saveBlock(block *types.Block, blockParts *types.PartSet, seenCommit *types.Commit) {

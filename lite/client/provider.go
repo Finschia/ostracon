@@ -1,5 +1,5 @@
 /*
-Package client defines a provider that uses a rpcclient
+Package client defines a provider that uses a rpchttp
 to get information, which is used to get new headers
 and validators directly from a Tendermint client.
 */
@@ -12,6 +12,7 @@ import (
 	"github.com/tendermint/tendermint/lite"
 	lerr "github.com/tendermint/tendermint/lite/errors"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
+	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"github.com/tendermint/tendermint/types"
 )
@@ -40,7 +41,7 @@ func NewProvider(chainID string, client SignStatusClient) lite.Provider {
 // NewHTTPProvider can connect to a tendermint json-rpc endpoint
 // at the given url, and uses that as a read-only provider.
 func NewHTTPProvider(chainID, remote string) (lite.Provider, error) {
-	httpClient, err := rpcclient.NewHTTP(remote, "/websocket")
+	httpClient, err := rpchttp.New(remote, "/websocket")
 	if err != nil {
 		return nil, err
 	}
@@ -97,11 +98,11 @@ func (p *provider) fetchLatestCommit(minHeight int64, maxHeight int64) (*ctypes.
 }
 
 // Implements Provider.
-func (p *provider) ValidatorSet(chainID string, height int64) (valset *types.ValidatorSet, err error) {
-	return p.getValidatorSet(chainID, height)
+func (p *provider) VoterSet(chainID string, height int64) (valset *types.VoterSet, err error) {
+	return p.getVoterSet(chainID, height)
 }
 
-func (p *provider) getValidatorSet(chainID string, height int64) (valset *types.ValidatorSet, err error) {
+func (p *provider) getVoterSet(chainID string, height int64) (valset *types.VoterSet, err error) {
 	if chainID != p.chainID {
 		err = fmt.Errorf("expected chainID %s, got %s", p.chainID, chainID)
 		return
@@ -110,12 +111,15 @@ func (p *provider) getValidatorSet(chainID string, height int64) (valset *types.
 		err = fmt.Errorf("expected height >= 1, got height %v", height)
 		return
 	}
-	res, err := p.client.Validators(&height, 0, 0)
+
+	var res *ctypes.ResultVoters
+	res, err = p.client.Voters(&height, 0, 0)
+
 	if err != nil {
 		// TODO pass through other types of errors.
 		return nil, lerr.ErrUnknownValidators(chainID, height)
 	}
-	valset = types.NewValidatorSet(res.Validators)
+	valset = types.WrapValidatorsToVoterSet(res.Voters)
 	return
 }
 
@@ -123,13 +127,13 @@ func (p *provider) getValidatorSet(chainID string, height int64) (valset *types.
 func (p *provider) fillFullCommit(signedHeader types.SignedHeader) (fc lite.FullCommit, err error) {
 
 	// Get the validators.
-	valset, err := p.getValidatorSet(signedHeader.ChainID, signedHeader.Height)
+	valset, err := p.getVoterSet(signedHeader.ChainID, signedHeader.Height)
 	if err != nil {
 		return lite.FullCommit{}, err
 	}
 
 	// Get the next validators.
-	nextValset, err := p.getValidatorSet(signedHeader.ChainID, signedHeader.Height+1)
+	nextValset, err := p.getVoterSet(signedHeader.ChainID, signedHeader.Height+1)
 	if err != nil {
 		return lite.FullCommit{}, err
 	}

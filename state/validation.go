@@ -5,11 +5,12 @@ import (
 	"errors"
 	"fmt"
 
+	dbm "github.com/tendermint/tm-db"
+
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/crypto/vrf"
 	"github.com/tendermint/tendermint/types"
-	dbm "github.com/tendermint/tm-db"
 )
 
 //-----------------------------------------------------
@@ -68,16 +69,16 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, round
 			block.LastResultsHash,
 		)
 	}
-	if !bytes.Equal(block.ValidatorsHash, state.Validators.Hash()) {
-		return fmt.Errorf("wrong Block.Header.ValidatorsHash.  Expected %X, got %v",
-			state.Validators.Hash(),
-			block.ValidatorsHash,
+	if !bytes.Equal(block.VotersHash, state.Voters.Hash()) {
+		return fmt.Errorf("wrong Block.Header.VotersHash.  Expected %X, got %v",
+			state.Voters.Hash(),
+			block.VotersHash,
 		)
 	}
-	if !bytes.Equal(block.NextValidatorsHash, state.NextValidators.Hash()) {
-		return fmt.Errorf("wrong Block.Header.NextValidatorsHash.  Expected %X, got %v",
-			state.NextValidators.Hash(),
-			block.NextValidatorsHash,
+	if !bytes.Equal(block.NextVotersHash, state.NextVoters.Hash()) {
+		return fmt.Errorf("wrong Block.Header.NextVotersHash.  Expected %X, got %v",
+			state.NextVoters.Hash(),
+			block.NextVotersHash,
 		)
 	}
 
@@ -87,10 +88,10 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, round
 			return errors.New("block at height 1 can't have LastCommit signatures")
 		}
 	} else {
-		if len(block.LastCommit.Signatures) != state.LastValidators.Size() {
-			return types.NewErrInvalidCommitSignatures(state.LastValidators.Size(), len(block.LastCommit.Signatures))
+		if len(block.LastCommit.Signatures) != state.LastVoters.Size() {
+			return types.NewErrInvalidCommitSignatures(state.LastVoters.Size(), len(block.LastCommit.Signatures))
 		}
-		err := state.LastValidators.VerifyCommit(
+		err := state.LastVoters.VerifyCommit(
 			state.ChainID, state.LastBlockID, block.Height-1, block.LastCommit)
 		if err != nil {
 			return err
@@ -106,7 +107,7 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, round
 			)
 		}
 
-		medianTime := MedianTime(block.LastCommit, state.LastValidators)
+		medianTime := MedianTime(block.LastCommit, state.LastVoters)
 		if !block.Time.Equal(medianTime) {
 			return fmt.Errorf("invalid block time. Expected %v, got %v",
 				medianTime,
@@ -153,10 +154,10 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, round
 
 	// validate proposer
 	if !bytes.Equal(block.ProposerAddress.Bytes(),
-		types.SelectProposer(state.Validators, state.LastProofHash, block.Height, block.Round).Address.Bytes()) {
+		state.Validators.SelectProposer(state.LastProofHash, block.Height, block.Round).Address.Bytes()) {
 		return fmt.Errorf("block.ProposerAddress, %X, is not the proposer %X",
 			block.ProposerAddress,
-			types.SelectProposer(state.Validators, state.LastProofHash, block.Height, block.Round).Address,
+			state.Validators.SelectProposer(state.LastProofHash, block.Height, block.Round).Address,
 		)
 	}
 
@@ -192,37 +193,38 @@ func VerifyEvidence(stateDB dbm.DB, state State, evidence types.Evidence) error 
 	var (
 		height         = state.LastBlockHeight
 		evidenceParams = state.ConsensusParams.Evidence
+
+		ageDuration  = state.LastBlockTime.Sub(evidence.Time())
+		ageNumBlocks = height - evidence.Height()
 	)
 
-	ageNumBlocks := height - evidence.Height()
-	if ageNumBlocks > evidenceParams.MaxAgeNumBlocks {
-		return fmt.Errorf("evidence from height %d is too old. Min height is %d",
-			evidence.Height(), height-evidenceParams.MaxAgeNumBlocks)
+	if ageDuration > evidenceParams.MaxAgeDuration && ageNumBlocks > evidenceParams.MaxAgeNumBlocks {
+		return fmt.Errorf(
+			"evidence from height %d (created at: %v) is too old; min height is %d and evidence can not be older than %v",
+			evidence.Height(),
+			evidence.Time(),
+			height-evidenceParams.MaxAgeNumBlocks,
+			state.LastBlockTime.Add(evidenceParams.MaxAgeDuration),
+		)
 	}
 
-	ageDuration := state.LastBlockTime.Sub(evidence.Time())
-	if ageDuration > evidenceParams.MaxAgeDuration {
-		return fmt.Errorf("evidence created at %v has expired. Evidence can not be older than: %v",
-			evidence.Time(), state.LastBlockTime.Add(evidenceParams.MaxAgeDuration))
-	}
-
-	valset, err := LoadValidators(stateDB, evidence.Height())
+	voterSet, err := LoadVoters(stateDB, evidence.Height(), state.VoterParams)
 	if err != nil {
 		// TODO: if err is just that we cant find it cuz we pruned, ignore.
 		// TODO: if its actually bad evidence, punish peer
 		return err
 	}
 
-	// The address must have been an active validator at the height.
-	// NOTE: we will ignore evidence from H if the key was not a validator
+	// The address must have been an active voter at the height.
+	// NOTE: we will ignore evidence from H if the key was not a voter
 	// at H, even if it is a validator at some nearby H'
 	// XXX: this makes lite-client bisection as is unsafe
 	// See https://github.com/tendermint/tendermint/issues/3244
 	ev := evidence
 	height, addr := ev.Height(), ev.Address()
-	_, val := valset.GetByAddress(addr)
+	_, val := voterSet.GetByAddress(addr)
 	if val == nil {
-		return fmt.Errorf("address %X was not a validator at height %d", addr, height)
+		return fmt.Errorf("address %X was not a voter at height %d", addr, height)
 	}
 
 	if err := evidence.Verify(state.ChainID, val.PubKey); err != nil {

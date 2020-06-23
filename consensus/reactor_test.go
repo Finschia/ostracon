@@ -14,6 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	dbm "github.com/tendermint/tm-db"
+
 	abcicli "github.com/tendermint/tendermint/abci/client"
 	"github.com/tendermint/tendermint/abci/example/kvstore"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -29,7 +31,6 @@ import (
 	sm "github.com/tendermint/tendermint/state"
 	"github.com/tendermint/tendermint/store"
 	"github.com/tendermint/tendermint/types"
-	dbm "github.com/tendermint/tm-db"
 )
 
 //----------------------------------------------
@@ -119,7 +120,7 @@ func TestReactorWithEvidence(t *testing.T) {
 	// to unroll unwieldy abstractions. Here we duplicate the code from:
 	// css := randConsensusNet(N, "consensus_reactor_test", newMockTickerFunc(true), newCounter)
 
-	genDoc, privVals := randGenesisDoc(nValidators, false, 30)
+	genDoc, privVals := randGenesisDoc(nValidators, false, 30, nil)
 	css := make([]*State, nValidators)
 	logger := consensusLogger()
 	for i := 0; i < nValidators; i++ {
@@ -154,8 +155,9 @@ func TestReactorWithEvidence(t *testing.T) {
 		// mock the evidence pool
 		// everyone includes evidence of another double signing
 		vIdx := (i + 1) % nValidators
-		addr := privVals[vIdx].GetPubKey().Address()
-		evpool := newMockEvidencePool(addr)
+		pubKey, err := privVals[vIdx].GetPubKey()
+		require.NoError(t, err)
+		evpool := newMockEvidencePool(pubKey.Address())
 
 		// Make State
 		blockExec := sm.NewBlockExecutor(stateDB, log.TestingLogger(), proxyAppConnCon, mempool, evpool)
@@ -333,7 +335,7 @@ func TestReactorRecordsVotesAndBlockParts(t *testing.T) {
 //-------------------------------------------------------------
 // ensure we can make blocks despite cycling a validator set
 
-func TestReactorVotingPowerChange(t *testing.T) {
+func TestReactorStakingPowerChange(t *testing.T) {
 	nVals := 4
 	logger := log.TestingLogger()
 	css, cleanup := randConsensusNet(
@@ -348,7 +350,9 @@ func TestReactorVotingPowerChange(t *testing.T) {
 	// map of active validators
 	activeVals := make(map[string]struct{})
 	for i := 0; i < nVals; i++ {
-		addr := css[i].privValidator.GetPubKey().Address()
+		pubKey, err := css[i].privValidator.GetPubKey()
+		require.NoError(t, err)
+		addr := pubKey.Address()
 		activeVals[string(addr)] = struct{}{}
 	}
 
@@ -360,51 +364,52 @@ func TestReactorVotingPowerChange(t *testing.T) {
 	//---------------------------------------------------------------------------
 	logger.Debug("---------------------------- Testing changing the voting power of one validator a few times")
 
-	val1PubKey := css[0].privValidator.GetPubKey()
+	val1PubKey, err := css[0].privValidator.GetPubKey()
+	require.NoError(t, err)
 	val1PubKeyABCI := types.TM2PB.PubKey(val1PubKey)
 	updateValidatorTx := kvstore.MakeValSetChangeTx(val1PubKeyABCI, 25)
-	previousTotalVotingPower := css[0].GetRoundState().LastValidators.TotalVotingPower()
+	previousTotalVotingPower := css[0].GetRoundState().LastVoters.TotalVotingPower()
 
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlockWithTx(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 
-	if css[0].GetRoundState().LastValidators.TotalVotingPower() == previousTotalVotingPower {
+	if css[0].GetRoundState().LastVoters.TotalVotingPower() == previousTotalVotingPower {
 		t.Fatalf(
-			"expected voting power to change (before: %d, after: %d)",
+			"expected staking power to change (before: %d, after: %d)",
 			previousTotalVotingPower,
-			css[0].GetRoundState().LastValidators.TotalVotingPower())
+			css[0].GetRoundState().LastVoters.TotalVotingPower())
 	}
 
 	updateValidatorTx = kvstore.MakeValSetChangeTx(val1PubKeyABCI, 2)
-	previousTotalVotingPower = css[0].GetRoundState().LastValidators.TotalVotingPower()
+	previousTotalVotingPower = css[0].GetRoundState().LastVoters.TotalVotingPower()
 
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlockWithTx(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 
-	if css[0].GetRoundState().LastValidators.TotalVotingPower() == previousTotalVotingPower {
+	if css[0].GetRoundState().LastVoters.TotalVotingPower() == previousTotalVotingPower {
 		t.Fatalf(
 			"expected voting power to change (before: %d, after: %d)",
 			previousTotalVotingPower,
-			css[0].GetRoundState().LastValidators.TotalVotingPower())
+			css[0].GetRoundState().LastVoters.TotalVotingPower())
 	}
 
 	updateValidatorTx = kvstore.MakeValSetChangeTx(val1PubKeyABCI, 26)
-	previousTotalVotingPower = css[0].GetRoundState().LastValidators.TotalVotingPower()
+	previousTotalVotingPower = css[0].GetRoundState().LastVoters.TotalVotingPower()
 
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlockWithTx(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 
-	if css[0].GetRoundState().LastValidators.TotalVotingPower() == previousTotalVotingPower {
+	if css[0].GetRoundState().LastVoters.TotalVotingPower() == previousTotalVotingPower {
 		t.Fatalf(
 			"expected voting power to change (before: %d, after: %d)",
 			previousTotalVotingPower,
-			css[0].GetRoundState().LastValidators.TotalVotingPower())
+			css[0].GetRoundState().LastVoters.TotalVotingPower())
 	}
 }
 
@@ -427,8 +432,9 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 	// map of active validators
 	activeVals := make(map[string]struct{})
 	for i := 0; i < nVals; i++ {
-		addr := css[i].privValidator.GetPubKey().Address()
-		activeVals[string(addr)] = struct{}{}
+		pubKey, err := css[i].privValidator.GetPubKey()
+		require.NoError(t, err)
+		activeVals[string(pubKey.Address())] = struct{}{}
 	}
 
 	// wait till everyone makes block 1
@@ -439,7 +445,8 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 	//---------------------------------------------------------------------------
 	logger.Info("---------------------------- Testing adding one validator")
 
-	newValidatorPubKey1 := css[nVals].privValidator.GetPubKey()
+	newValidatorPubKey1, err := css[nVals].privValidator.GetPubKey()
+	require.NoError(t, err)
 	valPubKey1ABCI := types.TM2PB.PubKey(newValidatorPubKey1)
 	newValidatorTx1 := kvstore.MakeValSetChangeTx(valPubKey1ABCI, testMinPower)
 
@@ -466,31 +473,34 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 	//---------------------------------------------------------------------------
 	logger.Info("---------------------------- Testing changing the voting power of one validator")
 
-	updateValidatorPubKey1 := css[nVals].privValidator.GetPubKey()
+	updateValidatorPubKey1, err := css[nVals].privValidator.GetPubKey()
+	require.NoError(t, err)
 	updatePubKey1ABCI := types.TM2PB.PubKey(updateValidatorPubKey1)
 	updateValidatorTx1 := kvstore.MakeValSetChangeTx(updatePubKey1ABCI, 25)
-	previousTotalVotingPower := css[nVals].GetRoundState().LastValidators.TotalVotingPower()
+	previousTotalVotingPower := css[nVals].GetRoundState().LastVoters.TotalVotingPower()
 
 	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css, updateValidatorTx1)
 	waitForAndValidateBlockWithTx(t, nPeers, activeVals, blocksSubs, css, updateValidatorTx1)
 	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css)
 	waitForBlockWithUpdatedValsAndValidateIt(t, nPeers, activeVals, blocksSubs, css)
 
-	if css[nVals].GetRoundState().LastValidators.TotalVotingPower() == previousTotalVotingPower {
+	if css[nVals].GetRoundState().LastVoters.TotalVotingPower() == previousTotalVotingPower {
 		t.Errorf(
-			"expected voting power to change (before: %d, after: %d)",
+			"expected staking power to change (before: %d, after: %d)",
 			previousTotalVotingPower,
-			css[nVals].GetRoundState().LastValidators.TotalVotingPower())
+			css[nVals].GetRoundState().LastVoters.TotalVotingPower())
 	}
 
 	//---------------------------------------------------------------------------
 	logger.Info("---------------------------- Testing adding two validators at once")
 
-	newValidatorPubKey2 := css[nVals+1].privValidator.GetPubKey()
+	newValidatorPubKey2, err := css[nVals+1].privValidator.GetPubKey()
+	require.NoError(t, err)
 	newVal2ABCI := types.TM2PB.PubKey(newValidatorPubKey2)
 	newValidatorTx2 := kvstore.MakeValSetChangeTx(newVal2ABCI, testMinPower)
 
-	newValidatorPubKey3 := css[nVals+2].privValidator.GetPubKey()
+	newValidatorPubKey3, err := css[nVals+2].privValidator.GetPubKey()
+	require.NoError(t, err)
 	newVal3ABCI := types.TM2PB.PubKey(newValidatorPubKey3)
 	newValidatorTx3 := kvstore.MakeValSetChangeTx(newVal3ABCI, testMinPower)
 

@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	cstypes "github.com/tendermint/tendermint/consensus/types"
+	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/libs/log"
 	tmpubsub "github.com/tendermint/tendermint/libs/pubsub"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
@@ -65,7 +66,9 @@ func TestStateProposerSelection0(t *testing.T) {
 
 	// Commit a block and ensure proposer for the next height is correct.
 	prop := cs1.GetRoundState().Proposer
-	address := cs1.privValidator.GetPubKey().Address()
+	pv, err := cs1.privValidator.GetPubKey()
+	require.NoError(t, err)
+	address := pv.Address()
 	if !bytes.Equal(prop.Address, address) {
 		t.Fatalf("expected proposer to be validator %d. Got %X", 0, prop.Address)
 	}
@@ -80,7 +83,7 @@ func TestStateProposerSelection0(t *testing.T) {
 	ensureNewRound(newRoundCh, height+1, 0)
 
 	prop = cs1.GetRoundState().Proposer
-	addr := types.SelectProposer(cs1.Validators, cs1.state.LastProofHash, cs1.Height, cs1.Round).PubKey.Address()
+	addr := cs1.Validators.SelectProposer(cs1.state.LastProofHash, cs1.Height, cs1.Round).PubKey.Address()
 	if !bytes.Equal(prop.Address, addr) {
 		panic(fmt.Sprintf("expected proposer to be validator %d. Got %X", 1, prop.Address))
 	}
@@ -104,10 +107,10 @@ func TestStateProposerSelection2(t *testing.T) {
 	// everyone just votes nil. we get a new proposer each round
 	for i := 0; i < len(vss); i++ {
 		prop := cs1.GetRoundState().Proposer
-		addr := types.SelectProposer(cs1.Validators, cs1.state.LastProofHash, height, i+round).PubKey.Address()
+		addr := cs1.Validators.SelectProposer(cs1.state.LastProofHash, height, i+round).PubKey.Address()
 		correctProposer := addr
 		if !bytes.Equal(prop.Address, correctProposer) {
-			idx, _ := cs1.Validators.GetByAddress(addr)
+			idx, _ := cs1.Voters.GetByAddress(addr)
 			panic(fmt.Sprintf(
 				"expected RoundState.Validators.GetProposer() to be validator %d. Got %X",
 				idx,
@@ -182,7 +185,7 @@ func TestStateBadProposal(t *testing.T) {
 	proposalCh := subscribe(cs1.eventBus, types.EventQueryCompleteProposal)
 	voteCh := subscribe(cs1.eventBus, types.EventQueryVote)
 
-	propBlock, _ := cs1.createProposalBlock(round) //changeProposer(t, cs1, vs2)
+	propBlock, _ := cs1.createProposalBlock(round) // changeProposer(t, cs1, vs2)
 
 	// make the second validator the proposer by incrementing round
 	round++
@@ -520,7 +523,9 @@ func TestStateLockPOLRelock(t *testing.T) {
 
 	timeoutWaitCh := subscribe(cs1.eventBus, types.EventQueryTimeoutWait)
 	proposalCh := subscribe(cs1.eventBus, types.EventQueryCompleteProposal)
-	addr := cs1.privValidator.GetPubKey().Address()
+	pv1, err := cs1.privValidator.GetPubKey()
+	require.NoError(t, err)
+	addr := pv1.Address()
 	voteCh := subscribeToVoter(cs1, addr)
 	newRoundCh := subscribe(cs1.eventBus, types.EventQueryNewRound)
 	newBlockCh := subscribe(cs1.eventBus, types.EventQueryNewBlockHeader)
@@ -614,7 +619,9 @@ func TestStateLockPOLUnlock(t *testing.T) {
 	timeoutWaitCh := subscribe(cs1.eventBus, types.EventQueryTimeoutWait)
 	newRoundCh := subscribe(cs1.eventBus, types.EventQueryNewRound)
 	unlockCh := subscribe(cs1.eventBus, types.EventQueryUnlock)
-	addr := cs1.privValidator.GetPubKey().Address()
+	pv1, err := cs1.privValidator.GetPubKey()
+	require.NoError(t, err)
+	addr := pv1.Address()
 	voteCh := subscribeToVoter(cs1, addr)
 
 	// everything done from perspective of cs1
@@ -708,7 +715,9 @@ func TestStateLockPOLSafety1(t *testing.T) {
 	timeoutProposeCh := subscribe(cs1.eventBus, types.EventQueryTimeoutPropose)
 	timeoutWaitCh := subscribe(cs1.eventBus, types.EventQueryTimeoutWait)
 	newRoundCh := subscribe(cs1.eventBus, types.EventQueryNewRound)
-	addr := cs1.privValidator.GetPubKey().Address()
+	pv1, err := cs1.privValidator.GetPubKey()
+	require.NoError(t, err)
+	addr := pv1.Address()
 	voteCh := subscribeToVoter(cs1, addr)
 
 	forceProposer(cs1, vss, []int{0, 1, 2}, []int64{height, height, height}, []int{round, round + 1, round + 2})
@@ -827,7 +836,9 @@ func TestStateLockPOLSafety2(t *testing.T) {
 	timeoutWaitCh := subscribe(cs1.eventBus, types.EventQueryTimeoutWait)
 	newRoundCh := subscribe(cs1.eventBus, types.EventQueryNewRound)
 	unlockCh := subscribe(cs1.eventBus, types.EventQueryUnlock)
-	addr := cs1.privValidator.GetPubKey().Address()
+	pv1, err := cs1.privValidator.GetPubKey()
+	require.NoError(t, err)
+	addr := pv1.Address()
 	voteCh := subscribeToVoter(cs1, addr)
 
 	forceProposer(cs1, vss, []int{0, 1}, []int64{height, height}, []int{round, round + 1})
@@ -920,7 +931,9 @@ func TestProposeValidBlock(t *testing.T) {
 	timeoutProposeCh := subscribe(cs1.eventBus, types.EventQueryTimeoutPropose)
 	newRoundCh := subscribe(cs1.eventBus, types.EventQueryNewRound)
 	unlockCh := subscribe(cs1.eventBus, types.EventQueryUnlock)
-	addr := cs1.privValidator.GetPubKey().Address()
+	pv1, err := cs1.privValidator.GetPubKey()
+	require.NoError(t, err)
+	addr := pv1.Address()
 	voteCh := subscribeToVoter(cs1, addr)
 
 	forceProposer(cs1, vss, []int{0, theOthers(0), theOthers(0), theOthers(0), 0},
@@ -1014,7 +1027,9 @@ func TestValidateValidBlockOnCommit(t *testing.T) {
 	timeoutProposeCh := subscribe(cs1.eventBus, types.EventQueryTimeoutPropose)
 	newRoundCh := subscribe(cs1.eventBus, types.EventQueryNewRound)
 	unlockCh := subscribe(cs1.eventBus, types.EventQueryUnlock)
-	addr := cs1.privValidator.GetPubKey().Address()
+	pubKey, err := cs1.privValidator.GetPubKey()
+	require.NoError(t, err)
+	addr := pubKey.Address()
 	voteCh := subscribeToVoter(cs1, addr)
 
 	forceProposer(cs1, vss, []int{0, theOthers(0), theOthers(0), theOthers(0), 0},
@@ -1151,7 +1166,9 @@ func TestSetValidBlockOnDelayedPrevote(t *testing.T) {
 	timeoutWaitCh := subscribe(cs1.eventBus, types.EventQueryTimeoutWait)
 	newRoundCh := subscribe(cs1.eventBus, types.EventQueryNewRound)
 	validBlockCh := subscribe(cs1.eventBus, types.EventQueryValidBlock)
-	addr := cs1.privValidator.GetPubKey().Address()
+	pv1, err := cs1.privValidator.GetPubKey()
+	require.NoError(t, err)
+	addr := pv1.Address()
 	voteCh := subscribeToVoter(cs1, addr)
 
 	forceProposer(cs1, vss, []int{0, 1}, []int64{height, height}, []int{round, round + 1})
@@ -1213,7 +1230,9 @@ func TestSetValidBlockOnDelayedProposal(t *testing.T) {
 	timeoutProposeCh := subscribe(cs1.eventBus, types.EventQueryTimeoutPropose)
 	newRoundCh := subscribe(cs1.eventBus, types.EventQueryNewRound)
 	validBlockCh := subscribe(cs1.eventBus, types.EventQueryValidBlock)
-	addr := cs1.privValidator.GetPubKey().Address()
+	pv1, err := cs1.privValidator.GetPubKey()
+	require.NoError(t, err)
+	addr := pv1.Address()
 	voteCh := subscribeToVoter(cs1, addr)
 	proposalCh := subscribe(cs1.eventBus, types.EventQueryCompleteProposal)
 
@@ -1286,7 +1305,9 @@ func TestWaitingTimeoutProposeOnNewRound(t *testing.T) {
 
 	timeoutWaitCh := subscribe(cs1.eventBus, types.EventQueryTimeoutPropose)
 	newRoundCh := subscribe(cs1.eventBus, types.EventQueryNewRound)
-	addr := cs1.privValidator.GetPubKey().Address()
+	pv1, err := cs1.privValidator.GetPubKey()
+	require.NoError(t, err)
+	addr := pv1.Address()
 	voteCh := subscribeToVoter(cs1, addr)
 
 	// start round
@@ -1320,7 +1341,9 @@ func TestRoundSkipOnNilPolkaFromHigherRound(t *testing.T) {
 
 	timeoutWaitCh := subscribe(cs1.eventBus, types.EventQueryTimeoutWait)
 	newRoundCh := subscribe(cs1.eventBus, types.EventQueryNewRound)
-	addr := cs1.privValidator.GetPubKey().Address()
+	pv1, err := cs1.privValidator.GetPubKey()
+	require.NoError(t, err)
+	addr := pv1.Address()
 	voteCh := subscribeToVoter(cs1, addr)
 
 	// start round
@@ -1354,7 +1377,9 @@ func TestWaitTimeoutProposeOnNilPolkaForTheCurrentRound(t *testing.T) {
 
 	timeoutProposeCh := subscribe(cs1.eventBus, types.EventQueryTimeoutPropose)
 	newRoundCh := subscribe(cs1.eventBus, types.EventQueryNewRound)
-	addr := cs1.privValidator.GetPubKey().Address()
+	pv1, err := cs1.privValidator.GetPubKey()
+	require.NoError(t, err)
+	addr := pv1.Address()
 	voteCh := subscribeToVoter(cs1, addr)
 
 	// start round in which PO is not proposer
@@ -1471,7 +1496,9 @@ func TestStartNextHeightCorrectly(t *testing.T) {
 
 	newRoundCh := subscribe(cs1.eventBus, types.EventQueryNewRound)
 	newBlockHeader := subscribe(cs1.eventBus, types.EventQueryNewBlockHeader)
-	addr := cs1.privValidator.GetPubKey().Address()
+	pv1, err := cs1.privValidator.GetPubKey()
+	require.NoError(t, err)
+	addr := pv1.Address()
 	voteCh := subscribeToVoter(cs1, addr)
 
 	forceProposer(cs1, vss, []int{0, 1}, []int64{height, height + 1}, []int{round, 0})
@@ -1528,7 +1555,9 @@ func TestResetTimeoutPrecommitUponNewHeight(t *testing.T) {
 
 	newRoundCh := subscribe(cs1.eventBus, types.EventQueryNewRound)
 	newBlockHeader := subscribe(cs1.eventBus, types.EventQueryNewBlockHeader)
-	addr := cs1.privValidator.GetPubKey().Address()
+	pv1, err := cs1.privValidator.GetPubKey()
+	require.NoError(t, err)
+	addr := pv1.Address()
 	voteCh := subscribeToVoter(cs1, addr)
 
 	forceProposer(cs1, vss, []int{0, 1}, []int64{height, height + 1}, []int{round, 0})
@@ -1667,7 +1696,9 @@ func TestStateHalt1(t *testing.T) {
 	timeoutWaitCh := subscribe(cs1.eventBus, types.EventQueryTimeoutWait)
 	newRoundCh := subscribe(cs1.eventBus, types.EventQueryNewRound)
 	newBlockCh := subscribe(cs1.eventBus, types.EventQueryNewBlock)
-	addr := cs1.privValidator.GetPubKey().Address()
+	pv1, err := cs1.privValidator.GetPubKey()
+	require.NoError(t, err)
+	addr := pv1.Address()
 	voteCh := subscribeToVoter(cs1, addr)
 
 	forceProposer(cs1, vss, []int{0, 1}, []int64{height, height}, []int{round, round + 1})
@@ -1814,4 +1845,155 @@ func subscribeUnBuffered(eventBus *types.EventBus, q tmpubsub.Query) <-chan tmpu
 		panic(fmt.Sprintf("failed to subscribe %s to %v", testSubscriber, q))
 	}
 	return sub.Out()
+}
+
+func makeVssMap(vss []*validatorStub) map[crypto.PubKey]*validatorStub {
+	vssMap := make(map[crypto.PubKey]*validatorStub)
+	for _, pv := range vss {
+		pubKey, _ := pv.GetPubKey()
+		vssMap[pubKey] = pv
+	}
+	return vssMap
+}
+
+func votersPrivVals(voterSet *types.VoterSet, vssMap map[crypto.PubKey]*validatorStub) []*validatorStub {
+	totalVotingPower := voterSet.TotalVotingPower()
+	votingPower := int64(0)
+	voters := 0
+	for i, v := range voterSet.Voters {
+		vssMap[v.PubKey].Index = i // NOTE: re-indexing for new voters
+		if votingPower < totalVotingPower*2/3+1 {
+			votingPower += v.VotingPower
+			voters++
+		}
+	}
+	result := make([]*validatorStub, voters)
+	for i := 0; i < voters; i++ {
+		result[i] = vssMap[voterSet.Voters[i].PubKey]
+	}
+	return result
+}
+
+func createProposalBlockByOther(cs *State, other *validatorStub, round int) (
+	block *types.Block, blockParts *types.PartSet) {
+	var commit *types.Commit
+	switch {
+	case cs.Height == 1:
+		commit = types.NewCommit(0, 0, types.BlockID{}, nil)
+	case cs.LastCommit.HasTwoThirdsMajority():
+		commit = cs.LastCommit.MakeCommit()
+	default:
+		return
+	}
+
+	pubKey, err := other.GetPubKey()
+	if err != nil {
+		return
+	}
+	proposerAddr := pubKey.Address()
+	message := cs.state.MakeHashMessage(round)
+
+	proof, err := other.GenerateVRFProof(message)
+	if err != nil {
+		return
+	}
+	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerAddr, round, proof)
+}
+
+func proposeBlock(t *testing.T, cs *State, round int, vssMap map[crypto.PubKey]*validatorStub) types.BlockID {
+	newBlock, blockParts := createProposalBlockByOther(cs, vssMap[cs.Proposer.PubKey], round)
+	proposal := types.NewProposal(cs.Height, round, -1, types.BlockID{
+		Hash: newBlock.Hash(), PartsHeader: blockParts.Header()})
+	if err := vssMap[cs.Proposer.PubKey].SignProposal(config.ChainID(), proposal); err != nil {
+		t.Fatal("failed to sign bad proposal", err)
+	}
+
+	// set the proposal block
+	if err := cs.SetProposalAndBlock(proposal, newBlock, blockParts, "some peer"); err != nil {
+		t.Fatal(err)
+	}
+	return types.BlockID{Hash: newBlock.Hash(), PartsHeader: blockParts.Header()}
+}
+
+func TestStateFullRoundWithSelectedVoter(t *testing.T) {
+	cs, vss := randStateWithVoterParams(10, &types.VoterParams{
+		VoterElectionThreshold:          5,
+		MaxTolerableByzantinePercentage: 20,
+		ElectionPrecision:               2})
+	vss[0].Height = 1 // this is needed because of `incrementHeight(vss[1:]...)` of randStateWithVoterParams()
+	vssMap := makeVssMap(vss)
+	height, round := cs.Height, cs.Round
+
+	voteCh := subscribeUnBuffered(cs.eventBus, types.EventQueryVote)
+	propCh := subscribe(cs.eventBus, types.EventQueryCompleteProposal)
+	newRoundCh := subscribe(cs.eventBus, types.EventQueryNewRound)
+	newBlockCh := subscribe(cs.eventBus, types.EventQueryNewBlock)
+
+	startTestRound(cs, height, round)
+
+	// height 1
+	ensureNewRound(newRoundCh, height, round)
+	privPubKey, _ := cs.privValidator.GetPubKey()
+	if !cs.isProposer(privPubKey.Address()) {
+		blockID := proposeBlock(t, cs, round, vssMap)
+		ensureProposal(propCh, height, round, blockID)
+	} else {
+		ensureNewProposal(propCh, height, round)
+	}
+
+	propBlock := cs.GetRoundState().ProposalBlock
+	voters := cs.Voters
+	voterPrivVals := votersPrivVals(voters, vssMap)
+	signAddVotes(cs, types.PrevoteType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
+		voterPrivVals...)
+
+	for range voterPrivVals {
+		ensurePrevote(voteCh, height, round) // wait for prevote
+	}
+
+	signAddVotes(cs, types.PrecommitType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
+		voterPrivVals...)
+
+	for range voterPrivVals {
+		ensurePrecommit(voteCh, height, round) // wait for precommit
+	}
+
+	ensureNewBlock(newBlockCh, height)
+
+	// height 2
+	incrementHeight(vss...)
+
+	ensureNewRound(newRoundCh, height+1, 0)
+
+	height = cs.Height
+	privPubKey, _ = cs.privValidator.GetPubKey()
+	if !cs.isProposer(privPubKey.Address()) {
+		blockID := proposeBlock(t, cs, round, vssMap)
+		ensureProposal(propCh, height, round, blockID)
+	} else {
+		ensureNewProposal(propCh, height, round)
+	}
+
+	propBlock = cs.GetRoundState().ProposalBlock
+	voters = cs.Voters
+	voterPrivVals = votersPrivVals(voters, vssMap)
+
+	signAddVotes(cs, types.PrevoteType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
+		voterPrivVals...)
+
+	for range voterPrivVals {
+		ensurePrevote(voteCh, height, round) // wait for prevote
+	}
+
+	signAddVotes(cs, types.PrecommitType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
+		voterPrivVals...)
+
+	for range voterPrivVals {
+		ensurePrecommit(voteCh, height, round) // wait for precommit
+	}
+
+	ensureNewBlock(newBlockCh, height)
+
+	// we're going to roll right into new height
+	ensureNewRound(newRoundCh, height+1, 0)
 }

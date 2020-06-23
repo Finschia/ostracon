@@ -93,7 +93,7 @@ Available endpoints:
 /unconfirmed_txs
 /unsafe_flush_mempool
 /unsafe_stop_cpu_profiler
-/validators
+/voters
 
 Endpoints that require arguments:
 /abci_query?path=_&data=_&prove=_

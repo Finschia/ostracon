@@ -12,8 +12,8 @@ import (
 	"github.com/tendermint/tendermint/version"
 )
 
-// database keys
 var (
+	// database keys
 	stateKey = []byte("stateKey")
 )
 
@@ -53,7 +53,8 @@ type State struct {
 	Version Version
 
 	// immutable
-	ChainID string
+	ChainID     string
+	VoterParams *types.VoterParams
 
 	// LastBlockHeight=0 at genesis (ie. block(H=0) does not exist)
 	LastBlockHeight int64
@@ -63,7 +64,7 @@ type State struct {
 	// vrf hash from proof
 	LastProofHash []byte
 
-	// LastValidators is used to validate block.LastCommit.
+	// LastVoters is used to validate block.LastCommit.
 	// Validators are persisted to the database separately every time they change,
 	// so we can query for historical validator sets.
 	// Note that if s.LastBlockHeight causes a valset change,
@@ -71,7 +72,9 @@ type State struct {
 	// Extra +1 due to nextValSet delay.
 	NextValidators              *types.ValidatorSet
 	Validators                  *types.ValidatorSet
-	LastValidators              *types.ValidatorSet
+	NextVoters                  *types.VoterSet
+	Voters                      *types.VoterSet
+	LastVoters                  *types.VoterSet
 	LastHeightValidatorsChanged int64
 
 	// Consensus parameters used for validating blocks.
@@ -93,8 +96,9 @@ func (state State) MakeHashMessage(round int) []byte {
 // Copy makes a copy of the State for mutating.
 func (state State) Copy() State {
 	return State{
-		Version: state.Version,
-		ChainID: state.ChainID,
+		Version:     state.Version,
+		ChainID:     state.ChainID,
+		VoterParams: state.VoterParams,
 
 		LastBlockHeight: state.LastBlockHeight,
 		LastBlockID:     state.LastBlockID,
@@ -103,8 +107,10 @@ func (state State) Copy() State {
 		LastProofHash: state.LastProofHash,
 
 		NextValidators:              state.NextValidators.Copy(),
+		NextVoters:                  state.NextVoters.Copy(),
 		Validators:                  state.Validators.Copy(),
-		LastValidators:              state.LastValidators.Copy(),
+		Voters:                      state.Voters.Copy(),
+		LastVoters:                  state.LastVoters.Copy(),
 		LastHeightValidatorsChanged: state.LastHeightValidatorsChanged,
 
 		ConsensusParams:                  state.ConsensusParams,
@@ -156,14 +162,14 @@ func (state State) MakeBlock(
 	if height == 1 {
 		timestamp = state.LastBlockTime // genesis time
 	} else {
-		timestamp = MedianTime(commit, state.LastValidators)
+		timestamp = MedianTime(commit, state.LastVoters)
 	}
 
 	// Fill rest of header with state data.
 	block.Header.Populate(
 		state.Version.Consensus, state.ChainID,
 		timestamp, state.LastBlockID,
-		state.Validators.Hash(), state.NextValidators.Hash(),
+		state.Voters.Hash(), state.NextVoters.Hash(),
 		state.ConsensusParams.Hash(), state.AppHash, state.LastResultsHash,
 		proposerAddress,
 		round,
@@ -177,7 +183,7 @@ func (state State) MakeBlock(
 // corresponding validator set. The computed time is always between timestamps of
 // the votes sent by honest processes, i.e., a faulty processes can not arbitrarily increase or decrease the
 // computed value.
-func MedianTime(commit *types.Commit, validators *types.ValidatorSet) time.Time {
+func MedianTime(commit *types.Commit, voters *types.VoterSet) time.Time {
 	weightedTimes := make([]*tmtime.WeightedTime, len(commit.Signatures))
 	totalVotingPower := int64(0)
 
@@ -185,11 +191,11 @@ func MedianTime(commit *types.Commit, validators *types.ValidatorSet) time.Time 
 		if commitSig.Absent() {
 			continue
 		}
-		_, validator := validators.GetByAddress(commitSig.ValidatorAddress)
+		_, validator := voters.GetByAddress(commitSig.ValidatorAddress)
 		// If there's no condition, TestValidateBlockCommit panics; not needed normally.
 		if validator != nil {
-			totalVotingPower += validator.VotingPower
-			weightedTimes[i] = tmtime.NewWeightedTime(commitSig.Timestamp, validator.VotingPower)
+			totalVotingPower += validator.StakingPower
+			weightedTimes[i] = tmtime.NewWeightedTime(commitSig.Timestamp, validator.StakingPower)
 		}
 	}
 
@@ -245,8 +251,9 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 	}
 
 	return State{
-		Version: initStateVersion,
-		ChainID: genDoc.ChainID,
+		Version:     initStateVersion,
+		ChainID:     genDoc.ChainID,
+		VoterParams: genDoc.VoterParams,
 
 		LastBlockHeight: 0,
 		LastBlockID:     types.BlockID{},
@@ -256,8 +263,10 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 		LastProofHash: genDoc.Hash(),
 
 		NextValidators:              nextValidatorSet,
+		NextVoters:                  types.SelectVoter(nextValidatorSet, genDoc.Hash(), genDoc.VoterParams),
 		Validators:                  validatorSet,
-		LastValidators:              types.NewValidatorSet(nil),
+		Voters:                      types.ToVoterAll(validatorSet.Validators),
+		LastVoters:                  &types.VoterSet{},
 		LastHeightValidatorsChanged: 1,
 
 		ConsensusParams:                  *genDoc.ConsensusParams,

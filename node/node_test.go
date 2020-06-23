@@ -12,6 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	dbm "github.com/tendermint/tm-db"
+
 	"github.com/tendermint/tendermint/abci/example/kvstore"
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/crypto/ed25519"
@@ -27,7 +29,6 @@ import (
 	"github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
 	"github.com/tendermint/tendermint/version"
-	dbm "github.com/tendermint/tm-db"
 )
 
 func TestNodeStartStop(t *testing.T) {
@@ -355,7 +356,7 @@ func state(nVals int, height int64) (sm.State, dbm.DB, types.PrivValidator) {
 
 	for i := 1; i < int(height); i++ {
 		s.LastBlockHeight++
-		s.LastValidators = s.Validators.Copy()
+		s.LastVoters = s.Voters.Copy()
 		sm.SaveState(stateDB, s)
 	}
 	return s, stateDB, privVal

@@ -64,17 +64,16 @@ See the [install instructions](/docs/introduction/install.md)
 
 ## Contributing
 
-Please abide by the [Code of Conduct](CODE_OF_CONDUCT.md) in all interactions,
-and the [contributing guidelines](CONTRIBUTING.md) when submitting code.
+Please abide by the [Code of Conduct](CODE_OF_CONDUCT.md) in all interactions.
 
-Join the larger community on the [forum](https://forum.cosmos.network/) and the [chat](https://riot.im/app/#/room/#tendermint:matrix.org).
+Before contributing to the project, please take a look at the [contributing guidelines](CONTRIBUTING.md)
+and the [style guide](STYLE_GUIDE.md).
 
-To learn more about the structure of the software, watch the [Developer
-Sessions](/docs/DEV_SESSIONS.md) and read some [Architectural Decision
-Records](https://github.com/tendermint/tendermint/tree/master/docs/architecture).
+To get more active, Join the wider community at [Discord](https://discord.gg/AzefAFd) or jump onto the [Forum](https://forum.cosmos.network/).
 
-Learn more by reading the code and comparing it to the
-[specification](https://github.com/tendermint/spec).
+Learn more by reading the code and the
+[specifications](https://github.com/tendermint/spec) or watch the [Developer Sessions](/docs/DEV_SESSIONS.md) and read up on the
+[Architectural Decision Records](https://github.com/tendermint/tendermint/tree/master/docs/architecture).
 
 ## Versioning
 
@@ -118,7 +117,14 @@ data into the new chain.
 However, any bump in the PATCH version should be compatible with existing histories
 (if not please open an [issue](https://github.com/tendermint/tendermint/issues)).
 
-For more information on upgrading, see [UPGRADING.md](./UPGRADING.md)
+For more information on upgrading, see [UPGRADING.md](./UPGRADING.md).
+
+### Supported Versions
+
+Because we are a small core team, we only ship patch updates, including security updates,
+to the most recent minor release and the second-most recent minor release. Consequently,
+we strongly recommend keeping Tendermint up-to-date. Upgrading instructions can be found
+in [UPGRADING.md](./UPGRADING.md).
 
 ## Resources
 
@@ -133,7 +139,7 @@ hosted at: https://docs.tendermint.com/master/
 ### Tools
 
 Benchmarking is provided by `tm-load-test`.
-The code for `tm-load-test` can be found [here](https://github.com/interchainio/tm-load-test) this binary needs to be built separately.
+The code for `tm-load-test` can be found [here](https://github.com/informalsystems/tm-load-test) this binary needs to be built separately.
 Additional documentation is found [here](/docs/tools).
 
 ### Sub-projects

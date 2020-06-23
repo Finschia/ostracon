@@ -15,6 +15,7 @@ import (
 	certclient "github.com/tendermint/tendermint/lite/client"
 	nm "github.com/tendermint/tendermint/node"
 	"github.com/tendermint/tendermint/rpc/client"
+	rpclocal "github.com/tendermint/tendermint/rpc/client/local"
 	rpctest "github.com/tendermint/tendermint/rpc/test"
 	"github.com/tendermint/tendermint/types"
 )
@@ -47,14 +48,14 @@ func _TestAppProofs(t *testing.T) {
 	assert, require := assert.New(t), require.New(t)
 
 	prt := defaultProofRuntime()
-	cl := client.NewLocal(node)
+	cl := rpclocal.New(node)
 	client.WaitForHeight(cl, 1, nil)
 
 	// This sets up our trust on the node based on some past point.
 	source := certclient.NewProvider(chainID, cl)
 	seed, err := source.LatestFullCommit(chainID, 1, 1)
 	require.NoError(err, "%#v", err)
-	cert := lite.NewBaseVerifier(chainID, seed.Height(), seed.Validators)
+	cert := lite.NewBaseVerifier(chainID, seed.Height(), seed.Voters)
 
 	// Wait for tx confirmation.
 	done := make(chan int64)
@@ -126,7 +127,7 @@ func _TestAppProofs(t *testing.T) {
 func TestTxProofs(t *testing.T) {
 	assert, require := assert.New(t), require.New(t)
 
-	cl := client.NewLocal(node)
+	cl := rpclocal.New(node)
 	client.WaitForHeight(cl, 1, nil)
 
 	tx := kvstoreTx([]byte("key-a"), []byte("value-a"))
@@ -139,7 +140,7 @@ func TestTxProofs(t *testing.T) {
 	source := certclient.NewProvider(chainID, cl)
 	seed, err := source.LatestFullCommit(chainID, brh-2, brh-2)
 	require.NoError(err, "%#v", err)
-	cert := lite.NewBaseVerifier(chainID, seed.Height(), seed.Validators)
+	cert := lite.NewBaseVerifier(chainID, seed.Height(), seed.Voters)
 
 	// First let's make sure a bogus transaction hash returns a valid non-existence proof.
 	key := types.Tx([]byte("bogus")).Hash()

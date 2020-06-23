@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/tendermint/tendermint/store"
-
 	"github.com/stretchr/testify/assert"
+
+	dbm "github.com/tendermint/tm-db"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	cfg "github.com/tendermint/tendermint/config"
@@ -18,9 +18,9 @@ import (
 	"github.com/tendermint/tendermint/p2p"
 	"github.com/tendermint/tendermint/proxy"
 	sm "github.com/tendermint/tendermint/state"
+	"github.com/tendermint/tendermint/store"
 	"github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
-	dbm "github.com/tendermint/tm-db"
 )
 
 var config *cfg.Config
@@ -32,7 +32,7 @@ func randGenesisDoc(numValidators int, randPower bool, minPower int64) (*types.G
 		val, privVal := types.RandValidator(randPower, minPower)
 		validators[i] = types.GenesisValidator{
 			PubKey: val.PubKey,
-			Power:  val.VotingPower,
+			Power:  val.StakingPower,
 		}
 		privValidators[i] = privVal
 	}
@@ -112,7 +112,7 @@ func newBlockchainReactor(
 		thisParts := thisBlock.MakePartSet(types.BlockPartSizeBytes)
 		blockID := types.BlockID{Hash: thisBlock.Hash(), PartsHeader: thisParts.Header()}
 
-		state, err = blockExec.ApplyBlock(state, blockID, thisBlock)
+		state, _, err = blockExec.ApplyBlock(state, blockID, thisBlock)
 		if err != nil {
 			panic(errors.Wrap(err, "error apply block"))
 		}
@@ -351,7 +351,7 @@ func makeBlock(privVal types.PrivValidator, height int64, state sm.State, lastCo
 	message := state.MakeHashMessage(0)
 	proof, _ := privVal.GenerateVRFProof(message)
 	block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, nil,
-		types.SelectProposer(state.Validators, state.LastProofHash, height, 0).Address, 0, proof)
+		state.Validators.SelectProposer(state.LastProofHash, height, 0).Address, 0, proof)
 	return block
 }
 
