@@ -173,7 +173,7 @@ func PruneStates(db dbm.DB, from int64, to int64) error {
 		if keepVals[h] {
 			v := loadValidatorsInfo(db, calcValidatorsKey(h))
 			if v.ValidatorSet == nil {
-				v.ValidatorSet, _, err = LoadValidators(db, h)
+				v.ValidatorSet, err = LoadValidators(db, h)
 				if err != nil {
 					return err
 				}
@@ -291,12 +291,37 @@ func (valInfo *ValidatorsInfo) Bytes() []byte {
 	return cdc.MustMarshalBinaryBare(valInfo)
 }
 
-// LoadValidators loads the VoterSet for a given height.
+// LoadValidators loads the ValidatorSet for a given height.
 // Returns ErrNoValSetForHeight if the validator set can't be found for this height.
-func LoadValidators(db dbm.DB, height int64) (*types.ValidatorSet, *types.VoterSet, error) {
+func LoadValidators(db dbm.DB, height int64) (*types.ValidatorSet, error) {
 	valInfo := loadValidatorsInfo(db, calcValidatorsKey(height))
 	if valInfo == nil {
-		return nil, nil, ErrNoValSetForHeight{height}
+		return nil, ErrNoValSetForHeight{height}
+	}
+	if valInfo.ValidatorSet == nil {
+		lastStoredHeight := lastStoredHeightFor(height, valInfo.LastHeightChanged)
+		valInfo2 := loadValidatorsInfo(db, calcValidatorsKey(lastStoredHeight))
+		if valInfo2 == nil || valInfo2.ValidatorSet == nil {
+			panic(
+				fmt.Sprintf("Couldn't find validators at height %d (height %d was originally requested)",
+					lastStoredHeight,
+					height,
+				),
+			)
+		}
+		valInfo2.ValidatorSet.IncrementProposerPriority(int(height - lastStoredHeight)) // mutate
+		valInfo = valInfo2
+	}
+
+	return valInfo.ValidatorSet, nil
+}
+
+// LoadVoters loads the VoterSet for a given height.
+// Returns ErrNoValSetForHeight if the validator set can't be found for this height.
+func LoadVoters(db dbm.DB, height int64, voterParams *types.VoterParams) (*types.VoterSet, error) {
+	valInfo := loadValidatorsInfo(db, calcValidatorsKey(height))
+	if valInfo == nil {
+		return nil, ErrNoValSetForHeight{height}
 	}
 	if valInfo.ValidatorSet == nil {
 		proofHash := valInfo.ProofHash // store proof hash of the height
@@ -315,7 +340,7 @@ func LoadValidators(db dbm.DB, height int64) (*types.ValidatorSet, *types.VoterS
 		valInfo.ProofHash = proofHash // reload proof again
 	}
 
-	return valInfo.ValidatorSet, types.SelectVoter(valInfo.ValidatorSet, valInfo.ProofHash), nil
+	return types.SelectVoter(valInfo.ValidatorSet, valInfo.ProofHash, voterParams), nil
 }
 
 func lastStoredHeightFor(height, lastHeightChanged int64) int64 {

@@ -16,10 +16,6 @@ import (
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 )
 
-var (
-	MinVoters = 20
-)
-
 // VoterSet represent a set of *Validator at a given height.
 type VoterSet struct {
 	// NOTE: persisted via reflect, must be exported.
@@ -408,10 +404,14 @@ func (c *candidate) SetWinPoint(winPoint int64) {
 	c.val.VotingPower = winPoint
 }
 
-func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
-	// TODO: decide MinVoters, MinTotalVotingPowerPercent; make it to config
-	if len(proofHash) == 0 || validators.Size() <= MinVoters {
-		// height 1 has voter set that is same to validator set
+func accuracyFromElectionPrecision(precision int) float64 {
+	base := math.Pow10(precision)
+	result := (base - 1) / base
+	return result
+}
+
+func SelectVoter(validators *ValidatorSet, proofHash []byte, voterParams *VoterParams) *VoterSet {
+	if len(proofHash) == 0 || validators.Size() <= voterParams.VoterElectionThreshold {
 		return ToVoterAll(validators.Validators)
 	}
 
@@ -424,7 +424,13 @@ func SelectVoter(validators *ValidatorSet, proofHash []byte) *VoterSet {
 		}
 	}
 
-	winners := tmrand.RandomSamplingWithoutReplacement(seed, candidates, MinVoters)
+	minVoters := CalNumOfVoterToElect(int64(len(candidates)), float64(voterParams.MaxTolerableByzantinePercentage)/100,
+		accuracyFromElectionPrecision(voterParams.ElectionPrecision))
+	if minVoters > math.MaxInt32 {
+		panic("CalNumOfVoterToElect is overflow for MaxInt32")
+	}
+	voterCount := tmmath.MaxInt(voterParams.VoterElectionThreshold, int(minVoters))
+	winners := tmrand.RandomSamplingWithoutReplacement(seed, candidates, voterCount)
 	voters := make([]*Validator, len(winners))
 	for i, winner := range winners {
 		voters[i] = winner.(*candidate).val
@@ -491,13 +497,14 @@ func RandVoterSet(numVoters int, votingPower int64) (*ValidatorSet, *VoterSet, [
 	}
 	vals := NewValidatorSet(valz)
 	sort.Sort(PrivValidatorsByAddress(privValidators))
-	return vals, SelectVoter(vals, []byte{}), privValidators
+	return vals, SelectVoter(vals, []byte{}, DefaultVoterParams()), privValidators
 }
 
 // CalNumOfVoterToElect calculate the number of voter to elect and return the number.
 func CalNumOfVoterToElect(n int64, byzantineRatio float64, accuracy float64) int64 {
 	if byzantineRatio < 0 || byzantineRatio > 1 || accuracy < 0 || accuracy > 1 {
-		panic("byzantineRatio and accuracy should be the float between 0 and 1")
+		panic(fmt.Sprintf("byzantineRatio and accuracy should be the float between 0 and 1. Got: %f",
+			byzantineRatio))
 	}
 	byzantine := int64(math.Floor(float64(n) * byzantineRatio))
 

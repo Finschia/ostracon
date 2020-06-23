@@ -18,11 +18,12 @@ import (
 //
 // More: https://docs.tendermint.com/master/rpc/#/Info/validators
 func Voters(ctx *rpctypes.Context, heightPtr *int64, page, perPage int) (*ctypes.ResultVoters, error) {
-	return voters(ctx, heightPtr, page, perPage, sm.LoadValidators)
+	return voters(ctx, heightPtr, page, perPage, sm.LoadVoters)
 }
 
 func voters(ctx *rpctypes.Context, heightPtr *int64, page, perPage int,
-	loadFunc func(db dbm.DB, height int64) (*types.ValidatorSet, *types.VoterSet, error)) (*ctypes.ResultVoters, error) {
+	loadFunc func(db dbm.DB, height int64, voterParams *types.VoterParams) (*types.VoterSet, error)) (
+	*ctypes.ResultVoters, error) {
 	// The latest validator that we know is the
 	// NextValidator of the last block.
 	height := consensusState.GetState().LastBlockHeight + 1
@@ -31,7 +32,7 @@ func voters(ctx *rpctypes.Context, heightPtr *int64, page, perPage int,
 		return nil, err
 	}
 
-	_, voters, err := loadFunc(stateDB, height)
+	voters, err := loadFunc(stateDB, height, consensusState.GetState().VoterParams)
 	if err != nil {
 		return nil, err
 	}
