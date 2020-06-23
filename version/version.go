@@ -20,13 +20,14 @@ const (
 	// Must be a string because scripts like dist.sh read this file.
 	// XXX: Don't change the name of this variable or you will break
 	// automation :)
-	TMCoreSemVer = "0.33.3"
+
+	TMCoreSemVer = "0.33.4"
 
 	// LINECoreSemVer is the current version of LINE Tendermint Core.
-	LINECoreSemVer = "0.1"
+	LINECoreSemVer = "0.2"
 
 	// ABCISemVer is the semantic version of the ABCI library
-	ABCISemVer  = "0.16.1"
+	ABCISemVer  = "0.16.2"
 	ABCIVersion = ABCISemVer
 )
 

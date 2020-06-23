@@ -10,6 +10,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	dbm "github.com/tendermint/tm-db"
+
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/behaviour"
 	cfg "github.com/tendermint/tendermint/config"
@@ -23,7 +25,6 @@ import (
 	"github.com/tendermint/tendermint/store"
 	"github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
-	dbm "github.com/tendermint/tm-db"
 )
 
 type mockPeer struct {
@@ -76,9 +77,11 @@ type mockBlockApplier struct {
 }
 
 // XXX: Add whitelist/blacklist?
-func (mba *mockBlockApplier) ApplyBlock(state sm.State, blockID types.BlockID, block *types.Block) (sm.State, error) {
+func (mba *mockBlockApplier) ApplyBlock(
+	state sm.State, blockID types.BlockID, block *types.Block,
+) (sm.State, int64, error) {
 	state.LastBlockHeight++
-	return state, nil
+	return state, 0, nil
 }
 
 type mockSwitchIo struct {
@@ -127,7 +130,7 @@ func (sio *mockSwitchIo) hasSwitchedToConsensus() bool {
 	return sio.switchedToConsensus
 }
 
-func (sio *mockSwitchIo) broadcastStatusRequest(height int64) {
+func (sio *mockSwitchIo) broadcastStatusRequest(base int64, height int64) {
 }
 
 type testReactorParams struct {
@@ -347,7 +350,6 @@ func TestReactorHelperMode(t *testing.T) {
 	var (
 		channelID = byte(0x40)
 	)
-
 	config := cfg.ResetTestRoot("blockchain_reactor_v2_test")
 	defer os.RemoveAll(config.RootDir)
 	genDoc, privVals := randGenesisDoc(config.ChainID(), 1, false, 30)
@@ -415,6 +417,22 @@ func TestReactorHelperMode(t *testing.T) {
 	}
 }
 
+func TestReactorSetSwitchNil(t *testing.T) {
+	config := cfg.ResetTestRoot("blockchain_reactor_v2_test")
+	defer os.RemoveAll(config.RootDir)
+	genDoc, privVals := randGenesisDoc(config.ChainID(), 1, false, 30)
+
+	reactor := newTestReactor(testReactorParams{
+		logger:   log.TestingLogger(),
+		genDoc:   genDoc,
+		privVals: privVals,
+	})
+	reactor.SetSwitch(nil)
+
+	assert.Nil(t, reactor.Switch)
+	assert.Nil(t, reactor.io)
+}
+
 //----------------------------------------------
 // utility funcs
 
@@ -428,7 +446,7 @@ func makeTxs(height int64) (txs []types.Tx) {
 func makeBlock(privVal types.PrivValidator, height int64, state sm.State, lastCommit *types.Commit) *types.Block {
 	message := state.MakeHashMessage(0)
 	proof, _ := privVal.GenerateVRFProof(message)
-	proposerAddr := types.SelectProposer(state.Validators, state.LastProofHash, height, 0).Address
+	proposerAddr := state.Validators.SelectProposer(state.LastProofHash, height, 0).Address
 	block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, nil, proposerAddr, 0, proof)
 	return block
 }
@@ -445,7 +463,7 @@ func randGenesisDoc(chainID string, numValidators int, randPower bool, minPower 
 		val, privVal := types.RandValidator(randPower, minPower)
 		validators[i] = types.GenesisValidator{
 			PubKey: val.PubKey,
-			Power:  val.VotingPower,
+			Power:  val.StakingPower,
 		}
 		privValidators[i] = privVal
 	}
@@ -514,7 +532,7 @@ func newReactorStore(
 		thisParts := thisBlock.MakePartSet(types.BlockPartSizeBytes)
 		blockID := types.BlockID{Hash: thisBlock.Hash(), PartsHeader: thisParts.Header()}
 
-		state, err = blockExec.ApplyBlock(state, blockID, thisBlock)
+		state, _, err = blockExec.ApplyBlock(state, blockID, thisBlock)
 		if err != nil {
 			panic(errors.Wrap(err, "error apply block"))
 		}

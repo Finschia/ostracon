@@ -13,8 +13,7 @@ import (
 // PrivValidator defines the functionality of a local Tendermint validator
 // that signs votes and proposals, and never double signs.
 type PrivValidator interface {
-	// TODO: Extend the interface to return errors too. Issue: https://github.com/tendermint/tendermint/issues/3602
-	GetPubKey() crypto.PubKey
+	GetPubKey() (crypto.PubKey, error)
 
 	SignVote(chainID string, vote *Vote) error
 	SignProposal(chainID string, proposal *Proposal) error
@@ -32,7 +31,16 @@ func (pvs PrivValidatorsByAddress) Len() int {
 }
 
 func (pvs PrivValidatorsByAddress) Less(i, j int) bool {
-	return bytes.Compare(pvs[i].GetPubKey().Address(), pvs[j].GetPubKey().Address()) == -1
+	pvi, err := pvs[i].GetPubKey()
+	if err != nil {
+		panic(err)
+	}
+	pvj, err := pvs[j].GetPubKey()
+	if err != nil {
+		panic(err)
+	}
+
+	return bytes.Compare(pvi.Address(), pvj.Address()) == -1
 }
 
 func (pvs PrivValidatorsByAddress) Swap(i, j int) {
@@ -64,8 +72,8 @@ func NewMockPVWithParams(privKey crypto.PrivKey, breakProposalSigning, breakVote
 }
 
 // Implements PrivValidator.
-func (pv MockPV) GetPubKey() crypto.PubKey {
-	return pv.PrivKey.PubKey()
+func (pv MockPV) GetPubKey() (crypto.PubKey, error) {
+	return pv.PrivKey.PubKey(), nil
 }
 
 // Implements PrivValidator.
@@ -109,8 +117,8 @@ func (pv MockPV) GenerateVRFProof(message []byte) (vrf.Proof, error) {
 
 // String returns a string representation of the MockPV.
 func (pv MockPV) String() string {
-	addr := pv.GetPubKey().Address()
-	return fmt.Sprintf("MockPV{%v}", addr)
+	mpv, _ := pv.GetPubKey() // mockPV will never return an error, ignored here
+	return fmt.Sprintf("MockPV{%v}", mpv.Address())
 }
 
 // XXX: Implement.

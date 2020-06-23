@@ -14,9 +14,13 @@ import (
 	"time"
 
 	"github.com/go-kit/kit/log/term"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto/vrf"
 
 	"path"
+
+	dbm "github.com/tendermint/tm-db"
 
 	abcicli "github.com/tendermint/tendermint/abci/client"
 	"github.com/tendermint/tendermint/abci/example/counter"
@@ -35,7 +39,6 @@ import (
 	"github.com/tendermint/tendermint/store"
 	"github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
-	dbm "github.com/tendermint/tm-db"
 )
 
 const (
@@ -49,7 +52,7 @@ type cleanupFunc func()
 // genesis, chain_id, priv_val
 var config *cfg.Config // NOTE: must be reset for each _test.go file
 var consensusReplayConfig *cfg.Config
-var ensureTimeout = time.Millisecond * 100
+var ensureTimeout = time.Millisecond * 200
 
 func ensureDir(dir string, mode os.FileMode) {
 	if err := tmos.EnsureDir(dir, mode); err != nil {
@@ -84,17 +87,23 @@ func (vs *validatorStub) signVote(
 	voteType types.SignedMsgType,
 	hash []byte,
 	header types.PartSetHeader) (*types.Vote, error) {
-	addr := vs.PrivValidator.GetPubKey().Address()
+
+	pubKey, err := vs.PrivValidator.GetPubKey()
+	if err != nil {
+		return nil, errors.Wrap(err, "can't get pubkey")
+	}
+
 	vote := &types.Vote{
 		ValidatorIndex:   vs.Index,
-		ValidatorAddress: addr,
+		ValidatorAddress: pubKey.Address(),
 		Height:           vs.Height,
 		Round:            vs.Round,
 		Timestamp:        tmtime.Now(),
 		Type:             voteType,
 		BlockID:          types.BlockID{Hash: hash, PartsHeader: header},
 	}
-	err := vs.PrivValidator.SignVote(config.ChainID(), vote)
+
+	err = vs.PrivValidator.SignVote(config.ChainID(), vote)
 	return vote, err
 }
 
@@ -138,7 +147,15 @@ func (vss ValidatorStubsByAddress) Len() int {
 }
 
 func (vss ValidatorStubsByAddress) Less(i, j int) bool {
-	return bytes.Compare(vss[i].GetPubKey().Address(), vss[j].GetPubKey().Address()) == -1
+	vssi, err := vss[i].GetPubKey()
+	if err != nil {
+		panic(err)
+	}
+	vssj, err := vss[j].GetPubKey()
+	if err != nil {
+		panic(err)
+	}
+	return bytes.Compare(vssi.Address(), vssj.Address()) == -1
 }
 
 func (vss ValidatorStubsByAddress) Swap(i, j int) {
@@ -166,8 +183,10 @@ func decideProposal(
 ) (proposal *types.Proposal, block *types.Block) {
 	oldPrivValidator := cs1.privValidator
 	cs1.mtx.Lock()
-	if !cs1.privValidator.GetPubKey().Equals(vs.PrivValidator.GetPubKey()) {
-		// block creater must be the cs.privValidator
+	cs1PubKey, _ := cs1.privValidator.GetPubKey()
+	vsPubKey, _ := vs.PrivValidator.GetPubKey()
+	if !cs1PubKey.Equals(vsPubKey) {
+		// block creator must be the cs.privValidator
 		cs1.privValidator = vs.PrivValidator
 	}
 	block, blockParts := cs1.createProposalBlock(round)
@@ -207,7 +226,9 @@ func signAddVotes(
 
 func validatePrevote(t *testing.T, cs *State, round int, privVal *validatorStub, blockHash []byte) {
 	prevotes := cs.Votes.Prevotes(round)
-	address := privVal.GetPubKey().Address()
+	pubKey, err := privVal.GetPubKey()
+	require.NoError(t, err)
+	address := pubKey.Address()
 	var vote *types.Vote
 	if vote = prevotes.GetByAddress(address); vote == nil {
 		panic("Failed to find prevote from validator")
@@ -225,7 +246,9 @@ func validatePrevote(t *testing.T, cs *State, round int, privVal *validatorStub,
 
 func validateLastPrecommit(t *testing.T, cs *State, privVal *validatorStub, blockHash []byte) {
 	votes := cs.LastCommit
-	address := privVal.GetPubKey().Address()
+	pv, err := privVal.GetPubKey()
+	require.NoError(t, err)
+	address := pv.Address()
 	var vote *types.Vote
 	if vote = votes.GetByAddress(address); vote == nil {
 		panic("Failed to find precommit from validator")
@@ -245,7 +268,9 @@ func validatePrecommit(
 	lockedBlockHash []byte,
 ) {
 	precommits := cs.Votes.Precommits(thisRound)
-	address := privVal.GetPubKey().Address()
+	pv, err := privVal.GetPubKey()
+	require.NoError(t, err)
+	address := pv.Address()
 	var vote *types.Vote
 	if vote = precommits.GetByAddress(address); vote == nil {
 		panic("Failed to find precommit from validator")
@@ -385,8 +410,12 @@ func loadPrivValidator(config *cfg.Config) *privval.FilePV {
 }
 
 func randState(nValidators int) (*State, []*validatorStub) {
+	return randStateWithVoterParams(nValidators, types.DefaultVoterParams())
+}
+
+func randStateWithVoterParams(nValidators int, voterParams *types.VoterParams) (*State, []*validatorStub) {
 	// Get State
-	state, privVals := randGenesisState(nValidators, false, 10)
+	state, privVals := randGenesisState(nValidators, false, 10, voterParams)
 	state.LastProofHash = []byte{2}
 
 	vss := make([]*validatorStub, nValidators)
@@ -408,7 +437,7 @@ func theOthers(index int) int {
 }
 
 func forceProposer(cs *State, vals []*validatorStub, index []int, height []int64, round []int) {
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 5000; i++ {
 		allMatch := true
 		firstHash := []byte{byte(i)}
 		currentHash := firstHash
@@ -422,7 +451,8 @@ func forceProposer(cs *State, vals []*validatorStub, index []int, height []int64
 				curVal = vals[theOthers(index[j])]
 				mustBe = false
 			}
-			if curVal.GetPubKey().Equals(types.SelectProposer(cs.Validators, currentHash, height[j], round[j]).PubKey) !=
+			curValPubKey, _ := curVal.GetPubKey()
+			if curValPubKey.Equals(cs.Validators.SelectProposer(currentHash, height[j], round[j]).PubKey) !=
 				mustBe {
 				allMatch = false
 				break
@@ -671,7 +701,7 @@ func consensusLogger() log.Logger {
 
 func randConsensusNet(nValidators int, testName string, tickerFunc func() TimeoutTicker,
 	appFunc func() abci.Application, configOpts ...func(*cfg.Config)) ([]*State, cleanupFunc) {
-	genDoc, privVals := randGenesisDoc(nValidators, false, 30)
+	genDoc, privVals := randGenesisDoc(nValidators, false, 30, types.DefaultVoterParams())
 	css := make([]*State, nValidators)
 	logger := consensusLogger()
 	configRootDirs := make([]string, 0, nValidators)
@@ -709,7 +739,7 @@ func randConsensusNetWithPeers(
 	tickerFunc func() TimeoutTicker,
 	appFunc func(string) abci.Application,
 ) ([]*State, *types.GenesisDoc, *cfg.Config, cleanupFunc) {
-	genDoc, privVals := randGenesisDoc(nValidators, false, testMinPower)
+	genDoc, privVals := randGenesisDoc(nValidators, false, testMinPower, types.DefaultVoterParams())
 	css := make([]*State, nPeers)
 	logger := consensusLogger()
 	var peer0Config *cfg.Config
@@ -771,14 +801,19 @@ func getSwitchIndex(switches []*p2p.Switch, peer p2p.Peer) int {
 //-------------------------------------------------------------------------------
 // genesis
 
-func randGenesisDoc(numValidators int, randPower bool, minPower int64) (*types.GenesisDoc, []types.PrivValidator) {
+func randGenesisDoc(
+	numValidators int,
+	randPower bool,
+	minPower int64,
+	voterParams *types.VoterParams,
+) (*types.GenesisDoc, []types.PrivValidator) {
 	validators := make([]types.GenesisValidator, numValidators)
 	privValidators := make([]types.PrivValidator, numValidators)
 	for i := 0; i < numValidators; i++ {
 		val, privVal := types.RandValidator(randPower, minPower)
 		validators[i] = types.GenesisValidator{
 			PubKey: val.PubKey,
-			Power:  val.VotingPower,
+			Power:  val.StakingPower,
 		}
 		privValidators[i] = privVal
 	}
@@ -788,11 +823,13 @@ func randGenesisDoc(numValidators int, randPower bool, minPower int64) (*types.G
 		GenesisTime: tmtime.Now(),
 		ChainID:     config.ChainID(),
 		Validators:  validators,
+		VoterParams: voterParams,
 	}, privValidators
 }
 
-func randGenesisState(numValidators int, randPower bool, minPower int64) (sm.State, []types.PrivValidator) {
-	genDoc, privValidators := randGenesisDoc(numValidators, randPower, minPower)
+func randGenesisState(numValidators int, randPower bool, minPower int64, voterParams *types.VoterParams) (
+	sm.State, []types.PrivValidator) {
+	genDoc, privValidators := randGenesisDoc(numValidators, randPower, minPower, voterParams)
 	s0, _ := sm.MakeGenesisState(genDoc)
 	return s0, privValidators
 }

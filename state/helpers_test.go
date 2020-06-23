@@ -46,7 +46,7 @@ func makeAndCommitGoodBlock(
 	evidence []types.Evidence) (sm.State, types.BlockID, *types.Commit, error) {
 	// A good block passes
 	state, blockID, err := makeAndApplyGoodBlock(state,
-		privVals[types.SelectProposer(state.Validators, state.LastProofHash, height, 0).Address.String()],
+		privVals[state.Validators.SelectProposer(state.LastProofHash, height, 0).Address.String()],
 		height, lastCommit, proposerAddr, blockExec, evidence)
 	if err != nil {
 		return state, types.BlockID{}, nil, err
@@ -70,7 +70,7 @@ func makeAndApplyGoodBlock(state sm.State, privVal types.PrivValidator, height i
 	}
 	blockID := types.BlockID{Hash: block.Hash(),
 		PartsHeader: types.PartSetHeader{Total: 3, Hash: tmrand.Bytes(32)}}
-	state, err := blockExec.ApplyBlock(state, blockID, block)
+	state, _, err := blockExec.ApplyBlock(state, blockID, block)
 	if err != nil {
 		return state, types.BlockID{}, err
 	}
@@ -134,7 +134,7 @@ func makeState(nVals, height int) (sm.State, dbm.DB, map[string]types.PrivValida
 
 	for i := 1; i < height; i++ {
 		s.LastBlockHeight++
-		s.LastValidators = s.Validators.Copy()
+		s.LastVoters = s.Voters.Copy()
 		sm.SaveState(stateDB, s)
 	}
 	return s, stateDB, privVals
@@ -147,12 +147,13 @@ func makeBlock(state sm.State, height int64) *types.Block {
 func makeBlockWithPrivVal(state sm.State, privVal types.PrivValidator, height int64) *types.Block {
 	message := state.MakeHashMessage(0)
 	proof, _ := privVal.GenerateVRFProof(message)
+	pubKey, _ := privVal.GetPubKey()
 	block, _ := state.MakeBlock(
 		height,
 		makeTxs(state.LastBlockHeight),
 		new(types.Commit),
 		nil,
-		privVal.GetPubKey().Address(),
+		pubKey.Address(),
 		0,
 		proof,
 	)
@@ -221,7 +222,7 @@ func makeHeaderPartsResponsesValPowerChange(
 
 	// If the pubkey is new, remove the old and add the new.
 	_, val := state.NextValidators.GetByIndex(0)
-	if val.VotingPower != power {
+	if val.StakingPower != power {
 		abciResponses.EndBlock = &abci.ResponseEndBlock{
 			ValidatorUpdates: []abci.ValidatorUpdate{
 				types.TM2PB.NewValidatorUpdate(val.PubKey, power),

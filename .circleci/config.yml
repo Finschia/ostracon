@@ -14,9 +14,6 @@ executors:
       - image: tendermintdev/docker-website-deployment
     environment:
       AWS_REGION: us-east-1
-  protoc:
-    docker:
-      - image: tendermintdev/docker-protoc
 
 commands:
   checkout_with_submodules:
@@ -95,33 +92,6 @@ jobs:
           root: "/tmp/bin"
           paths:
             - "."
-  proto-lint:
-    executor: protoc
-    steps:
-      - checkout
-      - run:
-          command: make proto-lint
-
-  test_abci_apps:
-    executor: golang
-    steps:
-      - run_test:
-          script_path: abci/tests/test_app/test.sh
-
-  # if this test fails, fix it and update the docs at:
-  # https://github.com/tendermint/tendermint/blob/master/docs/abci-cli.md
-  test_abci_cli:
-    executor: golang
-    steps:
-      - run_test:
-          script_path: abci/tests/test_cli/test.sh
-
-  test_apps:
-    executor: golang
-    resource_class: large
-    steps:
-      - run_test:
-          script_path: test/app/test.sh
 
   test_persistence:
     executor: golang
@@ -132,6 +102,7 @@ jobs:
 
   test_cover:
     executor: golang
+    resource_class: large
     parallelism: 4
     steps:
       - restore_cache:
@@ -143,7 +114,6 @@ jobs:
           name: "Restore go module cache"
           keys:
             - go-mod-v2-{{ checksum "go.sum" }}
-#      - make_libsodium
       - run:
           name: "Run tests"
           command: |
@@ -369,31 +339,33 @@ jobs:
       - store_artifacts:
           path: /go/src/github.com/tendermint/tendermint/tendermint-*.tar.gz
 
-  # # Test RPC implementation against the swagger documented specs
-  # contract_tests:
-  #   working_directory: /home/circleci/.go_workspace/src/github.com/tendermint/tendermint
-  #   machine:
-  #     image: circleci/classic:latest
-  #   environment:
-  #     GOBIN: /home/circleci/.go_workspace/bin
-  #     GOPATH: /home/circleci/.go_workspace/
-  #     GOOS: linux
-  #     GOARCH: amd64
-  #   parallelism: 1
-  #   steps:
-  #     - checkout_with_submodules
-  #     - run:
-  #         name: Test RPC endpoints against swagger documentation
-  #         command: |
-  #           set -x
-  #           export PATH=~/.local/bin:$PATH
-  #           # install node and dredd
-  #           ./scripts/get_nodejs.sh
-  #           # build the binaries with a proper version of Go
-  #           docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang make build-linux build-contract-tests-hooks
-  #           # This docker image works with go 1.7, we can install here the hook handler that contract-tests is going to use
-  #           go get github.com/snikch/goodman/cmd/goodman
-  #           make contract-tests
+  contract_tests:
+    working_directory: /home/circleci/.go_workspace/src/github.com/tendermint/tendermint
+    machine:
+      image: circleci/classic:latest
+    environment:
+      GOBIN: /home/circleci/.go_workspace/bin
+      GOPATH: /home/circleci/.go_workspace/
+      GOOS: linux
+      GOARCH: amd64
+    parallelism: 1
+    steps:
+      - checkout_with_submodules
+      - run:
+          name: Test RPC endpoints against swagger documentation
+          command: |
+            set -x
+            export PATH=~/.local/bin:$PATH
+            # install node and dredd
+            ./scripts/get_nodejs.sh
+            # build the binaries with a proper version of Go
+            # Build Tendermint
+            docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang:1.14.1-alpine /bin/sh -c "apk add --update make git && make build-linux"
+            # Build contract-tests
+            docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint ubuntu:20.10 ./scripts/prepare_dredd_test.sh
+            # This docker image works with go 1.7, we can install here the hook handler that contract-tests is going to use
+            go get github.com/snikch/goodman/cmd/goodman
+            make contract-tests
 
 workflows:
   version: 2
@@ -413,19 +385,9 @@ workflows:
           filters:
             branches:
               only:
-                - docs-theme-latest
+                - docs-staging
       - lint
       - setup_dependencies
-      - test_abci_apps:
-          requires:
-            - setup_dependencies
-      - proto-lint
-      - test_abci_cli:
-          requires:
-            - setup_dependencies
-      - test_apps:
-          requires:
-            - setup_dependencies
       - test_cover:
           requires:
             - setup_dependencies
@@ -435,7 +397,6 @@ workflows:
       - localnet:
           requires:
             - setup_dependencies
-#      - test_p2p
       - test_p2p:
             name: test_p2p_ipv6
             ipv: 6
@@ -445,9 +406,9 @@ workflows:
               only:
                 - master
                 - /v[0-9]+\.[0-9]+/
-      # - contract_tests:
-      #     requires:
-      #       - setup_dependencies
+      - contract_tests:
+          requires:
+            - setup_dependencies
 
 #  release:
 #    jobs:

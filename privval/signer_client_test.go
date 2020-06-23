@@ -77,15 +77,20 @@ func TestSignerGetPubKey(t *testing.T) {
 		defer tc.signerServer.Stop()
 		defer tc.signerClient.Close()
 
-		pubKey := tc.signerClient.GetPubKey()
-		expectedPubKey := tc.mockPV.GetPubKey()
+		pubKey, err := tc.signerClient.GetPubKey()
+		require.NoError(t, err)
+		expectedPubKey, err := tc.mockPV.GetPubKey()
+		require.NoError(t, err)
 
 		assert.Equal(t, expectedPubKey, pubKey)
 
-		addr := tc.signerClient.GetPubKey().Address()
-		expectedAddr := tc.mockPV.GetPubKey().Address()
+		pubKey, err = tc.signerClient.GetPubKey()
+		require.NoError(t, err)
+		expectedpk, err := tc.mockPV.GetPubKey()
+		require.NoError(t, err)
+		expectedAddr := expectedpk.Address()
 
-		assert.Equal(t, expectedAddr, addr)
+		assert.Equal(t, expectedAddr, pubKey.Address())
 	}
 }
 
@@ -115,9 +120,11 @@ func TestSignerGenerateVRFProof(t *testing.T) {
 		require.Nil(t, err)
 		_, err = vrf.ProofToHash(proof)
 		require.Nil(t, err)
-		pubKey, ok := tc.signerClient.GetPubKey().(ed25519.PubKeyEd25519)
+		pubKey, err2 := tc.signerClient.GetPubKey()
+		require.NoError(t, err2)
+		pubKeyEd25519, ok := pubKey.(ed25519.PubKeyEd25519)
 		require.True(t, ok)
-		expected, err := vrf.Verify(pubKey, proof, message)
+		expected, err := vrf.Verify(pubKeyEd25519, proof, message)
 		require.Nil(t, err)
 		assert.True(t, expected)
 	}

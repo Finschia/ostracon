@@ -11,12 +11,12 @@ import (
 type mock struct {
 	chainID string
 	headers map[int64]*types.SignedHeader
-	vals    map[int64]*types.ValidatorSet
+	vals    map[int64]*types.VoterSet
 }
 
 // New creates a mock provider with the given set of headers and validator
 // sets.
-func New(chainID string, headers map[int64]*types.SignedHeader, vals map[int64]*types.ValidatorSet) provider.Provider {
+func New(chainID string, headers map[int64]*types.SignedHeader, vals map[int64]*types.VoterSet) provider.Provider {
 	return &mock{
 		chainID: chainID,
 		headers: headers,
@@ -53,7 +53,7 @@ func (p *mock) SignedHeader(height int64) (*types.SignedHeader, error) {
 	return nil, provider.ErrSignedHeaderNotFound
 }
 
-func (p *mock) ValidatorSet(height int64) (*types.ValidatorSet, error) {
+func (p *mock) VoterSet(height int64) (*types.VoterSet, error) {
 	if height == 0 && len(p.vals) > 0 {
 		return p.vals[int64(len(p.vals))], nil
 	}

@@ -12,26 +12,26 @@ import (
 var _ Verifier = (*BaseVerifier)(nil)
 
 // BaseVerifier lets us check the validity of SignedHeaders at height or
-// later, requiring sufficient votes (> 2/3) from the given valset.
+// later, requiring sufficient votes (> 2/3) from the given voterSet.
 // To verify blocks produced by a blockchain with mutable validator sets,
 // use the DynamicVerifier.
 // TODO: Handle unbonding time.
 type BaseVerifier struct {
-	chainID string
-	height  int64
-	valset  *types.ValidatorSet
+	chainID  string
+	height   int64
+	voterSet *types.VoterSet
 }
 
 // NewBaseVerifier returns a new Verifier initialized with a validator set at
 // some height.
-func NewBaseVerifier(chainID string, height int64, valset *types.ValidatorSet) *BaseVerifier {
+func NewBaseVerifier(chainID string, height int64, valset *types.VoterSet) *BaseVerifier {
 	if valset.IsNilOrEmpty() {
-		panic("NewBaseVerifier requires a valid valset")
+		panic("NewBaseVerifier requires a valid voterSet")
 	}
 	return &BaseVerifier{
-		chainID: chainID,
-		height:  height,
-		valset:  valset,
+		chainID:  chainID,
+		height:   height,
+		voterSet: valset,
 	}
 }
 
@@ -56,9 +56,9 @@ func (bv *BaseVerifier) Verify(signedHeader types.SignedHeader) error {
 	}
 
 	// We can't verify with the wrong validator set.
-	if !bytes.Equal(signedHeader.ValidatorsHash,
-		bv.valset.Hash()) {
-		return lerr.ErrUnexpectedValidators(signedHeader.ValidatorsHash, bv.valset.Hash())
+	if !bytes.Equal(signedHeader.VotersHash,
+		bv.voterSet.Hash()) {
+		return lerr.ErrUnexpectedValidators(signedHeader.VotersHash, bv.voterSet.Hash())
 	}
 
 	// Do basic sanity checks.
@@ -68,7 +68,7 @@ func (bv *BaseVerifier) Verify(signedHeader types.SignedHeader) error {
 	}
 
 	// Check commit signatures.
-	err = bv.valset.VerifyCommit(
+	err = bv.voterSet.VerifyCommit(
 		bv.chainID, signedHeader.Commit.BlockID,
 		signedHeader.Height, signedHeader.Commit)
 	if err != nil {

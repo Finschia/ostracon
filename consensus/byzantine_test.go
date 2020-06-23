@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+
 	"github.com/tendermint/tendermint/libs/service"
 	"github.com/tendermint/tendermint/p2p"
 	sm "github.com/tendermint/tendermint/state"
@@ -178,8 +179,8 @@ func TestByzantine(t *testing.T) {
 
 // find proposer of current height and round from State
 func findProposer(state *State) (int, *types.Validator) {
-	proposer := types.SelectProposer(state.Validators, state.state.LastProofHash, state.Height, state.Round)
-	return state.Validators.GetByAddress(proposer.PubKey.Address())
+	proposer := state.Validators.SelectProposer(state.state.LastProofHash, state.Height, state.Round)
+	return state.Voters.GetByAddress(proposer.PubKey.Address())
 }
 
 //-------------------------------

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -129,5 +130,63 @@ func TestConsensusParamsUpdate(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		assert.Equal(t, tc.updatedParams, tc.params.Update(tc.updates))
+	}
+}
+
+func TestVoterParamsValidate(t *testing.T) {
+	errorCases := []VoterParams{
+		{
+			VoterElectionThreshold:          -1,
+			MaxTolerableByzantinePercentage: 1,
+			ElectionPrecision:               2,
+		},
+		{
+			VoterElectionThreshold:          0,
+			MaxTolerableByzantinePercentage: 0,
+			ElectionPrecision:               2,
+		},
+		{
+			VoterElectionThreshold:          0,
+			MaxTolerableByzantinePercentage: 34,
+			ElectionPrecision:               2,
+		},
+		{
+			VoterElectionThreshold:          0,
+			MaxTolerableByzantinePercentage: 33,
+			ElectionPrecision:               1,
+		},
+		{
+			VoterElectionThreshold:          0,
+			MaxTolerableByzantinePercentage: 33,
+			ElectionPrecision:               17,
+		},
+	}
+	normalCases := []VoterParams{
+		{
+			VoterElectionThreshold:          0,
+			MaxTolerableByzantinePercentage: 1,
+			ElectionPrecision:               2,
+		},
+		{
+			VoterElectionThreshold:          99999999,
+			MaxTolerableByzantinePercentage: 1,
+			ElectionPrecision:               2,
+		},
+		{
+			VoterElectionThreshold:          0,
+			MaxTolerableByzantinePercentage: 33,
+			ElectionPrecision:               2,
+		},
+		{
+			VoterElectionThreshold:          0,
+			MaxTolerableByzantinePercentage: 1,
+			ElectionPrecision:               15,
+		},
+	}
+	for _, tc := range errorCases {
+		assert.Error(t, tc.Validate())
+	}
+	for _, tc := range normalCases {
+		assert.NoError(t, tc.Validate())
 	}
 }

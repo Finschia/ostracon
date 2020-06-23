@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	amino "github.com/tendermint/go-amino"
+
 	cstypes "github.com/tendermint/tendermint/consensus/types"
 	"github.com/tendermint/tendermint/libs/bits"
 	tmevents "github.com/tendermint/tendermint/libs/events"
@@ -310,9 +311,9 @@ func (conR *Reactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 		case *VoteMessage:
 			cs := conR.conS
 			cs.mtx.RLock()
-			height, valSize, lastCommitSize := cs.Height, cs.Validators.Size(), cs.LastCommit.Size()
+			height, voterSize, lastCommitSize := cs.Height, cs.Voters.Size(), cs.LastCommit.Size()
 			cs.mtx.RUnlock()
-			ps.EnsureVoteBitArrays(height, valSize)
+			ps.EnsureVoteBitArrays(height, voterSize)
 			ps.EnsureVoteBitArrays(height-1, lastCommitSize)
 			ps.SetHasVote(msg.Vote)
 
@@ -493,8 +494,8 @@ OUTER_LOOP:
 			}
 		}
 
-		// If the peer is on a previous height, help catch up.
-		if (0 < prs.Height) && (prs.Height < rs.Height) {
+		// If the peer is on a previous height that we have, help catch up.
+		if (0 < prs.Height) && (prs.Height < rs.Height) && (prs.Height >= conR.conS.blockStore.Base()) {
 			heightLogger := logger.With("height", prs.Height)
 
 			// if we never received the commit message from the peer, the block parts wont be initialized
@@ -502,7 +503,7 @@ OUTER_LOOP:
 				blockMeta := conR.conS.blockStore.LoadBlockMeta(prs.Height)
 				if blockMeta == nil {
 					heightLogger.Error("Failed to load block meta",
-						"blockstoreHeight", conR.conS.blockStore.Height())
+						"blockstoreBase", conR.conS.blockStore.Base(), "blockstoreHeight", conR.conS.blockStore.Height())
 					time.Sleep(conR.conS.config.PeerGossipSleepDuration)
 				} else {
 					ps.InitProposalBlockParts(blockMeta.BlockID.PartsHeader)
@@ -566,8 +567,8 @@ func (conR *Reactor) gossipDataForCatchup(logger log.Logger, rs *cstypes.RoundSt
 		// Ensure that the peer's PartSetHeader is correct
 		blockMeta := conR.conS.blockStore.LoadBlockMeta(prs.Height)
 		if blockMeta == nil {
-			logger.Error("Failed to load block meta",
-				"ourHeight", rs.Height, "blockstoreHeight", conR.conS.blockStore.Height())
+			logger.Error("Failed to load block meta", "ourHeight", rs.Height,
+				"blockstoreBase", conR.conS.blockStore.Base(), "blockstoreHeight", conR.conS.blockStore.Height())
 			time.Sleep(conR.conS.config.PeerGossipSleepDuration)
 			return
 		} else if !blockMeta.BlockID.PartsHeader.Equals(prs.ProposalBlockPartsHeader) {
@@ -802,15 +803,17 @@ OUTER_LOOP:
 		// Maybe send Height/CatchupCommitRound/CatchupCommit.
 		{
 			prs := ps.GetRoundState()
-			if prs.CatchupCommitRound != -1 && 0 < prs.Height && prs.Height <= conR.conS.blockStore.Height() {
-				commit := conR.conS.LoadCommit(prs.Height)
-				peer.TrySend(StateChannel, cdc.MustMarshalBinaryBare(&VoteSetMaj23Message{
-					Height:  prs.Height,
-					Round:   commit.Round,
-					Type:    types.PrecommitType,
-					BlockID: commit.BlockID,
-				}))
-				time.Sleep(conR.conS.config.PeerQueryMaj23SleepDuration)
+			if prs.CatchupCommitRound != -1 && prs.Height > 0 && prs.Height <= conR.conS.blockStore.Height() &&
+				prs.Height >= conR.conS.blockStore.Base() {
+				if commit := conR.conS.LoadCommit(prs.Height); commit != nil {
+					peer.TrySend(StateChannel, cdc.MustMarshalBinaryBare(&VoteSetMaj23Message{
+						Height:  prs.Height,
+						Round:   commit.Round,
+						Type:    types.PrecommitType,
+						BlockID: commit.BlockID,
+					}))
+					time.Sleep(conR.conS.config.PeerQueryMaj23SleepDuration)
+				}
 			}
 		}
 
@@ -1119,7 +1122,7 @@ func (ps *PeerState) getVoteBitArray(height int64, round int, votesType types.Si
 }
 
 // 'round': A round for which we have a +2/3 commit.
-func (ps *PeerState) ensureCatchupCommitRound(height int64, round int, numValidators int) {
+func (ps *PeerState) ensureCatchupCommitRound(height int64, round int, numVoters int) {
 	if ps.PRS.Height != height {
 		return
 	}
@@ -1143,37 +1146,37 @@ func (ps *PeerState) ensureCatchupCommitRound(height int64, round int, numValida
 	if round == ps.PRS.Round {
 		ps.PRS.CatchupCommit = ps.PRS.Precommits
 	} else {
-		ps.PRS.CatchupCommit = bits.NewBitArray(numValidators)
+		ps.PRS.CatchupCommit = bits.NewBitArray(numVoters)
 	}
 }
 
 // EnsureVoteBitArrays ensures the bit-arrays have been allocated for tracking
 // what votes this peer has received.
-// NOTE: It's important to make sure that numValidators actually matches
-// what the node sees as the number of validators for height.
-func (ps *PeerState) EnsureVoteBitArrays(height int64, numValidators int) {
+// NOTE: It's important to make sure that numVoters actually matches
+// what the node sees as the number of voters for height.
+func (ps *PeerState) EnsureVoteBitArrays(height int64, numVoters int) {
 	ps.mtx.Lock()
 	defer ps.mtx.Unlock()
-	ps.ensureVoteBitArrays(height, numValidators)
+	ps.ensureVoteBitArrays(height, numVoters)
 }
 
-func (ps *PeerState) ensureVoteBitArrays(height int64, numValidators int) {
+func (ps *PeerState) ensureVoteBitArrays(height int64, numVoters int) {
 	if ps.PRS.Height == height {
 		if ps.PRS.Prevotes == nil {
-			ps.PRS.Prevotes = bits.NewBitArray(numValidators)
+			ps.PRS.Prevotes = bits.NewBitArray(numVoters)
 		}
 		if ps.PRS.Precommits == nil {
-			ps.PRS.Precommits = bits.NewBitArray(numValidators)
+			ps.PRS.Precommits = bits.NewBitArray(numVoters)
 		}
 		if ps.PRS.CatchupCommit == nil {
-			ps.PRS.CatchupCommit = bits.NewBitArray(numValidators)
+			ps.PRS.CatchupCommit = bits.NewBitArray(numVoters)
 		}
 		if ps.PRS.ProposalPOL == nil {
-			ps.PRS.ProposalPOL = bits.NewBitArray(numValidators)
+			ps.PRS.ProposalPOL = bits.NewBitArray(numVoters)
 		}
 	} else if ps.PRS.Height == height+1 {
 		if ps.PRS.LastCommit == nil {
-			ps.PRS.LastCommit = bits.NewBitArray(numValidators)
+			ps.PRS.LastCommit = bits.NewBitArray(numVoters)
 		}
 	}
 }

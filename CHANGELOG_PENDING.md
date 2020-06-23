@@ -1,16 +1,19 @@
-## v0.2
+## v0.3
 
 \*\*
 
 ### BREAKING CHANGES:
 
+- State
+
 - CLI/RPC/Config
 
 - Apps
 
+- P2P Protocol
+
 - Go API
 
-- Blockchain Protocol
 
 ### FEATURES:
 

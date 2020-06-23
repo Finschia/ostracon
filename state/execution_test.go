@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	"github.com/tendermint/tendermint/abci/example/kvstore"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/ed25519"
@@ -26,7 +27,9 @@ var (
 )
 
 func TestApplyBlock(t *testing.T) {
-	cc := proxy.NewLocalClientCreator(kvstore.NewApplication())
+	app := kvstore.NewApplication()
+	app.RetainBlocks = 1
+	cc := proxy.NewLocalClientCreator(app)
 	proxyApp := proxy.NewAppConns(cc)
 	err := proxyApp.Start()
 	require.Nil(t, err)
@@ -40,9 +43,9 @@ func TestApplyBlock(t *testing.T) {
 	block := makeBlockWithPrivVal(state, privVals[state.Validators.Validators[0].Address.String()], 1)
 	blockID := types.BlockID{Hash: block.Hash(), PartsHeader: block.MakePartSet(testPartSize).Header()}
 
-	//nolint:ineffassign
-	state, err = blockExec.ApplyBlock(state, blockID, block)
+	_, retainHeight, err := blockExec.ApplyBlock(state, blockID, block)
 	require.Nil(t, err)
+	assert.EqualValues(t, retainHeight, 1)
 
 	// TODO check state and mempool
 }
@@ -88,14 +91,14 @@ func TestBeginBlockValidators(t *testing.T) {
 	for _, tc := range testCases {
 		lastCommit := types.NewCommit(1, 0, prevBlockID, tc.lastCommitSigs)
 
-		proposer := types.SelectProposer(state.Validators, state.LastProofHash, 1, 0)
+		proposer := state.Validators.SelectProposer(state.LastProofHash, 1, 0)
 		message := state.MakeHashMessage(0)
 		proof, _ := privVals[proposer.Address.String()].GenerateVRFProof(message)
 
 		// block for height 2
 		block, _ := state.MakeBlock(2, makeTxs(2), lastCommit, nil, proposer.Address, 0, proof)
 
-		_, err = sm.ExecCommitBlock(proxyApp.Consensus(), block, log.TestingLogger(), stateDB)
+		_, err = sm.ExecCommitBlock(proxyApp.Consensus(), block, log.TestingLogger(), stateDB, state.VoterParams)
 		require.Nil(t, err, tc.desc)
 
 		// -> app receives a list of validators with a bool indicating if they signed
@@ -134,7 +137,7 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 	ev2 := types.NewMockEvidence(height2, time.Now(), idx2, val2)
 
 	now := tmtime.Now()
-	valSet := state.Validators
+	valSet := state.Voters
 	testCases := []struct {
 		desc                        string
 		evidence                    []types.Evidence
@@ -161,12 +164,12 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 	lastCommit := types.NewCommit(9, 0, prevBlockID, commitSigs)
 	for _, tc := range testCases {
 		message := state.MakeHashMessage(0)
-		proposer := types.SelectProposer(state.Validators, state.LastProofHash, 1, 0)
+		proposer := state.Validators.SelectProposer(state.LastProofHash, 1, 0)
 		proof, _ := privVals[proposer.Address.String()].GenerateVRFProof(message)
 		block, _ := state.MakeBlock(10, makeTxs(2), lastCommit, nil, proposer.Address, 0, proof)
 		block.Time = now
 		block.Evidence.Evidence = tc.evidence
-		_, err = sm.ExecCommitBlock(proxyApp.Consensus(), block, log.TestingLogger(), stateDB)
+		_, err = sm.ExecCommitBlock(proxyApp.Consensus(), block, log.TestingLogger(), stateDB, state.VoterParams)
 		require.Nil(t, err, tc.desc)
 
 		// -> app must receive an index of the byzantine validator
@@ -310,7 +313,7 @@ func TestUpdateValidators(t *testing.T) {
 				assert.NoError(t, err)
 				require.Equal(t, tc.resultingSet.Size(), tc.currentSet.Size())
 
-				assert.Equal(t, tc.resultingSet.TotalVotingPower(), tc.currentSet.TotalVotingPower())
+				assert.Equal(t, tc.resultingSet.TotalStakingPower(), tc.currentSet.TotalStakingPower())
 
 				assert.Equal(t, tc.resultingSet.Validators[0].Address, tc.currentSet.Validators[0].Address)
 				if tc.resultingSet.Size() > 1 {
@@ -361,7 +364,7 @@ func TestEndBlockValidatorUpdates(t *testing.T) {
 		{PubKey: types.TM2PB.PubKey(pubkey), Power: 10},
 	}
 
-	state, err = blockExec.ApplyBlock(state, blockID, block)
+	state, _, err = blockExec.ApplyBlock(state, blockID, block)
 	require.Nil(t, err)
 
 	// test new validator was added to NextValidators
@@ -379,7 +382,7 @@ func TestEndBlockValidatorUpdates(t *testing.T) {
 		require.True(t, ok, "Expected event of type EventDataValidatorSetUpdates, got %T", msg.Data())
 		if assert.NotEmpty(t, event.ValidatorUpdates) {
 			assert.Equal(t, pubkey, event.ValidatorUpdates[0].PubKey)
-			assert.EqualValues(t, 10, event.ValidatorUpdates[0].VotingPower)
+			assert.EqualValues(t, 10, event.ValidatorUpdates[0].StakingPower)
 		}
 	case <-updatesSub.Cancelled():
 		t.Fatalf("updatesSub was cancelled (reason: %v)", updatesSub.Err())
@@ -415,7 +418,7 @@ func TestEndBlockValidatorUpdatesResultingInEmptySet(t *testing.T) {
 		{PubKey: types.TM2PB.PubKey(state.Validators.Validators[0].PubKey), Power: 0},
 	}
 
-	assert.NotPanics(t, func() { state, err = blockExec.ApplyBlock(state, blockID, block) })
+	assert.NotPanics(t, func() { state, _, err = blockExec.ApplyBlock(state, blockID, block) })
 	assert.NotNil(t, err)
 	assert.NotEmpty(t, state.NextValidators.Validators)
 

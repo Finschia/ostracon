@@ -3,7 +3,9 @@ package commands
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+
 	cfg "github.com/tendermint/tendermint/config"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
@@ -59,11 +61,15 @@ func initFilesWithConfig(config *cfg.Config) error {
 			ChainID:         fmt.Sprintf("test-chain-%v", tmrand.Str(6)),
 			GenesisTime:     tmtime.Now(),
 			ConsensusParams: types.DefaultConsensusParams(),
+			VoterParams:     types.DefaultVoterParams(),
 		}
-		key := pv.GetPubKey()
+		pubKey, err := pv.GetPubKey()
+		if err != nil {
+			return errors.Wrap(err, "can't get pubkey")
+		}
 		genDoc.Validators = []types.GenesisValidator{{
-			Address: key.Address(),
-			PubKey:  key,
+			Address: pubKey.Address(),
+			PubKey:  pubKey,
 			Power:   10,
 		}}
 
