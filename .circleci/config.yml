@@ -395,20 +395,20 @@ workflows:
             branches:
               only:
                 - docs-staging
-#      - lint
+      - lint
       - setup_dependencies
-#      - test_cover:
-#          requires:
-#            - setup_dependencies
-#      - test_persistence:
-#          requires:
-#            - setup_dependencies
+      - test_cover:
+          requires:
+            - setup_dependencies
+      - test_persistence:
+          requires:
+            - setup_dependencies
       - localnet:
           requires:
             - setup_dependencies
-#      - test_p2p:
-#            name: test_p2p_ipv6
-#            ipv: 6
+      - test_p2p:
+            name: test_p2p_ipv6
+            ipv: 6
       - reproducible_builds:
           filters:
             branches:
