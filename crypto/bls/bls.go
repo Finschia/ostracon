@@ -7,6 +7,7 @@ import (
 
 	"github.com/herumi/bls-eth-go-binary/bls"
 	amino "github.com/tendermint/go-amino"
+
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 )

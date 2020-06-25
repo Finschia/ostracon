@@ -66,7 +66,7 @@ func LoadOrGenNodeKey(filePath string) (*NodeKey, error) {
 	sigKey := bls.GenPrivKey()
 	nodeKey := &NodeKey{
 		PrivKey: privKey,
-		SigKey: sigKey,
+		SigKey:  sigKey,
 	}
 
 	if err := nodeKey.SaveAs(filePath); err != nil {
