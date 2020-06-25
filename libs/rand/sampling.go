@@ -87,11 +87,8 @@ func init() {
 }
 
 func randomThreshold(seed *uint64, total uint64) uint64 {
-	if int64(total) < 0 {
-		panic(fmt.Sprintf("total priority is overflow: %d", total))
-	}
-	totalBig := big.NewInt(int64(total))
-	a := big.NewInt(int64(nextRandom(seed) & uint64Mask))
+	totalBig := new(big.Int).SetUint64(total)
+	a := new(big.Int).SetUint64(nextRandom(seed) & uint64Mask)
 	a.Mul(a, totalBig)
 	a.Div(a, divider)
 	return a.Uint64()
@@ -137,20 +134,29 @@ func RandomSamplingWithoutReplacement(
 				winnerNum, minSamplingCount, winnersPriority, totalPriority, threshold))
 		}
 	}
-	correction := totalPriority * precisionForSelection
-	compensationProportions := make([]uint64, winnerNum)
+	correction := new(big.Int).SetUint64(totalPriority)
+	correction = correction.Mul(correction, new(big.Int).SetUint64(precisionForSelection))
+	compensationProportions := make([]big.Int, winnerNum)
 	for i := winnerNum - 2; i >= 0; i-- {
-		compensationProportions[i] = compensationProportions[i+1] + correction/losersPriorities[i]
+		additionalCompensation := new(big.Int).Div(correction, new(big.Int).SetUint64(losersPriorities[i]))
+		compensationProportions[i].Add(&compensationProportions[i+1], additionalCompensation)
 	}
 	winners = candidates[len(candidates)-winnerNum:]
-	winPoints := make([]uint64, len(winners))
+	recalibration := new(big.Int).Div(correction, new(big.Int).SetUint64(precisionCorrectionForSelection))
 	for i, winner := range winners {
-		winPoints[i] = correction + winner.Priority()*compensationProportions[i]
-		winner.SetWinPoint(int64(winPoints[i] / (correction / precisionCorrectionForSelection)))
+		// winPoint = correction + winner.Priority() * compensationProportions[i]
+		winPoint := new(big.Int).SetUint64(winner.Priority())
+		winPoint.Mul(winPoint, &compensationProportions[i])
+		winPoint.Add(winPoint, correction)
+
+		winner.SetWinPoint(winPoint.Div(winPoint, recalibration).Int64())
 	}
 	return winners
 }
 
+// sumTotalPriority calculate the sum of all candidate's priority(weight)
+// and the sum should be less then or equal to MaxUint64
+// TODO We need to check the total weight doesn't over MaxUint64 in somewhere not here.
 func sumTotalPriority(candidates []Candidate) (sum uint64) {
 	for _, candi := range candidates {
 		sum += candi.Priority()

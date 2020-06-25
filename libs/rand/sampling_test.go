@@ -2,6 +2,7 @@ package rand
 
 import (
 	"fmt"
+	"github.com/tendermint/tendermint/types/time"
 	"math"
 	"math/rand"
 	s "sort"
@@ -174,6 +175,21 @@ func TestRandomSamplingWithoutReplacementIncludingZeroStakingPower(t *testing.T)
 	})
 	winners2 := RandomSamplingWithoutReplacement(0, candidates2, 95)
 	assert.True(t, len(winners2) == 90)
+}
+
+func TestRandomSamplingWithoutReplacementOverflow(t *testing.T) {
+	rand.Seed(time.Now().Unix())
+	number := 100
+	candidates := newCandidates(number, func(i int) uint64 { return math.MaxUint64 / uint64(number) })
+	winners := RandomSamplingWithoutReplacement(rand.Uint64(), candidates, 64)
+	lastWinPoint := int64(math.MaxInt64)
+	for _, w := range winners {
+		element := w.(*Element)
+		assert.True(t, element.winPoint > 0)
+		assert.True(t, element.winPoint <= lastWinPoint)
+		lastWinPoint = element.winPoint
+	}
+	assert.Equal(t, lastWinPoint, int64(precisionForSelection))
 }
 
 func accumulateAndResetReward(candidate []Candidate, acc []uint64) uint64 {
