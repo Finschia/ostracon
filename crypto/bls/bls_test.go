@@ -3,6 +3,8 @@ package bls_test
 import (
 	"bytes"
 	"fmt"
+	amino "github.com/tendermint/go-amino"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 	"testing"
 
 	b "github.com/herumi/bls-eth-go-binary/bls"
@@ -12,6 +14,152 @@ import (
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/bls"
 )
+
+func TestPrivKeyBLS12_Bytes(t *testing.T) {
+	pk := bls.GenPrivKey()
+	b := pk.Bytes()
+	if len(b) != 37 {
+		t.Fatalf("bytes length: %d != %d", len(b), 37)
+	}
+	if !bytes.Equal(b, pk.Bytes()) {
+		t.Errorf("bytes is not identical by call")
+	}
+}
+
+func TestPrivKeyBLS12_Sign(t *testing.T) {
+	msg := []byte{0, 1, 2, 3, 4, 5}
+	sign, err := bls.GenPrivKey().Sign(msg)
+	if err != nil {
+		t.Fatalf("Signing failed: %s", err)
+	}
+	if sign == nil {
+		t.Errorf("Signature is nil")
+	}
+	if len(sign) != bls.SignatureSize {
+		t.Errorf("Unexpected signature size: %d != %d", len(sign), bls.SignatureSize)
+	}
+}
+
+func TestPrivKeyBLS12_PubKey(t *testing.T) {
+	pubKey := bls.GenPrivKey().PubKey()
+	if pubKey == nil {
+		t.Errorf("Public key is nil")
+	}
+}
+
+func TestPrivKeyBLS12_Equals(t *testing.T) {
+	privKey := bls.GenPrivKey()
+	anotherPrivKey := bls.GenPrivKey()
+	if !privKey.Equals(privKey) {
+		t.Error("A is not identical")
+	}
+	if privKey.Equals(anotherPrivKey) || anotherPrivKey.Equals(privKey) {
+		t.Error("Different A and B were determined to be identical")
+	}
+
+	cdc := amino.NewCodec()
+	json, err := cdc.MarshalJSON(privKey)
+	if err != nil {
+		t.Fatalf("Marshalling failed: %s", err)
+	}
+	var restoredPrivKey = bls.PrivKeyBLS12{}
+	err = cdc.UnmarshalJSON(json, &restoredPrivKey)
+	if err != nil {
+		t.Fatalf("Unmarshalling failed: %s", err)
+	}
+	if !privKey.Equals(restoredPrivKey) || !restoredPrivKey.Equals(privKey) {
+		t.Errorf("Restored A was not identical")
+	}
+
+	ed25519PrivKey := ed25519.GenPrivKey()
+	if privKey.Equals(ed25519PrivKey) {
+		t.Errorf("Different types of keys were matched")
+	}
+}
+
+func TestPubKeyBLS12_Address(t *testing.T) {
+	privKey := bls.GenPrivKey()
+	pubKey := privKey.PubKey()
+	address := pubKey.Address()
+	if len(address) != 20 {
+		t.Errorf("Address length %d is not %d", len(address), 20)
+	}
+}
+
+func TestPubKeyBLS12_Bytes(t *testing.T) {
+	privKey := bls.GenPrivKey()
+	pubKey := privKey.PubKey()
+	b := pubKey.Bytes()
+	if len(b) != 53 {
+		t.Errorf("Byte length %d is not %d", len(b), 53)
+	}
+	if !bytes.Equal(b, pubKey.Bytes()) {
+		t.Errorf("Difference bytes was generated from the same public key")
+	}
+	if bytes.Equal(b, bls.GenPrivKey().PubKey().Bytes()) {
+		t.Errorf("The same bytes was generated from different public key")
+	}
+}
+
+func TestPubKeyBLS12_VerifyBytes(t *testing.T) {
+	privKey := bls.GenPrivKey()
+	pubKey := privKey.PubKey()
+	msg := []byte{0, 1, 2, 3, 4, 5}
+	sign, _ := privKey.Sign(msg)
+	if !pubKey.VerifyBytes(msg, sign) {
+		t.Errorf("Signature validation failed for the same message")
+	}
+
+	corruptedMessage := make([]byte, len(msg))
+	copy(corruptedMessage, msg)
+	corruptedMessage[0] ^= 1
+	if pubKey.VerifyBytes(corruptedMessage, sign) {
+		t.Errorf("Signature validation succeeded for the different messages")
+	}
+
+	otherPubKey := bls.GenPrivKey().PubKey()
+	if otherPubKey.VerifyBytes(msg, sign) {
+		t.Errorf("Signature validation succeeded for the different public key")
+	}
+
+	ed25519Sign, _ := ed25519.GenPrivKey().Sign(msg)
+	if pubKey.VerifyBytes(msg, ed25519Sign) {
+		t.Errorf("Verification accepted by ed25519 signature")
+	}
+
+	emptySign := make([]byte, 0)
+	if pubKey.VerifyBytes(msg, emptySign) {
+		t.Errorf("Verification accepted by empty bytes")
+	}
+
+	zeroSign := make([]byte, bls.SignatureSize)
+	if pubKey.VerifyBytes(msg, zeroSign) {
+		t.Errorf("Verification accepted by zero-filled bytes")
+	}
+}
+
+func TestPubKeyBLS12_String(t *testing.T) {
+	fmt.Printf("%s\n", bls.GenPrivKey().PubKey())
+}
+
+func TestPubKeyBLS12_Equals(t *testing.T) {
+	privKey := bls.GenPrivKey()
+	pubKey := privKey.PubKey()
+	samePubKey := privKey.PubKey()
+	if !pubKey.Equals(samePubKey) {
+		t.Errorf("Different public keys are generated from the same private key")
+	}
+
+	anotherPubKey := bls.GenPrivKey().PubKey()
+	if pubKey.Equals(anotherPubKey) {
+		t.Errorf("The same public keys are generated from different private keys")
+	}
+
+	ed25519PubKey := ed25519.GenPrivKey().PubKey()
+	if pubKey.Equals(ed25519PubKey) {
+		t.Errorf("Got a match on a different kind of key")
+	}
+}
 
 func TestBasicSignatureFunctions(t *testing.T) {
 	privateKey := b.SecretKey{}

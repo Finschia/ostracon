@@ -64,7 +64,7 @@ func (privKey PrivKeyBLS12) Sign(msg []byte) ([]byte, error) {
 	blsKey := bls.SecretKey{}
 	err := blsKey.Deserialize(privKey[:])
 	if err != nil {
-		return nil, err
+		panic(fmt.Sprintf("Failed to copy the private key: %s", err))
 	}
 	sign := blsKey.SignByte(msg)
 	return sign.Serialize(), nil
@@ -75,7 +75,7 @@ func (privKey PrivKeyBLS12) PubKey() crypto.PubKey {
 	blsKey := bls.SecretKey{}
 	err := blsKey.Deserialize(privKey[:])
 	if err != nil {
-		panic(fmt.Sprintf("Not a BLS12-381 private key: %X", privKey[:]))
+		panic(fmt.Sprintf("Failed to copy the private key: %s", err))
 	}
 	pubKey := blsKey.GetPublicKey()
 	pubKeyBinary := PubKeyBLS12{}
@@ -119,12 +119,11 @@ func (pubKey PubKeyBLS12) VerifyBytes(msg []byte, sig []byte) bool {
 	blsPubKey := bls.PublicKey{}
 	err := blsPubKey.Deserialize(pubKey[:])
 	if err != nil {
-		return false
+		panic(fmt.Sprintf("Failed to copy the public key: [%X] %s", pubKey[:], err))
 	}
 	blsSign := bls.Sign{}
 	err = blsSign.Deserialize(sig)
 	if err != nil {
-		fmt.Printf("Signature Deserialize failed: %s", err)
 		return false
 	}
 	return blsSign.VerifyByte(&blsPubKey, msg)
