@@ -2,11 +2,12 @@ package rand
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"math"
 	"math/rand"
 	s "sort"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type Element struct {
