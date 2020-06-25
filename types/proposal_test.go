@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	"github.com/tendermint/tendermint/crypto/tmhash"
 )
 
@@ -45,7 +46,8 @@ func TestProposalString(t *testing.T) {
 
 func TestProposalVerifySignature(t *testing.T) {
 	privVal := NewMockPV()
-	pubKey := privVal.GetPubKey()
+	pubKey, err := privVal.GetPubKey()
+	require.NoError(t, err)
 
 	prop := NewProposal(
 		4, 2, 2,
@@ -53,7 +55,7 @@ func TestProposalVerifySignature(t *testing.T) {
 	signBytes := prop.SignBytes("test_chain_id")
 
 	// sign it
-	err := privVal.SignProposal("test_chain_id", prop)
+	err = privVal.SignProposal("test_chain_id", prop)
 	require.NoError(t, err)
 
 	// verify the same proposal
@@ -93,8 +95,9 @@ func BenchmarkProposalSign(b *testing.B) {
 func BenchmarkProposalVerifySignature(b *testing.B) {
 	privVal := NewMockPV()
 	err := privVal.SignProposal("test_chain_id", testProposal)
-	require.Nil(b, err)
-	pubKey := privVal.GetPubKey()
+	require.NoError(b, err)
+	pubKey, err := privVal.GetPubKey()
+	require.NoError(b, err)
 
 	for i := 0; i < b.N; i++ {
 		pubKey.VerifyBytes(testProposal.SignBytes("test_chain_id"), testProposal.Signature)
@@ -137,5 +140,33 @@ func TestProposalValidateBasic(t *testing.T) {
 			tc.malleateProposal(prop)
 			assert.Equal(t, tc.expectErr, prop.ValidateBasic() != nil, "Validate Basic had an unexpected result")
 		})
+	}
+}
+
+func TestProposalProtoBuf(t *testing.T) {
+	proposal := NewProposal(1, 2, 3, makeBlockID([]byte("hash"), 2, []byte("part_set_hash")))
+	proposal.Signature = []byte("sig")
+	proposal2 := NewProposal(1, 2, 3, BlockID{})
+
+	testCases := []struct {
+		msg     string
+		p1      *Proposal
+		expPass bool
+	}{
+		{"success", proposal, true},
+		{"success", proposal2, false}, // blcokID cannot be empty
+		{"empty proposal failure validatebasic", &Proposal{}, false},
+		{"nil proposal", nil, false},
+	}
+	for _, tc := range testCases {
+		protoProposal := tc.p1.ToProto()
+
+		p, err := ProposalFromProto(protoProposal)
+		if tc.expPass {
+			require.NoError(t, err)
+			require.Equal(t, tc.p1, p, tc.msg)
+		} else {
+			require.Error(t, err)
+		}
 	}
 }

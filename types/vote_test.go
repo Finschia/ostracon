@@ -143,13 +143,14 @@ func TestVoteProposalNotEq(t *testing.T) {
 
 func TestVoteVerifySignature(t *testing.T) {
 	privVal := NewMockPV()
-	pubkey := privVal.GetPubKey()
+	pubkey, err := privVal.GetPubKey()
+	require.NoError(t, err)
 
 	vote := examplePrecommit()
 	signBytes := vote.SignBytes("test_chain_id")
 
 	// sign it
-	err := privVal.SignVote("test_chain_id", vote)
+	err = privVal.SignVote("test_chain_id", vote)
 	require.NoError(t, err)
 
 	// verify the same vote
@@ -193,12 +194,13 @@ func TestIsVoteTypeValid(t *testing.T) {
 
 func TestVoteVerify(t *testing.T) {
 	privVal := NewMockPV()
-	pubkey := privVal.GetPubKey()
+	pubkey, err := privVal.GetPubKey()
+	require.NoError(t, err)
 
 	vote := examplePrevote()
 	vote.ValidatorAddress = pubkey.Address()
 
-	err := vote.Verify("test_chain_id", ed25519.GenPrivKey().PubKey())
+	err = vote.Verify("test_chain_id", ed25519.GenPrivKey().PubKey())
 	if assert.Error(t, err) {
 		assert.Equal(t, ErrVoteInvalidValidatorAddress, err)
 	}
@@ -282,5 +284,33 @@ func TestVoteValidateBasic(t *testing.T) {
 			tc.malleateVote(vote)
 			assert.Equal(t, tc.expectErr, vote.ValidateBasic() != nil, "Validate Basic had an unexpected result")
 		})
+	}
+}
+
+func TestVoteProtobuf(t *testing.T) {
+	privVal := NewMockPV()
+	vote := examplePrecommit()
+	err := privVal.SignVote("test_chain_id", vote)
+	require.NoError(t, err)
+
+	testCases := []struct {
+		msg     string
+		v1      *Vote
+		expPass bool
+	}{
+		{"success", vote, true},
+		{"fail vote validate basic", &Vote{}, false},
+		{"failure nil", nil, false},
+	}
+	for _, tc := range testCases {
+		protoProposal := tc.v1.ToProto()
+
+		v, err := VoteFromProto(protoProposal)
+		if tc.expPass {
+			require.NoError(t, err)
+			require.Equal(t, tc.v1, v, tc.msg)
+		} else {
+			require.Error(t, err)
+		}
 	}
 }

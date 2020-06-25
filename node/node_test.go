@@ -12,6 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	dbm "github.com/tendermint/tm-db"
+
 	"github.com/tendermint/tendermint/abci/example/kvstore"
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/crypto/ed25519"
@@ -27,7 +29,6 @@ import (
 	"github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
 	"github.com/tendermint/tendermint/version"
-	dbm "github.com/tendermint/tm-db"
 )
 
 func TestNodeStartStop(t *testing.T) {
@@ -158,7 +159,7 @@ func TestNodeSetPrivValTCP(t *testing.T) {
 
 	n, err := DefaultNewNode(config, log.TestingLogger())
 	require.NoError(t, err)
-	assert.IsType(t, &privval.SignerClient{}, n.PrivValidator())
+	assert.IsType(t, &privval.RetrySignerClient{}, n.PrivValidator())
 }
 
 // address without a protocol must result in error
@@ -202,7 +203,7 @@ func TestNodeSetPrivValIPC(t *testing.T) {
 
 	n, err := DefaultNewNode(config, log.TestingLogger())
 	require.NoError(t, err)
-	assert.IsType(t, &privval.SignerClient{}, n.PrivValidator())
+	assert.IsType(t, &privval.RetrySignerClient{}, n.PrivValidator())
 }
 
 // testFreeAddr claims a free port so we don't block on listener being ready.

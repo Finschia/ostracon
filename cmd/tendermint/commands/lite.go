@@ -18,8 +18,8 @@ import (
 	lproxy "github.com/tendermint/tendermint/lite2/proxy"
 	lrpc "github.com/tendermint/tendermint/lite2/rpc"
 	dbs "github.com/tendermint/tendermint/lite2/store/db"
-	rpcclient "github.com/tendermint/tendermint/rpc/client"
-	rpcserver "github.com/tendermint/tendermint/rpc/lib/server"
+	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
+	rpcserver "github.com/tendermint/tendermint/rpc/jsonrpc/server"
 )
 
 // LiteCmd represents the base command when called without any subcommands
@@ -133,7 +133,7 @@ func runProxy(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	rpcClient, err := rpcclient.NewHTTP(primaryAddr, "/websocket")
+	rpcClient, err := rpchttp.New(primaryAddr, "/websocket")
 	if err != nil {
 		return errors.Wrapf(err, "http client for %s", primaryAddr)
 	}

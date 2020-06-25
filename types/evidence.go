@@ -7,12 +7,13 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/tendermint/tendermint/crypto/tmhash"
-
 	amino "github.com/tendermint/go-amino"
 
 	"github.com/tendermint/tendermint/crypto"
+	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
 	"github.com/tendermint/tendermint/crypto/merkle"
+	"github.com/tendermint/tendermint/crypto/tmhash"
+	tmproto "github.com/tendermint/tendermint/proto/types"
 )
 
 const (
@@ -59,13 +60,125 @@ type Evidence interface {
 	Height() int64                                     // height of the equivocation
 	Time() time.Time                                   // time of the equivocation
 	Address() []byte                                   // address of the equivocating validator
-	Bytes() []byte                                     // bytes which compromise the evidence
+	Bytes() []byte                                     // bytes which comprise the evidence
 	Hash() []byte                                      // hash of the evidence
 	Verify(chainID string, pubKey crypto.PubKey) error // verify the evidence
 	Equal(Evidence) bool                               // check equality of evidence
 
 	ValidateBasic() error
 	String() string
+}
+
+func EvidenceToProto(evidence Evidence) (*tmproto.Evidence, error) {
+	if evidence == nil {
+		return nil, errors.New("nil evidence")
+	}
+
+	switch evi := evidence.(type) {
+	case *DuplicateVoteEvidence:
+		voteB := evi.VoteB.ToProto()
+		voteA := evi.VoteA.ToProto()
+		pk, err := cryptoenc.PubKeyToProto(evi.PubKey)
+		if err != nil {
+			return nil, err
+		}
+		tp := &tmproto.Evidence{
+			Sum: &tmproto.Evidence_DuplicateVoteEvidence{
+				DuplicateVoteEvidence: &tmproto.DuplicateVoteEvidence{
+					PubKey: &pk,
+					VoteA:  voteA,
+					VoteB:  voteB,
+				},
+			},
+		}
+		return tp, nil
+	case MockEvidence:
+		if err := evi.ValidateBasic(); err != nil {
+			return nil, err
+		}
+
+		tp := &tmproto.Evidence{
+			Sum: &tmproto.Evidence_MockEvidence{
+				MockEvidence: &tmproto.MockEvidence{
+					EvidenceHeight:  evi.Height(),
+					EvidenceTime:    evi.Time(),
+					EvidenceAddress: evi.Address(),
+				},
+			},
+		}
+
+		return tp, nil
+	case MockRandomEvidence:
+		if err := evi.ValidateBasic(); err != nil {
+			return nil, err
+		}
+
+		tp := &tmproto.Evidence{
+			Sum: &tmproto.Evidence_MockRandomEvidence{
+				MockRandomEvidence: &tmproto.MockRandomEvidence{
+					EvidenceHeight:  evi.Height(),
+					EvidenceTime:    evi.Time(),
+					EvidenceAddress: evi.Address(),
+					RandBytes:       evi.randBytes,
+				},
+			},
+		}
+		return tp, nil
+	default:
+		return nil, fmt.Errorf("toproto: evidence is not recognized: %T", evi)
+	}
+}
+
+func EvidenceFromProto(evidence *tmproto.Evidence) (Evidence, error) {
+	if evidence == nil {
+		return nil, errors.New("nil evidence")
+	}
+
+	switch evi := evidence.Sum.(type) {
+	case *tmproto.Evidence_DuplicateVoteEvidence:
+
+		vA, err := VoteFromProto(evi.DuplicateVoteEvidence.VoteA)
+		if err != nil {
+			return nil, err
+		}
+
+		vB, err := VoteFromProto(evi.DuplicateVoteEvidence.VoteB)
+		if err != nil {
+			return nil, err
+		}
+
+		pk, err := cryptoenc.PubKeyFromProto(evi.DuplicateVoteEvidence.GetPubKey())
+		if err != nil {
+			return nil, err
+		}
+
+		dve := DuplicateVoteEvidence{
+			PubKey: pk,
+			VoteA:  vA,
+			VoteB:  vB,
+		}
+
+		return &dve, dve.ValidateBasic()
+	case *tmproto.Evidence_MockEvidence:
+		me := MockEvidence{
+			EvidenceHeight:  evi.MockEvidence.GetEvidenceHeight(),
+			EvidenceAddress: evi.MockEvidence.GetEvidenceAddress(),
+			EvidenceTime:    evi.MockEvidence.GetEvidenceTime(),
+		}
+		return me, me.ValidateBasic()
+	case *tmproto.Evidence_MockRandomEvidence:
+		mre := MockRandomEvidence{
+			MockEvidence: MockEvidence{
+				EvidenceHeight:  evi.MockRandomEvidence.GetEvidenceHeight(),
+				EvidenceAddress: evi.MockRandomEvidence.GetEvidenceAddress(),
+				EvidenceTime:    evi.MockRandomEvidence.GetEvidenceTime(),
+			},
+			randBytes: evi.MockRandomEvidence.RandBytes,
+		}
+		return mre, mre.ValidateBasic()
+	default:
+		return nil, errors.New("evidence is not recognized")
+	}
 }
 
 func RegisterEvidences(cdc *amino.Codec) {
@@ -220,6 +333,7 @@ func (dve *DuplicateVoteEvidence) Equal(ev Evidence) bool {
 	// just check their hashes
 	dveHash := tmhash.Sum(cdcEncode(dve))
 	evHash := tmhash.Sum(cdcEncode(ev))
+	fmt.Println(dveHash, evHash)
 	return bytes.Equal(dveHash, evHash)
 }
 
