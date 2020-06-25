@@ -120,9 +120,9 @@ func TestSignerGenerateVRFProof(t *testing.T) {
 		require.Nil(t, err)
 		_, err = vrf.ProofToHash(proof)
 		require.Nil(t, err)
-		pubKey, ok := tc.signerClient.GetPubKey().(ed25519.PubKeyEd25519)
-		require.True(t, ok)
-		expected, err := vrf.Verify(pubKey, proof, message)
+		pubKey, err := tc.signerClient.GetPubKey()
+		require.Nil(t, err)
+		expected, err := vrf.Verify(pubKey.(ed25519.PubKeyEd25519), proof, message)
 		require.Nil(t, err)
 		assert.True(t, expected)
 	}
