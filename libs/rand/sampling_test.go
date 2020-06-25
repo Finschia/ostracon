@@ -2,13 +2,11 @@ package rand
 
 import (
 	"fmt"
-	"github.com/tendermint/tendermint/types/time"
+	"github.com/stretchr/testify/assert"
 	"math"
 	"math/rand"
 	s "sort"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 type Element struct {
@@ -178,7 +176,6 @@ func TestRandomSamplingWithoutReplacementIncludingZeroStakingPower(t *testing.T)
 }
 
 func TestRandomSamplingWithoutReplacementOverflow(t *testing.T) {
-	rand.Seed(time.Now().Unix())
 	number := 100
 	candidates := newCandidates(number, func(i int) uint64 { return math.MaxUint64 / uint64(number) })
 	winners := RandomSamplingWithoutReplacement(rand.Uint64(), candidates, 64)
