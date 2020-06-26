@@ -10,7 +10,6 @@ LIBSODIUM_TARGET=
 PREPARE_LIBSODIUM_TARGET=
 ifeq ($(LIBSODIUM), 1)
   BUILD_TAGS='libsodium tendermint'
-  CGO_OPTPTION=1
   LIBSODIUM_TARGET=libsodium
 ifneq ($(OS), Windows_NT)
 ifeq ($(shell uname -s), Linux)
@@ -33,13 +32,11 @@ endif
 
 # handle race
 ifeq (race,$(findstring race,$(TENDERMINT_BUILD_OPTIONS)))
-  CGO_ENABLED=1
   BUILD_FLAGS += -race
 endif
 
 # handle cleveldb
 ifeq (cleveldb,$(findstring cleveldb,$(TENDERMINT_BUILD_OPTIONS)))
-  CGO_ENABLED=1
   BUILD_TAGS += cleveldb
 endif
 
@@ -72,11 +69,11 @@ include tests.mk
 ###############################################################################
 
 build: $(LIBSODIUM_TARGET)
-	CGO_ENABLED=$(CGO_ENABLED) go build $(BUILD_FLAGS) -tags "$(BUILD_TAGS)" -o $(OUTPUT) ./cmd/tendermint/
+	CGO_ENABLED=1 go build $(BUILD_FLAGS) -tags "$(BUILD_TAGS)" -o $(OUTPUT) ./cmd/tendermint/
 .PHONY: build
 
 install:
-	CGO_ENABLED=$(CGO_ENABLED) go install $(BUILD_FLAGS) -tags "$(BUILD_TAGS)" ./cmd/tendermint
+	CGO_ENABLED=1 go install $(BUILD_FLAGS) -tags "$(BUILD_TAGS)" ./cmd/tendermint
 .PHONY: install
 
 ###############################################################################

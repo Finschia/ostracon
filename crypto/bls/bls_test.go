@@ -118,11 +118,11 @@ func TestSignAndValidateBLS12(t *testing.T) {
 	fmt.Printf("restoring signature: %x\n", sig)
 
 	// Test the signature
-	assert.True(t, pubKey.VerifyBytes(msg, sig))
+	assert.True(t, pubKey.VerifySignature(msg, sig))
 
 	// Mutate the signature, just one bit.
 	// TODO: Replace this with a much better fuzzer, tendermint/ed25519/issues/10
 	sig[7] ^= byte(0x01)
 
-	assert.False(t, pubKey.VerifyBytes(msg, sig))
+	assert.False(t, pubKey.VerifySignature(msg, sig))
 }

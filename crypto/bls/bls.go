@@ -20,6 +20,7 @@ const (
 	PrivKeyBLS12Size = 32
 	PubKeyBLS12Size  = 48
 	SignatureSize    = 96
+	KeyType          = "bls12-381"
 )
 
 var cdc = amino.NewCodec()
@@ -93,6 +94,11 @@ func (privKey PrivKeyBLS12) Equals(other crypto.PrivKey) bool {
 	return false
 }
 
+// Type returns information to identify the type of this key.
+func (privKey PrivKeyBLS12) Type() string {
+	return KeyType
+}
+
 var _ crypto.PubKey = PubKeyBLS12{}
 
 // PubKeyBLS12 implements crypto.PubKey for the BLS12-381 signature scheme.
@@ -112,7 +118,7 @@ func (pubKey PubKeyBLS12) Bytes() []byte {
 	return bz
 }
 
-func (pubKey PubKeyBLS12) VerifyBytes(msg []byte, sig []byte) bool {
+func (pubKey PubKeyBLS12) VerifySignature(msg []byte, sig []byte) bool {
 	// make sure we use the same algorithm to sign
 	if len(sig) != SignatureSize {
 		return false
@@ -141,4 +147,9 @@ func (pubKey PubKeyBLS12) Equals(other crypto.PubKey) bool {
 		return bytes.Equal(pubKey[:], otherEd[:])
 	}
 	return false
+}
+
+// Type returns information to identify the type of this key.
+func (pubKey PubKeyBLS12) Type() string {
+	return KeyType
 }
