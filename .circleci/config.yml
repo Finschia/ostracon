@@ -379,6 +379,7 @@ jobs:
   #   parallelism: 1
   #   steps:
   #     - checkout_with_submodules
+  #     - setup_bls_library_build
   #     - run:
   #         name: Test RPC endpoints against swagger documentation
   #         command: |
