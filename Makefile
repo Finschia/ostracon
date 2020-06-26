@@ -5,10 +5,16 @@ OUTPUT?=build/tendermint
 BUILD_TAGS?=tendermint
 CGO_ENABLED ?= 0
 LIBSODIUM_TARGET=
+PREPARE_LIBSODIUM_TARGET=
 ifeq ($(LIBSODIUM), 1)
   BUILD_TAGS='libsodium tendermint'
   CGO_ENABLED=1
   LIBSODIUM_TARGET=libsodium
+ifneq ($(OS), Windows_NT)
+ifeq ($(shell uname -s), Linux)
+  PREPARE_LIBSODIUM_TARGET=prepare-libsodium-linux
+endif
+endif
 endif
 LIBSODIM_BUILD_TAGS='libsodium tendermint'
 LD_FLAGS = -X github.com/tendermint/tendermint/version.GitCommit=`git rev-parse --short=8 HEAD` -s -w
@@ -48,7 +54,7 @@ include tests.mk
 ###                                Build Tendermint                        ###
 ###############################################################################
 
-build:
+build: $(LIBSODIUM_TARGET)
 	CGO_ENABLED=$(CGO_ENABLED) go build $(BUILD_FLAGS) -tags '$(BUILD_TAGS)' -o $(OUTPUT) ./cmd/tendermint/
 .PHONY: build
 
@@ -105,7 +111,7 @@ install_abci:
 ###                              libsodium                                  ###
 ###############################################################################
 
-prepare_libsodium:
+prepare-libsodium-linux:
 	apt-get update && apt-get -y install libtool libboost-all-dev autoconf build-essential
 .PHONY: prepare_libsodium
 
@@ -181,7 +187,9 @@ format:
 
 lint:
 	@echo "--> Running linter"
-	@golangci-lint run
+	sh -c "$(CURDIR)/scripts/current_branch_lint.sh"
+	find . -name '*.go' -type f -not -path "*.git*" | xargs gofmt -d -s
+	go mod verify
 .PHONY: lint
 
 DESTINATION = ./index.html.md
@@ -223,8 +231,8 @@ build-docker:
 ###############################################################################
 
 # Build linux binary on other platforms
-build-linux: tools prepare_libsodium libsodium
-	GOOS=linux GOARCH=amd64 $(MAKE) build
+build-linux:
+	docker run --rm -v `pwd`:/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang:1.14.1-alpine /bin/sh -c "apk add --update git make gcc libc-dev build-base && make build"
 .PHONY: build-linux
 
 build-docker-localnode:

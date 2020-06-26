@@ -1,13 +1,11 @@
-## v0.33.6
-
+## v0.3
 
 \*\*
 
-Special thanks to external contributors on this release:
-
-Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermint).
-
 ### BREAKING CHANGES:
+
+- State
+  - [state] [\#92](https://github.com/line/tendermint/pull/92) Genesis state
 
 - CLI/RPC/Config
 
@@ -20,10 +18,8 @@ Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermi
 - Blockchain Protocol
 
 ### FEATURES:
-
-
+- [BLS] [\#81](https://github.com/line/tendermint/issues/81) Modify to generate at the same time as Ed25519 key generation
 
 ### IMPROVEMENTS:
-
 
 ### BUG FIXES:

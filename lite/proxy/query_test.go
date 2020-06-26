@@ -55,7 +55,7 @@ func _TestAppProofs(t *testing.T) {
 	source := certclient.NewProvider(chainID, cl)
 	seed, err := source.LatestFullCommit(chainID, 1, 1)
 	require.NoError(err, "%#v", err)
-	cert := lite.NewBaseVerifier(chainID, seed.Height(), seed.Validators)
+	cert := lite.NewBaseVerifier(chainID, seed.Height(), seed.Voters)
 
 	// Wait for tx confirmation.
 	done := make(chan int64)
@@ -140,7 +140,7 @@ func TestTxProofs(t *testing.T) {
 	source := certclient.NewProvider(chainID, cl)
 	seed, err := source.LatestFullCommit(chainID, brh-2, brh-2)
 	require.NoError(err, "%#v", err)
-	cert := lite.NewBaseVerifier(chainID, seed.Height(), seed.Validators)
+	cert := lite.NewBaseVerifier(chainID, seed.Height(), seed.Voters)
 
 	// First let's make sure a bogus transaction hash returns a valid non-existence proof.
 	key := types.Tx([]byte("bogus")).Hash()

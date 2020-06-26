@@ -31,10 +31,10 @@ var (
 // future.
 func VerifyNonAdjacent(
 	chainID string,
-	trustedHeader *types.SignedHeader, // height=X
-	trustedVals *types.ValidatorSet, // height=X or height=X+1
-	untrustedHeader *types.SignedHeader, // height=Y
-	untrustedVals *types.ValidatorSet, // height=Y
+	trustedHeader *types.SignedHeader,
+	trustedVals *types.VoterSet,
+	untrustedHeader *types.SignedHeader,
+	untrustedVals *types.VoterSet,
 	trustingPeriod time.Duration,
 	now time.Time,
 	maxClockDrift time.Duration,
@@ -95,9 +95,9 @@ func VerifyNonAdjacent(
 // future.
 func VerifyAdjacent(
 	chainID string,
-	trustedHeader *types.SignedHeader, // height=X
-	untrustedHeader *types.SignedHeader, // height=X+1
-	untrustedVals *types.ValidatorSet, // height=X+1
+	trustedHeader *types.SignedHeader,
+	untrustedHeader *types.SignedHeader,
+	untrustedVals *types.VoterSet,
 	trustingPeriod time.Duration,
 	now time.Time,
 	maxClockDrift time.Duration) error {
@@ -119,10 +119,10 @@ func VerifyAdjacent(
 	}
 
 	// Check the validator hashes are the same
-	if !bytes.Equal(untrustedHeader.ValidatorsHash, trustedHeader.NextValidatorsHash) {
+	if !bytes.Equal(untrustedHeader.VotersHash, trustedHeader.NextVotersHash) {
 		err := errors.Errorf("expected old header next validators (%X) to match those from new header (%X)",
-			trustedHeader.NextValidatorsHash,
-			untrustedHeader.ValidatorsHash,
+			trustedHeader.NextVotersHash,
+			untrustedHeader.VotersHash,
 		)
 		return err
 	}
@@ -139,10 +139,10 @@ func VerifyAdjacent(
 // Verify combines both VerifyAdjacent and VerifyNonAdjacent functions.
 func Verify(
 	chainID string,
-	trustedHeader *types.SignedHeader, // height=X
-	trustedVals *types.ValidatorSet, // height=X or height=X+1
-	untrustedHeader *types.SignedHeader, // height=Y
-	untrustedVals *types.ValidatorSet, // height=Y
+	trustedHeader *types.SignedHeader,
+	trustedVals *types.VoterSet,
+	untrustedHeader *types.SignedHeader,
+	untrustedVals *types.VoterSet,
 	trustingPeriod time.Duration,
 	now time.Time,
 	maxClockDrift time.Duration,
@@ -159,7 +159,7 @@ func Verify(
 func verifyNewHeaderAndVals(
 	chainID string,
 	untrustedHeader *types.SignedHeader,
-	untrustedVals *types.ValidatorSet,
+	untrustedVals *types.VoterSet,
 	trustedHeader *types.SignedHeader,
 	now time.Time,
 	maxClockDrift time.Duration) error {
@@ -187,9 +187,9 @@ func verifyNewHeaderAndVals(
 			maxClockDrift)
 	}
 
-	if !bytes.Equal(untrustedHeader.ValidatorsHash, untrustedVals.Hash()) {
-		return errors.Errorf("expected new header validators (%X) to match those that were supplied (%X) at height %d",
-			untrustedHeader.ValidatorsHash,
+	if !bytes.Equal(untrustedHeader.VotersHash, untrustedVals.Hash()) {
+		return errors.Errorf("expected new header voters (%X) to match those that were supplied (%X) at height %d",
+			untrustedHeader.VotersHash,
 			untrustedVals.Hash(),
 			untrustedHeader.Height,
 		)

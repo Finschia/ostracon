@@ -35,12 +35,12 @@ func TestApplyBlock(t *testing.T) {
 	require.Nil(t, err)
 	defer proxyApp.Stop()
 
-	state, stateDB, _ := makeState(1, 1)
+	state, stateDB, privVals := makeState(1, 1)
 
 	blockExec := sm.NewBlockExecutor(stateDB, log.TestingLogger(), proxyApp.Consensus(),
 		mock.Mempool{}, sm.MockEvidencePool{})
 
-	block := makeBlock(state, 1)
+	block := makeBlockWithPrivVal(state, privVals[state.Validators.Validators[0].Address.String()], 1)
 	blockID := types.BlockID{Hash: block.Hash(), PartsHeader: block.MakePartSet(testPartSize).Header()}
 
 	_, retainHeight, err := blockExec.ApplyBlock(state, blockID, block)
@@ -59,7 +59,7 @@ func TestBeginBlockValidators(t *testing.T) {
 	require.Nil(t, err)
 	defer proxyApp.Stop()
 
-	state, stateDB, _ := makeState(2, 2)
+	state, stateDB, privVals := makeState(2, 2)
 
 	prevHash := state.LastBlockID.Hash
 	prevParts := types.PartSetHeader{}
@@ -91,10 +91,14 @@ func TestBeginBlockValidators(t *testing.T) {
 	for _, tc := range testCases {
 		lastCommit := types.NewCommit(1, 0, prevBlockID, tc.lastCommitSigs)
 
-		// block for height 2
-		block, _ := state.MakeBlock(2, makeTxs(2), lastCommit, nil, state.Validators.GetProposer().Address)
+		proposer := state.Validators.SelectProposer(state.LastProofHash, 1, 0)
+		message := state.MakeHashMessage(0)
+		proof, _ := privVals[proposer.Address.String()].GenerateVRFProof(message)
 
-		_, err = sm.ExecCommitBlock(proxyApp.Consensus(), block, log.TestingLogger(), stateDB)
+		// block for height 2
+		block, _ := state.MakeBlock(2, makeTxs(2), lastCommit, nil, proposer.Address, 0, proof)
+
+		_, err = sm.ExecCommitBlock(proxyApp.Consensus(), block, log.TestingLogger(), stateDB, state.VoterParams)
 		require.Nil(t, err, tc.desc)
 
 		// -> app receives a list of validators with a bool indicating if they signed
@@ -121,7 +125,7 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 	require.Nil(t, err)
 	defer proxyApp.Stop()
 
-	state, stateDB, _ := makeState(2, 12)
+	state, stateDB, privVals := makeState(2, 12)
 
 	prevHash := state.LastBlockID.Hash
 	prevParts := types.PartSetHeader{}
@@ -133,7 +137,7 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 	ev2 := types.NewMockEvidence(height2, time.Now(), idx2, val2)
 
 	now := tmtime.Now()
-	valSet := state.Validators
+	valSet := state.Voters
 	testCases := []struct {
 		desc                        string
 		evidence                    []types.Evidence
@@ -159,11 +163,13 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 	commitSigs := []types.CommitSig{commitSig0, commitSig1}
 	lastCommit := types.NewCommit(9, 0, prevBlockID, commitSigs)
 	for _, tc := range testCases {
-
-		block, _ := state.MakeBlock(10, makeTxs(2), lastCommit, nil, state.Validators.GetProposer().Address)
+		message := state.MakeHashMessage(0)
+		proposer := state.Validators.SelectProposer(state.LastProofHash, 1, 0)
+		proof, _ := privVals[proposer.Address.String()].GenerateVRFProof(message)
+		block, _ := state.MakeBlock(10, makeTxs(2), lastCommit, nil, proposer.Address, 0, proof)
 		block.Time = now
 		block.Evidence.Evidence = tc.evidence
-		_, err = sm.ExecCommitBlock(proxyApp.Consensus(), block, log.TestingLogger(), stateDB)
+		_, err = sm.ExecCommitBlock(proxyApp.Consensus(), block, log.TestingLogger(), stateDB, state.VoterParams)
 		require.Nil(t, err, tc.desc)
 
 		// -> app must receive an index of the byzantine validator
@@ -307,7 +313,7 @@ func TestUpdateValidators(t *testing.T) {
 				assert.NoError(t, err)
 				require.Equal(t, tc.resultingSet.Size(), tc.currentSet.Size())
 
-				assert.Equal(t, tc.resultingSet.TotalVotingPower(), tc.currentSet.TotalVotingPower())
+				assert.Equal(t, tc.resultingSet.TotalStakingPower(), tc.currentSet.TotalStakingPower())
 
 				assert.Equal(t, tc.resultingSet.Validators[0].Address, tc.currentSet.Validators[0].Address)
 				if tc.resultingSet.Size() > 1 {
@@ -327,7 +333,7 @@ func TestEndBlockValidatorUpdates(t *testing.T) {
 	require.Nil(t, err)
 	defer proxyApp.Stop()
 
-	state, stateDB, _ := makeState(1, 1)
+	state, stateDB, privVals := makeState(1, 1)
 
 	blockExec := sm.NewBlockExecutor(
 		stateDB,
@@ -350,7 +356,7 @@ func TestEndBlockValidatorUpdates(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	block := makeBlock(state, 1)
+	block := makeBlockWithPrivVal(state, privVals[state.Validators.Validators[0].Address.String()], 1)
 	blockID := types.BlockID{Hash: block.Hash(), PartsHeader: block.MakePartSet(testPartSize).Header()}
 
 	pubkey := ed25519.GenPrivKey().PubKey()
@@ -376,7 +382,7 @@ func TestEndBlockValidatorUpdates(t *testing.T) {
 		require.True(t, ok, "Expected event of type EventDataValidatorSetUpdates, got %T", msg.Data())
 		if assert.NotEmpty(t, event.ValidatorUpdates) {
 			assert.Equal(t, pubkey, event.ValidatorUpdates[0].PubKey)
-			assert.EqualValues(t, 10, event.ValidatorUpdates[0].VotingPower)
+			assert.EqualValues(t, 10, event.ValidatorUpdates[0].StakingPower)
 		}
 	case <-updatesSub.Cancelled():
 		t.Fatalf("updatesSub was cancelled (reason: %v)", updatesSub.Err())

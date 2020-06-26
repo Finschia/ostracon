@@ -34,12 +34,22 @@ type GenesisValidator struct {
 	Name    string        `json:"name"`
 }
 
+type VoterParams struct {
+	VoterElectionThreshold          int `json:"voter_election_threshold"`
+	MaxTolerableByzantinePercentage int `json:"max_tolerable_byzantine_percentage"`
+
+	// As a unit of precision, if it is 1, it is 0.9, and if it is 2, it is 0.99.
+	// The default is 5, with a precision of 0.99999.
+	ElectionPrecision int `json:"election_precision"`
+}
+
 // GenesisDoc defines the initial conditions for a tendermint blockchain, in particular its validator set.
 type GenesisDoc struct {
 	GenesisTime     time.Time          `json:"genesis_time"`
 	ChainID         string             `json:"chain_id"`
 	ConsensusParams *ConsensusParams   `json:"consensus_params,omitempty"`
 	Validators      []GenesisValidator `json:"validators,omitempty"`
+	VoterParams     *VoterParams       `json:"voter_params,omitempty"`
 	AppHash         tmbytes.HexBytes   `json:"app_hash"`
 	AppState        json.RawMessage    `json:"app_state,omitempty"`
 }
@@ -79,6 +89,12 @@ func (genDoc *GenesisDoc) ValidateAndComplete() error {
 		return err
 	}
 
+	if genDoc.VoterParams == nil {
+		genDoc.VoterParams = DefaultVoterParams()
+	} else if err := genDoc.VoterParams.Validate(); err != nil {
+		return err
+	}
+
 	for i, v := range genDoc.Validators {
 		if v.Power == 0 {
 			return errors.Errorf("the genesis file cannot contain validators with no voting power: %v", v)
@@ -96,6 +112,11 @@ func (genDoc *GenesisDoc) ValidateAndComplete() error {
 	}
 
 	return nil
+}
+
+// Hash returns the hash of the GenesisDoc
+func (genDoc *GenesisDoc) Hash() []byte {
+	return cdcEncode(genDoc)
 }
 
 //------------------------------------------------------------

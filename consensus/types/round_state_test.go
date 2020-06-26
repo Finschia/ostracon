@@ -17,7 +17,7 @@ func BenchmarkRoundStateDeepCopy(b *testing.B) {
 
 	// Random validators
 	nval, ntxs := 100, 100
-	vset, _ := types.RandValidatorSet(nval, 1)
+	_, vset, _ := types.RandVoterSet(nval, 1)
 	commitSigs := make([]types.CommitSig, nval)
 	blockID := types.BlockID{
 		Hash: tmrand.Bytes(tmhash.Size),
@@ -47,7 +47,7 @@ func BenchmarkRoundStateDeepCopy(b *testing.B) {
 			LastBlockID:     blockID,
 			LastCommitHash:  tmrand.Bytes(20),
 			DataHash:        tmrand.Bytes(20),
-			ValidatorsHash:  tmrand.Bytes(20),
+			VotersHash:      tmrand.Bytes(20),
 			ConsensusHash:   tmrand.Bytes(20),
 			AppHash:         tmrand.Bytes(20),
 			LastResultsHash: tmrand.Bytes(20),
@@ -72,7 +72,7 @@ func BenchmarkRoundStateDeepCopy(b *testing.B) {
 	rs := &RoundState{
 		StartTime:          tmtime.Now(),
 		CommitTime:         tmtime.Now(),
-		Validators:         vset,
+		Voters:             vset,
 		Proposal:           proposal,
 		ProposalBlock:      block,
 		ProposalBlockParts: parts,
@@ -82,7 +82,7 @@ func BenchmarkRoundStateDeepCopy(b *testing.B) {
 		ValidBlockParts:    parts,
 		Votes:              nil, // TODO
 		LastCommit:         nil, // TODO
-		LastValidators:     vset,
+		LastVoters:         vset,
 	}
 	b.StartTimer()
 

@@ -26,16 +26,14 @@ func initializeValidatorState(valAddr []byte, height int64) dbm.DB {
 	stateDB := dbm.NewMemDB()
 
 	// create validator set and state
-	valSet := &types.ValidatorSet{
-		Validators: []*types.Validator{
-			{Address: valAddr},
-		},
+	vals := []*types.Validator{
+		{Address: valAddr, StakingPower: 1},
 	}
 	state := sm.State{
 		LastBlockHeight:             0,
 		LastBlockTime:               tmtime.Now(),
-		Validators:                  valSet,
-		NextValidators:              valSet.CopyIncrementProposerPriority(1),
+		Validators:                  types.NewValidatorSet(vals),
+		NextValidators:              types.NewValidatorSet(vals),
 		LastHeightValidatorsChanged: 1,
 		ConsensusParams: types.ConsensusParams{
 			Evidence: types.EvidenceParams{

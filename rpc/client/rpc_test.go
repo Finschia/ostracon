@@ -173,15 +173,13 @@ func TestGenesisAndValidators(t *testing.T) {
 		gval := gen.Genesis.Validators[0]
 
 		// get the current validators
-		vals, err := c.Validators(nil, 0, 0)
+		vals, err := c.Voters(nil, 0, 0)
 		require.Nil(t, err, "%d: %+v", i, err)
-		require.Equal(t, 1, len(vals.Validators))
-		require.Equal(t, 1, vals.Count)
-		require.Equal(t, 1, vals.Total)
-		val := vals.Validators[0]
+		require.Equal(t, 1, len(vals.Voters))
+		val := vals.Voters[0]
 
 		// make sure the current set is also the genesis set
-		assert.Equal(t, gval.Power, val.VotingPower)
+		assert.Equal(t, gval.Power, val.StakingPower)
 		assert.Equal(t, gval.PubKey, val.PubKey)
 	}
 }
@@ -511,14 +509,14 @@ func TestTxSearch(t *testing.T) {
 		require.Len(t, result.Txs, 0)
 
 		// check sorting
-		result, err = c.TxSearch(fmt.Sprintf("tx.height >= 1"), false, 1, 30, "asc")
+		result, err = c.TxSearch("tx.height >= 1", false, 1, 30, "asc")
 		require.Nil(t, err)
 		for k := 0; k < len(result.Txs)-1; k++ {
 			require.LessOrEqual(t, result.Txs[k].Height, result.Txs[k+1].Height)
 			require.LessOrEqual(t, result.Txs[k].Index, result.Txs[k+1].Index)
 		}
 
-		result, err = c.TxSearch(fmt.Sprintf("tx.height >= 1"), false, 1, 30, "desc")
+		result, err = c.TxSearch("tx.height >= 1", false, 1, 30, "desc")
 		require.Nil(t, err)
 		for k := 0; k < len(result.Txs)-1; k++ {
 			require.GreaterOrEqual(t, result.Txs[k].Height, result.Txs[k+1].Height)

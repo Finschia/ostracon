@@ -30,6 +30,9 @@ func TestByzantine(t *testing.T) {
 	css, cleanup := randConsensusNet(N, "consensus_byzantine_test", newMockTickerFunc(false), newCounter)
 	defer cleanup()
 
+	// get proposer of first block
+	proposerIdx, _ := findProposer(css[0])
+
 	// give the byzantine validator a normal ticker
 	ticker := NewTimeoutTicker()
 	ticker.SetLogger(css[0].Logger)
@@ -52,7 +55,7 @@ func TestByzantine(t *testing.T) {
 	reactors := make([]p2p.Reactor, N)
 	for i := 0; i < N; i++ {
 		// make first val byzantine
-		if i == 0 {
+		if i == proposerIdx {
 			// NOTE: Now, test validators are MockPV, which by default doesn't
 			// do any safety checks.
 			css[i].privValidator.(types.MockPV).DisableChecks()
@@ -78,7 +81,7 @@ func TestByzantine(t *testing.T) {
 		var conRI p2p.Reactor = conR
 
 		// make first val byzantine
-		if i == 0 {
+		if i == proposerIdx {
 			conRI = NewByzantineReactor(conR)
 		}
 
@@ -102,7 +105,7 @@ func TestByzantine(t *testing.T) {
 		return switches[i]
 	}, func(sws []*p2p.Switch, i, j int) {
 		// the network starts partitioned with globally active adversary
-		if i != 0 {
+		if i != proposerIdx && j != proposerIdx {
 			return
 		}
 		p2p.Connect2Switches(sws, i, j)
@@ -110,20 +113,22 @@ func TestByzantine(t *testing.T) {
 
 	// start the non-byz state machines.
 	// note these must be started before the byz
-	for i := 1; i < N; i++ {
-		cr := reactors[i].(*Reactor)
-		cr.SwitchToConsensus(cr.conS.GetState(), 0)
+	for i := 0; i < N; i++ {
+		if i != proposerIdx {
+			cr := reactors[i].(*Reactor)
+			cr.SwitchToConsensus(cr.conS.GetState(), 0)
+		}
 	}
 
 	// start the byzantine state machine
-	byzR := reactors[0].(*ByzantineReactor)
+	byzR := reactors[proposerIdx].(*ByzantineReactor)
 	s := byzR.reactor.conS.GetState()
 	byzR.reactor.SwitchToConsensus(s, 0)
 
 	// byz proposer sends one block to peers[0]
 	// and the other block to peers[1] and peers[2].
 	// note peers and switches order don't match.
-	peers := switches[0].Peers().List()
+	peers := switches[proposerIdx].Peers().List()
 
 	// partition A
 	ind0 := getSwitchIndex(switches, peers[0])
@@ -133,6 +138,7 @@ func TestByzantine(t *testing.T) {
 	ind2 := getSwitchIndex(switches, peers[2])
 	p2p.Connect2Switches(switches, ind1, ind2)
 
+	// FIXME: test stops at the following step after the introduction of VRF elections
 	// wait for someone in the big partition (B) to make a block
 	<-blocksSubs[ind2].Out()
 
@@ -144,11 +150,13 @@ func TestByzantine(t *testing.T) {
 	// (one of them already has)
 	wg := new(sync.WaitGroup)
 	wg.Add(2)
-	for i := 1; i < N-1; i++ {
-		go func(j int) {
-			<-blocksSubs[j].Out()
-			wg.Done()
-		}(i)
+	for i := 0; i < N-1; i++ {
+		if i != proposerIdx {
+			go func(j int) {
+				<-blocksSubs[j].Out()
+				wg.Done()
+			}(i)
+		}
 	}
 
 	done := make(chan struct{})
@@ -169,6 +177,12 @@ func TestByzantine(t *testing.T) {
 	}
 }
 
+// find proposer of current height and round from State
+func findProposer(state *State) (int, *types.Validator) {
+	proposer := state.Validators.SelectProposer(state.state.LastProofHash, state.Height, state.Round)
+	return state.Voters.GetByAddress(proposer.PubKey.Address())
+}
+
 //-------------------------------
 // byzantine consensus functions
 
@@ -177,7 +191,7 @@ func byzantineDecideProposalFunc(t *testing.T, height int64, round int, cs *Stat
 	// Avoid sending on internalMsgQueue and running consensus state.
 
 	// Create a new proposal block from state/txs from the mempool.
-	block1, blockParts1 := cs.createProposalBlock()
+	block1, blockParts1 := cs.createProposalBlock(round)
 	polRound, propBlockID := cs.ValidRound, types.BlockID{Hash: block1.Hash(), PartsHeader: blockParts1.Header()}
 	proposal1 := types.NewProposal(height, round, polRound, propBlockID)
 	if err := cs.privValidator.SignProposal(cs.state.ChainID, proposal1); err != nil {
@@ -185,7 +199,7 @@ func byzantineDecideProposalFunc(t *testing.T, height int64, round int, cs *Stat
 	}
 
 	// Create a new proposal block from state/txs from the mempool.
-	block2, blockParts2 := cs.createProposalBlock()
+	block2, blockParts2 := cs.createProposalBlock(round)
 	polRound, propBlockID = cs.ValidRound, types.BlockID{Hash: block2.Hash(), PartsHeader: blockParts2.Header()}
 	proposal2 := types.NewProposal(height, round, polRound, propBlockID)
 	if err := cs.privValidator.SignProposal(cs.state.ChainID, proposal2); err != nil {

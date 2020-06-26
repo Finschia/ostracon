@@ -99,7 +99,7 @@ func TestABCIHeader(t *testing.T) {
 		protocolVersion, "chainID", timestamp, lastBlockID,
 		[]byte("valHash"), []byte("nextValHash"),
 		[]byte("consHash"), []byte("appHash"), []byte("lastResultsHash"),
-		[]byte("proposerAddress"),
+		[]byte("proposerAddress"), 0, []byte("lastProof"),
 	)
 
 	cdc := amino.NewCodec()
@@ -142,7 +142,7 @@ func TestABCIEvidence(t *testing.T) {
 	}
 	abciEv := TM2PB.Evidence(
 		ev,
-		NewValidatorSet([]*Validator{NewValidator(pubKey, 10)}),
+		ToVoterAll([]*Validator{NewValidator(pubKey, 10)}),
 		time.Now(),
 	)
 

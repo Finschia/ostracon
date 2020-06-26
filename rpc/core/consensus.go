@@ -7,28 +7,37 @@ import (
 	rpctypes "github.com/tendermint/tendermint/rpc/jsonrpc/types"
 	sm "github.com/tendermint/tendermint/state"
 	"github.com/tendermint/tendermint/types"
+	dbm "github.com/tendermint/tm-db"
 )
 
 // Validators gets the validator set at the given block height.
 //
 // If no height is provided, it will fetch the latest validator set. Note the
-// validators are sorted by their voting power - this is the canonical order
-// for the validators in the set as used in computing their Merkle root.
+// voters are sorted by their voting power - this is the canonical order
+// for the voters in the set as used in computing their Merkle root.
 //
 // More: https://docs.tendermint.com/master/rpc/#/Info/validators
-func Validators(ctx *rpctypes.Context, heightPtr *int64, page, perPage int) (*ctypes.ResultValidators, error) {
-	// The latest validator that we know is the NextValidator of the last block.
+func Voters(ctx *rpctypes.Context, heightPtr *int64, page, perPage int) (*ctypes.ResultVoters, error) {
+	return voters(ctx, heightPtr, page, perPage, sm.LoadVoters)
+}
+
+func voters(ctx *rpctypes.Context, heightPtr *int64, page, perPage int,
+	loadFunc func(db dbm.DB, height int64, voterParams *types.VoterParams) (*types.VoterSet, error)) (
+	*ctypes.ResultVoters, error) {
+	// The latest validator that we know is the
+	// NextValidator of the last block.
 	height, err := getHeight(latestUncommittedHeight(), heightPtr)
 	if err != nil {
 		return nil, err
 	}
 
-	validators, err := sm.LoadValidators(env.StateDB, height)
+	voters, err := loadFunc(env.StateDB, height, env.ConsensusState.GetState().VoterParams)
+	//validators, err := sm.LoadValidators(env.StateDB, height)
 	if err != nil {
 		return nil, err
 	}
 
-	totalCount := len(validators.Validators)
+	totalCount := len(voters.Voters)
 	perPage = validatePerPage(perPage)
 	page, err = validatePage(page, perPage, totalCount)
 	if err != nil {
@@ -37,13 +46,11 @@ func Validators(ctx *rpctypes.Context, heightPtr *int64, page, perPage int) (*ct
 
 	skipCount := validateSkipCount(page, perPage)
 
-	v := validators.Validators[skipCount : skipCount+tmmath.MinInt(perPage, totalCount-skipCount)]
+	v := voters.Voters[skipCount : skipCount+tmmath.MinInt(perPage, totalCount-skipCount)]
 
-	return &ctypes.ResultValidators{
+	return &ctypes.ResultVoters{
 		BlockHeight: height,
-		Validators:  v,
-		Count:       len(v),
-		Total:       totalCount}, nil
+		Voters:      v}, nil
 }
 
 // DumpConsensusState dumps consensus state.

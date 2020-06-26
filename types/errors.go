@@ -22,6 +22,17 @@ type (
 	ErrUnsupportedKey struct {
 		Expected string
 	}
+
+	// VRF verification failure
+	ErrInvalidProof struct {
+		ErrorMessage string
+	}
+
+	// invalid round
+	ErrInvalidRound struct {
+		ConsensusRound int
+		BlockRound     int
+	}
 )
 
 func NewErrInvalidCommitHeight(expected, actual int64) ErrInvalidCommitHeight {
@@ -54,4 +65,20 @@ func NewErrUnsupportedKey(expected string) ErrUnsupportedKey {
 
 func (e ErrUnsupportedKey) Error() string {
 	return fmt.Sprintf("the private key is not a %s", e.Expected)
+}
+
+func NewErrInvalidProof(message string) ErrInvalidProof {
+	return ErrInvalidProof{ErrorMessage: message}
+}
+
+func (e ErrInvalidProof) Error() string {
+	return fmt.Sprintf("Proof verification failed: %s", e.ErrorMessage)
+}
+
+func NewErrInvalidRound(consensusRound, blockRound int) ErrInvalidRound {
+	return ErrInvalidRound{ConsensusRound: consensusRound, BlockRound: blockRound}
+}
+
+func (e ErrInvalidRound) Error() string {
+	return fmt.Sprintf("Block round(%d) is mismatched to consensus round(%d)", e.BlockRound, e.ConsensusRound)
 }

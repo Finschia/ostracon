@@ -31,6 +31,12 @@ commands:
           command: |
             sudo apt-get update && sudo apt-get -y install libtool
             make libsodium
+  setup_bls_library_build:
+    steps:
+      - run:
+          name: "Install build tools to build BLS library"
+          command: |
+            sudo apt-get update && sudo apt-get -y install gcc
   run_test:
     parameters:
       script_path:
@@ -48,6 +54,7 @@ commands:
           keys:
             - go-mod-v1-{{ checksum "go.sum" }}
       - make_libsodium
+      - setup_bls_library_build
       - run:
           name: "Running test"
           command: |
@@ -56,6 +63,7 @@ commands:
 jobs:
   setup_dependencies:
     executor: golang
+    resource_class: large
     steps:
       - checkout_with_submodules
       - restore_cache:
@@ -74,6 +82,7 @@ jobs:
       - attach_workspace:
           at: /tmp/workspace
       - make_libsodium
+      - setup_bls_library_build
       - run:
           name: "Build binaries"
           command: make install install_abci
@@ -94,12 +103,14 @@ jobs:
 
   test_persistence:
     executor: golang
+    resource_class: large
     steps:
       - run_test:
           script_path: test/persist/test_failure_indices.sh
 
   test_cover:
     executor: golang
+    resource_class: large
     parallelism: 4
     steps:
       - restore_cache:
@@ -111,7 +122,6 @@ jobs:
           name: "Restore go module cache"
           keys:
             - go-mod-v2-{{ checksum "go.sum" }}
-      - make_libsodium
       - run:
           name: "Run tests"
           command: |
@@ -141,16 +151,16 @@ jobs:
     parallelism: 1
     steps:
       - checkout_with_submodules
-      - make_libsodium
       - run:
           name: run localnet and exit on failure
           command: |
             set -x
-            docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang make build-linux
+            docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang:1.14.1-alpine /bin/sh -c "apk add --update git make gcc libc-dev build-base && make build"
             make localnet-start &
             ./scripts/localnet-blocks-test.sh 40 5 10 localhost
 
   test_p2p:
+    resource_class: xlarge
     environment:
       GOBIN: /home/circleci/.go_workspace/bin
       GOPATH: /home/circleci/.go_workspace
@@ -163,37 +173,12 @@ jobs:
     steps:
       - checkout_with_submodules
       - make_libsodium
+      - setup_bls_library_build
       - run: mkdir -p $GOPATH/src/github.com/tendermint
       - run: ln -sf /home/circleci/project $GOPATH/src/github.com/tendermint/tendermint
       - run: bash test/p2p/circleci.sh << parameters.ipv >>
       - store_artifacts:
           path: /home/circleci/project/test/p2p/logs
-
-# TODO We need to replace the docker image with the image that adds libsodium library.
-#  upload_coverage:
-#    executor: golang
-#    steps:
-#      - attach_workspace:
-#          at: /tmp/workspace
-#      - restore_cache:
-#          name: "Restore source code cache"
-#          keys:
-#            - go-src-v1-{{ .Revision }}
-#      - checkout
-#      - restore_cache:
-#          name: "Restore go module cache"
-#          keys:
-#            - go-mod-v2-{{ checksum "go.sum" }}
-#      - run:
-#          name: gather
-#          command: |
-#            echo "mode: atomic" > coverage.txt
-#            for prof in $(ls /tmp/workspace/profiles/); do
-#              tail -n +2 /tmp/workspace/profiles/"$prof" >> coverage.txt
-#            done
-#      - run:
-#          name: upload
-#          command: bash .circleci/codecov.sh -f coverage.txt
 
   deploy_docs:
     executor: docs
@@ -268,6 +253,21 @@ jobs:
 #          paths:
 #            - "*.zip"
 #            - "tendermint_linux_amd64"
+
+  lint:
+    executor: golang
+    parallelism: 1
+    steps:
+      - checkout
+      - restore_cache:
+          name: "Restore go modules cache"
+          keys:
+            - go-mod-v1-{{ checksum "go.sum" }}
+      - run:
+          name: "Run linter"
+          command: |
+            curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.23.8
+            make lint
 
   release_artifacts:
     executor: golang
@@ -348,31 +348,33 @@ jobs:
       - store_artifacts:
           path: /go/src/github.com/tendermint/tendermint/tendermint-*.tar.gz
 
-  # # Test RPC implementation against the swagger documented specs
-  # contract_tests:
-  #   working_directory: /home/circleci/.go_workspace/src/github.com/tendermint/tendermint
-  #   machine:
-  #     image: circleci/classic:latest
-  #   environment:
-  #     GOBIN: /home/circleci/.go_workspace/bin
-  #     GOPATH: /home/circleci/.go_workspace/
-  #     GOOS: linux
-  #     GOARCH: amd64
-  #   parallelism: 1
-  #   steps:
-  #     - checkout_with_submodules
-  #     - run:
-  #         name: Test RPC endpoints against swagger documentation
-  #         command: |
-  #           set -x
-  #           export PATH=~/.local/bin:$PATH
-  #           # install node and dredd
-  #           ./scripts/get_nodejs.sh
-  #           # build the binaries with a proper version of Go
-  #           docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang make build-linux build-contract-tests-hooks
-  #           # This docker image works with go 1.7, we can install here the hook handler that contract-tests is going to use
-  #           go get github.com/snikch/goodman/cmd/goodman
-  #           make contract-tests
+  contract_tests:
+    working_directory: /home/circleci/.go_workspace/src/github.com/tendermint/tendermint
+    machine:
+      image: circleci/classic:latest
+    environment:
+      GOBIN: /home/circleci/.go_workspace/bin
+      GOPATH: /home/circleci/.go_workspace/
+      GOOS: linux
+      GOARCH: amd64
+    parallelism: 1
+    steps:
+      - checkout_with_submodules
+      - run:
+          name: Test RPC endpoints against swagger documentation
+          command: |
+            set -x
+            export PATH=~/.local/bin:$PATH
+            # install node and dredd
+            ./scripts/get_nodejs.sh
+            # build the binaries with a proper version of Go
+            # Build Tendermint
+            docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang:1.14.1-alpine /bin/sh -c "apk add --update git make gcc libc-dev build-base && make build"
+            # Build contract-tests
+            docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint ubuntu:20.10 ./scripts/prepare_dredd_test.sh
+            # This docker image works with go 1.7, we can install here the hook handler that contract-tests is going to use
+            go get github.com/snikch/goodman/cmd/goodman
+            make contract-tests
 
 workflows:
   version: 2
@@ -393,6 +395,7 @@ workflows:
             branches:
               only:
                 - docs-staging
+      - lint
       - setup_dependencies
       - test_cover:
           requires:
@@ -403,22 +406,18 @@ workflows:
       - localnet:
           requires:
             - setup_dependencies
-      - test_p2p
       - test_p2p:
             name: test_p2p_ipv6
             ipv: 6
-#      - upload_coverage:
-#          requires:
-#            - test_cover
       - reproducible_builds:
           filters:
             branches:
               only:
                 - master
                 - /v[0-9]+\.[0-9]+/
-      # - contract_tests:
-      #     requires:
-      #       - setup_dependencies
+      - contract_tests:
+          requires:
+            - setup_dependencies
 
 #  release:
 #    jobs:

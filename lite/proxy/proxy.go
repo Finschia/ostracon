@@ -131,9 +131,9 @@ func makeTxFunc(c rpcclient.Client) func(ctx *rpctypes.Context, hash []byte, pro
 func makeValidatorsFunc(c rpcclient.Client) func(
 	ctx *rpctypes.Context,
 	height *int64,
-) (*ctypes.ResultValidators, error) {
-	return func(ctx *rpctypes.Context, height *int64) (*ctypes.ResultValidators, error) {
-		return c.Validators(height, 0, 0)
+) (*ctypes.ResultVoters, error) {
+	return func(ctx *rpctypes.Context, height *int64) (*ctypes.ResultVoters, error) {
+		return c.Voters(height, 0, 0)
 	}
 }
 

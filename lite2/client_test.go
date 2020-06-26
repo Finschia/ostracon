@@ -24,7 +24,7 @@ const (
 
 var (
 	keys     = genPrivKeys(4)
-	vals     = keys.ToValidators(20, 10)
+	vals     = types.ToVoterAll(keys.ToValidators(20, 10).Validators)
 	bTime, _ = time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
 	h1       = keys.GenSignedHeader(chainID, 1, bTime, nil, vals, vals,
 		hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys))
@@ -40,7 +40,7 @@ var (
 		Height: 1,
 		Hash:   h1.Hash(),
 	}
-	valSet = map[int64]*types.ValidatorSet{
+	valSet = map[int64]*types.VoterSet{
 		1: vals,
 		2: vals,
 		3: vals,
@@ -64,12 +64,12 @@ var (
 
 func TestClient_SequentialVerification(t *testing.T) {
 	newKeys := genPrivKeys(4)
-	newVals := newKeys.ToValidators(10, 1)
+	newVals := types.ToVoterAll(newKeys.ToValidators(10, 1).Validators)
 
 	testCases := []struct {
 		name         string
 		otherHeaders map[int64]*types.SignedHeader // all except ^
-		vals         map[int64]*types.ValidatorSet
+		vals         map[int64]*types.VoterSet
 		initErr      bool
 		verifyErr    bool
 	}{
@@ -87,7 +87,7 @@ func TestClient_SequentialVerification(t *testing.T) {
 				1: keys.GenSignedHeader(chainID, 1, bTime.Add(1*time.Hour), nil, vals, vals,
 					hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys)),
 			},
-			map[int64]*types.ValidatorSet{
+			map[int64]*types.VoterSet{
 				1: vals,
 			},
 			true,
@@ -128,7 +128,7 @@ func TestClient_SequentialVerification(t *testing.T) {
 		{
 			"bad: different validator set at height 3",
 			headerSet,
-			map[int64]*types.ValidatorSet{
+			map[int64]*types.VoterSet{
 				1: vals,
 				2: vals,
 				3: newVals,
@@ -178,16 +178,16 @@ func TestClient_SequentialVerification(t *testing.T) {
 func TestClient_SkippingVerification(t *testing.T) {
 	// required for 2nd test case
 	newKeys := genPrivKeys(4)
-	newVals := newKeys.ToValidators(10, 1)
+	newVals := types.ToVoterAll(newKeys.ToValidators(10, 1).Validators)
 
 	// 1/3+ of vals, 2/3- of newVals
 	transitKeys := keys.Extend(3)
-	transitVals := transitKeys.ToValidators(10, 1)
+	transitVals := types.ToVoterAll(transitKeys.ToValidators(10, 1).Validators)
 
 	testCases := []struct {
 		name         string
 		otherHeaders map[int64]*types.SignedHeader // all except ^
-		vals         map[int64]*types.ValidatorSet
+		vals         map[int64]*types.VoterSet
 		initErr      bool
 		verifyErr    bool
 	}{
@@ -211,7 +211,7 @@ func TestClient_SkippingVerification(t *testing.T) {
 				3: transitKeys.GenSignedHeader(chainID, 3, bTime.Add(2*time.Hour), nil, transitVals, transitVals,
 					hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(transitKeys)),
 			},
-			map[int64]*types.ValidatorSet{
+			map[int64]*types.VoterSet{
 				1: vals,
 				2: vals,
 				3: transitVals,
@@ -231,7 +231,7 @@ func TestClient_SkippingVerification(t *testing.T) {
 				3: newKeys.GenSignedHeader(chainID, 3, bTime.Add(2*time.Hour), nil, newVals, newVals,
 					hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(newKeys)),
 			},
-			map[int64]*types.ValidatorSet{
+			map[int64]*types.VoterSet{
 				1: vals,
 				2: vals,
 				3: newVals,
@@ -251,7 +251,7 @@ func TestClient_SkippingVerification(t *testing.T) {
 				3: newKeys.GenSignedHeader(chainID, 3, bTime.Add(2*time.Hour), nil, newVals, newVals,
 					hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(newKeys)),
 			},
-			map[int64]*types.ValidatorSet{
+			map[int64]*types.VoterSet{
 				1: vals,
 				2: vals,
 				3: newVals,
@@ -342,7 +342,7 @@ func TestClient_Cleanup(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, h)
 
-	valSet, _, err := c.TrustedValidatorSet(1)
+	valSet, _, err := c.TrustedVoterSet(1)
 	assert.Error(t, err)
 	assert.Nil(t, valSet)
 }
@@ -370,11 +370,11 @@ func TestClientRestoresTrustedHeaderAfterStartup1(t *testing.T) {
 		assert.NotNil(t, h)
 		assert.Equal(t, h.Hash(), h1.Hash())
 
-		valSet, _, err := c.TrustedValidatorSet(1)
+		valSet, _, err := c.TrustedVoterSet(1)
 		assert.NoError(t, err)
 		assert.NotNil(t, valSet)
 		if assert.NotNil(t, valSet) {
-			assert.Equal(t, h.ValidatorsHash.Bytes(), valSet.Hash())
+			assert.Equal(t, h.VotersHash.Bytes(), valSet.Hash())
 		}
 	}
 
@@ -417,11 +417,11 @@ func TestClientRestoresTrustedHeaderAfterStartup1(t *testing.T) {
 			assert.Equal(t, h.Hash(), header1.Hash())
 		}
 
-		valSet, _, err := c.TrustedValidatorSet(1)
+		valSet, _, err := c.TrustedVoterSet(1)
 		assert.NoError(t, err)
 		assert.NotNil(t, valSet)
 		if assert.NotNil(t, valSet) {
-			assert.Equal(t, h.ValidatorsHash.Bytes(), valSet.Hash())
+			assert.Equal(t, h.VotersHash.Bytes(), valSet.Hash())
 		}
 	}
 }
@@ -454,11 +454,11 @@ func TestClientRestoresTrustedHeaderAfterStartup2(t *testing.T) {
 		assert.NotNil(t, h)
 		assert.Equal(t, h.Hash(), h1.Hash())
 
-		valSet, _, err := c.TrustedValidatorSet(1)
+		valSet, _, err := c.TrustedVoterSet(1)
 		assert.NoError(t, err)
 		assert.NotNil(t, valSet)
 		if assert.NotNil(t, valSet) {
-			assert.Equal(t, h.ValidatorsHash.Bytes(), valSet.Hash())
+			assert.Equal(t, h.VotersHash.Bytes(), valSet.Hash())
 		}
 	}
 
@@ -504,7 +504,7 @@ func TestClientRestoresTrustedHeaderAfterStartup2(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, h)
 
-		valSet, _, err := c.TrustedValidatorSet(1)
+		valSet, _, err := c.TrustedVoterSet(1)
 		assert.Error(t, err)
 		assert.Nil(t, valSet)
 	}
@@ -539,11 +539,11 @@ func TestClientRestoresTrustedHeaderAfterStartup3(t *testing.T) {
 		assert.NotNil(t, h)
 		assert.Equal(t, h.Hash(), h1.Hash())
 
-		valSet, _, err := c.TrustedValidatorSet(1)
+		valSet, _, err := c.TrustedVoterSet(1)
 		assert.NoError(t, err)
 		assert.NotNil(t, valSet)
 		if assert.NotNil(t, valSet) {
-			assert.Equal(t, h.ValidatorsHash.Bytes(), valSet.Hash())
+			assert.Equal(t, h.VotersHash.Bytes(), valSet.Hash())
 		}
 
 		// Check we no longer have 2nd header (+header2+).
@@ -551,7 +551,7 @@ func TestClientRestoresTrustedHeaderAfterStartup3(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, h)
 
-		valSet, _, err = c.TrustedValidatorSet(2)
+		valSet, _, err = c.TrustedVoterSet(2)
 		assert.Error(t, err)
 		assert.Nil(t, valSet)
 	}
@@ -600,11 +600,11 @@ func TestClientRestoresTrustedHeaderAfterStartup3(t *testing.T) {
 		assert.NotNil(t, h)
 		assert.Equal(t, h.Hash(), header1.Hash())
 
-		valSet, _, err := c.TrustedValidatorSet(1)
+		valSet, _, err := c.TrustedVoterSet(1)
 		assert.NoError(t, err)
 		assert.NotNil(t, valSet)
 		if assert.NotNil(t, valSet) {
-			assert.Equal(t, h.ValidatorsHash.Bytes(), valSet.Hash())
+			assert.Equal(t, h.VotersHash.Bytes(), valSet.Hash())
 		}
 
 		// Check we no longer have invalid 2nd header (+header2+).
@@ -612,7 +612,7 @@ func TestClientRestoresTrustedHeaderAfterStartup3(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, h)
 
-		valSet, _, err = c.TrustedValidatorSet(2)
+		valSet, _, err = c.TrustedVoterSet(2)
 		assert.Error(t, err)
 		assert.Nil(t, valSet)
 	}
@@ -636,10 +636,10 @@ func TestClient_Update(t *testing.T) {
 		assert.EqualValues(t, 3, h.Height)
 	}
 
-	valSet, _, err := c.TrustedValidatorSet(3)
+	valSet, _, err := c.TrustedVoterSet(3)
 	assert.NoError(t, err)
 	if assert.NotNil(t, valSet) {
-		assert.Equal(t, h.ValidatorsHash.Bytes(), valSet.Hash())
+		assert.Equal(t, h.VotersHash.Bytes(), valSet.Hash())
 	}
 }
 
@@ -678,7 +678,7 @@ func TestClient_Concurrency(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, h)
 
-			vals, _, err := c.TrustedValidatorSet(2)
+			vals, _, err := c.TrustedVoterSet(2)
 			assert.NoError(t, err)
 			assert.NotNil(t, vals)
 		}()
@@ -835,11 +835,11 @@ func TestClient_NewClientFromTrustedStore(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, h.Height)
 
-	valSet, _, err := c.TrustedValidatorSet(1)
+	valSet, _, err := c.TrustedVoterSet(1)
 	assert.NoError(t, err)
 	assert.NotNil(t, valSet)
 	if assert.NotNil(t, valSet) {
-		assert.Equal(t, h.ValidatorsHash.Bytes(), valSet.Hash())
+		assert.Equal(t, h.VotersHash.Bytes(), valSet.Hash())
 	}
 }
 
@@ -868,7 +868,7 @@ func TestClientRemovesWitnessIfItSendsUsIncorrectHeader(t *testing.T) {
 				hash("app_hash2"), hash("cons_hash"), hash("results_hash"),
 				len(keys), len(keys), types.BlockID{Hash: h1.Hash()}),
 		},
-		map[int64]*types.ValidatorSet{
+		map[int64]*types.VoterSet{
 			1: vals,
 			2: vals,
 		},
@@ -881,7 +881,7 @@ func TestClientRemovesWitnessIfItSendsUsIncorrectHeader(t *testing.T) {
 			2: h2,
 			3: {Header: nil, Commit: nil},
 		},
-		map[int64]*types.ValidatorSet{
+		map[int64]*types.VoterSet{
 			1: vals,
 			2: vals,
 		},
@@ -928,7 +928,7 @@ func TestClientTrustedValidatorSet(t *testing.T) {
 	_, err = c.VerifyHeaderAtHeight(2, bTime.Add(2*time.Hour).Add(1*time.Second))
 	require.NoError(t, err)
 
-	valSet, height, err := c.TrustedValidatorSet(0)
+	valSet, height, err := c.TrustedVoterSet(0)
 	assert.NoError(t, err)
 	assert.NotNil(t, valSet)
 	assert.EqualValues(t, 2, height)

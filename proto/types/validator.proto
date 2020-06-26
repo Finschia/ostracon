@@ -7,14 +7,14 @@ import "third_party/proto/gogoproto/gogo.proto";
 import "proto/crypto/keys/types.proto";
 
 message ValidatorSet {
-  repeated Validator validators         = 1;
-  Validator          proposer           = 2;
-  int64              total_voting_power = 3;
+  repeated Validator validators          = 1;
+  int64              total_staking_power = 2;
 }
 
 message Validator {
   bytes                                  address           = 1;
   tendermint.proto.crypto.keys.PublicKey pub_key           = 2 [(gogoproto.nullable) = false];
-  int64                                  voting_power      = 3;
-  int64                                  proposer_priority = 4;
+  int64                                  staking_power     = 3;
+  int64                                  voting_power      = 4;
+  int64                                  proposer_priority = 5;
 }

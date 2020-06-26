@@ -34,8 +34,8 @@ func TestInquirerValidPath(t *testing.T) {
 	count := 50
 	fcz := make([]FullCommit, count)
 	for i := 0; i < count; i++ {
-		vals := keys.ToValidators(vote, 0)
-		nextVals := nkeys.ToValidators(vote, 0)
+		vals := types.ToVoterAll(keys.ToValidators(vote, 0).Validators)
+		nextVals := types.ToVoterAll(nkeys.ToValidators(vote, 0).Validators)
 		h := int64(1 + i)
 		appHash := []byte(fmt.Sprintf("h=%d", h))
 		fcz[i] = keys.GenFullCommit(
@@ -81,7 +81,7 @@ func TestDynamicVerify(t *testing.T) {
 	trust := NewDBProvider("trust", dbm.NewMemDB())
 	source := NewDBProvider("source", dbm.NewMemDB())
 
-	// 10 commits with one valset, 1 to change,
+	// 10 commits with one voterSet, 1 to change,
 	// 10 commits with the next one
 	n1, n2 := 10, 10
 	nCommits := n1 + n2 + 1
@@ -92,9 +92,9 @@ func TestDynamicVerify(t *testing.T) {
 	chainID := "dynamic-verifier"
 	power := int64(10)
 	keys1 := genPrivKeys(5)
-	vals1 := keys1.ToValidators(power, 0)
+	vals1 := types.ToVoterAll(keys1.ToValidators(power, 0).Validators)
 	keys2 := genPrivKeys(5)
-	vals2 := keys2.ToValidators(power, 0)
+	vals2 := types.ToVoterAll(keys2.ToValidators(power, 0).Validators)
 
 	// make some commits with the first
 	for i := 0; i < n1; i++ {
@@ -130,7 +130,7 @@ func TestDynamicVerify(t *testing.T) {
 	// require.NoError(t, err)
 }
 
-func makeFullCommit(height int64, keys privKeys, vals, nextVals *types.ValidatorSet, chainID string) FullCommit {
+func makeFullCommit(height int64, keys privKeys, vals, nextVals *types.VoterSet, chainID string) FullCommit {
 	height++
 
 	consHash := tmhash.Sum([]byte("special-params"))
@@ -160,8 +160,8 @@ func TestInquirerVerifyHistorical(t *testing.T) {
 	consHash := []byte("special-params")
 	fcz := make([]FullCommit, count)
 	for i := 0; i < count; i++ {
-		vals := keys.ToValidators(vote, 0)
-		nextVals := nkeys.ToValidators(vote, 0)
+		vals := types.ToVoterAll(keys.ToValidators(vote, 0).Validators)
+		nextVals := types.ToVoterAll(nkeys.ToValidators(vote, 0).Validators)
 		h := int64(1 + i)
 		appHash := []byte(fmt.Sprintf("h=%d", h))
 		resHash := []byte(fmt.Sprintf("res=%d", h))
@@ -252,8 +252,8 @@ func TestConcurrencyInquirerVerify(t *testing.T) {
 	consHash := []byte("special-params")
 	fcz := make([]FullCommit, count)
 	for i := 0; i < count; i++ {
-		vals := keys.ToValidators(vote, 0)
-		nextVals := nkeys.ToValidators(vote, 0)
+		vals := types.ToVoterAll(keys.ToValidators(vote, 0).Validators)
+		nextVals := types.ToVoterAll(nkeys.ToValidators(vote, 0).Validators)
 		h := int64(1 + i)
 		appHash := []byte(fmt.Sprintf("h=%d", h))
 		resHash := []byte(fmt.Sprintf("res=%d", h))
