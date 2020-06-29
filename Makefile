@@ -281,6 +281,6 @@ endif
 # prerequisits: build-contract-tests-hooks build-linux
 # the two build commands were not added to let this command run from generic containers or machines.
 # The binaries should be built beforehand
-contract-tests:
+contract-tests: build-docker-localnode
 	dredd
 .PHONY: contract-tests
