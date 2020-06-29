@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 	"testing/quick"
+	"time"
 
 	tmtime "github.com/tendermint/tendermint/types/time"
 
@@ -1466,6 +1467,65 @@ func TestValSetUpdateOverflowRelated(t *testing.T) {
 			assert.Equal(t, tt.expectedVals, toTestValList(valSet.Validators))
 			verifyValidatorSet(t, valSet)
 		})
+	}
+}
+
+func TestVerifyCommitTrusting(t *testing.T) {
+	var (
+		blockID                                      = makeBlockIDRandom()
+		voteSet, _, originalVoterSet, privValidators = randVoteSet(1, 1, tmproto.PrecommitType, 6, 1)
+		commit, err                                  = MakeCommit(blockID, 1, 1, voteSet, privValidators, time.Now())
+		_, newVoterSet, _                            = RandVoterSet(2, 1)
+	)
+	require.NoError(t, err)
+
+	testCases := []struct {
+		//valSet *ValidatorSet
+		voterSet *VoterSet
+		err      bool
+	}{
+		// good
+		0: {
+			//valSet: originalValset,
+			voterSet: originalVoterSet,
+			err:      false,
+		},
+		// bad - no overlap between validator sets
+		1: {
+			voterSet: newVoterSet,
+			err:      true,
+		},
+		// good - first two are different but the rest of the same -> >1/3
+		2: {
+			//voterSet: WrapValidatorsToVoterSet(append(newValSet.Validators, originalValset.Validators...)),
+			voterSet: WrapValidatorsToVoterSet(append(newVoterSet.Voters, originalVoterSet.Voters...)),
+			err:      false,
+		},
+	}
+
+	for _, tc := range testCases {
+		err = tc.voterSet.VerifyCommitLightTrusting("test_chain_id", commit,
+			tmmath.Fraction{Numerator: 1, Denominator: 3})
+		if tc.err {
+			assert.Error(t, err)
+		} else {
+			assert.NoError(t, err)
+		}
+	}
+}
+
+func TestVerifyCommitTrustingErrorsOnOverflow(t *testing.T) {
+	var (
+		blockID                    = makeBlockIDRandom()
+		voteSet, _, voterSet, vals = randVoteSet(1, 1, tmproto.PrecommitType, 1, MaxTotalStakingPower)
+		commit, err                = MakeCommit(blockID, 1, 1, voteSet, vals, time.Now())
+	)
+	require.NoError(t, err)
+
+	err = voterSet.VerifyCommitLightTrusting("test_chain_id", commit,
+		tmmath.Fraction{Numerator: 25, Denominator: 55})
+	if assert.Error(t, err) {
+		assert.Contains(t, err.Error(), "int64 overflow")
 	}
 }
 
