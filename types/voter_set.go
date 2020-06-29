@@ -266,8 +266,13 @@ func (voters *VoterSet) VerifyCommitTrusting(chainID string, blockID BlockID,
 	var (
 		talliedVotingPower int64
 		seenVals           = make(map[int]int, len(commit.Signatures)) // validator index -> commit index
-		votingPowerNeeded  = (voters.TotalVotingPower() * trustLevel.Numerator) / trustLevel.Denominator
 	)
+
+	totalVotingPowerMulByNumerator, overflow := safeMul(voters.TotalVotingPower(), trustLevel.Numerator)
+	if overflow {
+		return errors.New("int64 overflow while calculating voting power needed. please provide smaller trustLevel numerator")
+	}
+	votingPowerNeeded := totalVotingPowerMulByNumerator / trustLevel.Denominator
 
 	for idx, commitSig := range commit.Signatures {
 		if commitSig.Absent() {

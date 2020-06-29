@@ -1386,7 +1386,7 @@ func TestVerifyCommitTrusting(t *testing.T) {
 func TestVerifyCommitTrustingErrorsOnOverflow(t *testing.T) {
 	var (
 		blockID                    = makeBlockIDRandom()
-		voteSet, _, voterSet, vals = randVoteSet(1, 1, PrecommitType, 1, MaxTotalVotingPower)
+		voteSet, _, voterSet, vals = randVoteSet(1, 1, PrecommitType, 1, MaxTotalStakingPower)
 		commit, err                = MakeCommit(blockID, 1, 1, voteSet, vals, time.Now())
 	)
 	require.NoError(t, err)
