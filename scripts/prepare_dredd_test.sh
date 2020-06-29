@@ -2,7 +2,7 @@
 
  echo "Install compile tools"
  apt-get update
- apt-get install -y make wget git
+ apt-get install -y make wget git gcc libc-dev
 
  VERSION=1.14.2
  OS=linux
