@@ -104,7 +104,7 @@ func TestRandomSamplingWithoutReplacement1Candidate(t *testing.T) {
 	winners := RandomSamplingWithoutReplacement(0, candidates, 1)
 	assert.True(t, len(winners) == 1)
 	assert.True(t, candidates[0] == winners[0])
-	assert.True(t, winners[0].(*Element).winPoint == 1000)
+	assert.True(t, uint64(winners[0].(*Element).winPoint) == precisionForSelection)
 	resetWinPoint(candidates)
 
 	winners2 := RandomSamplingWithoutReplacement(0, candidates, 0)
@@ -176,11 +176,28 @@ func TestRandomSamplingWithoutReplacementIncludingZeroStakingPower(t *testing.T)
 	assert.True(t, len(winners2) == 90)
 }
 
-func accumulateAndResetReward(candidate []Candidate, acc []uint64) {
+func TestRandomSamplingWithoutReplacementOverflow(t *testing.T) {
+	number := 100
+	candidates := newCandidates(number, func(i int) uint64 { return math.MaxUint64 / uint64(number) })
+	winners := RandomSamplingWithoutReplacement(rand.Uint64(), candidates, 64)
+	lastWinPoint := int64(math.MaxInt64)
+	for _, w := range winners {
+		element := w.(*Element)
+		assert.True(t, element.winPoint > 0)
+		assert.True(t, element.winPoint <= lastWinPoint)
+		lastWinPoint = element.winPoint
+	}
+	assert.Equal(t, lastWinPoint, int64(precisionForSelection))
+}
+
+func accumulateAndResetReward(candidate []Candidate, acc []uint64) uint64 {
+	totalWinPoint := uint64(0)
 	for i, c := range candidate {
 		acc[i] += uint64(c.(*Element).winPoint)
+		totalWinPoint += uint64(c.(*Element).winPoint)
 		c.(*Element).winPoint = 0
 	}
+	return totalWinPoint
 }
 
 func TestDivider(t *testing.T) {
@@ -277,14 +294,22 @@ func TestRandomSamplingWithoutReplacementEquity(t *testing.T) {
 
 	// good condition
 	candidates := newCandidates(100, func(i int) uint64 { return 1000000 + rand.Uint64()&0xFFFFF })
+	totalStaking := uint64(0)
+	for _, c := range candidates {
+		totalStaking += c.Priority()
+	}
+
 	accumulatedRewards := make([]uint64, 100)
+	totalAccumulateRewards := uint64(0)
 	for i := 0; i < loopCount; i++ {
 		RandomSamplingWithoutReplacement(uint64(i), candidates, 99)
-		accumulateAndResetReward(candidates, accumulatedRewards)
+		totalAccumulateRewards += accumulateAndResetReward(candidates, accumulatedRewards)
 	}
 	for i := 0; i < 99; i++ {
-		rewardPerStakingDiff :=
-			math.Abs(float64(accumulatedRewards[i])/float64(candidates[i].Priority())/float64(loopCount) - 1)
+		rewardRate := float64(accumulatedRewards[i]) / float64(totalAccumulateRewards)
+		stakingRate := float64(candidates[i].Priority()) / float64(totalStaking)
+		rate := rewardRate / stakingRate
+		rewardPerStakingDiff := math.Abs(1 - rate)
 		assert.True(t, rewardPerStakingDiff < 0.01)
 	}
 

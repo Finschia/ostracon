@@ -2,7 +2,6 @@ package rand
 
 import (
 	"fmt"
-	"math"
 	"math/big"
 	s "sort"
 )
@@ -74,6 +73,12 @@ func moveWinnerToLast(candidates []Candidate, winner int) {
 
 const uint64Mask = uint64(0x7FFFFFFFFFFFFFFF)
 
+// precisionForSelection is a value to be corrected to increase precision when calculating voting power as an integer.
+const precisionForSelection = uint64(1000)
+
+// precisionCorrectionForSelection is a value corrected for accuracy of voting power
+const precisionCorrectionForSelection = uint64(1000)
+
 var divider *big.Int
 
 func init() {
@@ -82,19 +87,13 @@ func init() {
 }
 
 func randomThreshold(seed *uint64, total uint64) uint64 {
-	if int64(total) < 0 {
-		panic(fmt.Sprintf("total priority is overflow: %d", total))
-	}
-	totalBig := big.NewInt(int64(total))
-	a := big.NewInt(int64(nextRandom(seed) & uint64Mask))
+	totalBig := new(big.Int).SetUint64(total)
+	a := new(big.Int).SetUint64(nextRandom(seed) & uint64Mask)
 	a.Mul(a, totalBig)
 	a.Div(a, divider)
 	return a.Uint64()
 }
 
-// `RandomSamplingWithoutReplacement` elects winners among candidates without replacement
-// so it updates rewards of winners. This function continues to elect winners until the both of two
-// conditions(minSamplingCount, minPriorityPercent) are met.
 func RandomSamplingWithoutReplacement(
 	seed uint64, candidates []Candidate, minSamplingCount int) (winners []Candidate) {
 
@@ -135,26 +134,29 @@ func RandomSamplingWithoutReplacement(
 				winnerNum, minSamplingCount, winnersPriority, totalPriority, threshold))
 		}
 	}
-	compensationProportions := make([]float64, winnerNum)
-	for i := winnerNum - 2; i >= 0; i-- { // last winner doesn't get compensation reward
-		compensationProportions[i] = compensationProportions[i+1] + 1/float64(losersPriorities[i])
+	correction := new(big.Int).SetUint64(totalPriority)
+	correction = correction.Mul(correction, new(big.Int).SetUint64(precisionForSelection))
+	compensationProportions := make([]big.Int, winnerNum)
+	for i := winnerNum - 2; i >= 0; i-- {
+		additionalCompensation := new(big.Int).Div(correction, new(big.Int).SetUint64(losersPriorities[i]))
+		compensationProportions[i].Add(&compensationProportions[i+1], additionalCompensation)
 	}
 	winners = candidates[len(candidates)-winnerNum:]
-	winPoints := make([]float64, len(winners))
-	totalWinPoint := float64(0)
+	recalibration := new(big.Int).Div(correction, new(big.Int).SetUint64(precisionCorrectionForSelection))
 	for i, winner := range winners {
-		winPoints[i] = 1 + float64(winner.Priority())*compensationProportions[i]
-		totalWinPoint += winPoints[i]
-	}
-	for i, winner := range winners {
-		if winPoints[i] > math.MaxInt64 || winPoints[i] < 0 {
-			panic(fmt.Sprintf("winPoint is invalid: %f", winPoints[i]))
-		}
-		winner.SetWinPoint(int64(float64(totalPriority) * winPoints[i] / totalWinPoint))
+		// winPoint = correction + winner.Priority() * compensationProportions[i]
+		winPoint := new(big.Int).SetUint64(winner.Priority())
+		winPoint.Mul(winPoint, &compensationProportions[i])
+		winPoint.Add(winPoint, correction)
+
+		winner.SetWinPoint(winPoint.Div(winPoint, recalibration).Int64())
 	}
 	return winners
 }
 
+// sumTotalPriority calculate the sum of all candidate's priority(weight)
+// and the sum should be less then or equal to MaxUint64
+// TODO We need to check the total weight doesn't over MaxUint64 in somewhere not here.
 func sumTotalPriority(candidates []Candidate) (sum uint64) {
 	for _, candi := range candidates {
 		sum += candi.Priority()
