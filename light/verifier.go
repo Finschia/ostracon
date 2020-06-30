@@ -143,6 +143,15 @@ func VerifyAdjacent(
 		return err
 	}
 
+	// Check the voter hashes are right
+	if !bytes.Equal(untrustedHeader.VotersHash, untrustedVoters.Hash()) {
+		err := fmt.Errorf("expected new header's voters hash (%X) to calculated voters' hash (%X)",
+			untrustedHeader.VotersHash,
+			untrustedVoters.Hash(),
+		)
+		return err
+	}
+
 	// Ensure that +2/3 of new validators signed correctly.
 	if err := untrustedVoters.VerifyCommitLight(trustedHeader.ChainID, untrustedHeader.Commit.BlockID,
 		untrustedHeader.Height, untrustedHeader.Commit); err != nil {

@@ -419,6 +419,7 @@ func initializeStateFromValidatorSet(valSet *types.ValidatorSet, height int64) s
 				MaxBytes:        1000,
 			},
 		},
+		LastProofHash: []byte{0, 0, 0, 0},
 	}
 
 	// save all states up to height

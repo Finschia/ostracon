@@ -140,6 +140,7 @@ func TestPruneStates(t *testing.T) {
 					},
 					LastHeightValidatorsChanged:      valsChanged,
 					LastHeightConsensusParamsChanged: paramsChanged,
+					LastProofHash:                    []byte{},
 				}
 
 				if state.LastBlockHeight >= 1 {

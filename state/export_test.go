@@ -44,5 +44,8 @@ func ValidateValidatorUpdates(abciUpdates []abci.ValidatorUpdate, params tmproto
 // store.go, exported exclusively and explicitly for testing.
 func SaveValidatorsInfo(db dbm.DB, height, lastHeightChanged int64, proofHash []byte, valSet *types.ValidatorSet) error {
 	stateStore := dbStore{db}
-	return stateStore.saveValidatorsInfo(height, lastHeightChanged, proofHash, valSet)
+	if err := db.Set(calcProofHashKey(height-1), proofHash); err != nil {
+		return err
+	}
+	return stateStore.saveValidatorsInfo(height, lastHeightChanged, valSet)
 }

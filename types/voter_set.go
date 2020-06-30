@@ -150,8 +150,7 @@ func (voters *VoterSet) Hash() []byte {
 // application that depends on the LastCommitInfo sent in BeginBlock, which
 // includes which voters signed. For instance, Gaia incentivizes proposers
 // with a bonus for including more than +2/3 of the signatures.
-func (voters *VoterSet) VerifyCommit(chainID string, blockID BlockID,
-	height int64, commit *Commit) error {
+func (voters *VoterSet) VerifyCommit(chainID string, blockID BlockID, height int64, commit *Commit) error {
 
 	if voters.Size() != len(commit.Signatures) {
 		return NewErrInvalidCommitSignatures(voters.Size(), len(commit.Signatures))

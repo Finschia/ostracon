@@ -504,6 +504,7 @@ func (h *Header) StringIndented(indent string) string {
 %s  LastCommit:     %v
 %s  Data:           %v
 %s  Voters:         %v
+%s  Validators:     %v
 %s  NextValidators: %v
 %s  App:            %v
 %s  Consensus:      %v
@@ -521,6 +522,7 @@ func (h *Header) StringIndented(indent string) string {
 		indent, h.LastCommitHash,
 		indent, h.DataHash,
 		indent, h.VotersHash,
+		indent, h.ValidatorsHash,
 		indent, h.NextValidatorsHash,
 		indent, h.AppHash,
 		indent, h.ConsensusHash,
