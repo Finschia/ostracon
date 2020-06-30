@@ -286,6 +286,8 @@ func TestClient_SequentialVerification(t *testing.T) {
 }
 
 func TestClient_SkippingVerification(t *testing.T) {
+	t.Skip("Skipping verification disabled under selection of voters")
+
 	// required for 2nd test case
 	newKeys := genPrivKeys(4)
 	newVals := newKeys.ToValidators(10, 1)

@@ -59,6 +59,7 @@ func SequentialVerification() Option {
 // applies to non-adjacent headers. For adjacent headers, sequential
 // verification is used.
 func SkippingVerification(trustLevel tmmath.Fraction) Option {
+	panic("lite client cannot use skipping verification under selection of voters")
 	return func(c *Client) {
 		c.verificationMode = skipping
 		c.trustLevel = trustLevel
@@ -205,7 +206,7 @@ func NewClientFromTrustedStore(
 	c := &Client{
 		chainID:          chainID,
 		trustingPeriod:   trustingPeriod,
-		verificationMode: skipping,
+		verificationMode: sequential, // we cannot use skipping under selection of voters
 		trustLevel:       DefaultTrustLevel,
 		maxRetryAttempts: defaultMaxRetryAttempts,
 		maxClockDrift:    defaultMaxClockDrift,
