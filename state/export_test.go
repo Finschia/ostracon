@@ -47,5 +47,6 @@ func SaveConsensusParamsInfo(db dbm.DB, nextHeight, changeHeight int64, params t
 // SaveValidatorsInfo is an alias for the private saveValidatorsInfo method in
 // store.go, exported exclusively and explicitly for testing.
 func SaveValidatorsInfo(db dbm.DB, height, lastHeightChanged int64, proofHash []byte, valSet *types.ValidatorSet) {
-	saveValidatorsInfo(db, height, lastHeightChanged, proofHash, valSet)
+	db.Set(calcProofHashKey(height-1), proofHash)
+	saveValidatorsInfo(db, height, lastHeightChanged, valSet)
 }

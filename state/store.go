@@ -25,6 +25,10 @@ func calcValidatorsKey(height int64) []byte {
 	return []byte(fmt.Sprintf("validatorsKey:%v", height))
 }
 
+func calcProofHashKey(height int64) []byte {
+	return []byte(fmt.Sprintf("proofHashKey:%v", height))
+}
+
 func calcConsensusParamsKey(height int64) []byte {
 	return []byte(fmt.Sprintf("consensusParamsKey:%v", height))
 }
@@ -105,12 +109,14 @@ func saveState(db dbm.DB, state State, key []byte) {
 		// This extra logic due to Tendermint validator set changes being delayed 1 block.
 		// It may get overwritten due to InitChain validator updates.
 		lastHeightVoteChanged := int64(1)
-		saveValidatorsInfo(db, nextHeight, lastHeightVoteChanged, []byte{}, state.Validators)
+		saveValidatorsInfo(db, nextHeight, lastHeightVoteChanged, state.Validators)
 	}
 	// Save next validators.
-	saveValidatorsInfo(db, nextHeight+1, state.LastHeightValidatorsChanged, state.LastProofHash, state.NextValidators)
+	saveValidatorsInfo(db, nextHeight+1, state.LastHeightValidatorsChanged, state.NextValidators)
 	// Save next consensus params.
 	saveConsensusParamsInfo(db, nextHeight, state.LastHeightConsensusParamsChanged, state.ConsensusParams)
+	// Save current proof hash
+	db.Set(calcProofHashKey(nextHeight), state.LastProofHash)
 	db.SetSync(key, state.Bytes())
 }
 
@@ -283,7 +289,6 @@ func SaveABCIResponses(db dbm.DB, height int64, abciResponses *ABCIResponses) {
 type ValidatorsInfo struct {
 	ValidatorSet      *types.ValidatorSet
 	LastHeightChanged int64
-	ProofHash         []byte
 }
 
 // Bytes serializes the ValidatorsInfo using go-amino.
@@ -318,13 +323,15 @@ func LoadValidators(db dbm.DB, height int64) (*types.ValidatorSet, error) {
 
 // LoadVoters loads the VoterSet for a given height.
 // Returns ErrNoValSetForHeight if the validator set can't be found for this height.
+// Returns ErrNoProofHashForHeight if the proof hash can't be found for this height.
+// We cannot get the voters for latest height, because we save next validators for latest height+1 and
+// proof hash for latest height
 func LoadVoters(db dbm.DB, height int64, voterParams *types.VoterParams) (*types.VoterSet, error) {
 	valInfo := loadValidatorsInfo(db, calcValidatorsKey(height))
 	if valInfo == nil {
 		return nil, ErrNoValSetForHeight{height}
 	}
 	if valInfo.ValidatorSet == nil {
-		proofHash := valInfo.ProofHash // store proof hash of the height
 		lastStoredHeight := lastStoredHeightFor(height, valInfo.LastHeightChanged)
 		valInfo2 := loadValidatorsInfo(db, calcValidatorsKey(lastStoredHeight))
 		if valInfo2 == nil || valInfo2.ValidatorSet == nil {
@@ -337,10 +344,18 @@ func LoadVoters(db dbm.DB, height int64, voterParams *types.VoterParams) (*types
 		}
 		valInfo2.ValidatorSet.IncrementProposerPriority(int(height - lastStoredHeight)) // mutate
 		valInfo = valInfo2
-		valInfo.ProofHash = proofHash // reload proof again
 	}
 
-	return types.SelectVoter(valInfo.ValidatorSet, valInfo.ProofHash, voterParams), nil
+	proofHash, err := db.Get(calcProofHashKey(height))
+	if err != nil {
+		// DATA HAS BEEN CORRUPTED OR THE SPEC HAS CHANGED
+		tmos.Exit(fmt.Sprintf(`LoadValidators: ProofHash has been corrupted or its spec has changed:
+                %v\n`, err))
+	}
+	if len(proofHash) == 0 {
+		return nil,ErrNoProofHashForHeight{height}
+	}
+	return types.SelectVoter(valInfo.ValidatorSet, proofHash, voterParams), nil
 }
 
 func lastStoredHeightFor(height, lastHeightChanged int64) int64 {
@@ -375,13 +390,12 @@ func loadValidatorsInfo(db dbm.DB, valKey []byte) *ValidatorsInfo {
 // `height` is the effective height for which the validator is responsible for
 // signing. It should be called from s.Save(), right before the state itself is
 // persisted.
-func saveValidatorsInfo(db dbm.DB, height, lastHeightChanged int64, proofHash []byte, valSet *types.ValidatorSet) {
+func saveValidatorsInfo(db dbm.DB, height, lastHeightChanged int64, valSet *types.ValidatorSet) {
 	if lastHeightChanged > height {
 		panic("LastHeightChanged cannot be greater than ValidatorsInfo height")
 	}
 	valInfo := &ValidatorsInfo{
 		LastHeightChanged: lastHeightChanged,
-		ProofHash:         proofHash,
 	}
 	// Only persist validator set if it was updated or checkpoint height (see
 	// valSetCheckpointInterval) is reached.

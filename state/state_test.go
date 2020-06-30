@@ -195,8 +195,7 @@ func TestValidatorSimpleSaveLoad(t *testing.T) {
 
 	// Should be able to load for height 2.
 	v, err = sm.LoadVoters(stateDB, 2, state.VoterParams)
-	assert.Nil(err, "expected no err at height 2")
-	assert.Equal(v.Hash(), state.NextValidators.Hash(), "expected validator hashes to match")
+	assert.Error(err, sm.ErrNoProofHashForHeight{Height:2}.Error())
 
 	// Increment height, save; should be able to load for next & next next height.
 	state.LastBlockHeight++
@@ -205,9 +204,9 @@ func TestValidatorSimpleSaveLoad(t *testing.T) {
 		state.LastProofHash, state.NextValidators)
 	vp0, err := sm.LoadVoters(stateDB, nextHeight+0, state.VoterParams)
 	assert.Nil(err, "expected no err")
-	vp1, err := sm.LoadVoters(stateDB, nextHeight+1, state.VoterParams)
+	vp1, err := sm.LoadValidators(stateDB, nextHeight+1)
 	assert.Nil(err, "expected no err")
-	assert.Equal(vp0.Hash(), state.Validators.Hash(), "expected validator hashes to match")
+	assert.Equal(vp0.Hash(), state.Voters.Hash(), "expected validator hashes to match")
 	assert.Equal(vp1.Hash(), state.NextValidators.Hash(), "expected next validator hashes to match")
 }
 
@@ -259,7 +258,7 @@ func TestOneValidatorChangesSaveLoad(t *testing.T) {
 	}
 
 	for i, power := range testCases {
-		v, err := sm.LoadVoters(stateDB, int64(i+1+1), state.VoterParams) // +1 because vset changes delayed by 1 block.
+		v, err := sm.LoadValidators(stateDB, int64(i+1+1)) // +1 because vset changes delayed by 1 block.
 		assert.Nil(t, err, fmt.Sprintf("expected no err at height %d", i))
 		assert.Equal(t, v.Size(), 1, "validator set size is greater than 1: %d", v.Size())
 		_, val := v.GetByIndex(0)
