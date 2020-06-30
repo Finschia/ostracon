@@ -228,7 +228,7 @@ func TestValidatorSimpleSaveLoad(t *testing.T) {
 	assert.Nil(err, "expected no err at height 1")
 	assert.Equal(v.Hash(), state.Validators.Hash(), "expected validator hashes to match")
 
-	// Should be able to load for height 2.
+	// Can't load last voter set because of proof hash is not defined for last height
 	v, err = statestore.LoadVoters(2, state.VoterParams)
 	assert.Error(err, sm.ErrNoProofHashForHeight{Height: 2}.Error())
 
@@ -242,8 +242,10 @@ func TestValidatorSimpleSaveLoad(t *testing.T) {
 	assert.Nil(err, "expected no err")
 	vp1, err := statestore.LoadValidators(nextHeight + 1)
 	assert.Nil(err, "expected no err")
-	assert.Equal(vp0.Hash(), state.Voters.Hash(), "expected validator hashes to match")
+	assert.Equal(vp0.Hash(), state.Voters.Hash(), "expected voter hashes to match")
 	assert.Equal(vp1.Hash(), state.NextValidators.Hash(), "expected next validator hashes to match")
+	_, err = statestore.LoadVoters(nextHeight+1, state.VoterParams)
+	assert.Error(err, sm.ErrNoProofHashForHeight{Height: nextHeight + 1}.Error())
 }
 
 // TestValidatorChangesSaveLoad tests saving and loading a validator set with changes.
@@ -302,6 +304,85 @@ func TestOneValidatorChangesSaveLoad(t *testing.T) {
 		assert.Equal(t, val.StakingPower, power, fmt.Sprintf(`unexpected powerat
                 height %d`, i))
 	}
+
+	testCases = testCases[:len(testCases)-1] // except last height
+	for i, power := range testCases {
+		v, err := stateStore.LoadVoters(int64(i+1+1), state.VoterParams) // +1 because vset changes delayed by 1 block.
+		assert.Nil(t, err, fmt.Sprintf("expected no err at height %d", i))
+		assert.Equal(t, v.Size(), 1, "validator set size is greater than 1: %d", v.Size())
+		_, val := v.GetByIndex(0)
+
+		assert.Equal(t, val.StakingPower, power, fmt.Sprintf(`unexpected powerat
+                height %d`, i))
+	}
+}
+
+func isSameVoterSet(t *testing.T, a, b *types.VoterSet) {
+	assert.True(t, a.Size() == b.Size(), "VoterSet size is different")
+	for i, v := range a.Voters {
+		assert.True(t, bytes.Equal(v.PubKey.Bytes(), b.Voters[i].PubKey.Bytes()),
+			"voter public key is different")
+		assert.True(t, v.StakingPower == b.Voters[i].StakingPower, "voter staking power is different")
+		assert.True(t, v.VotingPower == b.Voters[i].VotingPower, "voter voting power is different")
+	}
+}
+
+func isSameValidatorSet(t *testing.T, a, b *types.ValidatorSet) {
+	assert.True(t, a.Size() == b.Size(), "ValidatorSet size is different")
+	for i, v := range a.Validators {
+		assert.True(t, bytes.Equal(v.PubKey.Bytes(), b.Validators[i].PubKey.Bytes()),
+			"validator public key is different")
+		assert.True(t, v.StakingPower == b.Validators[i].StakingPower, "validator staking power is different")
+		assert.True(t, v.VotingPower == b.Validators[i].VotingPower, "validator voting power is different")
+	}
+}
+
+func TestLoadAndSaveVoters(t *testing.T) {
+	tearDown, db, state := setupTestCase(t)
+	defer tearDown(t)
+
+	voterParam := &types.VoterParams{
+		VoterElectionThreshold:          3,
+		MaxTolerableByzantinePercentage: 20,
+		ElectionPrecision:               5,
+	}
+	state.Validators = genValSetWithPowers([]int64{1000, 1100, 1200, 1500, 2000, 5000})
+	state.NextValidators = state.Validators
+
+	stateStore := sm.NewStore(db)
+	lastHeight := 10
+	voters := make([]*types.VoterSet, lastHeight)
+	validators := make([]*types.ValidatorSet, lastHeight+1)
+	validators[0] = state.Validators.Copy()
+	for i := 1; i <= lastHeight; i++ {
+		state.Voters = types.SelectVoter(state.Validators, state.LastProofHash, voterParam)
+		voters[i-1] = state.Voters.Copy()
+		validators[i] = state.NextValidators.Copy()
+		state.LastBlockHeight = int64(i - 1)
+		state.LastHeightValidatorsChanged = int64(i + 1)
+		err := stateStore.Save(state)
+		assert.NoError(t, err)
+		state.LastVoters = state.Voters.Copy()
+		state.LastProofHash = tmrand.Bytes(10)
+		nValSet := state.NextValidators.Copy()
+		err = nValSet.UpdateWithChangeSet(genValSetWithPowers([]int64{int64(2000 + i)}).Validators)
+		assert.NoError(t, err)
+		nValSet.IncrementProposerPriority(1)
+		state.Validators = state.NextValidators.Copy()
+		state.NextValidators = nValSet
+	}
+
+	for i := int64(1); i <= int64(lastHeight); i++ {
+		voterSet, err := stateStore.LoadVoters(i, voterParam)
+		assert.NoError(t, err, "LoadVoters should succeed")
+		isSameVoterSet(t, voters[i-1], voterSet)
+		validatorSet, err := stateStore.LoadValidators(i)
+		assert.NoError(t, err, "LoadValidators should succeed")
+		isSameValidatorSet(t, validators[i-1], validatorSet)
+	}
+	validatorSet, err := stateStore.LoadValidators(int64(lastHeight + 1))
+	assert.NoError(t, err, "LoadValidators should succeed")
+	isSameValidatorSet(t, validators[lastHeight], validatorSet)
 }
 
 func TestProposerFrequency(t *testing.T) {
