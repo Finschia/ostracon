@@ -56,7 +56,7 @@ func (p *Mock) LightBlock(_ context.Context, height int64) (*types.LightBlock, e
 	if height == 0 && len(p.headers) > 0 {
 		sh := p.headers[int64(len(p.headers))]
 		vals := p.vals[int64(len(p.vals))]
-		voters := p.voters[int64(len(p.vals))]
+		voters := p.voters[int64(len(p.voters))]
 		lb = &types.LightBlock{
 			SignedHeader: sh,
 			ValidatorSet: vals,

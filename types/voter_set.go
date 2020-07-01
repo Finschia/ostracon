@@ -222,7 +222,7 @@ func (voters *VoterSet) VerifyCommitLight(chainID string, blockID BlockID,
 
 	talliedVotingPower := int64(0)
 	votingPowerNeeded := voters.TotalVotingPower() * 2 / 3
-	for idx, commitSig := range commit.Signatures {
+	for _, commitSig := range commit.Signatures {
 		// No need to verify absent or nil votes.
 		if !commitSig.ForBlock() {
 			continue
@@ -230,7 +230,8 @@ func (voters *VoterSet) VerifyCommitLight(chainID string, blockID BlockID,
 
 		// The vals and commit have a 1-to-1 correspondance.
 		// This means we don't need the voter address or to do any lookup.
-		voter := voters.Voters[idx]
+		// voter := voters.Voters[idx]
+		idx, voter := voters.GetByAddress(commitSig.ValidatorAddress)
 
 		// Validate signature.
 		voteSignBytes := commit.VoteSignBytes(chainID, int32(idx))

@@ -1,6 +1,7 @@
 package light_test
 
 import (
+	"bytes"
 	"testing"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 
 	dbm "github.com/tendermint/tm-db"
 
+	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/light"
 	"github.com/tendermint/tendermint/light/provider"
@@ -32,7 +34,6 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 	witness := mockp.New(chainID, witnessHeaders, witnessValidators, witnessVoters)
 	forgedKeys := chainKeys[divergenceHeight-1].ChangeKeys(3) // we change 3 out of the 5 validators (still 2/5 remain)
 	forgedVals := forgedKeys.ToValidators(2, 0)
-	forgedVoters := types.ToVoterAll(forgedVals.Validators)
 
 	for height := int64(1); height <= latestHeight; height++ {
 		if height < divergenceHeight {
@@ -42,11 +43,36 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 			continue
 		}
 		primaryHeaders[height] = forgedKeys.GenSignedHeader(chainID, height, bTime.Add(time.Duration(height)*time.Minute),
-			nil, forgedVoters, forgedVals, forgedVals, hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(forgedKeys))
+			nil, forgedVals, forgedVals, hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(forgedKeys),
+			types.DefaultVoterParams())
 		primaryValidators[height] = forgedVals
-		primaryVoters[height] = forgedVoters
+		primaryVoters[height] = types.SelectVoter(primaryValidators[height], proofHash(primaryHeaders[height]), types.DefaultVoterParams())
 	}
+
+	// FIXME 🏺 This test joints the forged block to the correct block.
+	// In order to create a blockchain with successful basic validation, NextValidatorHash must be pointed to
+	// ValidatorHash, which will change the hash value of the block and invalidate the Commit signature.
+	primaryHeaders[divergenceHeight-1].NextValidatorsHash = primaryHeaders[divergenceHeight].ValidatorsHash
+	primaryHeaders[divergenceHeight-1].Commit.BlockID.Hash = primaryHeaders[divergenceHeight-1].Hash()
+	// for idx, voter := range primaryVoters[divergenceHeight-1].Voters {
+	//	voteSignBytes := primaryHeaders[divergenceHeight-1].Commit.VoteSignBytes(chainID, int32(idx))
+	//	primaryHeaders[divergenceHeight-1].Commit.Signatures[idx].Signature = ???
+	// }
+
 	primary := mockp.New(chainID, primaryHeaders, primaryValidators, primaryVoters)
+
+	// validate primaryHeaders/Validators/Voters
+	for height, header := range primaryHeaders {
+		require.Equal(t, header.VotersHash, tmbytes.HexBytes(primaryVoters[height].Hash()))
+		require.True(t, primaryHeaders[height+1] == nil ||
+			bytes.Equal(header.NextValidatorsHash, primaryHeaders[height+1].ValidatorsHash))
+		require.Equal(t, header.Hash(), header.Commit.BlockID.Hash, "height=%d", height)
+		for idx, commitSig := range header.Commit.Signatures {
+			voteSignBytes := header.Commit.VoteSignBytes(chainID, int32(idx))
+			require.True(t, primaryVoters[height].Voters[idx].PubKey.VerifySignature(voteSignBytes, commitSig.Signature),
+				"height=%d, i=%d", height, idx)
+		}
+	}
 
 	c, err := light.NewClient(
 		ctx,
@@ -129,8 +155,9 @@ func TestLightClientAttackEvidence_Equivocation(t *testing.T) {
 			// a different block (which we do by adding txs)
 			primaryHeaders[height] = chainKeys[height].GenSignedHeader(chainID, height,
 				bTime.Add(time.Duration(height)*time.Minute), []types.Tx{[]byte("abcd")},
-				witnessVoters[height], witnessValidators[height], witnessValidators[height+1], hash("app_hash"),
-				hash("cons_hash"), hash("results_hash"), 0, len(chainKeys[height])-1)
+				witnessValidators[height], witnessValidators[height+1], hash("app_hash"),
+				hash("cons_hash"), hash("results_hash"), 0, len(chainKeys[height])-1,
+				types.DefaultVoterParams())
 			primaryValidators[height] = witnessValidators[height]
 			primaryVoters[height] = witnessVoters[height]
 		}
