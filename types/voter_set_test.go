@@ -296,7 +296,7 @@ func TestSelectVoter(t *testing.T) {
 
 	// test VoterElectionThreshold
 	for i := 1; i < 100; i++ {
-		voterSet := SelectVoter(valSet, hash, &VoterParams{15, i, 1})
+		voterSet := SelectVoter(valSet, hash, &VoterParams{15, int32(i), 1})
 		assert.True(t, voterSet.Size() >= 15)
 	}
 }
@@ -399,7 +399,7 @@ func TestSelectVoterMaxVarious(t *testing.T) {
 		for validators := 16; validators <= 256; validators *= 4 {
 			for voters := 1; voters <= validators; voters += 10 {
 				valSet, _ := randValidatorSetWithMinMax(validators, 100, 100*int64(minMaxRate))
-				voterSet := SelectVoter(valSet, []byte{byte(hash)}, &VoterParams{voters, 20, 5})
+				voterSet := SelectVoter(valSet, []byte{byte(hash)}, &VoterParams{int32(voters), 20, 5})
 				if voterSet.Size() < voters {
 					t.Logf("Cannot elect voters up to MaxVoters: validators=%d, MaxVoters=%d, actual voters=%d",
 						validators, voters, voterSet.Size())
@@ -461,7 +461,7 @@ func countByzantines(voters []*Validator, byzantines map[string]bool) int {
 }
 
 func electVotersForLoop(t *testing.T, hash []byte, valSet *ValidatorSet, privMap map[string]PrivValidator,
-	byzantines map[string]bool, loopCount int, byzantinePercent, accuracy int) {
+	byzantines map[string]bool, loopCount int, byzantinePercent, accuracy int32) {
 	byzantineFault := 0
 	totalVoters := 0
 	totalByzantines := 0
@@ -485,7 +485,7 @@ func electVotersForLoop(t *testing.T, hash []byte, valSet *ValidatorSet, privMap
 
 func TestCalVotersNum2(t *testing.T) {
 	valSet, privMap := randValidatorSetWithMinMax(100, 100, 10000)
-	byzantinePercent := 20
+	byzantinePercent := int32(20)
 	byzantines := makeByzantine(valSet, float64(byzantinePercent)/100)
 	genDoc := &GenesisDoc{
 		GenesisTime: tmtime.Now(),
