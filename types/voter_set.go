@@ -434,14 +434,14 @@ func (c *candidate) SetWinPoint(winPoint int64) {
 	c.val.VotingPower = winPoint
 }
 
-func accuracyFromElectionPrecision(precision int) float64 {
-	base := math.Pow10(precision)
+func accuracyFromElectionPrecision(precision int32) float64 {
+	base := math.Pow10(int(precision))
 	result := (base - 1) / base
 	return result
 }
 
 func SelectVoter(validators *ValidatorSet, proofHash []byte, voterParams *VoterParams) *VoterSet {
-	if len(proofHash) == 0 || validators.Size() <= voterParams.VoterElectionThreshold {
+	if len(proofHash) == 0 || validators.Size() <= int(voterParams.VoterElectionThreshold) {
 		return ToVoterAll(validators.Validators)
 	}
 
@@ -459,7 +459,7 @@ func SelectVoter(validators *ValidatorSet, proofHash []byte, voterParams *VoterP
 	if minVoters > math.MaxInt32 {
 		panic("CalNumOfVoterToElect is overflow for MaxInt32")
 	}
-	voterCount := tmmath.MaxInt(voterParams.VoterElectionThreshold, int(minVoters))
+	voterCount := tmmath.MaxInt(int(voterParams.VoterElectionThreshold), int(minVoters))
 	winners := tmrand.RandomSamplingWithoutReplacement(seed, candidates, voterCount)
 	voters := make([]*Validator, len(winners))
 	for i, winner := range winners {
