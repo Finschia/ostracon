@@ -7,6 +7,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	tmmath "github.com/tendermint/tendermint/libs/math"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -515,4 +517,37 @@ func TestAccuracyFromElectionPrecision(t *testing.T) {
 	assert.True(t, accuracyFromElectionPrecision(13) == 0.9999999999999)
 	assert.True(t, accuracyFromElectionPrecision(14) == 0.99999999999999)
 	assert.True(t, accuracyFromElectionPrecision(15) == 0.999999999999999)
+}
+
+func TestVoterSetProtoBuf(t *testing.T) {
+	_, voterSet, _ := RandVoterSet(10, 100)
+	_, voterSet2, _ := RandVoterSet(10, 100)
+	voterSet2.Voters[0] = &Validator{}
+
+	testCase := []struct {
+		msg      string
+		v1       *VoterSet
+		expPass1 bool
+		expPass2 bool
+	}{
+		{"success", voterSet, true, true},
+		{"fail voterSet2, pubkey empty", voterSet2, false, false},
+		{"false nil", nil, false, false},
+	}
+	for _, tc := range testCase {
+		protoVoterSet, err := tc.v1.ToProto()
+		if tc.expPass1 {
+			require.NoError(t, err, tc.msg)
+		} else {
+			require.Error(t, err, tc.msg)
+		}
+
+		vSet, err := VoterSetFromProto(protoVoterSet)
+		if tc.expPass2 {
+			require.NoError(t, err, tc.msg)
+			require.EqualValues(t, tc.v1, vSet, tc.msg)
+		} else {
+			require.Error(t, err, tc.msg)
+		}
+	}
 }

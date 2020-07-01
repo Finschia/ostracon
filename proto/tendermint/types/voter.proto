@@ -1,0 +1,17 @@
+syntax = "proto3";
+package tendermint.types;
+
+option go_package = "github.com/tendermint/tendermint/proto/tendermint/types";
+
+import "tendermint/types/validator.proto";
+
+message VoterSet {
+  repeated tendermint.types.Validator voters = 1;
+  int64    total_voting_power                = 2;
+}
+
+message VoterParams {
+  int32 VoterElectionThreshold          = 1;
+  int32 MaxTolerableByzantinePercentage = 2;
+  int32 ElectionPrecision               = 3;
+}

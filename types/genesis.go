@@ -12,7 +12,6 @@ import (
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	tmos "github.com/tendermint/tendermint/libs/os"
-	tmprotostate "github.com/tendermint/tendermint/proto/tendermint/state"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
 )
@@ -53,18 +52,18 @@ func (vp *VoterParams) DefaultVoterParams() *VoterParams {
 	}
 }
 
-func (vp *VoterParams) ToProto() *tmprotostate.VoterParams {
+func (vp *VoterParams) ToProto() *tmproto.VoterParams {
 	if vp == nil {
 		return nil
 	}
-	return &tmprotostate.VoterParams{
+	return &tmproto.VoterParams{
 		VoterElectionThreshold:          int32(vp.VoterElectionThreshold),
 		MaxTolerableByzantinePercentage: int32(vp.MaxTolerableByzantinePercentage),
 		ElectionPrecision:               int32(vp.ElectionPrecision),
 	}
 }
 
-func VoterParamsFromProto(pb *tmprotostate.VoterParams) *VoterParams {
+func VoterParamsFromProto(pb *tmproto.VoterParams) *VoterParams {
 	if pb == nil {
 		return nil
 	}

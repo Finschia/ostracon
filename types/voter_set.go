@@ -310,6 +310,50 @@ func (voters *VoterSet) VerifyCommitLightTrusting(chainID string, commit *Commit
 	return ErrNotEnoughVotingPowerSigned{Got: talliedVotingPower, Needed: votingPowerNeeded}
 }
 
+// ToProto converts VoterSet to protobuf
+func (voters *VoterSet) ToProto() (*tmproto.VoterSet, error) {
+	if voters.IsNilOrEmpty() {
+		return nil, errors.New("nil voter set")
+	}
+
+	vsp := new(tmproto.VoterSet)
+	votersProto := make([]*tmproto.Validator, len(voters.Voters))
+	for i := 0; i < len(voters.Voters); i++ {
+		voterp, err := voters.Voters[i].ToProto()
+		if err != nil {
+			return nil, err
+		}
+		votersProto[i] = voterp
+	}
+	vsp.Voters = votersProto
+	vsp.TotalVotingPower = voters.totalVotingPower
+
+	return vsp, nil
+}
+
+// VoterSetFromProto sets a protobuf VoterSet to the given pointer.
+// It returns an error if any of the validators from the set or the proposer
+// is invalid
+func VoterSetFromProto(vp *tmproto.VoterSet) (*VoterSet, error) {
+	if vp == nil {
+		return nil, errors.New("nil voter set") // voter set should never be nil, bigger issues are at play if empty
+	}
+	voters := new(VoterSet)
+
+	valsProto := make([]*Validator, len(vp.Voters))
+	for i := 0; i < len(vp.Voters); i++ {
+		v, err := ValidatorFromProto(vp.Voters[i])
+		if err != nil {
+			return nil, err
+		}
+		valsProto[i] = v
+	}
+	voters.Voters = valsProto
+	voters.totalVotingPower = vp.GetTotalVotingPower()
+
+	return voters, voters.ValidateBasic()
+}
+
 //-----------------
 
 // IsErrNotEnoughVotingPowerSigned returns true if err is
@@ -363,52 +407,6 @@ func (voters *VoterSet) StringIndented(indent string) string {
 		indent, indent, strings.Join(voterStrings, "\n"+indent+"    "),
 		indent)
 
-}
-
-// ToProto converts VoterSet to protobuf
-func (voters *VoterSet) ToProto() (*tmproto.VoterSet, error) {
-	if voters.IsNilOrEmpty() {
-		return &tmproto.VoterSet{}, nil // voter set should never be nil
-	}
-
-	vp := new(tmproto.VoterSet)
-	valsProto := make([]*tmproto.Validator, len(voters.Voters))
-	for i := 0; i < len(voters.Voters); i++ {
-		valp, err := voters.Voters[i].ToProto()
-		if err != nil {
-			return nil, err
-		}
-		valsProto[i] = valp
-	}
-	vp.Validators = valsProto
-
-	vp.TotalStakingPower = voters.totalVotingPower
-
-	return vp, nil
-}
-
-// VoterSetFromProto sets a protobuf VoterSet to the given pointer.
-// It returns an error if any of the validators from the set or the proposer
-// is invalid
-func VoterSetFromProto(vp *tmproto.VoterSet) (*VoterSet, error) {
-	if vp == nil {
-		return nil, errors.New("nil voter set") // voter set should never be nil, bigger issues are at play if empty
-	}
-	voters := new(VoterSet)
-
-	valsProto := make([]*Validator, len(vp.Validators))
-	for i := 0; i < len(vp.Validators); i++ {
-		v, err := ValidatorFromProto(vp.Validators[i])
-		if err != nil {
-			return nil, err
-		}
-		valsProto[i] = v
-	}
-	voters.Voters = valsProto
-
-	voters.totalVotingPower = vp.GetTotalStakingPower()
-
-	return voters, voters.ValidateBasic()
 }
 
 type candidate struct {
