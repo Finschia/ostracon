@@ -8,6 +8,7 @@ import "abci/types/types.proto";
 import "proto/types/types.proto";
 import "proto/types/validator.proto";
 import "proto/types/params.proto";
+import "proto/types/voter.proto";
 import "proto/version/version.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -58,17 +59,20 @@ message State {
   // Extra +1 due to nextValSet delay.
   tendermint.proto.types.ValidatorSet next_validators                = 6;
   tendermint.proto.types.ValidatorSet validators                     = 7;
-  tendermint.proto.types.ValidatorSet last_validators                = 8;
-  int64                               last_height_validators_changed = 9;
+  tendermint.proto.types.VoterSet     next_voters                    = 8;
+  tendermint.proto.types.VoterSet     voters                         = 9;
+  tendermint.proto.types.VoterSet     last_voters                    = 10;
+  tendermint.proto.types.ValidatorSet last_validators                = 11;
+  int64                               last_height_validators_changed = 12;
 
   // Consensus parameters used for validating blocks.
   // Changes returned by EndBlock and updated after Commit.
-  tendermint.proto.types.ConsensusParams consensus_params                     = 10 [(gogoproto.nullable) = false];
-  int64                                  last_height_consensus_params_changed = 11;
+  tendermint.proto.types.ConsensusParams consensus_params                     = 13 [(gogoproto.nullable) = false];
+  int64                                  last_height_consensus_params_changed = 14;
 
   // Merkle root of the results from executing prev block
-  bytes last_results_hash = 12;
+  bytes last_results_hash = 15;
 
   // the latest AppHash we've received from calling abci.Commit()
-  bytes app_hash = 13;
+  bytes app_hash = 16;
 }

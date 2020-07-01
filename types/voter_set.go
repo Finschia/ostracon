@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	tmproto "github.com/tendermint/tendermint/proto/types"
 	"math"
 	"sort"
 	"strings"
@@ -313,6 +314,48 @@ func (voters *VoterSet) VerifyCommitTrusting(chainID string, blockID BlockID,
 	}
 
 	return ErrNotEnoughVotingPowerSigned{Got: talliedVotingPower, Needed: votingPowerNeeded}
+}
+
+// ToProto converts VoterSet to protobuf
+func (voters *VoterSet) ToProto() (*tmproto.VoterSet, error) {
+	if voters == nil {
+		return nil, errors.New("nil voter set")
+	}
+	vsp := new(tmproto.VoterSet)
+	votersProto := make([]*tmproto.Validator, len(voters.Voters))
+	for i := 0; i < len(voters.Voters); i++ {
+		voterp, err := voters.Voters[i].ToProto()
+		if err != nil {
+			return nil, err
+		}
+		votersProto[i] = voterp
+	}
+	vsp.Voters = votersProto
+	vsp.TotalVotingPower = voters.totalVotingPower
+
+	return vsp, nil
+}
+
+// VoterSetFromProto sets a protobuf VoterSEt to the give pointer.
+// It returns an error if any of the voters from the set or the proposer is invalid
+func VoterSetFromProto(vp *tmproto.VoterSet) (*VoterSet, error) {
+	if vp == nil {
+		return nil, errors.New("nil voter set")
+	}
+	voters := new(VoterSet)
+
+	valsProto := make([]*Validator, len(vp.Voters))
+	for i := 0; i < len(vp.Voters); i++ {
+		v, err := ValidatorFromProto(vp.Voters[i])
+		if err != nil {
+			return nil, err
+		}
+		valsProto[i] = v
+	}
+	voters.Voters = valsProto
+	voters.totalVotingPower = vp.GetTotalVotingPower()
+
+	return voters, nil
 }
 
 func verifyCommitBasic(commit *Commit, height int64, blockID BlockID) error {
