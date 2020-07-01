@@ -44,11 +44,14 @@ message State {
   // immutable
   string chain_id = 2 [(gogoproto.customname) = "ChainID"];
 
+  // voter_params
+  tendermint.proto.types.VoterParams voter_params = 3;
+
   // LastBlockHeight=0 at genesis (ie. block(H=0) does not exist)
-  int64                          last_block_height = 3;
-  tendermint.proto.types.BlockID last_block_id     = 4
+  int64                          last_block_height = 4;
+  tendermint.proto.types.BlockID last_block_id     = 5
       [(gogoproto.nullable) = false, (gogoproto.customname) = "LastBlockID"];
-  google.protobuf.Timestamp last_block_time = 5
+  google.protobuf.Timestamp last_block_time = 6
       [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
 
   // LastValidators is used to validate block.LastCommit.
@@ -57,22 +60,22 @@ message State {
   // Note that if s.LastBlockHeight causes a valset change,
   // we set s.LastHeightValidatorsChanged = s.LastBlockHeight + 1 + 1
   // Extra +1 due to nextValSet delay.
-  tendermint.proto.types.ValidatorSet next_validators                = 6;
-  tendermint.proto.types.ValidatorSet validators                     = 7;
-  tendermint.proto.types.VoterSet     next_voters                    = 8;
-  tendermint.proto.types.VoterSet     voters                         = 9;
-  tendermint.proto.types.VoterSet     last_voters                    = 10;
-  tendermint.proto.types.ValidatorSet last_validators                = 11;
-  int64                               last_height_validators_changed = 12;
+  tendermint.proto.types.ValidatorSet next_validators                = 7;
+  tendermint.proto.types.ValidatorSet validators                     = 8;
+  tendermint.proto.types.VoterSet     next_voters                    = 9;
+  tendermint.proto.types.VoterSet     voters                         = 10;
+  tendermint.proto.types.VoterSet     last_voters                    = 11;
+  tendermint.proto.types.ValidatorSet last_validators                = 12;
+  int64                               last_height_validators_changed = 13;
 
   // Consensus parameters used for validating blocks.
   // Changes returned by EndBlock and updated after Commit.
-  tendermint.proto.types.ConsensusParams consensus_params                     = 13 [(gogoproto.nullable) = false];
-  int64                                  last_height_consensus_params_changed = 14;
+  tendermint.proto.types.ConsensusParams consensus_params                     = 14 [(gogoproto.nullable) = false];
+  int64                                  last_height_consensus_params_changed = 15;
 
   // Merkle root of the results from executing prev block
-  bytes last_results_hash = 15;
+  bytes last_results_hash = 16;
 
   // the latest AppHash we've received from calling abci.Commit()
-  bytes app_hash = 16;
+  bytes app_hash = 17;
 }
