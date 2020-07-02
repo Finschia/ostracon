@@ -221,7 +221,7 @@ func genSignedHeaderWithInvalidProof(pkz privKeys, chainID string, height int64,
 	proofHash, _ := vrf.ProofToHash(proof)
 	invalidProofHash := make([]byte, len(proofHash))
 	copy(invalidProofHash, proofHash)
-	invalidProofHash[0] = invalidProofHash[0] ^ 0x01 // force invalid proof hash
+	invalidProofHash[0] ^= 0x01 // force invalid proof hash
 	voterSet := types.SelectVoter(valset, invalidProofHash, voterParams)
 
 	header := genHeader(chainID, height, bTime, txs, voterSet, valset, nextValset, appHash, consHash, resHash,
