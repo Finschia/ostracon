@@ -7,8 +7,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	tmmath "github.com/tendermint/tendermint/libs/math"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -532,7 +530,8 @@ func TestVoterSetProtoBuf(t *testing.T) {
 	}{
 		{"success", voterSet, true, true},
 		{"fail voterSet2, pubkey empty", voterSet2, false, false},
-		{"false nil", nil, false, false},
+		{"fail empty voterSet", &VoterSet{}, true, false},
+		{"false nil", nil, true, false},
 	}
 	for _, tc := range testCase {
 		protoVoterSet, err := tc.v1.ToProto()

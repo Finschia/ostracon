@@ -33,7 +33,7 @@ func TestLightBlockValidateBasic(t *testing.T) {
 	testCases := []struct {
 		name      string
 		sh        *SignedHeader
-		vals      *VoterSet
+		voters    *VoterSet
 		expectErr bool
 	}{
 		{"valid light block", sh, voters, false},
@@ -45,7 +45,7 @@ func TestLightBlockValidateBasic(t *testing.T) {
 	for _, tc := range testCases {
 		lightBlock := LightBlock{
 			SignedHeader: tc.sh,
-			VoterSet:     tc.vals,
+			VoterSet:     tc.voters,
 		}
 		err := lightBlock.ValidateBasic(header.ChainID)
 		if tc.expectErr {
@@ -75,21 +75,21 @@ func TestLightBlockProtobuf(t *testing.T) {
 	testCases := []struct {
 		name       string
 		sh         *SignedHeader
-		vals       *VoterSet
+		voters     *VoterSet
 		toProtoErr bool
 		toBlockErr bool
 	}{
 		{"valid light block", sh, voters, false, false},
 		{"empty signed header", &SignedHeader{}, voters, false, false},
-		{"empty validator set", sh, &VoterSet{}, false, true},
+		{"empty voter set", sh, &VoterSet{}, false, true},
 		{"empty light block", &SignedHeader{}, &VoterSet{}, false, true},
 	}
 
 	for _, tc := range testCases {
 		lightBlock := &LightBlock{
 			SignedHeader: tc.sh,
-			ValidatorSet: NewValidatorSet(tc.vals.Voters),
-			VoterSet:     tc.vals,
+			ValidatorSet: NewValidatorSet(tc.voters.Voters),
+			VoterSet:     tc.voters,
 		}
 		lbp, err := lightBlock.ToProto()
 		if tc.toProtoErr {

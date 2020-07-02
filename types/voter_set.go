@@ -29,7 +29,7 @@ type VoterSet struct {
 }
 
 func WrapValidatorsToVoterSet(vals []*Validator) *VoterSet {
-	sort.Sort(ValidatorsByAddress(vals)) // TODO 🏺 Should we sort by VotingPower in v0.34?
+	sort.Sort(ValidatorsByVotingPower(vals))
 	voterSet := &VoterSet{Voters: vals, totalVotingPower: 0}
 	voterSet.updateTotalVotingPower()
 	return voterSet
@@ -66,11 +66,10 @@ func (voters *VoterSet) HasAddress(address []byte) bool {
 // GetByAddress returns an index of the validator with address and validator
 // itself if found. Otherwise, -1 and nil are returned.
 func (voters *VoterSet) GetByAddress(address []byte) (index int32, val *Validator) {
-	idx := sort.Search(len(voters.Voters), func(i int) bool {
-		return bytes.Compare(address, voters.Voters[i].Address) <= 0
-	})
-	if idx < len(voters.Voters) && bytes.Equal(voters.Voters[idx].Address, address) {
-		return int32(idx), voters.Voters[idx].Copy()
+	for idx, val := range voters.Voters {
+		if bytes.Equal(val.Address, address) {
+			return int32(idx), val.Copy()
+		}
 	}
 	return -1, nil
 }
@@ -313,7 +312,7 @@ func (voters *VoterSet) VerifyCommitLightTrusting(chainID string, commit *Commit
 // ToProto converts VoterSet to protobuf
 func (voters *VoterSet) ToProto() (*tmproto.VoterSet, error) {
 	if voters.IsNilOrEmpty() {
-		return nil, errors.New("nil voter set")
+		return &tmproto.VoterSet{}, nil // validator set should never be nil
 	}
 
 	vsp := new(tmproto.VoterSet)
@@ -490,7 +489,6 @@ func ToVoterAll(validators []*Validator) *VoterSet {
 		copy(zeroRemoved, newVoters[:voterCount])
 		newVoters = zeroRemoved
 	}
-	sort.Sort(ValidatorsByAddress(newVoters))
 	return WrapValidatorsToVoterSet(newVoters)
 }
 

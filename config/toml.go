@@ -541,9 +541,9 @@ var testGenesisFmt = `{
     }
   ],
   "voter_params": {
-    "voter_election_threshold": "1",
-    "max_tolerable_byzantine_percentage": "33",
-    "election_precision": "2"
+    "voter_election_threshold": 1,
+    "max_tolerable_byzantine_percentage": 33,
+    "election_precision": 2
   },
   "app_hash": ""
 }`

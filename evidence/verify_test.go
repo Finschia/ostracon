@@ -32,6 +32,7 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 	conflictingVals, err := types.ValidatorSetFromExistingValidators(append(commonVals.Validators, newVal))
 	require.NoError(t, err)
 	conflictingVoters, err := types.ValidatorSetFromExistingValidators(append(commonVoters.Voters, newVal))
+	require.NoError(t, err)
 	conflictingVoterSet := types.ToVoterAll(conflictingVoters.Validators)
 	conflictingPrivVals := append(commonPrivVals, newPrivVal)
 
