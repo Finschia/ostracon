@@ -27,8 +27,8 @@ const (
 )
 
 var (
-	keys     = genPrivKeys(10)
-	vals     = keys.ToValidators(20, 10)
+	keys       = genPrivKeys(10)
+	vals       = keys.ToValidators(20, 10)
 	voterParam = &types.VoterParams{
 		VoterElectionThreshold:          4,
 		MaxTolerableByzantinePercentage: 1,
@@ -96,7 +96,7 @@ func TestClient_SequentialVerification(t *testing.T) {
 			map[int64]*types.SignedHeader{
 				// different header
 				1: keys.GenSignedHeader(chainID, 1, bTime.Add(1*time.Hour), nil,
-					vals, vals,	[]byte("app_hash"), []byte("cons_hash"), []byte("results_hash"), 0, len(keys),
+					vals, vals, []byte("app_hash"), []byte("cons_hash"), []byte("results_hash"), 0, len(keys),
 					voterParam),
 			},
 			map[int64]*types.ValidatorSet{
@@ -112,7 +112,7 @@ func TestClient_SequentialVerification(t *testing.T) {
 				1: h1,
 				// interim header (1/3 signed)
 				2: keys.GenSignedHeaderByRate(chainID, 2, bTime.Add(1*time.Hour), nil,
-					vals, vals,	[]byte("app_hash"), []byte("cons_hash"), []byte("results_hash"), 0.33,
+					vals, vals, []byte("app_hash"), []byte("cons_hash"), []byte("results_hash"), 0.33,
 					voterParam),
 				// last header (3/3 signed)
 				3: keys.GenSignedHeader(chainID, 3, bTime.Add(2*time.Hour), nil,
@@ -130,7 +130,7 @@ func TestClient_SequentialVerification(t *testing.T) {
 				1: h1,
 				// interim header (3/3 signed)
 				2: keys.GenSignedHeader(chainID, 2, bTime.Add(1*time.Hour), nil,
-					vals, vals,	[]byte("app_hash"), []byte("cons_hash"), []byte("results_hash"), 0, len(keys),
+					vals, vals, []byte("app_hash"), []byte("cons_hash"), []byte("results_hash"), 0, len(keys),
 					voterParam),
 				// last header (1/3 signed)
 				3: keys.GenSignedHeaderByRate(chainID, 3, bTime.Add(2*time.Hour), nil,
@@ -159,7 +159,7 @@ func TestClient_SequentialVerification(t *testing.T) {
 				1: h1,
 				// voters from invalid proof hash
 				2: genSignedHeaderWithInvalidProof(keys, chainID, 2, bTime.Add(1*time.Hour), nil,
-					vals, vals,	[]byte("app_hash"), []byte("cons_hash"), []byte("results_hash"), 0, len(keys),
+					vals, vals, []byte("app_hash"), []byte("cons_hash"), []byte("results_hash"), 0, len(keys),
 					voterParam),
 				// last header (1/3 signed)
 				3: keys.GenSignedHeader(chainID, 3, bTime.Add(2*time.Hour), nil,
@@ -221,7 +221,7 @@ func genSignedHeaderWithInvalidProof(pkz privKeys, chainID string, height int64,
 	proofHash, _ := vrf.ProofToHash(proof)
 	invalidProofHash := make([]byte, len(proofHash))
 	copy(invalidProofHash, proofHash)
-	invalidProofHash[0] = invalidProofHash[0]^0x01 // force invalid proof hash
+	invalidProofHash[0] = invalidProofHash[0] ^ 0x01 // force invalid proof hash
 	voterSet := types.SelectVoter(valset, invalidProofHash, voterParams)
 
 	header := genHeader(chainID, height, bTime, txs, voterSet, valset, nextValset, appHash, consHash, resHash,
@@ -234,7 +234,6 @@ func genSignedHeaderWithInvalidProof(pkz privKeys, chainID string, height int64,
 
 func TestClient_SkippingVerification(t *testing.T) {
 	t.Skip("Skipping verification disabled under selection of voters")
-	
 	// required for 2nd test case
 	newKeys := genPrivKeys(4)
 	newVals := newKeys.ToValidators(10, 1)

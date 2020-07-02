@@ -195,7 +195,7 @@ func TestValidatorSimpleSaveLoad(t *testing.T) {
 
 	// Can't load last voter set because of proof hash is not defined for last height
 	v, err = sm.LoadVoters(stateDB, 2, state.VoterParams)
-	assert.Error(err, sm.ErrNoProofHashForHeight{Height:2}.Error())
+	assert.Error(err, sm.ErrNoProofHashForHeight{Height: 2}.Error())
 
 	// Increment height, save; should be able to load for next & next next height.
 	state.LastBlockHeight++
@@ -209,7 +209,7 @@ func TestValidatorSimpleSaveLoad(t *testing.T) {
 	assert.Equal(vp0.Hash(), state.Voters.Hash(), "expected voter hashes to match")
 	assert.Equal(vp1.Hash(), state.NextValidators.Hash(), "expected next validator hashes to match")
 	_, err = sm.LoadVoters(stateDB, nextHeight+1, state.VoterParams)
-	assert.Error(err, sm.ErrNoProofHashForHeight{Height:nextHeight+1}.Error())
+	assert.Error(err, sm.ErrNoProofHashForHeight{Height: nextHeight + 1}.Error())
 }
 
 // TestValidatorChangesSaveLoad tests saving and loading a validator set with changes.
@@ -321,13 +321,13 @@ func TestLoadAndSaveVoters(t *testing.T) {
 		state.Voters = types.SelectVoter(state.Validators, state.LastProofHash, voterParam)
 		voters[i-1] = state.Voters.Copy()
 		validators[i] = state.NextValidators.Copy()
-		state.LastBlockHeight = int64(i-1)
-		state.LastHeightValidatorsChanged = int64(i+1)
+		state.LastBlockHeight = int64(i - 1)
+		state.LastHeightValidatorsChanged = int64(i + 1)
 		sm.SaveState(db, state)
 		state.LastVoters = state.Voters.Copy()
 		state.LastProofHash = rand.Bytes(10)
 		nValSet := state.NextValidators.Copy()
-		err := nValSet.UpdateWithChangeSet(genValSetWithPowers([]int64{int64(2000+i)}).Validators)
+		err := nValSet.UpdateWithChangeSet(genValSetWithPowers([]int64{int64(2000 + i)}).Validators)
 		assert.NoError(t, err)
 		nValSet.IncrementProposerPriority(1)
 		state.Validators = state.NextValidators.Copy()

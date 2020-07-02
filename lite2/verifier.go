@@ -62,8 +62,8 @@ func VerifyNonAdjacent(
 	}
 	untrustedVoters := types.SelectVoter(untrustedVals, proofHash, voterParams)
 
-	if err := verifyNewHeaderAndVoters(chainID, untrustedHeader, untrustedVoters, trustedHeader, now, maxClockDrift);
-		err != nil {
+	if err := verifyNewHeaderAndVoters(chainID, untrustedHeader, untrustedVoters, trustedHeader, now,
+		maxClockDrift); err != nil {
 		return ErrInvalidHeader{err}
 	}
 
@@ -127,8 +127,8 @@ func VerifyAdjacent(
 		return errors.Errorf("invalid proof: %s", err.Error())
 	}
 	untrustedVoters := types.SelectVoter(untrustedVals, proofHash, voterParams)
-	if err := verifyNewHeaderAndVoters(chainID, untrustedHeader, untrustedVoters, trustedHeader, now, maxClockDrift);
-		err != nil {
+	if err := verifyNewHeaderAndVoters(chainID, untrustedHeader, untrustedVoters, trustedHeader, now,
+		maxClockDrift); err != nil {
 		return ErrInvalidHeader{err}
 	}
 

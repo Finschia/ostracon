@@ -353,7 +353,7 @@ func LoadVoters(db dbm.DB, height int64, voterParams *types.VoterParams) (*types
                 %v\n`, err))
 	}
 	if len(proofHash) == 0 {
-		return nil,ErrNoProofHashForHeight{height}
+		return nil, ErrNoProofHashForHeight{height}
 	}
 	return types.SelectVoter(valInfo.ValidatorSet, proofHash, voterParams), nil
 }
