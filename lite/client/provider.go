@@ -99,10 +99,10 @@ func (p *provider) fetchLatestCommit(minHeight int64, maxHeight int64) (*ctypes.
 
 // Implements Provider.
 func (p *provider) ValidatorSet(chainID string, height int64) (valset *types.ValidatorSet, err error) {
-	return p.getVoterSet(chainID, height)
+	return p.getValidatorSet(chainID, height)
 }
 
-func (p *provider) getVoterSet(chainID string, height int64) (valset *types.ValidatorSet, err error) {
+func (p *provider) getValidatorSet(chainID string, height int64) (valset *types.ValidatorSet, err error) {
 	if chainID != p.chainID {
 		err = fmt.Errorf("expected chainID %s, got %s", p.chainID, chainID)
 		return
@@ -127,13 +127,13 @@ func (p *provider) getVoterSet(chainID string, height int64) (valset *types.Vali
 func (p *provider) fillFullCommit(signedHeader types.SignedHeader) (fc lite.FullCommit, err error) {
 
 	// Get the validators.
-	valset, err := p.getVoterSet(signedHeader.ChainID, signedHeader.Height)
+	valset, err := p.getValidatorSet(signedHeader.ChainID, signedHeader.Height)
 	if err != nil {
 		return lite.FullCommit{}, err
 	}
 
 	// Get the next validators.
-	nextValset, err := p.getVoterSet(signedHeader.ChainID, signedHeader.Height+1)
+	nextValset, err := p.getValidatorSet(signedHeader.ChainID, signedHeader.Height+1)
 	if err != nil {
 		return lite.FullCommit{}, err
 	}
