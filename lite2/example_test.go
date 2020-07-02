@@ -2,12 +2,13 @@ package lite_test
 
 import (
 	"fmt"
-	"github.com/tendermint/tendermint/types"
 	"io/ioutil"
 	stdlog "log"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/tendermint/tendermint/types"
 
 	dbm "github.com/tendermint/tm-db"
 

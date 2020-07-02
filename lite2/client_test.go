@@ -1,12 +1,13 @@
 package lite_test
 
 import (
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/tendermint/tendermint/crypto/vrf"
-	"github.com/tendermint/tendermint/libs/rand"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/tendermint/tendermint/crypto/ed25519"
+	"github.com/tendermint/tendermint/crypto/vrf"
+	"github.com/tendermint/tendermint/libs/rand"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

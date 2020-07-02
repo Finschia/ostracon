@@ -1,9 +1,10 @@
 package lite_test
 
 import (
-	"github.com/tendermint/tendermint/types"
 	"testing"
 	"time"
+
+	"github.com/tendermint/tendermint/types"
 
 	dbm "github.com/tendermint/tm-db"
 

@@ -3,10 +3,10 @@ package lite
 import (
 	"bytes"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto/vrf"
 	"sync"
 
-	log "github.com/tendermint/tendermint/libs/log"
+	"github.com/tendermint/tendermint/crypto/vrf"
+	"github.com/tendermint/tendermint/libs/log"
 	lerr "github.com/tendermint/tendermint/lite/errors"
 	"github.com/tendermint/tendermint/types"
 )

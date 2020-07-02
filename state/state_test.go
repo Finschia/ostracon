@@ -194,7 +194,7 @@ func TestValidatorSimpleSaveLoad(t *testing.T) {
 	assert.Equal(v.Hash(), state.Validators.Hash(), "expected validator hashes to match")
 
 	// Can't load last voter set because of proof hash is not defined for last height
-	v, err = sm.LoadVoters(stateDB, 2, state.VoterParams)
+	_, err = sm.LoadVoters(stateDB, 2, state.VoterParams)
 	assert.Error(err, sm.ErrNoProofHashForHeight{Height: 2}.Error())
 
 	// Increment height, save; should be able to load for next & next next height.

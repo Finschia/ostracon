@@ -2,8 +2,9 @@ package lite
 
 import (
 	"bytes"
-	"github.com/tendermint/tendermint/crypto/vrf"
 	"time"
+
+	"github.com/tendermint/tendermint/crypto/vrf"
 
 	"github.com/pkg/errors"
 

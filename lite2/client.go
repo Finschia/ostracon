@@ -3,13 +3,13 @@ package lite
 import (
 	"bytes"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto/vrf"
 	"math/rand"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
 
+	"github.com/tendermint/tendermint/crypto/vrf"
 	"github.com/tendermint/tendermint/libs/log"
 	tmmath "github.com/tendermint/tendermint/libs/math"
 	"github.com/tendermint/tendermint/lite2/provider"
