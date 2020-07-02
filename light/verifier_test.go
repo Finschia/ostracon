@@ -292,7 +292,7 @@ func TestVerifyAdjacentHeadersWithVoterSampling(t *testing.T) {
 		// 2/3 signed -> no error
 		6: {
 			keys.GenSignedHeaderByRate(chainID, nextHeight, bTime.Add(1*time.Hour), nil,
-				vals, vals, []byte("app_hash"), []byte("cons_hash"), []byte("results_hash"), 0.66,
+				vals, vals, []byte("app_hash"), []byte("cons_hash"), []byte("results_hash"), 0.67,
 				voterParamsHalf),
 			vals,
 			3 * time.Hour,
