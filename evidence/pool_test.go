@@ -1,13 +1,13 @@
 package evidence
 
 import (
-	"github.com/tendermint/tendermint/libs/rand"
 	"os"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/tendermint/tendermint/libs/rand"
 
 	dbm "github.com/tendermint/tm-db"
 
