@@ -9,6 +9,7 @@ import (
 
 	"github.com/snikch/goodman/hooks"
 	"github.com/snikch/goodman/transaction"
+	"github.com/tendermint/tendermint/cmd/contract_tests/unmarshaler"
 )
 
 func main() {

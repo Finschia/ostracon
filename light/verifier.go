@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/tendermint/tendermint/crypto/vrf"
-
 	tmmath "github.com/tendermint/tendermint/libs/math"
 	"github.com/tendermint/tendermint/types"
 )
