@@ -54,18 +54,20 @@ message State {
   google.protobuf.Timestamp last_block_time = 6
       [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
 
+  // vrf hash from proof
+  bytes last_proof_hash = 7;
+
   // LastValidators is used to validate block.LastCommit.
   // Validators are persisted to the database separately every time they change,
   // so we can query for historical validator sets.
   // Note that if s.LastBlockHeight causes a valset change,
   // we set s.LastHeightValidatorsChanged = s.LastBlockHeight + 1 + 1
   // Extra +1 due to nextValSet delay.
-  tendermint.proto.types.ValidatorSet next_validators                = 7;
-  tendermint.proto.types.ValidatorSet validators                     = 8;
-  tendermint.proto.types.VoterSet     next_voters                    = 9;
-  tendermint.proto.types.VoterSet     voters                         = 10;
-  tendermint.proto.types.VoterSet     last_voters                    = 11;
-  tendermint.proto.types.ValidatorSet last_validators                = 12;
+  tendermint.proto.types.ValidatorSet next_validators                = 8;
+  tendermint.proto.types.ValidatorSet validators                     = 9;
+  tendermint.proto.types.VoterSet     next_voters                    = 10;
+  tendermint.proto.types.VoterSet     voters                         = 11;
+  tendermint.proto.types.VoterSet     last_voters                    = 12;
   int64                               last_height_validators_changed = 13;
 
   // Consensus parameters used for validating blocks.
