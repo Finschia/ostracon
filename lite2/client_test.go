@@ -10,7 +10,6 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/tendermint/tendermint/crypto/vrf"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/libs/rand"
@@ -211,8 +210,8 @@ func genSignedHeaderWithInvalidProof(pkz privKeys, chainID string, height int64,
 	secret := [64]byte{}
 	privateKey := ed25519.GenPrivKeyFromSecret(secret[:])
 	message := rand.Bytes(10)
-	proof, _ := vrf.Prove(privateKey, message)
-	proofHash, _ := vrf.ProofToHash(proof)
+	proof, _ := privateKey.VRFProve(message)
+	proofHash, _ := privateKey.PubKey().VRFVerify(proof, message)
 	invalidProofHash := make([]byte, len(proofHash))
 	copy(invalidProofHash, proofHash)
 	invalidProofHash[0] ^= 0x01 // force invalid proof hash

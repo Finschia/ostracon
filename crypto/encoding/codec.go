@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/bls"
+	"github.com/tendermint/tendermint/crypto/composite"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	pc "github.com/tendermint/tendermint/proto/crypto/keys"
 )
@@ -16,6 +18,29 @@ func PubKeyToProto(k crypto.PubKey) (pc.PublicKey, error) {
 	}
 	var kp pc.PublicKey
 	switch k := k.(type) {
+	case composite.PubKeyComposite:
+		sign, err := PubKeyToProto(k.SignKey)
+		if err != nil {
+			return kp, err
+		}
+		vrf, err := PubKeyToProto(k.VrfKey)
+		if err != nil {
+			return kp, err
+		}
+		kp = pc.PublicKey{
+			Sum: &pc.PublicKey_Composite{
+				Composite: &pc.CompositePublicKey{
+					SignKey: &sign,
+					VrfKey:  &vrf,
+				},
+			},
+		}
+	case bls.PubKeyBLS12:
+		kp = pc.PublicKey{
+			Sum: &pc.PublicKey_Bls{
+				Bls: k[:],
+			},
+		}
 	case ed25519.PubKeyEd25519:
 		kp = pc.PublicKey{
 			Sum: &pc.PublicKey_Ed25519{
@@ -34,6 +59,29 @@ func PubKeyFromProto(k *pc.PublicKey) (crypto.PubKey, error) {
 		return nil, errors.New("nil PublicKey")
 	}
 	switch k := k.Sum.(type) {
+	case *pc.PublicKey_Composite:
+		var pk composite.PubKeyComposite
+		sign, err := PubKeyFromProto(k.Composite.SignKey)
+		if err != nil {
+			return pk, err
+		}
+		vrf, err := PubKeyFromProto(k.Composite.VrfKey)
+		if err != nil {
+			return pk, err
+		}
+		pk = composite.PubKeyComposite{
+			SignKey: sign,
+			VrfKey:  vrf,
+		}
+		return pk, nil
+	case *pc.PublicKey_Bls:
+		if len(k.Bls) != bls.PubKeyBLS12Size {
+			return nil, fmt.Errorf("invalid size for PubKeyBLS. Got %d, expected %d",
+				len(k.Bls), bls.PubKeyBLS12Size)
+		}
+		var pk bls.PubKeyBLS12
+		copy(pk[:], k.Bls)
+		return pk, nil
 	case *pc.PublicKey_Ed25519:
 		if len(k.Ed25519) != ed25519.PubKeyEd25519Size {
 			return nil, fmt.Errorf("invalid size for PubKeyEd25519. Got %d, expected %d",

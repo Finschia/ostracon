@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/tendermint/tendermint/crypto/vrf"
 	"github.com/tendermint/tendermint/libs/rand"
 	"github.com/tendermint/tendermint/types"
 )
@@ -118,15 +117,10 @@ func TestSignerGenerateVRFProof(t *testing.T) {
 
 		proof, err := tc.signerClient.GenerateVRFProof(message)
 		require.Nil(t, err)
-		_, err = vrf.ProofToHash(proof)
+		pubKey, _ := tc.signerClient.GetPubKey()
+		output, err := pubKey.VRFVerify(proof, message)
 		require.Nil(t, err)
-		pubKey, err2 := tc.signerClient.GetPubKey()
-		require.NoError(t, err2)
-		pubKeyEd25519, ok := pubKey.(ed25519.PubKeyEd25519)
-		require.True(t, ok)
-		expected, err := vrf.Verify(pubKeyEd25519, proof, message)
-		require.Nil(t, err)
-		assert.True(t, expected)
+		require.NotNil(t, output)
 	}
 }
 

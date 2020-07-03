@@ -6,6 +6,8 @@ import (
 	amino "github.com/tendermint/go-amino"
 
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/bls"
+	"github.com/tendermint/tendermint/crypto/composite"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/crypto/multisig"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
@@ -31,10 +33,12 @@ func init() {
 
 	// TODO: Have amino provide a way to go from concrete struct to route directly.
 	// Its currently a private API
+	nameTable[reflect.TypeOf(bls.PubKeyBLS12{})] = bls.PubKeyAminoName
 	nameTable[reflect.TypeOf(ed25519.PubKeyEd25519{})] = ed25519.PubKeyAminoName
 	nameTable[reflect.TypeOf(sr25519.PubKeySr25519{})] = sr25519.PubKeyAminoName
 	nameTable[reflect.TypeOf(secp256k1.PubKeySecp256k1{})] = secp256k1.PubKeyAminoName
 	nameTable[reflect.TypeOf(multisig.PubKeyMultisigThreshold{})] = multisig.PubKeyMultisigThresholdAminoRoute
+	nameTable[reflect.TypeOf(composite.PubKeyComposite{})] = composite.PubKeyCompositeAminoName
 }
 
 // PubkeyAminoName returns the amino route of a pubkey
@@ -49,6 +53,8 @@ func PubkeyAminoName(cdc *amino.Codec, key crypto.PubKey) (string, bool) {
 func RegisterAmino(cdc *amino.Codec) {
 	// These are all written here instead of
 	cdc.RegisterInterface((*crypto.PubKey)(nil), nil)
+	cdc.RegisterConcrete(bls.PubKeyBLS12{},
+		bls.PubKeyAminoName, nil)
 	cdc.RegisterConcrete(ed25519.PubKeyEd25519{},
 		ed25519.PubKeyAminoName, nil)
 	cdc.RegisterConcrete(sr25519.PubKeySr25519{},
@@ -57,14 +63,20 @@ func RegisterAmino(cdc *amino.Codec) {
 		secp256k1.PubKeyAminoName, nil)
 	cdc.RegisterConcrete(multisig.PubKeyMultisigThreshold{},
 		multisig.PubKeyMultisigThresholdAminoRoute, nil)
+	cdc.RegisterConcrete(composite.PubKeyComposite{},
+		composite.PubKeyCompositeAminoName, nil)
 
 	cdc.RegisterInterface((*crypto.PrivKey)(nil), nil)
+	cdc.RegisterConcrete(bls.PrivKeyBLS12{},
+		bls.PrivKeyAminoName, nil)
 	cdc.RegisterConcrete(ed25519.PrivKeyEd25519{},
 		ed25519.PrivKeyAminoName, nil)
 	cdc.RegisterConcrete(sr25519.PrivKeySr25519{},
 		sr25519.PrivKeyAminoName, nil)
 	cdc.RegisterConcrete(secp256k1.PrivKeySecp256k1{},
 		secp256k1.PrivKeyAminoName, nil)
+	cdc.RegisterConcrete(composite.PrivKeyComposite{},
+		composite.PrivKeyCompositeAminoName, nil)
 }
 
 // RegisterKeyType registers an external key type to allow decoding it from bytes
@@ -83,4 +95,9 @@ func PrivKeyFromBytes(privKeyBytes []byte) (privKey crypto.PrivKey, err error) {
 func PubKeyFromBytes(pubKeyBytes []byte) (pubKey crypto.PubKey, err error) {
 	err = cdc.UnmarshalBinaryBare(pubKeyBytes, &pubKey)
 	return
+}
+
+// PubKeyToBytes marshals the public key to bytes
+func PubKeyToBytes(pubKey crypto.PubKey) ([]byte, error) {
+	return cdc.MarshalBinaryBare(pubKey)
 }

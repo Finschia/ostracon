@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/tendermint/tendermint/crypto/vrf"
+	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
 	"github.com/tendermint/tendermint/version"
@@ -149,7 +149,7 @@ func (state State) MakeBlock(
 	evidence []types.Evidence,
 	proposerAddress []byte,
 	round int,
-	proof vrf.Proof,
+	proof crypto.Proof,
 ) (*types.Block, *types.PartSet) {
 
 	// Build base block with block data.

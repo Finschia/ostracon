@@ -128,9 +128,12 @@ func TestBlockMakePartSetWithEvidence(t *testing.T) {
 	ev := NewMockEvidence(h, time.Now(), 0, voterSet.Voters[0].Address)
 	evList := []Evidence{ev}
 
-	partSet := MakeBlock(h, []Tx{Tx("Hello World")}, commit, evList).MakePartSet(512)
+	block := MakeBlock(h, []Tx{Tx("Hello World")}, commit, evList)
+	bz, _ := cdc.MarshalBinaryLengthPrefixed(block)
+	blockSize := len(bz)
+	partSet := block.MakePartSet(512)
 	assert.NotNil(t, partSet)
-	assert.Equal(t, 3, partSet.Total())
+	assert.Equal(t, int(math.Ceil(float64(blockSize)/512.0)), partSet.Total())
 }
 
 func TestBlockHashesTo(t *testing.T) {
@@ -385,8 +388,8 @@ func TestBlockMaxDataBytes(t *testing.T) {
 		0: {-10, 1, 0, true, 0},
 		1: {10, 1, 0, true, 0},
 		2: {865, 1, 0, true, 0},
-		3: {900, 1, 0, false, 0},
-		4: {901, 1, 0, false, 1},
+		3: {932, 1, 0, false, 0},
+		4: {933, 1, 0, false, 1},
 	}
 
 	for i, tc := range testCases {
@@ -414,8 +417,8 @@ func TestBlockMaxDataBytesUnknownEvidence(t *testing.T) {
 		0: {-10, 1, true, 0},
 		1: {10, 1, true, 0},
 		2: {961, 1, true, 0},
-		3: {999, 1, false, 0},
-		4: {1001, 1, false, 1},
+		3: {1035, 1, false, 0},
+		4: {1036, 1, false, 1},
 	}
 
 	for i, tc := range testCases {

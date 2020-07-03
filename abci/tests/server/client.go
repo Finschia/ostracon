@@ -5,6 +5,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/tendermint/tendermint/crypto/composite"
+	tmtypes "github.com/tendermint/tendermint/types"
+
 	abcicli "github.com/tendermint/tendermint/abci/client"
 	"github.com/tendermint/tendermint/abci/types"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
@@ -14,9 +17,10 @@ func InitChain(client abcicli.Client) error {
 	total := 10
 	vals := make([]types.ValidatorUpdate, total)
 	for i := 0; i < total; i++ {
-		pubkey := tmrand.Bytes(33)
+		pk := composite.GenPrivKey().PubKey()
+		pubkey := tmtypes.TM2PB.PubKey(pk).Data
 		power := tmrand.Int()
-		vals[i] = types.Ed25519ValidatorUpdate(pubkey, int64(power))
+		vals[i] = types.NewValidatorUpdate("composite", pubkey, int64(power))
 	}
 	_, err := client.InitChainSync(types.RequestInitChain{
 		Validators: vals,

@@ -58,13 +58,17 @@ func ExamplePrintRegisteredTypes() {
 	cdc.PrintTypes(os.Stdout)
 	// Output: | Type | Name | Prefix | Length | Notes |
 	//| ---- | ---- | ------ | ----- | ------ |
+	//| PubKeyBLS12 | tendermint/PubKeyBLS12 | 0xD68FFBC1 | 0x30 |  |
 	//| PubKeyEd25519 | tendermint/PubKeyEd25519 | 0x1624DE64 | 0x20 |  |
 	//| PubKeySr25519 | tendermint/PubKeySr25519 | 0x0DFB1005 | 0x20 |  |
 	//| PubKeySecp256k1 | tendermint/PubKeySecp256k1 | 0xEB5AE987 | 0x21 |  |
 	//| PubKeyMultisigThreshold | tendermint/PubKeyMultisigThreshold | 0x22C1F7E2 | variable |  |
+	//| PubKeyComposite | tendermint/PubKeyComposite | 0x01886E34 | variable |  |
+	//| PrivKeyBLS12 | tendermint/PrivKeyBLS12 | 0xEAECF03F | 0x20 |  |
 	//| PrivKeyEd25519 | tendermint/PrivKeyEd25519 | 0xA3288910 | 0x40 |  |
 	//| PrivKeySr25519 | tendermint/PrivKeySr25519 | 0x2F82D78B | 0x20 |  |
 	//| PrivKeySecp256k1 | tendermint/PrivKeySecp256k1 | 0xE1B0F79B | 0x20 |  |
+	//| PrivKeyComposite | tendermint/PrivKeyComposite | 0x9F3EE8F0 | variable |  |
 }
 
 func TestKeyEncodings(t *testing.T) {
@@ -172,7 +176,10 @@ func (privkey testPriv) PubKey() crypto.PubKey { return testPub{} }
 func (privkey testPriv) Bytes() []byte {
 	return testCdc.MustMarshalBinaryBare(privkey)
 }
-func (privkey testPriv) Sign(msg []byte) ([]byte, error)  { return []byte{}, nil }
+func (privkey testPriv) Sign(msg []byte) ([]byte, error) { return []byte{}, nil }
+func (privkey testPriv) VRFProve(seed []byte) (crypto.Proof, error) {
+	return nil, nil
+}
 func (privkey testPriv) Equals(other crypto.PrivKey) bool { return true }
 
 type testPub []byte
@@ -180,6 +187,9 @@ type testPub []byte
 func (key testPub) Address() crypto.Address { return crypto.Address{} }
 func (key testPub) Bytes() []byte {
 	return testCdc.MustMarshalBinaryBare(key)
+}
+func (key testPub) VRFVerify(proof crypto.Proof, seed []byte) (crypto.Output, error) {
+	return nil, nil
 }
 func (key testPub) VerifyBytes(msg []byte, sig []byte) bool { return true }
 func (key testPub) Equals(other crypto.PubKey) bool         { return true }

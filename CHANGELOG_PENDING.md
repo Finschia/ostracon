@@ -11,10 +11,11 @@
 - Apps
 
 - P2P Protocol
-   
+
 - Go API
 
 - Blockchain Protocol
+- [consensus] [\#101](https://github.com/line/tendermint/pull/101) Introduce composite key to delegate features to each function key
 
 ### FEATURES:
 

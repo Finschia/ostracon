@@ -7,7 +7,9 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/composite"
 	"github.com/tendermint/tendermint/crypto/ed25519"
+	cryptoamino "github.com/tendermint/tendermint/crypto/encoding/amino"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 	"github.com/tendermint/tendermint/crypto/sr25519"
 )
@@ -21,6 +23,7 @@ const (
 )
 
 const (
+	ABCIPubKeyTypeComposite = "composite"
 	ABCIPubKeyTypeEd25519   = "ed25519"
 	ABCIPubKeyTypeSr25519   = "sr25519"
 	ABCIPubKeyTypeSecp256k1 = "secp256k1"
@@ -29,6 +32,7 @@ const (
 // TODO: Make non-global by allowing for registration of more pubkey types
 
 var ABCIPubKeyTypesToAminoNames = map[string]string{
+	ABCIPubKeyTypeComposite: composite.PubKeyCompositeAminoName,
 	ABCIPubKeyTypeEd25519:   ed25519.PubKeyAminoName,
 	ABCIPubKeyTypeSr25519:   sr25519.PubKeyAminoName,
 	ABCIPubKeyTypeSecp256k1: secp256k1.PubKeyAminoName,
@@ -101,6 +105,15 @@ func (tm2pb) ValidatorUpdate(val *Validator) abci.ValidatorUpdate {
 // TODO: add cases when new pubkey types are added to crypto
 func (tm2pb) PubKey(pubKey crypto.PubKey) abci.PubKey {
 	switch pk := pubKey.(type) {
+	case composite.PubKeyComposite:
+		b, err := cryptoamino.PubKeyToBytes(pk)
+		if err != nil {
+			panic(fmt.Sprintf("failed to serialize the composite public key: %+v, %s", pk, err))
+		}
+		return abci.PubKey{
+			Type: ABCIPubKeyTypeComposite,
+			Data: b,
+		}
 	case ed25519.PubKeyEd25519:
 		return abci.PubKey{
 			Type: ABCIPubKeyTypeEd25519,
@@ -195,11 +208,25 @@ var PB2TM = pb2tm{}
 type pb2tm struct{}
 
 func (pb2tm) PubKey(pubKey abci.PubKey) (crypto.PubKey, error) {
+	pk, err := PB2TM.restorePubKey(pubKey)
+	if err != nil {
+		return nil, err
+	}
+	return pk, nil
+}
+
+func (pb2tm) restorePubKey(pubKey abci.PubKey) (crypto.PubKey, error) {
 	switch pubKey.Type {
+	case ABCIPubKeyTypeComposite:
+		pk, err := cryptoamino.PubKeyFromBytes(pubKey.Data)
+		if err != nil {
+			return nil, err
+		}
+		return pk, nil
 	case ABCIPubKeyTypeEd25519:
 		if len(pubKey.Data) != ed25519.PubKeyEd25519Size {
-			return nil, fmt.Errorf("invalid size for PubKeyEd25519. Got %d, expected %d",
-				len(pubKey.Data), ed25519.PubKeyEd25519Size)
+			return nil, fmt.Errorf("invalid size for PubKeyEd25519. Got %d, expected %d: %+v",
+				len(pubKey.Data), ed25519.PubKeyEd25519Size, pubKey)
 		}
 		var pk ed25519.PubKeyEd25519
 		copy(pk[:], pubKey.Data)

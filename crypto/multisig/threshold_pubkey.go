@@ -1,6 +1,8 @@
 package multisig
 
 import (
+	"fmt"
+
 	"github.com/tendermint/tendermint/crypto"
 )
 
@@ -65,6 +67,11 @@ func (pk PubKeyMultisigThreshold) VerifyBytes(msg []byte, marshalledSig []byte) 
 		}
 	}
 	return true
+}
+
+// VRFVerify is not supported in MultisigThreshold.
+func (pk PubKeyMultisigThreshold) VRFVerify(proof crypto.Proof, seed []byte) (crypto.Output, error) {
+	return nil, fmt.Errorf("VRF verify is not supported by the MultisigThreshold")
 }
 
 // Bytes returns the amino encoded version of the PubKeyMultisigThreshold
