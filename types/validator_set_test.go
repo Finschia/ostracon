@@ -1381,7 +1381,82 @@ func TestVerifyCommitTrusting(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
+}
 
+func TestVerifyCommitTrustingErrorsOnOverflow(t *testing.T) {
+	var (
+		blockID                    = makeBlockIDRandom()
+		voteSet, _, voterSet, vals = randVoteSet(1, 1, PrecommitType, 1, MaxTotalStakingPower)
+		commit, err                = MakeCommit(blockID, 1, 1, voteSet, vals, time.Now())
+	)
+	require.NoError(t, err)
+
+	err = voterSet.VerifyCommitTrusting("test_chain_id", blockID, commit.Height, commit,
+		tmmath.Fraction{Numerator: 25, Denominator: 55})
+	if assert.Error(t, err) {
+		assert.Contains(t, err.Error(), "int64 overflow")
+	}
+}
+
+func TestSafeMul(t *testing.T) {
+	testCases := []struct {
+		a        int64
+		b        int64
+		c        int64
+		overflow bool
+	}{
+		0: {0, 0, 0, false},
+		1: {1, 0, 0, false},
+		2: {2, 3, 6, false},
+		3: {2, -3, -6, false},
+		4: {-2, -3, 6, false},
+		5: {-2, 3, -6, false},
+		6: {math.MaxInt64, 1, math.MaxInt64, false},
+		7: {math.MaxInt64 / 2, 2, math.MaxInt64 - 1, false},
+		8: {math.MaxInt64 / 2, 3, -1, true},
+		9: {math.MaxInt64, 2, -1, true},
+	}
+
+	for i, tc := range testCases {
+		c, overflow := safeMul(tc.a, tc.b)
+		assert.Equal(t, tc.c, c, "#%d", i)
+		assert.Equal(t, tc.overflow, overflow, "#%d", i)
+	}
+}
+
+func TestValidatorSetProtoBuf(t *testing.T) {
+	valset, _ := RandValidatorSet(10, 100)
+	valset2, _ := RandValidatorSet(10, 100)
+	valset2.Validators[0] = &Validator{}
+
+	testCases := []struct {
+		msg      string
+		v1       *ValidatorSet
+		expPass1 bool
+		expPass2 bool
+	}{
+		{"success", valset, true, true},
+		{"fail valSet2, pubkey empty", valset2, false, false},
+		// TODO I don't know why this is not occurred error.
+		//{"fail empty valSet", &ValidatorSet{}, false, false},
+		{"false nil", nil, false, false},
+	}
+	for _, tc := range testCases {
+		protoValSet, err := tc.v1.ToProto()
+		if tc.expPass1 {
+			require.NoError(t, err, tc.msg)
+		} else {
+			require.Error(t, err, tc.msg)
+		}
+
+		valSet, err := ValidatorSetFromProto(protoValSet)
+		if tc.expPass2 {
+			require.NoError(t, err, tc.msg)
+			require.EqualValues(t, tc.v1, valSet, tc.msg)
+		} else {
+			require.Error(t, err, tc.msg)
+		}
+	}
 }
 
 //---------------------

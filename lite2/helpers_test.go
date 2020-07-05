@@ -5,7 +5,7 @@ import (
 
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
-
+	"github.com/tendermint/tendermint/crypto/tmhash"
 	"github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
 )
@@ -142,6 +142,7 @@ func genHeader(chainID string, height int64, bTime time.Time, txs types.Txs,
 		AppHash:         appHash,
 		ConsensusHash:   consHash,
 		LastResultsHash: resHash,
+		ProposerAddress: valset.Voters[0].Address,
 	}
 }
 
@@ -202,8 +203,8 @@ func GenMockNode(
 
 	// genesis header and vals
 	lastHeader := keys.GenSignedHeader(chainID, 1, bTime.Add(1*time.Minute), nil,
-		keys.ToVoters(2, 2), newKeys.ToVoters(2, 2), []byte("app_hash"), []byte("cons_hash"),
-		[]byte("results_hash"), 0, len(keys))
+		keys.ToVoters(2, 2), newKeys.ToVoters(2, 2), hash("app_hash"), hash("cons_hash"),
+		hash("results_hash"), 0, len(keys))
 	currentHeader := lastHeader
 	headers[1] = currentHeader
 	voterSet[1] = keys.ToVoters(2, 2)
@@ -216,8 +217,8 @@ func GenMockNode(
 		newKeys = keys.ChangeKeys(valVariationInt)
 		currentHeader = keys.GenSignedHeaderLastBlockID(chainID, height, bTime.Add(time.Duration(height)*time.Minute),
 			nil,
-			keys.ToVoters(2, 2), newKeys.ToVoters(2, 2), []byte("app_hash"), []byte("cons_hash"),
-			[]byte("results_hash"), 0, len(keys), types.BlockID{Hash: lastHeader.Hash()})
+			keys.ToVoters(2, 2), newKeys.ToVoters(2, 2), hash("app_hash"), hash("cons_hash"),
+			hash("results_hash"), 0, len(keys), types.BlockID{Hash: lastHeader.Hash()})
 		headers[height] = currentHeader
 		voterSet[height] = keys.ToVoters(2, 2)
 		lastHeader = currentHeader
@@ -225,4 +226,8 @@ func GenMockNode(
 	}
 
 	return chainID, headers, voterSet
+}
+
+func hash(s string) []byte {
+	return tmhash.Sum([]byte(s))
 }

@@ -1,6 +1,7 @@
 package types
 
 import (
+	"github.com/stretchr/testify/require"
 	"math"
 	"testing"
 
@@ -79,7 +80,7 @@ func TestSelectVoter(t *testing.T) {
 
 	// test VoterElectionThreshold
 	for i := 1; i < 100; i++ {
-		voterSet := SelectVoter(valSet, hash, &VoterParams{15, i, 1})
+		voterSet := SelectVoter(valSet, hash, &VoterParams{15, int32(i), 1})
 		assert.True(t, voterSet.Size() >= 15)
 	}
 }
@@ -182,7 +183,7 @@ func TestSelectVoterMaxVarious(t *testing.T) {
 		for validators := 16; validators <= 256; validators *= 4 {
 			for voters := 1; voters <= validators; voters += 10 {
 				valSet, _ := randValidatorSetWithMinMax(validators, 100, 100*int64(minMaxRate))
-				voterSet := SelectVoter(valSet, []byte{byte(hash)}, &VoterParams{voters, 20, 5})
+				voterSet := SelectVoter(valSet, []byte{byte(hash)}, &VoterParams{int32(voters), 20, 5})
 				if voterSet.Size() < voters {
 					t.Logf("Cannot elect voters up to MaxVoters: validators=%d, MaxVoters=%d, actual voters=%d",
 						validators, voters, voterSet.Size())
@@ -244,7 +245,7 @@ func countByzantines(voters []*Validator, byzantines map[string]bool) int {
 }
 
 func electVotersForLoop(t *testing.T, hash []byte, valSet *ValidatorSet, privMap map[string]PrivValidator,
-	byzantines map[string]bool, loopCount int, byzantinePercent, accuracy int) {
+	byzantines map[string]bool, loopCount int, byzantinePercent, accuracy int32) {
 	byzantineFault := 0
 	totalVoters := 0
 	totalByzantines := 0
@@ -268,7 +269,7 @@ func electVotersForLoop(t *testing.T, hash []byte, valSet *ValidatorSet, privMap
 
 func TestCalVotersNum2(t *testing.T) {
 	valSet, privMap := randValidatorSetWithMinMax(100, 100, 10000)
-	byzantinePercent := 20
+	byzantinePercent := int32(20)
 	byzantines := makeByzantine(valSet, float64(byzantinePercent)/100)
 	genDoc := &GenesisDoc{
 		GenesisTime: tmtime.Now(),
@@ -300,4 +301,37 @@ func TestAccuracyFromElectionPrecision(t *testing.T) {
 	assert.True(t, accuracyFromElectionPrecision(13) == 0.9999999999999)
 	assert.True(t, accuracyFromElectionPrecision(14) == 0.99999999999999)
 	assert.True(t, accuracyFromElectionPrecision(15) == 0.999999999999999)
+}
+
+func TestVoterSetProtoBuf(t *testing.T) {
+	_, voterSet, _ := RandVoterSet(10, 100)
+	_, voterSet2, _ := RandVoterSet(10, 100)
+	voterSet2.Voters[0] = &Validator{}
+
+	testCase := []struct {
+		msg      string
+		v1       *VoterSet
+		expPass1 bool
+		expPass2 bool
+	}{
+		{"success", voterSet, true, true},
+		{"fail voterSet2, pubkey empty", voterSet2, false, false},
+		{"false nil", nil, false, false},
+	}
+	for _, tc := range testCase {
+		protoVoterSet, err := tc.v1.ToProto()
+		if tc.expPass1 {
+			require.NoError(t, err, tc.msg)
+		} else {
+			require.Error(t, err, tc.msg)
+		}
+
+		vSet, err := VoterSetFromProto(protoVoterSet)
+		if tc.expPass2 {
+			require.NoError(t, err, tc.msg)
+			require.EqualValues(t, tc.v1, vSet, tc.msg)
+		} else {
+			require.Error(t, err, tc.msg)
+		}
+	}
 }

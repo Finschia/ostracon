@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	tmproto "github.com/tendermint/tendermint/proto/types"
 	"math"
 	"sort"
 	"strings"
@@ -266,8 +267,13 @@ func (voters *VoterSet) VerifyCommitTrusting(chainID string, blockID BlockID,
 	var (
 		talliedVotingPower int64
 		seenVals           = make(map[int]int, len(commit.Signatures)) // validator index -> commit index
-		votingPowerNeeded  = (voters.TotalVotingPower() * trustLevel.Numerator) / trustLevel.Denominator
 	)
+
+	totalVotingPowerMulByNumerator, overflow := safeMul(voters.TotalVotingPower(), trustLevel.Numerator)
+	if overflow {
+		return errors.New("int64 overflow while calculating voting power needed. please provide smaller trustLevel numerator")
+	}
+	votingPowerNeeded := totalVotingPowerMulByNumerator / trustLevel.Denominator
 
 	for idx, commitSig := range commit.Signatures {
 		if commitSig.Absent() {
@@ -308,6 +314,48 @@ func (voters *VoterSet) VerifyCommitTrusting(chainID string, blockID BlockID,
 	}
 
 	return ErrNotEnoughVotingPowerSigned{Got: talliedVotingPower, Needed: votingPowerNeeded}
+}
+
+// ToProto converts VoterSet to protobuf
+func (voters *VoterSet) ToProto() (*tmproto.VoterSet, error) {
+	if voters == nil {
+		return nil, errors.New("nil voter set")
+	}
+	vsp := new(tmproto.VoterSet)
+	votersProto := make([]*tmproto.Validator, len(voters.Voters))
+	for i := 0; i < len(voters.Voters); i++ {
+		voterp, err := voters.Voters[i].ToProto()
+		if err != nil {
+			return nil, err
+		}
+		votersProto[i] = voterp
+	}
+	vsp.Voters = votersProto
+	vsp.TotalVotingPower = voters.totalVotingPower
+
+	return vsp, nil
+}
+
+// VoterSetFromProto sets a protobuf VoterSEt to the give pointer.
+// It returns an error if any of the voters from the set or the proposer is invalid
+func VoterSetFromProto(vp *tmproto.VoterSet) (*VoterSet, error) {
+	if vp == nil {
+		return nil, errors.New("nil voter set")
+	}
+	voters := new(VoterSet)
+
+	valsProto := make([]*Validator, len(vp.Voters))
+	for i := 0; i < len(vp.Voters); i++ {
+		v, err := ValidatorFromProto(vp.Voters[i])
+		if err != nil {
+			return nil, err
+		}
+		valsProto[i] = v
+	}
+	voters.Voters = valsProto
+	voters.totalVotingPower = vp.GetTotalVotingPower()
+
+	return voters, nil
 }
 
 func verifyCommitBasic(commit *Commit, height int64, blockID BlockID) error {
@@ -404,14 +452,14 @@ func (c *candidate) SetWinPoint(winPoint int64) {
 	c.val.VotingPower = winPoint
 }
 
-func accuracyFromElectionPrecision(precision int) float64 {
-	base := math.Pow10(precision)
+func accuracyFromElectionPrecision(precision int32) float64 {
+	base := math.Pow10(int(precision))
 	result := (base - 1) / base
 	return result
 }
 
 func SelectVoter(validators *ValidatorSet, proofHash []byte, voterParams *VoterParams) *VoterSet {
-	if len(proofHash) == 0 || validators.Size() <= voterParams.VoterElectionThreshold {
+	if len(proofHash) == 0 || validators.Size() <= int(voterParams.VoterElectionThreshold) {
 		return ToVoterAll(validators.Validators)
 	}
 
@@ -429,7 +477,7 @@ func SelectVoter(validators *ValidatorSet, proofHash []byte, voterParams *VoterP
 	if minVoters > math.MaxInt32 {
 		panic("CalNumOfVoterToElect is overflow for MaxInt32")
 	}
-	voterCount := tmmath.MaxInt(voterParams.VoterElectionThreshold, int(minVoters))
+	voterCount := tmmath.MaxInt(int(voterParams.VoterElectionThreshold), int(minVoters))
 	winners := tmrand.RandomSamplingWithoutReplacement(seed, candidates, voterCount)
 	voters := make([]*Validator, len(winners))
 	for i, winner := range winners {
