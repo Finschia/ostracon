@@ -7,7 +7,6 @@ Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermi
 ### BREAKING CHANGES
 
 - State
-  - [state] [\#83](https://github.com/line/tendermint/pull/92) Add `VoterParams` to state
   - [state] [\#100](https://github.com/line/tendermint/pull/100) Remove `NextVoters` from state
 
 - CLI/RPC/Config
@@ -28,10 +27,7 @@ Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermi
   - [consensus] [\#83](https://github.com/line/tendermint/pull/83) Change calculation of `VotingPower`
 
 ### FEATURES:
-- [rpc] [\#78](https://github.com/line/tendermint/pull/78) Add `Voters` rpc
-- [types] [\#83](https://github.com/line/tendermint/pull/83) Add `StakingPower` to `Validator`
-- [consensus] [\#83](https://github.com/line/tendermint/pull/83) Change calculation of `VotingPower`
-- [consensus] [\#92](https://github.com/line/tendermint/pull/92) Apply calculation of voter count
+- [BLS] [\#81](https://github.com/line/tendermint/issues/81) Modify to generate at the same time as Ed25519 key generation
 - [lite] [\#100](https://github.com/line/tendermint/pull/100) Lite calls `Genesis()` rpc when it starts up
 
 ### IMPROVEMENTS
