@@ -2,6 +2,7 @@ package lite
 
 import (
 	"bytes"
+
 	"github.com/tendermint/tendermint/crypto/vrf"
 
 	"github.com/pkg/errors"
@@ -60,8 +61,7 @@ func (bv *BaseVerifier) Verify(signedHeader types.SignedHeader) error {
 	}
 
 	// We can't verify with the wrong validator set.
-	if !bytes.Equal(signedHeader.ValidatorsHash,
-		bv.valSet.Hash()) {
+	if !bytes.Equal(signedHeader.ValidatorsHash, bv.valSet.Hash()) {
 		return lerr.ErrUnexpectedValidators(signedHeader.ValidatorsHash, bv.valSet.Hash())
 	}
 
