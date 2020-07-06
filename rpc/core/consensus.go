@@ -26,8 +26,7 @@ func validators(ctx *rpctypes.Context, heightPtr *int64, page, perPage int,
 	*ctypes.ResultValidators, error) {
 	// The latest validator that we know is the
 	// NextValidator of the last block.
-	height := env.ConsensusState.GetState().LastBlockHeight + 1
-	height, err := getHeight(height, heightPtr)
+	height, err := getHeight(latestUncommittedHeight(), heightPtr)
 	if err != nil {
 		return nil, err
 	}
