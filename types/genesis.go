@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	tmproto "github.com/tendermint/tendermint/proto/types"
 	"io/ioutil"
 	"time"
+
+	tmproto "github.com/tendermint/tendermint/proto/types"
 
 	"github.com/pkg/errors"
 
@@ -149,6 +150,21 @@ func GenesisDocFromFile(genDocFile string) (*GenesisDoc, error) {
 		return nil, errors.Wrap(err, fmt.Sprintf("Error reading GenesisDoc at %v", genDocFile))
 	}
 	return genDoc, nil
+}
+
+func (vp *VoterParams) Validate() error {
+	if vp.VoterElectionThreshold < 0 {
+		return errors.Errorf("VoterElectionThreshold must be greater than or equal to 0. Got %d",
+			vp.VoterElectionThreshold)
+	}
+	if vp.MaxTolerableByzantinePercentage <= 0 || vp.MaxTolerableByzantinePercentage >= 34 {
+		return errors.Errorf("MaxTolerableByzantinePercentage must be in between 1 and 33. Got %d",
+			vp.MaxTolerableByzantinePercentage)
+	}
+	if vp.ElectionPrecision <= 1 || vp.ElectionPrecision > 15 {
+		return errors.Errorf("ElectionPrecision must be in 2~15(including). Got %d", vp.ElectionPrecision)
+	}
+	return nil
 }
 
 func (vp *VoterParams) ToProto() *tmproto.VoterParams {

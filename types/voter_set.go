@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	tmproto "github.com/tendermint/tendermint/proto/types"
 	"math"
 	"sort"
 	"strings"
+
+	tmproto "github.com/tendermint/tendermint/proto/types"
 
 	"github.com/datastream/probab/dst"
 	"github.com/pkg/errors"
