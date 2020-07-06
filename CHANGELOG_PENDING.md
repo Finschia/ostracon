@@ -16,6 +16,8 @@
    
 - Go API
 
+- Blockchain Protocol
+
 ### FEATURES:
 - [BLS] [\#81](https://github.com/line/tendermint/issues/81) Modify to generate at the same time as Ed25519 key generation
 - [lite] [\#100](https://github.com/line/tendermint/pull/100) Lite calls `Genesis()` rpc when it starts up
