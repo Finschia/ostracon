@@ -45,10 +45,7 @@ func NewClient(next rpcclient.Client, lc *lite.Client) *Client {
 
 func (c *Client) OnStart() error {
 	if !c.next.IsRunning() {
-		err := c.next.Start()
-		if err != nil {
-			return nil
-		}
+		return c.next.Start()
 	}
 	return nil
 }
