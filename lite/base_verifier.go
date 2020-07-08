@@ -3,6 +3,8 @@ package lite
 import (
 	"bytes"
 
+	"github.com/tendermint/tendermint/crypto/vrf"
+
 	"github.com/pkg/errors"
 
 	lerr "github.com/tendermint/tendermint/lite/errors"
@@ -17,21 +19,24 @@ var _ Verifier = (*BaseVerifier)(nil)
 // use the DynamicVerifier.
 // TODO: Handle unbonding time.
 type BaseVerifier struct {
-	chainID  string
-	height   int64
-	voterSet *types.VoterSet
+	chainID     string
+	height      int64
+	valSet      *types.ValidatorSet
+	voterParams *types.VoterParams
 }
 
 // NewBaseVerifier returns a new Verifier initialized with a validator set at
 // some height.
-func NewBaseVerifier(chainID string, height int64, valset *types.VoterSet) *BaseVerifier {
+func NewBaseVerifier(chainID string, height int64, valset *types.ValidatorSet,
+	voterParams *types.VoterParams) *BaseVerifier {
 	if valset.IsNilOrEmpty() {
 		panic("NewBaseVerifier requires a valid voterSet")
 	}
 	return &BaseVerifier{
-		chainID:  chainID,
-		height:   height,
-		voterSet: valset,
+		chainID:     chainID,
+		height:      height,
+		valSet:      valset,
+		voterParams: voterParams,
 	}
 }
 
@@ -56,9 +61,8 @@ func (bv *BaseVerifier) Verify(signedHeader types.SignedHeader) error {
 	}
 
 	// We can't verify with the wrong validator set.
-	if !bytes.Equal(signedHeader.VotersHash,
-		bv.voterSet.Hash()) {
-		return lerr.ErrUnexpectedValidators(signedHeader.VotersHash, bv.voterSet.Hash())
+	if !bytes.Equal(signedHeader.ValidatorsHash, bv.valSet.Hash()) {
+		return lerr.ErrUnexpectedValidators(signedHeader.ValidatorsHash, bv.valSet.Hash())
 	}
 
 	// Do basic sanity checks.
@@ -67,8 +71,17 @@ func (bv *BaseVerifier) Verify(signedHeader types.SignedHeader) error {
 		return errors.Wrap(err, "in verify")
 	}
 
+	proofHash, err := vrf.ProofToHash(signedHeader.Proof.Bytes())
+	if err != nil {
+		return errors.Wrap(err, "in verify")
+	}
+	voters := types.SelectVoter(bv.valSet, proofHash, bv.voterParams)
+	if !bytes.Equal(signedHeader.VotersHash, voters.Hash()) {
+		return errors.Errorf("header's voter hash is %X, but voters hash is %X",
+			signedHeader.VotersHash, voters.Hash())
+	}
 	// Check commit signatures.
-	err = bv.voterSet.VerifyCommit(
+	err = voters.VerifyCommit(
 		bv.chainID, signedHeader.Commit.BlockID,
 		signedHeader.Height, signedHeader.Commit)
 	if err != nil {

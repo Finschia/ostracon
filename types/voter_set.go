@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	tmproto "github.com/tendermint/tendermint/proto/types"
 	"math"
 	"sort"
 	"strings"
+
+	tmproto "github.com/tendermint/tendermint/proto/types"
 
 	"github.com/datastream/probab/dst"
 	"github.com/pkg/errors"
@@ -127,8 +128,7 @@ func (voters *VoterSet) Hash() []byte {
 }
 
 // VerifyCommit verifies +2/3 of the set had signed the given commit.
-func (voters *VoterSet) VerifyCommit(chainID string, blockID BlockID,
-	height int64, commit *Commit) error {
+func (voters *VoterSet) VerifyCommit(chainID string, blockID BlockID, height int64, commit *Commit) error {
 
 	if voters.Size() != len(commit.Signatures) {
 		return NewErrInvalidCommitSignatures(voters.Size(), len(commit.Signatures))

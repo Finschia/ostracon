@@ -92,6 +92,44 @@ func (p *http) SignedHeader(height int64) (*types.SignedHeader, error) {
 	return &commit.SignedHeader, nil
 }
 
+// ValidatorSet fetches a ValidatorSet at the given height. Multiple HTTP
+// requests might be required if the validator set size is over 100.
+func (p *http) ValidatorSet(height int64) (*types.ValidatorSet, error) {
+	h, err := validateHeight(height)
+	if err != nil {
+		return nil, err
+	}
+
+	const maxPerPage = 100
+	res, err := p.SignStatusClient.Validators(h, 0, maxPerPage)
+	if err != nil {
+		// TODO: standartise errors on the RPC side
+		if regexpMissingHeight.MatchString(err.Error()) {
+			return nil, provider.ErrValidatorSetNotFound
+		}
+		return nil, err
+	}
+
+	var (
+		vals = res.Validators
+		page = 1
+	)
+
+	// Check if there are more validators.
+	for len(res.Validators) == maxPerPage {
+		res, err = p.SignStatusClient.Validators(h, page, maxPerPage)
+		if err != nil {
+			return nil, err
+		}
+		if len(res.Validators) > 0 {
+			vals = append(vals, res.Validators...)
+		}
+		page++
+	}
+
+	return types.NewValidatorSet(vals), nil
+}
+
 // VoterSet fetches a VoterSet at the given height. Multiple HTTP
 // requests might be required if the validator set size is over 100.
 func (p *http) VoterSet(height int64) (*types.VoterSet, error) {

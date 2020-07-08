@@ -73,9 +73,9 @@ func (mc *multiProvider) LatestFullCommit(chainID string, minHeight, maxHeight i
 
 // VoterSet returns validator set at height as provided by the first
 // provider which has it, or an error otherwise.
-func (mc *multiProvider) VoterSet(chainID string, height int64) (valset *types.VoterSet, err error) {
+func (mc *multiProvider) ValidatorSet(chainID string, height int64) (valset *types.ValidatorSet, err error) {
 	for _, p := range mc.providers {
-		valset, err = p.VoterSet(chainID, height)
+		valset, err = p.ValidatorSet(chainID, height)
 		if err == nil {
 			// TODO Log unexpected types of errors.
 			return valset, nil

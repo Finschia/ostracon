@@ -3,9 +3,11 @@ package bls_test
 import (
 	"bytes"
 	"fmt"
-	amino "github.com/tendermint/go-amino"
-	"github.com/tendermint/tendermint/crypto/ed25519"
+
 	"testing"
+
+	"github.com/tendermint/go-amino"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 
 	b "github.com/herumi/bls-eth-go-binary/bls"
 

@@ -60,16 +60,16 @@ func (dbp *DBProvider) SaveFullCommit(fc FullCommit) error {
 	// Save the fc.validators.
 	// We might be overwriting what we already have, but
 	// it makes the logic easier for now.
-	vsKey := voterSetKey(fc.ChainID(), fc.Height())
-	vsBz, err := dbp.cdc.MarshalBinaryLengthPrefixed(fc.Voters)
+	vsKey := validatorSetKey(fc.ChainID(), fc.Height())
+	vsBz, err := dbp.cdc.MarshalBinaryLengthPrefixed(fc.Validators)
 	if err != nil {
 		return err
 	}
 	batch.Set(vsKey, vsBz)
 
 	// Save the fc.NextValidators.
-	nvsKey := voterSetKey(fc.ChainID(), fc.Height()+1)
-	nvsBz, err := dbp.cdc.MarshalBinaryLengthPrefixed(fc.NextVoters)
+	nvsKey := validatorSetKey(fc.ChainID(), fc.Height()+1)
+	nvsBz, err := dbp.cdc.MarshalBinaryLengthPrefixed(fc.NextValidators)
 	if err != nil {
 		return err
 	}
@@ -149,12 +149,12 @@ func (dbp *DBProvider) LatestFullCommit(chainID string, minHeight, maxHeight int
 	return FullCommit{}, lerr.ErrCommitNotFound()
 }
 
-func (dbp *DBProvider) VoterSet(chainID string, height int64) (valset *types.VoterSet, err error) {
-	return dbp.getVoterSet(chainID, height)
+func (dbp *DBProvider) ValidatorSet(chainID string, height int64) (valset *types.ValidatorSet, err error) {
+	return dbp.getValidatorSet(chainID, height)
 }
 
-func (dbp *DBProvider) getVoterSet(chainID string, height int64) (voterSet *types.VoterSet, err error) {
-	vsBz, err := dbp.db.Get(voterSetKey(chainID, height))
+func (dbp *DBProvider) getValidatorSet(chainID string, height int64) (validatorSet *types.ValidatorSet, err error) {
+	vsBz, err := dbp.db.Get(validatorSetKey(chainID, height))
 	if err != nil {
 		return nil, err
 	}
@@ -162,37 +162,39 @@ func (dbp *DBProvider) getVoterSet(chainID string, height int64) (voterSet *type
 		err = lerr.ErrUnknownValidators(chainID, height)
 		return
 	}
-	err = dbp.cdc.UnmarshalBinaryLengthPrefixed(vsBz, &voterSet)
+	err = dbp.cdc.UnmarshalBinaryLengthPrefixed(vsBz, &validatorSet)
 	if err != nil {
 		return
 	}
 
-	// To test deep equality.  This makes it easier to test for e.g. voterSet
+	// To test deep equality.  This makes it easier to test for e.g. validatorSet
 	// equivalence using assert.Equal (tests for deep equality) in our tests,
 	// which also tests for unexported/private field equivalence.
-	voterSet.TotalVotingPower()
+	validatorSet.TotalStakingPower()
 	return
 }
 
 func (dbp *DBProvider) fillFullCommit(sh types.SignedHeader) (FullCommit, error) {
 	var chainID = sh.ChainID
 	var height = sh.Height
-	var valset, nextValset *types.VoterSet
+	var valSet *types.ValidatorSet
+	var nextValSet *types.ValidatorSet
+
 	// Load the validator set.
-	valset, err := dbp.getVoterSet(chainID, height)
+	valSet, err := dbp.getValidatorSet(chainID, height)
 	if err != nil {
 		return FullCommit{}, err
 	}
 	// Load the next validator set.
-	nextValset, err = dbp.getVoterSet(chainID, height+1)
+	nextValSet, err = dbp.getValidatorSet(chainID, height+1)
 	if err != nil {
 		return FullCommit{}, err
 	}
 	// Return filled FullCommit.
 	return FullCommit{
-		SignedHeader: sh,
-		Voters:       valset,
-		NextVoters:   nextValset,
+		SignedHeader:   sh,
+		Validators:     valSet,
+		NextValidators: nextValSet,
 	}, nil
 }
 
@@ -243,7 +245,7 @@ func signedHeaderKey(chainID string, height int64) []byte {
 	return []byte(fmt.Sprintf("%s/%010d/sh", chainID, height))
 }
 
-func voterSetKey(chainID string, height int64) []byte {
+func validatorSetKey(chainID string, height int64) []byte {
 	return []byte(fmt.Sprintf("%s/%010d/vs", chainID, height))
 }
 

@@ -6,6 +6,7 @@ import (
 	"github.com/tendermint/tendermint/lite2/provider"
 	"github.com/tendermint/tendermint/lite2/provider/http"
 	"github.com/tendermint/tendermint/lite2/store"
+	"github.com/tendermint/tendermint/types"
 )
 
 // NewHTTPClient initiates an instance of a lite client using HTTP addresses
@@ -20,6 +21,7 @@ func NewHTTPClient(
 	primaryAddress string,
 	witnessesAddresses []string,
 	trustedStore store.Store,
+	voterParams *types.VoterParams,
 	options ...Option) (*Client, error) {
 
 	providers, err := providersFromAddresses(append(witnessesAddresses, primaryAddress), chainID)
@@ -33,6 +35,7 @@ func NewHTTPClient(
 		providers[len(providers)-1],
 		providers[:len(providers)-1],
 		trustedStore,
+		voterParams,
 		options...)
 }
 
@@ -48,6 +51,7 @@ func NewHTTPClientFromTrustedStore(
 	primaryAddress string,
 	witnessesAddresses []string,
 	trustedStore store.Store,
+	voterParams *types.VoterParams,
 	options ...Option) (*Client, error) {
 
 	providers, err := providersFromAddresses(append(witnessesAddresses, primaryAddress), chainID)
@@ -61,6 +65,7 @@ func NewHTTPClientFromTrustedStore(
 		providers[len(providers)-1],
 		providers[:len(providers)-1],
 		trustedStore,
+		voterParams,
 		options...)
 }
 

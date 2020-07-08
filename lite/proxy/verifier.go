@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"github.com/pkg/errors"
+	"github.com/tendermint/tendermint/types"
 
 	dbm "github.com/tendermint/tm-db"
 
@@ -28,7 +29,7 @@ func NewVerifier(
 		lvlProvider,
 	)
 	source := lclient.NewProvider(chainID, client)
-	cert := lite.NewDynamicVerifier(chainID, trust, source)
+	cert := lite.NewDynamicVerifier(chainID, trust, source, types.DefaultVoterParams())
 	cert.SetLogger(logger) // Sets logger recursively.
 
 	// TODO: Make this more secure, e.g. make it interactive in the console?

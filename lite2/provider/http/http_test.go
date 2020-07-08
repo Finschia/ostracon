@@ -79,7 +79,7 @@ func TestProvider(t *testing.T) {
 	require.Error(t, err)
 	assert.Equal(t, provider.ErrSignedHeaderNotFound, err)
 
-	_, err = p.VoterSet(1000)
+	_, err = p.ValidatorSet(1000)
 	require.Error(t, err)
 	assert.Equal(t, provider.ErrValidatorSetNotFound, err)
 
@@ -87,7 +87,7 @@ func TestProvider(t *testing.T) {
 	require.Error(t, err)
 	assert.Equal(t, provider.ErrSignedHeaderNotFound, err)
 
-	_, err = p.VoterSet(1)
+	_, err = p.ValidatorSet(1)
 	require.Error(t, err)
 	assert.Equal(t, provider.ErrValidatorSetNotFound, err)
 }

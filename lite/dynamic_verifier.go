@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	log "github.com/tendermint/tendermint/libs/log"
+	"github.com/tendermint/tendermint/crypto/vrf"
+	"github.com/tendermint/tendermint/libs/log"
 	lerr "github.com/tendermint/tendermint/lite/errors"
 	"github.com/tendermint/tendermint/types"
 )
@@ -34,6 +35,8 @@ type DynamicVerifier struct {
 	// pending map to synchronize concurrent verification requests
 	mtx                  sync.Mutex
 	pendingVerifications map[int64]chan struct{}
+
+	voterParams *types.VoterParams
 }
 
 // NewDynamicVerifier returns a new DynamicVerifier. It uses the
@@ -42,13 +45,15 @@ type DynamicVerifier struct {
 //
 // The trusted provider should be a DBProvider.
 // The source provider should be a client.HTTPProvider.
-func NewDynamicVerifier(chainID string, trusted PersistentProvider, source Provider) *DynamicVerifier {
+func NewDynamicVerifier(chainID string, trusted PersistentProvider, source Provider,
+	voterParams *types.VoterParams) *DynamicVerifier {
 	return &DynamicVerifier{
 		logger:               log.NewNopLogger(),
 		chainID:              chainID,
 		trusted:              trusted,
 		source:               source,
 		pendingVerifications: make(map[int64]chan struct{}, sizeOfPendingMap),
+		voterParams:          voterParams,
 	}
 }
 
@@ -115,38 +120,38 @@ func (dv *DynamicVerifier) Verify(shdr types.SignedHeader) error {
 	}
 
 	// sync up to the prevHeight and assert our latest NextValidatorSet
-	// is the VoterSet for the SignedHeader
+	// is the validatorSet for the SignedHeader
 	if trustedFC.Height() == prevHeight {
 		// Return error if voterSet doesn't match.
 		if !bytes.Equal(
-			trustedFC.NextVoters.Hash(),
-			shdr.Header.VotersHash) {
+			trustedFC.NextValidators.Hash(),
+			shdr.Header.ValidatorsHash) {
 			return lerr.ErrUnexpectedValidators(
-				trustedFC.NextVoters.Hash(),
-				shdr.Header.VotersHash)
+				trustedFC.NextValidators.Hash(),
+				shdr.Header.ValidatorsHash)
 		}
 	} else {
-		// If voterSet doesn't match, try to update
+		// If validatorSet doesn't match, try to update
 		if !bytes.Equal(
-			trustedFC.NextVoters.Hash(),
-			shdr.Header.VotersHash) {
+			trustedFC.NextValidators.Hash(),
+			shdr.Header.ValidatorsHash) {
 			// ... update.
 			trustedFC, err = dv.updateToHeight(prevHeight)
 			if err != nil {
 				return err
 			}
 			// Return error if voterSet _still_ doesn't match.
-			if !bytes.Equal(trustedFC.NextVoters.Hash(),
-				shdr.Header.VotersHash) {
+			if !bytes.Equal(trustedFC.NextValidators.Hash(),
+				shdr.Header.ValidatorsHash) {
 				return lerr.ErrUnexpectedValidators(
-					trustedFC.NextVoters.Hash(),
-					shdr.Header.VotersHash)
+					trustedFC.NextValidators.Hash(),
+					shdr.Header.ValidatorsHash)
 			}
 		}
 	}
 
 	// Verify the signed header using the matching voterSet.
-	cert := NewBaseVerifier(dv.chainID, trustedFC.Height()+1, trustedFC.NextVoters)
+	cert := NewBaseVerifier(dv.chainID, trustedFC.Height()+1, trustedFC.NextValidators, dv.voterParams)
 	err = cert.Verify(shdr)
 	if err != nil {
 		return err
@@ -160,7 +165,7 @@ func (dv *DynamicVerifier) Verify(shdr types.SignedHeader) error {
 	// See https://github.com/tendermint/tendermint/issues/3174.
 
 	// Get the next validator set.
-	nextValset, err := dv.source.VoterSet(dv.chainID, shdr.Height+1)
+	nextValset, err := dv.source.ValidatorSet(dv.chainID, shdr.Height+1)
 	if lerr.IsErrUnknownValidators(err) {
 		// Ignore this error.
 		return nil
@@ -170,13 +175,13 @@ func (dv *DynamicVerifier) Verify(shdr types.SignedHeader) error {
 
 	// Create filled FullCommit.
 	nfc := FullCommit{
-		SignedHeader: shdr,
-		Voters:       trustedFC.NextVoters,
-		NextVoters:   nextValset,
+		SignedHeader:   shdr,
+		Validators:     trustedFC.NextValidators,
+		NextValidators: nextValset,
 	}
 	// Validate the full commit.  This checks the cryptographic
 	// signatures of Commit against Validators.
-	if err := nfc.ValidateFull(dv.chainID); err != nil {
+	if err := nfc.ValidateFull(dv.chainID, dv.voterParams); err != nil {
 		return err
 	}
 	// Trust it.
@@ -191,9 +196,20 @@ func (dv *DynamicVerifier) verifyAndSave(trustedFC, sourceFC FullCommit) error {
 	if trustedFC.Height() >= sourceFC.Height() {
 		panic("should not happen")
 	}
-	err := trustedFC.NextVoters.VerifyFutureCommit(
-		sourceFC.Voters,
-		dv.chainID, sourceFC.SignedHeader.Commit.BlockID,
+	proofHash, err := vrf.ProofToHash(trustedFC.SignedHeader.Proof.Bytes())
+	if err != nil {
+		return err
+	}
+	voters := types.SelectVoter(trustedFC.NextValidators, proofHash, dv.voterParams)
+
+	proofHash, err = vrf.ProofToHash(sourceFC.SignedHeader.Proof.Bytes())
+	if err != nil {
+		return err
+	}
+	futureVoters := types.SelectVoter(sourceFC.Validators, proofHash, dv.voterParams)
+
+	err = voters.VerifyFutureCommit(
+		futureVoters, dv.chainID, sourceFC.SignedHeader.Commit.BlockID,
 		sourceFC.SignedHeader.Height, sourceFC.SignedHeader.Commit,
 	)
 	if err != nil {
@@ -223,7 +239,7 @@ func (dv *DynamicVerifier) updateToHeight(h int64) (FullCommit, error) {
 
 	// Validate the full commit.  This checks the cryptographic
 	// signatures of Commit against Validators.
-	if err := sourceFC.ValidateFull(dv.chainID); err != nil {
+	if err := sourceFC.ValidateFull(dv.chainID, dv.voterParams); err != nil {
 		return FullCommit{}, err
 	}
 

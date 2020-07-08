@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/tendermint/tendermint/types"
+
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/tendermint/tendermint/abci/example/kvstore"
@@ -59,6 +61,7 @@ func ExampleClient_Update() {
 		primary,
 		[]provider.Provider{primary}, // NOTE: primary should not be used here
 		dbs.New(db, chainID),
+		types.DefaultVoterParams(),
 		// Logger(log.TestingLogger()),
 	)
 	if err != nil {
@@ -128,6 +131,7 @@ func ExampleClient_VerifyHeaderAtHeight() {
 		primary,
 		[]provider.Provider{primary}, // NOTE: primary should not be used here
 		dbs.New(db, chainID),
+		types.DefaultVoterParams(),
 		// Logger(log.TestingLogger()),
 	)
 	if err != nil {
