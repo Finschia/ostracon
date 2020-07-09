@@ -7,10 +7,9 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/rand"
-
 	dbm "github.com/tendermint/tm-db"
 
+	"github.com/tendermint/tendermint/libs/rand"
 	sm "github.com/tendermint/tendermint/state"
 	"github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"

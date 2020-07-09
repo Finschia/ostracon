@@ -5,17 +5,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/tendermint/tendermint/crypto/vrf"
-	"github.com/tendermint/tendermint/libs/rand"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
 	dbm "github.com/tendermint/tm-db"
 
+	"github.com/tendermint/tendermint/crypto/ed25519"
+	"github.com/tendermint/tendermint/crypto/vrf"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/libs/log"
+	"github.com/tendermint/tendermint/libs/rand"
 	lite "github.com/tendermint/tendermint/lite2"
 	"github.com/tendermint/tendermint/lite2/provider"
 	mockp "github.com/tendermint/tendermint/lite2/provider/mock"

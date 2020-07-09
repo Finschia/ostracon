@@ -1,11 +1,12 @@
 package types
 
 import (
-	"github.com/stretchr/testify/require"
 	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/tendermint/tendermint/crypto/vrf"
 	tmtime "github.com/tendermint/tendermint/types/time"
 )
