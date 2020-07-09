@@ -15,6 +15,7 @@ Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermi
 
 - P2P Protocol
   - [abci] [\#100](https://github.com/line/tendermint/pull/100) Add `voters_hash` field, which is needed for verification of a block header
+  - [abci] [\#102](https://github.com/line/tendermint/pull/102) Add voting power in `VoterInfo` of abci
 
 - Go API
     - [types] [\#83](https://github.com/line/tendermint/pull/83) Add `StakingPower` to `Validator`
