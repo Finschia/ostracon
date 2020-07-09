@@ -3,18 +3,16 @@ package bls_test
 import (
 	"bytes"
 	"fmt"
-
 	"testing"
 
-	"github.com/tendermint/go-amino"
-	"github.com/tendermint/tendermint/crypto/ed25519"
-
 	b "github.com/herumi/bls-eth-go-binary/bls"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tendermint/go-amino"
+
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/bls"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 )
 
 func TestPrivKeyBLS12_Bytes(t *testing.T) {

@@ -1,13 +1,14 @@
 package core
 
 import (
+	dbm "github.com/tendermint/tm-db"
+
 	cm "github.com/tendermint/tendermint/consensus"
 	tmmath "github.com/tendermint/tendermint/libs/math"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	rpctypes "github.com/tendermint/tendermint/rpc/jsonrpc/types"
 	sm "github.com/tendermint/tendermint/state"
 	"github.com/tendermint/tendermint/types"
-	dbm "github.com/tendermint/tm-db"
 )
 
 // Validators gets the validator set at the given block height.
