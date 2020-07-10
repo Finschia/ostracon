@@ -95,6 +95,16 @@ func NewVoteSet(chainID string, height int64, round int32,
 	}
 }
 
+// used only test
+func (voteSet *VoteSet) GetSum() int64 {
+	if voteSet == nil {
+		return 0
+	}
+	voteSet.mtx.Lock()
+	defer voteSet.mtx.Unlock()
+	return voteSet.sum
+}
+
 func (voteSet *VoteSet) ChainID() string {
 	return voteSet.chainID
 }

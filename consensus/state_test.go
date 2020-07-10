@@ -50,6 +50,8 @@ CatchupSuite
   * TestCatchup - if we might be behind and we've seen any 2/3 prevotes, round skip to new round, precommit, or prevote
 HaltSuite
 x * TestHalt1 - if we see +2/3 precommits after timing out into new round, we should still commit
+VoterSamplingSuite
+x * TestStateFullRoundWithSelectedVoter - voter sampling version of TestStateFullRound2
 
 */
 
@@ -2212,6 +2214,121 @@ func TestStateFullRoundWithSelectedVoter(t *testing.T) {
 	}
 
 	signAddVotes(cs, tmproto.PrecommitType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
+		voterPrivVals...)
+
+	for range voterPrivVals {
+		ensurePrecommit(voteCh, height, round) // wait for precommit
+	}
+
+	ensureNewBlock(newBlockCh, height)
+
+	// we're going to roll right into new height
+	ensureNewRound(newRoundCh, height+1, 0)
+}
+
+func ensureVotingPowerOfVoteSet(t *testing.T, voteSet *types.VoteSet, votingPower int64) {
+	assert.True(t, voteSet.GetSum() == votingPower)
+}
+
+func TestStateBadVoterWithSelectedVoter(t *testing.T) {
+	cs, vss := randStateWithVoterParams(10, &types.VoterParams{
+		VoterElectionThreshold:          5,
+		MaxTolerableByzantinePercentage: 20,
+		ElectionPrecision:               2})
+	vss[0].Height = 1 // this is needed because of `incrementHeight(vss[1:]...)` of randStateWithVoterParams()
+	vssMap := makeVssMap(vss)
+	height, round := cs.Height, cs.Round
+
+	voteCh := subscribeUnBuffered(cs.eventBus, types.EventQueryVote)
+	propCh := subscribe(cs.eventBus, types.EventQueryCompleteProposal)
+	newRoundCh := subscribe(cs.eventBus, types.EventQueryNewRound)
+	newBlockCh := subscribe(cs.eventBus, types.EventQueryNewBlock)
+
+	startTestRound(cs, height, round)
+
+	// height 1
+	ensureNewRound(newRoundCh, height, round)
+	privPubKey, _ := cs.privValidator.GetPubKey()
+	if !cs.isProposer(privPubKey.Address()) {
+		blockID := proposeBlock(t, cs, round, vssMap)
+		ensureProposal(propCh, height, round, blockID)
+	} else {
+		ensureNewProposal(propCh, height, round)
+	}
+
+	propBlock := cs.GetRoundState().ProposalBlock
+	voters := cs.Voters
+	// a validator being not a voter votes instead of a voter
+	notVoter := getValidatorBeingNotVoter(cs)
+	if notVoter == nil {
+		panic("invalid test case: cannot find a validator being not a voter")
+	}
+	orgPubKey := voters.Voters[0].PubKey
+	orgAddress := voters.Voters[0].Address
+
+	voters.Voters[0].PubKey = notVoter.PubKey
+	voters.Voters[0].Address = notVoter.Address
+
+	voterPrivVals := votersPrivVals(voters, vssMap)
+	signAddVotes(cs, types.PrevoteType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
+		voterPrivVals...)
+
+	// restore cs.Voters
+	voters.Voters[0].PubKey = orgPubKey
+	voters.Voters[0].Address = orgAddress
+
+	sumVotingPower := int64(0)
+	for i := range voterPrivVals[1:] { // one failed
+		ensurePrevote(voteCh, height, round) // wait for prevote
+		sumVotingPower += voters.Voters[i+1].VotingPower
+	}
+
+	// ensure we didn't get a vote for Voters[0]
+	ensureVotingPowerOfVoteSet(t, cs.Votes.Prevotes(round), sumVotingPower)
+	assert.False(t, cs.Votes.Prevotes(round).HasTwoThirdsMajority())
+
+	// add remain vote
+	voterPrivVals = votersPrivVals(voters, vssMap)
+	signAddVotes(cs, types.PrevoteType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
+		voterPrivVals[:1]...)
+
+	ensurePrevote(voteCh, height, round)
+
+	signAddVotes(cs, types.PrecommitType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
+		voterPrivVals...)
+
+	for range voterPrivVals {
+		ensurePrecommit(voteCh, height, round) // wait for precommit
+	}
+
+	ensureNewBlock(newBlockCh, height)
+
+	// height 2
+	incrementHeight(vss...)
+
+	ensureNewRound(newRoundCh, height+1, 0)
+
+	height = cs.Height
+	privPubKey, _ = cs.privValidator.GetPubKey()
+	if !cs.isProposer(privPubKey.Address()) {
+		blockID := proposeBlock(t, cs, round, vssMap)
+		ensureProposal(propCh, height, round, blockID)
+	} else {
+		ensureNewProposal(propCh, height, round)
+	}
+
+	propBlock = cs.GetRoundState().ProposalBlock
+	voters = cs.Voters
+	voterPrivVals = votersPrivVals(voters, vssMap)
+
+	signAddVotes(cs, types.PrevoteType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
+		voterPrivVals...)
+
+	for range voterPrivVals {
+		ensurePrevote(voteCh, height, round) // wait for prevote
+	}
+
+	signAddVotes(cs, types.PrecommitType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
 		voterPrivVals...)
 
 	for range voterPrivVals {
