@@ -222,6 +222,15 @@ func signAddVotes(
 	addVotes(to, votes...)
 }
 
+func getValidatorBeingNotVoter(cs *State) *types.Validator {
+	for _, val := range cs.Validators.Validators {
+		if !cs.Voters.HasAddress(val.Address) {
+			return val
+		}
+	}
+	return nil
+}
+
 func validatePrevote(t *testing.T, cs *State, round int, privVal *validatorStub, blockHash []byte) {
 	prevotes := cs.Votes.Prevotes(round)
 	pubKey, err := privVal.GetPubKey()
