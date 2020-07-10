@@ -314,7 +314,7 @@ message ValidatorUpdate {
 // VoteInfo
 message VoteInfo {
   Validator validator         = 1 [(gogoproto.nullable) = false];
-  int64     power             = 2;
+  int64     voting_power      = 2;
   bool      signed_last_block = 3;
 }
 
