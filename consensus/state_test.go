@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/tendermint/tendermint/abci/example/kvstore"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -17,6 +19,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmpubsub "github.com/tendermint/tendermint/libs/pubsub"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
+	mempl "github.com/tendermint/tendermint/mempool"
 	p2pmock "github.com/tendermint/tendermint/p2p/mock"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	"github.com/tendermint/tendermint/types"
@@ -2339,4 +2342,121 @@ func TestStateBadVoterWithSelectedVoter(t *testing.T) {
 
 	// we're going to roll right into new height
 	ensureNewRound(newRoundCh, height+1, 0)
+}
+
+func addValidator(cs *State, vssMap map[crypto.PubKey]*validatorStub, height int64) {
+	newVal, privVal := types.RandValidator(false, 10)
+	valPubKeyABCI := types.TM2PB.PubKey(newVal.PubKey)
+	newValidatorTx := kvstore.MakeValSetChangeTx(valPubKeyABCI, 10)
+	_ = assertMempool(cs.txNotifier).CheckTx(newValidatorTx, nil, mempl.TxInfo{})
+	vssMap[newVal.PubKey] = newValidatorStub(privVal, len(vssMap)+1)
+	vssMap[newVal.PubKey].Height = height
+}
+
+func TestStateAllVoterToSelectedVoter(t *testing.T) {
+	startValidators := 5
+	cs, vss := randStateWithVoterParamsWithApp(startValidators, &types.VoterParams{
+		VoterElectionThreshold:          int32(startValidators),
+		MaxTolerableByzantinePercentage: 20,
+		ElectionPrecision:               2},
+		"TestStateAllVoterToSelectedVoter")
+	vss[0].Height = 1 // this is needed because of `incrementHeight(vss[1:]...)` of randStateWithVoterParams()
+	vssMap := makeVssMap(vss)
+	height, round := cs.Height, cs.Round
+
+	voteCh := subscribeUnBuffered(cs.eventBus, types.EventQueryVote)
+	propCh := subscribe(cs.eventBus, types.EventQueryCompleteProposal)
+	newRoundCh := subscribe(cs.eventBus, types.EventQueryNewRound)
+	newBlockCh := subscribe(cs.eventBus, types.EventQueryNewBlock)
+
+	// add first validator
+	addValidator(cs, vssMap, height)
+
+	startTestRound(cs, height, round)
+
+	// height 1
+	ensureNewRound(newRoundCh, height, round)
+	privPubKey, _ := cs.privValidator.GetPubKey()
+	if !cs.isProposer(privPubKey.Address()) {
+		blockID := proposeBlock(t, cs, round, vssMap)
+		ensureProposal(propCh, height, round, blockID)
+	} else {
+		ensureNewProposal(propCh, height, round)
+	}
+
+	propBlock := cs.GetRoundState().ProposalBlock
+	voters := cs.Voters
+	voterPrivVals := votersPrivVals(voters, vssMap)
+	signAddVotes(cs, types.PrevoteType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
+		voterPrivVals...)
+
+	for range voterPrivVals {
+		ensurePrevote(voteCh, height, round) // wait for prevote
+	}
+
+	signAddVotes(cs, types.PrecommitType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
+		voterPrivVals...)
+
+	// add sescond validator
+	addValidator(cs, vssMap, height)
+
+	for range voterPrivVals {
+		ensurePrecommit(voteCh, height, round) // wait for precommit
+	}
+
+	ensureNewBlock(newBlockCh, height)
+
+	incrementHeightByMap(vssMap)
+
+	ensureNewRound(newRoundCh, height+1, 0)
+
+	endHeight := 20
+	voterCount := make([]int, endHeight-1)
+	for i := 0; i < len(voterCount); i++ {
+		voterCount[i] = int(types.CalNumOfVoterToElect(int64(startValidators+i), 0.2, 0.99))
+		if voterCount[i] < startValidators {
+			voterCount[i] = startValidators
+		}
+	}
+	for i := 2; i <= endHeight; i++ { // height 2~10
+		height = cs.Height
+		privPubKey, _ = cs.privValidator.GetPubKey()
+		if !cs.isProposer(privPubKey.Address()) {
+			blockID := proposeBlock(t, cs, round, vssMap)
+			ensureProposal(propCh, height, round, blockID)
+		} else {
+			ensureNewProposal(propCh, height, round)
+		}
+
+		propBlock = cs.GetRoundState().ProposalBlock
+		voters = cs.Voters
+		voterPrivVals = votersPrivVals(voters, vssMap)
+
+		// verify voters count
+		assert.True(t, voters.Size() == voterCount[i-2])
+
+		signAddVotes(cs, types.PrevoteType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
+			voterPrivVals...)
+
+		for range voterPrivVals {
+			ensurePrevote(voteCh, height, round) // wait for prevote
+		}
+
+		signAddVotes(cs, types.PrecommitType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
+			voterPrivVals...)
+
+		// add next validator
+		addValidator(cs, vssMap, height)
+
+		for range voterPrivVals {
+			ensurePrecommit(voteCh, height, round) // wait for precommit
+		}
+
+		ensureNewBlock(newBlockCh, height)
+
+		incrementHeightByMap(vssMap)
+
+		// we're going to roll right into new height
+		ensureNewRound(newRoundCh, height+1, 0)
+	}
 }
