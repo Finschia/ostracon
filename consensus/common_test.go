@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/tendermint/tendermint/crypto"
+
 	"github.com/go-kit/kit/log/term"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
@@ -128,6 +130,12 @@ func signVotes(
 
 func incrementHeight(vss ...*validatorStub) {
 	for _, vs := range vss {
+		vs.Height++
+	}
+}
+
+func incrementHeightByMap(vssMap map[crypto.PubKey]*validatorStub) {
+	for _, vs := range vssMap {
 		vs.Height++
 	}
 }
@@ -428,6 +436,26 @@ func randStateWithVoterParams(nValidators int, voterParams *types.VoterParams) (
 	vss := make([]*validatorStub, nValidators)
 
 	cs := newState(state, privVals[0], counter.NewApplication(true))
+
+	for i := 0; i < nValidators; i++ {
+		vss[i] = newValidatorStub(privVals[i], i)
+	}
+	// since cs1 starts at 1
+	incrementHeight(vss[1:]...)
+
+	return cs, vss
+}
+
+func randStateWithVoterParamsWithApp(nValidators int, voterParams *types.VoterParams, testName string) (
+	*State, []*validatorStub) {
+	// Get State
+	state, privVals := randGenesisState(nValidators, false, 10, voterParams)
+	state.LastProofHash = []byte{2}
+
+	vss := make([]*validatorStub, nValidators)
+
+	app := newPersistentKVStoreWithPath(path.Join(config.DBDir(), testName))
+	cs := newState(state, privVals[0], app)
 
 	for i := 0; i < nValidators; i++ {
 		vss[i] = newValidatorStub(privVals[i], i)
