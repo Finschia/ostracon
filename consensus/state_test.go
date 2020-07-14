@@ -55,6 +55,7 @@ HaltSuite
 x * TestHalt1 - if we see +2/3 precommits after timing out into new round, we should still commit
 VoterSamplingSuite
 x * TestStateFullRoundWithSelectedVoter - voter sampling version of TestStateFullRound2
+x * TestStateAllVoterToSelectedVoter - selected voters increase under the situation that validators change from 5 to 24
 
 */
 
