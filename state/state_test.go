@@ -1002,6 +1002,7 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 	}
 	// verify voters
 	voterSetOf1, err := sm.LoadVoters(stateDB, nextHeight, state.VoterParams)
+	assert.NoError(t, err)
 	mustBeSameVoterSet(t, state.Voters, voterSetOf1)
 
 	// Load nextheight+1, it should be the new pubkey.
