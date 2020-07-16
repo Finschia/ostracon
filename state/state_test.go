@@ -317,7 +317,7 @@ func TestOneValidatorChangesSaveLoad(t *testing.T) {
 	}
 }
 
-func isSameVoterSet(t *testing.T, a, b *types.VoterSet) {
+func mustBeSameVoterSet(t *testing.T, a, b *types.VoterSet) {
 	assert.True(t, a.Size() == b.Size(), "VoterSet size is different")
 	for i, v := range a.Voters {
 		assert.True(t, bytes.Equal(v.PubKey.Bytes(), b.Voters[i].PubKey.Bytes()),
@@ -327,7 +327,7 @@ func isSameVoterSet(t *testing.T, a, b *types.VoterSet) {
 	}
 }
 
-func isSameValidatorSet(t *testing.T, a, b *types.ValidatorSet) {
+func mustBeSameValidatorSet(t *testing.T, a, b *types.ValidatorSet) {
 	assert.True(t, a.Size() == b.Size(), "ValidatorSet size is different")
 	for i, v := range a.Validators {
 		assert.True(t, bytes.Equal(v.PubKey.Bytes(), b.Validators[i].PubKey.Bytes()),
@@ -375,14 +375,14 @@ func TestLoadAndSaveVoters(t *testing.T) {
 	for i := int64(1); i <= int64(lastHeight); i++ {
 		voterSet, err := stateStore.LoadVoters(i, voterParam)
 		assert.NoError(t, err, "LoadVoters should succeed")
-		isSameVoterSet(t, voters[i-1], voterSet)
+		mustBeSameVoterSet(t, voters[i-1], voterSet)
 		validatorSet, err := stateStore.LoadValidators(i)
 		assert.NoError(t, err, "LoadValidators should succeed")
-		isSameValidatorSet(t, validators[i-1], validatorSet)
+		mustBeSameValidatorSet(t, validators[i-1], validatorSet)
 	}
 	validatorSet, err := stateStore.LoadValidators(int64(lastHeight + 1))
 	assert.NoError(t, err, "LoadValidators should succeed")
-	isSameValidatorSet(t, validators[lastHeight], validatorSet)
+	mustBeSameValidatorSet(t, validators[lastHeight], validatorSet)
 }
 
 func TestProposerFrequency(t *testing.T) {
@@ -1017,10 +1017,17 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 	defer tearDown(t)
 	stateStore := sm.NewStore(stateDB)
 	require.Equal(t, int64(0), state.LastBlockHeight)
+
+	state.VoterParams = &types.VoterParams{
+		VoterElectionThreshold:          3,
+		MaxTolerableByzantinePercentage: 20,
+		ElectionPrecision:               5,
+	}
 	state.Validators = genValSet(valSetSize)
 	state.Validators.SelectProposer([]byte{}, 1, 0)
 	state.NextValidators = state.Validators.Copy()
 	state.NextValidators.SelectProposer([]byte{}, 2, 0)
+	state.Voters = types.SelectVoter(state.Validators, state.LastProofHash, state.VoterParams)
 	err := stateStore.Save(state)
 	require.NoError(t, err)
 
@@ -1050,6 +1057,9 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 	if index < 0 {
 		t.Fatal("expected to find old validator")
 	}
+	// verify voters
+	voterSetOf1, err := stateStore.LoadVoters(nextHeight, state.VoterParams)
+	mustBeSameVoterSet(t, state.Voters, voterSetOf1)
 
 	// Load nextheight+1, it should be the new pubkey.
 	v1, err := stateStore.LoadValidators(nextHeight + 1)
@@ -1060,6 +1070,8 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 	if index < 0 {
 		t.Fatal("expected to find newly added validator")
 	}
+	_, err = stateStore.LoadVoters(nextHeight+1, state.VoterParams)
+	assert.Error(t, err, sm.ErrNoProofHashForHeight{})
 }
 
 func TestStateMakeBlock(t *testing.T) {
