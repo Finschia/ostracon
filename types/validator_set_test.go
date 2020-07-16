@@ -405,10 +405,14 @@ func randValidator(totalStakingPower int64) *Validator {
 
 func randValidatorSet(numValidators int) *ValidatorSet {
 	validators := make([]*Validator, numValidators)
-	totalStakingPower := int64(0)
+	totalStakingPower := int64(numValidators) // to depend for total staking power to be over MaxTotalStakingPower
 	for i := 0; i < numValidators; i++ {
 		validators[i] = randValidator(totalStakingPower)
 		totalStakingPower += validators[i].StakingPower
+		if totalStakingPower >= MaxTotalStakingPower {
+			// the remainder must have 1 of staking power
+			totalStakingPower = MaxTotalStakingPower - 1
+		}
 	}
 	return NewValidatorSet(validators)
 }
