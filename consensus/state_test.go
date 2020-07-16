@@ -2235,7 +2235,9 @@ func ensureVotingPowerOfVoteSet(t *testing.T, voteSet *types.VoteSet, votingPowe
 }
 
 func TestStateBadVoterWithSelectedVoter(t *testing.T) {
-	cs, vss := randStateWithVoterParams(10, &types.VoterParams{
+	// if validators are 9, then selected voters are 4
+	// if one of 4 voters does not vote, the consensus state does not progress to next step
+	cs, vss := randStateWithVoterParams(9, &types.VoterParams{
 		VoterElectionThreshold:          5,
 		MaxTolerableByzantinePercentage: 20,
 		ElectionPrecision:               2})
@@ -2261,40 +2263,50 @@ func TestStateBadVoterWithSelectedVoter(t *testing.T) {
 	}
 
 	propBlock := cs.GetRoundState().ProposalBlock
-	voters := cs.Voters
+	voters := cs.Voters.Copy()
 	// a validator being not a voter votes instead of a voter
 	notVoter := getValidatorBeingNotVoter(cs)
 	if notVoter == nil {
 		panic("invalid test case: cannot find a validator being not a voter")
 	}
-	orgPubKey := voters.Voters[0].PubKey
-	orgAddress := voters.Voters[0].Address
 
-	voters.Voters[0].PubKey = notVoter.PubKey
-	voters.Voters[0].Address = notVoter.Address
+	nonMyIndex := 0
+	myPub, _ := cs.privValidator.GetPubKey()
+	for i, v := range voters.Voters {
+		if !myPub.Equals(v.PubKey) {
+			nonMyIndex = i
+			break
+		}
+	}
+
+	voters.Voters[nonMyIndex] = &types.Validator{
+		PubKey:       notVoter.PubKey,
+		Address:      notVoter.Address,
+		StakingPower: voters.Voters[nonMyIndex].StakingPower,
+		VotingPower:  voters.Voters[nonMyIndex].VotingPower,
+	}
 
 	voterPrivVals := votersPrivVals(voters, vssMap)
 	signAddVotes(cs, types.PrevoteType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
 		voterPrivVals...)
 
-	// restore cs.Voters
-	voters.Voters[0].PubKey = orgPubKey
-	voters.Voters[0].Address = orgAddress
-
 	sumVotingPower := int64(0)
-	for i := range voterPrivVals[1:] { // one failed
+	for i := range voterPrivVals { // one failed
+		if i == nonMyIndex {
+			continue
+		}
 		ensurePrevote(voteCh, height, round) // wait for prevote
-		sumVotingPower += voters.Voters[i+1].VotingPower
+		sumVotingPower += voters.Voters[i].VotingPower
 	}
 
-	// ensure we didn't get a vote for Voters[0]
+	// ensure we didn't get a vote for Voters[nonMyIndex]
 	ensureVotingPowerOfVoteSet(t, cs.Votes.Prevotes(round), sumVotingPower)
 	assert.False(t, cs.Votes.Prevotes(round).HasTwoThirdsMajority())
 
 	// add remain vote
-	voterPrivVals = votersPrivVals(voters, vssMap)
+	voterPrivVals = votersPrivVals(cs.Voters, vssMap)
 	signAddVotes(cs, types.PrevoteType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
-		voterPrivVals[:1]...)
+		voterPrivVals[nonMyIndex:nonMyIndex+1]...)
 
 	ensurePrevote(voteCh, height, round)
 
