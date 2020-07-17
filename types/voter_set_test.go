@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	tmrand "github.com/tendermint/tendermint/libs/rand"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/tendermint/tendermint/crypto/ed25519"
@@ -606,4 +608,44 @@ func TestVoterSetProtoBuf(t *testing.T) {
 			require.Error(t, err, tc.msg)
 		}
 	}
+}
+
+func testVotingPower(t *testing.T, valSet *ValidatorSet) {
+	voterParams := &VoterParams{
+		VoterElectionThreshold:          100,
+		MaxTolerableByzantinePercentage: 20,
+		ElectionPrecision:               2,
+	}
+
+	voterSetNoSampling := SelectVoter(valSet, []byte{0}, voterParams)
+	for _, v := range voterSetNoSampling.Voters {
+		assert.True(t, v.StakingPower == v.VotingPower)
+	}
+
+	for i := 90; i > 50; i-- {
+		voterParams.VoterElectionThreshold = int32(i)
+		voterSetSampling := SelectVoter(valSet, []byte{0}, voterParams)
+		allSame := true
+		for _, v := range voterSetSampling.Voters {
+			if v.StakingPower != v.VotingPower {
+				allSame = false
+				break
+			}
+		}
+		assert.False(t, allSame)
+		if valSet.TotalStakingPower() > voterSetSampling.TotalVotingPower() {
+			assert.True(t, valSet.TotalStakingPower()-voterSetSampling.TotalVotingPower() < 1000)
+		} else {
+			assert.True(t, valSet.TotalStakingPower()-voterSetSampling.TotalVotingPower() < 1000)
+		}
+	}
+}
+
+func TestVotingPower(t *testing.T) {
+	testVotingPower(t, randValidatorSet(100))
+	vals := make([]*Validator, 100)
+	for i := 0; i < len(vals); i++ {
+		vals[i] = newValidator(tmrand.Bytes(32), 100)
+	}
+	testVotingPower(t, NewValidatorSet(vals))
 }
