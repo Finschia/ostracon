@@ -634,7 +634,8 @@ func testVotingPower(t *testing.T, valSet *ValidatorSet) {
 		}
 		assert.False(t, allSame)
 		assert.True(t, valSet.TotalStakingPower() > voterSetSampling.TotalVotingPower())
-		assert.True(t, valSet.TotalStakingPower()-voterSetSampling.TotalVotingPower() < 1000)
+		// total voting power can not be less than total staking power - precisionForSelection(1000)
+		assert.True(t, valSet.TotalStakingPower()-voterSetSampling.TotalVotingPower() <= 1000)
 	}
 }
 
