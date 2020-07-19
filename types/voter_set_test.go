@@ -645,4 +645,9 @@ func TestVotingPower(t *testing.T) {
 		vals[i] = newValidator(tmrand.Bytes(32), 100)
 	}
 	testVotingPower(t, NewValidatorSet(vals))
+	vals2 := make([]*Validator, 100)
+	for i := 0; i < len(vals2); i++ {
+		vals2[i] = newValidator(rand.Bytes(32), MaxTotalStakingPower/100)
+	}
+	testVotingPower(t, NewValidatorSet(vals2))
 }
