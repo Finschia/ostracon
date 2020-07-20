@@ -4,6 +4,8 @@ import (
 	"math"
 	"testing"
 
+	"github.com/tendermint/tendermint/libs/rand"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -247,6 +249,27 @@ func TestCalVotersNum(t *testing.T) {
 	assert.Panics(t, func() { CalNumOfVoterToElect(total, 1.1, 0.9999) })
 }
 
+func TestCalNumOfVoterToElect(t *testing.T) {
+	// result of CalNumOfVoterToElect(1, 0.2, 0.99999) ~ CalNumOfVoterToElect(260, 0.2, 0.99999)
+	result := []int64{1, 1, 1, 1, 4, 4, 4, 4, 4, 7, 7, 7, 7, 7, 10, 10, 10, 10, 10, 13,
+		13, 13, 13, 13, 16, 16, 16, 16, 16, 19, 19, 19, 19, 19, 22, 22, 22, 22, 22, 25,
+		25, 25, 25, 25, 28, 28, 28, 28, 28, 31, 31, 31, 31, 31, 34, 34, 34, 34, 34, 37,
+		37, 37, 37, 37, 40, 40, 40, 40, 40, 43, 43, 43, 43, 43, 46, 46, 46, 46, 46, 49,
+		49, 49, 49, 49, 52, 52, 52, 52, 49, 55, 52, 52, 52, 52, 55, 55, 55, 55, 55, 58,
+		58, 58, 58, 58, 61, 61, 58, 58, 58, 61, 61, 61, 61, 61, 64, 64, 64, 64, 61, 67,
+		67, 64, 64, 64, 67, 67, 67, 67, 67, 70, 70, 70, 67, 67, 70, 70, 70, 70, 70, 73,
+		73, 73, 70, 70, 73, 73, 73, 73, 73, 76, 76, 76, 76, 73, 79, 76, 76, 76, 76, 79,
+		79, 79, 76, 76, 79, 79, 79, 79, 79, 82, 82, 82, 79, 79, 82, 82, 82, 82, 82, 85,
+		85, 82, 82, 82, 85, 85, 85, 85, 85, 88, 88, 85, 85, 85, 88, 88, 88, 88, 85, 88,
+		88, 88, 88, 88, 91, 91, 88, 88, 88, 91, 91, 91, 91, 88, 94, 91, 91, 91, 91, 94,
+		94, 94, 91, 91, 94, 94, 94, 94, 94, 97, 94, 94, 94, 94, 97, 97, 97, 94, 94, 97,
+		97, 97, 97, 97, 100, 97, 97, 97, 97, 100, 100, 100, 97, 97, 100, 100, 100, 100, 97, 103}
+
+	for i := 1; i <= len(result); i++ {
+		assert.True(t, CalNumOfVoterToElect(int64(i), 0.2, 0.99999) == result[i-1])
+	}
+}
+
 func makeByzantine(valSet *ValidatorSet, rate float64) map[string]bool {
 	result := make(map[string]bool)
 	byzantinePower := int64(0)
@@ -371,4 +394,47 @@ func TestVoterSetProtoBuf(t *testing.T) {
 			require.Error(t, err, tc.msg)
 		}
 	}
+}
+
+func testVotingPower(t *testing.T, valSet *ValidatorSet) {
+	voterParams := &VoterParams{
+		VoterElectionThreshold:          100,
+		MaxTolerableByzantinePercentage: 20,
+		ElectionPrecision:               2,
+	}
+
+	voterSetNoSampling := SelectVoter(valSet, []byte{0}, voterParams)
+	for _, v := range voterSetNoSampling.Voters {
+		assert.True(t, v.StakingPower == v.VotingPower)
+	}
+
+	for i := 90; i > 50; i-- {
+		voterParams.VoterElectionThreshold = int32(i)
+		voterSetSampling := SelectVoter(valSet, []byte{0}, voterParams)
+		allSame := true
+		for _, v := range voterSetSampling.Voters {
+			if v.StakingPower != v.VotingPower {
+				allSame = false
+				break
+			}
+		}
+		assert.False(t, allSame)
+		assert.True(t, valSet.TotalStakingPower() > voterSetSampling.TotalVotingPower())
+		// total voting power can not be less than total staking power - precisionForSelection(1000)
+		assert.True(t, valSet.TotalStakingPower()-voterSetSampling.TotalVotingPower() <= 1000)
+	}
+}
+
+func TestVotingPower(t *testing.T) {
+	testVotingPower(t, randValidatorSet(100))
+	vals := make([]*Validator, 100)
+	for i := 0; i < len(vals); i++ {
+		vals[i] = newValidator(rand.Bytes(32), 100)
+	}
+	testVotingPower(t, NewValidatorSet(vals))
+	vals2 := make([]*Validator, 100)
+	for i := 0; i < len(vals2); i++ {
+		vals2[i] = newValidator(rand.Bytes(32), MaxTotalStakingPower/100)
+	}
+	testVotingPower(t, NewValidatorSet(vals2))
 }
