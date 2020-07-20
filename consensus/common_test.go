@@ -481,7 +481,7 @@ func randStateWithVoterParamsWithApp(nValidators int, voterParams *types.VoterPa
 	cs := newState(state, privVals[0], app)
 
 	for i := 0; i < nValidators; i++ {
-		vss[i] = newValidatorStub(privVals[i], i)
+		vss[i] = newValidatorStub(privVals[i], int32(i))
 	}
 	// since cs1 starts at 1
 	incrementHeight(vss[1:]...)

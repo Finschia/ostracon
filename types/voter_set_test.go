@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/tendermint/tendermint/libs/rand"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 
 	"github.com/stretchr/testify/require"
@@ -476,7 +477,7 @@ func TestCalNumOfVoterToElect(t *testing.T) {
 		85, 82, 82, 82, 85, 85, 85, 85, 85, 88, 88, 85, 85, 85, 88, 88, 88, 88, 85, 88,
 		88, 88, 88, 88, 91, 91, 88, 88, 88, 91, 91, 91, 91, 88, 94, 91, 91, 91, 91, 94,
 		94, 94, 91, 91, 94, 94, 94, 94, 94, 97, 94, 94, 94, 94, 97, 97, 97, 94, 94, 97,
-		97, 97, 97, 97, 100, 97, 97, 97, 97, 100, 100, 100, 97, 97, 100, 100, 100, 100, 97, 103}
+		97, 97, 97, 97, 101, 97, 97, 97, 97, 104, 101, 101, 97, 97, 104, 104, 101, 101, 97, 104}
 
 	for i := 1; i <= len(result); i++ {
 		assert.True(t, CalNumOfVoterToElect(int64(i), 0.2, 0.99999) == result[i-1])
