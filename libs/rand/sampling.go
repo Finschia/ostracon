@@ -142,14 +142,20 @@ func RandomSamplingWithoutReplacement(
 		compensationProportions[i].Add(&compensationProportions[i+1], additionalCompensation)
 	}
 	winners = candidates[len(candidates)-winnerNum:]
+	winPoints := make([]*big.Int, len(winners))
+	totalWinPoint := new(big.Int)
+	for i, winner := range winners {
+		winPoints[i] = new(big.Int).SetUint64(winner.Priority())
+		winPoints[i].Mul(winPoints[i], &compensationProportions[i])
+		winPoints[i].Add(winPoints[i], correction)
+		totalWinPoint.Add(totalWinPoint, winPoints[i])
+	}
 	recalibration := new(big.Int).Div(correction, new(big.Int).SetUint64(precisionCorrectionForSelection))
 	for i, winner := range winners {
-		// winPoint = correction + winner.Priority() * compensationProportions[i]
-		winPoint := new(big.Int).SetUint64(winner.Priority())
-		winPoint.Mul(winPoint, &compensationProportions[i])
-		winPoint.Add(winPoint, correction)
-
-		winner.SetWinPoint(winPoint.Div(winPoint, recalibration).Int64())
+		winPoint := new(big.Int)
+		winPoint.Mul(recalibration, winPoints[i])
+		winPoint.Div(winPoint, totalWinPoint)
+		winner.SetWinPoint(winPoint.Int64())
 	}
 	return winners
 }
