@@ -2009,12 +2009,45 @@ func ensureVotingPowerOfVoteSet(t *testing.T, voteSet *types.VoteSet, votingPowe
 }
 
 func TestStateBadVoterWithSelectedVoter(t *testing.T) {
-	// if validators are 9, then selected voters are 4
-	// if one of 4 voters does not vote, the consensus state does not progress to next step
+	// if validators are 9, then selected voters are 4+
+	// if one of 4+ voters does not vote, the consensus state does not progress to next step
+	// making him having 1/3 + 1 voting power of total
 	cs, vss := randStateWithVoterParams(9, &types.VoterParams{
 		VoterElectionThreshold:          5,
 		MaxTolerableByzantinePercentage: 20,
-		ElectionPrecision:               2})
+		ElectionPrecision:               5})
+
+	assert.True(t, cs.Voters.Size() >= 4)
+
+	// a validator being not a voter votes instead of a voter
+	notVoter := getValidatorBeingNotVoter(cs)
+	if notVoter == nil {
+		panic("invalid test case: cannot find a validator being not a voter")
+	}
+
+	nonMyIndex := 0
+	myPub, _ := cs.privValidator.GetPubKey()
+	for i, v := range cs.Voters.Voters {
+		if !myPub.Equals(v.PubKey) {
+			nonMyIndex = i
+			break
+		}
+	}
+
+	// make the invalid voter having voting power of 1/3+1 of total
+	cs.Voters.Voters[nonMyIndex].VotingPower =
+		(cs.Voters.TotalVotingPower()-cs.Voters.Voters[nonMyIndex].VotingPower)/2 + 1
+
+	voters := cs.Voters.Copy()
+
+	// make a voter having invalid pub key
+	voters.Voters[nonMyIndex] = &types.Validator{
+		PubKey:       notVoter.PubKey,
+		Address:      notVoter.Address,
+		StakingPower: cs.Voters.Voters[nonMyIndex].StakingPower,
+		VotingPower:  cs.Voters.Voters[nonMyIndex].VotingPower,
+	}
+
 	vss[0].Height = 1 // this is needed because of `incrementHeight(vss[1:]...)` of randStateWithVoterParams()
 	vssMap := makeVssMap(vss)
 	height, round := cs.Height, cs.Round
@@ -2037,28 +2070,6 @@ func TestStateBadVoterWithSelectedVoter(t *testing.T) {
 	}
 
 	propBlock := cs.GetRoundState().ProposalBlock
-	voters := cs.Voters.Copy()
-	// a validator being not a voter votes instead of a voter
-	notVoter := getValidatorBeingNotVoter(cs)
-	if notVoter == nil {
-		panic("invalid test case: cannot find a validator being not a voter")
-	}
-
-	nonMyIndex := 0
-	myPub, _ := cs.privValidator.GetPubKey()
-	for i, v := range voters.Voters {
-		if !myPub.Equals(v.PubKey) {
-			nonMyIndex = i
-			break
-		}
-	}
-
-	voters.Voters[nonMyIndex] = &types.Validator{
-		PubKey:       notVoter.PubKey,
-		Address:      notVoter.Address,
-		StakingPower: voters.Voters[nonMyIndex].StakingPower,
-		VotingPower:  voters.Voters[nonMyIndex].VotingPower,
-	}
 
 	voterPrivVals := votersPrivVals(voters, vssMap)
 	signAddVotes(cs, types.PrevoteType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
@@ -2108,8 +2119,7 @@ func TestStateBadVoterWithSelectedVoter(t *testing.T) {
 	}
 
 	propBlock = cs.GetRoundState().ProposalBlock
-	voters = cs.Voters
-	voterPrivVals = votersPrivVals(voters, vssMap)
+	voterPrivVals = votersPrivVals(cs.Voters, vssMap)
 
 	signAddVotes(cs, types.PrevoteType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
 		voterPrivVals...)
