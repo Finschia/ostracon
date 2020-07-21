@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,11 +19,13 @@ import (
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
 	"github.com/tendermint/tendermint/crypto/vrf"
+	"github.com/tendermint/tendermint/libs/rand"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	sm "github.com/tendermint/tendermint/state"
 	"github.com/tendermint/tendermint/types"
+	tmtime "github.com/tendermint/tendermint/types/time"
 )
 
 // setupTestCase does setup common to all test cases.
@@ -1200,4 +1203,50 @@ func TestState_MakeHashMessage(t *testing.T) {
 	message3 := state.MakeHashMessage(0)
 	require.False(t, bytes.Equal(message1, message3))
 	require.False(t, bytes.Equal(message2, message3))
+}
+
+func TestMedianTime(t *testing.T) {
+	now := tmtime.Now()
+	cases := []struct {
+		votingPowers []int64
+		times        []time.Time
+		expectedMid  time.Time
+	}{
+		{
+			votingPowers: []int64{10, 10, 10, 10, 10}, // mid = 50/2 = 25
+			times:        []time.Time{now, now.Add(1), now.Add(2), now.Add(3), now.Add(4)},
+			expectedMid:  now.Add(2),
+		},
+		{
+			votingPowers: []int64{10, 20, 30, 40, 50}, // mid = 150/2 = 75
+			times:        []time.Time{now, now.Add(1), now.Add(2), now.Add(3), now.Add(4)},
+			expectedMid:  now.Add(3),
+		},
+		{
+			votingPowers: []int64{10, 20, 30, 40, 1000}, // mid = 1100/2 = 550
+			times:        []time.Time{now, now.Add(1), now.Add(2), now.Add(3), now.Add(4)},
+			expectedMid:  now.Add(4),
+		},
+		{
+			votingPowers: []int64{10, 2000, 2001, 2002, 2003}, // mid = 8016/2 = 4008
+			times:        []time.Time{now, now.Add(1), now.Add(2), now.Add(3), now.Add(4)},
+			expectedMid:  now.Add(2),
+		},
+	}
+
+	for i, tc := range cases {
+		vals := make([]*types.Validator, len(tc.times))
+		commits := make([]types.CommitSig, len(tc.times))
+		for j := range tc.votingPowers {
+			vals[j] = types.NewValidator(ed25519.GenPrivKey().PubKey(), 10)
+		}
+		voters := types.ToVoterAll(vals)
+		for j, power := range tc.votingPowers {
+			// reset voting power with a value that is not staking power
+			voters.Voters[j].VotingPower = power
+			commits[j] = types.NewCommitSigForBlock(rand.Bytes(10), voters.Voters[j].Address, tc.times[j])
+		}
+		commit := types.NewCommit(10, 0, types.BlockID{Hash: []byte("0xDEADBEEF")}, commits)
+		assert.True(t, sm.MedianTime(commit, voters) == tc.expectedMid, "case %d", i)
+	}
 }
