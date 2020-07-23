@@ -1,6 +1,8 @@
 #!/bin/sh
 # This script generate new validator and add new validator to the chain
-# warning: if you input p2p port, abci, api and promethus port is set automatelly
+# warning:
+#   1. if you input p2p port, abci, api and promethus port is set automatelly
+#   2. if you set multi validator in one device, the `allow_duplicate_ip` of all validator's config should be true.
 #
 # Process
 # 1. generate new validator with keys
@@ -22,7 +24,7 @@ if [ "$#" -ne 3 ]; then
 	exit 2
 fi
 
-TENDERMINT="../build/tendermint"
+TENDERMINT="./build/tendermint"
 # HOME_PATH="./single3"
 HOME_PATH=$1
 # P2P_PORT=26677
@@ -30,11 +32,10 @@ P2P_PORT=$2
 # PERSISTENT_PEERS='c8029828535291adbd1782e8aad41c121019e163@localhost:26656'
 PERSISTENT_PEERS=$3
 
-ORIGIN_URL=$(echo $PERSISTENT_PEERS | cut -d '@' -f 2 )
+ORIGIN_URL=$(echo $PERSISTENT_PEERS | cut -d '@' -f 2 | cut -d ':' -f 1 )":26657"
 ABCI_PORT=$(( $P2P_PORT + 1 ))
 API_PORT=$(( $P2P_PORT + 2 ))
 PROMETHEUS_PORT=$(( $P2P_PORT + 3))
-
 
 # generate new node with private key
 ${TENDERMINT} init --home=${HOME_PATH}
