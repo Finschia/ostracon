@@ -66,6 +66,7 @@ sed -i'.back' -e "s/26658/$ABCI_PORT/" \
 			  -e "s/26656/${P2P_PORT}/" \
 			  -e "/prometheus = false/s/false/true/" \
 			  -e "/allow_duplicate_ip = false/s/false/true/" \
+			  -e "/addr_book_strict = true/s/true/false/" \
 			  -e "s/26660/${PROMETHEUS_PORT}/" \
 			  $HOME_PATH/config/config.toml
 
