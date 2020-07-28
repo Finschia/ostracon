@@ -74,12 +74,12 @@ sed -i'.back' -e "s/persistent_peers = \"\"/persistent_peers = \"${PERSISTENT_PE
         $HOME_PATH/config/config.toml
 
 # show transaction for adding new validator
-# get public address
+# get public key
 echo "Get public address of new validator node"
-PUBLIC_ADDR=$(sudo bash -c "cat ${HOME_PATH}/config/priv_validator_key.json" | jq -r ".pub_key.value")
+PUBLIC_KEY=$(sudo bash -c "cat ${HOME_PATH}/config/priv_validator_key.json" | jq -r ".pub_key.value")
 
 # send tx whitch add new validator
-curl -G --data-urlencode 'tx="val:'${PUBLIC_ADDR}'!10"' http://localhost:26657/broadcast_tx_sync
+curl -G --data-urlencode 'tx="val:'${PUBLIC_KEY}'!10"' http://localhost:26657/broadcast_tx_sync
 
 # run new validator
 $TENDERMINT node --proxy_app=persistent_kvstore --home=$HOME_PATH
