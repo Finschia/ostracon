@@ -7,6 +7,7 @@ import (
 	"github.com/tendermint/tendermint/crypto/bls"
 
 	"github.com/stretchr/testify/require"
+
 	"github.com/tendermint/tendermint/libs/log"
 )
 
