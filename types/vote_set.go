@@ -27,35 +27,27 @@ type P2PID string
 /*
 	VoteSet helps collect signatures from validators at each height+round for a
 	predefined vote type.
-
 	We need VoteSet to be able to keep track of conflicting votes when validators
 	double-sign.  Yet, we can't keep track of *all* the votes seen, as that could
 	be a DoS attack vector.
-
 	There are two storage areas for votes.
 	1. voteSet.votes
 	2. voteSet.votesByBlock
-
 	`.votes` is the "canonical" list of votes.  It always has at least one vote,
 	if a vote from a validator had been seen at all.  Usually it keeps track of
 	the first vote seen, but when a 2/3 majority is found, votes for that get
 	priority and are copied over from `.votesByBlock`.
-
 	`.votesByBlock` keeps track of a list of votes for a particular block.  There
 	are two ways a &blockVotes{} gets created in `.votesByBlock`.
 	1. the first vote seen by a validator was for the particular block.
 	2. a peer claims to have seen 2/3 majority for the particular block.
-
 	Since the first vote from a validator will always get added in `.votesByBlock`
 	, all votes in `.votes` will have a corresponding entry in `.votesByBlock`.
-
 	When a &blockVotes{} in `.votesByBlock` reaches a 2/3 majority quorum, its
 	votes are copied into `.votes`.
-
 	All this is memory bounded because conflicting votes only get added if a peer
 	told us to track that block, each peer only gets to tell us 1 such block, and,
 	there's only a limited number of peers.
-
 	NOTE: Assumes that the sum total of voting power does not exceed MaxUInt64.
 */
 type VoteSet struct {
@@ -557,9 +549,11 @@ func (voteSet *VoteSet) sumTotalFrac() (int64, int64, float64) {
 //--------------------------------------------------------------------------------
 // Commit
 
-// MakeCommit constructs a Commit from the VoteSet.
-// Panics if the vote type is not PrecommitType or if
-// there's no +2/3 votes for a single block.
+// MakeCommit constructs a Commit from the VoteSet. It only includes precommits
+// for the block, which has 2/3+ majority, and nil.
+//
+// Panics if the vote type is not PrecommitType or if there's no +2/3 votes for
+// a single block.
 func (voteSet *VoteSet) MakeCommit() *Commit {
 	if voteSet.signedMsgType != PrecommitType {
 		panic("Cannot MakeCommit() unless VoteSet.Type is PrecommitType")
@@ -575,7 +569,12 @@ func (voteSet *VoteSet) MakeCommit() *Commit {
 	// For every validator, get the precommit
 	commitSigs := make([]CommitSig, len(voteSet.votes))
 	for i, v := range voteSet.votes {
-		commitSigs[i] = v.CommitSig()
+		commitSig := v.CommitSig()
+		// if block ID exists but doesn't match, exclude sig
+		if commitSig.ForBlock() && !v.BlockID.Equals(*voteSet.maj23) {
+			commitSig = NewCommitSigAbsent()
+		}
+		commitSigs[i] = commitSig
 	}
 
 	return NewCommit(voteSet.GetHeight(), voteSet.GetRound(), *voteSet.maj23, commitSigs)
