@@ -404,7 +404,7 @@ func (c *Client) initializeWithTrustOptions(options TrustOptions) error {
 	voters := types.SelectVoter(vals, proofHash, c.voterParams)
 
 	// Ensure that +2/3 of voters signed correctly.
-	err = voters.VerifyCommit(c.chainID, h.Commit.BlockID, h.Height, h.Commit)
+	err = voters.VerifyCommitLight(c.chainID, h.Commit.BlockID, h.Height, h.Commit)
 	if err != nil {
 		return fmt.Errorf("invalid commit: %w", err)
 	}
@@ -977,7 +977,7 @@ func (c *Client) compareNewHeaderWithWitnesses(h *types.SignedHeader) error {
 					c.logger.Error("Witness sent us incorrect header; invalid proof", "err", err)
 				}
 				voters := types.SelectVoter(c.latestTrustedValidators, proofHash, c.voterParams)
-				if err = voters.VerifyCommitTrusting(c.chainID, altH.Commit.BlockID,
+				if err = voters.VerifyCommitLightTrusting(c.chainID, altH.Commit.BlockID,
 					altH.Height, altH.Commit, c.trustLevel); err != nil {
 					c.logger.Error("Witness sent us incorrect header", "err", err, "witness", witness)
 					witnessesToRemove = append(witnessesToRemove, i)
