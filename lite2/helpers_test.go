@@ -5,7 +5,10 @@ import (
 
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
-
+	"github.com/tendermint/tendermint/crypto/tmhash"
+	"github.com/tendermint/tendermint/crypto/vrf"
+	tmbytes "github.com/tendermint/tendermint/libs/bytes"
+	"github.com/tendermint/tendermint/libs/rand"
 	"github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
 )
@@ -78,14 +81,11 @@ func (pkz privKeys) ToVoters(init, inc int64) *types.VoterSet {
 }
 
 // signHeader properly signs the header with all keys from first to last exclusive.
-func (pkz privKeys) signHeader(header *types.Header, first, last int) *types.Commit {
-	commitSigs := make([]types.CommitSig, len(pkz))
-	for i := 0; i < len(pkz); i++ {
+func (pkz privKeys) signHeader(header *types.Header, voterSet *types.VoterSet, first, last int) *types.Commit {
+	commitSigs := make([]types.CommitSig, voterSet.Size())
+	for i := 0; i < len(commitSigs); i++ {
 		commitSigs[i] = types.NewCommitSigAbsent()
 	}
-
-	// We need this list to keep the ordering.
-	vset := pkz.ToValidators(1, 0)
 
 	blockID := types.BlockID{
 		Hash:        header.Hash(),
@@ -94,21 +94,54 @@ func (pkz privKeys) signHeader(header *types.Header, first, last int) *types.Com
 
 	// Fill in the votes we want.
 	for i := first; i < last && i < len(pkz); i++ {
-		vote := makeVote(header, vset, pkz[i], blockID)
+		idx, voter := voterSet.GetByAddress(pkz[i].PubKey().Address())
+		if voter == nil {
+			continue
+		}
+		vote := makeVote(header, idx, pkz[i], blockID)
 		commitSigs[vote.ValidatorIndex] = vote.CommitSig()
 	}
 
 	return types.NewCommit(header.Height, 1, blockID, commitSigs)
 }
 
-func makeVote(header *types.Header, valset *types.ValidatorSet,
-	key crypto.PrivKey, blockID types.BlockID) *types.Vote {
+func (pkz privKeys) signHeaderByRate(header *types.Header, voterSet *types.VoterSet, rate float64) *types.Commit {
+	commitSigs := make([]types.CommitSig, voterSet.Size())
+	for i := 0; i < len(commitSigs); i++ {
+		commitSigs[i] = types.NewCommitSigAbsent()
+	}
+
+	blockID := types.BlockID{
+		Hash:        header.Hash(),
+		PartsHeader: types.PartSetHeader{Total: 1, Hash: crypto.CRandBytes(32)},
+	}
+
+	// Fill in the votes we want.
+	until := int64(float64(voterSet.TotalVotingPower()) * rate)
+	sum := int64(0)
+	for i := 0; i < len(pkz); i++ {
+		idx, voter := voterSet.GetByAddress(pkz[i].PubKey().Address())
+		if voter == nil {
+			continue
+		}
+		vote := makeVote(header, idx, pkz[i], blockID)
+		commitSigs[vote.ValidatorIndex] = vote.CommitSig()
+
+		sum += voter.VotingPower
+		if sum > until {
+			break
+		}
+	}
+
+	return types.NewCommit(header.Height, 1, blockID, commitSigs)
+}
+
+func makeVote(header *types.Header, voterIdx int, key crypto.PrivKey, blockID types.BlockID) *types.Vote {
 
 	addr := key.PubKey().Address()
-	idx, _ := valset.GetByAddress(addr)
 	vote := &types.Vote{
 		ValidatorAddress: addr,
-		ValidatorIndex:   idx,
+		ValidatorIndex:   voterIdx,
 		Height:           header.Height,
 		Round:            1,
 		Timestamp:        tmtime.Now(),
@@ -128,7 +161,8 @@ func makeVote(header *types.Header, valset *types.ValidatorSet,
 }
 
 func genHeader(chainID string, height int64, bTime time.Time, txs types.Txs,
-	valset, nextValset *types.VoterSet, appHash, consHash, resHash []byte) *types.Header {
+	voterSet *types.VoterSet, valset, nextValset *types.ValidatorSet, appHash, consHash, resHash []byte,
+	proof tmbytes.HexBytes) *types.Header {
 
 	return &types.Header{
 		ChainID: chainID,
@@ -136,36 +170,75 @@ func genHeader(chainID string, height int64, bTime time.Time, txs types.Txs,
 		Time:    bTime,
 		// LastBlockID
 		// LastCommitHash
-		VotersHash:      valset.Hash(),
-		NextVotersHash:  nextValset.Hash(),
-		DataHash:        txs.Hash(),
-		AppHash:         appHash,
-		ConsensusHash:   consHash,
-		LastResultsHash: resHash,
+		VotersHash:         voterSet.Hash(),
+		ValidatorsHash:     valset.Hash(),
+		NextValidatorsHash: nextValset.Hash(),
+		DataHash:           txs.Hash(),
+		AppHash:            appHash,
+		Proof:              proof,
+		ConsensusHash:      consHash,
+		LastResultsHash:    resHash,
+		ProposerAddress:    voterSet.Voters[0].Address,
 	}
 }
 
 // GenSignedHeader calls genHeader and signHeader and combines them into a SignedHeader.
 func (pkz privKeys) GenSignedHeader(chainID string, height int64, bTime time.Time, txs types.Txs,
-	valset, nextValset *types.VoterSet, appHash, consHash, resHash []byte, first, last int) *types.SignedHeader {
+	valset, nextValset *types.ValidatorSet, appHash, consHash, resHash []byte,
+	first, last int, voterParams *types.VoterParams) *types.SignedHeader {
 
-	header := genHeader(chainID, height, bTime, txs, valset, nextValset, appHash, consHash, resHash)
+	secret := [64]byte{}
+	privateKey := ed25519.GenPrivKeyFromSecret(secret[:])
+	message := rand.Bytes(10)
+	proof, _ := vrf.Prove(privateKey, message)
+	proofHash, _ := vrf.ProofToHash(proof)
+	voterSet := types.SelectVoter(valset, proofHash, voterParams)
+
+	header := genHeader(chainID, height, bTime, txs, voterSet, valset, nextValset, appHash, consHash, resHash,
+		tmbytes.HexBytes(proof))
 	return &types.SignedHeader{
 		Header: header,
-		Commit: pkz.signHeader(header, first, last),
+		Commit: pkz.signHeader(header, voterSet, first, last),
+	}
+}
+
+func (pkz privKeys) GenSignedHeaderByRate(chainID string, height int64, bTime time.Time, txs types.Txs,
+	valset, nextValset *types.ValidatorSet, appHash, consHash, resHash []byte,
+	rate float64, voterParams *types.VoterParams) *types.SignedHeader {
+
+	secret := [64]byte{}
+	privateKey := ed25519.GenPrivKeyFromSecret(secret[:])
+	message := rand.Bytes(10)
+	proof, _ := vrf.Prove(privateKey, message)
+	proofHash, _ := vrf.ProofToHash(proof)
+	voterSet := types.SelectVoter(valset, proofHash, voterParams)
+
+	header := genHeader(chainID, height, bTime, txs, voterSet, valset, nextValset, appHash, consHash, resHash,
+		tmbytes.HexBytes(proof))
+	return &types.SignedHeader{
+		Header: header,
+		Commit: pkz.signHeaderByRate(header, voterSet, rate),
 	}
 }
 
 // GenSignedHeaderLastBlockID calls genHeader and signHeader and combines them into a SignedHeader.
 func (pkz privKeys) GenSignedHeaderLastBlockID(chainID string, height int64, bTime time.Time, txs types.Txs,
-	valset, nextValset *types.VoterSet, appHash, consHash, resHash []byte, first, last int,
-	lastBlockID types.BlockID) *types.SignedHeader {
+	valset, nextValset *types.ValidatorSet, appHash, consHash, resHash []byte, first, last int,
+	lastBlockID types.BlockID, voterParams *types.VoterParams) *types.SignedHeader {
 
-	header := genHeader(chainID, height, bTime, txs, valset, nextValset, appHash, consHash, resHash)
+	secret := [64]byte{}
+	privateKey := ed25519.GenPrivKeyFromSecret(secret[:])
+	message := rand.Bytes(10)
+	proof, _ := vrf.Prove(privateKey, message)
+	proofHash, _ := vrf.ProofToHash(proof)
+	voterSet := types.SelectVoter(valset, proofHash, voterParams)
+
+	header := genHeader(chainID, height, bTime, txs, voterSet, valset, nextValset, appHash, consHash, resHash,
+		tmbytes.HexBytes(proof))
 	header.LastBlockID = lastBlockID
 	return &types.SignedHeader{
 		Header: header,
-		Commit: pkz.signHeader(header, first, last),
+		Commit: pkz.signHeader(header, voterSet, first, last),
 	}
 }
 
@@ -185,11 +258,11 @@ func GenMockNode(
 	bTime time.Time) (
 	string,
 	map[int64]*types.SignedHeader,
-	map[int64]*types.VoterSet) {
+	map[int64]*types.ValidatorSet) {
 
 	var (
 		headers         = make(map[int64]*types.SignedHeader, blockSize)
-		voterSet        = make(map[int64]*types.VoterSet, blockSize)
+		valSet          = make(map[int64]*types.ValidatorSet, blockSize)
 		keys            = genPrivKeys(valSize)
 		totalVariation  = valVariation
 		valVariationInt int
@@ -201,12 +274,13 @@ func GenMockNode(
 	newKeys = keys.ChangeKeys(valVariationInt)
 
 	// genesis header and vals
+	vals := keys.ToValidators(2, 2)
 	lastHeader := keys.GenSignedHeader(chainID, 1, bTime.Add(1*time.Minute), nil,
-		keys.ToVoters(2, 2), newKeys.ToVoters(2, 2), []byte("app_hash"), []byte("cons_hash"),
-		[]byte("results_hash"), 0, len(keys))
+		vals, newKeys.ToValidators(2, 2), hash("app_hash"), hash("cons_hash"),
+		hash("results_hash"), 0, len(keys), types.DefaultVoterParams())
 	currentHeader := lastHeader
 	headers[1] = currentHeader
-	voterSet[1] = keys.ToVoters(2, 2)
+	valSet[1] = keys.ToValidators(2, 2)
 	keys = newKeys
 
 	for height := int64(2); height <= blockSize; height++ {
@@ -214,15 +288,20 @@ func GenMockNode(
 		valVariationInt = int(totalVariation)
 		totalVariation = -float32(valVariationInt)
 		newKeys = keys.ChangeKeys(valVariationInt)
+		vals = keys.ToValidators(2, 2)
 		currentHeader = keys.GenSignedHeaderLastBlockID(chainID, height, bTime.Add(time.Duration(height)*time.Minute),
 			nil,
-			keys.ToVoters(2, 2), newKeys.ToVoters(2, 2), []byte("app_hash"), []byte("cons_hash"),
-			[]byte("results_hash"), 0, len(keys), types.BlockID{Hash: lastHeader.Hash()})
+			vals, newKeys.ToValidators(2, 2), hash("app_hash"), hash("cons_hash"),
+			hash("results_hash"), 0, len(keys), types.BlockID{Hash: lastHeader.Hash()}, types.DefaultVoterParams())
 		headers[height] = currentHeader
-		voterSet[height] = keys.ToVoters(2, 2)
+		valSet[height] = keys.ToValidators(2, 2)
 		lastHeader = currentHeader
 		keys = newKeys
 	}
 
-	return chainID, headers, voterSet
+	return chainID, headers, valSet
+}
+
+func hash(s string) []byte {
+	return tmhash.Sum([]byte(s))
 }

@@ -1,4 +1,4 @@
-## v0.3
+## v0.4
 
 \*\*
 
@@ -11,9 +11,10 @@
 - Apps
 
 - P2P Protocol
-
+   
 - Go API
 
+- Blockchain Protocol
 
 ### FEATURES:
 

@@ -23,6 +23,7 @@ import (
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 	sm "github.com/tendermint/tendermint/state"
 	"github.com/tendermint/tendermint/types"
+	tmtime "github.com/tendermint/tendermint/types/time"
 )
 
 // setupTestCase does setup common to all test cases.
@@ -193,10 +194,9 @@ func TestValidatorSimpleSaveLoad(t *testing.T) {
 	assert.Nil(err, "expected no err at height 1")
 	assert.Equal(v.Hash(), state.Validators.Hash(), "expected validator hashes to match")
 
-	// Should be able to load for height 2.
-	v, err = sm.LoadVoters(stateDB, 2, state.VoterParams)
-	assert.Nil(err, "expected no err at height 2")
-	assert.Equal(v.Hash(), state.NextValidators.Hash(), "expected validator hashes to match")
+	// Can't load last voter set because of proof hash is not defined for last height
+	_, err = sm.LoadVoters(stateDB, 2, state.VoterParams)
+	assert.Error(err, sm.ErrNoProofHashForHeight{Height: 2}.Error())
 
 	// Increment height, save; should be able to load for next & next next height.
 	state.LastBlockHeight++
@@ -205,10 +205,12 @@ func TestValidatorSimpleSaveLoad(t *testing.T) {
 		state.LastProofHash, state.NextValidators)
 	vp0, err := sm.LoadVoters(stateDB, nextHeight+0, state.VoterParams)
 	assert.Nil(err, "expected no err")
-	vp1, err := sm.LoadVoters(stateDB, nextHeight+1, state.VoterParams)
+	vp1, err := sm.LoadValidators(stateDB, nextHeight+1)
 	assert.Nil(err, "expected no err")
-	assert.Equal(vp0.Hash(), state.Validators.Hash(), "expected validator hashes to match")
+	assert.Equal(vp0.Hash(), state.Voters.Hash(), "expected voter hashes to match")
 	assert.Equal(vp1.Hash(), state.NextValidators.Hash(), "expected next validator hashes to match")
+	_, err = sm.LoadVoters(stateDB, nextHeight+1, state.VoterParams)
+	assert.Error(err, sm.ErrNoProofHashForHeight{Height: nextHeight + 1}.Error())
 }
 
 // TestValidatorChangesSaveLoad tests saving and loading a validator set with changes.
@@ -259,6 +261,17 @@ func TestOneValidatorChangesSaveLoad(t *testing.T) {
 	}
 
 	for i, power := range testCases {
+		v, err := sm.LoadValidators(stateDB, int64(i+1+1)) // +1 because vset changes delayed by 1 block.
+		assert.Nil(t, err, fmt.Sprintf("expected no err at height %d", i))
+		assert.Equal(t, v.Size(), 1, "validator set size is greater than 1: %d", v.Size())
+		_, val := v.GetByIndex(0)
+
+		assert.Equal(t, val.StakingPower, power, fmt.Sprintf(`unexpected powerat
+                height %d`, i))
+	}
+
+	testCases = testCases[:len(testCases)-1] // except last height
+	for i, power := range testCases {
 		v, err := sm.LoadVoters(stateDB, int64(i+1+1), state.VoterParams) // +1 because vset changes delayed by 1 block.
 		assert.Nil(t, err, fmt.Sprintf("expected no err at height %d", i))
 		assert.Equal(t, v.Size(), 1, "validator set size is greater than 1: %d", v.Size())
@@ -267,6 +280,72 @@ func TestOneValidatorChangesSaveLoad(t *testing.T) {
 		assert.Equal(t, val.StakingPower, power, fmt.Sprintf(`unexpected powerat
                 height %d`, i))
 	}
+}
+
+func mustBeSameVoterSet(t *testing.T, a, b *types.VoterSet) {
+	assert.True(t, a.Size() == b.Size(), "VoterSet size is different")
+	for i, v := range a.Voters {
+		assert.True(t, bytes.Equal(v.PubKey.Bytes(), b.Voters[i].PubKey.Bytes()),
+			"voter public key is different")
+		assert.True(t, v.StakingPower == b.Voters[i].StakingPower, "voter staking power is different")
+		assert.True(t, v.VotingPower == b.Voters[i].VotingPower, "voter voting power is different")
+	}
+}
+
+func mustBeSameValidatorSet(t *testing.T, a, b *types.ValidatorSet) {
+	assert.True(t, a.Size() == b.Size(), "ValidatorSet size is different")
+	for i, v := range a.Validators {
+		assert.True(t, bytes.Equal(v.PubKey.Bytes(), b.Validators[i].PubKey.Bytes()),
+			"validator public key is different")
+		assert.True(t, v.StakingPower == b.Validators[i].StakingPower, "validator staking power is different")
+		assert.True(t, v.VotingPower == b.Validators[i].VotingPower, "validator voting power is different")
+	}
+}
+
+func TestLoadAndSaveVoters(t *testing.T) {
+	tearDown, db, state := setupTestCase(t)
+	defer tearDown(t)
+
+	voterParam := &types.VoterParams{
+		VoterElectionThreshold:          3,
+		MaxTolerableByzantinePercentage: 20,
+		ElectionPrecision:               5,
+	}
+	state.Validators = genValSetWithPowers([]int64{1000, 1100, 1200, 1500, 2000, 5000})
+	state.NextValidators = state.Validators
+
+	lastHeight := 10
+	voters := make([]*types.VoterSet, lastHeight)
+	validators := make([]*types.ValidatorSet, lastHeight+1)
+	validators[0] = state.Validators.Copy()
+	for i := 1; i <= lastHeight; i++ {
+		state.Voters = types.SelectVoter(state.Validators, state.LastProofHash, voterParam)
+		voters[i-1] = state.Voters.Copy()
+		validators[i] = state.NextValidators.Copy()
+		state.LastBlockHeight = int64(i - 1)
+		state.LastHeightValidatorsChanged = int64(i + 1)
+		sm.SaveState(db, state)
+		state.LastVoters = state.Voters.Copy()
+		state.LastProofHash = rand.Bytes(10)
+		nValSet := state.NextValidators.Copy()
+		err := nValSet.UpdateWithChangeSet(genValSetWithPowers([]int64{int64(2000 + i)}).Validators)
+		assert.NoError(t, err)
+		nValSet.IncrementProposerPriority(1)
+		state.Validators = state.NextValidators.Copy()
+		state.NextValidators = nValSet
+	}
+
+	for i := int64(1); i <= int64(lastHeight); i++ {
+		voterSet, err := sm.LoadVoters(db, i, voterParam)
+		assert.NoError(t, err, "LoadVoters should succeed")
+		mustBeSameVoterSet(t, voters[i-1], voterSet)
+		validatorSet, err := sm.LoadValidators(db, i)
+		assert.NoError(t, err, "LoadValidators should succeed")
+		mustBeSameValidatorSet(t, validators[i-1], validatorSet)
+	}
+	validatorSet, err := sm.LoadValidators(db, int64(lastHeight+1))
+	assert.NoError(t, err, "LoadValidators should succeed")
+	mustBeSameValidatorSet(t, validators[lastHeight], validatorSet)
 }
 
 func TestProposerFrequency(t *testing.T) {
@@ -881,10 +960,18 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 	tearDown, stateDB, state := setupTestCase(t)
 	defer tearDown(t)
 	require.Equal(t, int64(0), state.LastBlockHeight)
+
+	state.VoterParams = &types.VoterParams{
+		VoterElectionThreshold:          3,
+		MaxTolerableByzantinePercentage: 20,
+		ElectionPrecision:               5,
+	}
 	state.Validators = genValSet(valSetSize)
 	state.Validators.SelectProposer([]byte{}, 1, 0)
 	state.NextValidators = state.Validators.Copy()
 	state.NextValidators.SelectProposer([]byte{}, 2, 0)
+	state.Voters = types.SelectVoter(state.Validators, state.LastProofHash, state.VoterParams)
+
 	sm.SaveState(stateDB, state)
 
 	_, valOld := state.Validators.GetByIndex(0)
@@ -914,6 +1001,10 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 	if index < 0 {
 		t.Fatal("expected to find old validator")
 	}
+	// verify voters
+	voterSetOf1, err := sm.LoadVoters(stateDB, nextHeight, state.VoterParams)
+	assert.NoError(t, err)
+	mustBeSameVoterSet(t, state.Voters, voterSetOf1)
 
 	// Load nextheight+1, it should be the new pubkey.
 	v1, err := sm.LoadValidators(stateDB, nextHeight+1)
@@ -924,6 +1015,8 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 	if index < 0 {
 		t.Fatal("expected to find newly added validator")
 	}
+	_, err = sm.LoadVoters(stateDB, nextHeight+1, state.VoterParams)
+	assert.Error(t, err, sm.ErrNoProofHashForHeight{})
 }
 
 func TestStateMakeBlock(t *testing.T) {
@@ -1048,4 +1141,50 @@ func TestState_MakeHashMessage(t *testing.T) {
 	message3 := state.MakeHashMessage(0)
 	require.False(t, bytes.Equal(message1, message3))
 	require.False(t, bytes.Equal(message2, message3))
+}
+
+func TestMedianTime(t *testing.T) {
+	now := tmtime.Now()
+	cases := []struct {
+		votingPowers []int64
+		times        []time.Time
+		expectedMid  time.Time
+	}{
+		{
+			votingPowers: []int64{10, 10, 10, 10, 10}, // mid = 50/2 = 25
+			times:        []time.Time{now, now.Add(1), now.Add(2), now.Add(3), now.Add(4)},
+			expectedMid:  now.Add(2),
+		},
+		{
+			votingPowers: []int64{10, 20, 30, 40, 50}, // mid = 150/2 = 75
+			times:        []time.Time{now, now.Add(1), now.Add(2), now.Add(3), now.Add(4)},
+			expectedMid:  now.Add(3),
+		},
+		{
+			votingPowers: []int64{10, 20, 30, 40, 1000}, // mid = 1100/2 = 550
+			times:        []time.Time{now, now.Add(1), now.Add(2), now.Add(3), now.Add(4)},
+			expectedMid:  now.Add(4),
+		},
+		{
+			votingPowers: []int64{10, 2000, 2001, 2002, 2003}, // mid = 8016/2 = 4008
+			times:        []time.Time{now, now.Add(1), now.Add(2), now.Add(3), now.Add(4)},
+			expectedMid:  now.Add(2),
+		},
+	}
+
+	for i, tc := range cases {
+		vals := make([]*types.Validator, len(tc.times))
+		commits := make([]types.CommitSig, len(tc.times))
+		for j := range tc.votingPowers {
+			vals[j] = types.NewValidator(ed25519.GenPrivKey().PubKey(), 10)
+		}
+		voters := types.ToVoterAll(vals)
+		for j, power := range tc.votingPowers {
+			// reset voting power with a value that is not staking power
+			voters.Voters[j].VotingPower = power
+			commits[j] = types.NewCommitSigForBlock(rand.Bytes(10), voters.Voters[j].Address, tc.times[j])
+		}
+		commit := types.NewCommit(10, 0, types.BlockID{Hash: []byte("0xDEADBEEF")}, commits)
+		assert.True(t, sm.MedianTime(commit, voters) == tc.expectedMid, "case %d", i)
+	}
 }

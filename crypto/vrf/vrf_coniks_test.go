@@ -6,6 +6,7 @@ import (
 
 	coniksimpl "github.com/coniks-sys/coniks-go/crypto/vrf"
 	"github.com/stretchr/testify/require"
+
 	"github.com/tendermint/tendermint/crypto/ed25519"
 )
 

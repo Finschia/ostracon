@@ -712,6 +712,8 @@ paths:
         - Info
       description: |
         Get consensus state.
+
+        Not safe to call from inside the ABCI application during a block execution.
       responses:
         200:
           description: consensus state results.
@@ -733,6 +735,8 @@ paths:
         - Info
       description: |
         Get consensus state.
+
+        Not safe to call from inside the ABCI application during a block execution.
       responses:
         200:
           description: consensus state results.
@@ -1311,7 +1315,6 @@ components:
         - "last_commit_hash"
         - "data_hash"
         - "voters_hash"
-        - "next_voters_hash"
         - "consensus_hash"
         - "app_hash"
         - "last_results_hash"
@@ -1348,9 +1351,6 @@ components:
           type: string
           example: "970886F99E77ED0D60DA8FCE0447C2676E59F2F77302B0C4AA10E1D02F18EF73"
         voters_hash:
-          type: string
-          example: "D658BFD100CA8025CFD3BECFE86194322731D387286FBD26E059115FD5F2BCA0"
-        next_voters_hash:
           type: string
           example: "D658BFD100CA8025CFD3BECFE86194322731D387286FBD26E059115FD5F2BCA0"
         consensus_hash:
@@ -1741,7 +1741,6 @@ components:
                     - "last_commit_hash"
                     - "data_hash"
                     - "voters_hash"
-                    - "next_voters_hash"
                     - "consensus_hash"
                     - "app_hash"
                     - "last_results_hash"
@@ -1797,9 +1796,6 @@ components:
                       type: "string"
                       example: "970886F99E77ED0D60DA8FCE0447C2676E59F2F77302B0C4AA10E1D02F18EF73"
                     voters_hash:
-                      type: "string"
-                      example: "D658BFD100CA8025CFD3BECFE86194322731D387286FBD26E059115FD5F2BCA0"
-                    next_voters_hash:
                       type: "string"
                       example: "D658BFD100CA8025CFD3BECFE86194322731D387286FBD26E059115FD5F2BCA0"
                     consensus_hash:

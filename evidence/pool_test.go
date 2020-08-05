@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-
 	dbm "github.com/tendermint/tm-db"
 
+	"github.com/tendermint/tendermint/libs/rand"
 	sm "github.com/tendermint/tendermint/state"
 	"github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
@@ -30,10 +30,13 @@ func initializeValidatorState(valAddr []byte, height int64) dbm.DB {
 		{Address: valAddr, StakingPower: 1},
 	}
 	state := sm.State{
+		VoterParams:                 types.DefaultVoterParams(),
 		LastBlockHeight:             0,
 		LastBlockTime:               tmtime.Now(),
+		LastProofHash:               rand.Bytes(10),
 		Validators:                  types.NewValidatorSet(vals),
 		NextValidators:              types.NewValidatorSet(vals),
+		Voters:                      types.ToVoterAll(vals),
 		LastHeightValidatorsChanged: 1,
 		ConsensusParams: types.ConsensusParams{
 			Evidence: types.EvidenceParams{

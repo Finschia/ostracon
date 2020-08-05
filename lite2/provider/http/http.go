@@ -3,6 +3,7 @@ package http
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/tendermint/tendermint/lite2/provider"
@@ -10,6 +11,9 @@ import (
 	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
 	"github.com/tendermint/tendermint/types"
 )
+
+// This is very brittle, see: https://github.com/tendermint/tendermint/issues/4740
+var regexpMissingHeight = regexp.MustCompile(`height \d+ (must be less than or equal to|is not available)`)
 
 // SignStatusClient combines a SignClient and StatusClient.
 type SignStatusClient interface {
@@ -70,7 +74,7 @@ func (p *http) SignedHeader(height int64) (*types.SignedHeader, error) {
 	commit, err := p.SignStatusClient.Commit(h)
 	if err != nil {
 		// TODO: standartise errors on the RPC side
-		if strings.Contains(err.Error(), "height must be less than or equal") {
+		if regexpMissingHeight.MatchString(err.Error()) {
 			return nil, provider.ErrSignedHeaderNotFound
 		}
 		return nil, err
@@ -88,6 +92,44 @@ func (p *http) SignedHeader(height int64) (*types.SignedHeader, error) {
 	return &commit.SignedHeader, nil
 }
 
+// ValidatorSet fetches a ValidatorSet at the given height. Multiple HTTP
+// requests might be required if the validator set size is over 100.
+func (p *http) ValidatorSet(height int64) (*types.ValidatorSet, error) {
+	h, err := validateHeight(height)
+	if err != nil {
+		return nil, err
+	}
+
+	const maxPerPage = 100
+	res, err := p.SignStatusClient.Validators(h, 0, maxPerPage)
+	if err != nil {
+		// TODO: standartise errors on the RPC side
+		if regexpMissingHeight.MatchString(err.Error()) {
+			return nil, provider.ErrValidatorSetNotFound
+		}
+		return nil, err
+	}
+
+	var (
+		vals = res.Validators
+		page = 1
+	)
+
+	// Check if there are more validators.
+	for len(res.Validators) == maxPerPage {
+		res, err = p.SignStatusClient.Validators(h, page, maxPerPage)
+		if err != nil {
+			return nil, err
+		}
+		if len(res.Validators) > 0 {
+			vals = append(vals, res.Validators...)
+		}
+		page++
+	}
+
+	return types.NewValidatorSet(vals), nil
+}
+
 // VoterSet fetches a VoterSet at the given height. Multiple HTTP
 // requests might be required if the validator set size is over 100.
 func (p *http) VoterSet(height int64) (*types.VoterSet, error) {
@@ -100,7 +142,7 @@ func (p *http) VoterSet(height int64) (*types.VoterSet, error) {
 	res, err := p.SignStatusClient.Voters(h, 0, maxPerPage)
 	if err != nil {
 		// TODO: standartise errors on the RPC side
-		if strings.Contains(err.Error(), "height must be less than or equal") {
+		if regexpMissingHeight.MatchString(err.Error()) {
 			return nil, provider.ErrValidatorSetNotFound
 		}
 		return nil, err

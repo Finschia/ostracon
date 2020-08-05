@@ -21,10 +21,10 @@ const (
 	// XXX: Don't change the name of this variable or you will break
 	// automation :)
 
-	TMCoreSemVer = "0.33.4"
+	TMCoreSemVer = "0.33.5"
 
 	// LINECoreSemVer is the current version of LINE Tendermint Core.
-	LINECoreSemVer = "0.2"
+	LINECoreSemVer = "0.3"
 
 	// ABCISemVer is the semantic version of the ABCI library
 	ABCISemVer  = "0.16.2"

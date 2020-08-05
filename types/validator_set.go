@@ -12,6 +12,7 @@ import (
 
 	"github.com/tendermint/tendermint/crypto/merkle"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
+	tmproto "github.com/tendermint/tendermint/proto/types"
 )
 
 const (
@@ -671,6 +672,51 @@ func (valz ValidatorsByAddress) Swap(i, j int) {
 	valz[j] = it
 }
 
+// ToProto converts ValidatorSet to protobuf
+func (vals *ValidatorSet) ToProto() (*tmproto.ValidatorSet, error) {
+	if vals == nil {
+		return nil, errors.New("nil validator set") // validator set should never be nil
+	}
+	vp := new(tmproto.ValidatorSet)
+	valsProto := make([]*tmproto.Validator, len(vals.Validators))
+	for i := 0; i < len(vals.Validators); i++ {
+		valp, err := vals.Validators[i].ToProto()
+		if err != nil {
+			return nil, err
+		}
+		valsProto[i] = valp
+	}
+	vp.Validators = valsProto
+
+	vp.TotalStakingPower = vals.totalStakingPower
+
+	return vp, nil
+}
+
+// ValidatorSetFromProto sets a protobuf ValidatorSet to the given pointer.
+// It returns an error if any of the validators from the set or the proposer
+// is invalid
+func ValidatorSetFromProto(vp *tmproto.ValidatorSet) (*ValidatorSet, error) {
+	if vp == nil {
+		return nil, errors.New("nil validator set") // validator set should never be nil, bigger issues are at play if empty
+	}
+	vals := new(ValidatorSet)
+
+	valsProto := make([]*Validator, len(vp.Validators))
+	for i := 0; i < len(vp.Validators); i++ {
+		v, err := ValidatorFromProto(vp.Validators[i])
+		if err != nil {
+			return nil, err
+		}
+		valsProto[i] = v
+	}
+	vals.Validators = valsProto
+
+	vals.totalStakingPower = vp.GetTotalStakingPower()
+
+	return vals, nil
+}
+
 //----------------------------------------
 // for testing
 
@@ -691,7 +737,7 @@ func RandValidatorSet(numValidators int, votingPower int64) (*ValidatorSet, []Pr
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// safe addition/subtraction
+// safe addition/subtraction/multiplication
 
 func safeAdd(a, b int64) (int64, bool) {
 	if b > 0 && a > math.MaxInt64-b {
@@ -731,4 +777,34 @@ func safeSubClip(a, b int64) int64 {
 		return math.MaxInt64
 	}
 	return c
+}
+
+func safeMul(a, b int64) (int64, bool) {
+	if a == 0 || b == 0 {
+		return 0, false
+	}
+
+	absOfB := b
+	if b < 0 {
+		absOfB = -b
+	}
+
+	var (
+		c        = a
+		overflow bool
+	)
+
+	for absOfB > 1 {
+		c, overflow = safeAdd(c, a)
+		if overflow {
+			return c, true
+		}
+		absOfB--
+	}
+
+	if (b < 0 && a > 0) || (b < 0 && a < 0) {
+		return -c, false
+	}
+
+	return c, false
 }

@@ -2,13 +2,11 @@ PACKAGES=$(shell go list ./...)
 SRCPATH=$(shell pwd)
 OUTPUT?=build/tendermint
 
-BUILD_TAGS?='tendermint'
-CGO_OPTPTION=0
+BUILD_TAGS?=tendermint
 LIBSODIUM_TARGET=
 PREPARE_LIBSODIUM_TARGET=
 ifeq ($(LIBSODIUM), 1)
   BUILD_TAGS='libsodium tendermint'
-  CGO_OPTPTION=1
   LIBSODIUM_TARGET=libsodium
 ifneq ($(OS), Windows_NT)
 ifeq ($(shell uname -s), Linux)
@@ -22,7 +20,26 @@ BUILD_FLAGS = -mod=readonly -ldflags "$(LD_FLAGS)"
 HTTPS_GIT := https://github.com/tendermint/tendermint.git
 DOCKER_BUF := docker run -v $(shell pwd):/workspace --workdir /workspace bufbuild/buf
 
-all: check build test install
+# handle nostrip
+ifeq (,$(findstring nostrip,$(TENDERMINT_BUILD_OPTIONS)))
+  BUILD_FLAGS += -trimpath
+  LD_FLAGS += -s -w
+endif
+
+# handle race
+ifeq (race,$(findstring race,$(TENDERMINT_BUILD_OPTIONS)))
+  BUILD_FLAGS += -race
+endif
+
+# handle cleveldb
+ifeq (cleveldb,$(findstring cleveldb,$(TENDERMINT_BUILD_OPTIONS)))
+  BUILD_TAGS += cleveldb
+endif
+
+# allow users to pass additional flags via the conventional LDFLAGS variable
+LD_FLAGS += $(LDFLAGS)
+
+all: check $(LIBSODIUM_TARGET) build test install
 .PHONY: all
 
 # The below include contains the tools.
@@ -34,24 +51,12 @@ include tests.mk
 ###############################################################################
 
 build: $(LIBSODIUM_TARGET)
-	CGO_ENABLED=$(CGO_OPTION) go build $(BUILD_FLAGS) -tags $(BUILD_TAGS) -o $(OUTPUT) ./cmd/tendermint/
+	CGO_ENABLED=1 go build $(BUILD_FLAGS) -tags '$(BUILD_TAGS)' -o $(OUTPUT) ./cmd/tendermint/
 .PHONY: build
 
-build_c: $(LIBSODIUM_TARGET)
-	CGO_ENABLED=$(CGO_OPTION) go build $(BUILD_FLAGS) -tags "$(BUILD_TAGS) cleveldb" -o $(OUTPUT) ./cmd/tendermint/
-.PHONY: build_c
-
-build_race: $(LIBSODIUM_TARGET)
-	CGO_ENABLED=$(CGO_OPTION) go build -race $(BUILD_FLAGS) -tags $(BUILD_TAGS) -o $(OUTPUT) ./cmd/tendermint
-.PHONY: build_race
-
 install:
-	CGO_ENABLED=$(CGO_OPTION) go install $(BUILD_FLAGS) -tags $(BUILD_TAGS) ./cmd/tendermint
+	CGO_ENABLED=1 go install $(BUILD_FLAGS) -tags $(BUILD_TAGS) ./cmd/tendermint
 .PHONY: install
-
-install_c:
-	CGO_ENABLED=$(CGO_OPTION) go install $(BUILD_FLAGS) -tags "$(BUILD_TAGS) cleveldb" ./cmd/tendermint
-.PHONY: install_c
 
 ###############################################################################
 ###                                Protobuf                                 ###
@@ -156,15 +161,15 @@ gen_certs: clean_certs
 	certstrap init --common-name "tendermint.com" --passphrase ""
 	certstrap request-cert --common-name "server" -ip "127.0.0.1" --passphrase ""
 	certstrap sign "server" --CA "tendermint.com" --passphrase ""
-	mv out/server.crt rpc/lib/server/test.crt
-	mv out/server.key rpc/lib/server/test.key
+	mv out/server.crt rpc/jsonrpc/server/test.crt
+	mv out/server.key rpc/jsonrpc/server/test.key
 	rm -rf out
 .PHONY: gen_certs
 
 # deletes generated certificates
 clean_certs:
-	rm -f rpc/lib/server/test.crt
-	rm -f rpc/lib/server/test.key
+	rm -f rpc/jsonrpc/server/test.crt
+	rm -f rpc/jsonrpc/server/test.key
 .PHONY: clean_certs
 
 ###############################################################################
@@ -222,17 +227,17 @@ build-docker:
 ###############################################################################
 
 # Build linux binary on other platforms
-build-linux: tools $(PREPARE_LIBSODIUM_TARGET) $(LIBSODIUM_TARGET)
-	GOOS=linux GOARCH=amd64 $(MAKE) build
+build-linux:
+	docker run --rm -v `pwd`:/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang:1.14.1-alpine /bin/sh -c "apk add --update git make gcc libc-dev build-base && make build"
 .PHONY: build-linux
 
 build-docker-localnode:
 	@cd networks/local && make
 .PHONY: build-docker-localnode
 
-# Runs `make build_c` from within an Amazon Linux (v2)-based Docker build
-# container in order to build an Amazon Linux-compatible binary. Produces a
-# compatible binary at ./build/tendermint
+# Runs `make build TENDERMINT_BUILD_OPTIONS=cleveldb` from within an Amazon
+# Linux (v2)-based Docker build container in order to build an Amazon
+# Linux-compatible binary. Produces a compatible binary at ./build/tendermint
 build_c-amazonlinux:
 	$(MAKE) -C ./DOCKER build_amazonlinux_buildimage
 	docker run --rm -it -v `pwd`:/tendermint tendermint/tendermint:build_c-amazonlinux
@@ -263,6 +268,6 @@ endif
 # prerequisits: build-contract-tests-hooks build-linux
 # the two build commands were not added to let this command run from generic containers or machines.
 # The binaries should be built beforehand
-contract-tests:
+contract-tests: build-docker-localnode
 	dredd
 .PHONY: contract-tests

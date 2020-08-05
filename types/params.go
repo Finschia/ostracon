@@ -80,21 +80,6 @@ func DefaultVoterParams() *VoterParams {
 		ElectionPrecision:               DefaultElectionPrecision}
 }
 
-func (params *VoterParams) Validate() error {
-	if params.VoterElectionThreshold < 0 {
-		return errors.Errorf("VoterElectionThreshold must be greater than or equal to 0. Got %d",
-			params.VoterElectionThreshold)
-	}
-	if params.MaxTolerableByzantinePercentage <= 0 || params.MaxTolerableByzantinePercentage >= 34 {
-		return errors.Errorf("MaxTolerableByzantinePercentage must be in between 1 and 33. Got %d",
-			params.MaxTolerableByzantinePercentage)
-	}
-	if params.ElectionPrecision <= 1 || params.ElectionPrecision > 15 {
-		return errors.Errorf("ElectionPrecision must be in 2~15(including). Got %d", params.ElectionPrecision)
-	}
-	return nil
-}
-
 // DefaultBlockParams returns a default BlockParams.
 func DefaultBlockParams() BlockParams {
 	return BlockParams{

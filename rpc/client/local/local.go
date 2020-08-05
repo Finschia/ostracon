@@ -14,7 +14,7 @@ import (
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	"github.com/tendermint/tendermint/rpc/core"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
-	rpctypes "github.com/tendermint/tendermint/rpc/lib/types"
+	rpctypes "github.com/tendermint/tendermint/rpc/jsonrpc/types"
 	"github.com/tendermint/tendermint/types"
 )
 
@@ -151,6 +151,10 @@ func (c *Local) BlockResults(height *int64) (*ctypes.ResultBlockResults, error) 
 
 func (c *Local) Commit(height *int64) (*ctypes.ResultCommit, error) {
 	return core.Commit(c.ctx, height)
+}
+
+func (c *Local) Validators(height *int64, page, perPage int) (*ctypes.ResultValidators, error) {
+	return core.Validators(c.ctx, height, page, perPage)
 }
 
 func (c *Local) Voters(height *int64, page, perPage int) (*ctypes.ResultVoters, error) {

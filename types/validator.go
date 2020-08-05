@@ -2,11 +2,14 @@ package types
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/tendermint/tendermint/crypto"
+	ce "github.com/tendermint/tendermint/crypto/encoding"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
+	tmproto "github.com/tendermint/tendermint/proto/types"
 )
 
 // Volatile state for each Validator
@@ -98,6 +101,49 @@ func (v *Validator) Bytes() []byte {
 		v.PubKey,
 		v.StakingPower,
 	})
+}
+
+// ToProto converts Valiator to protobuf
+func (v *Validator) ToProto() (*tmproto.Validator, error) {
+	if v == nil {
+		return nil, errors.New("nil validator")
+	}
+
+	pk, err := ce.PubKeyToProto(v.PubKey)
+	if err != nil {
+		return nil, err
+	}
+
+	vp := tmproto.Validator{
+		Address:          v.Address,
+		PubKey:           pk,
+		StakingPower:     v.StakingPower,
+		VotingPower:      v.VotingPower,
+		ProposerPriority: v.ProposerPriority,
+	}
+
+	return &vp, nil
+}
+
+// FromProto sets a protobuf Validator to the given pointer.
+// It returns an error if the public key is invalid.
+func ValidatorFromProto(vp *tmproto.Validator) (*Validator, error) {
+	if vp == nil {
+		return nil, errors.New("nil validator")
+	}
+
+	pk, err := ce.PubKeyFromProto(&vp.PubKey)
+	if err != nil {
+		return nil, err
+	}
+	v := new(Validator)
+	v.Address = vp.GetAddress()
+	v.PubKey = pk
+	v.StakingPower = vp.GetStakingPower()
+	v.VotingPower = vp.GetVotingPower()
+	v.ProposerPriority = vp.GetProposerPriority()
+
+	return v, nil
 }
 
 //----------------------------------------

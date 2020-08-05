@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	coniksimpl "github.com/coniks-sys/coniks-go/crypto/vrf"
+
 	"github.com/tendermint/tendermint/crypto/ed25519"
 )
 

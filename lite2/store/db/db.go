@@ -47,11 +47,11 @@ func New(db dbm.DB, prefix string) store.Store {
 	return &dbs{db: db, prefix: prefix, cdc: cdc, size: size}
 }
 
-// SaveSignedHeaderAndValidatorSet persists SignedHeader and VoterSet to
+// SaveSignedHeaderAndValidatorSet persists SignedHeader and ValidatorSet to
 // the db.
 //
 // Safe for concurrent use by multiple goroutines.
-func (s *dbs) SaveSignedHeaderAndValidatorSet(sh *types.SignedHeader, valSet *types.VoterSet) error {
+func (s *dbs) SaveSignedHeaderAndValidatorSet(sh *types.SignedHeader, valSet *types.ValidatorSet) error {
 	if sh.Height <= 0 {
 		panic("negative or zero height")
 	}
@@ -84,7 +84,7 @@ func (s *dbs) SaveSignedHeaderAndValidatorSet(sh *types.SignedHeader, valSet *ty
 	return err
 }
 
-// DeleteSignedHeaderAndValidatorSet deletes SignedHeader and VoterSet from
+// DeleteSignedHeaderAndValidatorSet deletes SignedHeader and ValidatorSet from
 // the db.
 //
 // Safe for concurrent use by multiple goroutines.
@@ -132,10 +132,10 @@ func (s *dbs) SignedHeader(height int64) (*types.SignedHeader, error) {
 	return signedHeader, err
 }
 
-// VoterSet loads VoterSet at the given height.
+// ValidatorSet loads ValidatorSet at the given height.
 //
 // Safe for concurrent use by multiple goroutines.
-func (s *dbs) VoterSet(height int64) (*types.VoterSet, error) {
+func (s *dbs) ValidatorSet(height int64) (*types.ValidatorSet, error) {
 	if height <= 0 {
 		panic("negative or zero height")
 	}
@@ -148,7 +148,7 @@ func (s *dbs) VoterSet(height int64) (*types.VoterSet, error) {
 		return nil, store.ErrValidatorSetNotFound
 	}
 
-	var valSet *types.VoterSet
+	var valSet *types.ValidatorSet
 	err = s.cdc.UnmarshalBinaryLengthPrefixed(bz, &valSet)
 	return valSet, err
 }

@@ -19,7 +19,7 @@ import (
 	lrpc "github.com/tendermint/tendermint/lite2/rpc"
 	dbs "github.com/tendermint/tendermint/lite2/store/db"
 	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
-	rpcserver "github.com/tendermint/tendermint/rpc/lib/server"
+	rpcserver "github.com/tendermint/tendermint/rpc/jsonrpc/server"
 )
 
 // LiteCmd represents the base command when called without any subcommands
@@ -105,6 +105,20 @@ func runProxy(cmd *cobra.Command, args []string) error {
 		return errors.Wrap(err, "new goleveldb")
 	}
 
+	rpcClient, err := rpchttp.New(primaryAddr, "/websocket")
+	if err != nil {
+		return errors.Wrapf(err, "http client for %s", primaryAddr)
+	}
+	// start rpcClient to get genesis
+	if err := rpcClient.Start(); err != nil {
+		return errors.Wrapf(err, "cannot start rpc client")
+	}
+
+	genDocResult, err := rpcClient.Genesis()
+	if err != nil {
+		return errors.Wrapf(err, "cannot get genesis")
+	}
+
 	var c *lite.Client
 	if trustedHeight > 0 && len(trustedHash) > 0 { // fresh installation
 		c, err = lite.NewHTTPClient(
@@ -117,6 +131,7 @@ func runProxy(cmd *cobra.Command, args []string) error {
 			primaryAddr,
 			witnessesAddrs,
 			dbs.New(db, chainID),
+			genDocResult.Genesis.VoterParams,
 			lite.Logger(logger),
 		)
 	} else { // continue from latest state
@@ -126,6 +141,7 @@ func runProxy(cmd *cobra.Command, args []string) error {
 			primaryAddr,
 			witnessesAddrs,
 			dbs.New(db, chainID),
+			genDocResult.Genesis.VoterParams,
 			lite.Logger(logger),
 		)
 	}
@@ -133,10 +149,6 @@ func runProxy(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	rpcClient, err := rpchttp.New(primaryAddr, "/websocket")
-	if err != nil {
-		return errors.Wrapf(err, "http client for %s", primaryAddr)
-	}
 	p := lproxy.Proxy{
 		Addr:   listenAddr,
 		Config: &rpcserver.Config{MaxOpenConnections: maxOpenConnections},

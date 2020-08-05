@@ -7,19 +7,18 @@ import (
 	"io/ioutil"
 	"math"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/tendermint/tendermint/crypto"
+
 	"github.com/go-kit/kit/log/term"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	"github.com/tendermint/tendermint/crypto/vrf"
-
-	"path"
-
 	dbm "github.com/tendermint/tm-db"
 
 	abcicli "github.com/tendermint/tendermint/abci/client"
@@ -28,6 +27,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	cfg "github.com/tendermint/tendermint/config"
 	cstypes "github.com/tendermint/tendermint/consensus/types"
+	"github.com/tendermint/tendermint/crypto/vrf"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/libs/log"
 	tmos "github.com/tendermint/tendermint/libs/os"
@@ -134,6 +134,12 @@ func incrementHeight(vss ...*validatorStub) {
 	}
 }
 
+func incrementHeightByMap(vssMap map[crypto.PubKey]*validatorStub) {
+	for _, vs := range vssMap {
+		vs.Height++
+	}
+}
+
 func incrementRound(vss ...*validatorStub) {
 	for _, vs := range vss {
 		vs.Round++
@@ -222,6 +228,15 @@ func signAddVotes(
 ) {
 	votes := signVotes(voteType, hash, header, vss...)
 	addVotes(to, votes...)
+}
+
+func getValidatorBeingNotVoter(cs *State) *types.Validator {
+	for _, val := range cs.Validators.Validators {
+		if !cs.Voters.HasAddress(val.Address) {
+			return val
+		}
+	}
+	return nil
 }
 
 func validatePrevote(t *testing.T, cs *State, round int, privVal *validatorStub, blockHash []byte) {
@@ -421,6 +436,26 @@ func randStateWithVoterParams(nValidators int, voterParams *types.VoterParams) (
 	vss := make([]*validatorStub, nValidators)
 
 	cs := newState(state, privVals[0], counter.NewApplication(true))
+
+	for i := 0; i < nValidators; i++ {
+		vss[i] = newValidatorStub(privVals[i], i)
+	}
+	// since cs1 starts at 1
+	incrementHeight(vss[1:]...)
+
+	return cs, vss
+}
+
+func randStateWithVoterParamsWithApp(nValidators int, voterParams *types.VoterParams, testName string) (
+	*State, []*validatorStub) {
+	// Get State
+	state, privVals := randGenesisState(nValidators, false, 10, voterParams)
+	state.LastProofHash = []byte{2}
+
+	vss := make([]*validatorStub, nValidators)
+
+	app := newPersistentKVStoreWithPath(path.Join(config.DBDir(), testName))
+	cs := newState(state, privVals[0], app)
 
 	for i := 0; i < nValidators; i++ {
 		vss[i] = newValidatorStub(privVals[i], i)
