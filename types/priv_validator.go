@@ -69,9 +69,6 @@ func NewMockPVWithParams(privKey crypto.PrivKey, breakProposalSigning, breakVote
 
 // Implements PrivValidator.
 func (pv MockPV) GetPubKey() (crypto.PubKey, error) {
-	//signKey := bls.GenPrivKey()
-	//vrfKey := ed25519.GenPrivKey()
-	//return composite.NewPrivKeyComposite(signKey, vrfKey).PubKey(), nil
 	return pv.PrivKey.PubKey(), nil
 }
 

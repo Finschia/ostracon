@@ -2,14 +2,20 @@ package kvstore
 
 import (
 	"github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/composite"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 )
 
+// Generates a default private key for use in an example or test.
+func GenDefaultPrivKey() crypto.PrivKey {
+	return composite.GenPrivKey()
+}
+
 // RandVal creates one random validator, with a key derived
 // from the input value
 func RandVal(i int) types.ValidatorUpdate {
-	pk := composite.GenPrivKey().PubKey()
+	pk := GenDefaultPrivKey().PubKey()
 	power := tmrand.Uint16() + 1
 	v := types.NewValidatorUpdate(pk, int64(power))
 	return v

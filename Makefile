@@ -252,13 +252,13 @@ DOCKER_CMD = docker run --rm \
                         -v `pwd`:$(DOCKER_HOME) \
                         -w $(DOCKER_HOME)
 DOCKER_IMG = golang:1.14.6-alpine3.12
-APK_CMD = apk add --update --no-cache git make gcc libc-dev build-base curl jq file gmp-dev clang
-APK_CMD += && cd crypto/bls/internal/bls-eth-go-binary
-APK_CMD += && make CXX=clang++
-APK_CMD += && cd $(DOCKER_HOME)
-APK_CMD += && go mod edit -replace github.com/herumi/bls-eth-go-binary=./crypto/bls/internal/bls-eth-go-binary
-APK_CMD += && make build
-APK_CMD += && go mod edit -dropreplace github.com/herumi/bls-eth-go-binary
+BUILD_CMD = apk add --update --no-cache git make gcc libc-dev build-base curl jq file gmp-dev clang \
+	&& cd crypto/bls/internal/bls-eth-go-binary \
+	&& make CXX=clang++ \
+	&& cd $(DOCKER_HOME) \
+	&& go mod edit -replace github.com/herumi/bls-eth-go-binary=./crypto/bls/internal/bls-eth-go-binary \
+	&& make build \
+	&& go mod edit -dropreplace github.com/herumi/bls-eth-go-binary
 
 # Login docker-container for confirmation building linux binary
 build-shell:
@@ -277,7 +277,7 @@ build-linux:
 	fi
 
 	# Build Linux binary
-	$(DOCKER_CMD) ${DOCKER_IMG} /bin/sh -c "$(APK_CMD)"
+	$(DOCKER_CMD) ${DOCKER_IMG} /bin/sh -c "$(BUILD_CMD)"
 
 	# Remove the BLS local library from modules
 	rm -rf $(SRCPATH)/crypto/bls/internal/mcl

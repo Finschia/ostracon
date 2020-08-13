@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	abcicli "github.com/tendermint/tendermint/abci/client"
+	"github.com/tendermint/tendermint/abci/example/kvstore"
 	"github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto/composite"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 )
 
@@ -15,7 +15,7 @@ func InitChain(client abcicli.Client) error {
 	total := 10
 	vals := make([]types.ValidatorUpdate, total)
 	for i := 0; i < total; i++ {
-		pubkey := composite.GenPrivKey().PubKey()
+		pubkey := kvstore.GenDefaultPrivKey().PubKey()
 		power := tmrand.Int()
 		vals[i] = types.NewValidatorUpdate(pubkey, int64(power))
 	}
