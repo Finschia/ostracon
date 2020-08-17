@@ -1,17 +1,16 @@
 package vrf
 
 import (
+	"crypto/ed25519"
 	"encoding/hex"
 	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/tendermint/tendermint/crypto/ed25519"
 )
 
 const (
-	SEEDBYTES = 64
+	SEEDBYTES = ed25519.SeedSize
 )
 
 var (
@@ -35,10 +34,11 @@ func enc(s []byte) string {
 
 func TestProofToHash(t *testing.T) {
 	secret := [SEEDBYTES]byte{}
-	privateKey := ed25519.GenPrivKeyFromSecret(secret[:])
+	privateKey := ed25519.NewKeyFromSeed(secret[:])
+	publicKey := privateKey.Public().(ed25519.PublicKey)
 	message := []byte("hello, world")
 
-	proof, err1 := Prove(privateKey, message)
+	proof, err1 := Prove(privateKey[:], publicKey[:], message)
 	if err1 != nil {
 		t.Fatalf("failed to prove: %s", err1)
 	}
@@ -61,14 +61,14 @@ func TestProofToHash(t *testing.T) {
 
 func TestProveAndVerify(t *testing.T) {
 	secret := [SEEDBYTES]byte{}
-	privateKey := ed25519.GenPrivKeyFromSecret(secret[:])
-	publicKey, _ := privateKey.PubKey().(ed25519.PubKeyEd25519)
+	privateKey := ed25519.NewKeyFromSeed(secret[:])
+	publicKey := privateKey.Public().(ed25519.PublicKey)
 
 	t.Logf("private key: [%s]", enc(privateKey[:]))
 	t.Logf("public  key: [%s]", enc(publicKey[:]))
 
 	message := []byte("hello, world")
-	proof, err1 := Prove(privateKey, message)
+	proof, err1 := Prove(privateKey[:], publicKey[:], message)
 	if err1 != nil {
 		t.Fatalf("failed to prove: %s", err1)
 	}
@@ -80,7 +80,7 @@ func TestProveAndVerify(t *testing.T) {
 	}
 	t.Logf("hash for \"%s\": %s", message, hash1.ToInt())
 
-	verified, err3 := Verify(publicKey, proof, message)
+	verified, err3 := Verify(publicKey[:], proof, message)
 	if err3 != nil {
 		t.Errorf("failed to verify: %s", err3)
 	} else if !verified {
@@ -90,12 +90,13 @@ func TestProveAndVerify(t *testing.T) {
 
 func TestAvalancheEffect(t *testing.T) {
 	secret := [SEEDBYTES]byte{}
-	privateKey := ed25519.GenPrivKeyFromSecret(secret[:])
+	privateKey := ed25519.NewKeyFromSeed(secret[:])
+	publicKey := privateKey.Public().(ed25519.PublicKey)
 
 	for _, messageString := range Message {
 		message := []byte(messageString)
 
-		proof, err := Prove(privateKey, message)
+		proof, err := Prove(privateKey[:], publicKey[:], message)
 		require.NoError(t, err)
 		hash, err := ProofToHash(proof)
 		require.NoError(t, err)
@@ -108,7 +109,7 @@ func TestAvalancheEffect(t *testing.T) {
 			old := message[i/8]
 			message[i/8] ^= byte(uint(1) << (uint(i) % uint(8))) // modify 1 bit
 
-			proof2, err := Prove(privateKey, message)
+			proof2, err := Prove(privateKey[:], publicKey[:], message)
 			require.NoError(t, err)
 			hash2, err := ProofToHash(proof2)
 			require.NoError(t, err)

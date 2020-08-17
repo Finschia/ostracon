@@ -46,6 +46,11 @@ func (privKey PrivKeySecp256k1) Bytes() []byte {
 	return cdc.MustMarshalBinaryBare(privKey)
 }
 
+// VRFProve is not supported in Secp256k1.
+func (privKey PrivKeySecp256k1) VRFProve(seed []byte) (crypto.Proof, error) {
+	return nil, fmt.Errorf("VRF prove is not supported by the secp256k1")
+}
+
 // PubKey performs the point-scalar multiplication from the privKey on the
 // generator point to get the pubkey.
 func (privKey PrivKeySecp256k1) PubKey() crypto.PubKey {
@@ -156,6 +161,11 @@ func (pubKey PubKeySecp256k1) Bytes() []byte {
 		panic(err)
 	}
 	return bz
+}
+
+// VRFVerify is not supported in Secp256k1.
+func (pubKey PubKeySecp256k1) VRFVerify(proof crypto.Proof, seed []byte) (crypto.Output, error) {
+	return nil, fmt.Errorf("VRF verify is not supported by the secp256k1")
 }
 
 func (pubKey PubKeySecp256k1) String() string {

@@ -4,7 +4,6 @@ import (
 	amino "github.com/tendermint/go-amino"
 
 	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/vrf"
 	"github.com/tendermint/tendermint/types"
 )
 
@@ -66,7 +65,7 @@ type VRFProofRequest struct {
 
 // VRFProofResponse is a PrivValidatorSocket message containing a Proof.
 type VRFProofResponse struct {
-	Proof vrf.Proof
+	Proof crypto.Proof
 	Error *RemoteSignerError
 }
 

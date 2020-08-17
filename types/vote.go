@@ -13,7 +13,7 @@ import (
 
 const (
 	// MaxVoteBytes is a maximum vote size (including amino overhead).
-	MaxVoteBytes int64  = 223
+	MaxVoteBytes int64  = 255
 	nilVoteStr   string = "nil-Vote"
 )
 
@@ -168,7 +168,7 @@ func (vote *Vote) ValidateBasic() error {
 		return errors.New("signature is missing")
 	}
 	if len(vote.Signature) > MaxSignatureSize {
-		return fmt.Errorf("signature is too big (max: %d)", MaxSignatureSize)
+		return fmt.Errorf("signature is too big %d (max: %d)", len(vote.Signature), MaxSignatureSize)
 	}
 	return nil
 }

@@ -4,13 +4,17 @@ const (
 	PubKeyEd25519 = "ed25519"
 )
 
-func Ed25519ValidatorUpdate(pubkey []byte, power int64) ValidatorUpdate {
+func NewValidatorUpdate(keyType string, pubkey []byte, power int64) ValidatorUpdate {
 	return ValidatorUpdate{
 		// Address:
 		PubKey: PubKey{
-			Type: PubKeyEd25519,
+			Type: keyType,
 			Data: pubkey,
 		},
 		Power: power,
 	}
+}
+
+func Ed25519ValidatorUpdate(pubkey []byte, power int64) ValidatorUpdate {
+	return NewValidatorUpdate(PubKeyEd25519, pubkey, power)
 }

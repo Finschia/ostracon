@@ -9,8 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tendermint/tendermint/crypto/vrf"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -247,8 +245,6 @@ func TestSignProposal(t *testing.T) {
 }
 
 func TestGenerateVRFProof(t *testing.T) {
-	assert := assert.New(t)
-
 	tempKeyFile, err := ioutil.TempFile("", "priv_validator_key_")
 	require.Nil(t, err)
 	tempStateFile, err := ioutil.TempFile("", "priv_validator_state_")
@@ -256,20 +252,14 @@ func TestGenerateVRFProof(t *testing.T) {
 
 	privVal := GenFilePV(tempKeyFile.Name(), tempStateFile.Name())
 
-	privKeyEd25519, ok := privVal.Key.PrivKey.(ed25519.PrivKeyEd25519)
-	require.True(t, ok)
-	pubKeyEd25519, ok := privKeyEd25519.PubKey().(ed25519.PubKeyEd25519)
-	require.True(t, ok)
 	success := [][]byte{{}, {0x00}, make([]byte, 100)}
 	for _, msg := range success {
 		proof, err := privVal.GenerateVRFProof(msg)
 		require.Nil(t, err)
 		t.Log("  Message    : ", hex.EncodeToString(msg), " -> ", hex.EncodeToString(proof[:]))
-		_, err = vrf.ProofToHash(proof)
+		pubKey, _ := privVal.GetPubKey()
+		_, err = pubKey.VRFVerify(proof, msg)
 		require.Nil(t, err)
-		expected, err := vrf.Verify(pubKeyEd25519, proof, msg)
-		require.Nil(t, err)
-		assert.True(expected)
 	}
 }
 

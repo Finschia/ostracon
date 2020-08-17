@@ -4,8 +4,6 @@ import (
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
-	"github.com/tendermint/tendermint/crypto/vrf"
-
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
@@ -125,7 +123,7 @@ func genHeader(chainID string, height int64, txs types.Txs,
 	secret := [64]byte{}
 	privateKey := ed25519.GenPrivKeyFromSecret(secret[:])
 	message := []byte("hello, world")
-	proof, _ := vrf.Prove(privateKey, message)
+	proof, _ := privateKey.VRFProve(message)
 
 	return &types.Header{
 		ChainID: chainID,

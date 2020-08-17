@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/tendermint/tendermint/crypto/vrf"
+
 	amino "github.com/tendermint/go-amino"
 	"golang.org/x/crypto/ed25519"
 
@@ -55,6 +57,16 @@ func (privKey PrivKeyEd25519) Bytes() []byte {
 func (privKey PrivKeyEd25519) Sign(msg []byte) ([]byte, error) {
 	signatureBytes := ed25519.Sign(privKey[:], msg)
 	return signatureBytes, nil
+}
+
+// VRFProve generates a VRF Proof for given seed to generate a verifiable random.
+func (privKey PrivKeyEd25519) VRFProve(seed []byte) (crypto.Proof, error) {
+	pubKey := privKey.PubKey().(PubKeyEd25519)
+	proof, err := vrf.Prove(privKey[:], pubKey[:], seed)
+	if err != nil {
+		return nil, err
+	}
+	return crypto.Proof(proof[:]), nil
 }
 
 // PubKey gets the corresponding public key from the private key.
@@ -154,6 +166,22 @@ func (pubKey PubKeyEd25519) VerifyBytes(msg []byte, sig []byte) bool {
 		return false
 	}
 	return ed25519.Verify(pubKey[:], msg, sig)
+}
+
+// VRFVerify verifies that the given VRF Proof was generated from the seed by the owner of this public key.
+func (pubKey PubKeyEd25519) VRFVerify(proof crypto.Proof, seed []byte) (crypto.Output, error) {
+	valid, err := vrf.Verify(pubKey[:], vrf.Proof(proof), seed)
+	if err != nil {
+		return nil, fmt.Errorf("the specified proof is not a valid ed25519 proof: %v", proof)
+	}
+	if !valid {
+		return nil, fmt.Errorf("the specified Proof is not generated with this pair-key: %v", proof)
+	}
+	output, err := vrf.ProofToHash(vrf.Proof(proof))
+	if err != nil {
+		return nil, err
+	}
+	return crypto.Output(output), nil
 }
 
 func (pubKey PubKeyEd25519) String() string {

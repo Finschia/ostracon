@@ -12,7 +12,6 @@ import (
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/merkle"
 	"github.com/tendermint/tendermint/crypto/tmhash"
-	"github.com/tendermint/tendermint/crypto/vrf"
 	"github.com/tendermint/tendermint/libs/bits"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	tmmath "github.com/tendermint/tendermint/libs/math"
@@ -322,7 +321,7 @@ func (h *Header) Populate(
 	consensusHash, appHash, lastResultsHash []byte,
 	proposerAddress Address,
 	round int,
-	proof vrf.Proof,
+	proof crypto.Proof,
 ) {
 	h.Version = version
 	h.ChainID = chainID
@@ -641,7 +640,7 @@ func (cs CommitSig) ValidateBasic() error {
 			return errors.New("signature is missing")
 		}
 		if len(cs.Signature) > MaxSignatureSize {
-			return fmt.Errorf("signature is too big (max: %d)", MaxSignatureSize)
+			return fmt.Errorf("signature is too big %d (max: %d)", len(cs.Signature), MaxSignatureSize)
 		}
 	}
 
@@ -687,6 +686,8 @@ type Commit struct {
 	Round      int         `json:"round"`
 	BlockID    BlockID     `json:"block_id"`
 	Signatures []CommitSig `json:"signatures"`
+
+	AggregatedSignature []byte `json:"aggregated_signature"`
 
 	// Memoized in first call to corresponding method.
 	// NOTE: can't memoize in constructor because constructor isn't used for

@@ -57,6 +57,11 @@ func (pubKey PubKeySr25519) VerifyBytes(msg []byte, sig []byte) bool {
 	return publicKey.Verify(signature, signingContext)
 }
 
+// VRFVerify is not supported in Sr25519.
+func (pubKey PubKeySr25519) VRFVerify(proof crypto.Proof, seed []byte) (crypto.Output, error) {
+	return nil, fmt.Errorf("VRF verify is not supported by the sr25519")
+}
+
 func (pubKey PubKeySr25519) String() string {
 	return fmt.Sprintf("PubKeySr25519{%X}", pubKey[:])
 }

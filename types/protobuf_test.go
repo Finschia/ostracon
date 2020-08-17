@@ -4,6 +4,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/tendermint/tendermint/crypto/bls"
+	"github.com/tendermint/tendermint/crypto/composite"
+
 	"github.com/golang/protobuf/proto" // nolint: staticcheck // still used by gogoproto
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,8 +23,10 @@ import (
 func TestABCIPubKey(t *testing.T) {
 	pkEd := ed25519.GenPrivKey().PubKey()
 	pkSecp := secp256k1.GenPrivKey().PubKey()
+	pkComposite := composite.NewPrivKeyComposite(bls.GenPrivKey(), ed25519.GenPrivKey()).PubKey()
 	testABCIPubKey(t, pkEd, ABCIPubKeyTypeEd25519)
 	testABCIPubKey(t, pkSecp, ABCIPubKeyTypeSecp256k1)
+	testABCIPubKey(t, pkComposite, ABCIPubKeyTypeComposite)
 }
 
 func testABCIPubKey(t *testing.T, pk crypto.PubKey, typeStr string) {
@@ -151,10 +156,11 @@ func TestABCIEvidence(t *testing.T) {
 
 type pubKeyEddie struct{}
 
-func (pubKeyEddie) Address() Address                        { return []byte{} }
-func (pubKeyEddie) Bytes() []byte                           { return []byte{} }
-func (pubKeyEddie) VerifyBytes(msg []byte, sig []byte) bool { return false }
-func (pubKeyEddie) Equals(crypto.PubKey) bool               { return false }
+func (pubKeyEddie) Address() Address                                                { return []byte{} }
+func (pubKeyEddie) Bytes() []byte                                                   { return []byte{} }
+func (pubKeyEddie) VerifyBytes(msg []byte, sig []byte) bool                         { return false }
+func (pubKeyEddie) VRFVerify(proof crypto.Proof, msg []byte) (crypto.Output, error) { return nil, nil }
+func (pubKeyEddie) Equals(crypto.PubKey) bool                                       { return false }
 
 func TestABCIValidatorFromPubKeyAndPower(t *testing.T) {
 	pubkey := ed25519.GenPrivKey().PubKey()

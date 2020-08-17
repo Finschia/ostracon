@@ -29,7 +29,7 @@ jobs:
       - uses: actions/cache@v1
         with:
           path: ~/go/bin
-          key: ${{ runner.os }}-go-tm-binary
+          key: ${{ runner.os }}-go-tm-binary-${{ hashFiles('**/*.go', '**/go.sum', 'Makefile') }}
 
   test_abci_apps:
     runs-on: ubuntu-latest
@@ -43,7 +43,7 @@ jobs:
       - uses: actions/cache@v1
         with:
           path: ~/go/bin
-          key: ${{ runner.os }}-go-tm-binary
+          key: ${{ runner.os }}-go-tm-binary-${{ hashFiles('**/*.go', '**/go.sum', 'Makefile') }}
       - name: test_abci_apps
         run: abci/tests/test_app/test.sh
         shell: bash
@@ -60,7 +60,7 @@ jobs:
       - uses: actions/cache@v1
         with:
           path: ~/go/bin
-          key: ${{ runner.os }}-go-tm-binary
+          key: ${{ runner.os }}-go-tm-binary-${{ hashFiles('**/*.go', '**/go.sum', 'Makefile') }}
       - run: abci/tests/test_cli/test.sh
         shell: bash
 
@@ -76,7 +76,7 @@ jobs:
       - uses: actions/cache@v1
         with:
           path: ~/go/bin
-          key: ${{ runner.os }}-go-tm-binary
+          key: ${{ runner.os }}-go-tm-binary-${{ hashFiles('**/*.go', '**/go.sum', 'Makefile') }}
       - name: test_apps
         run: test/app/test.sh
         shell: bash

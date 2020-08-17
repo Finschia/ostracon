@@ -2,8 +2,6 @@ package vrf
 
 import (
 	"math/big"
-
-	"github.com/tendermint/tendermint/crypto/ed25519"
 )
 
 // defaultVrf is assigned to vrfEd25519r2ishiguro by init() of vrf_r2ishguro.go
@@ -15,9 +13,13 @@ var defaultVrf vrfEd25519
 type Proof []byte
 type Output []byte
 
+func (proof Proof) ToHash() ([]byte, error) {
+	return ProofToHash(proof)
+}
+
 type vrfEd25519 interface {
-	Prove(privateKey ed25519.PrivKeyEd25519, message []byte) (Proof, error)
-	Verify(publicKey ed25519.PubKeyEd25519, proof Proof, message []byte) (bool, error)
+	Prove(privateKey []byte, publicKey []byte, message []byte) (Proof, error)
+	Verify(publicKey []byte, proof Proof, message []byte) (bool, error)
 	ProofToHash(proof Proof) (Output, error)
 }
 
@@ -27,11 +29,11 @@ func (op Output) ToInt() *big.Int {
 	return &i
 }
 
-func Prove(privateKey ed25519.PrivKeyEd25519, message []byte) (Proof, error) {
-	return defaultVrf.Prove(privateKey, message)
+func Prove(privateKey []byte, publicKey []byte, message []byte) (Proof, error) {
+	return defaultVrf.Prove(privateKey, publicKey, message)
 }
 
-func Verify(publicKey ed25519.PubKeyEd25519, proof Proof, message []byte) (bool, error) {
+func Verify(publicKey []byte, proof Proof, message []byte) (bool, error) {
 	return defaultVrf.Verify(publicKey, proof, message)
 }
 

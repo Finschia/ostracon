@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"unsafe"
 
-	"github.com/tendermint/tendermint/crypto/ed25519"
 	libsodium "github.com/tendermint/tendermint/crypto/vrf/internal/vrf"
 )
 
@@ -23,8 +22,8 @@ func init() {
 	defaultVrf = newVrfEd25519ImplLibsodium()
 }
 
-func (base vrfImplLibsodium) Prove(privateKey ed25519.PrivKeyEd25519, message []byte) (Proof, error) {
-	privKey := (*[libsodium.SECRETKEYBYTES]byte)(unsafe.Pointer(&privateKey))
+func (base vrfImplLibsodium) Prove(privateKey []byte, message []byte) (Proof, error) {
+	privKey := (*[libsodium.SECRETKEYBYTES]byte)(unsafe.Pointer(&(*privateKey)))
 	pf, err := libsodium.Prove(privKey, message)
 	if err != nil {
 		return nil, err
@@ -32,7 +31,7 @@ func (base vrfImplLibsodium) Prove(privateKey ed25519.PrivKeyEd25519, message []
 	return newProof(pf), nil
 }
 
-func (base vrfImplLibsodium) Verify(publicKey ed25519.PubKeyEd25519, proof Proof, message []byte) (bool, error) {
+func (base vrfImplLibsodium) Verify(publicKey []byte, proof Proof, message []byte) (bool, error) {
 	pubKey := (*[libsodium.PUBLICKEYBYTES]byte)(unsafe.Pointer(&publicKey))
 	op, err := libsodium.Verify(pubKey, toArray(proof), message)
 	if err != nil {

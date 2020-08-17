@@ -7,9 +7,9 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/tendermint/tendermint/crypto/vrf"
-
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/bls"
+	"github.com/tendermint/tendermint/crypto/composite"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	tmos "github.com/tendermint/tendermint/libs/os"
@@ -152,7 +152,9 @@ type FilePV struct {
 // GenFilePV generates a new validator with randomly generated private key
 // and sets the filePaths, but does not call Save().
 func GenFilePV(keyFilePath, stateFilePath string) *FilePV {
-	privKey := ed25519.GenPrivKey()
+	signKey := bls.GenPrivKey()
+	vrfKey := ed25519.GenPrivKey()
+	privKey := composite.NewPrivKeyComposite(signKey, vrfKey)
 
 	return &FilePV{
 		Key: FilePVKey{
@@ -262,12 +264,8 @@ func (pv *FilePV) SignProposal(chainID string, proposal *types.Proposal) error {
 }
 
 // GenerateVRFProof generates a proof for specified message.
-func (pv *FilePV) GenerateVRFProof(message []byte) (vrf.Proof, error) {
-	privKey, ok := pv.Key.PrivKey.(ed25519.PrivKeyEd25519)
-	if !ok {
-		return nil, types.NewErrUnsupportedKey("ed25519")
-	}
-	return vrf.Prove(privKey, message)
+func (pv *FilePV) GenerateVRFProof(message []byte) (crypto.Proof, error) {
+	return pv.Key.PrivKey.VRFProve(message)
 }
 
 // Save persists the FilePV to disk.
