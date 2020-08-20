@@ -22,7 +22,7 @@ and the Handshake allows any necessary blocks to be replayed.
 Validator set changes are effected using the following transaction format:
 
 ```
-"val:pubkey1!power1,pubkey2!power2,pubkey3!power3"
+"val:composite!pubkey1!power1,composite!pubkey2!power2,composite!pubkey3!power3"
 ```
 
 where `pubkeyN` is a base64-encoded 32-byte ed25519 key and `powerN` is a new voting power for the validator with `pubkeyN` (possibly a new one).

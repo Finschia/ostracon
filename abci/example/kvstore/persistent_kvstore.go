@@ -166,26 +166,25 @@ func (app *PersistentKVStoreApplication) Validators() (validators []types.Valida
 
 func MakeValSetChangeTx(pubkey types.PubKey, power int64) []byte {
 	pubStr := base64.StdEncoding.EncodeToString(pubkey.Data)
-	return []byte(fmt.Sprintf("val:%s!%d", pubStr, power))
+	return []byte(fmt.Sprintf("val:%s!%s!%d", pubkey.Type, pubStr, power))
 }
 
 func isValidatorTx(tx []byte) bool {
 	return strings.HasPrefix(string(tx), ValidatorSetChangePrefix)
 }
 
-// format is "val:pubkey!power"
+// format is "val:keytype!pubkey!power"
 // pubkey is a base64-encoded 32-byte ed25519 key
 func (app *PersistentKVStoreApplication) execValidatorTx(tx []byte) types.ResponseDeliverTx {
 	tx = tx[len(ValidatorSetChangePrefix):]
-
 	//get the pubkey and power
 	pubKeyAndPower := strings.Split(string(tx), "!")
-	if len(pubKeyAndPower) != 2 {
+	if len(pubKeyAndPower) != 3 {
 		return types.ResponseDeliverTx{
 			Code: code.CodeTypeEncodingError,
-			Log:  fmt.Sprintf("Expected 'pubkey!power'. Got %v", pubKeyAndPower)}
+			Log:  fmt.Sprintf("Expected 'keytype!pubkey!power'. Got %v", pubKeyAndPower)}
 	}
-	pubkeyS, powerS := pubKeyAndPower[0], pubKeyAndPower[1]
+	keytype, pubkeyS, powerS := pubKeyAndPower[0], pubKeyAndPower[1], pubKeyAndPower[2]
 
 	// decode the pubkey
 	pubkey, err := base64.StdEncoding.DecodeString(pubkeyS)
@@ -204,8 +203,7 @@ func (app *PersistentKVStoreApplication) execValidatorTx(tx []byte) types.Respon
 	}
 
 	// update
-	// TODO The type of public key to be restored should be kept its original type.
-	return app.updateValidator(types.NewValidatorUpdate(tmtypes.ABCIPubKeyTypeComposite, pubkey, power))
+	return app.updateValidator(types.NewValidatorUpdate(keytype, pubkey, power))
 }
 
 // add, update, or remove a validator
