@@ -1708,6 +1708,8 @@ func (cs *State) pruneBlocks(retainHeight int64) (uint64, error) {
 }
 
 func (cs *State) recordMetrics(height int64, block *types.Block) {
+	cs.metrics.Validators.Set(float64(cs.Validators.Size()))
+	cs.metrics.ValidatorsPower.Set(float64(cs.Validators.TotalStakingPower()))
 	cs.metrics.Voters.Set(float64(cs.Voters.Size()))
 	cs.metrics.VotersPower.Set(float64(cs.Voters.TotalVotingPower()))
 
