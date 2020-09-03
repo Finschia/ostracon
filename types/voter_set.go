@@ -8,14 +8,13 @@ import (
 	"sort"
 	"strings"
 
-	tmproto "github.com/tendermint/tendermint/proto/types"
-
 	"github.com/pkg/errors"
 
 	"github.com/tendermint/tendermint/crypto/merkle"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	tmmath "github.com/tendermint/tendermint/libs/math"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
+	tmproto "github.com/tendermint/tendermint/proto/types"
 )
 
 // VoterSet represent a set of *Validator at a given height.

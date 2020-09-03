@@ -101,7 +101,6 @@ func (vs *validatorStub) signVote(
 		Timestamp:        tmtime.Now(),
 		Type:             voteType,
 		BlockID:          types.BlockID{Hash: hash, PartsHeader: header},
-		Signature:        []byte{},
 	}
 
 	err = vs.PrivValidator.SignVote(config.ChainID(), vote)

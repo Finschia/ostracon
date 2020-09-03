@@ -1087,6 +1087,7 @@ func (cs *State) createProposalBlock(round int) (block *types.Block, blockParts 
 	case cs.LastCommit.HasTwoThirdsMajority():
 		// Make the commit from LastCommit
 		commit = cs.LastCommit.MakeCommit()
+		commit.AggregateSignatures()
 	default: // This shouldn't happen.
 		cs.Logger.Error("enterPropose: Cannot propose anything: No commit for the previous block")
 		return
@@ -2047,7 +2048,6 @@ func (cs *State) signVote(
 		Timestamp:        cs.voteTime(),
 		Type:             msgType,
 		BlockID:          types.BlockID{Hash: hash, PartsHeader: header},
-		Signature:        []byte{},
 	}
 
 	err = cs.privValidator.SignVote(cs.state.ChainID, vote)

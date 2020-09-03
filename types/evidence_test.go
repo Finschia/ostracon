@@ -30,7 +30,6 @@ func makeVote(
 		Round:            round,
 		Type:             SignedMsgType(step),
 		BlockID:          blockID,
-		Signature:        []byte{},
 	}
 	err = val.SignVote(chainID, v)
 	if err != nil {

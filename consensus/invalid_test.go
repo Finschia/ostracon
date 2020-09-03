@@ -80,7 +80,6 @@ func invalidDoPrevoteFunc(t *testing.T, height int64, round int, cs *State, sw *
 			BlockID: types.BlockID{
 				Hash:        blockHash,
 				PartsHeader: types.PartSetHeader{Total: 1, Hash: tmrand.Bytes(32)}},
-			Signature: []byte{},
 		}
 		if err = cs.privValidator.SignVote(cs.state.ChainID, precommit); err != nil {
 			panic(err)
