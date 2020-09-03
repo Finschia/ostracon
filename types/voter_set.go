@@ -8,10 +8,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/tendermint/tendermint/crypto/bls"
-
 	"github.com/pkg/errors"
 
+	"github.com/tendermint/tendermint/crypto/bls"
 	"github.com/tendermint/tendermint/crypto/merkle"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	tmmath "github.com/tendermint/tendermint/libs/math"

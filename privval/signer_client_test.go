@@ -205,7 +205,6 @@ func TestSignerVote(t *testing.T) {
 			Timestamp:        ts,
 			ValidatorAddress: valAddr,
 			ValidatorIndex:   1,
-			Signature:        []byte{},
 		}
 
 		have := &types.Vote{
@@ -216,7 +215,6 @@ func TestSignerVote(t *testing.T) {
 			Timestamp:        ts,
 			ValidatorAddress: valAddr,
 			ValidatorIndex:   1,
-			Signature:        []byte{},
 		}
 
 		tc := tc
@@ -251,7 +249,6 @@ func TestSignerVoteResetDeadline(t *testing.T) {
 			Timestamp:        ts,
 			ValidatorAddress: valAddr,
 			ValidatorIndex:   1,
-			Signature:        []byte{},
 		}
 
 		have := &types.Vote{
@@ -262,7 +259,6 @@ func TestSignerVoteResetDeadline(t *testing.T) {
 			Timestamp:        ts,
 			ValidatorAddress: valAddr,
 			ValidatorIndex:   1,
-			Signature:        []byte{},
 		}
 
 		tc := tc
@@ -307,7 +303,6 @@ func TestSignerVoteKeepAlive(t *testing.T) {
 			Timestamp:        ts,
 			ValidatorAddress: valAddr,
 			ValidatorIndex:   1,
-			Signature:        []byte{},
 		}
 
 		have := &types.Vote{
@@ -318,7 +313,6 @@ func TestSignerVoteKeepAlive(t *testing.T) {
 			Timestamp:        ts,
 			ValidatorAddress: valAddr,
 			ValidatorIndex:   1,
-			Signature:        []byte{},
 		}
 
 		tc := tc
@@ -403,7 +397,6 @@ func TestSignerSignVoteErrors(t *testing.T) {
 			Timestamp:        ts,
 			ValidatorAddress: valAddr,
 			ValidatorIndex:   1,
-			Signature:        []byte("signature"),
 		}
 
 		// Replace signer service privval with one that always fails
@@ -473,7 +466,7 @@ func TestSignerUnexpectedResponse(t *testing.T) {
 		})
 
 		ts := time.Now()
-		want := &types.Vote{Timestamp: ts, Type: tmproto.PrecommitType, Signature: []byte{}}
+		want := &types.Vote{Timestamp: ts, Type: tmproto.PrecommitType}
 
 		e := tc.signerClient.SignVote(tc.chainID, want.ToProto())
 		assert.EqualError(t, e, "empty response")

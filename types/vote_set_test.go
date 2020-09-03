@@ -121,7 +121,6 @@ func TestVoteSet_AddVote_Good(t *testing.T) {
 		Type:             tmproto.PrevoteType,
 		Timestamp:        tmtime.Now(),
 		BlockID:          BlockID{nil, PartSetHeader{}},
-		Signature:        []byte{},
 	}
 	_, err = signAddVote(val0, vote, voteSet)
 	require.NoError(t, err)
@@ -220,7 +219,6 @@ func TestVoteSet_2_3Majority(t *testing.T) {
 		Type:             tmproto.PrevoteType,
 		Timestamp:        tmtime.Now(),
 		BlockID:          BlockID{nil, PartSetHeader{}},
-		Signature:        []byte{},
 	}
 	// 6 out of 10 voted for nil.
 	for i := int32(0); i < 6; i++ {
@@ -275,7 +273,6 @@ func TestVoteSet_2_3MajorityRedux(t *testing.T) {
 		Timestamp:        tmtime.Now(),
 		Type:             tmproto.PrevoteType,
 		BlockID:          BlockID{blockHash, blockPartSetHeader},
-		Signature:        []byte{},
 	}
 
 	// 66 out of 100 voted for nil.
@@ -373,7 +370,6 @@ func TestVoteSet_Conflicts(t *testing.T) {
 		Timestamp:        tmtime.Now(),
 		Type:             tmproto.PrevoteType,
 		BlockID:          BlockID{nil, PartSetHeader{}},
-		Signature:        []byte{},
 	}
 
 	val0, err := privValidators[0].GetPubKey()
@@ -502,7 +498,6 @@ func TestVoteSet_MakeCommit(t *testing.T) {
 		Timestamp:        tmtime.Now(),
 		Type:             tmproto.PrecommitType,
 		BlockID:          BlockID{blockHash, blockPartSetHeader},
-		Signature:        []byte{},
 	}
 
 	// 6 out of 10 voted for some block.
@@ -588,6 +583,7 @@ func TestVoteSet_MakeCommit(t *testing.T) {
 		}
 
 		commit := voteSet.MakeCommit()
+		commit.AggregateSignatures()
 
 		assert.Equal(t, height, commit.Height)
 		assert.Equal(t, round, commit.Round)

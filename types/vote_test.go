@@ -44,7 +44,6 @@ func exampleVote(t byte) *Vote {
 		},
 		ValidatorAddress: crypto.AddressHash([]byte("validator_address")),
 		ValidatorIndex:   56789,
-		Signature:        []byte{},
 	}
 }
 
@@ -67,13 +66,13 @@ func TestVoteSignBytesTestVectors(t *testing.T) {
 		want    []byte
 	}{
 		0: {
-			"", &Vote{Signature: []byte{}},
+			"", &Vote{},
 			// NOTE: Height and Round are skipped here. This case needs to be considered while parsing.
 			[]byte{0xd, 0x2a, 0xb, 0x8, 0x80, 0x92, 0xb8, 0xc3, 0x98, 0xfe, 0xff, 0xff, 0xff, 0x1},
 		},
 		// with proper (fixed size) height and round (PreCommit):
 		1: {
-			"", &Vote{Height: 1, Round: 1, Type: tmproto.PrecommitType, Signature: []byte{}},
+			"", &Vote{Height: 1, Round: 1, Type: tmproto.PrecommitType},
 			[]byte{
 				0x21,                                   // length
 				0x8,                                    // (field_number << 3) | wire_type
@@ -88,7 +87,7 @@ func TestVoteSignBytesTestVectors(t *testing.T) {
 		},
 		// with proper (fixed size) height and round (PreVote):
 		2: {
-			"", &Vote{Height: 1, Round: 1, Type: tmproto.PrevoteType, Signature: []byte{}},
+			"", &Vote{Height: 1, Round: 1, Type: tmproto.PrevoteType},
 			[]byte{
 				0x21,                                   // length
 				0x8,                                    // (field_number << 3) | wire_type
@@ -102,7 +101,7 @@ func TestVoteSignBytesTestVectors(t *testing.T) {
 				0xb, 0x8, 0x80, 0x92, 0xb8, 0xc3, 0x98, 0xfe, 0xff, 0xff, 0xff, 0x1},
 		},
 		3: {
-			"", &Vote{Height: 1, Round: 1, Signature: []byte{}},
+			"", &Vote{Height: 1, Round: 1},
 			[]byte{
 				0x1f,                                   // length
 				0x11,                                   // (field_number << 3) | wire_type
@@ -115,7 +114,7 @@ func TestVoteSignBytesTestVectors(t *testing.T) {
 		},
 		// containing non-empty chain_id:
 		4: {
-			"test_chain_id", &Vote{Height: 1, Round: 1, Signature: []byte{}},
+			"test_chain_id", &Vote{Height: 1, Round: 1},
 			[]byte{
 				0x2e,                                   // length
 				0x11,                                   // (field_number << 3) | wire_type
@@ -139,8 +138,8 @@ func TestVoteSignBytesTestVectors(t *testing.T) {
 }
 
 func TestVoteProposalNotEq(t *testing.T) {
-	cv := CanonicalizeVote("", &tmproto.Vote{Height: 1, Round: 1, Signature: []byte{}})
-	p := CanonicalizeProposal("", &tmproto.Proposal{Height: 1, Round: 1, Signature: []byte{}})
+	cv := CanonicalizeVote("", &tmproto.Vote{Height: 1, Round: 1})
+	p := CanonicalizeProposal("", &tmproto.Proposal{Height: 1, Round: 1})
 	vb, err := proto.Marshal(&cv)
 	require.NoError(t, err)
 	pb, err := proto.Marshal(&p)
@@ -243,7 +242,6 @@ func TestMaxVoteBytes(t *testing.T) {
 				Hash:  tmhash.Sum([]byte("blockID_part_set_header_hash")),
 			},
 		},
-		Signature: []byte{},
 	}
 
 	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
@@ -321,7 +319,7 @@ func TestVoteProtobuf(t *testing.T) {
 			expPass bool
 		}{
 			{"success", vote, true},
-			{"fail vote validate basic", &Vote{Signature: []byte{}}, false},
+			{"fail vote validate basic", &Vote{}, false},
 			{"failure nil", nil, false},
 		}
 		for _, tc := range testCases {

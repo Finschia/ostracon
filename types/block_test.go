@@ -303,19 +303,7 @@ func TestCommit(t *testing.T) {
 	require.NotNil(t, commit.BitArray())
 	assert.Equal(t, bits.NewBitArray(10).Size(), commit.BitArray().Size())
 
-	vote1, vote2 := voteSet.GetByIndex(0), commit.GetByIndex(0)
-	assert.Equal(t, vote1.BlockID, vote2.BlockID)
-	assert.Equal(t, vote1.Height, vote2.Height)
-	assert.Equal(t, vote1.Round, vote2.Round)
-	assert.Equal(t, vote1.Timestamp, vote2.Timestamp)
-	assert.Equal(t, vote1.Type, vote2.Type)
-	assert.Equal(t, vote1.ValidatorAddress, vote2.ValidatorAddress)
-	assert.Equal(t, vote1.ValidatorIndex, vote2.ValidatorIndex)
-	assert.NotNil(t, vote1.Signature)
-	if len(vote1.Signature) == bls.SignatureSize { // RandVoterSet() generates private key type randomly ;(
-		assert.Nil(t, vote2.Signature)
-	}
-	assert.True(t, commit.IsCommit())
+	assert.Equal(t, voteSet.GetByIndex(0), commit.GetByIndex(0))
 }
 
 func TestCommitValidateBasic(t *testing.T) {
@@ -920,10 +908,6 @@ func TestCommitToVoteSet(t *testing.T) {
 	chainID := voteSet.ChainID()
 	voteSet2 := CommitToVoteSet(chainID, commit, voterSet)
 
-	assert.Nil(t, voteSet.aggregatedSignature)
-	assert.NotNil(t, commit.AggregatedSignature)
-	assert.Equal(t, commit.AggregatedSignature, voteSet2.aggregatedSignature)
-
 	for i := int32(0); int(i) < len(vals); i++ {
 		vote1 := voteSet2.GetByIndex(i)
 		vote2 := commit.GetVote(i)
@@ -971,7 +955,6 @@ func TestCommitToVoteSetWithVotesForNilBlock(t *testing.T) {
 					Type:             tmproto.PrecommitType,
 					BlockID:          tc.blockIDs[n],
 					Timestamp:        tmtime.Now(),
-					Signature:        []byte{},
 				}
 
 				added, err := signAddVote(vals[vi], vote, voteSet)

@@ -67,7 +67,6 @@ func makeVote(
 		Timestamp:        tmtime.Now(),
 		Type:             tmproto.PrecommitType,
 		BlockID:          blockID,
-		Signature:        []byte{},
 	}
 
 	vpb := vote.ToProto()

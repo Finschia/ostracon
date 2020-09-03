@@ -156,7 +156,6 @@ func makeVote(header *types.Header, voterSet *types.VoterSet,
 		Timestamp:        tmtime.Now(),
 		Type:             tmproto.PrecommitType,
 		BlockID:          blockID,
-		Signature:        []byte{},
 	}
 
 	v := vote.ToProto()

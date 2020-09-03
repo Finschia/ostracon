@@ -363,7 +363,6 @@ func newVote(addr types.Address, idx int32, height int64, round int32,
 		Type:             typ,
 		Timestamp:        tmtime.Now(),
 		BlockID:          blockID,
-		Signature:        []byte{},
 	}
 }
 
