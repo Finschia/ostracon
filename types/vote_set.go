@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/tendermint/tendermint/crypto/bls"
 	"github.com/tendermint/tendermint/libs/bits"
 )
 
@@ -64,6 +65,8 @@ type VoteSet struct {
 	maj23         *BlockID               // First 2/3 majority seen
 	votesByBlock  map[string]*blockVotes // string(blockHash|blockParts) -> blockVotes
 	peerMaj23s    map[P2PID]BlockID      // Maj23 for each peer
+
+	aggregatedSignature []byte
 }
 
 // Constructs a new VoteSet struct used to accumulate votes for given height/round.
@@ -83,6 +86,8 @@ func NewVoteSet(chainID string, height int64, round int, signedMsgType SignedMsg
 		maj23:         nil,
 		votesByBlock:  make(map[string]*blockVotes, voterSet.Size()),
 		peerMaj23s:    make(map[P2PID]BlockID),
+
+		aggregatedSignature: nil,
 	}
 }
 
@@ -193,6 +198,9 @@ func (voteSet *VoteSet) addVote(vote *Vote) (added bool, err error) {
 
 	// If we already know of this vote, return false.
 	if existing, ok := voteSet.getVote(valIndex, blockKey); ok {
+		if existing.Signature == nil {
+			return false, nil // probably aggregated
+		}
 		if bytes.Equal(existing.Signature, vote.Signature) {
 			return false, nil // duplicate
 		}
@@ -204,6 +212,12 @@ func (voteSet *VoteSet) addVote(vote *Vote) (added bool, err error) {
 		return false, errors.Wrapf(err, "Failed to verify vote with ChainID %s and PubKey %s", voteSet.chainID, voter.PubKey)
 	}
 
+	// To make state deterministic, it prohibits to add a new Vote to the VoteSet that is restored from an existing
+	// Commit.
+	if voteSet.aggregatedSignature != nil {
+		return false, errors.Errorf("This VoteSet is already done Commit and no new Vote can be added.")
+	}
+
 	// Add vote and get conflicting vote if any.
 	added, conflicting := voteSet.addVerifiedVote(vote, blockKey, voter.VotingPower)
 	if conflicting != nil {
@@ -212,6 +226,7 @@ func (voteSet *VoteSet) addVote(vote *Vote) (added bool, err error) {
 	if !added {
 		panic("Expected to add non-conflicting vote")
 	}
+
 	return added, nil
 }
 
@@ -567,6 +582,7 @@ func (voteSet *VoteSet) MakeCommit() *Commit {
 	}
 
 	// For every validator, get the precommit
+	aggregatedSignature := voteSet.aggregatedSignature
 	commitSigs := make([]CommitSig, len(voteSet.votes))
 	for i, v := range voteSet.votes {
 		commitSig := v.CommitSig()
@@ -575,9 +591,26 @@ func (voteSet *VoteSet) MakeCommit() *Commit {
 			commitSig = NewCommitSigAbsent()
 		}
 		commitSigs[i] = commitSig
+
+		if !commitSigs[i].Absent() && len(commitSigs[i].Signature) == bls.SignatureSize {
+			if aggregatedSignature == nil {
+				aggregatedSignature = commitSigs[i].Signature
+				commitSigs[i].Signature = nil
+			} else {
+				aggrSig, err := bls.AddSignature(aggregatedSignature, commitSigs[i].Signature)
+				if err == nil {
+					aggregatedSignature = aggrSig
+					commitSigs[i].Signature = nil
+				} else {
+					// The BLS signature that fail to aggregate is remained intact.
+					fmt.Printf("*** ERROR: fail to aggregate signature: %s\n", err)
+				}
+			}
+		}
 	}
 
-	return NewCommit(voteSet.GetHeight(), voteSet.GetRound(), *voteSet.maj23, commitSigs)
+	return NewCommitWithAggregatedSignature(
+		voteSet.GetHeight(), voteSet.GetRound(), *voteSet.maj23, commitSigs, aggregatedSignature)
 }
 
 //--------------------------------------------------------------------------------

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+
 	"github.com/tendermint/tendermint/libs/fail"
 	"github.com/tendermint/tendermint/libs/log"
 	tmos "github.com/tendermint/tendermint/libs/os"
@@ -2046,6 +2047,7 @@ func (cs *State) signVote(
 		Timestamp:        cs.voteTime(),
 		Type:             msgType,
 		BlockID:          types.BlockID{Hash: hash, PartsHeader: header},
+		Signature:        []byte{},
 	}
 
 	err = cs.privValidator.SignVote(cs.state.ChainID, vote)
