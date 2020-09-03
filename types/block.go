@@ -7,6 +7,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/tendermint/tendermint/crypto/bls"
+	"github.com/tendermint/tendermint/crypto/composite"
+
 	"github.com/pkg/errors"
 
 	"github.com/tendermint/tendermint/crypto"
@@ -636,10 +639,8 @@ func (cs CommitSig) ValidateBasic() error {
 			)
 		}
 		// NOTE: Timestamp validation is subtle and handled elsewhere.
-		if len(cs.Signature) == 0 {
-			return errors.New("signature is missing")
-		}
-		if len(cs.Signature) > MaxSignatureSize {
+		// NOTE: Signature may be nil if it is aggregated and is handled elsewhere.
+		if cs.Signature != nil && len(cs.Signature) > MaxSignatureSize {
 			return fmt.Errorf("signature is too big %d (max: %d)", len(cs.Signature), MaxSignatureSize)
 		}
 	}
@@ -698,11 +699,38 @@ type Commit struct {
 
 // NewCommit returns a new Commit.
 func NewCommit(height int64, round int, blockID BlockID, commitSigs []CommitSig) *Commit {
+	return NewCommitWithAggregatedSignature(height, round, blockID, commitSigs, nil)
+}
+
+// NewCommitWithAggregatedSignature returns a new Commit with .
+// The aggrSig can be set to null. Then all commitSigs must have a valid signature.
+func NewCommitWithAggregatedSignature(height int64, round int, blockID BlockID, commitSigs []CommitSig, aggrSig []byte) *Commit {
+
+	// Make a copy of CommitSig to avoid side effects
+	newCommitSigs := make([]CommitSig, len(commitSigs))
+	copy(newCommitSigs, commitSigs)
+	commitSigs = newCommitSigs
+
+	// Create aggregate signature and reset per-CommitSig signature if possible
+	for i := range commitSigs {
+		if commitSigs[i].Absent() {
+			continue
+		}
+		curAggrSig, err := bls.AddSignature(aggrSig, commitSigs[i].Signature)
+		if err == nil {
+			aggrSig = curAggrSig
+			commitSigs[i].Signature = nil
+		} else {
+			// TODO It's possible to continue if the signature aggregation fails, but a warning log output is wanted here.
+		}
+	}
+
 	return &Commit{
-		Height:     height,
-		Round:      round,
-		BlockID:    blockID,
-		Signatures: commitSigs,
+		Height:              height,
+		Round:               round,
+		BlockID:             blockID,
+		Signatures:          commitSigs,
+		AggregatedSignature: aggrSig,
 	}
 }
 
@@ -819,10 +847,26 @@ func (commit *Commit) ValidateBasic() error {
 		if len(commit.Signatures) == 0 {
 			return errors.New("no signatures in commit")
 		}
+		omittedSignatures := 0
 		for i, commitSig := range commit.Signatures {
 			if err := commitSig.ValidateBasic(); err != nil {
 				return fmt.Errorf("wrong CommitSig #%d: %v", i, err)
 			}
+			if !commitSig.Absent() && commitSig.Signature == nil {
+				omittedSignatures += 1
+			}
+		}
+		if commit.AggregatedSignature == nil {
+			if omittedSignatures > 0 {
+				return fmt.Errorf("%d erased signatures are present, but no aggregate signature exist in commit",
+					omittedSignatures)
+			}
+		} else if omittedSignatures == 0 {
+			return fmt.Errorf("erased signatures are not present, but aggregated signature exist in commit: %x",
+				commit.AggregatedSignature)
+		} else if len(commit.AggregatedSignature) > MaxSignatureSize {
+			return fmt.Errorf("signature is too big %d (max: %d)",
+				len(commit.AggregatedSignature), MaxSignatureSize)
 		}
 	}
 
@@ -884,6 +928,7 @@ func (commit *Commit) ToProto() *tmproto.Commit {
 	c.Height = commit.Height
 	c.Round = int32(commit.Round)
 	c.BlockID = commit.BlockID.ToProto()
+	c.AggregatedSignature = commit.AggregatedSignature
 	if commit.hash != nil {
 		c.Hash = commit.hash
 	}
@@ -921,6 +966,7 @@ func CommitFromProto(cp *tmproto.Commit) (*Commit, error) {
 	commit.Height = cp.Height
 	commit.Round = int(cp.Round)
 	commit.BlockID = *bi
+	commit.AggregatedSignature = cp.AggregatedSignature
 	commit.hash = cp.Hash
 	commit.bitArray = bitArray
 
@@ -1195,4 +1241,20 @@ func BlockIDFromProto(bID *tmproto.BlockID) (*BlockID, error) {
 	blockID.Hash = bID.Hash
 
 	return blockID, blockID.ValidateBasic()
+}
+
+// GetBLSPubKey is a utility function for referencing a specified public key as a BLS key for signature.
+// If the key is not BLS, return nil
+func GetSignatureKey(pubKey crypto.PubKey) *bls.PubKeyBLS12 {
+	for {
+		if compPubKey, ok := pubKey.(composite.PubKeyComposite); ok {
+			pubKey = compPubKey.SignKey
+		} else {
+			break
+		}
+	}
+	if blsPubKey, ok := pubKey.(bls.PubKeyBLS12); ok {
+		return &blsPubKey
+	}
+	return nil
 }

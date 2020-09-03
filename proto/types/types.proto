@@ -108,8 +108,9 @@ message Commit {
 	int32 round = 2;
 	BlockID block_id = 3 [(gogoproto.nullable) = false, (gogoproto.customname) = "BlockID"];
 	repeated CommitSig signatures = 4 [(gogoproto.nullable) = false];
-	bytes hash = 5;
-	tendermint.proto.libs.bits.BitArray bit_array = 6;
+	bytes aggregated_signature = 5;
+	bytes hash = 6;
+	tendermint.proto.libs.bits.BitArray bit_array = 7;
 }
 
 // CommitSig is a part of the Vote included in a Commit.

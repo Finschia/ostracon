@@ -8,6 +8,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/tendermint/tendermint/crypto/bls"
+
 	tmproto "github.com/tendermint/tendermint/proto/types"
 
 	"github.com/datastream/probab/dst"
@@ -147,6 +149,8 @@ func (voters *VoterSet) VerifyCommit(chainID string, blockID BlockID,
 
 	talliedVotingPower := int64(0)
 	votingPowerNeeded := voters.TotalVotingPower() * 2 / 3
+	blsPubKeys := make([]bls.PubKeyBLS12, 0, len(commit.Signatures))
+	messages := make([][]byte, 0, len(commit.Signatures))
 	for idx, commitSig := range commit.Signatures {
 		if commitSig.Absent() {
 			continue // OK, some signatures can be absent.
@@ -158,8 +162,17 @@ func (voters *VoterSet) VerifyCommit(chainID string, blockID BlockID,
 
 		// Validate signature.
 		voteSignBytes := commit.VoteSignBytes(chainID, idx)
-		if !val.PubKey.VerifyBytes(voteSignBytes, commitSig.Signature) {
-			return fmt.Errorf("wrong signature (#%d): %X", idx, commitSig.Signature)
+		if commitSig.Signature != nil {
+			if !val.PubKey.VerifyBytes(voteSignBytes, commitSig.Signature) {
+				return fmt.Errorf("wrong signature (#%d): %X", idx, commitSig.Signature)
+			}
+		} else {
+			blsPubKey := GetSignatureKey(val.PubKey)
+			if blsPubKey == nil {
+				return fmt.Errorf("signature %d has been omitted, even though it is not a BLS key", idx)
+			}
+			blsPubKeys = append(blsPubKeys, *blsPubKey)
+			messages = append(messages, voteSignBytes)
 		}
 		// Good!
 		if blockID.Equals(commitSig.BlockID(commit.BlockID)) {
@@ -169,6 +182,10 @@ func (voters *VoterSet) VerifyCommit(chainID string, blockID BlockID,
 		// It's OK that the BlockID doesn't match.  We include stray
 		// signatures (~votes for nil) to measure validator availability.
 		// }
+	}
+
+	if err := bls.VerifyAggregatedSignature(commit.AggregatedSignature, blsPubKeys, messages); err != nil {
+		return fmt.Errorf("wrong aggregated signature: %X; %s", commit.AggregatedSignature, err)
 	}
 
 	if got, needed := talliedVotingPower, votingPowerNeeded; got <= needed {

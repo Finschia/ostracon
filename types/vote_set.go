@@ -6,6 +6,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/tendermint/tendermint/crypto/bls"
+
 	"github.com/pkg/errors"
 
 	"github.com/tendermint/tendermint/libs/bits"
@@ -64,6 +66,8 @@ type VoteSet struct {
 	maj23         *BlockID               // First 2/3 majority seen
 	votesByBlock  map[string]*blockVotes // string(blockHash|blockParts) -> blockVotes
 	peerMaj23s    map[P2PID]BlockID      // Maj23 for each peer
+
+	aggregatedSignature []byte
 }
 
 // Constructs a new VoteSet struct used to accumulate votes for given height/round.
@@ -83,6 +87,8 @@ func NewVoteSet(chainID string, height int64, round int, signedMsgType SignedMsg
 		maj23:         nil,
 		votesByBlock:  make(map[string]*blockVotes, voterSet.Size()),
 		peerMaj23s:    make(map[P2PID]BlockID),
+
+		aggregatedSignature: nil,
 	}
 }
 
@@ -212,6 +218,16 @@ func (voteSet *VoteSet) addVote(vote *Vote) (added bool, err error) {
 	if !added {
 		panic("Expected to add non-conflicting vote")
 	}
+
+	// Aggregate signature in added vote if possible.
+	aggrSign, err := bls.AddSignature(voteSet.aggregatedSignature, vote.Signature)
+	if err == nil {
+		voteSet.aggregatedSignature = aggrSign
+		vote.Signature = nil
+	} else {
+		// TODO It's possible to continue if the signature aggregation fails, but a warning log output is wanted here.
+	}
+
 	return added, nil
 }
 
@@ -577,7 +593,8 @@ func (voteSet *VoteSet) MakeCommit() *Commit {
 		commitSigs[i] = commitSig
 	}
 
-	return NewCommit(voteSet.GetHeight(), voteSet.GetRound(), *voteSet.maj23, commitSigs)
+	return NewCommitWithAggregatedSignature(
+		voteSet.GetHeight(), voteSet.GetRound(), *voteSet.maj23, commitSigs, voteSet.aggregatedSignature)
 }
 
 //--------------------------------------------------------------------------------
