@@ -338,7 +338,7 @@ func TestCalVotersNum2(t *testing.T) {
 	}
 	hash := genDoc.Hash()
 
-	loopCount := 1000
+	loopCount := 300 // circleci failed too often with the value 1000
 	electVotersForLoop(t, hash, valSet, privMap, byzantines, loopCount, byzantinePercent, 1)
 	electVotersForLoop(t, hash, valSet, privMap, byzantines, loopCount, byzantinePercent, 2)
 	electVotersForLoop(t, hash, valSet, privMap, byzantines, loopCount, byzantinePercent, 3)

@@ -564,11 +564,16 @@ func deepcpVote(vote *types.Vote) (res *types.Vote) {
 			Hash:        make([]byte, len(vote.BlockID.Hash)),
 			PartsHeader: vote.BlockID.PartsHeader,
 		},
-		Signature: make([]byte, len(vote.Signature)),
+		Signature: []byte{},
 	}
 	copy(res.ValidatorAddress, vote.ValidatorAddress)
 	copy(res.BlockID.Hash, vote.BlockID.Hash)
-	copy(res.Signature, vote.Signature)
+	if vote.Signature == nil {
+		res.Signature = nil
+	} else if len(vote.Signature) > 0 {
+		res.Signature = make([]byte, len(vote.Signature))
+		copy(res.Signature, vote.Signature)
+	}
 	return
 }
 
@@ -606,6 +611,7 @@ func makeEvidences(
 				Hash:  tmhash.Sum([]byte("partset")),
 			},
 		},
+		Signature: []byte{},
 	}
 
 	var err error
