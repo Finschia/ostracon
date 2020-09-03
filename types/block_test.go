@@ -5,11 +5,16 @@ import (
 	// number generator here and we can run the tests a bit faster
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"math"
 	"os"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/tendermint/tendermint/crypto/bls"
+	"github.com/tendermint/tendermint/crypto/composite"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -211,6 +216,63 @@ func TestNilDataHashDoesntCrash(t *testing.T) {
 	assert.Equal(t, []byte(new(Data).Hash()), nilBytes)
 }
 
+func TestNewCommit(t *testing.T) {
+	blockID := BlockID{
+		Hash: []byte{},
+		PartsHeader: PartSetHeader{
+			Total: 0,
+			Hash:  []byte{},
+		},
+	}
+	privKeys := [...]crypto.PrivKey{
+		bls.GenPrivKey(),
+		composite.GenPrivKey(),
+		ed25519.GenPrivKey(),
+		bls.GenPrivKey(),
+	}
+	msgs := make([][]byte, len(privKeys))
+	signs := make([][]byte, len(privKeys))
+	pubKeys := make([]crypto.PubKey, len(privKeys))
+	commitSigs := make([]CommitSig, len(privKeys))
+	for i := 0; i < len(privKeys); i++ {
+		msgs[i] = []byte(fmt.Sprintf("hello, world %d", i))
+		signs[i], _ = privKeys[i].Sign(msgs[i])
+		pubKeys[i] = privKeys[i].PubKey()
+		commitSigs[i] = NewCommitSigForBlock(signs[i], pubKeys[i].Address(), time.Now())
+		assert.Equal(t, signs[i], commitSigs[i].Signature)
+	}
+	commit := NewCommit(0, 1, blockID, commitSigs)
+
+	assert.Equal(t, int64(0), commit.Height)
+	assert.Equal(t, 1, commit.Round)
+	assert.Equal(t, blockID, commit.BlockID)
+	assert.Equal(t, len(commitSigs), len(commit.Signatures))
+	assert.Nil(t, commit.AggregatedSignature)
+	assert.NotNil(t, commit.Signatures[0].Signature)
+	assert.NotNil(t, commit.Signatures[1].Signature)
+	assert.NotNil(t, commit.Signatures[2].Signature)
+	assert.NotNil(t, commit.Signatures[3].Signature)
+	assert.True(t, pubKeys[2].VerifyBytes(msgs[2], commit.Signatures[2].Signature))
+
+	blsPubKeys := []bls.PubKeyBLS12{
+		*GetSignatureKey(pubKeys[0]),
+		*GetSignatureKey(pubKeys[1]),
+		*GetSignatureKey(pubKeys[3]),
+	}
+	blsSigMsgs := [][]byte{msgs[0], msgs[1], msgs[3]}
+	func() {
+		aggrSig, err := bls.AddSignature(nil, signs[0])
+		assert.Nil(t, err)
+		aggrSig, err = bls.AddSignature(aggrSig, signs[1])
+		assert.Nil(t, err)
+		aggrSig, err = bls.AddSignature(aggrSig, signs[3])
+		assert.Nil(t, err)
+		err = bls.VerifyAggregatedSignature(aggrSig, blsPubKeys, blsSigMsgs)
+		assert.Nil(t, err)
+		assert.Nil(t, commit.AggregatedSignature)
+	}()
+}
+
 func TestCommit(t *testing.T) {
 	lastID := makeBlockIDRandom()
 	h := int64(3)
@@ -228,7 +290,16 @@ func TestCommit(t *testing.T) {
 	require.NotNil(t, commit.BitArray())
 	assert.Equal(t, bits.NewBitArray(10).Size(), commit.BitArray().Size())
 
-	assert.Equal(t, voteSet.GetByIndex(0), commit.GetByIndex(0))
+	vote1, vote2 := voteSet.GetByIndex(0), commit.GetByIndex(0)
+	assert.Equal(t, vote1.BlockID, vote2.BlockID)
+	assert.Equal(t, vote1.Height, vote2.Height)
+	assert.Equal(t, vote1.Round, vote2.Round)
+	assert.Equal(t, vote1.Timestamp, vote2.Timestamp)
+	assert.Equal(t, vote1.Type, vote2.Type)
+	assert.Equal(t, vote1.ValidatorAddress, vote2.ValidatorAddress)
+	assert.Equal(t, vote1.ValidatorIndex, vote2.ValidatorIndex)
+	assert.NotNil(t, vote1.Signature)
+	assert.Nil(t, vote2.Signature)
 	assert.True(t, commit.IsCommit())
 }
 
@@ -251,6 +322,49 @@ func TestCommitValidateBasic(t *testing.T) {
 			assert.Equal(t, tc.expectErr, com.ValidateBasic() != nil, "Validate Basic had an unexpected result")
 		})
 	}
+}
+
+func TestCommitHash(t *testing.T) {
+	t.Run("receiver is nil", func(t *testing.T) {
+		var commit *Commit = nil
+		assert.Nil(t, commit.Hash())
+	})
+
+	t.Run("without any signatures", func(t *testing.T) {
+		commit := &Commit{
+			hash:                nil,
+			Signatures:          nil,
+			AggregatedSignature: nil,
+		}
+		expected, _ := hex.DecodeString("6E340B9CFFB37A989CA544E6BB780A2C78901D3FB33738768511A30617AFA01D")
+		assert.Equal(t, expected, commit.Hash().Bytes())
+	})
+
+	t.Run("with out without aggregated signature", func(t *testing.T) {
+		signature := []byte{0, 0, 0, 0}
+		address := []byte{0, 0, 0, 0}
+		tm := time.Unix(0, 0)
+		commit := &Commit{
+			hash: nil,
+			Signatures: []CommitSig{
+				NewCommitSigAbsent(),
+				NewCommitSigForBlock(signature, address, tm),
+			},
+			AggregatedSignature: nil,
+		}
+		expected, _ := hex.DecodeString("82ac742aeeb4266d4e1f659985987c181c494ac17494750cda4dce61e38b0514")
+		assert.Equal(t, expected, commit.Hash().Bytes())
+
+		commit.hash = nil
+		commit.AggregatedSignature = []byte{0, 0, 0, 0}
+		expected, _ = hex.DecodeString("0b3875dd994c60a8781851e5533886f3000203fa2f9587b5c256666dc5fa89ef")
+		assert.Equal(t, expected, commit.Hash().Bytes())
+
+		commit.hash = nil
+		commit.AggregatedSignature = []byte{0, 1, 2, 3}
+		expected, _ = hex.DecodeString("f7d7318af02be9015b6440496844d06ec68684251c2378c41a2c2b4e2f5d76cb")
+		assert.Equal(t, expected, commit.Hash().Bytes())
+	})
 }
 
 func TestHeaderHash(t *testing.T) {
@@ -447,16 +561,17 @@ func TestCommitToVoteSet(t *testing.T) {
 	chainID := voteSet.ChainID()
 	voteSet2 := CommitToVoteSet(chainID, commit, valSet)
 
+	assert.Nil(t, voteSet.aggregatedSignature)
+	assert.NotNil(t, commit.AggregatedSignature)
+	assert.Equal(t, commit.AggregatedSignature, voteSet2.aggregatedSignature)
+
 	for i := 0; i < len(vals); i++ {
-		vote1 := voteSet.GetByIndex(i)
-		vote2 := voteSet2.GetByIndex(i)
-		vote3 := commit.GetVote(i)
+		vote1 := voteSet2.GetByIndex(i)
+		vote2 := commit.GetVote(i)
 
 		vote1bz := cdc.MustMarshalBinaryBare(vote1)
 		vote2bz := cdc.MustMarshalBinaryBare(vote2)
-		vote3bz := cdc.MustMarshalBinaryBare(vote3)
 		assert.Equal(t, vote1bz, vote2bz)
-		assert.Equal(t, vote1bz, vote3bz)
 	}
 }
 
@@ -495,6 +610,7 @@ func TestCommitToVoteSetWithVotesForNilBlock(t *testing.T) {
 					Type:             PrecommitType,
 					BlockID:          tc.blockIDs[n],
 					Timestamp:        tmtime.Now(),
+					Signature:        []byte{},
 				}
 
 				added, err := signAddVote(vals[vi], vote, voteSet)

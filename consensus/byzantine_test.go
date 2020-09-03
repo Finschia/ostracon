@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+
 	config2 "github.com/tendermint/tendermint/config"
 
 	"github.com/tendermint/tendermint/libs/service"

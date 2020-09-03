@@ -2,8 +2,14 @@ package composite_test
 
 import (
 	"bytes"
+	"encoding/base64"
+	"encoding/hex"
+	"fmt"
 	"testing"
 
+	"github.com/tendermint/go-amino"
+
+	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/bls"
 	"github.com/tendermint/tendermint/crypto/composite"
 	"github.com/tendermint/tendermint/crypto/ed25519"
@@ -169,4 +175,114 @@ func TestPubKeyComposite_VRFVerify(t *testing.T) {
 	if !bytes.Equal(output1, output2) {
 		t.Errorf("Output is different from the VRF key.")
 	}
+}
+
+func TestEnvironmentalCompatibility(t *testing.T) {
+	var cdc = amino.NewCodec()
+	cdc.RegisterInterface((*crypto.PrivKey)(nil), nil)
+	cdc.RegisterInterface((*crypto.PubKey)(nil), nil)
+	cdc.RegisterConcrete(bls.PubKeyBLS12{}, bls.PubKeyAminoName, nil)
+	cdc.RegisterConcrete(bls.PrivKeyBLS12{}, bls.PrivKeyAminoName, nil)
+	cdc.RegisterConcrete(ed25519.PubKeyEd25519{}, ed25519.PubKeyAminoName, nil)
+	cdc.RegisterConcrete(ed25519.PrivKeyEd25519{}, ed25519.PrivKeyAminoName, nil)
+	cdc.RegisterConcrete(composite.PubKeyComposite{}, composite.PubKeyCompositeAminoName, nil)
+	cdc.RegisterConcrete(composite.PrivKeyComposite{}, composite.PrivKeyCompositeAminoName, nil)
+
+	t.Run("MarshalCompositeKey", func(t *testing.T) {
+		privKey := composite.GenPrivKey()
+		privKeyBytes, err := cdc.MarshalBinaryBare(privKey)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Printf("PrivKeyComposite: %s\n", hex.EncodeToString(privKeyBytes))
+	})
+
+	t.Run("The same signature is generated from the same key binary for any runtime env", func(t *testing.T) {
+		privKeyBytes, err := hex.DecodeString("9f3ee8f00a25eaecf03f203761de9e836bed524dd0b2737c56b69f69672c2b3e40" +
+			"31b74817474c62b204221245a328891040c69e39ac62519a09895babbb84d6a3a8ea4b69a61760e0c0b04052e252c272ef478fb" +
+			"da7337ad81ed4202d2bb3ad8240e17248aae2dc169b2e12b45b366d09be")
+		if err != nil {
+			t.Fatal(err)
+		}
+		compositePrivKey := composite.PrivKeyComposite{}
+		if err := cdc.UnmarshalBinaryBare(privKeyBytes, &compositePrivKey); err != nil {
+			t.Fatal(err)
+		}
+		msg := []byte("hello, world")
+		actual, err := compositePrivKey.Sign(msg)
+		if err != nil {
+			t.Fatal(err)
+		}
+		expected, err := hex.DecodeString("b6bf1dbc3a0d67f19a64d8be04bac7b6bb0963698e1711b3955593f23bf325902298a4" +
+			"9132ce4ebf452302f21af95da307186574106a5cbdc630a43d3269db99e5ecbf99d4798d8dc681dac1d60f6e43868860ae247e9" +
+			"e66287774df12e79569")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(expected, actual) {
+			t.Logf("Expected Signature: %s (%d bytes)", hex.EncodeToString(expected), len(expected))
+			t.Logf("Actual   Signature: %s (%d bytes)", hex.EncodeToString(actual), len(actual))
+			t.Errorf("Signatures generated from the same key and message are different than expected")
+		}
+	})
+
+	// https://github.com/line/tendermint/issues/121
+	t.Run("A reproduction test of issue #121", func(t *testing.T) {
+
+		// restore BLS private key from base64 string in priv_validator_key.json
+		blsPrivKey := bls.PrivKeyBLS12{}
+		blsPrivKeyBytes, err := base64.StdEncoding.DecodeString("BpqODFajV6NnQhBfT8ERyvwyqPoZS664e1v35sfr76g=")
+		if err != nil {
+			t.Fatal(err)
+		} else if len(blsPrivKeyBytes) != bls.PrivKeyBLS12Size {
+			t.Fatalf("fixed private key size: %d != %d", bls.PrivKeyBLS12Size, len(blsPrivKeyBytes))
+		}
+		copy(blsPrivKey[:], blsPrivKeyBytes)
+
+		// restore Ed25519 private key from base64 string in priv_validator_key.json
+		ed25519PrivKey := ed25519.PrivKeyEd25519{}
+		ed25519PrivKeyBytes, err := base64.StdEncoding.DecodeString("TGb5K4TbD1XdNd0HGEt7I6quhTJ2aSckgPLLBKs8hDUC" +
+			"4Wh8kfEmnRUeMYtR8V0UfNwQyTYqGupZeyIhJcV1TA==")
+		if err != nil {
+			t.Fatal(err)
+		} else if len(ed25519PrivKeyBytes) != len(ed25519PrivKey) {
+			t.Fatalf("fixed private key size: %d != %d", len(ed25519PrivKey), len(ed25519PrivKeyBytes))
+		}
+		copy(ed25519PrivKey[:], ed25519PrivKeyBytes)
+
+		// compare addresses to assumed value
+		compositePrivKey := composite.NewPrivKeyComposite(blsPrivKey, ed25519PrivKey)
+		compositePubKey := compositePrivKey.PubKey()
+		address, err := hex.DecodeString("7A68265205CB115AE35A13515C423F1721E87BB4")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(address, compositePubKey.Address()) {
+			t.Fatalf("addresses didn't match: %s", hex.EncodeToString(compositePubKey.Address()))
+		}
+
+		// compare generated signature to assumed value
+		message, err := hex.DecodeString("44080111010000000000000022300A147A68265205CB115AE35A13515C423F1721E87BB" +
+			"412180A147A68265205CB115AE35A13515C423F1721E87BB410013205636861696E")
+		if err != nil {
+			t.Fatal(err)
+		}
+		signature, err := compositePrivKey.Sign(message)
+		if err != nil {
+			t.Fatal(err)
+		}
+		expectedSig, err := hex.DecodeString("a00a8a8143fff615e3df98e9b4a493b0ffc5cf1cee14c55d4c667c34651392331c4d" +
+			"5a1bf0a15d018262d61f74a59cc80775217b81363796e50aac7ce7542424a2eb84fbaf787f7a1c00229682ac4bb0a45f67cdf43f" +
+			"b21b091f25a0a8bd51ae")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(expectedSig, signature) {
+			t.Logf("Address: %s", hex.EncodeToString(address))
+			t.Logf("Message: %s (%d bytes)", hex.EncodeToString(message), len(message))
+			t.Logf("Expected Signature: %s (%d bytes)", hex.EncodeToString(expectedSig), len(expectedSig))
+			t.Logf("Actual   Signature: %s (%d bytes)", hex.EncodeToString(signature), len(signature))
+			t.Errorf("Different signatures are made for the same message with the same private key.")
+		}
+	})
 }

@@ -273,6 +273,7 @@ func (th *TestHarness) TestSignVote() error {
 			ValidatorIndex:   0,
 			ValidatorAddress: tmhash.SumTruncated([]byte("addr")),
 			Timestamp:        time.Now(),
+			Signature:        []byte{},
 		}
 		voteBytes := vote.SignBytes(th.chainID)
 		// sign the vote

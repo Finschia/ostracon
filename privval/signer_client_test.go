@@ -20,7 +20,7 @@ type signerTestCase struct {
 	signerServer *SignerServer
 }
 
-func getSignerTestCases(t *testing.T) []signerTestCase {
+func getSignerTestCases(t *testing.T, start bool) []signerTestCase {
 	testCases := make([]signerTestCase, 0)
 
 	// Get test cases for each possible dialer (DialTCP / DialUnix / etc)
@@ -35,8 +35,10 @@ func getSignerTestCases(t *testing.T) []signerTestCase {
 		require.NoError(t, err)
 		ss := NewSignerServer(sd, chainID, mockPV)
 
-		err = ss.Start()
-		require.NoError(t, err)
+		if start {
+			err = ss.Start()
+			require.NoError(t, err)
+		}
 
 		tc := signerTestCase{
 			chainID:      chainID,
@@ -52,7 +54,7 @@ func getSignerTestCases(t *testing.T) []signerTestCase {
 }
 
 func TestSignerClose(t *testing.T) {
-	for _, tc := range getSignerTestCases(t) {
+	for _, tc := range getSignerTestCases(t, true) {
 		err := tc.signerClient.Close()
 		assert.NoError(t, err)
 
@@ -62,7 +64,7 @@ func TestSignerClose(t *testing.T) {
 }
 
 func TestSignerPing(t *testing.T) {
-	for _, tc := range getSignerTestCases(t) {
+	for _, tc := range getSignerTestCases(t, true) {
 		defer tc.signerServer.Stop()
 		defer tc.signerClient.Close()
 
@@ -72,7 +74,7 @@ func TestSignerPing(t *testing.T) {
 }
 
 func TestSignerGetPubKey(t *testing.T) {
-	for _, tc := range getSignerTestCases(t) {
+	for _, tc := range getSignerTestCases(t, true) {
 		defer tc.signerServer.Stop()
 		defer tc.signerClient.Close()
 
@@ -94,7 +96,7 @@ func TestSignerGetPubKey(t *testing.T) {
 }
 
 func TestSignerProposal(t *testing.T) {
-	for _, tc := range getSignerTestCases(t) {
+	for _, tc := range getSignerTestCases(t, true) {
 		ts := time.Now()
 		want := &types.Proposal{Timestamp: ts}
 		have := &types.Proposal{Timestamp: ts}
@@ -111,7 +113,7 @@ func TestSignerProposal(t *testing.T) {
 
 func TestSignerGenerateVRFProof(t *testing.T) {
 	message := []byte("hello, world")
-	for _, tc := range getSignerTestCases(t) {
+	for _, tc := range getSignerTestCases(t, true) {
 		defer tc.signerServer.Stop()
 		defer tc.signerClient.Close()
 
@@ -125,10 +127,10 @@ func TestSignerGenerateVRFProof(t *testing.T) {
 }
 
 func TestSignerVote(t *testing.T) {
-	for _, tc := range getSignerTestCases(t) {
+	for _, tc := range getSignerTestCases(t, true) {
 		ts := time.Now()
-		want := &types.Vote{Timestamp: ts, Type: types.PrecommitType}
-		have := &types.Vote{Timestamp: ts, Type: types.PrecommitType}
+		want := &types.Vote{Timestamp: ts, Type: types.PrecommitType, Signature: []byte{}}
+		have := &types.Vote{Timestamp: ts, Type: types.PrecommitType, Signature: []byte{}}
 
 		defer tc.signerServer.Stop()
 		defer tc.signerClient.Close()
@@ -141,10 +143,10 @@ func TestSignerVote(t *testing.T) {
 }
 
 func TestSignerVoteResetDeadline(t *testing.T) {
-	for _, tc := range getSignerTestCases(t) {
+	for _, tc := range getSignerTestCases(t, true) {
 		ts := time.Now()
-		want := &types.Vote{Timestamp: ts, Type: types.PrecommitType}
-		have := &types.Vote{Timestamp: ts, Type: types.PrecommitType}
+		want := &types.Vote{Timestamp: ts, Type: types.PrecommitType, Signature: []byte{}}
+		have := &types.Vote{Timestamp: ts, Type: types.PrecommitType, Signature: []byte{}}
 
 		defer tc.signerServer.Stop()
 		defer tc.signerClient.Close()
@@ -167,10 +169,10 @@ func TestSignerVoteResetDeadline(t *testing.T) {
 }
 
 func TestSignerVoteKeepAlive(t *testing.T) {
-	for _, tc := range getSignerTestCases(t) {
+	for _, tc := range getSignerTestCases(t, true) {
 		ts := time.Now()
-		want := &types.Vote{Timestamp: ts, Type: types.PrecommitType}
-		have := &types.Vote{Timestamp: ts, Type: types.PrecommitType}
+		want := &types.Vote{Timestamp: ts, Type: types.PrecommitType, Signature: []byte{}}
+		have := &types.Vote{Timestamp: ts, Type: types.PrecommitType, Signature: []byte{}}
 
 		defer tc.signerServer.Stop()
 		defer tc.signerClient.Close()
@@ -192,7 +194,7 @@ func TestSignerVoteKeepAlive(t *testing.T) {
 }
 
 func TestSignerSignProposalErrors(t *testing.T) {
-	for _, tc := range getSignerTestCases(t) {
+	for _, tc := range getSignerTestCases(t, true) {
 		// Replace service with a mock that always fails
 		tc.signerServer.privVal = types.NewErroringMockPV()
 		tc.mockPV = types.NewErroringMockPV()
@@ -214,9 +216,9 @@ func TestSignerSignProposalErrors(t *testing.T) {
 }
 
 func TestSignerSignVoteErrors(t *testing.T) {
-	for _, tc := range getSignerTestCases(t) {
+	for _, tc := range getSignerTestCases(t, true) {
 		ts := time.Now()
-		vote := &types.Vote{Timestamp: ts, Type: types.PrecommitType}
+		vote := &types.Vote{Timestamp: ts, Type: types.PrecommitType, Signature: []byte{}}
 
 		// Replace signer service privval with one that always fails
 		tc.signerServer.privVal = types.NewErroringMockPV()
@@ -261,14 +263,19 @@ func brokenHandler(privVal types.PrivValidator, request SignerMessage, chainID s
 }
 
 func TestSignerUnexpectedResponse(t *testing.T) {
-	for _, tc := range getSignerTestCases(t) {
+	for _, tc := range getSignerTestCases(t, false) {
+		// this should be executed before SignerServer starts to avoid race condition
+		tc.signerServer.privVal = types.NewMockPV()
+		tc.mockPV = types.NewMockPV()
+
 		tc.signerServer.SetRequestHandler(brokenHandler)
+		tc.signerServer.Start()
 
 		defer tc.signerServer.Stop()
 		defer tc.signerClient.Close()
 
 		ts := time.Now()
-		want := &types.Vote{Timestamp: ts, Type: types.PrecommitType}
+		want := &types.Vote{Timestamp: ts, Type: types.PrecommitType, Signature: []byte{}}
 
 		e := tc.signerClient.SignVote(tc.chainID, want)
 		assert.EqualError(t, e, "received unexpected response")

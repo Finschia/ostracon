@@ -10,6 +10,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/bls"
+	"github.com/tendermint/tendermint/crypto/composite"
 	"github.com/tendermint/tendermint/crypto/merkle"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	"github.com/tendermint/tendermint/libs/bits"
@@ -551,7 +553,9 @@ type CommitSig struct {
 	BlockIDFlag      BlockIDFlag `json:"block_id_flag"`
 	ValidatorAddress Address     `json:"validator_address"`
 	Timestamp        time.Time   `json:"timestamp"`
-	Signature        []byte      `json:"signature"`
+
+	// This can take a nil in case when the signature is being aggregated.
+	Signature []byte `json:"signature"`
 }
 
 // NewCommitSigForBlock returns new CommitSig with BlockIDFlagCommit.
@@ -636,10 +640,8 @@ func (cs CommitSig) ValidateBasic() error {
 			)
 		}
 		// NOTE: Timestamp validation is subtle and handled elsewhere.
-		if len(cs.Signature) == 0 {
-			return errors.New("signature is missing")
-		}
-		if len(cs.Signature) > MaxSignatureSize {
+		// NOTE: Signature may be nil if it is aggregated and is handled elsewhere.
+		if cs.Signature != nil && len(cs.Signature) > MaxSignatureSize {
 			return fmt.Errorf("signature is too big %d (max: %d)", len(cs.Signature), MaxSignatureSize)
 		}
 	}
@@ -698,11 +700,18 @@ type Commit struct {
 
 // NewCommit returns a new Commit.
 func NewCommit(height int64, round int, blockID BlockID, commitSigs []CommitSig) *Commit {
+	return NewCommitWithAggregatedSignature(height, round, blockID, commitSigs, nil)
+}
+
+// NewCommitWithAggregatedSignature returns a new Commit with .
+func NewCommitWithAggregatedSignature(
+	height int64, round int, blockID BlockID, commitSigs []CommitSig, aggrSig []byte) *Commit {
 	return &Commit{
-		Height:     height,
-		Round:      round,
-		BlockID:    blockID,
-		Signatures: commitSigs,
+		Height:              height,
+		Round:               round,
+		BlockID:             blockID,
+		Signatures:          commitSigs,
+		AggregatedSignature: aggrSig,
 	}
 }
 
@@ -720,6 +729,7 @@ func CommitToVoteSet(chainID string, commit *Commit, voters *VoterSet) *VoteSet 
 			panic(fmt.Sprintf("Failed to reconstruct LastCommit: %v", err))
 		}
 	}
+	voteSet.aggregatedSignature = commit.AggregatedSignature
 	return voteSet
 }
 
@@ -819,10 +829,27 @@ func (commit *Commit) ValidateBasic() error {
 		if len(commit.Signatures) == 0 {
 			return errors.New("no signatures in commit")
 		}
+		omittedSignatures := 0
 		for i, commitSig := range commit.Signatures {
 			if err := commitSig.ValidateBasic(); err != nil {
 				return fmt.Errorf("wrong CommitSig #%d: %v", i, err)
 			}
+			if !commitSig.Absent() && commitSig.Signature == nil {
+				omittedSignatures++
+			}
+		}
+		switch {
+		case commit.AggregatedSignature == nil:
+			if omittedSignatures > 0 {
+				return fmt.Errorf("%d erased signatures are present, but no aggregate signature exist in commit",
+					omittedSignatures)
+			}
+		case omittedSignatures == 0:
+			return fmt.Errorf("erased signatures are not present, but aggregated signature exist in commit: %x",
+				commit.AggregatedSignature)
+		case len(commit.AggregatedSignature) > MaxSignatureSize:
+			return fmt.Errorf("signature is too big %d (max: %d)",
+				len(commit.AggregatedSignature), MaxSignatureSize)
 		}
 	}
 
@@ -835,10 +862,11 @@ func (commit *Commit) Hash() tmbytes.HexBytes {
 		return nil
 	}
 	if commit.hash == nil {
-		bs := make([][]byte, len(commit.Signatures))
+		bs := make([][]byte, len(commit.Signatures)+1)
 		for i, commitSig := range commit.Signatures {
 			bs[i] = cdcEncode(commitSig)
 		}
+		bs[len(bs)-1] = commit.AggregatedSignature
 		commit.hash = merkle.SimpleHashFromByteSlices(bs)
 	}
 	return commit.hash
@@ -857,12 +885,14 @@ func (commit *Commit) StringIndented(indent string) string {
 %s  Height:     %d
 %s  Round:      %d
 %s  BlockID:    %v
+%s  AggregatedSignature: %X
 %s  Signatures:
 %s    %v
 %s}#%v`,
 		indent, commit.Height,
 		indent, commit.Round,
 		indent, commit.BlockID,
+		indent, tmbytes.Fingerprint(commit.AggregatedSignature),
 		indent,
 		indent, strings.Join(commitSigStrings, "\n"+indent+"    "),
 		indent, commit.hash)
@@ -884,11 +914,45 @@ func (commit *Commit) ToProto() *tmproto.Commit {
 	c.Height = commit.Height
 	c.Round = int32(commit.Round)
 	c.BlockID = commit.BlockID.ToProto()
+	c.AggregatedSignature = commit.AggregatedSignature
 	if commit.hash != nil {
 		c.Hash = commit.hash
 	}
 	c.BitArray = commit.bitArray.ToProto()
 	return c
+}
+
+// VerifySignatures validates the signatures in this commit.
+func (commit *Commit) VerifySignatures(chainID string, vals []*Validator) error {
+	blsPubKeys := make([]bls.PubKeyBLS12, 0, len(commit.Signatures))
+	messages := make([][]byte, 0, len(commit.Signatures))
+	for idx, commitSig := range commit.Signatures {
+		if commitSig.Absent() {
+			continue // OK, some signatures can be absent.
+		}
+
+		// Validate signature.
+		if val := vals[idx]; val != nil {
+			voteSignBytes := commit.VoteSignBytes(chainID, idx)
+			if commitSig.Signature != nil {
+				if !val.PubKey.VerifyBytes(voteSignBytes, commitSig.Signature) {
+					return fmt.Errorf("wrong signature (#%d): %X", idx, commitSig.Signature)
+				}
+			} else {
+				blsPubKey := GetSignatureKey(val.PubKey)
+				if blsPubKey == nil {
+					return fmt.Errorf("signature %d has been omitted, even though it is not a BLS key", idx)
+				}
+				blsPubKeys = append(blsPubKeys, *blsPubKey)
+				messages = append(messages, voteSignBytes)
+			}
+		}
+	}
+
+	if err := bls.VerifyAggregatedSignature(commit.AggregatedSignature, blsPubKeys, messages); err != nil {
+		return fmt.Errorf("wrong aggregated signature: %X; %s", commit.AggregatedSignature, err)
+	}
+	return nil
 }
 
 // FromProto sets a protobuf Commit to the given pointer.
@@ -921,6 +985,7 @@ func CommitFromProto(cp *tmproto.Commit) (*Commit, error) {
 	commit.Height = cp.Height
 	commit.Round = int(cp.Round)
 	commit.BlockID = *bi
+	commit.AggregatedSignature = cp.AggregatedSignature
 	commit.hash = cp.Hash
 	commit.bitArray = bitArray
 
@@ -1195,4 +1260,20 @@ func BlockIDFromProto(bID *tmproto.BlockID) (*BlockID, error) {
 	blockID.Hash = bID.Hash
 
 	return blockID, blockID.ValidateBasic()
+}
+
+// GetSignatureKey is a utility function for referencing a specified public key as a BLS key for signature.
+// If the key is not BLS, return nil
+func GetSignatureKey(pubKey crypto.PubKey) *bls.PubKeyBLS12 {
+	for {
+		if compPubKey, ok := pubKey.(composite.PubKeyComposite); ok {
+			pubKey = compPubKey.SignKey
+		} else {
+			break
+		}
+	}
+	if blsPubKey, ok := pubKey.(bls.PubKeyBLS12); ok {
+		return &blsPubKey
+	}
+	return nil
 }
