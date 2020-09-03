@@ -67,6 +67,7 @@ func makeVote(
 		Timestamp:        tmtime.Now(),
 		Type:             tmproto.PrecommitType,
 		BlockID:          blockID,
+		Signature:        []byte{},
 	}
 
 	vpb := vote.ToProto()
@@ -236,9 +237,9 @@ func TestFastSyncNoBlockResponse(t *testing.T) {
 	for _, tt := range tests {
 		block := reactorPairs[1].bcR.store.LoadBlock(tt.height)
 		if tt.existent {
-			assert.True(t, block != nil)
+			assert.True(t, block != nil, "height=%d, existent=%t", tt.height, tt.existent)
 		} else {
-			assert.True(t, block == nil)
+			assert.True(t, block == nil, "height=%d, existent=%t", tt.height, tt.existent)
 		}
 	}
 }

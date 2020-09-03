@@ -26,6 +26,7 @@ func MakeCommit(blockID BlockID, height int64, round int32,
 			Type:             tmproto.PrecommitType,
 			BlockID:          blockID,
 			Timestamp:        now,
+			Signature:        []byte{},
 		}
 
 		_, err = signAddVote(validators[i], vote, voteSet)
@@ -69,6 +70,7 @@ func MakeVote(
 		Timestamp:        now,
 		Type:             tmproto.PrecommitType,
 		BlockID:          blockID,
+		Signature:        []byte{},
 	}
 	v := vote.ToProto()
 

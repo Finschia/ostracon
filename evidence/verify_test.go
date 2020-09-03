@@ -29,7 +29,7 @@ import (
 func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 	commonVals, commonVoters, commonPrivVals := types.RandVoterSet(2, 10)
 
-	newVal, newPrivVal := types.RandValidator(false, 9)
+	newVal, newPrivVal := types.RandValidatorForPrivKey(types.PrivKeyEd25519, false, 9)
 
 	conflictingVals, err := types.ValidatorSetFromExistingValidators(append(commonVals.Validators, newVal))
 	require.NoError(t, err)
@@ -415,6 +415,7 @@ func makeVote(
 		Type:             tmproto.SignedMsgType(step),
 		BlockID:          blockID,
 		Timestamp:        time,
+		Signature:        []byte{},
 	}
 
 	vpb := v.ToProto()

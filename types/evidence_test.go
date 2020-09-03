@@ -268,6 +268,7 @@ func makeVote(
 		Type:             step,
 		BlockID:          blockID,
 		Timestamp:        time,
+		Signature:        []byte{},
 	}
 
 	vpb := v.ToProto()

@@ -2,6 +2,7 @@ package bls
 
 import (
 	"bytes"
+	"crypto/sha512"
 	"crypto/subtle"
 	"fmt"
 
@@ -41,6 +42,71 @@ func init() {
 // PrivKeyBLS12 implements crypto.PrivKey.
 type PrivKeyBLS12 [PrivKeyBLS12Size]byte
 
+// AddSignature adds a BLS signature to the init. When the init is nil, then a new aggregate signature is built
+// from specified signature.
+func AddSignature(init []byte, signature []byte) (aggrSign []byte, err error) {
+	if init == nil {
+		blsSign := bls.Sign{}
+		init = blsSign.Serialize()
+	} else if len(init) != SignatureSize {
+		err = fmt.Errorf("invalid BLS signature: aggregated signature size %d is not valid size %d",
+			len(init), SignatureSize)
+		return
+	}
+	if len(signature) != SignatureSize {
+		err = fmt.Errorf("invalid BLS signature: signature size %d is not valid size %d",
+			len(signature), SignatureSize)
+		return
+	}
+	blsSign := bls.Sign{}
+	err = blsSign.Deserialize(signature)
+	if err != nil {
+		return
+	}
+	aggrBLSSign := bls.Sign{}
+	err = aggrBLSSign.Deserialize(init)
+	if err != nil {
+		return
+	}
+	aggrBLSSign.Add(&blsSign)
+	aggrSign = aggrBLSSign.Serialize()
+	return
+}
+
+func VerifyAggregatedSignature(aggregatedSignature []byte, pubKeys []PubKeyBLS12, msgs [][]byte) error {
+	if len(pubKeys) != len(msgs) {
+		return fmt.Errorf("the number of public keys %d doesn't match the one of messages %d",
+			len(pubKeys), len(msgs))
+	}
+	if aggregatedSignature == nil {
+		if len(pubKeys) == 0 {
+			return nil
+		}
+		return fmt.Errorf(
+			"the aggregate signature was omitted, even though %d public keys were specified", len(pubKeys))
+	}
+	aggrSign := bls.Sign{}
+	err := aggrSign.Deserialize(aggregatedSignature)
+	if err != nil {
+		return err
+	}
+	blsPubKeys := make([]bls.PublicKey, len(pubKeys))
+	hashes := make([][]byte, len(msgs))
+	for i := 0; i < len(pubKeys); i++ {
+		blsPubKeys[i] = bls.PublicKey{}
+		err = blsPubKeys[i].Deserialize(pubKeys[i][:])
+		if err != nil {
+			return err
+		}
+		hash := sha512.Sum512_256(msgs[i])
+		hashes[i] = hash[:]
+	}
+	if !aggrSign.VerifyAggregateHashes(blsPubKeys, hashes) {
+		return fmt.Errorf("failed to verify the aggregated hashes by %d public keys", len(blsPubKeys))
+	}
+	return nil
+}
+
 // GenPrivKey generates a new BLS12-381 private key.
 func GenPrivKey() PrivKeyBLS12 {
 	sigKey := bls.SecretKey{}
@@ -69,7 +135,8 @@ func (privKey PrivKeyBLS12) Sign(msg []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	sign := blsKey.SignByte(msg)
+	hash := sha512.Sum512_256(msg)
+	sign := blsKey.SignHash(hash[:])
 	return sign.Serialize(), nil
 }
 
@@ -140,7 +207,8 @@ func (pubKey PubKeyBLS12) VerifySignature(msg []byte, sig []byte) bool {
 		fmt.Printf("Signature Deserialize failed: %s", err)
 		return false
 	}
-	return blsSign.VerifyByte(&blsPubKey, msg)
+	hash := sha512.Sum512_256(msg)
+	return blsSign.VerifyHash(&blsPubKey, hash[:])
 }
 
 // VRFVerify is not supported in BLS12.

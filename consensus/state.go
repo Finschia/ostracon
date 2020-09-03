@@ -2297,6 +2297,7 @@ func (cs *State) signVote(
 		Timestamp:        cs.voteTime(),
 		Type:             msgType,
 		BlockID:          types.BlockID{Hash: hash, PartSetHeader: header},
+		Signature:        []byte{},
 	}
 
 	v := vote.ToProto()

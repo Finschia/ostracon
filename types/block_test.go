@@ -5,22 +5,25 @@ import (
 	// number generator here and we can run the tests a bit faster
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"math"
 	"os"
 	"reflect"
 	"testing"
 	"time"
 
-	"github.com/tendermint/tendermint/crypto/vrf"
-
-	gogotypes "github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	gogotypes "github.com/gogo/protobuf/types"
+
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/bls"
+	"github.com/tendermint/tendermint/crypto/composite"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/crypto/merkle"
 	"github.com/tendermint/tendermint/crypto/tmhash"
+	"github.com/tendermint/tendermint/crypto/vrf"
 	"github.com/tendermint/tendermint/libs/bits"
 	"github.com/tendermint/tendermint/libs/bytes"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
@@ -226,6 +229,63 @@ func TestNilDataHashDoesntCrash(t *testing.T) {
 	assert.Equal(t, emptyBytes, []byte(new(Data).Hash()))
 }
 
+func TestNewCommit(t *testing.T) {
+	blockID := BlockID{
+		Hash: []byte{},
+		PartSetHeader: PartSetHeader{
+			Total: 0,
+			Hash:  []byte{},
+		},
+	}
+	privKeys := [...]crypto.PrivKey{
+		bls.GenPrivKey(),
+		composite.GenPrivKey(),
+		ed25519.GenPrivKey(),
+		bls.GenPrivKey(),
+	}
+	msgs := make([][]byte, len(privKeys))
+	signs := make([][]byte, len(privKeys))
+	pubKeys := make([]crypto.PubKey, len(privKeys))
+	commitSigs := make([]CommitSig, len(privKeys))
+	for i := 0; i < len(privKeys); i++ {
+		msgs[i] = []byte(fmt.Sprintf("hello, world %d", i))
+		signs[i], _ = privKeys[i].Sign(msgs[i])
+		pubKeys[i] = privKeys[i].PubKey()
+		commitSigs[i] = NewCommitSigForBlock(signs[i], pubKeys[i].Address(), time.Now())
+		assert.Equal(t, signs[i], commitSigs[i].Signature)
+	}
+	commit := NewCommit(0, 1, blockID, commitSigs)
+
+	assert.Equal(t, int64(0), commit.Height)
+	assert.Equal(t, int32(1), commit.Round)
+	assert.Equal(t, blockID, commit.BlockID)
+	assert.Equal(t, len(commitSigs), len(commit.Signatures))
+	assert.Nil(t, commit.AggregatedSignature)
+	assert.NotNil(t, commit.Signatures[0].Signature)
+	assert.NotNil(t, commit.Signatures[1].Signature)
+	assert.NotNil(t, commit.Signatures[2].Signature)
+	assert.NotNil(t, commit.Signatures[3].Signature)
+	assert.True(t, pubKeys[2].VerifySignature(msgs[2], commit.Signatures[2].Signature))
+
+	blsPubKeys := []bls.PubKeyBLS12{
+		*GetSignatureKey(pubKeys[0]),
+		*GetSignatureKey(pubKeys[1]),
+		*GetSignatureKey(pubKeys[3]),
+	}
+	blsSigMsgs := [][]byte{msgs[0], msgs[1], msgs[3]}
+	func() {
+		aggrSig, err := bls.AddSignature(nil, signs[0])
+		assert.Nil(t, err)
+		aggrSig, err = bls.AddSignature(aggrSig, signs[1])
+		assert.Nil(t, err)
+		aggrSig, err = bls.AddSignature(aggrSig, signs[3])
+		assert.Nil(t, err)
+		err = bls.VerifyAggregatedSignature(aggrSig, blsPubKeys, blsSigMsgs)
+		assert.Nil(t, err)
+		assert.Nil(t, commit.AggregatedSignature)
+	}()
+}
+
 func TestCommit(t *testing.T) {
 	lastID := makeBlockIDRandom()
 	h := int64(3)
@@ -243,7 +303,18 @@ func TestCommit(t *testing.T) {
 	require.NotNil(t, commit.BitArray())
 	assert.Equal(t, bits.NewBitArray(10).Size(), commit.BitArray().Size())
 
-	assert.Equal(t, voteSet.GetByIndex(0), commit.GetByIndex(0))
+	vote1, vote2 := voteSet.GetByIndex(0), commit.GetByIndex(0)
+	assert.Equal(t, vote1.BlockID, vote2.BlockID)
+	assert.Equal(t, vote1.Height, vote2.Height)
+	assert.Equal(t, vote1.Round, vote2.Round)
+	assert.Equal(t, vote1.Timestamp, vote2.Timestamp)
+	assert.Equal(t, vote1.Type, vote2.Type)
+	assert.Equal(t, vote1.ValidatorAddress, vote2.ValidatorAddress)
+	assert.Equal(t, vote1.ValidatorIndex, vote2.ValidatorIndex)
+	assert.NotNil(t, vote1.Signature)
+	if len(vote1.Signature) == bls.SignatureSize { // RandVoterSet() generates private key type randomly ;(
+		assert.Nil(t, vote2.Signature)
+	}
 	assert.True(t, commit.IsCommit())
 }
 
@@ -300,7 +371,7 @@ func TestMaxCommitBytes(t *testing.T) {
 
 	pb := commit.ToProto()
 
-	assert.EqualValues(t, MaxCommitBytes([]int{len(commit.Signatures[0].Signature)}), int64(pb.Size()))
+	assert.EqualValues(t, MaxCommitBytes([]int{len(commit.Signatures[0].Signature)}, 0), int64(pb.Size()))
 	assert.EqualValues(t, commit.MaxCommitBytes(), int64(pb.Size()))
 
 	// check the upper bound of the commit size
@@ -313,7 +384,7 @@ func TestMaxCommitBytes(t *testing.T) {
 
 	pb = commit.ToProto()
 
-	assert.EqualValues(t, MaxCommitBytes(sigsBytes), int64(pb.Size()))
+	assert.EqualValues(t, MaxCommitBytes(sigsBytes, 0), int64(pb.Size()))
 	assert.EqualValues(t, commit.MaxCommitBytes(), int64(pb.Size()))
 
 	pv1 := NewMockPV(PrivKeyEd25519)
@@ -337,6 +408,7 @@ func TestMaxCommitBytes(t *testing.T) {
 		Timestamp:        timestamp,
 		Type:             tmproto.PrecommitType,
 		BlockID:          blockID,
+		Signature:        tmrand.Bytes(MaxSignatureSize),
 	}
 	pbVote1 := vote1.ToProto()
 	assert.NoError(t, pv1.SignVote(chainID, pbVote1))
@@ -349,6 +421,7 @@ func TestMaxCommitBytes(t *testing.T) {
 		Timestamp:        timestamp,
 		Type:             tmproto.PrecommitType,
 		BlockID:          blockID,
+		Signature:        tmrand.Bytes(MaxSignatureSize),
 	}
 	pbVote2 := vote2.ToProto()
 	assert.NoError(t, pv2.SignVote(chainID, pbVote2))
@@ -361,6 +434,7 @@ func TestMaxCommitBytes(t *testing.T) {
 		Timestamp:        timestamp,
 		Type:             tmproto.PrecommitType,
 		BlockID:          blockID,
+		Signature:        tmrand.Bytes(MaxSignatureSize),
 	}
 	pbVote3 := vote3.ToProto()
 	// does not sign vote3
@@ -382,6 +456,49 @@ func TestMaxCommitBytes(t *testing.T) {
 	assert.Equal(t, len(bz2), commit.ToProto().Size())
 	assert.Equal(t, CommitBlockIDMaxLen, protoBlockID.Size())
 	assert.Equal(t, commit.MaxCommitBytes(), int64(commit.ToProto().Size()))
+}
+
+func TestCommitHash(t *testing.T) {
+	t.Run("receiver is nil", func(t *testing.T) {
+		var commit *Commit = nil
+		assert.Nil(t, commit.Hash())
+	})
+
+	t.Run("without any signatures", func(t *testing.T) {
+		commit := &Commit{
+			hash:                nil,
+			Signatures:          nil,
+			AggregatedSignature: nil,
+		}
+		expected, _ := hex.DecodeString("6E340B9CFFB37A989CA544E6BB780A2C78901D3FB33738768511A30617AFA01D")
+		assert.Equal(t, expected, commit.Hash().Bytes())
+	})
+
+	t.Run("with out without aggregated signature", func(t *testing.T) {
+		signature := []byte{0, 0, 0, 0}
+		address := []byte{0, 0, 0, 0}
+		tm := time.Unix(0, 0)
+		commit := &Commit{
+			hash: nil,
+			Signatures: []CommitSig{
+				NewCommitSigAbsent(),
+				NewCommitSigForBlock(signature, address, tm),
+			},
+			AggregatedSignature: nil,
+		}
+		expected, _ := hex.DecodeString("5EF6A2B65D0585177BD139364D23D9680A7387C2BFEE845F3F4AAF043FEBC555")
+		assert.Equal(t, expected, commit.Hash().Bytes())
+
+		commit.hash = nil
+		commit.AggregatedSignature = []byte{0, 0, 0, 0}
+		expected, _ = hex.DecodeString("3D9CD0C08000318B48DB77B1E2F974AD8F6AF32B922F571BB5BAB922D4443B65")
+		assert.Equal(t, expected, commit.Hash().Bytes())
+
+		commit.hash = nil
+		commit.AggregatedSignature = []byte{0, 1, 2, 3}
+		expected, _ = hex.DecodeString("F8960CFC0FFE82E323FD0484BA715589618AFCCF852731BDE6C9964F95DFC800")
+		assert.Equal(t, expected, commit.Hash().Bytes())
+	})
 }
 
 func TestHeaderHash(t *testing.T) {
@@ -803,19 +920,19 @@ func TestCommitToVoteSet(t *testing.T) {
 	chainID := voteSet.ChainID()
 	voteSet2 := CommitToVoteSet(chainID, commit, voterSet)
 
+	assert.Nil(t, voteSet.aggregatedSignature)
+	assert.NotNil(t, commit.AggregatedSignature)
+	assert.Equal(t, commit.AggregatedSignature, voteSet2.aggregatedSignature)
+
 	for i := int32(0); int(i) < len(vals); i++ {
-		vote1 := voteSet.GetByIndex(i)
-		vote2 := voteSet2.GetByIndex(i)
-		vote3 := commit.GetVote(i)
+		vote1 := voteSet2.GetByIndex(i)
+		vote2 := commit.GetVote(i)
 
 		vote1bz, err := vote1.ToProto().Marshal()
 		require.NoError(t, err)
 		vote2bz, err := vote2.ToProto().Marshal()
 		require.NoError(t, err)
-		vote3bz, err := vote3.ToProto().Marshal()
-		require.NoError(t, err)
 		assert.Equal(t, vote1bz, vote2bz)
-		assert.Equal(t, vote1bz, vote3bz)
 	}
 }
 
@@ -854,6 +971,7 @@ func TestCommitToVoteSetWithVotesForNilBlock(t *testing.T) {
 					Type:             tmproto.PrecommitType,
 					BlockID:          tc.blockIDs[n],
 					Timestamp:        tmtime.Now(),
+					Signature:        []byte{},
 				}
 
 				added, err := signAddVote(vals[vi], vote, voteSet)

@@ -2,7 +2,12 @@ package composite_test
 
 import (
 	"bytes"
+	"encoding/base64"
+	"encoding/hex"
+	"fmt"
 	"testing"
+
+	tmjson "github.com/tendermint/tendermint/libs/json"
 
 	"github.com/tendermint/tendermint/crypto/bls"
 	"github.com/tendermint/tendermint/crypto/composite"
@@ -169,4 +174,95 @@ func TestPubKeyComposite_VRFVerify(t *testing.T) {
 	if !bytes.Equal(output1, output2) {
 		t.Errorf("Output is different from the VRF key.")
 	}
+}
+
+func TestEnvironmentalCompatibility(t *testing.T) {
+	t.Run("The same signature is generated from the same key binary for any runtime env", func(t *testing.T) {
+		privKeyJson := fmt.Sprintf(
+			"{\"type\":\"%s\",\"value\":{\"sign\":{\"type\":\"%s\",\"value\":\"%s\"},\"vrf\":{\"type\":\"%s\",\"value\":\"%s\"}}}",
+			composite.PrivKeyName,
+			bls.PrivKeyName, "FXBs3F3g3FGyDY8P8ipK8t6jwFgJR/jvUnYwiKLWnYQ=",
+			ed25519.PrivKeyName, "IzLJPy6KFiEGbV7SvJAIUBzYbjOpgtdKU+RFsGWYknuTZdNPe6iQzthTvKj4ZU1rkLqXg6ofcej1/89NXexfww==")
+		compositePrivKey := composite.PrivKeyComposite{}
+		err := tmjson.Unmarshal([]byte(privKeyJson), &compositePrivKey)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		msg := []byte("hello, world")
+		actual, err := compositePrivKey.Sign(msg)
+		if err != nil {
+			t.Fatal(err)
+		}
+		expected, err := hex.DecodeString("880b6db7a1be536e1057b34552325dd4ae6acdab4aa833f196c9d7c6d10973c9bbfb4a" +
+			"7f6a482287698a26007be82047157e38c27f8994463b12788f7dde86a6057493543c7922141248845b4f63b4bcf207e4fc92b1d" +
+			"c4cff8d06d44e5d8109")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(expected, actual) {
+			t.Logf("Expected Signature: %s (%d bytes)", hex.EncodeToString(expected), len(expected))
+			t.Logf("Actual   Signature: %s (%d bytes)", hex.EncodeToString(actual), len(actual))
+			t.Errorf("Signatures generated from the same key and message are different than expected")
+		}
+	})
+
+	// https://github.com/line/tendermint/issues/121
+	t.Run("A reproduction test of issue #121", func(t *testing.T) {
+
+		// restore BLS private key from base64 string in priv_validator_key.json
+		blsPrivKey := bls.PrivKeyBLS12{}
+		blsPrivKeyBytes, err := base64.StdEncoding.DecodeString("BpqODFajV6NnQhBfT8ERyvwyqPoZS664e1v35sfr76g=")
+		if err != nil {
+			t.Fatal(err)
+		} else if len(blsPrivKeyBytes) != bls.PrivKeyBLS12Size {
+			t.Fatalf("fixed private key size: %d != %d", len(blsPrivKeyBytes), bls.PrivKeyBLS12Size)
+		}
+		copy(blsPrivKey[:], blsPrivKeyBytes)
+
+		// restore Ed25519 private key from base64 string in priv_validator_key.json
+		ed25519PrivKeyBytes, err := base64.StdEncoding.DecodeString("TGb5K4TbD1XdNd0HGEt7I6quhTJ2aSckgPLLBKs8hDUC" +
+			"4Wh8kfEmnRUeMYtR8V0UfNwQyTYqGupZeyIhJcV1TA==")
+		if err != nil {
+			t.Fatal(err)
+		} else if len(ed25519PrivKeyBytes) != ed25519.PrivateKeySize {
+			t.Fatalf("fixed private key size: %d != %d", len(ed25519PrivKeyBytes), ed25519.PrivateKeySize)
+		}
+		var ed25519PrivKey ed25519.PrivKey = ed25519PrivKeyBytes
+
+		// compare addresses to assumed value
+		compositePrivKey := composite.NewPrivKeyComposite(blsPrivKey, ed25519PrivKey)
+		compositePubKey := compositePrivKey.PubKey()
+		address, err := hex.DecodeString("712988cd548e7c6858aa3e836e02e8f836cdb7a9")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(address, compositePubKey.Address()) {
+			t.Errorf("addresses didn't match: %s", hex.EncodeToString(compositePubKey.Address()))
+		}
+
+		// compare generated signature to assumed value
+		message, err := hex.DecodeString("44080111010000000000000022300A147A68265205CB115AE35A13515C423F1721E87BB" +
+			"412180A147A68265205CB115AE35A13515C423F1721E87BB410013205636861696E")
+		if err != nil {
+			t.Fatal(err)
+		}
+		signature, err := compositePrivKey.Sign(message)
+		if err != nil {
+			t.Fatal(err)
+		}
+		expectedSig, err := hex.DecodeString("a00a8a8143fff615e3df98e9b4a493b0ffc5cf1cee14c55d4c667c34651392331c4d" +
+			"5a1bf0a15d018262d61f74a59cc80775217b81363796e50aac7ce7542424a2eb84fbaf787f7a1c00229682ac4bb0a45f67cdf43f" +
+			"b21b091f25a0a8bd51ae")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(expectedSig, signature) {
+			t.Logf("Address: %s", hex.EncodeToString(address))
+			t.Logf("Message: %s (%d bytes)", hex.EncodeToString(message), len(message))
+			t.Logf("Expected Signature: %s (%d bytes)", hex.EncodeToString(expectedSig), len(expectedSig))
+			t.Logf("Actual   Signature: %s (%d bytes)", hex.EncodeToString(signature), len(signature))
+			t.Errorf("Different signatures are made for the same message with the same private key.")
+		}
+	})
 }

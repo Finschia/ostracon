@@ -173,7 +173,7 @@ func (vote *Vote) Verify(chainID string, pubKey crypto.PubKey) error {
 		return ErrVoteInvalidValidatorAddress
 	}
 	v := vote.ToProto()
-	if !pubKey.VerifySignature(VoteSignBytes(chainID, v), vote.Signature) {
+	if vote.Signature != nil && !pubKey.VerifySignature(VoteSignBytes(chainID, v), vote.Signature) {
 		return ErrVoteInvalidSignature
 	}
 	return nil
@@ -214,11 +214,11 @@ func (vote *Vote) ValidateBasic() error {
 	if vote.ValidatorIndex < 0 {
 		return errors.New("negative ValidatorIndex")
 	}
-	if len(vote.Signature) == 0 {
+	if vote.Signature != nil && len(vote.Signature) == 0 {
 		return errors.New("signature is missing")
 	}
 
-	if len(vote.Signature) > MaxSignatureSize {
+	if vote.Signature != nil && len(vote.Signature) > MaxSignatureSize {
 		return fmt.Errorf("signature is too big %d (max: %d)", len(vote.Signature), MaxSignatureSize)
 	}
 

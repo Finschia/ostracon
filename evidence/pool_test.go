@@ -1,9 +1,14 @@
 package evidence_test
 
 import (
+	"fmt"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/tendermint/tendermint/crypto/bls"
+	"github.com/tendermint/tendermint/crypto/composite"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -120,7 +125,17 @@ func TestEvidencePoolBasic(t *testing.T) {
 	next := pool.EvidenceFront()
 	assert.Equal(t, ev, next.Value.(types.Evidence))
 
-	const evidenceBytes int64 = 436
+	var evidenceBytes int64
+	switch keyType := voterSet.Voters[0].PubKey.(type) {
+	case ed25519.PubKey:
+		evidenceBytes = 372
+	case bls.PubKeyBLS12:
+		evidenceBytes = 436
+	case composite.PubKeyComposite:
+		evidenceBytes = 436
+	default:
+		assert.Fail(t, fmt.Sprintf("unknown public key: %s", keyType))
+	}
 	evs, size = pool.PendingEvidence(evidenceBytes)
 	assert.Equal(t, 1, len(evs))
 	assert.Equal(t, evidenceBytes, size) // check that the size of the single evidence in bytes is correct

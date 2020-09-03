@@ -195,6 +195,7 @@ func TestValidateBlockCommit(t *testing.T) {
 			Timestamp:        tmtime.Now(),
 			Type:             tmproto.PrecommitType,
 			BlockID:          blockID,
+			Signature:        []byte{},
 		}
 
 		g := goodVote.ToProto()
