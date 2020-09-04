@@ -704,7 +704,8 @@ func NewCommit(height int64, round int, blockID BlockID, commitSigs []CommitSig)
 
 // NewCommitWithAggregatedSignature returns a new Commit with .
 // The aggrSig can be set to null. Then all commitSigs must have a valid signature.
-func NewCommitWithAggregatedSignature(height int64, round int, blockID BlockID, commitSigs []CommitSig, aggrSig []byte) *Commit {
+func NewCommitWithAggregatedSignature(
+	height int64, round int, blockID BlockID, commitSigs []CommitSig, aggrSig []byte) *Commit {
 
 	// Make a copy of CommitSig to avoid side effects
 	newCommitSigs := make([]CommitSig, len(commitSigs))
@@ -853,7 +854,7 @@ func (commit *Commit) ValidateBasic() error {
 				return fmt.Errorf("wrong CommitSig #%d: %v", i, err)
 			}
 			if !commitSig.Absent() && commitSig.Signature == nil {
-				omittedSignatures += 1
+				omittedSignatures++
 			}
 		}
 		if commit.AggregatedSignature == nil {

@@ -224,9 +224,10 @@ func (voteSet *VoteSet) addVote(vote *Vote) (added bool, err error) {
 	if err == nil {
 		voteSet.aggregatedSignature = aggrSign
 		vote.Signature = nil
-	} else {
-		// TODO It's possible to continue if the signature aggregation fails, but a warning log output is wanted here.
 	}
+	// else {
+	// TODO It's possible to continue if the signature aggregation fails, but a warning log output is wanted here.
+	// }
 
 	return added, nil
 }
