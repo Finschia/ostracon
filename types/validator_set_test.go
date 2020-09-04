@@ -717,8 +717,13 @@ func TestValidatorSet_VerifyCommitLight_ReturnsAsSoonAsMajorityOfVotingPowerSign
 	require.NoError(t, err)
 	commit.Signatures[3] = vote.CommitSig()
 
+	// NOTE: Before BLS signature aggregation, in case that three of the four signatures are valid, the Commit itself
+	// is considered valid even if one of the remaining signatures has been tampered with or replaced, but after
+	// BLS signature aggregation, the verification fails unless all four signatures are valid, since all four
+	// signatures are verified at once.
 	err = vset.VerifyCommitLight(chainID, blockID, h, commit)
-	assert.NoError(t, err)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "wrong signature (#3)")
 }
 
 func TestValidatorSet_VerifyCommitLightTrusting_ReturnsAsSoonAsTrustLevelOfVotingPowerSigned(t *testing.T) {
@@ -738,8 +743,13 @@ func TestValidatorSet_VerifyCommitLightTrusting_ReturnsAsSoonAsTrustLevelOfVotin
 	require.NoError(t, err)
 	commit.Signatures[2] = vote.CommitSig()
 
+	// NOTE: Before BLS signature aggregation, in case that three of the four signatures are valid, the Commit itself
+	// is considered valid even if one of the remaining signatures has been tampered with or replaced, but after
+	// BLS signature aggregation, the verification fails unless all four signatures are valid, since all four
+	// signatures are verified at once.
 	err = vset.VerifyCommitLightTrusting(chainID, blockID, h, commit, tmmath.Fraction{Numerator: 1, Denominator: 3})
-	assert.NoError(t, err)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "wrong signature (#2)")
 }
 
 func TestEmptySet(t *testing.T) {

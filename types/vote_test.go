@@ -199,6 +199,7 @@ func TestVoteVerify(t *testing.T) {
 
 	vote := examplePrevote()
 	vote.ValidatorAddress = pubkey.Address()
+	vote.Signature = []byte{}
 
 	err = vote.Verify("test_chain_id", ed25519.GenPrivKey().PubKey())
 	if assert.Error(t, err) {
