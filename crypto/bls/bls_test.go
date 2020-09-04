@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"math/rand"
+	"reflect"
 	"testing"
 	"time"
 
@@ -343,10 +344,17 @@ func generatePubKeysAndSigns(t *testing.T, size int) ([]bls.PubKeyBLS12, [][]byt
 func blsPublicKey(t *testing.T, pubKey crypto.PubKey) bls.PubKeyBLS12 {
 	blsPubKey, ok := pubKey.(bls.PubKeyBLS12)
 	if !ok {
-		t.Fatal(fmt.Sprintf("specified public key is not for BLS"))
+		var keyType string
+		if t := reflect.TypeOf(pubKey); t.Kind() == reflect.Ptr {
+			keyType = "*" + t.Elem().Name()
+		} else {
+			keyType = t.Name()
+		}
+		t.Fatal(fmt.Sprintf("specified public key is not for BLS: %s", keyType))
 	}
 	return blsPubKey
 }
+
 func aggregateSignatures(init []byte, signatures [][]byte) (aggrSig []byte, err error) {
 	aggrSig = init
 	for _, sign := range signatures {
@@ -398,7 +406,9 @@ func TestAggregatedSignature(t *testing.T) {
 		shuffledPubKeys := make([]bls.PubKeyBLS12, len(pubKeys))
 		copy(shuffledPubKeys, pubKeys)
 		rand.Seed(time.Now().UnixNano())
-		rand.Shuffle(len(shuffledPubKeys), func(i, j int) { shuffledPubKeys[i], shuffledPubKeys[j] = shuffledPubKeys[j], shuffledPubKeys[i] })
+		rand.Shuffle(len(shuffledPubKeys), func(i, j int) {
+			shuffledPubKeys[i], shuffledPubKeys[j] = shuffledPubKeys[j], shuffledPubKeys[i]
+		})
 		if err := bls.VerifyAggregatedSignature(aggrSig, shuffledPubKeys, msgs); err == nil {
 			t.Error("successfully validated with public keys of different order")
 		}
@@ -409,7 +419,9 @@ func TestAggregatedSignature(t *testing.T) {
 		shuffledMsgs := make([][]byte, len(msgs))
 		copy(shuffledMsgs, msgs)
 		rand.Seed(time.Now().UnixNano())
-		rand.Shuffle(len(shuffledMsgs), func(i, j int) { shuffledMsgs[i], shuffledMsgs[j] = shuffledMsgs[j], shuffledMsgs[i] })
+		rand.Shuffle(len(shuffledMsgs), func(i, j int) {
+			shuffledMsgs[i], shuffledMsgs[j] = shuffledMsgs[j], shuffledMsgs[i]
+		})
 		if err := bls.VerifyAggregatedSignature(aggrSig, pubKeys, shuffledMsgs); err == nil {
 			t.Error("successfully validated with messages of different order")
 		}

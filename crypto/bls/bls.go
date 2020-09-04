@@ -86,10 +86,9 @@ func VerifyAggregatedSignature(aggregatedSignature []byte, pubKeys []PubKeyBLS12
 	if aggregatedSignature == nil {
 		if len(pubKeys) == 0 {
 			return nil
-		} else {
-			return fmt.Errorf(
-				"the aggregate signature was omitted, even though %d public keys were specified", len(pubKeys))
 		}
+		return fmt.Errorf(
+			"the aggregate signature was omitted, even though %d public keys were specified", len(pubKeys))
 	}
 	aggrSign := bls.Sign{}
 	err := aggrSign.Deserialize(aggregatedSignature)
