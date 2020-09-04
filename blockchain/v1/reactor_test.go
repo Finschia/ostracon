@@ -67,6 +67,7 @@ func makeVote(
 		Timestamp:        tmtime.Now(),
 		Type:             types.PrecommitType,
 		BlockID:          blockID,
+		Signature:        []byte{},
 	}
 
 	_ = privVal.SignVote(header.ChainID, vote)

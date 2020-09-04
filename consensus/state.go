@@ -1941,6 +1941,7 @@ func (cs *State) signVote(
 		Timestamp:        cs.voteTime(),
 		Type:             msgType,
 		BlockID:          types.BlockID{Hash: hash, PartsHeader: header},
+		Signature:        []byte{},
 	}
 
 	err = cs.privValidator.SignVote(cs.state.ChainID, vote)

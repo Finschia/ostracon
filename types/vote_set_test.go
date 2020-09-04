@@ -97,6 +97,7 @@ func TestAddVote(t *testing.T) {
 		Type:             PrevoteType,
 		Timestamp:        tmtime.Now(),
 		BlockID:          BlockID{nil, PartSetHeader{}},
+		Signature:        []byte{},
 	}
 	_, err = signAddVote(val0, vote, voteSet)
 	if err != nil {
@@ -127,6 +128,7 @@ func Test2_3Majority(t *testing.T) {
 		Type:             PrevoteType,
 		Timestamp:        tmtime.Now(),
 		BlockID:          BlockID{nil, PartSetHeader{}},
+		Signature:        []byte{},
 	}
 	// 6 out of 10 voted for nil.
 	for i := 0; i < 6; i++ {
@@ -193,6 +195,7 @@ func Test2_3MajorityRedux(t *testing.T) {
 		Timestamp:        tmtime.Now(),
 		Type:             PrevoteType,
 		BlockID:          BlockID{blockHash, blockPartsHeader},
+		Signature:        []byte{},
 	}
 
 	// 66 out of 100 voted for nil.
@@ -306,6 +309,7 @@ func TestBadVotes(t *testing.T) {
 		Timestamp:        tmtime.Now(),
 		Type:             PrevoteType,
 		BlockID:          BlockID{nil, PartSetHeader{}},
+		Signature:        []byte{},
 	}
 
 	// val0 votes for nil.
@@ -383,6 +387,7 @@ func TestConflicts(t *testing.T) {
 		Timestamp:        tmtime.Now(),
 		Type:             PrevoteType,
 		BlockID:          BlockID{nil, PartSetHeader{}},
+		Signature:        []byte{},
 	}
 
 	val0, err := privValidators[0].GetPubKey()
@@ -525,6 +530,7 @@ func TestMakeCommit(t *testing.T) {
 		Timestamp:        tmtime.Now(),
 		Type:             PrecommitType,
 		BlockID:          BlockID{blockHash, blockPartsHeader},
+		Signature:        []byte{},
 	}
 
 	// 6 out of 10 voted for some block.

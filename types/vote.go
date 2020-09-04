@@ -164,10 +164,10 @@ func (vote *Vote) ValidateBasic() error {
 	if vote.ValidatorIndex < 0 {
 		return errors.New("negative ValidatorIndex")
 	}
-	if len(vote.Signature) == 0 {
+	if vote.Signature != nil && len(vote.Signature) == 0 {
 		return errors.New("signature is missing")
 	}
-	if len(vote.Signature) > MaxSignatureSize {
+	if vote.Signature != nil && len(vote.Signature) > MaxSignatureSize {
 		return fmt.Errorf("signature is too big %d (max: %d)", len(vote.Signature), MaxSignatureSize)
 	}
 	return nil

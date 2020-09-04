@@ -188,6 +188,7 @@ func TestValidateBlockCommit(t *testing.T) {
 			Timestamp:        tmtime.Now(),
 			Type:             types.PrecommitType,
 			BlockID:          blockID,
+			Signature:        []byte{},
 		}
 		err = badPrivVal.SignVote(chainID, goodVote)
 		require.NoError(t, err, "height %d", height)

@@ -560,6 +560,7 @@ func TestCommitToVoteSetWithVotesForNilBlock(t *testing.T) {
 					Type:             PrecommitType,
 					BlockID:          tc.blockIDs[n],
 					Timestamp:        tmtime.Now(),
+					Signature:        []byte{},
 				}
 
 				added, err := signAddVote(vals[vi], vote, voteSet)

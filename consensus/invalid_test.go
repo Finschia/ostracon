@@ -80,6 +80,7 @@ func invalidDoPrevoteFunc(t *testing.T, height int64, round int, cs *State, sw *
 			BlockID: types.BlockID{
 				Hash:        blockHash,
 				PartsHeader: types.PartSetHeader{Total: 1, Hash: tmrand.Bytes(32)}},
+			Signature: []byte{},
 		}
 		cs.privValidator.SignVote(cs.state.ChainID, precommit)
 		cs.privValidator = nil // disable priv val so we don't do normal votes
