@@ -512,6 +512,9 @@ func TestCommitToVoteSet(t *testing.T) {
 	chainID := voteSet.ChainID()
 	voteSet2 := CommitToVoteSet(chainID, commit, valSet)
 
+	assert.Equal(t, voteSet.aggregatedSignature, commit.AggregatedSignature)
+	assert.Equal(t, commit.AggregatedSignature, voteSet2.aggregatedSignature)
+
 	for i := 0; i < len(vals); i++ {
 		vote1 := voteSet.GetByIndex(i)
 		vote2 := voteSet2.GetByIndex(i)
