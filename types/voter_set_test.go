@@ -4,15 +4,13 @@ import (
 	"bytes"
 	"math"
 	"math/big"
+	s "sort"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
-	s "sort"
-
 	"github.com/tendermint/tendermint/crypto"
-
 	"github.com/tendermint/tendermint/crypto/merkle"
 	"github.com/tendermint/tendermint/libs/rand"
 	tmtime "github.com/tendermint/tendermint/types/time"
