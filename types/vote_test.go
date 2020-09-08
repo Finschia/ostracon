@@ -275,7 +275,7 @@ func TestVoteValidateBasic(t *testing.T) {
 		}, true},
 		{"Invalid Address", func(v *Vote) { v.ValidatorAddress = make([]byte, 1) }, true},
 		{"Invalid ValidatorIndex", func(v *Vote) { v.ValidatorIndex = -1 }, true},
-		{"Invalid Signature", func(v *Vote) { v.Signature = nil }, true},
+		{"Invalid Signature", func(v *Vote) { v.Signature = []byte{} }, true},
 		{"Too big Signature", func(v *Vote) { v.Signature = make([]byte, MaxSignatureSize+1) }, true},
 	}
 	for _, tc := range testCases {
