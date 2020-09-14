@@ -76,8 +76,7 @@ func DefaultConsensusParams() *ConsensusParams {
 func DefaultVoterParams() *VoterParams {
 	return &VoterParams{
 		VoterElectionThreshold:          DefaultVoterElectionThreshold,
-		MaxTolerableByzantinePercentage: DefaultMaxTolerableByzantinePercentage,
-		ElectionPrecision:               DefaultElectionPrecision}
+		MaxTolerableByzantinePercentage: DefaultMaxTolerableByzantinePercentage}
 }
 
 // DefaultBlockParams returns a default BlockParams.
