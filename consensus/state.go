@@ -1765,7 +1765,17 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 
 		}
 		if !selectedAsVoter {
-			cs.metrics.VoterPower.Set(float64(0))
+			address := "non_validator"
+			if cs.privValidator != nil {
+				pubKey, err := cs.privValidator.GetPubKey()
+				if err == nil && cs.Validators.HasAddress(pubKey.Address().Bytes()) {
+					address = pubKey.Address().String()
+				}
+			}
+			label := []string{
+				"validator_address", address,
+			}
+			cs.metrics.VoterPower.With(label...).Set(float64(0))
 		}
 	}
 	cs.metrics.MissingVoters.Set(float64(missingVoters))
