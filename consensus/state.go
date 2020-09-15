@@ -1765,16 +1765,7 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 
 		}
 		if !selectedAsVoter {
-			pubKey, err := cs.privValidator.GetPubKey()
-			if err == nil {
-				label := []string{
-					"validator_address", pubKey.Address().String(),
-				}
-				cs.metrics.VoterPower.With(label...).Set(float64(0))
-			} else {
-				// Metrics won't be updated, but it's not critical.
-				cs.Logger.Error("Error on retrival of pubkey", "err", err)
-			}
+			cs.metrics.VoterPower.Set(float64(0))
 		}
 	}
 	cs.metrics.MissingVoters.Set(float64(missingVoters))
