@@ -2146,8 +2146,7 @@ func TestStateFullRoundWithSelectedVoter(t *testing.T) {
 
 	cs, vss := randStateWithVoterParams(10, &types.VoterParams{
 		VoterElectionThreshold:          5,
-		MaxTolerableByzantinePercentage: 20,
-		ElectionPrecision:               2})
+		MaxTolerableByzantinePercentage: 20})
 	vss[0].Height = 1 // this is needed because of `incrementHeight(vss[1:]...)` of randStateWithVoterParams()
 	vssMap := makeVssMap(vss)
 	height, round := cs.Height, cs.Round
@@ -2236,8 +2235,7 @@ func TestStateBadVoterWithSelectedVoter(t *testing.T) {
 	// making him having 1/3 + 1 voting power of total
 	cs, vss := randStateWithVoterParams(9, &types.VoterParams{
 		VoterElectionThreshold:          5,
-		MaxTolerableByzantinePercentage: 20,
-		ElectionPrecision:               5})
+		MaxTolerableByzantinePercentage: 20})
 
 	assert.True(t, cs.Voters.Size() >= 4)
 
@@ -2381,8 +2379,7 @@ func TestStateAllVoterToSelectedVoter(t *testing.T) {
 	startValidators := 5
 	cs, vss := randStateWithVoterParamsWithApp(startValidators, &types.VoterParams{
 		VoterElectionThreshold:          int32(startValidators),
-		MaxTolerableByzantinePercentage: 20,
-		ElectionPrecision:               2},
+		MaxTolerableByzantinePercentage: 20},
 		"TestStateAllVoterToSelectedVoter")
 	vss[0].Height = 1 // this is needed because of `incrementHeight(vss[1:]...)` of randStateWithVoterParams()
 	vssMap := makeVssMap(vss)
@@ -2435,13 +2432,6 @@ func TestStateAllVoterToSelectedVoter(t *testing.T) {
 	ensureNewRound(newRoundCh, height+1, 0)
 
 	endHeight := 20
-	voterCount := make([]int, endHeight-1)
-	for i := 0; i < len(voterCount); i++ {
-		voterCount[i] = int(types.CalNumOfVoterToElect(int64(startValidators+i), 0.2, 0.99))
-		if voterCount[i] < startValidators {
-			voterCount[i] = startValidators
-		}
-	}
 	for i := 2; i <= endHeight; i++ { // height 2~10
 		height = cs.Height
 		privPubKey, _ = cs.privValidator.GetPubKey()
@@ -2455,9 +2445,6 @@ func TestStateAllVoterToSelectedVoter(t *testing.T) {
 		propBlock = cs.GetRoundState().ProposalBlock
 		voters = cs.Voters
 		voterPrivVals = votersPrivVals(voters, vssMap)
-
-		// verify voters count
-		assert.True(t, voters.Size() == voterCount[i-2])
 
 		signAddVotes(cs, tmproto.PrevoteType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
 			voterPrivVals...)

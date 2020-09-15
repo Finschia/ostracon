@@ -34,7 +34,6 @@ var (
 	voterParam = &types.VoterParams{
 		VoterElectionThreshold:          4,
 		MaxTolerableByzantinePercentage: 1,
-		ElectionPrecision:               3,
 	}
 	bTime, _ = time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
 	h1       = keys.GenSignedHeader(chainID, 1, bTime, nil, vals, vals,

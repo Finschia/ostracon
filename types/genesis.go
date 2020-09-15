@@ -38,17 +38,12 @@ type GenesisValidator struct {
 type VoterParams struct {
 	VoterElectionThreshold          int32 `json:"voter_election_threshold"`
 	MaxTolerableByzantinePercentage int32 `json:"max_tolerable_byzantine_percentage"`
-
-	// As a unit of precision, if it is 1, it is 0.9, and if it is 2, it is 0.99.
-	// The default is 5, with a precision of 0.99999.
-	ElectionPrecision int32 `json:"election_precision"`
 }
 
 func (vp *VoterParams) DefaultVoterParams() *VoterParams {
 	return &VoterParams{
 		DefaultVoterElectionThreshold,
 		DefaultMaxTolerableByzantinePercentage,
-		DefaultElectionPrecision,
 	}
 }
 
@@ -179,9 +174,6 @@ func (vp *VoterParams) Validate() error {
 		return fmt.Errorf("MaxTolerableByzantinePercentage must be in between 1 and 33. Got %d",
 			vp.MaxTolerableByzantinePercentage)
 	}
-	if vp.ElectionPrecision <= 1 || vp.ElectionPrecision > 15 {
-		return fmt.Errorf("ElectionPrecision must be in between 2 and 15. Got %d", vp.ElectionPrecision)
-	}
 	return nil
 }
 
@@ -192,7 +184,6 @@ func (vp *VoterParams) ToProto() *tmproto.VoterParams {
 	return &tmproto.VoterParams{
 		VoterElectionThreshold:          vp.VoterElectionThreshold,
 		MaxTolerableByzantinePercentage: vp.MaxTolerableByzantinePercentage,
-		ElectionPrecision:               vp.ElectionPrecision,
 	}
 }
 func VoterParamsFromProto(pb *tmproto.VoterParams) *VoterParams {
@@ -202,6 +193,5 @@ func VoterParamsFromProto(pb *tmproto.VoterParams) *VoterParams {
 	return &VoterParams{
 		VoterElectionThreshold:          pb.VoterElectionThreshold,
 		MaxTolerableByzantinePercentage: pb.MaxTolerableByzantinePercentage,
-		ElectionPrecision:               pb.ElectionPrecision,
 	}
 }

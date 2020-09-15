@@ -202,7 +202,6 @@ func TestVerifyAdjacentHeadersWithVoterSampling(t *testing.T) {
 		voterParamsHalf = &types.VoterParams{
 			VoterElectionThreshold:          5,
 			MaxTolerableByzantinePercentage: 10,
-			ElectionPrecision:               3,
 		}
 		keys = genPrivKeys(10)
 		// 100, 110, ..., 200

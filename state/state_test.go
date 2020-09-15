@@ -346,7 +346,6 @@ func TestLoadAndSaveVoters(t *testing.T) {
 	voterParam := &types.VoterParams{
 		VoterElectionThreshold:          3,
 		MaxTolerableByzantinePercentage: 20,
-		ElectionPrecision:               5,
 	}
 	state.Validators = genValSetWithPowers([]int64{1000, 1100, 1200, 1500, 2000, 5000})
 	state.NextValidators = state.Validators
@@ -1023,7 +1022,6 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 	state.VoterParams = &types.VoterParams{
 		VoterElectionThreshold:          3,
 		MaxTolerableByzantinePercentage: 20,
-		ElectionPrecision:               5,
 	}
 	state.Validators = genValSet(valSetSize)
 	state.Validators.SelectProposer([]byte{}, 1, 0)

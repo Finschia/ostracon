@@ -411,6 +411,7 @@ func (voters *VoterSet) StringIndented(indent string) string {
 
 type candidate struct {
 	priority uint64
+	winPoint float64
 	val      *Validator
 }
 
@@ -427,40 +428,36 @@ func (c *candidate) LessThan(other tmrand.Candidate) bool {
 	return bytes.Compare(c.val.Address, o.val.Address) < 0
 }
 
-func (c *candidate) SetWinPoint(winPoint int64) {
-	if winPoint < 0 {
-		panic(fmt.Sprintf("VotingPower must not be negative: %d", winPoint))
-	}
-	c.val.VotingPower = winPoint
+func (c *candidate) SetWinPoint(winPoint float64) {
+	c.winPoint = winPoint
 }
 
-func accuracyFromElectionPrecision(precision int32) float64 {
-	base := math.Pow10(int(precision))
-	result := (base - 1) / base
-	return result
+func (c *candidate) SetVotingPower(votingPower uint64) {
+	c.val.VotingPower = int64(votingPower)
+}
+
+func (c *candidate) WinPoint() float64 {
+	return c.winPoint
+}
+
+func (c *candidate) VotingPower() uint64 {
+	return uint64(c.val.VotingPower)
 }
 
 func SelectVoter(validators *ValidatorSet, proofHash []byte, voterParams *VoterParams) *VoterSet {
 	if len(proofHash) == 0 || validators.Size() <= int(voterParams.VoterElectionThreshold) {
 		return ToVoterAll(validators.Validators)
 	}
-
-	seed := hashToSeed(proofHash)
-	candidates := make([]tmrand.Candidate, len(validators.Validators))
-	for i, val := range validators.Validators {
-		candidates[i] = &candidate{
+	candidates := make([]tmrand.Candidate, 0)
+	for _, val := range validators.Validators {
+		candidates = append(candidates, &candidate{
 			priority: uint64(val.StakingPower),
 			val:      val.Copy(),
-		}
+		})
 	}
-
-	minVoters := CalNumOfVoterToElect(int64(len(candidates)), float64(voterParams.MaxTolerableByzantinePercentage)/100,
-		accuracyFromElectionPrecision(voterParams.ElectionPrecision))
-	if minVoters > math.MaxInt32 {
-		panic("CalNumOfVoterToElect is overflow for MaxInt32")
-	}
-	voterCount := tmmath.MaxInt(int(voterParams.VoterElectionThreshold), int(minVoters))
-	winners := tmrand.RandomSamplingWithoutReplacement(seed, candidates, voterCount)
+	seed := hashToSeed(proofHash)
+	tolerableByzantinePercent := uint64(voterParams.MaxTolerableByzantinePercentage)
+	winners := tmrand.ElectVotersNonDup(candidates, seed, tolerableByzantinePercent)
 	voters := make([]*Validator, len(winners))
 	for i, winner := range winners {
 		voters[i] = winner.(*candidate).val

@@ -10,7 +10,10 @@ import (
 type Candidate interface {
 	Priority() uint64
 	LessThan(other Candidate) bool
-	SetWinPoint(winPoint int64)
+	WinPoint() float64
+	VotingPower() uint64
+	SetWinPoint(winPoint float64)
+	SetVotingPower(votingPower uint64)
 }
 
 // Select a specified number of candidates randomly from the candidate set based on each priority. This function is
@@ -94,72 +97,6 @@ func randomThreshold(seed *uint64, total uint64) uint64 {
 	return a.Uint64()
 }
 
-func RandomSamplingWithoutReplacement(
-	seed uint64, candidates []Candidate, minSamplingCount int) (winners []Candidate) {
-
-	if len(candidates) < minSamplingCount {
-		panic(fmt.Sprintf("The number of candidates(%d) cannot be less minSamplingCount %d",
-			len(candidates), minSamplingCount))
-	}
-
-	totalPriority := sumTotalPriority(candidates)
-	candidates = sort(candidates)
-	winnersPriority := uint64(0)
-	losersPriorities := make([]uint64, len(candidates))
-	winnerNum := 0
-	for winnerNum < minSamplingCount {
-		if totalPriority-winnersPriority == 0 {
-			// it's possible if some candidates have zero priority
-			// if then, we can't elect voter any more; we should holt electing not to fall in infinity loop
-			break
-		}
-		threshold := randomThreshold(&seed, totalPriority-winnersPriority)
-		cumulativePriority := uint64(0)
-		found := false
-		for i, candidate := range candidates[:len(candidates)-winnerNum] {
-			if threshold < cumulativePriority+candidate.Priority() {
-				moveWinnerToLast(candidates, i)
-				winnersPriority += candidate.Priority()
-				losersPriorities[winnerNum] = totalPriority - winnersPriority
-				winnerNum++
-				found = true
-				break
-			}
-			cumulativePriority += candidate.Priority()
-		}
-
-		if !found {
-			panic(fmt.Sprintf("Cannot find random sample. winnerNum=%d, minSamplingCount=%d, "+
-				"winnersPriority=%d, totalPriority=%d, threshold=%d",
-				winnerNum, minSamplingCount, winnersPriority, totalPriority, threshold))
-		}
-	}
-	correction := new(big.Int).SetUint64(totalPriority)
-	correction = correction.Mul(correction, new(big.Int).SetUint64(precisionForSelection))
-	compensationProportions := make([]big.Int, winnerNum)
-	for i := winnerNum - 2; i >= 0; i-- {
-		additionalCompensation := new(big.Int).Div(correction, new(big.Int).SetUint64(losersPriorities[i]))
-		compensationProportions[i].Add(&compensationProportions[i+1], additionalCompensation)
-	}
-	winners = candidates[len(candidates)-winnerNum:]
-	winPoints := make([]*big.Int, len(winners))
-	totalWinPoint := new(big.Int)
-	for i, winner := range winners {
-		winPoints[i] = new(big.Int).SetUint64(winner.Priority())
-		winPoints[i].Mul(winPoints[i], &compensationProportions[i])
-		winPoints[i].Add(winPoints[i], correction)
-		totalWinPoint.Add(totalWinPoint, winPoints[i])
-	}
-	recalibration := new(big.Int).Div(correction, new(big.Int).SetUint64(precisionCorrectionForSelection))
-	for i, winner := range winners {
-		winPoint := new(big.Int)
-		winPoint.Mul(recalibration, winPoints[i])
-		winPoint.Div(winPoint, totalWinPoint)
-		winner.SetWinPoint(winPoint.Int64())
-	}
-	return winners
-}
-
 // sumTotalPriority calculate the sum of all candidate's priority(weight)
 // and the sum should be less then or equal to MaxUint64
 // TODO We need to check the total weight doesn't over MaxUint64 in somewhere not here.
@@ -198,6 +135,118 @@ func sort(candidates []Candidate) []Candidate {
 			return temp[i].Priority() > temp[j].Priority()
 		}
 		return temp[i].LessThan(temp[j])
+	})
+	return temp
+}
+
+func electVoter(
+	seed *uint64, candidates []Candidate, voterNum int, totalPriority uint64) (
+	winnerIdx int, winner Candidate) {
+	threshold := randomThreshold(seed, totalPriority)
+	found := false
+	cumulativePriority := uint64(0)
+	for i, candidate := range candidates[:len(candidates)-voterNum] {
+		if threshold < cumulativePriority+candidate.Priority() {
+			winner = candidates[i]
+			winnerIdx = i
+			found = true
+			break
+		}
+		cumulativePriority += candidate.Priority()
+	}
+
+	if !found {
+		panic(fmt.Sprintf("Cannot find random sample. voterNum=%d, "+
+			"totalPriority=%d, threshold=%d",
+			voterNum, totalPriority, threshold))
+	}
+
+	return winnerIdx, winner
+}
+
+func ElectVotersNonDup(candidates []Candidate, seed, tolerableByzantinePercent uint64) (voters []Candidate) {
+	totalPriority := sumTotalPriority(candidates)
+	tolerableByzantinePower := totalPriority * tolerableByzantinePercent / 100
+	voters = make([]Candidate, 0)
+	candidates = sort(candidates)
+
+	zeroPriorities := 0
+	for i := len(candidates); candidates[i-1].Priority() == 0; i-- {
+		zeroPriorities++
+	}
+
+	losersPriorities := totalPriority
+	for len(voters)+zeroPriorities < len(candidates) {
+		//accumulateWinPoints(voters)
+		for _, voter := range voters {
+			//i = v1 ... vt
+			//stakingPower(i) * 1000 / (stakingPower(vt+1 ... vn) + stakingPower(i))
+			additionalWinPoint := new(big.Int).Mul(new(big.Int).SetUint64(voter.Priority()),
+				new(big.Int).SetUint64(precisionForSelection))
+			additionalWinPoint.Div(additionalWinPoint, new(big.Int).Add(new(big.Int).SetUint64(losersPriorities),
+				new(big.Int).SetUint64(voter.Priority())))
+			voter.SetWinPoint(voter.WinPoint() + float64(additionalWinPoint.Uint64())/float64(precisionCorrectionForSelection))
+		}
+		//electVoter
+		winnerIdx, winner := electVoter(&seed, candidates, len(voters)+zeroPriorities, losersPriorities)
+
+		//add 1 winPoint to winner
+		winner.SetWinPoint(1)
+
+		moveWinnerToLast(candidates, winnerIdx)
+		voters = append(voters, winner)
+		losersPriorities -= winner.Priority()
+
+		//sort voters in ascending votingPower/stakingPower
+		sortVoters(voters)
+		totalWinPoint := float64(0)
+
+		//calculateVotingPowers(voters)
+		for _, voter := range voters {
+			totalWinPoint += voter.WinPoint()
+		}
+		totalVotingPower := uint64(0)
+		for _, voter := range voters {
+			bigWinPoint := new(big.Int).SetUint64(
+				uint64(voter.WinPoint() * float64(precisionForSelection*precisionForSelection)))
+			bigTotalWinPoint := new(big.Int).SetUint64(uint64(totalWinPoint * float64(precisionForSelection)))
+			bigVotingPower := new(big.Int).Mul(new(big.Int).Div(bigWinPoint, bigTotalWinPoint),
+				new(big.Int).SetUint64(totalPriority))
+			votingPower := new(big.Int).Div(bigVotingPower, new(big.Int).SetUint64(precisionForSelection)).Uint64()
+			voter.SetVotingPower(votingPower)
+			totalVotingPower += votingPower
+		}
+
+		topFVotersVotingPower := countVoters(voters, tolerableByzantinePower)
+		if topFVotersVotingPower < totalVotingPower/3 {
+			break
+		}
+	}
+	return voters
+}
+
+func countVoters(voters []Candidate, tolerableByzantinePower uint64) uint64 {
+	topFVotersStakingPower := uint64(0)
+	topFVotersVotingPower := uint64(0)
+	for _, voter := range voters {
+		prev := topFVotersStakingPower
+		topFVotersStakingPower += voter.Priority()
+		topFVotersVotingPower += voter.VotingPower()
+		if prev < tolerableByzantinePower && topFVotersStakingPower >= tolerableByzantinePower {
+			break
+		}
+	}
+	return topFVotersVotingPower
+}
+
+// sortVoters is function to sort voters in descending votingPower/stakingPower
+func sortVoters(candidates []Candidate) []Candidate {
+	temp := make([]Candidate, len(candidates))
+	copy(temp, candidates)
+	s.Slice(temp, func(i, j int) bool {
+		a := temp[i].VotingPower() / temp[i].Priority()
+		b := temp[j].VotingPower() / temp[j].Priority()
+		return a > b
 	})
 	return temp
 }

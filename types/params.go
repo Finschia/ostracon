@@ -22,7 +22,6 @@ const (
 
 	DefaultVoterElectionThreshold          = 33
 	DefaultMaxTolerableByzantinePercentage = 20
-	DefaultElectionPrecision               = 5 // 5 is 0.99999
 )
 
 // DefaultConsensusParams returns a default ConsensusParams.
@@ -39,8 +38,7 @@ func DefaultConsensusParams() *tmproto.ConsensusParams {
 func DefaultVoterParams() *VoterParams {
 	return &VoterParams{
 		VoterElectionThreshold:          DefaultVoterElectionThreshold,
-		MaxTolerableByzantinePercentage: DefaultMaxTolerableByzantinePercentage,
-		ElectionPrecision:               DefaultElectionPrecision}
+		MaxTolerableByzantinePercentage: DefaultMaxTolerableByzantinePercentage}
 }
 
 // DefaultBlockParams returns a default BlockParams.
