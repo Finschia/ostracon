@@ -26,7 +26,7 @@ type signerTestCase struct {
 	signerServer *SignerServer
 }
 
-func getSignerTestCases(t *testing.T) []signerTestCase {
+func getSignerTestCases(t *testing.T, start bool) []signerTestCase {
 	testCases := make([]signerTestCase, 0)
 
 	// Get test cases for each possible dialer (DialTCP / DialUnix / etc)
@@ -41,8 +41,10 @@ func getSignerTestCases(t *testing.T) []signerTestCase {
 		require.NoError(t, err)
 		ss := NewSignerServer(sd, chainID, &mockPV)
 
-		err = ss.Start()
-		require.NoError(t, err)
+		if start {
+			err = ss.Start()
+			require.NoError(t, err)
+		}
 
 		tc := signerTestCase{
 			chainID:      chainID,
@@ -58,7 +60,7 @@ func getSignerTestCases(t *testing.T) []signerTestCase {
 }
 
 func TestSignerClose(t *testing.T) {
-	for _, tc := range getSignerTestCases(t) {
+	for _, tc := range getSignerTestCases(t, true) {
 		err := tc.signerClient.Close()
 		assert.NoError(t, err)
 
@@ -68,7 +70,7 @@ func TestSignerClose(t *testing.T) {
 }
 
 func TestSignerPing(t *testing.T) {
-	for _, tc := range getSignerTestCases(t) {
+	for _, tc := range getSignerTestCases(t, true) {
 		tc := tc
 		t.Cleanup(func() {
 			if err := tc.signerServer.Stop(); err != nil {
@@ -87,7 +89,7 @@ func TestSignerPing(t *testing.T) {
 }
 
 func TestSignerGetPubKey(t *testing.T) {
-	for _, tc := range getSignerTestCases(t) {
+	for _, tc := range getSignerTestCases(t, true) {
 		tc := tc
 		t.Cleanup(func() {
 			if err := tc.signerServer.Stop(); err != nil {
@@ -118,7 +120,7 @@ func TestSignerGetPubKey(t *testing.T) {
 }
 
 func TestSignerProposal(t *testing.T) {
-	for _, tc := range getSignerTestCases(t) {
+	for _, tc := range getSignerTestCases(t, true) {
 		ts := time.Now()
 		hash := tmrand.Bytes(tmhash.Size)
 		have := &types.Proposal{
@@ -159,7 +161,7 @@ func TestSignerProposal(t *testing.T) {
 
 func TestSignerGenerateVRFProof(t *testing.T) {
 	message := []byte("hello, world")
-	for _, tc := range getSignerTestCases(t) {
+	for _, tc := range getSignerTestCases(t, true) {
 		defer tc.signerServer.Stop()
 		defer tc.signerClient.Close()
 
@@ -180,7 +182,7 @@ func TestSignerGenerateVRFProof(t *testing.T) {
 }
 
 func TestSignerVote(t *testing.T) {
-	for _, tc := range getSignerTestCases(t) {
+	for _, tc := range getSignerTestCases(t, true) {
 		ts := time.Now()
 		hash := tmrand.Bytes(tmhash.Size)
 		valAddr := tmrand.Bytes(crypto.AddressSize)
@@ -224,7 +226,7 @@ func TestSignerVote(t *testing.T) {
 }
 
 func TestSignerVoteResetDeadline(t *testing.T) {
-	for _, tc := range getSignerTestCases(t) {
+	for _, tc := range getSignerTestCases(t, true) {
 		ts := time.Now()
 		hash := tmrand.Bytes(tmhash.Size)
 		valAddr := tmrand.Bytes(crypto.AddressSize)
@@ -278,7 +280,7 @@ func TestSignerVoteResetDeadline(t *testing.T) {
 }
 
 func TestSignerVoteKeepAlive(t *testing.T) {
-	for _, tc := range getSignerTestCases(t) {
+	for _, tc := range getSignerTestCases(t, true) {
 		ts := time.Now()
 		hash := tmrand.Bytes(tmhash.Size)
 		valAddr := tmrand.Bytes(crypto.AddressSize)
@@ -331,7 +333,7 @@ func TestSignerVoteKeepAlive(t *testing.T) {
 }
 
 func TestSignerSignProposalErrors(t *testing.T) {
-	for _, tc := range getSignerTestCases(t) {
+	for _, tc := range getSignerTestCases(t, true) {
 		// Replace service with a mock that always fails
 		tc.signerServer.privVal = types.NewErroringMockPV()
 		tc.mockPV = types.NewErroringMockPV()
@@ -372,7 +374,7 @@ func TestSignerSignProposalErrors(t *testing.T) {
 }
 
 func TestSignerSignVoteErrors(t *testing.T) {
-	for _, tc := range getSignerTestCases(t) {
+	for _, tc := range getSignerTestCases(t, true) {
 		ts := time.Now()
 		hash := tmrand.Bytes(tmhash.Size)
 		valAddr := tmrand.Bytes(crypto.AddressSize)
@@ -437,11 +439,13 @@ func brokenHandler(privVal types.PrivValidator, request privvalproto.Message,
 }
 
 func TestSignerUnexpectedResponse(t *testing.T) {
-	for _, tc := range getSignerTestCases(t) {
+	for _, tc := range getSignerTestCases(t, false) {
+		// this should be executed before SignerServer starts to avoid race condition
 		tc.signerServer.privVal = types.NewMockPV()
 		tc.mockPV = types.NewMockPV()
 
 		tc.signerServer.SetRequestHandler(brokenHandler)
+		tc.signerServer.Start()
 
 		tc := tc
 		t.Cleanup(func() {
