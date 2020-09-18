@@ -301,6 +301,7 @@ func execBlockOnProxyApp(
 		return nil, err
 	}
 
+	startTime := time.Now()
 	// Run txs of block.
 	for _, tx := range block.Txs {
 		proxyAppConn.DeliverTxAsync(abci.RequestDeliverTx{Tx: tx})
@@ -308,6 +309,8 @@ func execBlockOnProxyApp(
 			return nil, err
 		}
 	}
+	endTime := time.Now()
+	execTime := endTime.Sub(startTime)
 
 	// End block.
 	abciResponses.EndBlock, err = proxyAppConn.EndBlockSync(abci.RequestEndBlock{Height: block.Height})
@@ -316,7 +319,7 @@ func execBlockOnProxyApp(
 		return nil, err
 	}
 
-	logger.Info("Executed block", "height", block.Height, "validTxs", validTxs, "invalidTxs", invalidTxs)
+	logger.Info("Executed block", "height", block.Height, "validTxs", validTxs, "invalidTxs", invalidTxs, "execTime", execTime)
 
 	return abciResponses, nil
 }
