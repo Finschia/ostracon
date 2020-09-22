@@ -198,7 +198,7 @@ func ElectVotersNonDup(candidates []Candidate, seed, tolerableByzantinePercent u
 		losersPriorities -= winner.Priority()
 
 		//sort voters in ascending votingPower/stakingPower
-		sortVoters(voters)
+		voters = sortVoters(voters)
 		totalWinPoint := float64(0)
 
 		//calculateVotingPowers(voters)
