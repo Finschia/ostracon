@@ -76,7 +76,7 @@ type StepDuration struct {
 }
 
 func (sd *StepDuration) GetDuration() float64 {
-	return float64(sd.end.Sub(sd.start).Milliseconds())
+	return float64(sd.end.Sub(sd.start).Microseconds()) / 1000
 }
 
 func (sd *StepDuration) SetStart(start time.Time) {
@@ -96,14 +96,11 @@ type StepTimes struct {
 	ProposalVerifying       StepDuration
 	ProposalBlockReceiving  StepDuration
 	PrevoteBlockVerifying   StepDuration
-	PrevoteSigning          StepDuration
 	PrevoteReceiving        StepDuration
 	PrecommitBlockVerifying StepDuration
-	PrecommitSigning        StepDuration
 	PrecommitReceiving      StepDuration
 	CommitBlockVerifying    StepDuration
-	CommitBlockSaving       StepDuration
-	CommitBlockExecuting    StepDuration
+	CommitBlockApplying     StepDuration
 }
 
 // State handles execution of the consensus algorithm.
@@ -1317,10 +1314,8 @@ func (cs *State) defaultDoPrevote(height int64, round int32) {
 	// NOTE: the proposal signature is validated when it is received,
 	// and the proposal block parts are validated as they are received (against the merkle hash in the proposal)
 	logger.Debug("prevote step: ProposalBlock is valid")
-	cs.stepTimes.PrevoteSigning.SetStart(cs.stepTimes.PrevoteBlockVerifying.end)
 	cs.signAddVote(tmproto.PrevoteType, cs.ProposalBlock.Hash(), cs.ProposalBlockParts.Header())
-	cs.stepTimes.PrevoteSigning.SetEnd(tmtime.Now())
-	cs.stepTimes.PrevoteReceiving.SetStart(cs.stepTimes.PrevoteSigning.end)
+	cs.stepTimes.PrevoteReceiving.SetStart(cs.stepTimes.PrevoteBlockVerifying.end)
 }
 
 // Enter: any +2/3 prevotes at next round.
@@ -1420,9 +1415,7 @@ func (cs *State) enterPrecommit(height int64, round int32) {
 			}
 		}
 
-		cs.stepTimes.PrecommitSigning.SetStart(tmtime.Now())
 		cs.signAddVote(tmproto.PrecommitType, nil, types.PartSetHeader{})
-		cs.stepTimes.PrecommitSigning.SetEnd(tmtime.Now())
 		return
 	}
 
@@ -1437,10 +1430,8 @@ func (cs *State) enterPrecommit(height int64, round int32) {
 			logger.Error("failed publishing event relock", "err", err)
 		}
 
-		cs.stepTimes.PrecommitSigning.SetStart(tmtime.Now())
 		cs.signAddVote(tmproto.PrecommitType, blockID.Hash, blockID.PartSetHeader)
-		cs.stepTimes.PrecommitSigning.SetEnd(tmtime.Now())
-		cs.stepTimes.PrecommitReceiving.SetStart(cs.stepTimes.PrecommitSigning.end)
+		cs.stepTimes.PrecommitReceiving.SetStart(tmtime.Now())
 		return
 	}
 
@@ -1464,10 +1455,8 @@ func (cs *State) enterPrecommit(height int64, round int32) {
 			logger.Error("failed publishing event lock", "err", err)
 		}
 
-		cs.stepTimes.PrecommitSigning.SetStart(cs.stepTimes.PrecommitBlockVerifying.end)
 		cs.signAddVote(tmproto.PrecommitType, blockID.Hash, blockID.PartSetHeader)
-		cs.stepTimes.PrecommitSigning.SetEnd(tmtime.Now())
-		cs.stepTimes.PrecommitReceiving.SetStart(cs.stepTimes.PrecommitSigning.end)
+		cs.stepTimes.PrecommitReceiving.SetStart(tmtime.Now())
 		return
 	}
 
@@ -1656,7 +1645,6 @@ func (cs *State) finalizeCommit(height int64) {
 
 	fail.Fail() // XXX
 
-	cs.stepTimes.CommitBlockSaving.SetStart(cs.stepTimes.CommitBlockVerifying.end)
 	// Save to blockStore.
 	if cs.blockStore.Height() < block.Height {
 		// NOTE: the seenCommit is local justification to commit this block,
@@ -1694,14 +1682,12 @@ func (cs *State) finalizeCommit(height int64) {
 
 	fail.Fail() // XXX
 
-	cs.stepTimes.CommitBlockSaving.SetEnd(tmtime.Now())
-
 	// Create a copy of the state for staging and an event cache for txs.
 	stateCopy := cs.state.Copy()
 
 	// Execute and commit the block, update and save the state, and update the mempool.
 	// NOTE The block.AppHash wont reflect these txs until the next block.
-	cs.stepTimes.CommitBlockExecuting.SetStart(cs.stepTimes.CommitBlockSaving.end)
+	cs.stepTimes.CommitBlockApplying.SetStart(tmtime.Now())
 	var (
 		err          error
 		retainHeight int64
@@ -1719,7 +1705,7 @@ func (cs *State) finalizeCommit(height int64) {
 		logger.Error("failed to apply block", "err", err)
 		return
 	}
-	cs.stepTimes.CommitBlockExecuting.SetEnd(tmtime.Now())
+	cs.stepTimes.CommitBlockApplying.SetEnd(tmtime.Now())
 
 	fail.Fail() // XXX
 
@@ -1875,18 +1861,15 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 	cs.metrics.BlockSizeBytes.Set(float64(block.Size()))
 	cs.metrics.CommittedHeight.Set(float64(block.Height))
 
-	cs.metrics.ProposalWaiting.Set(cs.stepTimes.ProposalWaiting.GetDuration())
-	cs.metrics.ProposalVerifying.Set(cs.stepTimes.ProposalVerifying.GetDuration())
-	cs.metrics.ProposalBlockReceiving.Set(cs.stepTimes.ProposalBlockReceiving.GetDuration())
-	cs.metrics.PrevoteBlockVerifying.Set(cs.stepTimes.PrevoteBlockVerifying.GetDuration())
-	cs.metrics.PrevoteSigning.Set(cs.stepTimes.PrevoteSigning.GetDuration())
-	cs.metrics.PrevoteReceiving.Set(cs.stepTimes.PrevoteReceiving.GetDuration())
-	cs.metrics.PrecommitBlockVerifying.Set(cs.stepTimes.PrecommitBlockVerifying.GetDuration())
-	cs.metrics.PrecommitSigning.Set(cs.stepTimes.PrecommitSigning.GetDuration())
-	cs.metrics.PrecommitReceiving.Set(cs.stepTimes.PrecommitReceiving.GetDuration())
-	cs.metrics.CommitBlockVerifying.Set(cs.stepTimes.CommitBlockVerifying.GetDuration())
-	cs.metrics.CommitBlockSaving.Set(cs.stepTimes.CommitBlockSaving.GetDuration())
-	cs.metrics.CommitBlockExecuting.Set(cs.stepTimes.CommitBlockExecuting.GetDuration())
+	cs.metrics.ProposalWaiting.Observe(cs.stepTimes.ProposalWaiting.GetDuration())
+	cs.metrics.ProposalVerifying.Observe(cs.stepTimes.ProposalVerifying.GetDuration())
+	cs.metrics.ProposalBlockReceiving.Observe(cs.stepTimes.ProposalBlockReceiving.GetDuration())
+	cs.metrics.PrevoteBlockVerifying.Observe(cs.stepTimes.PrevoteBlockVerifying.GetDuration())
+	cs.metrics.PrevoteReceiving.Observe(cs.stepTimes.PrevoteReceiving.GetDuration())
+	cs.metrics.PrecommitBlockVerifying.Observe(cs.stepTimes.PrecommitBlockVerifying.GetDuration())
+	cs.metrics.PrecommitReceiving.Observe(cs.stepTimes.PrecommitReceiving.GetDuration())
+	cs.metrics.CommitBlockVerifying.Observe(cs.stepTimes.CommitBlockVerifying.GetDuration())
+	cs.metrics.CommitBlockApplying.Observe(cs.stepTimes.CommitBlockApplying.GetDuration())
 }
 
 //-----------------------------------------------------------------------------

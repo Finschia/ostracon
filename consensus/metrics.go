@@ -67,18 +67,15 @@ type Metrics struct {
 	BlockParts metrics.Counter
 
 	// Execution time profiling of each step
-	ProposalWaiting         metrics.Gauge
-	ProposalVerifying       metrics.Gauge
-	ProposalBlockReceiving  metrics.Gauge
-	PrevoteBlockVerifying   metrics.Gauge
-	PrevoteSigning          metrics.Gauge
-	PrevoteReceiving        metrics.Gauge
-	PrecommitBlockVerifying metrics.Gauge
-	PrecommitSigning        metrics.Gauge
-	PrecommitReceiving      metrics.Gauge
-	CommitBlockVerifying    metrics.Gauge
-	CommitBlockSaving       metrics.Gauge
-	CommitBlockExecuting    metrics.Gauge
+	ProposalWaiting         metrics.Histogram
+	ProposalVerifying       metrics.Histogram
+	ProposalBlockReceiving  metrics.Histogram
+	PrevoteBlockVerifying   metrics.Histogram
+	PrevoteReceiving        metrics.Histogram
+	PrecommitBlockVerifying metrics.Histogram
+	PrecommitReceiving      metrics.Histogram
+	CommitBlockVerifying    metrics.Histogram
+	CommitBlockApplying     metrics.Histogram
 }
 
 // PrometheusMetrics returns Metrics build using Prometheus client library.
@@ -217,77 +214,68 @@ func PrometheusMetrics(namespace string, labelsAndValues ...string) *Metrics {
 			Name:      "block_parts",
 			Help:      "Number of blockparts transmitted by peer.",
 		}, append(labels, "peer_id")).With(labelsAndValues...),
-		ProposalWaiting: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+		ProposalWaiting: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
 			Name:      "duration_proposal_waiting",
 			Help:      "Duration between enterNewRound and receiving proposal",
+			Buckets:   stdprometheus.LinearBuckets(1, 100, 10),
 		}, labels).With(labelsAndValues...),
-		ProposalVerifying: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+		ProposalVerifying: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
 			Name:      "duration_proposal_verifying",
 			Help:      "Duration of ValidBlock",
+			Buckets:   stdprometheus.LinearBuckets(1, 50, 10),
 		}, labels).With(labelsAndValues...),
-		ProposalBlockReceiving: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+		ProposalBlockReceiving: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
 			Name:      "duration_proposal_block_receiving",
 			Help:      "Duration of receiving all proposal block parts",
+			Buckets:   stdprometheus.LinearBuckets(1, 100, 10),
 		}, labels).With(labelsAndValues...),
-		PrevoteBlockVerifying: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+		PrevoteBlockVerifying: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
 			Name:      "duration_prevote_block_verifying",
 			Help:      "Duration of ValidBlock in prevote",
+			Buckets:   stdprometheus.LinearBuckets(1, 50, 10),
 		}, labels).With(labelsAndValues...),
-		PrevoteSigning: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
-			Namespace: namespace,
-			Subsystem: MetricsSubsystem,
-			Name:      "duration_prevote_signing",
-			Help:      "Duration of signing of prevote",
-		}, labels).With(labelsAndValues...),
-		PrevoteReceiving: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+		PrevoteReceiving: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
 			Name:      "duration_prevote_receiving",
 			Help:      "Duration of receiving 2/3+ prevotes",
+			Buckets:   stdprometheus.LinearBuckets(1, 100, 10),
 		}, labels).With(labelsAndValues...),
-		PrecommitBlockVerifying: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+		PrecommitBlockVerifying: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
 			Name:      "duration_precommit_block_verifying",
 			Help:      "Duration of ValidBlock in precommit",
+			Buckets:   stdprometheus.LinearBuckets(1, 50, 10),
 		}, labels).With(labelsAndValues...),
-		PrecommitSigning: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
-			Namespace: namespace,
-			Subsystem: MetricsSubsystem,
-			Name:      "duration_precommit_signing",
-			Help:      "Duration of signing of precommit",
-		}, labels).With(labelsAndValues...),
-		PrecommitReceiving: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+		PrecommitReceiving: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
 			Name:      "duration_precommit_receiving",
 			Help:      "Duration of receiving 2/3+ precommits",
+			Buckets:   stdprometheus.LinearBuckets(1, 100, 10),
 		}, labels).With(labelsAndValues...),
-		CommitBlockVerifying: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+		CommitBlockVerifying: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
 			Name:      "duration_commit_block_verifying",
 			Help:      "Duration of ValidBlock in commit",
+			Buckets:   stdprometheus.LinearBuckets(1, 50, 10),
 		}, labels).With(labelsAndValues...),
-		CommitBlockSaving: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+		CommitBlockApplying: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
-			Name:      "duration_commit_block_saving",
-			Help:      "Duration saving block",
-		}, labels).With(labelsAndValues...),
-		CommitBlockExecuting: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
-			Namespace: namespace,
-			Subsystem: MetricsSubsystem,
-			Name:      "duration_commit_block_executing",
+			Name:      "duration_commit_block_applying",
 			Help:      "Duration of applying block",
+			Buckets:   stdprometheus.LinearBuckets(1, 100, 10),
 		}, labels).With(labelsAndValues...),
 	}
 }
@@ -322,17 +310,14 @@ func NopMetrics() *Metrics {
 		StateSyncing:    discard.NewGauge(),
 		BlockParts:      discard.NewCounter(),
 
-		ProposalWaiting:         discard.NewGauge(),
-		ProposalVerifying:       discard.NewGauge(),
-		ProposalBlockReceiving:  discard.NewGauge(),
-		PrevoteBlockVerifying:   discard.NewGauge(),
-		PrevoteSigning:          discard.NewGauge(),
-		PrevoteReceiving:        discard.NewGauge(),
-		PrecommitBlockVerifying: discard.NewGauge(),
-		PrecommitSigning:        discard.NewGauge(),
-		PrecommitReceiving:      discard.NewGauge(),
-		CommitBlockVerifying:    discard.NewGauge(),
-		CommitBlockSaving:       discard.NewGauge(),
-		CommitBlockExecuting:    discard.NewGauge(),
+		ProposalWaiting:         discard.NewHistogram(),
+		ProposalVerifying:       discard.NewHistogram(),
+		ProposalBlockReceiving:  discard.NewHistogram(),
+		PrevoteBlockVerifying:   discard.NewHistogram(),
+		PrevoteReceiving:        discard.NewHistogram(),
+		PrecommitBlockVerifying: discard.NewHistogram(),
+		PrecommitReceiving:      discard.NewHistogram(),
+		CommitBlockVerifying:    discard.NewHistogram(),
+		CommitBlockApplying:     discard.NewHistogram(),
 	}
 }
