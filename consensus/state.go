@@ -71,23 +71,28 @@ type evidencePool interface {
 }
 
 type StepDuration struct {
-	start time.Time
-	end   time.Time
+	started bool
+	start   time.Time
+	end     time.Time
 }
 
 func (sd *StepDuration) GetDuration() float64 {
-	return float64(sd.end.Sub(sd.start).Microseconds()) / 1000
+	if sd.started {
+		return float64(sd.end.Sub(sd.start).Microseconds()) / 1000
+	}
+	return 0
 }
 
 func (sd *StepDuration) SetStart(start time.Time) {
 	sd.start = start
-	sd.end = start
+	sd.started = true
 }
 
 func (sd *StepDuration) SetEnd(end time.Time) {
-	if sd.start.Equal(sd.end) {
+	if sd.started {
 		// update only once at first; it will be reset when Start is re-assigned
 		sd.end = end
+		sd.started = false
 	}
 }
 
