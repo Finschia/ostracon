@@ -122,7 +122,7 @@ func TestElectVotersNonDupCandidate(t *testing.T) {
 func TestElectVotersNonDupSamplingThreshold(t *testing.T) {
 	candidates := newCandidates(100, func(i int) uint64 { return uint64(1000 * (i + 1)) })
 
-	for i := uint64(1); i <= 30; i++ {
+	for i := uint64(1); i <= 20; i++ {
 		winners := ElectVotersNonDup(candidates, 0, i)
 		assert.True(t, !isByzantine(winners, sumTotalPriority(candidates), i))
 		resetPoints(candidates)
