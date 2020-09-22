@@ -251,8 +251,13 @@ build-linux:
 	if [ ! -d $(SRCPATH)/crypto/bls/internal/bls-eth-go-binary ]; then \
 		mkdir -p $(SRCPATH)/crypto/bls/internal && \
 		git clone https://github.com/herumi/mcl $(SRCPATH)/crypto/bls/internal/mcl && \
+		cd $(SRCPATH)/crypto/bls/internal/mcl && \
+		git reset --hard 10621c6299d3db1c88fd0c27e63654edada08049 && \
 		git clone https://github.com/herumi/bls $(SRCPATH)/crypto/bls/internal/bls && \
-		git clone https://github.com/herumi/bls-eth-go-binary $(SRCPATH)/crypto/bls/internal/bls-eth-go-binary; \
+		git clone https://github.com/herumi/bls-eth-go-binary $(SRCPATH)/crypto/bls/internal/bls-eth-go-binary && \
+		cd $(SRCPATH)/crypto/bls/internal/bls-eth-go-binary && \
+		git reset --hard 41fc56eba7b48e65e410ef11cf5042d62e887017 && \
+		cd  $(SRCPATH); \
 	fi
 
 	# Build Linux binary
