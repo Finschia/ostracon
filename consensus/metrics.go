@@ -66,7 +66,14 @@ type Metrics struct {
 	// Number of blockparts transmitted by peer.
 	BlockParts metrics.Counter
 
+	// Number of blocks that are we couldn't receive
+	MissingProposal metrics.Gauge
+
+	// Number of rounds turned over.
+	RoundFailures metrics.Histogram
+
 	// Execution time profiling of each step
+	ProposalCreating        metrics.Histogram
 	ProposalWaiting         metrics.Histogram
 	ProposalVerifying       metrics.Histogram
 	ProposalBlockReceiving  metrics.Histogram
@@ -214,68 +221,88 @@ func PrometheusMetrics(namespace string, labelsAndValues ...string) *Metrics {
 			Name:      "block_parts",
 			Help:      "Number of blockparts transmitted by peer.",
 		}, append(labels, "peer_id")).With(labelsAndValues...),
+		MissingProposal: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "missing_proposal",
+			Help:      "Number of blocks we couldn't receive",
+		}, labels).With(labelsAndValues...),
+		RoundFailures: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "round_failures",
+			Help:      "Number of rounds failed on consensus",
+			Buckets:   stdprometheus.LinearBuckets(0, 1, 5),
+		}, labels).With(labelsAndValues...),
+		ProposalCreating: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "duration_proposal_creating",
+			Help:      "Duration of creating proposal and block",
+			Buckets:   stdprometheus.LinearBuckets(100, 100, 10),
+		}, labels).With(labelsAndValues...),
 		ProposalWaiting: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
 			Name:      "duration_proposal_waiting",
 			Help:      "Duration between enterNewRound and receiving proposal",
-			Buckets:   stdprometheus.LinearBuckets(1, 100, 10),
+			Buckets:   stdprometheus.LinearBuckets(100, 100, 10),
 		}, labels).With(labelsAndValues...),
 		ProposalVerifying: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
 			Name:      "duration_proposal_verifying",
 			Help:      "Duration of ValidBlock",
-			Buckets:   stdprometheus.LinearBuckets(1, 50, 10),
+			Buckets:   stdprometheus.LinearBuckets(50, 50, 10),
 		}, labels).With(labelsAndValues...),
 		ProposalBlockReceiving: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
 			Name:      "duration_proposal_block_receiving",
 			Help:      "Duration of receiving all proposal block parts",
-			Buckets:   stdprometheus.LinearBuckets(1, 100, 10),
+			Buckets:   stdprometheus.LinearBuckets(100, 100, 10),
 		}, labels).With(labelsAndValues...),
 		PrevoteBlockVerifying: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
 			Name:      "duration_prevote_block_verifying",
 			Help:      "Duration of ValidBlock in prevote",
-			Buckets:   stdprometheus.LinearBuckets(1, 50, 10),
+			Buckets:   stdprometheus.LinearBuckets(50, 50, 10),
 		}, labels).With(labelsAndValues...),
 		PrevoteReceiving: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
 			Name:      "duration_prevote_receiving",
 			Help:      "Duration of receiving 2/3+ prevotes",
-			Buckets:   stdprometheus.LinearBuckets(1, 100, 10),
+			Buckets:   stdprometheus.LinearBuckets(100, 100, 10),
 		}, labels).With(labelsAndValues...),
 		PrecommitBlockVerifying: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
 			Name:      "duration_precommit_block_verifying",
 			Help:      "Duration of ValidBlock in precommit",
-			Buckets:   stdprometheus.LinearBuckets(1, 50, 10),
+			Buckets:   stdprometheus.LinearBuckets(50, 50, 10),
 		}, labels).With(labelsAndValues...),
 		PrecommitReceiving: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
 			Name:      "duration_precommit_receiving",
 			Help:      "Duration of receiving 2/3+ precommits",
-			Buckets:   stdprometheus.LinearBuckets(1, 100, 10),
+			Buckets:   stdprometheus.LinearBuckets(100, 100, 10),
 		}, labels).With(labelsAndValues...),
 		CommitBlockVerifying: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
 			Name:      "duration_commit_block_verifying",
 			Help:      "Duration of ValidBlock in commit",
-			Buckets:   stdprometheus.LinearBuckets(1, 50, 10),
+			Buckets:   stdprometheus.LinearBuckets(50, 50, 10),
 		}, labels).With(labelsAndValues...),
 		CommitBlockApplying: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
 			Name:      "duration_commit_block_applying",
 			Help:      "Duration of applying block",
-			Buckets:   stdprometheus.LinearBuckets(1, 100, 10),
+			Buckets:   stdprometheus.LinearBuckets(100, 100, 10),
 		}, labels).With(labelsAndValues...),
 	}
 }
@@ -310,6 +337,10 @@ func NopMetrics() *Metrics {
 		StateSyncing:    discard.NewGauge(),
 		BlockParts:      discard.NewCounter(),
 
+		MissingProposal: discard.NewGauge(),
+		RoundFailures:   discard.NewHistogram(),
+
+		ProposalCreating:        discard.NewHistogram(),
 		ProposalWaiting:         discard.NewHistogram(),
 		ProposalVerifying:       discard.NewHistogram(),
 		ProposalBlockReceiving:  discard.NewHistogram(),

@@ -189,7 +189,7 @@ func (blockExec *BlockExecutor) ApplyBlock(
 		return state, 0, fmt.Errorf("commit failed for application: %v", err)
 	}
 	endTime = time.Now().UnixNano()
-	blockExec.metrics.BlockCommitingTime.Observe(float64(endTime-startTime) / 1000000)
+	blockExec.metrics.BlockCommittingTime.Observe(float64(endTime-startTime) / 1000000)
 
 	// Update evpool with the latest state.
 	blockExec.evpool.Update(state, block.Evidence.Evidence)

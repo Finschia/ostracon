@@ -20,7 +20,7 @@ type Metrics struct {
 	// Time between BeginBlock and EndBlock.
 	BlockProcessingTime metrics.Histogram
 	// Time of Commit
-	BlockCommitingTime metrics.Histogram
+	BlockCommittingTime metrics.Histogram
 }
 
 // PrometheusMetrics returns Metrics build using Prometheus client library.
@@ -31,9 +31,9 @@ func PrometheusMetrics(namespace string, labelsAndValues ...string) *Metrics {
 	for i := 0; i < len(labelsAndValues); i += 2 {
 		labels = append(labels, labelsAndValues[i])
 	}
-	compositeBuckets := stdprometheus.LinearBuckets(1, 20, 5)
-	compositeBuckets = append(compositeBuckets, stdprometheus.LinearBuckets(101, 100, 4)...)
-	compositeBuckets = append(compositeBuckets, stdprometheus.LinearBuckets(501, 500, 4)...)
+	compositeBuckets := stdprometheus.LinearBuckets(20, 20, 5)
+	compositeBuckets = append(compositeBuckets, stdprometheus.LinearBuckets(200, 100, 4)...)
+	compositeBuckets = append(compositeBuckets, stdprometheus.LinearBuckets(1000, 500, 4)...)
 
 	return &Metrics{
 		BlockVerifyingTime: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
@@ -41,7 +41,7 @@ func PrometheusMetrics(namespace string, labelsAndValues ...string) *Metrics {
 			Subsystem: MetricsSubsystem,
 			Name:      "block_verifying_time",
 			Help:      "Time of ValidBlock in ms.",
-			Buckets:   stdprometheus.LinearBuckets(1, 50, 10),
+			Buckets:   stdprometheus.LinearBuckets(50, 50, 10),
 		}, labels).With(labelsAndValues...),
 		BlockProcessingTime: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
 			Namespace: namespace,
@@ -50,12 +50,12 @@ func PrometheusMetrics(namespace string, labelsAndValues ...string) *Metrics {
 			Help:      "Time between BeginBlock and EndBlock in ms.",
 			Buckets:   compositeBuckets,
 		}, labels).With(labelsAndValues...),
-		BlockCommitingTime: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+		BlockCommittingTime: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
-			Name:      "block_commiting_time",
+			Name:      "block_committing_time",
 			Help:      "Time of Commit in ms.",
-			Buckets:   stdprometheus.LinearBuckets(1, 20, 10),
+			Buckets:   stdprometheus.LinearBuckets(20, 20, 10),
 		}, labels).With(labelsAndValues...),
 	}
 }
@@ -65,6 +65,6 @@ func NopMetrics() *Metrics {
 	return &Metrics{
 		BlockVerifyingTime:  discard.NewHistogram(),
 		BlockProcessingTime: discard.NewHistogram(),
-		BlockCommitingTime:  discard.NewHistogram(),
+		BlockCommittingTime: discard.NewHistogram(),
 	}
 }
