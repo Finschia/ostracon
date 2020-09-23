@@ -74,7 +74,7 @@ type StepDuration struct {
 }
 
 func (sd *StepDuration) GetDuration() float64 {
-	if sd.started {
+	if !sd.started && sd.end.After(sd.start) {
 		return float64(sd.end.Sub(sd.start).Microseconds())/1000
 	}
 	return 0
@@ -94,6 +94,8 @@ func (sd *StepDuration) SetEnd(end time.Time) {
 }
 
 type StepTimes struct {
+	ProposalCreatedByMyself bool
+	ProposalCreating        StepDuration
 	ProposalWaiting         StepDuration
 	ProposalVerifying       StepDuration
 	ProposalBlockReceiving  StepDuration
@@ -172,7 +174,7 @@ type State struct {
 	// for reporting metrics
 	metrics *Metrics
 
-	// starting time of each step
+	// times of each step
 	stepTimes StepTimes
 }
 
@@ -986,13 +988,14 @@ func (cs *State) enterPropose(height int64, round int) {
 			"privValidator",
 			cs.privValidator)
 		cs.decideProposal(height, round)
+		cs.stepTimes.ProposalCreatedByMyself = true
 	} else {
 		logger.Info("enterPropose: Not our turn to propose",
 			"proposer",
 			cs.Proposer.Address,
 			"privValidator",
 			cs.privValidator)
-
+		cs.stepTimes.ProposalCreatedByMyself = false
 	}
 
 	if !cs.Voters.HasAddress(address) {
@@ -1016,8 +1019,10 @@ func (cs *State) defaultDecideProposal(height int64, round int) {
 		block, blockParts = cs.ValidBlock, cs.ValidBlockParts
 	} else {
 		// Create a new proposal block from state/txs from the mempool.
+		cs.stepTimes.ProposalCreating.SetStart(tmtime.Now())
 		block, blockParts = cs.createProposalBlock(round)
 		if block == nil { // on error
+			cs.stepTimes.ProposalCreating.SetEnd(tmtime.Now())
 			return
 		}
 		cs.Logger.Info("Create Block", "Height", height, "Round", round,
@@ -1032,6 +1037,7 @@ func (cs *State) defaultDecideProposal(height int64, round int) {
 	propBlockID := types.BlockID{Hash: block.Hash(), PartsHeader: blockParts.Header()}
 	proposal := types.NewProposal(height, round, cs.ValidRound, propBlockID)
 	if err := cs.privValidator.SignProposal(cs.state.ChainID, proposal); err == nil {
+		cs.stepTimes.ProposalCreating.SetEnd(tmtime.Now())
 
 		// send proposal and block parts on internal msg queue
 		cs.sendInternalMessage(msgInfo{&ProposalMessage{proposal}, ""})
@@ -1042,6 +1048,7 @@ func (cs *State) defaultDecideProposal(height int64, round int) {
 		cs.Logger.Info("Signed proposal", "height", height, "round", round, "proposal", proposal)
 		cs.Logger.Debug(fmt.Sprintf("Signed proposal block: %v", block))
 	} else if !cs.replayMode {
+		cs.stepTimes.ProposalCreating.SetEnd(tmtime.Now())
 		cs.Logger.Error("enterPropose: Error signing proposal", "height", height, "round", round, "err", err)
 	}
 }
@@ -1148,8 +1155,13 @@ func (cs *State) defaultDoPrevote(height int64, round int) {
 
 	// If ProposalBlock is nil, prevote nil.
 	if cs.ProposalBlock == nil {
+		// if it already ends or not starts it will be ignored
+		cs.stepTimes.ProposalWaiting.SetEnd(tmtime.Now())
+		cs.stepTimes.ProposalBlockReceiving.SetEnd(cs.stepTimes.ProposalWaiting.end)
 		logger.Info("enterPrevote: ProposalBlock is nil")
 		cs.signAddVote(types.PrevoteType, nil, types.PartSetHeader{})
+		// increase missing proposal by one
+		cs.metrics.MissingProposal.Add(1)
 		return
 	}
 
@@ -1653,6 +1665,10 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 	cs.metrics.BlockSizeBytes.Set(float64(block.Size()))
 	cs.metrics.CommittedHeight.Set(float64(block.Height))
 
+	cs.metrics.RoundFailures.Observe(float64(cs.Round))
+	if cs.stepTimes.ProposalCreatedByMyself {
+		cs.metrics.ProposalCreating.Observe(cs.stepTimes.ProposalCreating.GetDuration())
+	}
 	cs.metrics.ProposalWaiting.Observe(cs.stepTimes.ProposalWaiting.GetDuration())
 	cs.metrics.ProposalVerifying.Observe(cs.stepTimes.ProposalVerifying.GetDuration())
 	cs.metrics.ProposalBlockReceiving.Observe(cs.stepTimes.ProposalBlockReceiving.GetDuration())
@@ -1696,7 +1712,6 @@ func (cs *State) defaultSetProposal(proposal *types.Proposal) error {
 		return ErrInvalidProposalSignature
 	}
 	cs.stepTimes.ProposalVerifying.SetEnd(tmtime.Now())
-
 
 	cs.Proposal = proposal
 	// We don't update cs.ProposalBlockParts if it is already set.
