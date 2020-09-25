@@ -249,8 +249,8 @@ build-shell:
 build-linux:
 	# Download, build and add the BSL local library to modules
 	rm -rf $(SRCPATH)/crypto/bls/internal/mcl
-        rm -rf $(SRCPATH)/crypto/bls/internal/bls
-        rm -rf $(SRCPATH)/crypto/bls/internal/bls-eth-go-binary
+	rm -rf $(SRCPATH)/crypto/bls/internal/bls
+	rm -rf $(SRCPATH)/crypto/bls/internal/bls-eth-go-binary
 	git clone https://github.com/herumi/mcl $(SRCPATH)/crypto/bls/internal/mcl && \
 	git clone https://github.com/herumi/bls $(SRCPATH)/crypto/bls/internal/bls && \
 	git clone https://github.com/herumi/bls-eth-go-binary $(SRCPATH)/crypto/bls/internal/bls-eth-go-binary; \
