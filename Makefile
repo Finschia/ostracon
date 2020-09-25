@@ -248,12 +248,12 @@ build-shell:
 
 build-linux:
 	# Download, build and add the BSL local library to modules
-	if [ ! -d $(SRCPATH)/crypto/bls/internal/bls-eth-go-binary ]; then \
-		mkdir -p $(SRCPATH)/crypto/bls/internal && \
-		git clone https://github.com/herumi/mcl $(SRCPATH)/crypto/bls/internal/mcl && \
-		git clone https://github.com/herumi/bls $(SRCPATH)/crypto/bls/internal/bls && \
-		git clone https://github.com/herumi/bls-eth-go-binary $(SRCPATH)/crypto/bls/internal/bls-eth-go-binary; \
-	fi
+	rm -rf $(SRCPATH)/crypto/bls/internal/mcl
+        rm -rf $(SRCPATH)/crypto/bls/internal/bls
+        rm -rf $(SRCPATH)/crypto/bls/internal/bls-eth-go-binary
+	git clone https://github.com/herumi/mcl $(SRCPATH)/crypto/bls/internal/mcl && \
+	git clone https://github.com/herumi/bls $(SRCPATH)/crypto/bls/internal/bls && \
+	git clone https://github.com/herumi/bls-eth-go-binary $(SRCPATH)/crypto/bls/internal/bls-eth-go-binary; \
 
 	# Build Linux binary
 	$(DOCKER_CMD) ${DOCKER_IMG} /bin/sh -c "$(BUILD_CMD)"
