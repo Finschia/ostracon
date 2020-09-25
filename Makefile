@@ -231,7 +231,7 @@ DOCKER_CMD = docker run --rm \
                         -v `pwd`:$(DOCKER_HOME) \
                         -w $(DOCKER_HOME)
 DOCKER_IMG = golang:1.14.6-alpine3.12
-BUILD_CMD = apk add --update --no-cache git make gcc libc-dev build-base curl jq file gmp-dev clang \
+BUILD_CMD = apk add --update --no-cache git make gcc libc-dev build-base curl jq file gmp-dev clang nasm \
 	&& cd crypto/bls/internal/bls-eth-go-binary \
 	&& make CXX=clang++ \
 	&& cd $(DOCKER_HOME) \
