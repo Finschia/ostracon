@@ -108,7 +108,7 @@ func ensureNoTxs(t *testing.T, reactor *Reactor, timeout time.Duration) {
 }
 
 const (
-	NumTxs  = 1000
+	NumTxs  = 100               // circleci failed too often with the value 1000
 	Timeout = 120 * time.Second // ridiculously high because CircleCI is slow
 )
 
