@@ -186,29 +186,41 @@ func TestPubKeyComposite_VRFVerify(t *testing.T) {
 func TestMy(t *testing.T) {
 	blsKey := bls.PrivKeyBLS12{}
 	vrfKey := ed25519.PrivKeyEd25519{}
-	blsKeyBinary := []byte{74, 34, 180, 175, 203, 92, 237, 211, 145, 23, 55, 92, 100, 6, 43, 241, 39, 218, 125, 31, 130, 120, 96, 248, 193, 51, 90, 185, 56, 18, 254, 90}
-	vrfKeyBinary := []byte{190, 183, 71, 79, 63, 127, 146, 85, 204, 90, 84, 59, 1, 183, 55, 243, 215, 132, 125, 80, 200, 246, 24, 142, 147, 52, 111, 98, 204, 19, 75, 137, 5, 246, 217, 51, 191, 52, 138, 206, 156, 9, 144, 130, 169, 214, 112, 138, 61, 41, 253, 76, 242, 178, 34, 145, 143, 159, 194, 70, 94, 47, 101, 40}
+	blsKeyBinary := []byte{74, 34, 180, 175, 203, 92, 237, 211, 145, 23, 55, 92, 100, 6, 43, 241, 39,
+		218, 125, 31, 130, 120, 96, 248, 193, 51, 90, 185, 56, 18, 254, 90}
+	vrfKeyBinary := []byte{190, 183, 71, 79, 63, 127, 146, 85, 204, 90, 84, 59, 1, 183, 55, 243, 215, 132, 125, 80,
+		200, 246, 24, 142, 147, 52, 111, 98, 204, 19, 75, 137, 5, 246, 217, 51, 191, 52, 138, 206, 156, 9, 144, 130,
+		169, 214, 112, 138, 61, 41, 253, 76, 242, 178, 34, 145, 143, 159, 194, 70, 94, 47, 101, 40}
 	copy(blsKey[:], blsKeyBinary)
 	copy(vrfKey[:], vrfKeyBinary)
 	privKey := composite.NewPrivKeyComposite(crypto.PrivKey(blsKey), crypto.PrivKey(vrfKey))
+
 	pubKey := privKey.PubKey()
 	address := pubKey.Address()
+
 	sampleVote := types.Vote{}
 	sampleVote.Height = 1
 	sampleVote.ValidatorIndex = 1
-	sampleVote.BlockID = types.BlockID{Hash: address.Bytes(), PartsHeader: types.PartSetHeader{Total: 1, Hash: address.Bytes()}}
+	sampleVote.BlockID = types.BlockID{
+		Hash:        address.Bytes(),
+		PartsHeader: types.PartSetHeader{Total: 1, Hash: address.Bytes()}}
 	sampleVote.Round = 0
 	sampleVote.Timestamp = time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
 	sampleVote.Type = types.PrevoteType
 	sampleVote.ValidatorAddress = address
+
 	signBytes := sampleVote.SignBytes("chainid")
 	sampleVote.Signature, _ = privKey.Sign(signBytes)
 	t.Logf("pubKey: %X", pubKey.Bytes())
 	t.Logf("vote: %X", sampleVote.SignBytes("chainid"))
 	t.Logf("vote signature: %X", sampleVote.Signature)
-	pubKeyBytes, _ := hex.DecodeString("D68FFBC130B25FCC05C88BE1D2CF5D53BC8E07A67C43F0FC1CD210A7E885FADA369B959FA74E7FF3ACF4BF9A96353D170B9D5C69701624DE642005F6D933BF348ACE9C099082A9D6708A3D29FD4CF2B222918F9FC2465E2F6528")
-	voteBytes, _ := hex.DecodeString("46080111010000000000000022300A14D9FB38E2F84230D6165FAD29072C9318EED18F5F12180A14D9FB38E2F84230D6165FAD29072C9318EED18F5F10013207636861696E6964")
-	signatureBytes, _ := hex.DecodeString("83AD3675D4AB4E0C3F9052BF29BE26A209258690DD89D619E64206A2FFFA7E3E8626D546340B44A1DCE4B39543630518123316C5A40EDFB3DE38015C6E1357C14DECD9A9A97949DAF40BDA755DC866AFD12963D85583C2E649138BBCAA27A9B0")
+	pubKeyBytes, _ := hex.DecodeString("D68FFBC130B25FCC05C88BE1D2CF5D53BC8E07A67C43F0FC1CD210A7E885FADA369B959F" +
+		"A74E7FF3ACF4BF9A96353D170B9D5C69701624DE642005F6D933BF348ACE9C099082A9D6708A3D29FD4CF2B222918F9FC2465E2F6528")
+	voteBytes, _ := hex.DecodeString("46080111010000000000000022300A14D9FB38E2F84230D6165FAD29072C9318EED18F5F12" +
+		"180A14D9FB38E2F84230D6165FAD29072C9318EED18F5F10013207636861696E6964")
+	signatureBytes, _ := hex.DecodeString("83AD3675D4AB4E0C3F9052BF29BE26A209258690DD89D619E64206A2FFFA7E3E8626D" +
+		"546340B44A1DCE4B39543630518123316C5A40EDFB3DE38015C6E1357C14DECD9A9A97949DAF40BDA755DC866AFD12963D85583C2E6" +
+		"49138BBCAA27A9B0")
 	assert.Equal(t, pubKey.Bytes(), pubKeyBytes)
 	assert.Equal(t, sampleVote.SignBytes("chainid"), voteBytes)
 	assert.Equal(t, sampleVote.Signature, signatureBytes)
