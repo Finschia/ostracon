@@ -231,7 +231,7 @@ DOCKER_CMD = docker run --rm \
                         -v `pwd`:$(DOCKER_HOME) \
                         -w $(DOCKER_HOME)
 DOCKER_IMG = golang:1.14.6-alpine3.12
-BUILD_CMD = apk add --update --no-cache git make gcc libc-dev build-base curl jq file gmp-dev clang nasm \
+BUILD_CMD = apk add --update --no-cache git make gcc libc-dev build-base curl jq file gmp-dev clang \
 	&& cd crypto/bls/internal/bls-eth-go-binary \
 	&& make CXX=clang++ \
 	&& cd $(DOCKER_HOME) \
@@ -248,20 +248,27 @@ build-shell:
 
 build-linux:
 	# Download, build and add the BSL local library to modules
-	rm -rf $(SRCPATH)/crypto/bls/internal/mcl
-	rm -rf $(SRCPATH)/crypto/bls/internal/bls
-	rm -rf $(SRCPATH)/crypto/bls/internal/bls-eth-go-binary
-	git clone https://github.com/herumi/mcl $(SRCPATH)/crypto/bls/internal/mcl && \
-	git clone https://github.com/herumi/bls $(SRCPATH)/crypto/bls/internal/bls && \
-	git clone https://github.com/herumi/bls-eth-go-binary $(SRCPATH)/crypto/bls/internal/bls-eth-go-binary; \
+	if [ ! -d $(SRCPATH)/crypto/bls/internal ]; then \
+		mkdir -p $(SRCPATH)/crypto/bls/internal && \
+		git clone https://github.com/herumi/mcl $(SRCPATH)/crypto/bls/internal/mcl && \
+		cd $(SRCPATH)/crypto/bls/internal/mcl && \
+		git checkout d51fd79c86954a443b1c7ce67d7bcdb8a63ddedb && \
+		cd .. && \
+		git clone https://github.com/herumi/bls $(SRCPATH)/crypto/bls/internal/bls && \
+		cd $(SRCPATH)/crypto/bls/internal/bls && \
+		git checkout accfc25c06c017f2686bb59c5106655293dd47d3 && \
+		cd .. && \
+		git clone https://github.com/herumi/bls-eth-go-binary $(SRCPATH)/crypto/bls/internal/bls-eth-go-binary && \
+		cd $(SRCPATH)/crypto/bls/internal/bls-eth-go-binary && \
+		git checkout 01d282b5380b0b0a59a880a2a645143807595ff3 && \
+		cd ..; \
+	fi
 
 	# Build Linux binary
 	$(DOCKER_CMD) ${DOCKER_IMG} /bin/sh -c "$(BUILD_CMD)"
 
 	# Remove the BLS local library from modules
-	rm -rf $(SRCPATH)/crypto/bls/internal/mcl
-	rm -rf $(SRCPATH)/crypto/bls/internal/bls
-	rm -rf $(SRCPATH)/crypto/bls/internal/bls-eth-go-binary
+	rm -rf $(SRCPATH)/crypto/bls/internal
 .PHONY: build-linux
 
 build-docker-localnode:
