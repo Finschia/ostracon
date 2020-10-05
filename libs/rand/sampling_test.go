@@ -105,11 +105,11 @@ func TestDivider(t *testing.T) {
 func TestRandomThreshold(t *testing.T) {
 	loopCount := 100000
 
-	// randomThreshold() should not return a value greater than total.
+	// RandomThreshold() should not return a value greater than total.
 	for i := 0; i < loopCount; i++ {
 		seed := rand.Uint64()
 		total := rand.Int63()
-		random := randomThreshold(&seed, uint64(total))
+		random := RandomThreshold(&seed, uint64(total))
 		assert.True(t, random < uint64(total))
 	}
 
@@ -118,7 +118,7 @@ func TestRandomThreshold(t *testing.T) {
 	bitHit := make([]int, 63)
 	for i := 0; i < loopCount; i++ {
 		seed := rand.Uint64()
-		random := randomThreshold(&seed, uint64(total))
+		random := RandomThreshold(&seed, uint64(total))
 		for j := 0; j < 63; j++ {
 			if random&(1<<j) > 0 {
 				bitHit[j]++
@@ -140,7 +140,7 @@ func TestRandomThreshold(t *testing.T) {
 	for i := 0; i < len(expect); i++ {
 		seed := uint64(i)
 		for j := 0; j < len(expect[i]); j++ {
-			seed = randomThreshold(&seed, uint64(total))
+			seed = RandomThreshold(&seed, uint64(total))
 			assert.True(t, seed == expect[i][j])
 		}
 	}
