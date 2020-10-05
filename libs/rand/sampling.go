@@ -10,7 +10,6 @@ import (
 type Candidate interface {
 	Priority() uint64
 	LessThan(other Candidate) bool
-	SetWinPoint(winPoint float64)
 }
 
 // Select a specified number of candidates randomly from the candidate set based on each priority. This function is
@@ -32,7 +31,7 @@ func RandomSamplingWithPriority(
 	thresholds := make([]uint64, sampleSize)
 	for i := 0; i < sampleSize; i++ {
 		// calculating [gross weights] × [(0,1] random number]
-		thresholds[i] = randomThreshold(&seed, totalPriority)
+		thresholds[i] = RandomThreshold(&seed, totalPriority)
 	}
 	s.Slice(thresholds, func(i, j int) bool { return thresholds[i] < thresholds[j] })
 
@@ -74,16 +73,12 @@ func init() {
 	divider.Add(divider, big.NewInt(1))
 }
 
-func randomThreshold(seed *uint64, total uint64) uint64 {
+func RandomThreshold(seed *uint64, total uint64) uint64 {
 	totalBig := new(big.Int).SetUint64(total)
 	a := new(big.Int).SetUint64(nextRandom(seed) & uint64Mask)
 	a.Mul(a, totalBig)
 	a.Div(a, divider)
 	return a.Uint64()
-}
-
-func RandomThreshold(seed *uint64, total uint64) uint64 {
-	return randomThreshold(seed, total)
 }
 
 // SplitMix64

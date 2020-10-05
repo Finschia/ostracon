@@ -642,8 +642,14 @@ func resetPoints(validators *ValidatorSet) {
 	}
 }
 
-func isByzantine(voters []voter, totalPriority, tolerableByzantinePercent int64) bool {
+func isByzantine(validators []*Validator, totalPriority, tolerableByzantinePercent int64) bool {
 	tolerableByzantinePower := totalPriority * tolerableByzantinePercent / 100
+	voters := make([]voter, len(validators))
+	for i, v := range validators {
+		voters[i] = voter{
+			val: v,
+		}
+	}
 	topFVotersVotingPower := countVoters(voters, tolerableByzantinePower)
 	return topFVotersVotingPower >= totalPriority/3
 }
@@ -723,9 +729,6 @@ func TestElectVotersNonDupOverflow(t *testing.T) {
 	assert.True(t, totalPriority < math.MaxInt64)
 	winners := electVotersNonDup(candidates, rand.Uint64(), 20)
 	assert.True(t, !isByzantine(winners, totalPriority, 20))
-	for _, w := range winners {
-		assert.True(t, w.winPoint > 0)
-	}
 }
 
 //func accumulateAndResetReward(voters []voter, acc []uint64) uint64 {
@@ -903,27 +906,24 @@ func newValidatorSet(length int, prio func(int) int64) *ValidatorSet {
 	}
 }
 
-func sameVoters(c1 []voter, c2 []voter) bool {
+func sameVoters(c1 []*Validator, c2 []*Validator) bool {
 	if len(c1) != len(c2) {
 		return false
 	}
 	s.Slice(c1, func(i, j int) bool {
-		return bytes.Compare(c1[i].val.Address.Bytes(), c1[j].val.Address.Bytes()) == -1
+		return bytes.Compare(c1[i].Address.Bytes(), c1[j].Address.Bytes()) == -1
 	})
 	s.Slice(c2, func(i, j int) bool {
-		return bytes.Compare(c2[i].val.Address.Bytes(), c2[j].val.Address.Bytes()) == -1
+		return bytes.Compare(c2[i].Address.Bytes(), c2[j].Address.Bytes()) == -1
 	})
 	for i := 0; i < len(c1); i++ {
-		if bytes.Compare(c1[i].val.Address.Bytes(), c2[i].val.Address.Bytes()) == 1 {
+		if bytes.Compare(c1[i].Address.Bytes(), c2[i].Address.Bytes()) == 1 {
 			return false
 		}
-		if c1[i].val.StakingPower != c2[i].val.StakingPower {
+		if c1[i].StakingPower != c2[i].StakingPower {
 			return false
 		}
-		if c1[i].winPoint != c2[i].winPoint {
-			return false
-		}
-		if c1[i].val.VotingPower != c2[i].val.VotingPower {
+		if c1[i].VotingPower != c2[i].VotingPower {
 			return false
 		}
 	}
@@ -932,13 +932,6 @@ func sameVoters(c1 []voter, c2 []voter) bool {
 
 func TestElectVotersNonDup(t *testing.T) {
 	candidates := newValidatorSet(5, func(i int) int64 { return 10 })
-	expectedPercentage := []float64{
-		0.262,
-		0.239,
-		0.210,
-		0.172,
-		0.114,
-	}
 	expectedVotingPower := []int64{
 		13,
 		11,
@@ -947,18 +940,12 @@ func TestElectVotersNonDup(t *testing.T) {
 		5,
 	}
 
-	totalWinPoint := float64(0)
 	byzantinePercent := int64(10)
 	voters := electVotersNonDup(candidates, 0, byzantinePercent)
 	assert.True(t, !isByzantine(voters, candidates.totalStakingPower, 10))
 
-	for _, voter := range voters {
-		totalWinPoint += voter.winPoint
-	}
-
 	for i, voter := range voters {
-		assert.True(t, expectedPercentage[i] == float64(int64(voter.winPoint*1000/totalWinPoint))/1000)
-		assert.True(t, expectedVotingPower[i] == voter.val.VotingPower)
+		assert.True(t, expectedVotingPower[i] == voter.VotingPower)
 	}
 
 }
@@ -976,7 +963,7 @@ func TestElectVoter(t *testing.T) {
 	//if fail to voting, panic
 	for i := range validators.Validators {
 		idx, winner := electVoter(&seed, candidates, i, total)
-		total -= winner.val.StakingPower
+		total -= winner.StakingPower
 		moveWinnerToLast(candidates, idx)
 	}
 }
