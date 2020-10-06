@@ -92,8 +92,16 @@ func DefaultNewNode(config *cfg.Config, logger log.Logger) (*Node, error) {
 		return nil, fmt.Errorf("failed to load or gen node key %s: %w", config.NodeKeyFile(), err)
 	}
 
-	return NewNode(config,
-		privval.LoadOrGenFilePV(config.PrivValidatorKeyFile(), config.PrivValidatorStateFile()),
+	privKey, err := privval.LoadOrGenFilePV(
+		config.PrivValidatorKeyFile(),
+		config.PrivValidatorStateFile(),
+		config.PrivValidatorKeyType())
+	if err != nil {
+		return nil, fmt.Errorf("failed to create a private key: %s", err)
+	}
+	return NewNode(
+		config,
+		privKey,
 		nodeKey,
 		proxy.DefaultClientCreator(config.ProxyApp, config.ABCI, config.DBDir()),
 		DefaultGenesisDocProviderFunc(config),
