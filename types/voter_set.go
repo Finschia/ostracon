@@ -628,11 +628,14 @@ func sortVoters(candidates []voter) []voter {
 	temp := make([]voter, len(candidates))
 	copy(temp, candidates)
 	sort.Slice(temp, func(i, j int) bool {
-		a := new(big.Int).Mul(big.NewInt(temp[i].val.VotingPower), big.NewInt(precisionForSelection))
-		a.Div(a, big.NewInt(temp[i].val.StakingPower))
-		b := new(big.Int).Mul(big.NewInt(temp[j].val.VotingPower), big.NewInt(precisionForSelection))
-		b.Div(b, big.NewInt(temp[j].val.StakingPower))
-		return a.Cmp(b) == 1
+		a, overflow1 := safeMul(temp[i].val.VotingPower, temp[j].val.StakingPower)
+		b, overflow2 := safeMul(temp[j].val.VotingPower, temp[i].val.StakingPower)
+		if !overflow1 && !overflow2 {
+			return a > b
+		}
+		bigA := new(big.Int).Mul(big.NewInt(temp[i].val.VotingPower), big.NewInt(temp[j].val.StakingPower))
+		bigB := new(big.Int).Mul(big.NewInt(temp[j].val.VotingPower), big.NewInt(temp[i].val.StakingPower))
+		return bigA.Cmp(bigB) == 1
 	})
 	return temp
 }

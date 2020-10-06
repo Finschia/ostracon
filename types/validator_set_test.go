@@ -1484,7 +1484,7 @@ func TestVerifyCommitTrusting(t *testing.T) {
 	require.NoError(t, err)
 
 	testCases := []struct {
-		//valSet *ValidatorSet
+		// valSet *ValidatorSet
 		voterSet *VoterSet
 		err      bool
 	}{
