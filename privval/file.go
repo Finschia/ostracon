@@ -28,7 +28,7 @@ const (
 )
 
 const (
-	PrevKeyTypeEd25519 string = "ed25519"
+	PrevKeyTypeEd25519   string = "ed25519"
 	PrevKeyTypeComposite string = "composite"
 )
 
