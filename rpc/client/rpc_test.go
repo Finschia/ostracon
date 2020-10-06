@@ -658,7 +658,8 @@ func TestBroadcastEvidenceDuplicateVote(t *testing.T) {
 	chainID := config.ChainID()
 	pvKeyFile := config.PrivValidatorKeyFile()
 	pvKeyStateFile := config.PrivValidatorStateFile()
-	pv := privval.LoadOrGenFilePV(pvKeyFile, pvKeyStateFile)
+	pvKeyType := config.PrivValidatorKeyType()
+	pv, _ := privval.LoadOrGenFilePV(pvKeyFile, pvKeyStateFile, pvKeyType)
 
 	ev, fakes := makeEvidences(t, pv, chainID)
 	t.Logf("evidence %v", ev)
