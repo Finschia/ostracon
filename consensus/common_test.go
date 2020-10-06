@@ -439,7 +439,8 @@ func loadPrivValidator(config *cfg.Config) *privval.FilePV {
 	privValidatorKeyFile := config.PrivValidatorKeyFile()
 	ensureDir(filepath.Dir(privValidatorKeyFile), 0700)
 	privValidatorStateFile := config.PrivValidatorStateFile()
-	privValidator := privval.LoadOrGenFilePV(privValidatorKeyFile, privValidatorStateFile)
+	privKeyType := config.PrivValidatorKeyType()
+	privValidator, _ := privval.LoadOrGenFilePV(privValidatorKeyFile, privValidatorStateFile, privKeyType)
 	privValidator.Reset()
 	return privValidator
 }
@@ -835,7 +836,7 @@ func randConsensusNetWithPeers(
 				panic(err)
 			}
 
-			privVal = privval.GenFilePV(tempKeyFile.Name(), tempStateFile.Name())
+			privVal, _ = privval.GenFilePV(tempKeyFile.Name(), tempStateFile.Name(), privval.PrevKeyTypeEd25519)
 		}
 
 		app := appFunc(path.Join(config.DBDir(), fmt.Sprintf("%s_%d", testName, i)))
