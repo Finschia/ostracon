@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"strings"
 	"time"
 
 	"github.com/tendermint/tendermint/crypto"
@@ -24,6 +25,11 @@ const (
 	stepPropose   int8 = 1
 	stepPrevote   int8 = 2
 	stepPrecommit int8 = 3
+)
+
+const (
+	PrevKeyTypeEd25519 string = "ed25519"
+	PrevKeyTypeComposite string = "composite"
 )
 
 // A vote is either stepPrevote or stepPrecommit.
@@ -151,10 +157,15 @@ type FilePV struct {
 
 // GenFilePV generates a new validator with randomly generated private key
 // and sets the filePaths, but does not call Save().
-func GenFilePV(keyFilePath, stateFilePath string) *FilePV {
-	signKey := bls.GenPrivKey()
-	vrfKey := ed25519.GenPrivKey()
-	privKey := composite.NewPrivKeyComposite(signKey, vrfKey)
+func GenFilePV(keyFilePath, stateFilePath, privKeyType string) (filePV *FilePV, err error) {
+	var privKey crypto.PrivKey
+	if strings.EqualFold(privKeyType, PrevKeyTypeEd25519) {
+		privKey = ed25519.GenPrivKey()
+	} else if strings.EqualFold(privKeyType, PrevKeyTypeComposite) {
+		privKey = composite.NewPrivKeyComposite(bls.GenPrivKey(), ed25519.GenPrivKey())
+	} else {
+		return nil, fmt.Errorf("undefined private key type: %s", privKeyType)
+	}
 
 	return &FilePV{
 		Key: FilePVKey{
@@ -167,7 +178,7 @@ func GenFilePV(keyFilePath, stateFilePath string) *FilePV {
 			Step:     stepNone,
 			filePath: stateFilePath,
 		},
-	}
+	}, nil
 }
 
 // LoadFilePV loads a FilePV from the filePaths.  The FilePV handles double
@@ -222,15 +233,17 @@ func loadFilePV(keyFilePath, stateFilePath string, loadState bool) *FilePV {
 
 // LoadOrGenFilePV loads a FilePV from the given filePaths
 // or else generates a new one and saves it to the filePaths.
-func LoadOrGenFilePV(keyFilePath, stateFilePath string) *FilePV {
-	var pv *FilePV
+func LoadOrGenFilePV(keyFilePath, stateFilePath, privKeyType string) (pv *FilePV, err error) {
 	if tmos.FileExists(keyFilePath) {
 		pv = LoadFilePV(keyFilePath, stateFilePath)
+		err = nil
 	} else {
-		pv = GenFilePV(keyFilePath, stateFilePath)
-		pv.Save()
+		pv, err = GenFilePV(keyFilePath, stateFilePath, privKeyType)
+		if pv != nil {
+			pv.Save()
+		}
 	}
-	return pv
+	return pv, err
 }
 
 // GetAddress returns the address of the validator.
