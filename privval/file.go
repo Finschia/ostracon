@@ -159,11 +159,12 @@ type FilePV struct {
 // and sets the filePaths, but does not call Save().
 func GenFilePV(keyFilePath, stateFilePath, privKeyType string) (filePV *FilePV, err error) {
 	var privKey crypto.PrivKey
-	if strings.EqualFold(privKeyType, PrevKeyTypeEd25519) {
+	switch strings.ToLower(privKeyType) {
+	case PrevKeyTypeEd25519:
 		privKey = ed25519.GenPrivKey()
-	} else if strings.EqualFold(privKeyType, PrevKeyTypeComposite) {
+	case PrevKeyTypeComposite:
 		privKey = composite.NewPrivKeyComposite(bls.GenPrivKey(), ed25519.GenPrivKey())
-	} else {
+	default:
 		return nil, fmt.Errorf("undefined private key type: %s", privKeyType)
 	}
 
