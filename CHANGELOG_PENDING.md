@@ -27,6 +27,7 @@ Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermi
   - [consensus] [\#83](https://github.com/line/tendermint/pull/83) Change calculation of `VotingPower`
 
 ### FEATURES:
+- [init command] [\#125](https://github.com/line/tendermint/pull/125) Add an option selecting private key type to init, testnet commands
 
 ### IMPROVEMENTS
 
