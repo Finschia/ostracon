@@ -391,7 +391,7 @@ jobs:
   #           # Build Tendermint
   #           make build-linux
   #           # Build contract-tests
-  #           docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint ubuntu:20.10 ./scripts/prepare_dredd_test.sh
+  #           docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint ubuntu:19.10 ./scripts/prepare_dredd_test.sh
   #           # This docker image works with go 1.7, we can install here the hook handler that contract-tests is going to use
   #           go get github.com/snikch/goodman/cmd/goodman
   #           make contract-tests
