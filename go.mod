@@ -22,8 +22,8 @@ require (
 	github.com/google/keytransparency v0.1.3
 	github.com/gorilla/websocket v1.4.2
 	github.com/gtank/merlin v0.1.1
-	github.com/herumi/bls v0.0.0-20200721070902-5e2af1489a06
-	github.com/herumi/bls-eth-go-binary v0.0.0-20200522010937-01d282b5380b
+	github.com/herumi/bls v0.0.0-20200904110701-e4663751b56f
+	github.com/herumi/bls-eth-go-binary v0.0.0-20200923072303-32b29e5d8cbf
 	github.com/libp2p/go-buffer-pool v0.0.2
 	github.com/minio/highwayhash v1.0.1
 	github.com/pkg/errors v0.9.1
