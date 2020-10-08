@@ -333,8 +333,7 @@ func TestLoadAndSaveVoters(t *testing.T) {
 		state.NextValidators = nValSet
 	}
 
-	//no voting power in validators[1]
-	for i := int64(2); i <= int64(lastHeight); i++ {
+	for i := int64(1); i <= int64(lastHeight); i++ {
 		voterSet, err := sm.LoadVoters(db, i, voterParam)
 		assert.NoError(t, err, "LoadVoters should succeed")
 		mustBeSameVoterSet(t, voters[i-1], voterSet)

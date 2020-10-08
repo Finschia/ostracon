@@ -29,9 +29,6 @@ func (e *Element) LessThan(other Candidate) bool {
 	return e.id < o.id
 }
 
-func (e *Element) SetWinPoint(winPoint float64) {
-	e.winPoint = winPoint
-}
 func (e *Element) SetVotingPower(votingPower uint64) {
 	e.votingPower = votingPower
 }
