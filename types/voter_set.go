@@ -416,7 +416,7 @@ func SelectVoter(validators *ValidatorSet, proofHash []byte, voterParams *VoterP
 	}
 	seed := hashToSeed(proofHash)
 	tolerableByzantinePercent := int64(voterParams.MaxTolerableByzantinePercentage)
-	voters := electVotersNonDup(validators, seed, tolerableByzantinePercent)
+	voters := electVotersNonDup(validators.Copy(), seed, tolerableByzantinePercent)
 	return WrapValidatorsToVoterSet(voters)
 }
 
@@ -534,7 +534,7 @@ func electVotersNonDup(validators *ValidatorSet, seed uint64, tolerableByzantine
 	if totalPriority*tolerableByzantinePercent%100 > 0 {
 		tolerableByzantinePower++
 	}
-	voters := make([]voter, 0)
+	voters := make([]*voter, 0)
 	candidates := sortValidators(validators.Validators)
 
 	zeroPriorities := 0
@@ -558,8 +558,8 @@ func electVotersNonDup(validators *ValidatorSet, seed uint64, tolerableByzantine
 		winnerIdx, winner := electVoter(&seed, candidates, len(voters)+zeroPriorities, losersPriorities)
 
 		moveWinnerToLast(candidates, winnerIdx)
-		voters = append(voters, voter{
-			val:      winner,
+		voters = append(voters, &voter{
+			val:      winner.Copy(),
 			winPoint: 1,
 		})
 		losersPriorities -= winner.StakingPower
@@ -597,7 +597,7 @@ func electVotersNonDup(validators *ValidatorSet, seed uint64, tolerableByzantine
 	return result
 }
 
-func countVoters(voters []voter, tolerableByzantinePower int64) int64 {
+func countVoters(voters []*voter, tolerableByzantinePower int64) int64 {
 	topFVotersStakingPower := int64(0)
 	topFVotersVotingPower := int64(0)
 	for _, voter := range voters {
@@ -624,15 +624,10 @@ func sortValidators(validators []*Validator) []*Validator {
 }
 
 // sortVoters is function to sort voters in descending votingPower/stakingPower
-func sortVoters(candidates []voter) []voter {
-	temp := make([]voter, len(candidates))
+func sortVoters(candidates []*voter) []*voter {
+	temp := make([]*voter, len(candidates))
 	copy(temp, candidates)
 	sort.Slice(temp, func(i, j int) bool {
-		a, overflow1 := safeMul(temp[i].val.VotingPower, temp[j].val.StakingPower)
-		b, overflow2 := safeMul(temp[j].val.VotingPower, temp[i].val.StakingPower)
-		if !overflow1 && !overflow2 {
-			return a > b
-		}
 		bigA := new(big.Int).Mul(big.NewInt(temp[i].val.VotingPower), big.NewInt(temp[j].val.StakingPower))
 		bigB := new(big.Int).Mul(big.NewInt(temp[j].val.VotingPower), big.NewInt(temp[i].val.StakingPower))
 		return bigA.Cmp(bigB) == 1
