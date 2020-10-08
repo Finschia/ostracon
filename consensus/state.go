@@ -75,7 +75,7 @@ type StepDuration struct {
 
 func (sd *StepDuration) GetDuration() float64 {
 	if !sd.started && sd.end.After(sd.start) {
-		return float64(sd.end.Sub(sd.start).Microseconds())/1000
+		return float64(sd.end.Sub(sd.start).Microseconds()) / 1000
 	}
 	return 0
 }
