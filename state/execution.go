@@ -343,7 +343,8 @@ func execBlockOnProxyApp(
 		return nil, err
 	}
 
-	logger.Info("executed block", "height", block.Height, "num_valid_txs", validTxs, "num_invalid_txs", invalidTxs, "exec_time", execTime)
+	logger.Info("executed block", "height", block.Height, "num_valid_txs", validTxs,
+		"num_invalid_txs", invalidTxs, "exec_time", execTime)
 	return abciResponses, nil
 }
 
