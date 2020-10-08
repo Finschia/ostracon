@@ -1545,6 +1545,7 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 				commitSize, valSetLen, block.Height, block.LastCommit.Signatures, cs.LastVoters.Voters))
 		}
 
+		selectedAsVoter := false
 		for i, val := range cs.LastVoters.Voters {
 			commitSig := block.LastCommit.Signatures[i]
 			if commitSig.Absent() {
@@ -1564,6 +1565,7 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 						"validator_address", val.Address.String(),
 					}
 					cs.metrics.VoterPower.With(label...).Set(float64(val.VotingPower))
+					selectedAsVoter = true
 					if commitSig.ForBlock() {
 						cs.metrics.VoterLastSignedHeight.With(label...).Set(float64(height))
 					} else {
@@ -1571,6 +1573,19 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 					}
 				}
 			}
+		}
+		if !selectedAsVoter {
+			address := ""
+			if cs.privValidator != nil {
+				pubKey, err := cs.privValidator.GetPubKey()
+				if err == nil && cs.Validators != nil && cs.Validators.HasAddress(pubKey.Address().Bytes()) {
+					address = pubKey.Address().String()
+				}
+			}
+			label := []string{
+				"validator_address", address,
+			}
+			cs.metrics.VoterPower.With(label...).Set(float64(0))
 		}
 	}
 	cs.metrics.MissingVoters.Set(float64(missingVoters))
