@@ -217,8 +217,12 @@ github.com/hashicorp/memberlist v0.1.3/go.mod h1:ajVTdAv/9Im8oMAAj5G31PhhMCZJV2p
 github.com/hashicorp/serf v0.8.2/go.mod h1:6hOLApaqBFA1NXqRQAsxw9QxuDEvNxSQRwA/JwenrHc=
 github.com/herumi/bls v0.0.0-20200721070902-5e2af1489a06 h1:4w5HyoC9FiD1UcO9j6MBkBIeBaLTe8JJOYmSiIFlo8c=
 github.com/herumi/bls v0.0.0-20200721070902-5e2af1489a06/go.mod h1:i4wRNUUFF1nNmYFHM9UDl13MGoxEQkMVCLAd82qZz4s=
+github.com/herumi/bls v0.0.0-20200904110701-e4663751b56f h1:MWNZl9RnZ8aDlChxHjlbNXAqFpwNPdLwoxJpV5LXUmw=
+github.com/herumi/bls v0.0.0-20200904110701-e4663751b56f/go.mod h1:i4wRNUUFF1nNmYFHM9UDl13MGoxEQkMVCLAd82qZz4s=
 github.com/herumi/bls-eth-go-binary v0.0.0-20200522010937-01d282b5380b h1:mu+F5uA3Y68oB6KXZqWlASKMetbNufhQx2stMI+sD+Y=
 github.com/herumi/bls-eth-go-binary v0.0.0-20200522010937-01d282b5380b/go.mod h1:luAnRm3OsMQeokhGzpYmc0ZKwawY7o87PUEP11Z7r7U=
+github.com/herumi/bls-eth-go-binary v0.0.0-20200923072303-32b29e5d8cbf h1:Lw7EOMVxu3O+7Ro5bqn9M20a7GwuCqZQsmdXNzmcKE4=
+github.com/herumi/bls-eth-go-binary v0.0.0-20200923072303-32b29e5d8cbf/go.mod h1:luAnRm3OsMQeokhGzpYmc0ZKwawY7o87PUEP11Z7r7U=
 github.com/hpcloud/tail v1.0.0 h1:nfCOvKYfkgYP8hkirhJocXT2+zOD8yUNjXaWfTlyFKI=
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
 github.com/hudl/fargo v1.3.0/go.mod h1:y3CKSmjA+wD2gak7sUSXTAoopbhU08POFhmITJgmKTg=

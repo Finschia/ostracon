@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/tendermint/tendermint/privval"
 )
 
 const (
@@ -212,6 +213,9 @@ type BaseConfig struct { //nolint: maligned
 	// If true, query the ABCI app on connecting to a new peer
 	// so the app can decide if we should keep the connection or not
 	FilterPeers bool `mapstructure:"filter_peers"` // false
+
+	// Specify validator's private key type
+	PrivKeyType string `mapstructure:"priv-key-type"`
 }
 
 // DefaultBaseConfig returns a default base configuration for a Tendermint node
@@ -231,6 +235,7 @@ func DefaultBaseConfig() BaseConfig {
 		FilterPeers:        false,
 		DBBackend:          "goleveldb",
 		DBPath:             "data",
+		PrivKeyType:        privval.PrevKeyTypeEd25519,
 	}
 }
 
@@ -271,6 +276,10 @@ func (cfg BaseConfig) NodeKeyFile() string {
 // DBDir returns the full path to the database directory
 func (cfg BaseConfig) DBDir() string {
 	return rootify(cfg.DBPath, cfg.RootDir)
+}
+
+func (cfg BaseConfig) PrivValidatorKeyType() string {
+	return cfg.PrivKeyType
 }
 
 // ValidateBasic performs basic validation (checking param bounds, etc.) and
