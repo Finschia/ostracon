@@ -26,7 +26,7 @@ func NewInitCmd() *cobra.Command {
 }
 
 func AddInitFlags(cmd *cobra.Command) {
-	cmd.Flags().String("priv-key-type", config.PrivKeyType,
+	cmd.Flags().String("priv_key_type", config.PrivKeyType,
 		"Specify validator's private key type (ed25519 | composite)")
 }
 

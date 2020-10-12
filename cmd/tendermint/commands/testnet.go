@@ -76,7 +76,7 @@ func init() {
 	TestnetFilesCmd.Flags().BoolVar(&randomMonikers, "random-monikers", false,
 		"randomize the moniker for each generated node")
 	TestnetFilesCmd.Flags().StringVar(&privKeyType, "priv-key-type", privval.PrevKeyTypeEd25519,
-		"Specify validator's private key type (ed25519 | composite)")
+		"specify validator's private key type (ed25519 | composite)")
 }
 
 // TestnetFilesCmd allows initialisation of files for a Tendermint testnet.
