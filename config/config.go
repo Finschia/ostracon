@@ -220,7 +220,7 @@ type BaseConfig struct { //nolint: maligned
 	FilterPeers bool `mapstructure:"filter_peers"` // false
 
 	// Specify validator's private key type
-	PrivKeyType string `mapstructure:"priv_key_type"`
+	PrivKeyType string `mapstructure:"priv-key-type"`
 }
 
 // DefaultBaseConfig returns a default base configuration for a Tendermint node
