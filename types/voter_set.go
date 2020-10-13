@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
+	"math/big"
 	"sort"
 	"strings"
 
@@ -556,62 +557,13 @@ func (voters *VoterSet) StringIndented(indent string) string {
 
 }
 
-type candidate struct {
-	priority uint64
-	val      *Validator
-}
-
-// for implement Candidate of rand package
-func (c *candidate) Priority() uint64 {
-	return c.priority
-}
-
-func (c *candidate) LessThan(other tmrand.Candidate) bool {
-	o, ok := other.(*candidate)
-	if !ok {
-		panic("incompatible type")
-	}
-	return bytes.Compare(c.val.Address, o.val.Address) < 0
-}
-
-func (c *candidate) SetWinPoint(winPoint int64) {
-	if winPoint < 0 {
-		panic(fmt.Sprintf("VotingPower must not be negative: %d", winPoint))
-	}
-	c.val.VotingPower = winPoint
-}
-
-func accuracyFromElectionPrecision(precision int32) float64 {
-	base := math.Pow10(int(precision))
-	result := (base - 1) / base
-	return result
-}
-
 func SelectVoter(validators *ValidatorSet, proofHash []byte, voterParams *VoterParams) *VoterSet {
 	if len(proofHash) == 0 || validators.Size() <= int(voterParams.VoterElectionThreshold) {
 		return ToVoterAll(validators.Validators)
 	}
-
 	seed := hashToSeed(proofHash)
-	candidates := make([]tmrand.Candidate, len(validators.Validators))
-	for i, val := range validators.Validators {
-		candidates[i] = &candidate{
-			priority: uint64(val.StakingPower),
-			val:      val.Copy(),
-		}
-	}
-
-	minVoters := CalNumOfVoterToElect(int64(len(candidates)), float64(voterParams.MaxTolerableByzantinePercentage)/100,
-		accuracyFromElectionPrecision(voterParams.ElectionPrecision))
-	if minVoters > math.MaxInt32 {
-		panic("CalNumOfVoterToElect is overflow for MaxInt32")
-	}
-	voterCount := tmmath.MaxInt(int(voterParams.VoterElectionThreshold), int(minVoters))
-	winners := tmrand.RandomSamplingWithoutReplacement(seed, candidates, voterCount)
-	voters := make([]*Validator, len(winners))
-	for i, winner := range winners {
-		voters[i] = winner.(*candidate).val
-	}
+	tolerableByzantinePercent := int64(voterParams.MaxTolerableByzantinePercentage)
+	voters := electVotersNonDup(validators.Copy(), seed, tolerableByzantinePercent)
 	return WrapValidatorsToVoterSet(voters)
 }
 
@@ -693,4 +645,152 @@ func CalNumOfVoterToElect(n int64, byzantineRatio float64, accuracy float64) int
 	}
 
 	return n
+}
+
+func electVoter(
+	seed *uint64, candidates []*Validator, voterNum int, totalPriority int64) (
+	winnerIdx int, winner *Validator) {
+	threshold := tmrand.RandomThreshold(seed, uint64(totalPriority))
+	found := false
+	cumulativePriority := int64(0)
+	for i, candidate := range candidates[:len(candidates)-voterNum] {
+		if threshold < uint64(cumulativePriority+candidate.StakingPower) {
+			winner = candidates[i]
+			winnerIdx = i
+			found = true
+			break
+		}
+		cumulativePriority += candidate.StakingPower
+	}
+
+	if !found {
+		panic(fmt.Sprintf("Cannot find random sample. voterNum=%d, "+
+			"totalPriority=%d, threshold=%d",
+			voterNum, totalPriority, threshold))
+	}
+
+	return winnerIdx, winner
+}
+
+const precisionForSelection = int64(1000)
+const precisionCorrectionForSelection = int64(1000)
+
+type voter struct {
+	val      *Validator
+	winPoint float64
+}
+
+func electVotersNonDup(validators *ValidatorSet, seed uint64, tolerableByzantinePercent int64) []*Validator {
+	validators.updateTotalStakingPower()
+	totalPriority := validators.totalStakingPower
+	tolerableByzantinePower := totalPriority * tolerableByzantinePercent / 100
+	// ceiling tolerableByzantinePower
+	if totalPriority*tolerableByzantinePercent%100 > 0 {
+		tolerableByzantinePower++
+	}
+	voters := make([]*voter, 0)
+	candidates := sortValidators(validators.Validators)
+
+	zeroPriorities := 0
+	for i := len(candidates); candidates[i-1].StakingPower == 0; i-- {
+		zeroPriorities++
+	}
+
+	losersPriorities := totalPriority
+	for len(voters)+zeroPriorities < len(candidates) {
+		// accumulateWinPoints(voters)
+		for i, voter := range voters {
+			// i = v1 ... vt
+			// stakingPower(i) * 1000 / (stakingPower(vt+1 ... vn) + stakingPower(i))
+			additionalWinPoint := new(big.Int).Mul(big.NewInt(voter.val.StakingPower),
+				big.NewInt(precisionForSelection))
+			additionalWinPoint.Div(additionalWinPoint, new(big.Int).Add(big.NewInt(losersPriorities),
+				big.NewInt(voter.val.StakingPower)))
+			voters[i].winPoint = voter.winPoint + float64(additionalWinPoint.Int64())/float64(precisionCorrectionForSelection)
+		}
+		// electVoter
+		winnerIdx, winner := electVoter(&seed, candidates, len(voters)+zeroPriorities, losersPriorities)
+
+		moveWinnerToLast(candidates, winnerIdx)
+		voters = append(voters, &voter{
+			val:      winner.Copy(),
+			winPoint: 1,
+		})
+		losersPriorities -= winner.StakingPower
+
+		// calculateVotingPowers(voters)
+		totalWinPoint := float64(0)
+		for _, voter := range voters {
+			totalWinPoint += voter.winPoint
+		}
+		totalVotingPower := int64(0)
+		for _, voter := range voters {
+			bigWinPoint := new(big.Int).SetUint64(
+				uint64(voter.winPoint * float64(precisionForSelection*precisionForSelection)))
+			bigTotalWinPoint := new(big.Int).SetUint64(uint64(totalWinPoint * float64(precisionForSelection)))
+			bigVotingPower := new(big.Int).Mul(new(big.Int).Div(bigWinPoint, bigTotalWinPoint),
+				big.NewInt(totalPriority))
+			votingPower := new(big.Int).Div(bigVotingPower, big.NewInt(precisionForSelection)).Int64()
+			voter.val.VotingPower = votingPower
+			totalVotingPower += votingPower
+		}
+
+		// sort voters in ascending votingPower/stakingPower
+		voters = sortVoters(voters)
+
+		topFVotersVotingPower := countVoters(voters, tolerableByzantinePower)
+		if topFVotersVotingPower < totalVotingPower/3 {
+			break
+		}
+	}
+
+	result := make([]*Validator, len(voters))
+	for i, v := range voters {
+		result[i] = v.val
+	}
+	return result
+}
+
+func countVoters(voters []*voter, tolerableByzantinePower int64) int64 {
+	topFVotersStakingPower := int64(0)
+	topFVotersVotingPower := int64(0)
+	for _, voter := range voters {
+		prev := topFVotersStakingPower
+		topFVotersStakingPower += voter.val.StakingPower
+		topFVotersVotingPower += voter.val.VotingPower
+		if prev < tolerableByzantinePower && topFVotersStakingPower >= tolerableByzantinePower {
+			break
+		}
+	}
+	return topFVotersVotingPower
+}
+
+func sortValidators(validators []*Validator) []*Validator {
+	temp := make([]*Validator, len(validators))
+	copy(temp, validators)
+	sort.Slice(temp, func(i, j int) bool {
+		if temp[i].StakingPower == temp[j].StakingPower {
+			return bytes.Compare(temp[i].Address, temp[j].Address) == -1
+		}
+		return temp[i].StakingPower > temp[j].StakingPower
+	})
+	return temp
+}
+
+// sortVoters is function to sort voters in descending votingPower/stakingPower
+func sortVoters(candidates []*voter) []*voter {
+	temp := make([]*voter, len(candidates))
+	copy(temp, candidates)
+	sort.Slice(temp, func(i, j int) bool {
+		bigA := new(big.Int).Mul(big.NewInt(temp[i].val.VotingPower), big.NewInt(temp[j].val.StakingPower))
+		bigB := new(big.Int).Mul(big.NewInt(temp[j].val.VotingPower), big.NewInt(temp[i].val.StakingPower))
+		return bigA.Cmp(bigB) == 1
+	})
+	return temp
+}
+
+func moveWinnerToLast(candidates []*Validator, winner int) {
+	winnerCandidate := candidates[winner]
+	copy(candidates[winner:], candidates[winner+1:])
+	candidates[len(candidates)-1] = winnerCandidate
 }
