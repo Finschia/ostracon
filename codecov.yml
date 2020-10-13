@@ -1,3 +1,7 @@
+codecov:
+  bot: Codecov bot for line/tendermint
+  token: a0d06f00-e140-4525-93f9-1722b2c9d5d2
+
 coverage:
   precision: 2
   round: down
