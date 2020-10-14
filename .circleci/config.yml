@@ -195,6 +195,32 @@ jobs:
       - run: bash test/p2p/circleci.sh
       - store_artifacts:
           path: /home/circleci/project/test/p2p/logs
+
+  upload_coverage:
+    executor: golang
+    steps:
+      - attach_workspace:
+          at: /tmp/workspace
+      - restore_cache:
+          name: "Restore source code cache"
+          keys:
+            - go-src-v1-{{ .Revision }}
+      - checkout
+      - restore_cache:
+          name: "Restore go module cache"
+          keys:
+            - go-mod-v2-{{ checksum "go.sum" }}
+      - run:
+          name: gather
+          command: |
+            echo "mode: atomic" > coverage.txt
+            for prof in $(ls /tmp/workspace/profiles/); do
+              tail -n +2 /tmp/workspace/profiles/"$prof" >> coverage.txt
+            done
+      - run:
+          name: upload
+          command: bash .circleci/codecov.sh -f coverage.txt
+
   deploy_docs:
     executor: docs
     steps:
@@ -439,9 +465,9 @@ workflows:
       - test_p2p:
             name: test_p2p_ipv6
             ipv: 6
-#      - upload_coverage:
-#          requires:
-#            - test_cover
+      - upload_coverage:
+          requires:
+            - test_cover
       - reproducible_builds:
           filters:
             branches:
