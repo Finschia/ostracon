@@ -6,8 +6,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/tendermint/tendermint/crypto/bls"
-
 	"github.com/pkg/errors"
 
 	"github.com/tendermint/tendermint/libs/bits"
@@ -218,16 +216,6 @@ func (voteSet *VoteSet) addVote(vote *Vote) (added bool, err error) {
 	if !added {
 		panic("Expected to add non-conflicting vote")
 	}
-
-	// Aggregate signature in added vote if possible.
-	aggrSign, err := bls.AddSignature(voteSet.aggregatedSignature, vote.Signature)
-	if err == nil {
-		voteSet.aggregatedSignature = aggrSign
-		vote.Signature = nil
-	}
-	// else {
-	// TODO It's possible to continue if the signature aggregation fails, but a warning log output is wanted here.
-	// }
 
 	return added, nil
 }

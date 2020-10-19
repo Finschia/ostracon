@@ -554,7 +554,9 @@ type CommitSig struct {
 	BlockIDFlag      BlockIDFlag `json:"block_id_flag"`
 	ValidatorAddress Address     `json:"validator_address"`
 	Timestamp        time.Time   `json:"timestamp"`
-	Signature        []byte      `json:"signature"`
+
+	// This can take a nil in case when the signature is being aggregated.
+	Signature []byte `json:"signature"`
 }
 
 // NewCommitSigForBlock returns new CommitSig with BlockIDFlagCommit.
@@ -703,29 +705,8 @@ func NewCommit(height int64, round int, blockID BlockID, commitSigs []CommitSig)
 }
 
 // NewCommitWithAggregatedSignature returns a new Commit with .
-// The aggrSig can be set to null. Then all commitSigs must have a valid signature.
 func NewCommitWithAggregatedSignature(
 	height int64, round int, blockID BlockID, commitSigs []CommitSig, aggrSig []byte) *Commit {
-
-	// Make a copy of CommitSig to avoid side effects
-	newCommitSigs := make([]CommitSig, len(commitSigs))
-	copy(newCommitSigs, commitSigs)
-	commitSigs = newCommitSigs
-
-	// Create aggregate signature and reset per-CommitSig signature if possible
-	for i := range commitSigs {
-		if commitSigs[i].Absent() {
-			continue
-		}
-		curAggrSig, err := bls.AddSignature(aggrSig, commitSigs[i].Signature)
-		if err == nil {
-			aggrSig = curAggrSig
-			commitSigs[i].Signature = nil
-		} else {
-			// TODO It's possible to continue if the signature aggregation fails, but a warning log output is wanted here.
-		}
-	}
-
 	return &Commit{
 		Height:              height,
 		Round:               round,
@@ -903,12 +884,14 @@ func (commit *Commit) StringIndented(indent string) string {
 %s  Height:     %d
 %s  Round:      %d
 %s  BlockID:    %v
+%s  AggregatedSignature: %X
 %s  Signatures:
 %s    %v
 %s}#%v`,
 		indent, commit.Height,
 		indent, commit.Round,
 		indent, commit.BlockID,
+		indent, tmbytes.Fingerprint(commit.AggregatedSignature),
 		indent,
 		indent, strings.Join(commitSigStrings, "\n"+indent+"    "),
 		indent, commit.hash)
@@ -938,7 +921,38 @@ func (commit *Commit) ToProto() *tmproto.Commit {
 	return c
 }
 
-func (commit *Commit) VerifySignatures(chainID string, vals []*Validator) error {
+// VerifyAndPackSignatures validates the signatures in this commit and then reduces the size of the commit by
+// aggregating the signatures that can be aggregated.
+func (commit *Commit) VerifyAndPackSignatures(chainID string, vals []*Validator) error {
+	if err := commit.verifySignatures(chainID, vals); err != nil {
+		return err
+	}
+
+	// aggregate BLS-scheme signatures
+	for i := range commit.Signatures {
+		commitSig := &commit.Signatures[i]
+		if commitSig.Absent() {
+			continue // OK, some signatures can be absent.
+		}
+		if commitSig.Signature != nil && len(commitSig.Signature) == bls.SignatureSize {
+			if commit.AggregatedSignature == nil {
+				commit.AggregatedSignature = commitSig.Signature
+				commitSig.Signature = nil
+			} else {
+				aggrSig, err := bls.AddSignature(commit.AggregatedSignature, commitSig.Signature)
+				if err == nil {
+					commit.AggregatedSignature = aggrSig
+					commitSig.Signature = nil
+				}
+				// The BLS signature that fail to aggregate is remained intact.
+			}
+		}
+	}
+
+	return nil
+}
+
+func (commit *Commit) verifySignatures(chainID string, vals []*Validator) error {
 	blsPubKeys := make([]bls.PubKeyBLS12, 0, len(commit.Signatures))
 	messages := make([][]byte, 0, len(commit.Signatures))
 	for idx, commitSig := range commit.Signatures {
