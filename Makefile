@@ -231,7 +231,7 @@ DOCKER_CMD = docker run --rm \
                         -v `pwd`:$(DOCKER_HOME) \
                         -w $(DOCKER_HOME)
 DOCKER_IMG = golang:1.14.6-alpine3.12
-BUILD_CMD = apk add --update --no-cache git make gcc libc-dev build-base curl jq file gmp-dev clang \
+BUILD_CMD = apk add --update --no-cache git make gcc nasm libc-dev build-base curl jq file gmp-dev clang \
 	&& cd crypto/bls/internal/bls-eth-go-binary \
 	&& make CXX=clang++ \
 	&& cd $(DOCKER_HOME) \
@@ -255,13 +255,7 @@ build-linux:
 		git checkout d51fd79c86954a443b1c7ce67d7bcdb8a63ddedb && \
 		cd .. && \
 		git clone https://github.com/herumi/bls $(SRCPATH)/crypto/bls/internal/bls && \
-		cd $(SRCPATH)/crypto/bls/internal/bls && \
-		git checkout accfc25c06c017f2686bb59c5106655293dd47d3 && \
-		cd .. && \
-		git clone https://github.com/herumi/bls-eth-go-binary $(SRCPATH)/crypto/bls/internal/bls-eth-go-binary && \
-		cd $(SRCPATH)/crypto/bls/internal/bls-eth-go-binary && \
-		git checkout 01d282b5380b0b0a59a880a2a645143807595ff3 && \
-		cd ..; \
+		git clone https://github.com/herumi/bls-eth-go-binary -b v1.12 --depth 1 $(SRCPATH)/crypto/bls/internal/bls-eth-go-binary; \
 	fi
 
 	# Build Linux binary
