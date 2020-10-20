@@ -351,7 +351,7 @@ jobs:
   contract_tests:
     working_directory: /home/circleci/.go_workspace/src/github.com/tendermint/tendermint
     machine:
-      image: circleci/classic:latest
+      image: ubuntu-1604:201903-01
     environment:
       GOBIN: /home/circleci/.go_workspace/bin
       GOPATH: /home/circleci/.go_workspace/
