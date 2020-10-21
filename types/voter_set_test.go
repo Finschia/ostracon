@@ -857,14 +857,14 @@ func sameVoters(c1 []*Validator, c2 []*Validator) bool {
 
 func TestElectVotersNonDup(t *testing.T) {
 	for n := 100; n <= 100000; n *= 10 {
-		validators := newValidatorSet(100, func(i int) int64 {
-			return int64(100 * (i + 1))
+		validators := newValidatorSet(n, func(i int) int64 {
+			return rand.Int63n(1000) + 1
 		})
 		validators.updateTotalStakingPower()
 
-		winners := electVotersNonDup(validators.Copy(), 0, 30)
+		winners := electVotersNonDup(validators.Copy(), 0, 20)
 
-		assert.True(t, isByzantine(winners, validators.totalStakingPower, 30))
+		assert.False(t, isByzantine(winners, validators.totalStakingPower, 20))
 	}
 }
 

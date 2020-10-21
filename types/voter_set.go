@@ -630,10 +630,11 @@ func sortVoters(candidates []*voter) []*voter {
 	sort.Slice(temp, func(i, j int) bool {
 		bigA := new(big.Int).Mul(big.NewInt(temp[i].val.VotingPower), big.NewInt(temp[j].val.StakingPower))
 		bigB := new(big.Int).Mul(big.NewInt(temp[j].val.VotingPower), big.NewInt(temp[i].val.StakingPower))
-		if bigA.Cmp(bigB) == 0 {
+		compareResult := bigA.Cmp(bigB)
+		if compareResult == 0 {
 			return bytes.Compare(temp[i].val.Address, temp[j].val.Address) == -1
 		}
-		return bigA.Cmp(bigB) == 1
+		return compareResult == 1
 	})
 	return temp
 }
