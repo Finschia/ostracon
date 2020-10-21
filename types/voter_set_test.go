@@ -3,21 +3,22 @@ package types
 import (
 	"bytes"
 	"math"
+	"math/big"
 	s "sort"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/libs/rand"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
-
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/stretchr/testify/assert"
-
+	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
+	"github.com/tendermint/tendermint/crypto/merkle"
 	tmmath "github.com/tendermint/tendermint/libs/math"
+	"github.com/tendermint/tendermint/libs/rand"
+	tmrand "github.com/tendermint/tendermint/libs/rand"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
 )
@@ -481,84 +482,6 @@ func TestCalNumOfVoterToElect(t *testing.T) {
 	}
 }
 
-func makeByzantine(valSet *ValidatorSet, rate float64) map[string]bool {
-	result := make(map[string]bool)
-	byzantinePower := int64(0)
-	threshold := int64(float64(valSet.TotalStakingPower()) * rate)
-	for _, v := range valSet.Validators {
-		if byzantinePower+v.StakingPower > threshold {
-			break
-		}
-		result[v.Address.String()] = true
-		byzantinePower += v.StakingPower
-	}
-	return result
-}
-
-func byzantinesPower(voters []*Validator, byzantines map[string]bool) int64 {
-	power := int64(0)
-	for _, v := range voters {
-		if byzantines[v.Address.String()] {
-			power += v.VotingPower
-		}
-	}
-	return power
-}
-
-func countByzantines(voters []*Validator, byzantines map[string]bool) int {
-	count := 0
-	for _, v := range voters {
-		if byzantines[v.Address.String()] {
-			count++
-		}
-	}
-	return count
-}
-
-func electVotersForLoop(t *testing.T, hash []byte, valSet *ValidatorSet, privMap map[string]PrivValidator,
-	byzantines map[string]bool, loopCount int, byzantinePercent, accuracy int32) {
-	byzantineFault := 0
-	totalVoters := 0
-	totalByzantines := 0
-	for i := 0; i < loopCount; i++ {
-		voterSet := SelectVoter(valSet, hash, &VoterParams{1, byzantinePercent})
-		byzantineThreshold := int64(float64(voterSet.TotalVotingPower())*0.33) + 1
-		if byzantinesPower(voterSet.Voters, byzantines) >= byzantineThreshold {
-			byzantineFault++
-		}
-		totalVoters += voterSet.Size()
-		totalByzantines += countByzantines(voterSet.Voters, byzantines)
-		proposer := valSet.SelectProposer(hash, int64(i), 0)
-		message := MakeRoundHash(hash, int64(i), 0)
-		proof, _ := privMap[proposer.Address.String()].GenerateVRFProof(message)
-		pubKey, _ := privMap[proposer.Address.String()].GetPubKey()
-		hash, _ = pubKey.VRFVerify(proof, message)
-	}
-	t.Logf("voters=%d, fault=%d, avg byzantines=%f",
-		totalVoters/loopCount, byzantineFault, float64(totalByzantines)/float64(loopCount))
-	assert.True(t, float64(byzantineFault) < float64(loopCount))
-}
-
-func TestCalVotersNum2(t *testing.T) {
-	t.Skip("take too much time and no longer using accuracy")
-	valSet, privMap := randValidatorSetWithMinMax(100, 100, 10000)
-	byzantinePercent := int32(20)
-	byzantines := makeByzantine(valSet, float64(byzantinePercent)/100)
-	genDoc := &GenesisDoc{
-		GenesisTime: tmtime.Now(),
-		ChainID:     "tendermint-test",
-		Validators:  toGenesisValidators(valSet.Validators),
-	}
-	hash := genDoc.Hash()
-
-	loopCount := 1000
-	electVotersForLoop(t, hash, valSet, privMap, byzantines, loopCount, byzantinePercent, 1)
-	electVotersForLoop(t, hash, valSet, privMap, byzantines, loopCount, byzantinePercent, 2)
-	electVotersForLoop(t, hash, valSet, privMap, byzantines, loopCount, byzantinePercent, 3)
-	electVotersForLoop(t, hash, valSet, privMap, byzantines, loopCount, byzantinePercent, 4)
-	electVotersForLoop(t, hash, valSet, privMap, byzantines, loopCount, byzantinePercent, 5)
-}
-
 func TestVoterSetProtoBuf(t *testing.T) {
 	_, voterSet, _ := RandVoterSet(10, 100)
 	_, voterSet2, _ := RandVoterSet(10, 100)
@@ -933,6 +856,19 @@ func sameVoters(c1 []*Validator, c2 []*Validator) bool {
 }
 
 func TestElectVotersNonDup(t *testing.T) {
+	for n := 100; n <= 100000; n *= 10 {
+		validators := newValidatorSet(100, func(i int) int64 {
+			return int64(100 * (i + 1))
+		})
+		validators.updateTotalStakingPower()
+
+		winners := electVotersNonDup(validators.Copy(), 0, 30)
+
+		assert.True(t, isByzantine(winners, validators.totalStakingPower, 30))
+	}
+}
+
+func TestElectVotersNonDupStaticVotingPower(t *testing.T) {
 	candidates := newValidatorSet(5, func(i int) int64 { return 10 })
 	expectedVotingPower := []int64{
 		13,
@@ -968,4 +904,258 @@ func TestElectVoter(t *testing.T) {
 		total -= winner.StakingPower
 		moveWinnerToLast(candidates, idx)
 	}
+}
+
+func TestElectVotersNonDupWithDifferentSeed(t *testing.T) {
+	validators := newValidatorSet(1000, func(i int) int64 {
+		return 1
+	})
+
+	voters1 := electVotersNonDup(validators.Copy(), 1234, 20)
+	voters2 := electVotersNonDup(validators.Copy(), 4321, 20)
+
+	assert.False(t, sameVoters(voters1, voters2))
+}
+
+func TestElectVotersNonDupValidatorsNotSorting(t *testing.T) {
+	validators := newValidatorSet(1000, func(i int) int64 {
+		return int64(i + 1)
+	})
+
+	shuffled := validators.Copy()
+	for i := range shuffled.Validators {
+		r := rand.Intn(len(shuffled.Validators))
+		shuffled.Validators[i], shuffled.Validators[r] = shuffled.Validators[r], shuffled.Validators[i]
+	}
+
+	winners := electVotersNonDup(validators, 0, 30)
+	shuffledWinners := electVotersNonDup(shuffled, 0, 30)
+
+	assert.True(t, sameVoters(winners, shuffledWinners))
+}
+
+func TestElectVotersNonDupVotingPower(t *testing.T) {
+	validators := newValidatorSet(100, func(i int) int64 {
+		return 1000
+	})
+
+	winners := electVotersNonDup(validators, 0, 30)
+
+	winPoints := make([]*big.Int, 0)
+	total := int64(0)
+	totalWinPoint := new(big.Int)
+	for n := 0; n < len(winners); n++ {
+		for i := range winPoints {
+			winPoint := big.NewInt(validators.totalStakingPower - total + 1000)
+			winPoint.Div(big.NewInt(1000*precisionForSelection), winPoint)
+			totalWinPoint.Add(totalWinPoint, winPoint)
+			winPoints[i] = new(big.Int).Add(winPoints[i], winPoint)
+		}
+		winPoints = append(winPoints, big.NewInt(1000))
+		totalWinPoint.Add(totalWinPoint, big.NewInt(1000))
+		total += 1000
+	}
+
+	for i, w := range winners {
+		winPoint := new(big.Int).Mul(winPoints[i], big.NewInt(precisionForSelection))
+		votingPower := new(big.Int).Div(winPoint, totalWinPoint)
+		votingPower.Mul(votingPower, big.NewInt(validators.totalStakingPower))
+		votingPower.Div(votingPower, big.NewInt(precisionCorrectionForSelection))
+
+		assert.True(t, w.VotingPower == votingPower.Int64())
+	}
+}
+
+func TestElectVotersNonDupWithOverflow(t *testing.T) {
+	expectedPanic := "Total staking power should be guarded to not exceed"
+	validators := newValidatorSet(101, func(i int) int64 {
+		return math.MaxInt64 / 100
+	})
+
+	defer func() {
+		pnc := recover()
+		if pncStr, ok := pnc.(string); ok {
+			assert.True(t, strings.HasPrefix(pncStr, expectedPanic))
+		} else {
+			t.Fatal("panic expected, but doesn't panic")
+		}
+	}()
+	electVotersNonDup(validators, 0, 30)
+}
+
+func TestElectVotersNonDupDistribution(t *testing.T) {
+	validators := newValidatorSet(100, func(i int) int64 {
+		return 1000
+	})
+	scores := make(map[string]int)
+	for i := 0; i < 100000; i++ {
+		//hash is distributed well
+		hash := merkle.HashFromByteSlices([][]byte{
+			[]byte(strconv.Itoa(i)),
+		})
+		seed := hashToSeed(hash)
+		winners := electVotersNonDup(validators.Copy(), seed, 1)
+		scores[winners[0].Address.String()]++
+	}
+
+	for _, v := range scores {
+		assert.True(t, v >= 900 && v <= 1100)
+	}
+}
+
+func TestElectVoterPanic(t *testing.T) {
+
+	validators := newValidatorSet(10, func(i int) int64 { return int64(i + 1) })
+	total := int64(0)
+	for _, val := range validators.Validators {
+		total += val.StakingPower
+	}
+	seed := uint64(0)
+
+	candidates := validators.Validators
+
+	//vote when there is no candidates
+	expectedResult := "Cannot find random sample."
+	defer func() {
+		pnc := recover()
+		if pncStr, ok := pnc.(string); ok {
+			assert.True(t, strings.HasPrefix(pncStr, expectedResult))
+		} else {
+			t.Fatal("panic expected, but doesn't panic")
+		}
+
+	}()
+	for i := 0; i < 11; i++ {
+		idx, winner := electVoter(&seed, candidates, i, total)
+		total -= winner.StakingPower
+		moveWinnerToLast(candidates, idx)
+	}
+}
+
+func newVotersWithRandomVotingPowerDescending(max, numerator, stakingPower int64) []*voter {
+	voters := make([]*voter, 0)
+
+	// random voters descending
+	random := int64(0)
+	for votingPower := max; votingPower > 0; votingPower -= random {
+		random = rand.Int63n(max/numerator) + 1
+		voters = append(voters, &voter{
+			val: &Validator{
+				StakingPower: stakingPower,
+				VotingPower:  votingPower,
+			},
+		})
+	}
+	return voters
+}
+
+func TestSortVoters(t *testing.T) {
+	for n := int64(0); n < 100; n++ {
+
+		// random voters descending
+		voters := newVotersWithRandomVotingPowerDescending(100000, 100, 10)
+
+		//shuffle the voters
+		shuffled := make([]*voter, len(voters))
+		copy(shuffled, voters)
+		for i := range shuffled {
+			target := rand.Intn(len(shuffled) - 1)
+			shuffled[i], shuffled[target] = shuffled[target], shuffled[i]
+		}
+
+		sorted := sortVoters(shuffled)
+		for i := range sorted {
+			assert.True(t, sorted[i].val.VotingPower == voters[i].val.VotingPower)
+		}
+	}
+}
+
+func TestSortVotersWithSameValue(t *testing.T) {
+	for n := 0; n < 100; n++ {
+
+		voters := make([]*voter, 0)
+
+		// random voters descending
+		random := int64(0)
+		n := 0
+		for votingPower := int64(100000); votingPower > 0; votingPower -= random {
+			random = rand.Int63n(100000/100) + 1
+			voters = append(voters, &voter{
+				val: &Validator{
+					StakingPower: 10,
+					VotingPower:  votingPower,
+					Address:      []byte(strconv.Itoa(n)),
+				},
+			})
+			voters = append(voters, &voter{
+				val: &Validator{
+					StakingPower: 10,
+					VotingPower:  votingPower,
+					Address:      []byte(strconv.Itoa(n + 1)),
+				},
+			})
+			n += 2
+		}
+
+		//shuffle the voters
+		shuffled := make([]*voter, len(voters))
+		copy(shuffled, voters)
+		for i := range shuffled {
+			target := rand.Intn(len(shuffled) - 1)
+			shuffled[i], shuffled[target] = shuffled[target], shuffled[i]
+		}
+
+		sorted := sortVoters(shuffled)
+		for i := range sorted {
+			a := sorted[i].val
+			b := voters[i].val
+			assert.True(t, bytes.Equal(a.Address, b.Address))
+			assert.True(t, a.VotingPower == b.VotingPower)
+		}
+	}
+}
+
+func TestCountVoters(t *testing.T) {
+	for n := int64(0); n < 100; n++ {
+		tolerableByzantinePercent := int64(30)
+
+		// random voters descending
+		voters := newVotersWithRandomVotingPowerDescending(100000, 100, 1000)
+		totalStakingPower := int64(1000 * len(voters))
+
+		tolerableByzantinePower := totalStakingPower * tolerableByzantinePercent / 100
+		if totalStakingPower*tolerableByzantinePercent%100 > 0 {
+			tolerableByzantinePower++
+		}
+
+		result := countVoters(voters, tolerableByzantinePower)
+		topFVotersStakingPower := int64(0)
+		topFVotersVotingPower := int64(0)
+		prev := int64(0)
+		for _, v := range voters {
+			prev = topFVotersStakingPower
+			topFVotersStakingPower += v.val.StakingPower
+			topFVotersVotingPower += v.val.VotingPower
+			if topFVotersVotingPower == result {
+				break
+			}
+		}
+
+		assert.True(t, topFVotersVotingPower == result)
+		assert.True(t, prev < tolerableByzantinePower)
+		assert.True(t, topFVotersStakingPower >= tolerableByzantinePower)
+	}
+}
+
+func TestMoveWinnerToLast(t *testing.T) {
+	validators := newValidatorSet(10, func(i int) int64 {
+		return int64(i + 1)
+	})
+
+	target := validators.Validators[3]
+	nextOfTarget := validators.Validators[4]
+	moveWinnerToLast(validators.Validators, 3)
+	assert.True(t, target == validators.Validators[9])
+	assert.True(t, nextOfTarget == validators.Validators[3])
+
 }
