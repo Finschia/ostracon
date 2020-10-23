@@ -566,16 +566,18 @@ func resetPoints(validators *ValidatorSet) {
 	}
 }
 
-func isByzantine(validators []*Validator, totalPriority, tolerableByzantinePercent int64) bool {
-	tolerableByzantinePower := totalPriority * tolerableByzantinePercent / 100
+func isByzantine(validators []*Validator, totalStakingPower, tolerableByzantinePercent int64) bool {
+	tolerableByzantinePower := getTolerableByzantinePower(totalStakingPower, tolerableByzantinePercent)
 	voters := make([]*voter, len(validators))
+	totalVotingPower := int64(0)
 	for i, v := range validators {
 		voters[i] = &voter{
 			val: v,
 		}
+		totalVotingPower += v.VotingPower
 	}
 	topFVotersVotingPower := countVoters(voters, tolerableByzantinePower)
-	return topFVotersVotingPower >= totalPriority/3
+	return topFVotersVotingPower >= totalVotingPower/3
 }
 
 func TestElectVotersNonDupCandidate(t *testing.T) {
@@ -817,12 +819,13 @@ func newValidatorSet(length int, prio func(int) int64) *ValidatorSet {
 	validators := make([]*Validator, length)
 	totalStakingPower := int64(0)
 	for i := 0; i < length; i++ {
+		stakingPower := prio(i)
 		validators[i] = &Validator{
 			Address:      crypto.AddressHash([]byte(strconv.Itoa(i))),
-			StakingPower: prio(i),
+			StakingPower: stakingPower,
 			VotingPower:  0,
 		}
-		totalStakingPower += prio(i)
+		totalStakingPower += stakingPower
 	}
 
 	return &ValidatorSet{
@@ -856,15 +859,16 @@ func sameVoters(c1 []*Validator, c2 []*Validator) bool {
 }
 
 func TestElectVotersNonDup(t *testing.T) {
-	for n := 100; n <= 100000; n *= 10 {
+	for n := 100; n < 10000; n *= 10 {
 		validators := newValidatorSet(n, func(i int) int64 {
-			return rand.Int63n(1000) + 1
+			return rand.Int63n(100) + 1
 		})
-		validators.updateTotalStakingPower()
 
-		winners := electVotersNonDup(validators.Copy(), 0, 20)
+		winners := electVotersNonDup(validators.Copy(), 0, 30)
 
-		assert.False(t, isByzantine(winners, validators.totalStakingPower, 20))
+		if len(winners) < n {
+			assert.True(t, !isByzantine(winners, validators.totalStakingPower, 30))
+		}
 	}
 }
 
@@ -907,14 +911,16 @@ func TestElectVoter(t *testing.T) {
 }
 
 func TestElectVotersNonDupWithDifferentSeed(t *testing.T) {
-	validators := newValidatorSet(1000, func(i int) int64 {
-		return 1
+	validators := newValidatorSet(100, func(i int) int64 {
+		return rand.Int63n(1000) + 1
 	})
 
-	voters1 := electVotersNonDup(validators.Copy(), 1234, 20)
-	voters2 := electVotersNonDup(validators.Copy(), 4321, 20)
+	voters := electVotersNonDup(validators.Copy(), 0, 30)
+	for n := 1; n <= 100; n++ {
+		otherVoters := electVotersNonDup(validators.Copy(), rand.Uint64(), 30)
 
-	assert.False(t, sameVoters(voters1, voters2))
+		assert.False(t, sameVoters(voters, otherVoters))
+	}
 }
 
 func TestElectVotersNonDupValidatorsNotSorting(t *testing.T) {
@@ -1123,11 +1129,7 @@ func TestCountVoters(t *testing.T) {
 		voters := newVotersWithRandomVotingPowerDescending(100000, 100, 1000)
 		totalStakingPower := int64(1000 * len(voters))
 
-		tolerableByzantinePower := totalStakingPower * tolerableByzantinePercent / 100
-		if totalStakingPower*tolerableByzantinePercent%100 > 0 {
-			tolerableByzantinePower++
-		}
-
+		tolerableByzantinePower := getTolerableByzantinePower(totalStakingPower, tolerableByzantinePercent)
 		result := countVoters(voters, tolerableByzantinePower)
 		topFVotersStakingPower := int64(0)
 		topFVotersVotingPower := int64(0)
