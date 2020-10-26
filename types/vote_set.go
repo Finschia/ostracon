@@ -3,6 +3,7 @@ package types
 import (
 	"bytes"
 	"fmt"
+	"github.com/tendermint/tendermint/crypto/bls"
 	"strings"
 	"sync"
 
@@ -197,6 +198,9 @@ func (voteSet *VoteSet) addVote(vote *Vote) (added bool, err error) {
 
 	// If we already know of this vote, return false.
 	if existing, ok := voteSet.getVote(valIndex, blockKey); ok {
+		if existing.Signature == nil {
+			return false, nil // probably aggregated
+		}
 		if bytes.Equal(existing.Signature, vote.Signature) {
 			return false, nil // duplicate
 		}
@@ -572,6 +576,7 @@ func (voteSet *VoteSet) MakeCommit() *Commit {
 	}
 
 	// For every validator, get the precommit
+	aggregatedSignature := voteSet.aggregatedSignature
 	commitSigs := make([]CommitSig, len(voteSet.votes))
 	for i, v := range voteSet.votes {
 		commitSig := v.CommitSig()
@@ -580,10 +585,26 @@ func (voteSet *VoteSet) MakeCommit() *Commit {
 			commitSig = NewCommitSigAbsent()
 		}
 		commitSigs[i] = commitSig
+
+		if !commitSigs[i].Absent() && len(commitSigs[i].Signature) == bls.SignatureSize {
+			if aggregatedSignature == nil {
+				aggregatedSignature = commitSigs[i].Signature
+				commitSigs[i].Signature = nil
+			} else {
+				aggrSig, err := bls.AddSignature(aggregatedSignature, commitSigs[i].Signature)
+				if err == nil {
+					aggregatedSignature = aggrSig
+					commitSigs[i].Signature = nil
+				} else {
+					// The BLS signature that fail to aggregate is remained intact.
+					fmt.Printf("*** ERROR: fail to aggregate signature: %s\n", err)
+				}
+			}
+		}
 	}
 
 	return NewCommitWithAggregatedSignature(
-		voteSet.GetHeight(), voteSet.GetRound(), *voteSet.maj23, commitSigs, voteSet.aggregatedSignature)
+		voteSet.GetHeight(), voteSet.GetRound(), *voteSet.maj23, commitSigs, aggregatedSignature)
 }
 
 //--------------------------------------------------------------------------------

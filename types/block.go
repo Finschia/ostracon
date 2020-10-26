@@ -929,25 +929,31 @@ func (commit *Commit) VerifyAndPackSignatures(chainID string, vals []*Validator)
 	}
 
 	// aggregate BLS-scheme signatures
-	for i := range commit.Signatures {
-		commitSig := &commit.Signatures[i]
-		if commitSig.Absent() {
-			continue // OK, some signatures can be absent.
-		}
-		if commitSig.Signature != nil && len(commitSig.Signature) == bls.SignatureSize {
-			if commit.AggregatedSignature == nil {
-				commit.AggregatedSignature = commitSig.Signature
-				commitSig.Signature = nil
-			} else {
-				aggrSig, err := bls.AddSignature(commit.AggregatedSignature, commitSig.Signature)
-				if err == nil {
-					commit.AggregatedSignature = aggrSig
+	/*
+		for i := range commit.Signatures {
+			commitSig := &commit.Signatures[i]
+			if commitSig.Absent() {
+				continue // OK, some signatures can be absent.
+			}
+
+			// BLS signature aggregation for all signatures that have been verified to be cleared.
+			// Signatures that fail to validate are rejected and be Absent.
+			if commitSig.Signature != nil && len(commitSig.Signature) == bls.SignatureSize {
+				if commit.AggregatedSignature == nil {
+					commit.AggregatedSignature = commitSig.Signature
 					commitSig.Signature = nil
+				} else {
+					aggrSig, err := bls.AddSignature(commit.AggregatedSignature, commitSig.Signature)
+					if err == nil {
+						commit.AggregatedSignature = aggrSig
+						commitSig.Signature = nil
+					}
+					// The BLS signature that fail to aggregate is remained intact.
 				}
-				// The BLS signature that fail to aggregate is remained intact.
+				fmt.Printf("*** Commit.VerifyAndPackSignatures(): signature aggregated\n")
 			}
 		}
-	}
+	*/
 
 	return nil
 }
