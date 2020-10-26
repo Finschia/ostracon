@@ -252,9 +252,12 @@ build-linux:
 		mkdir -p $(SRCPATH)/crypto/bls/internal && \
 		git clone https://github.com/herumi/mcl $(SRCPATH)/crypto/bls/internal/mcl && \
 		cd $(SRCPATH)/crypto/bls/internal/mcl && \
-		git checkout d51fd79c86954a443b1c7ce67d7bcdb8a63ddedb && \
+		git checkout 71e4f39fda890701914d521750490ecfe362f1da && \
 		cd .. && \
 		git clone https://github.com/herumi/bls $(SRCPATH)/crypto/bls/internal/bls && \
+		cd $(SRCPATH)/crypto/bls/internal/bls && \
+		git checkout 5e2af1489a06eddb58869b66a33aa855b27bb41c && \
+		cd .. && \
 		git clone https://github.com/herumi/bls-eth-go-binary -b v1.12 --depth 1 $(SRCPATH)/crypto/bls/internal/bls-eth-go-binary; \
 	fi
 
