@@ -247,11 +247,11 @@ func TestNewCommit(t *testing.T) {
 	assert.Equal(t, 1, commit.Round)
 	assert.Equal(t, blockID, commit.BlockID)
 	assert.Equal(t, len(commitSigs), len(commit.Signatures))
-	assert.NotNil(t, commit.AggregatedSignature)
-	assert.Nil(t, commit.Signatures[0].Signature)
-	assert.Nil(t, commit.Signatures[1].Signature)
+	assert.Nil(t, commit.AggregatedSignature)
+	assert.NotNil(t, commit.Signatures[0].Signature)
+	assert.NotNil(t, commit.Signatures[1].Signature)
 	assert.NotNil(t, commit.Signatures[2].Signature)
-	assert.Nil(t, commit.Signatures[3].Signature)
+	assert.NotNil(t, commit.Signatures[3].Signature)
 	assert.True(t, pubKeys[2].VerifyBytes(msgs[2], commit.Signatures[2].Signature))
 
 	blsPubKeys := []bls.PubKeyBLS12{
@@ -269,11 +269,8 @@ func TestNewCommit(t *testing.T) {
 		assert.Nil(t, err)
 		err = bls.VerifyAggregatedSignature(aggrSig, blsPubKeys, blsSigMsgs)
 		assert.Nil(t, err)
-		assert.Equal(t, aggrSig, commit.AggregatedSignature)
+		assert.Nil(t, commit.AggregatedSignature)
 	}()
-
-	err := bls.VerifyAggregatedSignature(commit.AggregatedSignature, blsPubKeys, blsSigMsgs)
-	assert.Nilf(t, err, "%s", err)
 }
 
 func TestCommit(t *testing.T) {
@@ -293,7 +290,16 @@ func TestCommit(t *testing.T) {
 	require.NotNil(t, commit.BitArray())
 	assert.Equal(t, bits.NewBitArray(10).Size(), commit.BitArray().Size())
 
-	assert.Equal(t, voteSet.GetByIndex(0), commit.GetByIndex(0))
+	vote1, vote2 := voteSet.GetByIndex(0), commit.GetByIndex(0)
+	assert.Equal(t, vote1.BlockID, vote2.BlockID)
+	assert.Equal(t, vote1.Height, vote2.Height)
+	assert.Equal(t, vote1.Round, vote2.Round)
+	assert.Equal(t, vote1.Timestamp, vote2.Timestamp)
+	assert.Equal(t, vote1.Type, vote2.Type)
+	assert.Equal(t, vote1.ValidatorAddress, vote2.ValidatorAddress)
+	assert.Equal(t, vote1.ValidatorIndex, vote2.ValidatorIndex)
+	assert.NotNil(t, vote1.Signature)
+	assert.Nil(t, vote2.Signature)
 	assert.True(t, commit.IsCommit())
 }
 
@@ -512,19 +518,17 @@ func TestCommitToVoteSet(t *testing.T) {
 	chainID := voteSet.ChainID()
 	voteSet2 := CommitToVoteSet(chainID, commit, valSet)
 
-	assert.Equal(t, voteSet.aggregatedSignature, commit.AggregatedSignature)
+	assert.Nil(t, voteSet.aggregatedSignature)
+	assert.NotNil(t, commit.AggregatedSignature)
 	assert.Equal(t, commit.AggregatedSignature, voteSet2.aggregatedSignature)
 
 	for i := 0; i < len(vals); i++ {
-		vote1 := voteSet.GetByIndex(i)
-		vote2 := voteSet2.GetByIndex(i)
-		vote3 := commit.GetVote(i)
+		vote1 := voteSet2.GetByIndex(i)
+		vote2 := commit.GetVote(i)
 
 		vote1bz := cdc.MustMarshalBinaryBare(vote1)
 		vote2bz := cdc.MustMarshalBinaryBare(vote2)
-		vote3bz := cdc.MustMarshalBinaryBare(vote3)
 		assert.Equal(t, vote1bz, vote2bz)
-		assert.Equal(t, vote1bz, vote3bz)
 	}
 }
 

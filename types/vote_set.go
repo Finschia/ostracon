@@ -3,9 +3,10 @@ package types
 import (
 	"bytes"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto/bls"
 	"strings"
 	"sync"
+
+	"github.com/tendermint/tendermint/crypto/bls"
 
 	"github.com/pkg/errors"
 
