@@ -591,9 +591,11 @@ func TestElectVotersNonDupCandidate(t *testing.T) {
 func TestElectVotersNonDupSamplingThreshold(t *testing.T) {
 	candidates := newValidatorSet(100, func(i int) int64 { return int64(1000 * (i + 1)) })
 
-	for i := int64(1); i <= 20; i++ {
+	for i := int64(1); i <= 30; i++ {
 		winners := electVotersNonDup(candidates, 0, i)
-		assert.True(t, !isByzantine(winners, candidates.totalStakingPower, i))
+		if len(winners) < 100 {
+			assert.True(t, !isByzantine(winners, candidates.totalStakingPower, i))
+		}
 		resetPoints(candidates)
 	}
 }
@@ -859,7 +861,8 @@ func sameVoters(c1 []*Validator, c2 []*Validator) bool {
 }
 
 func TestElectVotersNonDup(t *testing.T) {
-	for n := 100; n < 10000; n *= 10 {
+	for n := 100; n <= 1000; n += 100 {
+		rand.Seed(int64(n))
 		validators := newValidatorSet(n, func(i int) int64 {
 			return rand.Int63n(100) + 1
 		})
@@ -916,8 +919,10 @@ func TestElectVotersNonDupWithDifferentSeed(t *testing.T) {
 	})
 
 	voters := electVotersNonDup(validators.Copy(), 0, 30)
-	for n := 1; n <= 100; n++ {
-		otherVoters := electVotersNonDup(validators.Copy(), rand.Uint64(), 30)
+	for n := int64(1); n <= 100; n++ {
+		rand.Seed(n)
+		seed := rand.Int63n(100000) + 1
+		otherVoters := electVotersNonDup(validators.Copy(), uint64(seed), 30)
 
 		assert.False(t, sameVoters(voters, otherVoters))
 	}
@@ -1038,11 +1043,12 @@ func TestElectVoterPanic(t *testing.T) {
 	}
 }
 
-func newVotersWithRandomVotingPowerDescending(max, numerator, stakingPower int64) []*voter {
+func newVotersWithRandomVotingPowerDescending(seed, max, numerator, stakingPower int64) []*voter {
 	voters := make([]*voter, 0)
 
 	// random voters descending
 	random := int64(0)
+	rand.Seed(seed)
 	for votingPower := max; votingPower > 0; votingPower -= random {
 		random = rand.Int63n(max/numerator) + 1
 		voters = append(voters, &voter{
@@ -1059,7 +1065,7 @@ func TestSortVoters(t *testing.T) {
 	for n := int64(0); n < 100; n++ {
 
 		// random voters descending
-		voters := newVotersWithRandomVotingPowerDescending(100000, 100, 10)
+		voters := newVotersWithRandomVotingPowerDescending(n, 100000, 100, 10)
 
 		//shuffle the voters
 		shuffled := make([]*voter, len(voters))
@@ -1083,6 +1089,7 @@ func TestSortVotersWithSameValue(t *testing.T) {
 
 		// random voters descending
 		random := int64(0)
+		rand.Seed(int64(n))
 		n := 0
 		for votingPower := int64(100000); votingPower > 0; votingPower -= random {
 			random = rand.Int63n(100000/100) + 1
@@ -1126,7 +1133,7 @@ func TestCountVoters(t *testing.T) {
 		tolerableByzantinePercent := int64(30)
 
 		// random voters descending
-		voters := newVotersWithRandomVotingPowerDescending(100000, 100, 1000)
+		voters := newVotersWithRandomVotingPowerDescending(n, 100000, 100, 1000)
 		totalStakingPower := int64(1000 * len(voters))
 
 		tolerableByzantinePower := getTolerableByzantinePower(totalStakingPower, tolerableByzantinePercent)
