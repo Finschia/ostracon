@@ -573,7 +573,14 @@ func (mem *CListMempool) Update(
 	if mem.Size() > 0 {
 		if mem.config.Recheck {
 			mem.logger.Info("Recheck txs", "numtxs", mem.Size(), "height", height)
+
+			recheckStartTime := time.Now().UnixNano()
 			mem.recheckTxs()
+			recheckEndTime := time.Now().UnixNano()
+
+			recheckTimeMs := float64(recheckEndTime-recheckStartTime) / 1000000
+			mem.metrics.RecheckingTime.Set(recheckTimeMs)
+
 			// At this point, mem.txs are being rechecked.
 			// mem.recheckCursor re-scans mem.txs and possibly removes some txs.
 			// Before mem.Reap(), we should wait for mem.recheckCursor to be nil.
