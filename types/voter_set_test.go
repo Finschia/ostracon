@@ -676,12 +676,6 @@ func sameVoters(c1 []*Validator, c2 []*Validator) bool {
 	return true
 }
 
-func TestMyMy(t *testing.T) {
-	a := new(big.Int).Mul(new(big.Int).Div(big.NewInt(100000000000), big.NewInt(1000000000000)), big.NewInt(1000000000000))
-	b := new(big.Int).Div(new(big.Int).Mul(big.NewInt(100000000000), big.NewInt(1000000000000)), big.NewInt(1000000000000))
-	t.Logf("a=%v, b=%v", a, b)
-}
-
 func TestElectVotersNonDup(t *testing.T) {
 	for n := 100; n <= 1000; n += 100 {
 		rand.Seed(int64(n))
