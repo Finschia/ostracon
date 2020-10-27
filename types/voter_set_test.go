@@ -627,6 +627,98 @@ func TestElectVotersNonDupVoterCountHardCode(t *testing.T) {
 	}
 }
 
+func pickRandomVoter(voters []*Validator) (target *Validator, remain []*Validator) {
+	if len(voters) == 0 {
+		return nil, voters
+	}
+	idx := int(rand.Uint() % uint(len(voters)))
+	remain = make([]*Validator, len(voters)-1)
+	count := 0
+	for i, v := range voters {
+		if i == idx {
+			continue
+		}
+		remain[count] = v
+		count++
+	}
+	return voters[idx], remain
+}
+
+func TestElectVotersNonDupByzantineTolerable(t *testing.T) {
+	rand.Seed(time.Now().UnixNano())
+	validatorSet := newValidatorSet(100, func(i int) int64 { return int64(rand.Uint32()%10000 + 100) })
+	tolerableByzantinePercentage := int64(rand.Uint() % 33)
+	tolerableByzantinePower := getTolerableByzantinePower(validatorSet.TotalStakingPower(),
+		tolerableByzantinePercentage)
+	voters := electVotersNonDup(validatorSet, rand.Uint64(), tolerableByzantinePercentage)
+	totalVoting := int64(0)
+	for _, v := range voters {
+		totalVoting += v.VotingPower
+	}
+	for i := 0; i < 100; i++ {
+		copied := copyValidatorListShallow(voters)
+		sumStaking := int64(0)
+		sumVoting := int64(0)
+		for {
+			var one *Validator
+			one, copied = pickRandomVoter(copied)
+			if one == nil {
+				break
+			}
+			sumStaking += one.StakingPower
+			sumVoting += one.VotingPower
+			if sumStaking >= tolerableByzantinePower {
+				break
+			}
+		}
+		assert.True(t, sumVoting < totalVoting/3)
+	}
+}
+
+func TestElectVotersNonDupMinVoters(t *testing.T) {
+	rand.Seed(time.Now().UnixNano())
+	validatorSet := newValidatorSet(100, func(i int) int64 { return int64(rand.Uint32()%10000 + 100) })
+	tolerableByzantinePercentage := int64(rand.Uint() % 33)
+	for i := 0; i <= 100; i++ {
+		voters := electVotersNonDup(validatorSet, rand.Uint64(), tolerableByzantinePercentage)
+		assert.True(t, len(voters) >= i)
+	}
+}
+
+func TestElectVotersNonDupVoterCountHardCode(t *testing.T) {
+	validatorSet := newValidatorSet(100, func(i int) int64 { return int64(i) })
+	expected := [][]int{
+		{6, 12, 15, 21, 21, 26, 29, 34, 36, 39, 41, 44, 48, 54, 54, 57, 65, 65, 69, 71, 76, 80, 82, 84, 87, 91,
+			100, 100, 100, 100, 100, 100, 100},
+		{10, 12, 15, 21, 21, 26, 29, 34, 36, 39, 41, 44, 48, 54, 54, 57, 65, 65, 69, 71, 76, 80, 82, 84, 87, 91,
+			100, 100, 100, 100, 100, 100, 100},
+		{20, 20, 20, 21, 21, 26, 29, 34, 36, 39, 41, 44, 48, 54, 54, 57, 65, 65, 69, 71, 76, 80, 82, 84, 87, 91,
+			100, 100, 100, 100, 100, 100, 100},
+		{30, 30, 30, 30, 30, 30, 30, 34, 36, 39, 41, 44, 48, 54, 54, 57, 65, 65, 69, 71, 76, 80, 82, 84, 87, 91,
+			100, 100, 100, 100, 100, 100, 100},
+		{40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 41, 44, 48, 54, 54, 57, 65, 65, 69, 71, 76, 80, 82, 84, 87, 91,
+			100, 100, 100, 100, 100, 100, 100},
+		{50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 54, 54, 57, 65, 65, 69, 71, 76, 80, 82, 84, 87, 91,
+			100, 100, 100, 100, 100, 100, 100},
+		{60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 65, 65, 69, 71, 76, 80, 82, 84, 87, 91,
+			100, 100, 100, 100, 100, 100, 100},
+		{70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 71, 76, 80, 82, 84, 87, 91,
+			100, 100, 100, 100, 100, 100, 100},
+		{80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 82, 84, 87, 91,
+			100, 100, 100, 100, 100, 100, 100},
+		{90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 91,
+			100, 100, 100, 100, 100, 100, 100},
+		{100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
+			100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100},
+	}
+	for i := 0; i <= 100; i += 10 {
+		for j := 1; j <= 33; j++ {
+			voters := electVotersNonDup(validatorSet, 0, int64(j))
+			assert.True(t, len(voters) == expected[i/10][j-1])
+		}
+	}
+}
+
 func TestElectVotersNonDupCandidate(t *testing.T) {
 	validatorSet := newValidatorSet(100, func(i int) int64 { return int64(1000 * (i + 1)) })
 
