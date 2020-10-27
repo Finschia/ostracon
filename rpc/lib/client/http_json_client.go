@@ -372,12 +372,13 @@ func DefaultHTTPClient(remoteAddr string) (*http.Client, error) {
 			// Set to true to prevent GZIP-bomb DoS attacks
 			DisableCompression: true,
 			Dial:               dialFn,
+			// TODO revise the blow contstants & make it configurable
 			// From DefaultTransport
 			IdleConnTimeout:       90 * time.Second,
 			ExpectContinueTimeout: 1 * time.Second,
 			// Connection Pool
 			MaxIdleConns:        0,
-			MaxIdleConnsPerHost: 10000,
+			MaxIdleConnsPerHost: 20000,
 		},
 	}
 
