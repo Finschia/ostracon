@@ -570,16 +570,12 @@ func (mem *CListMempool) Update(
 
 	// Either recheck non-committed txs to see if they became invalid
 	// or just notify there're some txs left.
+	recheckStartTime := time.Now().UnixNano()
 	if mem.Size() > 0 {
 		if mem.config.Recheck {
 			mem.logger.Info("Recheck txs", "numtxs", mem.Size(), "height", height)
 
-			recheckStartTime := time.Now().UnixNano()
 			mem.recheckTxs()
-			recheckEndTime := time.Now().UnixNano()
-
-			recheckTimeMs := float64(recheckEndTime-recheckStartTime) / 1000000
-			mem.metrics.RecheckingTime.Set(recheckTimeMs)
 
 			// At this point, mem.txs are being rechecked.
 			// mem.recheckCursor re-scans mem.txs and possibly removes some txs.
@@ -588,6 +584,10 @@ func (mem *CListMempool) Update(
 			mem.notifyTxsAvailable()
 		}
 	}
+	recheckEndTime := time.Now().UnixNano()
+
+	recheckTimeMs := float64(recheckEndTime-recheckStartTime) / 1000000
+	mem.metrics.RecheckingTime.Set(recheckTimeMs)
 
 	// Update metrics
 	mem.metrics.Size.Set(float64(mem.Size()))
