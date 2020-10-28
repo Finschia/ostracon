@@ -2,7 +2,6 @@ package types
 
 import (
 	"bytes"
-	"fmt"
 	"math"
 	"math/big"
 	"strconv"
@@ -743,13 +742,6 @@ func TestElectVotersNonDup(t *testing.T) {
 		})
 
 		winners := electVotersNonDup(validators.Validators, 0, 30, 0)
-
-		if !isByzantineTolerable(winners, 30) {
-			for i, v := range winners {
-				fmt.Printf("%d: voting power: %d, staking power: %d\n", i, v.VotingPower, v.StakingPower)
-			}
-			break
-		}
 		assert.True(t, isByzantineTolerable(winners, 30))
 	}
 }
