@@ -45,6 +45,12 @@ type Reactor interface {
 	//
 	// CONTRACT: msgBytes are not nil.
 	Receive(chID byte, peer Peer, msgBytes []byte)
+
+	// receive async version
+	GetRecvChan() chan *BufferedMsg
+
+	// receive routine per reactor
+	RecvRoutine()
 }
 
 //--------------------------------------
@@ -52,13 +58,20 @@ type Reactor interface {
 type BaseReactor struct {
 	service.BaseService // Provides Start, Stop, .Quit
 	Switch              *Switch
+	recvMsgBuf          chan *BufferedMsg
+	impl                Reactor
 }
 
-func NewBaseReactor(name string, impl Reactor) *BaseReactor {
-	return &BaseReactor{
+func NewBaseReactor(name string, impl Reactor, async bool, recvBufSize int) *BaseReactor {
+	baseReactor := &BaseReactor{
 		BaseService: *service.NewBaseService(nil, name, impl),
 		Switch:      nil,
+		impl:        impl,
 	}
+	if async {
+		baseReactor.recvMsgBuf = make(chan *BufferedMsg, recvBufSize)
+	}
+	return baseReactor
 }
 
 func (br *BaseReactor) SetSwitch(sw *Switch) {
@@ -69,3 +82,29 @@ func (*BaseReactor) AddPeer(peer Peer)                             {}
 func (*BaseReactor) RemovePeer(peer Peer, reason interface{})      {}
 func (*BaseReactor) Receive(chID byte, peer Peer, msgBytes []byte) {}
 func (*BaseReactor) InitPeer(peer Peer) Peer                       { return peer }
+
+func (br *BaseReactor) OnStart() error {
+	if br.recvMsgBuf != nil {
+		// if it is async mode it starts RecvRoutine()
+		go br.RecvRoutine()
+	}
+	return nil
+}
+
+func (br *BaseReactor) RecvRoutine() {
+	for {
+		select {
+		case msg := <-br.recvMsgBuf:
+			br.impl.Receive(msg.ChID, msg.Peer, msg.Msg)
+		case <-br.Quit():
+			return
+		}
+	}
+}
+
+func (br *BaseReactor) GetRecvChan() chan *BufferedMsg {
+	if br.recvMsgBuf == nil {
+		panic("It's not async reactor, but GetRecvChan() is called ")
+	}
+	return br.recvMsgBuf
+}

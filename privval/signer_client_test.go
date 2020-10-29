@@ -162,8 +162,17 @@ func TestSignerProposal(t *testing.T) {
 func TestSignerGenerateVRFProof(t *testing.T) {
 	message := []byte("hello, world")
 	for _, tc := range getSignerTestCases(t, nil) {
-		defer tc.signerServer.Stop()
-		defer tc.signerClient.Close()
+		tc := tc
+		t.Cleanup(func() {
+			if err := tc.signerServer.Stop(); err != nil {
+				t.Error(err)
+			}
+		})
+		t.Cleanup(func() {
+			if err := tc.signerClient.Close(); err != nil {
+				t.Error(err)
+			}
+		})
 
 		proof, err := tc.signerClient.GenerateVRFProof(message)
 		require.Nil(t, err)

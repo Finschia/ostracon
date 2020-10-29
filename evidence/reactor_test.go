@@ -188,6 +188,7 @@ func TestReactorsGossipNoCommittedEvidence(t *testing.T) {
 }
 
 func TestReactorBroadcastEvidenceMemoryLeak(t *testing.T) {
+	config := cfg.TestConfig()
 	evidenceTime := time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
 	evidenceDB := dbm.NewMemDB()
 	blockStore := &mocks.BlockStore{}
@@ -215,7 +216,7 @@ func TestReactorBroadcastEvidenceMemoryLeak(t *testing.T) {
 	p.On("ID").Return("ABC")
 	p.On("String").Return("mock")
 
-	r := evidence.NewReactor(pool)
+	r := evidence.NewReactor(pool, config.P2P.RecvAsync, config.P2P.EvidenceRecvBufSize)
 	r.SetLogger(log.TestingLogger())
 	r.AddPeer(p)
 
@@ -256,11 +257,11 @@ func makeAndConnectReactorsAndPools(config *cfg.Config, stateStores []sm.Store) 
 			panic(err)
 		}
 		pools[i] = pool
-		reactors[i] = evidence.NewReactor(pool)
+		reactors[i] = evidence.NewReactor(pool, config.P2P.RecvAsync, config.P2P.EvidenceRecvBufSize)
 		reactors[i].SetLogger(logger.With("validator", i))
 	}
 
-	p2p.MakeConnectedSwitches(config.P2P, N, func(i int, s *p2p.Switch) *p2p.Switch {
+	p2p.MakeConnectedSwitches(config.P2P, N, func(i int, s *p2p.Switch, config *cfg.P2PConfig) *p2p.Switch {
 		s.AddReactor("EVIDENCE", reactors[i])
 		return s
 

@@ -154,10 +154,10 @@ func TestLightClientAttackEvidence(t *testing.T) {
 
 func TestLightClientAttackEvidenceValidation(t *testing.T) {
 	height := int64(5)
-	voteSet, valSet, voterSet, privVals := randVoteSet(height, 1, tmproto.PrecommitType, 10, 1)
+	voteSet, _, voterSet, privVals := randVoteSet(height, 1, tmproto.PrecommitType, 10, 1)
 	header := makeHeaderRandom()
 	header.Height = height
-	header.VotersHash = valSet.Hash()
+	header.VotersHash = voterSet.Hash()
 	blockID := makeBlockID(header.Hash(), math.MaxInt32, tmhash.Sum([]byte("partshash")))
 	commit, err := MakeCommit(blockID, height, 1, voteSet, privVals, time.Now())
 	require.NoError(t, err)

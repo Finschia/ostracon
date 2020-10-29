@@ -12,6 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	config2 "github.com/tendermint/tendermint/config"
+
 	dbm "github.com/tendermint/tm-db"
 
 	abcicli "github.com/tendermint/tendermint/abci/client"
@@ -105,7 +107,7 @@ func TestByzantinePrevoteEquivocation(t *testing.T) {
 	blocksSubs := make([]types.Subscription, 0)
 	eventBuses := make([]*types.EventBus, nValidators)
 	for i := 0; i < nValidators; i++ {
-		reactors[i] = NewReactor(css[i], true) // so we dont start the consensus states
+		reactors[i] = NewReactor(css[i], true, config.P2P.RecvAsync, config.P2P.ConsensusRecvBufSize) // so we dont start the consensus states
 		reactors[i].SetLogger(css[i].Logger)
 
 		// eventBus is already started with the cs
@@ -122,7 +124,7 @@ func TestByzantinePrevoteEquivocation(t *testing.T) {
 		}
 	}
 	// make connected switches and start all reactors
-	p2p.MakeConnectedSwitches(config.P2P, nValidators, func(i int, s *p2p.Switch) *p2p.Switch {
+	p2p.MakeConnectedSwitches(config.P2P, nValidators, func(i int, s *p2p.Switch, c *config2.P2PConfig) *p2p.Switch {
 		s.AddReactor("CONSENSUS", reactors[i])
 		s.SetLogger(reactors[i].conS.Logger.With("module", "p2p"))
 		return s
@@ -309,7 +311,7 @@ func TestByzantine(t *testing.T) {
 			config.P2P,
 			i,
 			"foo", "1.0.0",
-			func(i int, sw *p2p.Switch) *p2p.Switch {
+			func(i int, sw *p2p.Switch, config *config2.P2PConfig) *p2p.Switch {
 				return sw
 			})
 		switches[i].SetLogger(p2pLogger.With("validator", i))
@@ -343,7 +345,7 @@ func TestByzantine(t *testing.T) {
 		blocksSubs[i], err = eventBus.Subscribe(context.Background(), testSubscriber, types.EventQueryNewBlock)
 		require.NoError(t, err)
 
-		conR := NewReactor(css[i], true) // so we don't start the consensus states
+		conR := NewReactor(css[i], true, true, 1000) // so we don't start the consensus states
 		conR.SetLogger(logger.With("validator", i))
 		conR.SetEventBus(eventBus)
 
@@ -371,7 +373,7 @@ func TestByzantine(t *testing.T) {
 		}
 	}()
 
-	p2p.MakeConnectedSwitches(config.P2P, N, func(i int, s *p2p.Switch) *p2p.Switch {
+	p2p.MakeConnectedSwitches(config.P2P, N, func(i int, s *p2p.Switch, config *config2.P2PConfig) *p2p.Switch {
 		// ignore new switch s, we already made ours
 		switches[i].AddReactor("CONSENSUS", reactors[i])
 		return switches[i]
@@ -575,3 +577,10 @@ func (br *ByzantineReactor) Receive(chID byte, peer p2p.Peer, msgBytes []byte) {
 	br.reactor.Receive(chID, peer, msgBytes)
 }
 func (br *ByzantineReactor) InitPeer(peer p2p.Peer) p2p.Peer { return peer }
+func (br *ByzantineReactor) RecvRoutine() {
+	br.reactor.RecvRoutine()
+}
+
+func (br *ByzantineReactor) GetRecvChan() chan *p2p.BufferedMsg {
+	return br.reactor.GetRecvChan()
+}

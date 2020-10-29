@@ -8,7 +8,6 @@ import (
 	"github.com/tendermint/tendermint/libs/cmap"
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/libs/service"
-
 	tmconn "github.com/tendermint/tendermint/p2p/conn"
 )
 
@@ -39,6 +38,12 @@ type Peer interface {
 
 	Set(string, interface{})
 	Get(string) interface{}
+}
+
+type BufferedMsg struct {
+	ChID byte
+	Peer Peer
+	Msg  []byte
 }
 
 //----------------------------------------------------------
@@ -387,7 +392,25 @@ func createMConnection(
 			"chID", fmt.Sprintf("%#x", chID),
 		}
 		p.metrics.PeerReceiveBytesTotal.With(labels...).Add(float64(len(msgBytes)))
-		reactor.Receive(chID, p, msgBytes)
+		if config.RecvAsync {
+			ch := reactor.GetRecvChan()
+			p.metrics.NumPooledPeerMsgs.With(labels...).Set(float64(len(ch)))
+			// we must use copied msgBytes
+			// because msgBytes is on socket receive buffer yet so reactor can read it concurrently
+			copied := make([]byte, len(msgBytes))
+			copy(copied, msgBytes)
+			select {
+			case ch <- &BufferedMsg{
+				ChID: chID,
+				Peer: p,
+				Msg:  copied}:
+			default:
+				// if the channel is full, we abandon this message
+				p.metrics.NumAbandonedPeerMsgs.With(labels...).Add(1)
+			}
+		} else {
+			reactor.Receive(chID, p, msgBytes)
+		}
 	}
 
 	onError := func(r interface{}) {

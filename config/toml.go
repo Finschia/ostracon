@@ -309,6 +309,16 @@ allow_duplicate_ip = {{ .P2P.AllowDuplicateIP }}
 handshake_timeout = "{{ .P2P.HandshakeTimeout }}"
 dial_timeout = "{{ .P2P.DialTimeout }}"
 
+# Sync/async of reactor's receive function
+recv_async = {{ .P2P.RecvAsync }}
+
+# Size of channel buffer of reactor
+pex_recv_buf_size = {{ .P2P.PexRecvBufSize }}
+mempool_recv_buf_size = {{ .P2P.MempoolRecvBufSize }}
+evidence_recv_buf_size = {{ .P2P.EvidenceRecvBufSize }}
+consensus_recv_buf_size = {{ .P2P.ConsensusRecvBufSize }}
+blockchain_recv_buf_size = {{ .P2P.BlockchainRecvBufSize }}
+
 #######################################################
 ###          Mempool Configuration Option          ###
 #######################################################

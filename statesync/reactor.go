@@ -39,12 +39,12 @@ type Reactor struct {
 }
 
 // NewReactor creates a new state sync reactor.
-func NewReactor(conn proxy.AppConnSnapshot, connQuery proxy.AppConnQuery, tempDir string) *Reactor {
+func NewReactor(conn proxy.AppConnSnapshot, connQuery proxy.AppConnQuery, async bool, recvBufSize int) *Reactor {
 	r := &Reactor{
 		conn:      conn,
 		connQuery: connQuery,
 	}
-	r.BaseReactor = *p2p.NewBaseReactor("StateSync", r)
+	r.BaseReactor = *p2p.NewBaseReactor("StateSync", r, async, recvBufSize)
 	return r
 }
 
