@@ -80,7 +80,7 @@ const TestHost = "localhost"
 // NOTE: panics if any switch fails to start.
 func MakeConnectedSwitches(cfg *config.P2PConfig,
 	n int,
-	initSwitch func(int, *Switch) *Switch,
+	initSwitch func(int, *Switch, *config.P2PConfig) *Switch,
 	connect func([]*Switch, int, int),
 ) []*Switch {
 	switches := make([]*Switch, n)
@@ -179,7 +179,7 @@ func MakeSwitch(
 	cfg *config.P2PConfig,
 	i int,
 	network, version string,
-	initSwitch func(int, *Switch) *Switch,
+	initSwitch func(int, *Switch, *config.P2PConfig) *Switch,
 	opts ...SwitchOption,
 ) *Switch {
 
@@ -201,7 +201,7 @@ func MakeSwitch(
 	}
 
 	// TODO: let the config be passed in?
-	sw := initSwitch(i, NewSwitch(cfg, t, opts...))
+	sw := initSwitch(i, NewSwitch(cfg, t, opts...), cfg) // receive buffer size is all 1000 in test
 	sw.SetLogger(log.TestingLogger().With("switch", i))
 	sw.SetNodeKey(&nodeKey)
 

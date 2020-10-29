@@ -12,7 +12,7 @@ type Reactor struct {
 
 func NewReactor() *Reactor {
 	r := &Reactor{}
-	r.BaseReactor = *p2p.NewBaseReactor("Mock-PEX", r)
+	r.BaseReactor = *p2p.NewBaseReactor("Mock-PEX", r, true, 1000)
 	r.SetLogger(log.TestingLogger())
 	return r
 }

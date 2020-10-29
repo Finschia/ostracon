@@ -40,11 +40,11 @@ func makeAndConnectReactors(config *cfg.Config, stateDBs []dbm.DB) []*Reactor {
 
 		evidenceDB := dbm.NewMemDB()
 		pool := NewPool(stateDBs[i], evidenceDB)
-		reactors[i] = NewReactor(pool)
+		reactors[i] = NewReactor(pool, config.P2P.RecvAsync, config.P2P.EvidenceRecvBufSize)
 		reactors[i].SetLogger(logger.With("validator", i))
 	}
 
-	p2p.MakeConnectedSwitches(config.P2P, N, func(i int, s *p2p.Switch) *p2p.Switch {
+	p2p.MakeConnectedSwitches(config.P2P, N, func(i int, s *p2p.Switch, config *cfg.P2PConfig) *p2p.Switch {
 		s.AddReactor("EVIDENCE", reactors[i])
 		return s
 

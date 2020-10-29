@@ -22,5 +22,6 @@
 - [consensus] [\#126](https://github.com/line/tendermint/pull/126) Add some metrics measuring duration of each consensus steps
 
 ### IMPROVEMENTS:
+- [p2p] [\#135](https://github.com/line/tendermint/pull/135) Add async mode for reactors
 
 ### BUG FIXES:

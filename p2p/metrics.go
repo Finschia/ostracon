@@ -25,6 +25,10 @@ type Metrics struct {
 	PeerPendingSendBytes metrics.Gauge
 	// Number of transactions submitted by each peer.
 	NumTxs metrics.Gauge
+	// Number of abandoned peer messages
+	NumAbandonedPeerMsgs metrics.Counter
+	// Number of pooled peer messages
+	NumPooledPeerMsgs metrics.Gauge
 }
 
 // PrometheusMetrics returns Metrics build using Prometheus client library.
@@ -66,6 +70,18 @@ func PrometheusMetrics(namespace string, labelsAndValues ...string) *Metrics {
 			Name:      "num_txs",
 			Help:      "Number of transactions submitted by each peer.",
 		}, append(labels, "peer_id")).With(labelsAndValues...),
+		NumAbandonedPeerMsgs: prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "num_abandoned_peer_msgs",
+			Help:      "Number of peer messages abandoned because of full channel",
+		}, append(labels, "peer_id", "chID")).With(labelsAndValues...),
+		NumPooledPeerMsgs: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "num_pooled_peer_msgs",
+			Help:      "Number of peer messages pooled currently",
+		}, append(labels, "peer_id", "chID")).With(labelsAndValues...),
 	}
 }
 
@@ -77,5 +93,7 @@ func NopMetrics() *Metrics {
 		PeerSendBytesTotal:    discard.NewCounter(),
 		PeerPendingSendBytes:  discard.NewGauge(),
 		NumTxs:                discard.NewGauge(),
+		NumAbandonedPeerMsgs:  discard.NewCounter(),
+		NumPooledPeerMsgs:     discard.NewGauge(),
 	}
 }
