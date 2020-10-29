@@ -9,12 +9,13 @@ coverage:
   status:
     project:
       default:
+        target : 0%
         threshold: 1%
     patch: on
     changes: off
 
 comment:
-layout: "diff, files"
+  layout: "diff, files"
   behavior: default
   require_changes: no
   require_base: no
@@ -24,3 +25,4 @@ ignore:
   - "docs"
   - "DOCKER"
   - "scripts"
+  - "**/*.pb.go"
