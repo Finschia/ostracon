@@ -564,7 +564,9 @@ func pickRandomVoter(voters []*Validator) (target *Validator, remain []*Validato
 }
 
 func TestElectVotersNonDupByzantineTolerable(t *testing.T) {
-	rand.Seed(time.Now().UnixNano())
+	seed := time.Now().UnixNano()
+	rand.Seed(seed)
+	t.Logf("used seed=%d", seed)
 	validatorSet := newValidatorSet(100, func(i int) int64 { return int64(rand.Uint32()%10000 + 100) })
 	tolerableByzantinePercentage := int(rand.Uint() % 33)
 	tolerableByzantinePower := getTolerableByzantinePower(validatorSet.TotalStakingPower(),
@@ -595,7 +597,9 @@ func TestElectVotersNonDupByzantineTolerable(t *testing.T) {
 }
 
 func TestElectVotersNonDupMinVoters(t *testing.T) {
-	rand.Seed(time.Now().UnixNano())
+	seed := time.Now().UnixNano()
+	rand.Seed(seed)
+	t.Logf("used seed=%d", seed)
 	validatorSet := newValidatorSet(100, func(i int) int64 { return int64(rand.Uint32()%10000 + 100) })
 	tolerableByzantinePercentage := int(rand.Uint() % 33)
 	for i := 0; i <= 100; i++ {
