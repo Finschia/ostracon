@@ -223,7 +223,14 @@ func (blockExec *BlockExecutor) Commit(
 	}
 
 	// Commit block, get hash back
+	commitStartTime := time.Now().UnixNano()
 	res, err := blockExec.proxyApp.CommitSync()
+	commitEndTime := time.Now().UnixNano()
+
+	commitTimeMs := float64(commitEndTime-commitStartTime) / 1000000
+	blockExec.logger.Info("Committed state", "BlockAppCommitTime", commitTimeMs)
+	blockExec.metrics.BlockAppCommitTime.Set(commitTimeMs)
+
 	if err != nil {
 		blockExec.logger.Error(
 			"Client error during proxyAppConn.CommitSync",
