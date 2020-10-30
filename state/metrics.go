@@ -21,6 +21,8 @@ type Metrics struct {
 	BlockExecutionTime metrics.Gauge
 	// Time of Commit
 	BlockCommitTime metrics.Gauge
+	// Time of App Commit
+	BlockAppCommitTime metrics.Gauge
 }
 
 // PrometheusMetrics returns Metrics build using Prometheus client library.
@@ -51,6 +53,12 @@ func PrometheusMetrics(namespace string, labelsAndValues ...string) *Metrics {
 			Name:      "block_commit_time",
 			Help:      "Time of Commit in ms.",
 		}, labels).With(labelsAndValues...),
+		BlockAppCommitTime: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "block_app_commit_time",
+			Help:      "Time of App Commit in ms.",
+		}, labels).With(labelsAndValues...),
 	}
 }
 
@@ -60,5 +68,6 @@ func NopMetrics() *Metrics {
 		BlockProcessingTime: discard.NewHistogram(),
 		BlockExecutionTime:  discard.NewGauge(),
 		BlockCommitTime:     discard.NewGauge(),
+		BlockAppCommitTime:  discard.NewGauge(),
 	}
 }
