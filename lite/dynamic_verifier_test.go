@@ -53,8 +53,7 @@ func TestInquirerValidPath(t *testing.T) {
 	require.Nil(err)
 	cert := NewDynamicVerifier(chainID, trust, source, &types.VoterParams{
 		VoterElectionThreshold:          100,
-		MaxTolerableByzantinePercentage: 1,
-		ElectionPrecision:               2})
+		MaxTolerableByzantinePercentage: 1})
 	cert.SetLogger(log.TestingLogger())
 
 	// This should fail validation:

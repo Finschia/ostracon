@@ -16,8 +16,8 @@ ENV TMHOME /tendermint
 RUN apk update && \
     apk upgrade && \
     apk --no-cache add git make gcc libc-dev build-base curl jq bash && \
-    addgroup tmuser && \
-    adduser -S -G tmuser tmuser -h "$TMHOME"
+    addgroup --g 503 tmuser && \
+    adduser -S -G tmuser --uid 503 tmuser -h "$TMHOME"
 
 # Run the container with tmuser by default. (UID=100, GID=1000)
 USER tmuser

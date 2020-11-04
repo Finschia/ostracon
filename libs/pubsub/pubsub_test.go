@@ -383,7 +383,7 @@ func benchmarkNClients(n int, b *testing.B) {
 		s.PublishWithEvents(
 			ctx,
 			"Gamora",
-			map[string][]string{"abci.Account.Owner": {"Ivan"}, "abci.Invoices.Number": {strconv.Itoa(i)}},
+			map[string][]string{"abci.Account.Owner": {"Ivan"}, "abci.Invoices.Number": {string(rune(i))}},
 		)
 	}
 }
