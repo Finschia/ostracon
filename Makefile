@@ -246,7 +246,6 @@ build-linux:
 	# Build Linux binary
 	$(DOCKER_CMD) ${DOCKER_IMG} /bin/sh -c "$(BUILD_CMD)"
 
->>>>>>> 6f8f870e494229f7b5a3b97a6f8b433e1ae1ef86
 .PHONY: build-linux
 
 build-docker-localnode:
