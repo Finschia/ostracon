@@ -61,6 +61,24 @@ type ValidatorSet struct {
 	totalStakingPower int64
 }
 
+type candidate struct {
+	priority uint64
+	val      *Validator
+}
+
+// for implement Candidate of rand package
+func (c *candidate) Priority() uint64 {
+	return c.priority
+}
+
+func (c *candidate) LessThan(other tmrand.Candidate) bool {
+	o, ok := other.(*candidate)
+	if !ok {
+		panic("incompatible type")
+	}
+	return bytes.Compare(c.val.Address, o.val.Address) < 0
+}
+
 // NewValidatorSet initializes a VoterSet by copying over the
 // values from `valz`, a list of Validators. If valz is nil or empty,
 // the new VoterSet will have an empty list of Validators.
