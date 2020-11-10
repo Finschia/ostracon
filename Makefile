@@ -231,13 +231,9 @@ DOCKER_CMD = docker run --rm \
                         -v `pwd`:$(DOCKER_HOME) \
                         -w $(DOCKER_HOME)
 DOCKER_IMG = golang:1.14.6-alpine3.12
-BUILD_CMD = apk add --update --no-cache git make gcc nasm libc-dev build-base curl jq file gmp-dev clang \
-	&& cd crypto/bls/internal/bls-eth-go-binary \
-	&& make CXX=clang++ \
+BUILD_CMD = apk add --update --no-cache git make gcc libc-dev build-base curl jq file gmp-dev clang \
 	&& cd $(DOCKER_HOME) \
-	&& go mod edit -replace github.com/herumi/bls-eth-go-binary=./crypto/bls/internal/bls-eth-go-binary \
-	&& make build \
-	&& go mod edit -dropreplace github.com/herumi/bls-eth-go-binary
+	&& make build
 
 # Login docker-container for confirmation building linux binary
 build-shell:
@@ -247,25 +243,9 @@ build-shell:
 # Build linux binary on other platforms
 
 build-linux:
-	# Download, build and add the BSL local library to modules
-	if [ ! -d $(SRCPATH)/crypto/bls/internal ]; then \
-		mkdir -p $(SRCPATH)/crypto/bls/internal && \
-		git clone https://github.com/herumi/mcl $(SRCPATH)/crypto/bls/internal/mcl && \
-		cd $(SRCPATH)/crypto/bls/internal/mcl && \
-		git checkout 71e4f39fda890701914d521750490ecfe362f1da && \
-		cd .. && \
-		git clone https://github.com/herumi/bls $(SRCPATH)/crypto/bls/internal/bls && \
-		cd $(SRCPATH)/crypto/bls/internal/bls && \
-		git checkout 5e2af1489a06eddb58869b66a33aa855b27bb41c && \
-		cd .. && \
-		git clone https://github.com/herumi/bls-eth-go-binary -b v1.12 --depth 1 $(SRCPATH)/crypto/bls/internal/bls-eth-go-binary; \
-	fi
-
 	# Build Linux binary
 	$(DOCKER_CMD) ${DOCKER_IMG} /bin/sh -c "$(BUILD_CMD)"
 
-	# Remove the BLS local library from modules
-	rm -rf $(SRCPATH)/crypto/bls/internal
 .PHONY: build-linux
 
 build-docker-localnode:
