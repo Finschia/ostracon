@@ -331,6 +331,28 @@ And as always, friendly reminder, that we have a [bug bounty program](https://ha
 - [rpc] [\#5660](https://github.com/tendermint/tendermint/pull/5660) Set `application/json` as the `Content-Type` header in RPC responses. (@alexanderbez)
 - [store] [\#5382](https://github.com/tendermint/tendermint/pull/5382) Fix race conditions when loading/saving/pruning blocks (@erikgrinaker)
 
+## v0.33.9
+
+*November 10, 2020*
+
+This release reduces the pings frequency for remote private validators and the
+number of `GetPubKey` requests. Fixes
+[\#5550](https://github.com/tendermint/tendermint/issues/5550).
+
+Special thanks to external contributors on this release:
+@JoeKash, @joe-bowman
+
+Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermint).
+
+### IMPROVEMENTS:
+
+- [consensus] [\#5143](https://github.com/tendermint/tendermint/pull/5143) Only call `privValidator.GetPubKey` once per block (@melekes)
+
+### BUG FIXES:
+
+- [consensus] [\#4895](https://github.com/tendermint/tendermint/pull/4895) Cache the address of the validator to reduce querying a remote KMS (@joe-bowman)
+- [privval] [\#5638](https://github.com/tendermint/tendermint/pull/5638) Increase read/write timeout to 5s and calculate ping interval based on it (@JoeKash)
+
 ## v0.33.8
 
 *August 11, 2020*
