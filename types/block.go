@@ -839,15 +839,16 @@ func (commit *Commit) ValidateBasic() error {
 				omittedSignatures++
 			}
 		}
-		if commit.AggregatedSignature == nil {
+		switch {
+		case commit.AggregatedSignature == nil:
 			if omittedSignatures > 0 {
 				return fmt.Errorf("%d erased signatures are present, but no aggregate signature exist in commit",
 					omittedSignatures)
 			}
-		} else if omittedSignatures == 0 {
+		case omittedSignatures == 0:
 			return fmt.Errorf("erased signatures are not present, but aggregated signature exist in commit: %x",
 				commit.AggregatedSignature)
-		} else if len(commit.AggregatedSignature) > MaxSignatureSize {
+		case len(commit.AggregatedSignature) > MaxSignatureSize:
 			return fmt.Errorf("signature is too big %d (max: %d)",
 				len(commit.AggregatedSignature), MaxSignatureSize)
 		}

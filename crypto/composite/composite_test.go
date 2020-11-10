@@ -214,9 +214,9 @@ func TestEnvironmentalCompatibility(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		expected, err := hex.DecodeString("b0896e20be15f757686cec647bf86c97bc73f6607b730abb80828df110226498ba1c6" +
-			"ba9ccc645a7ee4a08b7db07e6d103699b40369475df592343b77d7e798f659b1f85eb9e237f870a1c98fa5e70e685e82ccf6de" +
-			"c4355e61450b5fa4ddb9b")
+		expected, err := hex.DecodeString("b6bf1dbc3a0d67f19a64d8be04bac7b6bb0963698e1711b3955593f23bf325902298a4" +
+			"9132ce4ebf452302f21af95da307186574106a5cbdc630a43d3269db99e5ecbf99d4798d8dc681dac1d60f6e43868860ae247e9" +
+			"e66287774df12e79569")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -272,9 +272,9 @@ func TestEnvironmentalCompatibility(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		expectedSig, err := hex.DecodeString("9427431821a7db58542bf52289cfa1ffb087673541df3558f5a5d69633d27bb733" +
-			"7846befc581536d48b9a805309c9b811eecb92336b290e52ee5be83e081f788ee4c66a154c8a954f5330744058c44aaa95d810" +
-			"3fcddab0dfdda3b5a8551944")
+		expectedSig, err := hex.DecodeString("a00a8a8143fff615e3df98e9b4a493b0ffc5cf1cee14c55d4c667c34651392331c4d" +
+			"5a1bf0a15d018262d61f74a59cc80775217b81363796e50aac7ce7542424a2eb84fbaf787f7a1c00229682ac4bb0a45f67cdf43f" +
+			"b21b091f25a0a8bd51ae")
 		if err != nil {
 			t.Fatal(err)
 		}
