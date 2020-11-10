@@ -922,44 +922,8 @@ func (commit *Commit) ToProto() *tmproto.Commit {
 	return c
 }
 
-// VerifyAndPackSignatures validates the signatures in this commit and then reduces the size of the commit by
-// aggregating the signatures that can be aggregated.
-func (commit *Commit) VerifyAndPackSignatures(chainID string, vals []*Validator) error {
-	if err := commit.verifySignatures(chainID, vals); err != nil {
-		return err
-	}
-
-	// aggregate BLS-scheme signatures
-	/*
-		for i := range commit.Signatures {
-			commitSig := &commit.Signatures[i]
-			if commitSig.Absent() {
-				continue // OK, some signatures can be absent.
-			}
-
-			// BLS signature aggregation for all signatures that have been verified to be cleared.
-			// Signatures that fail to validate are rejected and be Absent.
-			if commitSig.Signature != nil && len(commitSig.Signature) == bls.SignatureSize {
-				if commit.AggregatedSignature == nil {
-					commit.AggregatedSignature = commitSig.Signature
-					commitSig.Signature = nil
-				} else {
-					aggrSig, err := bls.AddSignature(commit.AggregatedSignature, commitSig.Signature)
-					if err == nil {
-						commit.AggregatedSignature = aggrSig
-						commitSig.Signature = nil
-					}
-					// The BLS signature that fail to aggregate is remained intact.
-				}
-				fmt.Printf("*** Commit.VerifyAndPackSignatures(): signature aggregated\n")
-			}
-		}
-	*/
-
-	return nil
-}
-
-func (commit *Commit) verifySignatures(chainID string, vals []*Validator) error {
+// VerifySignatures validates the signatures in this commit.
+func (commit *Commit) VerifySignatures(chainID string, vals []*Validator) error {
 	blsPubKeys := make([]bls.PubKeyBLS12, 0, len(commit.Signatures))
 	messages := make([][]byte, 0, len(commit.Signatures))
 	for idx, commitSig := range commit.Signatures {
@@ -1298,7 +1262,7 @@ func BlockIDFromProto(bID *tmproto.BlockID) (*BlockID, error) {
 	return blockID, blockID.ValidateBasic()
 }
 
-// GetBLSPubKey is a utility function for referencing a specified public key as a BLS key for signature.
+// GetSignatureKey is a utility function for referencing a specified public key as a BLS key for signature.
 // If the key is not BLS, return nil
 func GetSignatureKey(pubKey crypto.PubKey) *bls.PubKeyBLS12 {
 	for {

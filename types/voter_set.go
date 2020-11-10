@@ -168,7 +168,7 @@ func (voters *VoterSet) VerifyCommit(chainID string, blockID BlockID,
 	}
 
 	// Validate signature.
-	if err := commit.VerifyAndPackSignatures(chainID, voters.Voters); err != nil {
+	if err := commit.VerifySignatures(chainID, voters.Voters); err != nil {
 		return err
 	}
 
@@ -220,7 +220,7 @@ func (voters *VoterSet) VerifyCommitLight(chainID string, blockID BlockID,
 		// return as soon as +2/3 of the signatures are verified
 		if talliedVotingPower > votingPowerNeeded {
 			// Validate signature.
-			if err := commit.VerifyAndPackSignatures(chainID, voters.Voters); err != nil {
+			if err := commit.VerifySignatures(chainID, voters.Voters); err != nil {
 				return err
 			}
 			return nil
@@ -298,7 +298,7 @@ func (voters *VoterSet) VerifyFutureCommit(newSet *VoterSet, chainID string,
 	}
 
 	// Validate signature.
-	if err := commit.VerifyAndPackSignatures(chainID, vals); err != nil {
+	if err := commit.VerifySignatures(chainID, vals); err != nil {
 		return err
 	}
 
@@ -370,7 +370,7 @@ func (voters *VoterSet) VerifyCommitTrusting(chainID string, blockID BlockID,
 	}
 
 	// Validate signature.
-	if err := commit.VerifyAndPackSignatures(chainID, vals); err != nil {
+	if err := commit.VerifySignatures(chainID, vals); err != nil {
 		return err
 	}
 
@@ -439,7 +439,7 @@ func (voters *VoterSet) VerifyCommitLightTrusting(chainID string, blockID BlockI
 					_, val := voters.GetByAddress(cs.ValidatorAddress)
 					vals = append(vals, val)
 				}
-				if err := commit.VerifyAndPackSignatures(chainID, vals); err != nil {
+				if err := commit.VerifySignatures(chainID, vals); err != nil {
 					return err
 				}
 				return nil
