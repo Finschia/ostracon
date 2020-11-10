@@ -21,7 +21,7 @@ const (
 	// XXX: Don't change the name of this variable or you will break
 	// automation :)
 
-	TMCoreSemVer = "0.33.8"
+	TMCoreSemVer = "0.33.9"
 
 	// LINECoreSemVer is the current version of LINE Tendermint Core.
 	LINECoreSemVer = "0.3"

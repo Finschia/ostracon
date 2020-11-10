@@ -26,7 +26,7 @@
 - [p2p] [\#135](https://github.com/line/tendermint/pull/135) Add async mode for reactors
 - [encoding/decoding] [\#159](https://github.com/line/tendermint/pull/159) Extend the maximum number of characters that can be decoded to 200 characters
 
+### IMPROVEMENTS:
+
 ### BUG FIXES:
 
-- [consensus] [\#4895](https://github.com/tendermint/tendermint/pull/4895) Cache the address of the validator to reduce querying a remote KMS (@joe-bowman)
-- [privval] \#5638 Increase read/write timeout to 5s and calculate ping interval based on it (@JoeKash)
