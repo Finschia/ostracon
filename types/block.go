@@ -721,7 +721,6 @@ func NewCommitWithAggregatedSignature(
 // Inverse of VoteSet.MakeCommit().
 func CommitToVoteSet(chainID string, commit *Commit, voters *VoterSet) *VoteSet {
 	voteSet := NewVoteSet(chainID, commit.Height, commit.Round, PrecommitType, voters)
-	voteSet.aggregatedSignature = commit.AggregatedSignature
 	for idx, commitSig := range commit.Signatures {
 		if commitSig.Absent() {
 			continue // OK, some precommits can be missing.
@@ -731,6 +730,7 @@ func CommitToVoteSet(chainID string, commit *Commit, voters *VoterSet) *VoteSet 
 			panic(fmt.Sprintf("Failed to reconstruct LastCommit: %v", err))
 		}
 	}
+	voteSet.aggregatedSignature = commit.AggregatedSignature
 	return voteSet
 }
 

@@ -213,6 +213,12 @@ func (voteSet *VoteSet) addVote(vote *Vote) (added bool, err error) {
 		return false, errors.Wrapf(err, "Failed to verify vote with ChainID %s and PubKey %s", voteSet.chainID, voter.PubKey)
 	}
 
+	// To make state deterministic, it prohibits to add a new Vote to the VoteSet that is restored from an existing
+	// Commit.
+	if voteSet.aggregatedSignature != nil {
+		return false, errors.Errorf("This VoteSet is already done Commit and no new Vote can be added.")
+	}
+
 	// Add vote and get conflicting vote if any.
 	added, conflicting := voteSet.addVerifiedVote(vote, blockKey, voter.VotingPower)
 	if conflicting != nil {
