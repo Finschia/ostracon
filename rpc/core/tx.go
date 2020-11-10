@@ -141,21 +141,15 @@ func TxByHeight(ctx *rpctypes.Context, height int64, prove bool, orderBy string)
 		return nil, err
 	}
 
-	// sort results (must be done before pagination)
+	// sort results
 	switch orderBy {
 	case "desc":
 		sort.Slice(results, func(i, j int) bool {
-			if results[i].Height == results[j].Height {
-				return results[i].Index > results[j].Index
-			}
-			return results[i].Height > results[j].Height
+			return results[i].Index > results[j].Index
 		})
 	case "asc", "":
 		sort.Slice(results, func(i, j int) bool {
-			if results[i].Height == results[j].Height {
-				return results[i].Index < results[j].Index
-			}
-			return results[i].Height < results[j].Height
+			return results[i].Index < results[j].Index
 		})
 	default:
 		return nil, errors.New("expected order_by to be either `asc` or `desc` or empty")
