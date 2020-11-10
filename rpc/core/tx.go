@@ -124,3 +124,70 @@ func TxSearch(ctx *rpctypes.Context, query string, prove bool, page, perPage int
 
 	return &ctypes.ResultTxSearch{Txs: apiResults, TotalCount: totalCount}, nil
 }
+
+func TxByHeight(ctx *rpctypes.Context, height int64, prove bool, orderBy string) (*ctypes.ResultTxSearch, error) {
+	// if index is disabled, return error
+	if _, ok := txIndexer.(*null.TxIndex); ok {
+		return nil, errors.New("transaction indexing is disabled")
+	}
+
+	q, err := tmquery.New(fmt.Sprintf("tx.height=%d", height))
+	if err != nil {
+		return nil, err
+	}
+
+	results, err := txIndexer.Search(ctx.Context(), q)
+	if err != nil {
+		return nil, err
+	}
+
+	// sort results (must be done before pagination)
+	switch orderBy {
+	case "desc":
+		sort.Slice(results, func(i, j int) bool {
+			if results[i].Height == results[j].Height {
+				return results[i].Index > results[j].Index
+			}
+			return results[i].Height > results[j].Height
+		})
+	case "asc", "":
+		sort.Slice(results, func(i, j int) bool {
+			if results[i].Height == results[j].Height {
+				return results[i].Index < results[j].Index
+			}
+			return results[i].Height < results[j].Height
+		})
+	default:
+		return nil, errors.New("expected order_by to be either `asc` or `desc` or empty")
+	}
+
+	totalCount := len(results)
+
+	var block *types.Block
+	if prove {
+		block = blockStore.LoadBlock(height)
+	}
+
+	apiResults := make([]*ctypes.ResultTx, 0, totalCount)
+	for _, r := range results {
+
+		var proof types.TxProof
+		if prove {
+			if block == nil {
+				panic("block must not be nil")
+			}
+			proof = block.Data.Txs.Proof(int(r.Index)) // XXX: overflow on 32-bit machines
+		}
+
+		apiResults = append(apiResults, &ctypes.ResultTx{
+			Hash:     r.Tx.Hash(),
+			Height:   r.Height,
+			Index:    r.Index,
+			TxResult: r.Result,
+			Tx:       r.Tx,
+			Proof:    proof,
+		})
+	}
+
+	return &ctypes.ResultTxSearch{Txs: apiResults, TotalCount: totalCount}, nil
+}
