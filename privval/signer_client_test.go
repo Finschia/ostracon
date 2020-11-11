@@ -448,7 +448,7 @@ func brokenHandler(privVal types.PrivValidator, request privvalproto.Message,
 }
 
 func TestSignerUnexpectedResponse(t *testing.T) {
-	for _, tc := range getSignerTestCases(t, types.NewMockPV()) {
+	for _, tc := range getSignerTestCases(t, types.NewMockPV(types.PvKeyEd25519)) {
 		tc.signerServer.SetRequestHandler(brokenHandler)
 
 		tc := tc

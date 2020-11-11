@@ -43,7 +43,7 @@ func TestReactorBroadcastEvidence(t *testing.T) {
 
 	// create statedb for everyone
 	stateDBs := make([]sm.Store, N)
-	val := types.NewMockPV()
+	val := types.NewMockPV(types.PvKeyComposite) // TODO 🏺 need to test by all key types
 	// we need validators saved for heights at least as high as we have evidence for
 	height := int64(numEvidence) + 10
 	for i := 0; i < N; i++ {
@@ -73,7 +73,7 @@ func TestReactorBroadcastEvidence(t *testing.T) {
 func TestReactorSelectiveBroadcast(t *testing.T) {
 	config := cfg.TestConfig()
 
-	val := types.NewMockPV()
+	val := types.NewMockPV(types.PvKeyComposite) // TODO 🏺 need to test by all key types
 	height1 := int64(numEvidence) + 10
 	height2 := int64(numEvidence) / 2
 
@@ -116,7 +116,7 @@ func TestReactorSelectiveBroadcast(t *testing.T) {
 func TestReactorsGossipNoCommittedEvidence(t *testing.T) {
 	config := cfg.TestConfig()
 
-	val := types.NewMockPV()
+	val := types.NewMockPV(types.PvKeyComposite) // TODO 🏺 need to test by all key types
 	var height int64 = 10
 
 	// DB1 is ahead of DB2
@@ -195,7 +195,7 @@ func TestReactorBroadcastEvidenceMemoryLeak(t *testing.T) {
 	blockStore.On("LoadBlockMeta", mock.AnythingOfType("int64")).Return(
 		&types.BlockMeta{Header: types.Header{Time: evidenceTime}},
 	)
-	val := types.NewMockPV()
+	val := types.NewMockPV(types.PvKeyComposite) // TODO 🏺 need to test by all key types
 	stateStore := initializeValidatorState(val, 1)
 	pool, err := evidence.NewPool(evidenceDB, stateStore, blockStore)
 	require.NoError(t, err)

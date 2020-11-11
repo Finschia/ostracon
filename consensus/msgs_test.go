@@ -57,7 +57,7 @@ func TestMsgToProto(t *testing.T) {
 	}
 	pbProposal := proposal.ToProto()
 
-	pv := types.NewMockPV()
+	pv := types.NewMockPV(types.PvKeyComposite) // TODO 🏺 need to test by all key types
 	pk, err := pv.GetPubKey()
 	require.NoError(t, err)
 	val := types.NewValidator(pk, 100)

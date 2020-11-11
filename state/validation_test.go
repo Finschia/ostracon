@@ -112,7 +112,7 @@ func TestValidateBlockCommit(t *testing.T) {
 	)
 	lastCommit := types.NewCommit(0, 0, types.BlockID{}, nil)
 	wrongSigsCommit := types.NewCommit(1, 0, types.BlockID{}, nil)
-	badPrivVal := types.NewMockPV()
+	badPrivVal := types.NewMockPV(types.PvKeyEd25519)
 
 	for height := int64(1); height < validationTestsStopHeight; height++ {
 		proposerAddr := state.Validators.SelectProposer([]byte{}, height, 0).Address

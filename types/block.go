@@ -13,6 +13,8 @@ import (
 	gogotypes "github.com/gogo/protobuf/types"
 
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/bls"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/crypto/merkle"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	"github.com/tendermint/tendermint/libs/bits"
@@ -277,11 +279,15 @@ func BlockFromProto(bp *tmproto.Block) (*Block, error) {
 // MaxDataBytes returns the maximum size of block's data.
 //
 // XXX: Panics on negative result.
-func MaxDataBytes(maxBytes, evidenceBytes int64, valsCount int) int64 {
+func MaxDataBytes(maxBytes int64, commit *Commit, evidences []Evidence) int64 {
+	evidenceBytes := int64(0)
+	for _, ev := range evidences {
+		evidenceBytes += MaxEvidenceBytes(PvKeyTypeByPubKey(ev.PublicKey()))
+	}
 	maxDataBytes := maxBytes -
 		MaxOverheadForBlock -
 		MaxHeaderBytes -
-		MaxCommitBytes(valsCount) -
+		commit.MaxCommitBytes() -
 		evidenceBytes
 
 	if maxDataBytes < 0 {
@@ -630,6 +636,14 @@ type CommitSig struct {
 	Signature        []byte      `json:"signature"`
 }
 
+const (
+	BlockIDFlagLen      = 4
+	TimestampMaxLen     = 18
+	Bytes20AminoHeadLen = 2
+	Bytes64AminoHeadLen = 2
+	Bytes96AminoHeadLen = 3
+)
+
 // NewCommitSigForBlock returns new CommitSig with BlockIDFlagCommit.
 func NewCommitSigForBlock(signature []byte, valAddr Address, ts time.Time) CommitSig {
 	return CommitSig{
@@ -644,6 +658,21 @@ func MaxCommitBytes(valCount int) int64 {
 	// From the repeated commit sig field
 	var protoEncodingOverhead int64 = 3
 	return MaxCommitOverheadBytes + ((MaxCommitSigBytes + protoEncodingOverhead) * int64(valCount))
+}
+
+func (cs CommitSig) MaxCommitSigBytes() int64 {
+	switch len(cs.Signature) {
+	case 0:
+		return BlockIDFlagLen + TimestampMaxLen + Bytes20AminoHeadLen + int64(len(cs.ValidatorAddress.Bytes()))
+	case ed25519.SignatureSize:
+		return BlockIDFlagLen + TimestampMaxLen + Bytes20AminoHeadLen + int64(len(cs.ValidatorAddress.Bytes())) +
+			Bytes64AminoHeadLen + int64(len(cs.Signature))
+	case bls.SignatureSize:
+		return BlockIDFlagLen + TimestampMaxLen + Bytes20AminoHeadLen + int64(len(cs.ValidatorAddress.Bytes())) +
+			Bytes96AminoHeadLen + int64(len(cs.Signature))
+	}
+	return BlockIDFlagLen + TimestampMaxLen + Bytes20AminoHeadLen + int64(len(cs.ValidatorAddress.Bytes())) +
+		Bytes96AminoHeadLen + int64(len(cs.Signature))
 }
 
 // NewCommitSigAbsent returns new CommitSig with BlockIDFlagAbsent. Other
@@ -792,6 +821,29 @@ func NewCommit(height int64, round int32, blockID BlockID, commitSigs []CommitSi
 		BlockID:    blockID,
 		Signatures: commitSigs,
 	}
+}
+
+const (
+	CommitHeighMaxtLen    = 11
+	CommitRoundMaxLen     = 6
+	CommitBlockIDMaxLen   = 77
+	CommitAminoOverhead   = 1
+	CommitAggrSigOverhead = 2
+)
+
+func (commit *Commit) MaxCommitBytes() int64 {
+	sigBytes := int64(0)
+	for _, s := range commit.Signatures {
+		sigBytes += CommitAminoOverhead + s.MaxCommitSigBytes()
+	}
+	if sigBytes > 0 {
+		sigBytes += CommitAminoOverhead
+	}
+	bytesLen := CommitHeighMaxtLen + CommitRoundMaxLen + CommitAminoOverhead + CommitBlockIDMaxLen + sigBytes
+	if len(commit.AggregatedSignature) > 0 {
+		bytesLen += CommitAggrSigOverhead + int64(len(commit.AggregatedSignature))
+	}
+	return bytesLen
 }
 
 // CommitToVoteSet constructs a VoteSet from the Commit and validator set.

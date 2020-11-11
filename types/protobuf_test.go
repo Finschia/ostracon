@@ -134,20 +134,27 @@ func TestABCIHeader(t *testing.T) {
 }
 
 func TestABCIEvidence(t *testing.T) {
-	val := NewMockPV()
-	blockID := makeBlockID([]byte("blockhash"), 1000, []byte("partshash"))
-	blockID2 := makeBlockID([]byte("blockhash2"), 1000, []byte("partshash"))
-	const chainID = "mychain"
-	now := time.Now()
-	ev := &DuplicateVoteEvidence{
-		VoteA:            makeVote(t, val, chainID, 0, 10, 2, 1, blockID, now),
-		VoteB:            makeVote(t, val, chainID, 0, 10, 2, 1, blockID2, now),
-		TotalVotingPower: int64(100),
-		ValidatorPower:   int64(10),
-		Timestamp:        now,
+	keyTypeCases := []PvKeyType{
+		PvKeyEd25519,
+		PvKeyComposite,
+		PvKeyBLS,
 	}
-	for _, abciEv := range ev.ABCI() {
-		assert.Equal(t, "DUPLICATE_VOTE", abciEv.Type.String())
+	for _, kt := range keyTypeCases {
+		val := NewMockPV(kt)
+		blockID := makeBlockID([]byte("blockhash"), 1000, []byte("partshash"))
+		blockID2 := makeBlockID([]byte("blockhash2"), 1000, []byte("partshash"))
+		const chainID = "mychain"
+		now := time.Now()
+		ev := &DuplicateVoteEvidence{
+			VoteA:            makeVote(t, val, chainID, 0, 10, 2, 1, blockID, now),
+			VoteB:            makeVote(t, val, chainID, 0, 10, 2, 1, blockID2, now),
+			TotalVotingPower: int64(100),
+			ValidatorPower:   int64(10),
+			Timestamp:        now,
+		}
+		for _, abciEv := range ev.ABCI() {
+			assert.Equal(t, "DUPLICATE_VOTE", abciEv.Type.String())
+		}
 	}
 }
 

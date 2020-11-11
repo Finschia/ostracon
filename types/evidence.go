@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tendermint/tendermint/crypto"
+
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/merkle"
 	"github.com/tendermint/tendermint/crypto/tmhash"
@@ -17,16 +19,30 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
+func MaxEvidenceBytes(keyType PvKeyType) int64 {
+	// MaxEvidenceBytes is a maximum size of any evidence (including amino overhead).
+	switch keyType {
+	case PvKeyEd25519:
+		return 483
+	case PvKeyComposite:
+		return 608
+	case PvKeyBLS:
+		return 563
+	}
+	panic(fmt.Sprintf("unknown private key type: %d", keyType))
+}
+
 // Evidence represents any provable malicious activity by a validator.
 // Verification logic for each evidence is part of the evidence module.
 type Evidence interface {
-	ABCI() []abci.Evidence // forms individual evidence to be sent to the application
-	Bytes() []byte         // bytes which comprise the evidence
-	Hash() []byte          // hash of the evidence
-	Height() int64         // height of the infraction
-	String() string        // string format of the evidence
-	Time() time.Time       // time of the infraction
-	ValidateBasic() error  // basic consistency check
+	ABCI() []abci.Evidence    // forms individual evidence to be sent to the application
+	Bytes() []byte            // bytes which comprise the evidence
+	Hash() []byte             // hash of the evidence
+	Height() int64            // height of the infraction
+	String() string           // string format of the evidence
+	Time() time.Time          // time of the infraction
+	ValidateBasic() error     // basic consistency check
+	PublicKey() crypto.PubKey // public key of the equivocating validator
 }
 
 //--------------------------------------------------------------------------------------
@@ -40,6 +56,8 @@ type DuplicateVoteEvidence struct {
 	TotalVotingPower int64
 	ValidatorPower   int64
 	Timestamp        time.Time
+
+	PubKey crypto.PubKey
 }
 
 var _ Evidence = &DuplicateVoteEvidence{}
@@ -95,6 +113,10 @@ func (dve *DuplicateVoteEvidence) Bytes() []byte {
 	}
 
 	return bz
+}
+
+func (dve *DuplicateVoteEvidence) PublicKey() crypto.PubKey {
+	return dve.PubKey
 }
 
 // Hash returns the hash of the evidence.
@@ -216,6 +238,10 @@ func (l *LightClientAttackEvidence) ABCI() []abci.Evidence {
 		}
 	}
 	return abciEv
+}
+
+func (l *LightClientAttackEvidence) PublicKey() crypto.PubKey {
+	panic("implement me")
 }
 
 // Bytes returns the proto-encoded evidence as a byte array
@@ -544,7 +570,7 @@ func (err *ErrEvidenceOverflow) Error() string {
 
 // assumes the round to be 0 and the validator index to be 0
 func NewMockDuplicateVoteEvidence(height int64, time time.Time, chainID string) *DuplicateVoteEvidence {
-	val := NewMockPV()
+	val := NewMockPV(PvKeyEd25519)
 	return NewMockDuplicateVoteEvidenceWithValidator(height, time, val, chainID)
 }
 

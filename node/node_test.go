@@ -148,7 +148,7 @@ func TestNodeSetPrivValTCP(t *testing.T) {
 	signerServer := privval.NewSignerServer(
 		dialerEndpoint,
 		config.ChainID(),
-		types.NewMockPV(),
+		types.NewMockPV(types.PvKeyEd25519),
 	)
 
 	go func() {
@@ -194,7 +194,7 @@ func TestNodeSetPrivValIPC(t *testing.T) {
 	pvsc := privval.NewSignerServer(
 		dialerEndpoint,
 		config.ChainID(),
-		types.NewMockPV(),
+		types.NewMockPV(types.PvKeyEd25519),
 	)
 
 	go func() {

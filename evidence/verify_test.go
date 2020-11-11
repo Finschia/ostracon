@@ -309,8 +309,8 @@ type voteData struct {
 }
 
 func TestVerifyDuplicateVoteEvidence(t *testing.T) {
-	val := types.NewMockPV()
-	val2 := types.NewMockPV()
+	val := types.NewMockPV(types.PvKeyComposite) // TODO 🏺 need to test by all key types
+	val2 := types.NewMockPV(types.PvKeyComposite)
 	valSet := types.NewValidatorSet([]*types.Validator{val.ExtractIntoValidator(1)})
 	voterSet := types.ToVoterAll(valSet.Validators)
 
