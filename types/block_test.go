@@ -322,7 +322,7 @@ func TestMaxCommitBytes(t *testing.T) {
 	blockID := BlockID{tmrand.Bytes(tmhash.Size),
 		PartSetHeader{math.MaxInt32, tmrand.Bytes(tmhash.Size)}}
 
-	chainID := "mychain"
+	chainID := "mychain2"
 
 	vote1 := &Vote{
 		ValidatorAddress: pub1.Address(),
@@ -531,7 +531,7 @@ func TestCommitSigNumOfBytes(t *testing.T) {
 
 	blockID := BlockID{tmrand.Bytes(tmhash.Size),
 		PartSetHeader{math.MaxInt32, tmrand.Bytes(tmhash.Size)}}
-	chainID := "mychain"
+	chainID := "mychain1"
 	timestamp := time.Date(math.MaxInt64, 0, 0, 0, 0, 0, math.MaxInt64, time.UTC)
 
 	vote1 := &Vote{
@@ -595,7 +595,7 @@ func TestMaxCommitBytesMany(t *testing.T) {
 	blockID := BlockID{tmrand.Bytes(tmhash.Size),
 		PartSetHeader{math.MaxInt32, tmrand.Bytes(tmhash.Size)}}
 
-	chainID := "mychain"
+	chainID := "mychain3"
 	timestamp := time.Date(math.MaxInt64, 0, 0, 0, 0, 0, math.MaxInt64, time.UTC)
 
 	for i := 0; i < commitCount; i++ {
@@ -656,7 +656,7 @@ func TestMaxCommitBytesMixed(t *testing.T) {
 	blockID := BlockID{tmrand.Bytes(tmhash.Size),
 		PartSetHeader{math.MaxInt32, tmrand.Bytes(tmhash.Size)}}
 
-	chainID := "mychain"
+	chainID := "mychain4"
 	timestamp := time.Date(math.MaxInt64, 0, 0, 0, 0, 0, math.MaxInt64, time.UTC)
 
 	for i := 0; i < commitCount; i++ {
@@ -701,7 +701,7 @@ func TestBlockMaxDataBytes(t *testing.T) {
 	val[2] = newValidator(pub3.Address(), 300)
 	valSet := NewValidatorSet(val)
 	blockID := makeBlockIDRandom()
-	chainID := "mychain"
+	chainID := "mychain5"
 	vote1, _ := MakeVote(1, blockID, valSet, pv1, chainID, tmtime.Now())
 	vote2, _ := MakeVote(1, blockID, valSet, pv2, chainID, tmtime.Now())
 	vote3, _ := MakeVote(1, blockID, valSet, pv3, chainID, tmtime.Now())
@@ -974,7 +974,7 @@ func TestDataProtoBuf(t *testing.T) {
 
 // TestEvidenceDataProtoBuf ensures parity in converting to and from proto.
 func TestEvidenceDataProtoBuf(t *testing.T) {
-	const chainID = "mychain"
+	const chainID = "mychain6"
 	ev := NewMockDuplicateVoteEvidence(math.MaxInt64, time.Now(), chainID)
 	data := &EvidenceData{Evidence: EvidenceList{ev}}
 	_ = data.ByteSize()
