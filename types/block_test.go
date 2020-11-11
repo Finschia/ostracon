@@ -388,7 +388,7 @@ func TestCommitSigNumOfBytes(t *testing.T) {
 
 	blockID := BlockID{tmrand.Bytes(tmhash.Size),
 		PartSetHeader{math.MaxInt32, tmrand.Bytes(tmhash.Size)}}
-	chainID := "mychain"
+	chainID := "mychain1"
 	timestamp := time.Date(math.MaxInt64, 0, 0, 0, 0, 0, math.MaxInt64, time.UTC)
 
 	vote1 := &Vote{
@@ -458,7 +458,7 @@ func TestMaxCommitBytes(t *testing.T) {
 	blockID := BlockID{tmrand.Bytes(tmhash.Size),
 		PartSetHeader{math.MaxInt32, tmrand.Bytes(tmhash.Size)}}
 
-	chainID := "mychain"
+	chainID := "mychain2"
 	timestamp := time.Date(math.MaxInt64, 0, 0, 0, 0, 0, math.MaxInt64, time.UTC)
 
 	vote1 := &Vote{
@@ -516,7 +516,7 @@ func TestMaxCommitBytesMany(t *testing.T) {
 	blockID := BlockID{tmrand.Bytes(tmhash.Size),
 		PartSetHeader{math.MaxInt32, tmrand.Bytes(tmhash.Size)}}
 
-	chainID := "mychain"
+	chainID := "mychain3"
 	timestamp := time.Date(math.MaxInt64, 0, 0, 0, 0, 0, math.MaxInt64, time.UTC)
 
 	for i := 0; i < commitCount; i++ {
@@ -577,7 +577,7 @@ func TestMaxCommitBytesMixed(t *testing.T) {
 	blockID := BlockID{tmrand.Bytes(tmhash.Size),
 		PartSetHeader{math.MaxInt32, tmrand.Bytes(tmhash.Size)}}
 
-	chainID := "mychain"
+	chainID := "mychain4"
 	timestamp := time.Date(math.MaxInt64, 0, 0, 0, 0, 0, math.MaxInt64, time.UTC)
 
 	for i := 0; i < commitCount; i++ {
@@ -622,7 +622,7 @@ func TestBlockMaxDataBytes(t *testing.T) {
 	val[2] = newValidator(pub3.Address(), 300)
 	valSet := NewValidatorSet(val)
 	blockID := makeBlockIDRandom()
-	chainID := "mychain"
+	chainID := "mychain5"
 	vote1, _ := MakeVote(1, blockID, valSet, pv1, chainID, tmtime.Now())
 	vote2, _ := MakeVote(1, blockID, valSet, pv2, chainID, tmtime.Now())
 	vote3, _ := MakeVote(1, blockID, valSet, pv3, chainID, tmtime.Now())
