@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/tendermint/tendermint/crypto/bls"
 	"github.com/tendermint/tendermint/crypto/composite"
 
 	"github.com/tendermint/tendermint/crypto"
@@ -61,8 +62,37 @@ type MockPV struct {
 	breakVoteSigning     bool
 }
 
-func NewMockPV() MockPV {
-	return MockPV{composite.GenPrivKey(), false, false}
+type PvKeyType int
+
+const (
+	PvKeyEd25519 PvKeyType = iota
+	PvKeyComposite
+	PvKeyBLS
+)
+
+func NewMockPV(keyType PvKeyType) MockPV {
+	switch keyType {
+	case PvKeyEd25519:
+		return MockPV{ed25519.GenPrivKey(), false, false}
+	case PvKeyComposite:
+		return MockPV{composite.GenPrivKey(), false, false}
+	case PvKeyBLS:
+		return MockPV{bls.GenPrivKey(), false, false}
+	default:
+		panic(fmt.Sprintf("known pv key type: %d", keyType))
+	}
+}
+
+func PvKeyTypeByPubKey(pubKey crypto.PubKey) PvKeyType {
+	switch len(pubKey.Bytes()) {
+	case 37:
+		return PvKeyEd25519
+	case 90:
+		return PvKeyComposite
+	case 53:
+		return PvKeyBLS
+	}
+	panic(fmt.Sprintf("unknown address len: %d", len(pubKey.Bytes())))
 }
 
 // NewMockPVWithParams allows one to create a MockPV instance, but with finer
