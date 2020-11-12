@@ -51,14 +51,14 @@ type ReactorOption func(*Reactor)
 
 // NewReactor returns a new Reactor with the given
 // consensusState.
-func NewReactor(consensusState *State, fastSync bool, options ...ReactorOption) *Reactor {
+func NewReactor(consensusState *State, fastSync bool, async bool, recvBufSize int, options ...ReactorOption) *Reactor {
 	conR := &Reactor{
 		conS:     consensusState,
 		fastSync: fastSync,
 		metrics:  NopMetrics(),
 	}
 	conR.updateFastSyncingMetric()
-	conR.BaseReactor = *p2p.NewBaseReactor("Consensus", conR)
+	conR.BaseReactor = *p2p.NewBaseReactor("Consensus", conR, async, recvBufSize)
 
 	for _, option := range options {
 		option(conR)
@@ -71,6 +71,9 @@ func NewReactor(consensusState *State, fastSync bool, options ...ReactorOption) 
 // broadcasted to other peers and starting state if we're not in fast sync.
 func (conR *Reactor) OnStart() error {
 	conR.Logger.Info("Reactor ", "fastSync", conR.FastSync())
+
+	// call BaseReactor's OnStart()
+	conR.BaseReactor.OnStart()
 
 	// start routine that computes peer statistics for evaluating peer quality
 	go conR.peerStatsRoutine()

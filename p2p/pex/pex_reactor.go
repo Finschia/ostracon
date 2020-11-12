@@ -124,6 +124,9 @@ type ReactorConfig struct {
 	// Seeds is a list of addresses reactor may use
 	// if it can't connect to peers in the addrbook.
 	Seeds []string
+
+	// Receive channel buffer size
+	RecvBufSize int
 }
 
 type _attemptsToDial struct {
@@ -132,7 +135,7 @@ type _attemptsToDial struct {
 }
 
 // NewReactor creates new PEX reactor.
-func NewReactor(b AddrBook, config *ReactorConfig) *Reactor {
+func NewReactor(b AddrBook, async bool, config *ReactorConfig) *Reactor {
 	r := &Reactor{
 		book:                 b,
 		config:               config,
@@ -141,12 +144,15 @@ func NewReactor(b AddrBook, config *ReactorConfig) *Reactor {
 		lastReceivedRequests: cmap.NewCMap(),
 		crawlPeerInfos:       make(map[p2p.ID]crawlPeerInfo),
 	}
-	r.BaseReactor = *p2p.NewBaseReactor("PEX", r)
+	r.BaseReactor = *p2p.NewBaseReactor("PEX", r, async, config.RecvBufSize)
 	return r
 }
 
 // OnStart implements BaseService
 func (r *Reactor) OnStart() error {
+	// call BaseReactor's OnStart()
+	r.BaseReactor.OnStart()
+
 	err := r.book.Start()
 	if err != nil && err != service.ErrAlreadyStarted {
 		return err
@@ -168,6 +174,7 @@ func (r *Reactor) OnStart() error {
 	} else {
 		go r.ensurePeersRoutine()
 	}
+
 	return nil
 }
 
