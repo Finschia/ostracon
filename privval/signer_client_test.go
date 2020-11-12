@@ -262,7 +262,6 @@ func brokenHandler(privVal types.PrivValidator, request SignerMessage, chainID s
 
 func TestSignerUnexpectedResponse(t *testing.T) {
 	for _, tc := range getSignerTestCases(t) {
-
 		tc.signerServer.SetRequestHandler(brokenHandler)
 
 		defer tc.signerServer.Stop()
