@@ -14,6 +14,7 @@ func forAllPrivKeyTypes(t *testing.T, exec func(t *testing.T, name string, keyTy
 		{name: "ed25512", keyType: PrivKeyEd25519},
 		{name: "composite", keyType: PrivKeyComposite},
 		{name: "bls", keyType: PrivKeyBLS}}
+	//scopelint:ignore
 	for _, knt := range keyNameAndTypes {
 		t.Run(knt.name, func(t *testing.T) {
 			exec(t, knt.name, knt.keyType)
