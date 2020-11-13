@@ -55,10 +55,10 @@ func TestProposalString(t *testing.T) {
 }
 
 func TestProposalVerifySignature(t *testing.T) {
-	keyTypeCases := []PvKeyType{
-		PvKeyEd25519,
-		PvKeyComposite,
-		PvKeyBLS,
+	keyTypeCases := []PrivKeyType{
+		PrivKeyEd25519,
+		PrivKeyComposite,
+		PrivKeyBLS,
 	}
 	for _, kt := range keyTypeCases {
 		privVal := NewMockPV(kt)
@@ -107,47 +107,58 @@ func BenchmarkProposalWriteSignBytes(b *testing.B) {
 	}
 }
 
-func BenchmarkProposalSign(b *testing.B) {
-	keyTypeCases := []PvKeyType{
-		PvKeyEd25519,
-		PvKeyComposite,
-		PvKeyBLS,
-	}
-	for _, kt := range keyTypeCases {
-		privVal := NewMockPV(kt)
-		for i := 0; i < b.N; i++ {
-			err := privVal.SignProposal("test_chain_id", pbp)
-			if err != nil {
-				b.Error(err)
-			}
+func BenchmarkProposalSignEd25519(b *testing.B) {
+	benchmarkProposalSign(b, PrivKeyEd25519)
+}
+
+func BenchmarkProposalSignComposite(b *testing.B) {
+	benchmarkProposalSign(b, PrivKeyComposite)
+}
+
+func BenchmarkProposalSignBLS(b *testing.B) {
+	benchmarkProposalSign(b, PrivKeyBLS)
+}
+
+func benchmarkProposalSign(b *testing.B, keyType PrivKeyType) {
+	privVal := NewMockPV(keyType)
+	for i := 0; i < b.N; i++ {
+		err := privVal.SignProposal("test_chain_id", pbp)
+		if err != nil {
+			b.Error(err)
 		}
 	}
 }
 
-func BenchmarkProposalVerifySignature(b *testing.B) {
-	keyTypeCases := []PvKeyType{
-		PvKeyEd25519,
-		PvKeyComposite,
-		PvKeyBLS,
-	}
-	for _, kt := range keyTypeCases {
-		privVal := NewMockPV(kt)
-		err := privVal.SignProposal("test_chain_id", pbp)
-		require.NoError(b, err)
-		pubKey, err := privVal.GetPubKey()
-		require.NoError(b, err)
+func BenchmarkProposalVerifySignatureEd25519(b *testing.B) {
+	benchmarkProposalVerifySignature(b, PrivKeyEd25519)
+}
 
-		for i := 0; i < b.N; i++ {
-			pubKey.VerifySignature(ProposalSignBytes("test_chain_id", pbp), testProposal.Signature)
-		}
+func BenchmarkProposalVerifySignatureComposite(b *testing.B) {
+	benchmarkProposalVerifySignature(b, PrivKeyComposite)
+}
+
+func BenchmarkProposalVerifySignatureBLS(b *testing.B) {
+	benchmarkProposalVerifySignature(b, PrivKeyBLS)
+}
+
+func benchmarkProposalVerifySignature(b *testing.B, keyType PrivKeyType) {
+	privVal := NewMockPV(keyType)
+	err := privVal.SignProposal("test_chain_id", pbp)
+	require.NoError(b, err)
+	pubKey, err := privVal.GetPubKey()
+	require.NoError(b, err)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		pubKey.VerifySignature(ProposalSignBytes("test_chain_id", pbp), testProposal.Signature)
 	}
 }
 
 func TestProposalValidateBasic(t *testing.T) {
-	keyTypeCases := []PvKeyType{
-		PvKeyEd25519,
-		PvKeyComposite,
-		PvKeyBLS,
+	keyTypeCases := []PrivKeyType{
+		PrivKeyEd25519,
+		PrivKeyComposite,
+		PrivKeyBLS,
 	}
 	for _, kt := range keyTypeCases {
 		privVal := NewMockPV(kt)

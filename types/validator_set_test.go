@@ -417,7 +417,7 @@ func randValidatorSet(numValidators int) *ValidatorSet {
 	return NewValidatorSet(validators)
 }
 
-func randValidatorWithMinMax(keyType PvKeyType, min, max int64) (*Validator, PrivValidator) {
+func randValidatorWithMinMax(keyType PrivKeyType, min, max int64) (*Validator, PrivValidator) {
 	privVal := NewMockPV(keyType)
 	pubKey, _ := privVal.GetPubKey()
 	val := NewValidator(pubKey, min+int64(tmrand.Uint64()%uint64(1+max-min)))
@@ -425,7 +425,7 @@ func randValidatorWithMinMax(keyType PvKeyType, min, max int64) (*Validator, Pri
 	return val, privVal
 }
 
-func randValidatorSetWithMinMax(keyType PvKeyType, numValidators int, min, max int64) (*ValidatorSet,
+func randValidatorSetWithMinMax(keyType PrivKeyType, numValidators int, min, max int64) (*ValidatorSet,
 	map[string]PrivValidator) {
 	validators := make([]*Validator, numValidators)
 	privMap := make(map[string]PrivValidator)
@@ -1389,7 +1389,7 @@ func TestNewValidatorSetFromExistingValidators(t *testing.T) {
 	size := 5
 	vals := make([]*Validator, size)
 	for i := 0; i < size; i++ {
-		pv := NewMockPV(PvKeyComposite) // TODO 🏺 need to test by all key types
+		pv := NewMockPV(PrivKeyComposite) // TODO 🏺 need to test by all key types
 		vals[i] = pv.ExtractIntoValidator(int64(i + 1))
 	}
 	valSet := NewValidatorSet(vals)

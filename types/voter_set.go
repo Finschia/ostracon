@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math"
 	"math/big"
-	"math/rand"
 	"sort"
 	"strings"
 
@@ -461,18 +460,7 @@ func MakeRoundHash(proofHash []byte, height int64, round int32) []byte {
 	return hash.Sum(nil)
 }
 
-func randomKeyType() PvKeyType {
-	r := rand.Uint32() % 2
-	switch r {
-	case 0:
-		return PvKeyEd25519
-	case 1:
-		return PvKeyComposite
-	}
-	return PvKeyEd25519
-}
-
-// RandVoterSet returns a randomized validator/voter set, useful for testing.
+// RandVoterSet returns a randomized validator set, useful for testing.
 // NOTE: PrivValidator are in order.
 // UNSTABLE
 func RandVoterSet(numVoters int, votingPower int64) (*ValidatorSet, *VoterSet, []PrivValidator) {

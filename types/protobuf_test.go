@@ -134,12 +134,7 @@ func TestABCIHeader(t *testing.T) {
 }
 
 func TestABCIEvidence(t *testing.T) {
-	keyTypeCases := []PvKeyType{
-		PvKeyEd25519,
-		PvKeyComposite,
-		PvKeyBLS,
-	}
-	for _, kt := range keyTypeCases {
+	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
 		val := NewMockPV(kt)
 		blockID := makeBlockID([]byte("blockhash"), 1000, []byte("partshash"))
 		blockID2 := makeBlockID([]byte("blockhash2"), 1000, []byte("partshash"))
@@ -155,7 +150,7 @@ func TestABCIEvidence(t *testing.T) {
 		for _, abciEv := range ev.ABCI() {
 			assert.Equal(t, "DUPLICATE_VOTE", abciEv.Type.String())
 		}
-	}
+	})
 }
 
 type pubKeyEddie struct{}

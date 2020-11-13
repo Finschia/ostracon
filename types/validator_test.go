@@ -39,7 +39,7 @@ func TestValidatorProtoBuf(t *testing.T) {
 }
 
 func TestValidatorValidateBasic(t *testing.T) {
-	priv := NewMockPV(PvKeyComposite) // TODO 🏺 need to test by all key types
+	priv := NewMockPV(PrivKeyComposite) // TODO 🏺 need to test by all key types
 	pubKey, _ := priv.GetPubKey()
 	testCases := []struct {
 		val *Validator

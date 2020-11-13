@@ -19,14 +19,14 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
-func MaxEvidenceBytes(keyType PvKeyType) int64 {
+func MaxEvidenceBytes(keyType PrivKeyType) int64 {
 	// MaxEvidenceBytes is a maximum size of any evidence (including amino overhead).
 	switch keyType {
-	case PvKeyEd25519:
+	case PrivKeyEd25519:
 		return 483
-	case PvKeyComposite:
+	case PrivKeyComposite:
 		return 608
-	case PvKeyBLS:
+	case PrivKeyBLS:
 		return 563
 	}
 	panic(fmt.Sprintf("unknown private key type: %d", keyType))
@@ -318,7 +318,6 @@ func (l *LightClientAttackEvidence) ConflictingHeaderIsInvalid(trustedHeader *He
 		!bytes.Equal(trustedHeader.ConsensusHash, l.ConflictingBlock.ConsensusHash) ||
 		!bytes.Equal(trustedHeader.AppHash, l.ConflictingBlock.AppHash) ||
 		!bytes.Equal(trustedHeader.LastResultsHash, l.ConflictingBlock.LastResultsHash)
-
 }
 
 // Hash returns the hash of the header and the commonHeight. This is designed to cause hash collisions
@@ -570,7 +569,7 @@ func (err *ErrEvidenceOverflow) Error() string {
 
 // assumes the round to be 0 and the validator index to be 0
 func NewMockDuplicateVoteEvidence(height int64, time time.Time, chainID string) *DuplicateVoteEvidence {
-	val := NewMockPV(PvKeyEd25519)
+	val := NewMockPV(PrivKeyEd25519)
 	return NewMockDuplicateVoteEvidenceWithValidator(height, time, val, chainID)
 }
 

@@ -388,7 +388,7 @@ func TestSelectVoterReasonableStakingPower(t *testing.T) {
 }
 
 func findLargestStakingPowerGap(t *testing.T, loopCount int, minMaxRate int, maxVoters int) {
-	valSet, privMap := randValidatorSetWithMinMax(PvKeyEd25519, 30, 100, 100*int64(minMaxRate))
+	valSet, privMap := randValidatorSetWithMinMax(PrivKeyEd25519, 30, 100, 100*int64(minMaxRate))
 	genDoc := &GenesisDoc{
 		GenesisTime: tmtime.Now(),
 		ChainID:     "tendermint-test",
@@ -434,7 +434,7 @@ func TestSelectVoterMaxVarious(t *testing.T) {
 		t.Logf("<<< min: 100, max: %d >>>", 100*minMaxRate)
 		for validators := 16; validators <= 256; validators *= 4 {
 			for voters := 1; voters <= validators; voters += 10 {
-				valSet, _ := randValidatorSetWithMinMax(PvKeyEd25519, validators, 100, 100*int64(minMaxRate))
+				valSet, _ := randValidatorSetWithMinMax(PrivKeyEd25519, validators, 100, 100*int64(minMaxRate))
 				voterSet := SelectVoter(valSet, []byte{byte(hash)}, &VoterParams{int32(voters), 20})
 				if voterSet.Size() < voters {
 					t.Logf("Cannot elect voters up to MaxVoters: validators=%d, MaxVoters=%d, actual voters=%d",
@@ -543,7 +543,7 @@ func electVotersForLoop(t *testing.T, hash []byte, valSet *ValidatorSet, privMap
 
 func TestCalVotersNum2(t *testing.T) {
 	t.Skip("take too much time and no longer using accuracy")
-	valSet, privMap := randValidatorSetWithMinMax(PvKeyEd25519, 100, 100, 10000)
+	valSet, privMap := randValidatorSetWithMinMax(PrivKeyEd25519, 100, 100, 10000)
 	byzantinePercent := int32(20)
 	byzantines := makeByzantine(valSet, float64(byzantinePercent)/100)
 	genDoc := &GenesisDoc{

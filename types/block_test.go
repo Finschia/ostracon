@@ -311,9 +311,9 @@ func TestMaxCommitBytes(t *testing.T) {
 
 	assert.EqualValues(t, MaxCommitBytes(MaxVotesCount), int64(pb.Size()))
 
-	pv1 := NewMockPV(PvKeyEd25519)
-	pv2 := NewMockPV(PvKeyComposite)
-	pv3 := NewMockPV(PvKeyComposite)
+	pv1 := NewMockPV(PrivKeyEd25519)
+	pv2 := NewMockPV(PrivKeyComposite)
+	pv3 := NewMockPV(PrivKeyComposite)
 
 	pub1, _ := pv1.GetPubKey()
 	pub2, _ := pv2.GetPubKey()
@@ -521,9 +521,9 @@ func hexBytesFromString(s string) bytes.HexBytes {
 }
 
 func TestCommitSigNumOfBytes(t *testing.T) {
-	pv1 := NewMockPV(PvKeyEd25519)
-	pv2 := NewMockPV(PvKeyComposite)
-	pv3 := NewMockPV(PvKeyBLS)
+	pv1 := NewMockPV(PrivKeyEd25519)
+	pv2 := NewMockPV(PrivKeyComposite)
+	pv3 := NewMockPV(PrivKeyBLS)
 
 	pub1, _ := pv1.GetPubKey()
 	pub2, _ := pv2.GetPubKey()
@@ -599,7 +599,7 @@ func TestMaxCommitBytesMany(t *testing.T) {
 	timestamp := time.Date(math.MaxInt64, 0, 0, 0, 0, 0, math.MaxInt64, time.UTC)
 
 	for i := 0; i < commitCount; i++ {
-		pv := NewMockPV(PvKeyEd25519)
+		pv := NewMockPV(PrivKeyEd25519)
 		pub, _ := pv.GetPubKey()
 		vote := &Vote{
 			ValidatorAddress: pub.Address(),
@@ -628,7 +628,7 @@ func TestMaxCommitBytesAggregated(t *testing.T) {
 	timestamp := time.Date(math.MaxInt64, 0, 0, 0, 0, 0, math.MaxInt64, time.UTC)
 
 	for i := 0; i < commitCount; i++ {
-		pv := NewMockPV(PvKeyComposite)
+		pv := NewMockPV(PrivKeyComposite)
 		pub, _ := pv.GetPubKey()
 		vote := &Vote{
 			ValidatorAddress: pub.Address(),
@@ -673,7 +673,7 @@ func TestMaxCommitBytesMixed(t *testing.T) {
 			BlockID:          blockID,
 		}
 		// sign only if key type is ed25519
-		if keyType == PvKeyEd25519 {
+		if keyType == PrivKeyEd25519 {
 			assert.NoError(t, pv.SignVote(chainID, vote.ToProto()))
 		}
 		commitSig[i] = NewCommitSigForBlock(vote.Signature, pub.Address(), timestamp)
@@ -687,9 +687,9 @@ func TestMaxCommitBytesMixed(t *testing.T) {
 }
 
 func TestBlockMaxDataBytes(t *testing.T) {
-	pv1 := NewMockPV(PvKeyEd25519)
-	pv2 := NewMockPV(PvKeyComposite)
-	pv3 := NewMockPV(PvKeyBLS)
+	pv1 := NewMockPV(PrivKeyEd25519)
+	pv2 := NewMockPV(PrivKeyComposite)
+	pv3 := NewMockPV(PrivKeyBLS)
 
 	pub1, _ := pv1.GetPubKey()
 	pub2, _ := pv2.GetPubKey()

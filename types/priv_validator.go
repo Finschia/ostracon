@@ -57,37 +57,38 @@ type MockPV struct {
 	breakVoteSigning     bool
 }
 
-type PvKeyType int
+type PrivKeyType int
 
 const (
-	PvKeyEd25519 PvKeyType = iota
-	PvKeyComposite
-	PvKeyBLS
+	PrivKeyEd25519 PrivKeyType = iota
+	PrivKeyComposite
+	PrivKeyBLS
 )
 
-func NewMockPV(keyType PvKeyType) MockPV {
+func NewMockPV(keyType PrivKeyType) MockPV {
 	switch keyType {
-	case PvKeyEd25519:
+	case PrivKeyEd25519:
 		return MockPV{ed25519.GenPrivKey(), false, false}
-	case PvKeyComposite:
+	case PrivKeyComposite:
 		return MockPV{composite.GenPrivKey(), false, false}
-	case PvKeyBLS:
+	case PrivKeyBLS:
 		return MockPV{bls.GenPrivKey(), false, false}
 	default:
 		panic(fmt.Sprintf("known pv key type: %d", keyType))
 	}
 }
 
-func PvKeyTypeByPubKey(pubKey crypto.PubKey) PvKeyType {
-	switch len(pubKey.Bytes()) {
-	case 37:
-		return PvKeyEd25519
-	case 90:
-		return PvKeyComposite
-	case 53:
-		return PvKeyBLS
+func PrivKeyTypeByPubKey(pubKey crypto.PubKey) PrivKeyType {
+	switch pubKey.(type) {
+	case ed25519.PubKey:
+		return PrivKeyEd25519
+	case composite.PubKeyComposite:
+		return PrivKeyComposite
+	case bls.PubKeyBLS12:
+		return PrivKeyBLS
+	default:
+		panic(fmt.Sprintf("unknown address len: %d", len(pubKey.Bytes())))
 	}
-	panic(fmt.Sprintf("unknown address len: %d", len(pubKey.Bytes())))
 }
 
 // NewMockPVWithParams allows one to create a MockPV instance, but with finer
