@@ -135,7 +135,7 @@ func TestEvidencePoolBasic(t *testing.T) {
 // Tests inbound evidence for the right time and height
 func TestAddExpiredEvidence(t *testing.T) {
 	var (
-		val                 = types.NewMockPV(types.PvKeyComposite) // TODO 🏺 need to test by all key types
+		val                 = types.NewMockPV(types.PrivKeyComposite) // TODO 🏺 need to test by all key types
 		height              = int64(30)
 		stateStore          = initializeValidatorState(val, height)
 		evidenceDB          = dbm.NewMemDB()
@@ -352,7 +352,7 @@ func TestCheckEvidenceWithLightClientAttack(t *testing.T) {
 // pending evidence and continue to gossip it
 func TestRecoverPendingEvidence(t *testing.T) {
 	height := int64(10)
-	val := types.NewMockPV(types.PvKeyComposite) // TODO 🏺 need to test by all key types
+	val := types.NewMockPV(types.PrivKeyComposite) // TODO 🏺 need to test by all key types
 	valAddress := val.PrivKey.PubKey().Address()
 	evidenceDB := dbm.NewMemDB()
 	stateStore := initializeValidatorState(val, height)
@@ -484,7 +484,7 @@ func makeCommit(height int64, valAddr []byte) *types.Commit {
 }
 
 func defaultTestPool(height int64) (*evidence.Pool, types.MockPV) {
-	val := types.NewMockPV(types.PvKeyComposite) // TODO 🏺 need to test by all key types
+	val := types.NewMockPV(types.PrivKeyComposite) // TODO 🏺 need to test by all key types
 	valAddress := val.PrivKey.PubKey().Address()
 	evidenceDB := dbm.NewMemDB()
 	stateStore := initializeValidatorState(val, height)

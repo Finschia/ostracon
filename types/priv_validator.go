@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/tendermint/tendermint/libs/rand"
+
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/bls"
 	"github.com/tendermint/tendermint/crypto/composite"
@@ -86,9 +88,8 @@ func PrivKeyTypeByPubKey(pubKey crypto.PubKey) PrivKeyType {
 		return PrivKeyComposite
 	case bls.PubKeyBLS12:
 		return PrivKeyBLS
-	default:
-		panic(fmt.Sprintf("unknown address len: %d", len(pubKey.Bytes())))
 	}
+	panic(fmt.Sprintf("unknown public key type: %v", pubKey))
 }
 
 // NewMockPVWithParams allows one to create a MockPV instance, but with finer
@@ -181,4 +182,17 @@ func (pv *ErroringMockPV) SignProposal(chainID string, proposal *tmproto.Proposa
 
 func NewErroringMockPV() *ErroringMockPV {
 	return &ErroringMockPV{MockPV{ed25519.GenPrivKey(), false, false}}
+}
+
+////////////////////////////////////////
+// For testing
+func RandomKeyType() PrivKeyType {
+	r := rand.Uint32() % 2
+	switch r {
+	case 0:
+		return PrivKeyEd25519
+	case 1:
+		return PrivKeyComposite
+	}
+	return PrivKeyEd25519
 }

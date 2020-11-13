@@ -660,7 +660,7 @@ func TestMaxCommitBytesMixed(t *testing.T) {
 	timestamp := time.Date(math.MaxInt64, 0, 0, 0, 0, 0, math.MaxInt64, time.UTC)
 
 	for i := 0; i < commitCount; i++ {
-		keyType := randomKeyType()
+		keyType := RandomKeyType()
 		pv := NewMockPV(keyType)
 		pub, _ := pv.GetPubKey()
 		vote := &Vote{

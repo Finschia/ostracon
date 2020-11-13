@@ -4,8 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/tendermint/tendermint/libs/rand"
 )
 
 func forAllPrivKeyTypes(t *testing.T, exec func(t *testing.T, name string, keyType PrivKeyType)) {
@@ -23,20 +21,9 @@ func forAllPrivKeyTypes(t *testing.T, exec func(t *testing.T, name string, keyTy
 	}
 }
 
-func randomKeyType() PrivKeyType {
-	r := rand.Uint32() % 2
-	switch r {
-	case 0:
-		return PrivKeyEd25519
-	case 1:
-		return PrivKeyComposite
-	}
-	return PrivKeyEd25519
-}
-
 func TestPvKeyTypeByAddress(t *testing.T) {
 	for i := 0; i < 1000; i++ {
-		keyType := randomKeyType()
+		keyType := RandomKeyType()
 		pv := NewMockPV(keyType)
 		pubKey, _ := pv.GetPubKey()
 		assert.True(t, keyType == PrivKeyTypeByPubKey(pubKey))

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
-	s "sort"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -444,42 +444,6 @@ func TestSelectVoterMaxVarious(t *testing.T) {
 				hash++
 			}
 		}
-	}
-}
-
-func TestCalVotersNum(t *testing.T) {
-	total := int64(200)
-	byzantine := 0.2
-	accuracy := 0.99999
-	selection := CalNumOfVoterToElect(total, byzantine, accuracy)
-	assert.Equal(t, selection, int64(88))
-
-	total = int64(100)
-	selection = CalNumOfVoterToElect(total, byzantine, accuracy)
-	assert.Equal(t, selection, int64(58))
-
-	assert.Panics(t, func() { CalNumOfVoterToElect(total, 0.3, 10) })
-	assert.Panics(t, func() { CalNumOfVoterToElect(total, 1.1, 0.9999) })
-}
-
-func TestCalNumOfVoterToElect(t *testing.T) {
-	// result of CalNumOfVoterToElect(1, 0.2, 0.99999) ~ CalNumOfVoterToElect(260, 0.2, 0.99999)
-	result := []int64{1, 1, 1, 1, 4, 4, 4, 4, 4, 7, 7, 7, 7, 7, 10, 10, 10, 10, 10, 13,
-		13, 13, 13, 13, 16, 16, 16, 16, 16, 19, 19, 19, 19, 19, 22, 22, 22, 22, 22, 25,
-		25, 25, 25, 25, 28, 28, 28, 28, 28, 31, 31, 31, 31, 31, 34, 34, 34, 34, 34, 37,
-		37, 37, 37, 37, 40, 40, 40, 40, 40, 43, 43, 43, 43, 43, 46, 46, 46, 46, 46, 49,
-		49, 49, 49, 49, 52, 52, 52, 52, 49, 55, 52, 52, 52, 52, 55, 55, 55, 55, 55, 58,
-		58, 58, 58, 58, 61, 61, 58, 58, 58, 61, 61, 61, 61, 61, 64, 64, 64, 64, 61, 67,
-		67, 64, 64, 64, 67, 67, 67, 67, 67, 70, 70, 70, 67, 67, 70, 70, 70, 70, 70, 73,
-		73, 73, 70, 70, 73, 73, 73, 73, 73, 76, 76, 76, 76, 73, 79, 76, 76, 76, 76, 79,
-		79, 79, 76, 76, 79, 79, 79, 79, 79, 82, 82, 82, 79, 79, 82, 82, 82, 82, 82, 85,
-		85, 82, 82, 82, 85, 85, 85, 85, 85, 88, 88, 85, 85, 85, 88, 88, 88, 88, 85, 88,
-		88, 88, 88, 88, 91, 91, 88, 88, 88, 91, 91, 91, 91, 88, 94, 91, 91, 91, 91, 94,
-		94, 94, 91, 91, 94, 94, 94, 94, 94, 97, 94, 94, 94, 94, 97, 97, 97, 94, 94, 97,
-		97, 97, 97, 97, 100, 97, 97, 97, 97, 100, 100, 100, 97, 97, 100, 100, 100, 100, 97, 103}
-
-	for i := 1; i <= len(result); i++ {
-		assert.True(t, CalNumOfVoterToElect(int64(i), 0.2, 0.99999) == result[i-1])
 	}
 }
 
@@ -1043,10 +1007,10 @@ func sameVoters(c1 []*Validator, c2 []*Validator) bool {
 	if len(c1) != len(c2) {
 		return false
 	}
-	s.Slice(c1, func(i, j int) bool {
+	sort.Slice(c1, func(i, j int) bool {
 		return bytes.Compare(c1[i].Address.Bytes(), c1[j].Address.Bytes()) == -1
 	})
-	s.Slice(c2, func(i, j int) bool {
+	sort.Slice(c2, func(i, j int) bool {
 		return bytes.Compare(c2[i].Address.Bytes(), c2[j].Address.Bytes()) == -1
 	})
 	for i := 0; i < len(c1); i++ {
