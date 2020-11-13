@@ -15,9 +15,10 @@ func forAllPrivKeyTypes(t *testing.T, exec func(t *testing.T, name string, keyTy
 		{name: "composite", keyType: PrivKeyComposite},
 		{name: "bls", keyType: PrivKeyBLS}}
 	for _, knt := range keyNameAndTypes {
-		knt := knt // pin; to avoid "Using the variable on range scope knt in function literal (scopelint)"
-		t.Run(knt.name, func(t *testing.T) {
-			exec(t, knt.name, knt.keyType)
+		name := knt.name // pin; to avoid "Using the variable on range scope knt in function literal (scopelint)"
+		keyType := knt.keyType
+		t.Run(name, func(t *testing.T) {
+			exec(t, name, keyType)
 		})
 	}
 }

@@ -47,8 +47,11 @@ func Validators(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *in
 	// Retrieve to the indices where selected as Voters in Validators.
 	votersIndices := make([]int32, 0, len(v))
 	for i := range v {
-		idx, _ := voters.GetByAddress(v[i].Address)
-		votersIndices = append(votersIndices, idx)
+		idx, voter := voters.GetByAddress(v[i].Address)
+		if idx >= 0 {
+			votersIndices = append(votersIndices, int32(i))
+			v[i] = voter		// replace to preserve its VotingPower
+		}
 	}
 
 	return &ctypes.ResultValidators{

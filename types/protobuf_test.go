@@ -3,6 +3,8 @@ package types
 import (
 	"testing"
 
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
 	"github.com/golang/protobuf/proto" // nolint: staticcheck // still used by gogoproto
@@ -141,8 +143,8 @@ func TestABCIEvidence(t *testing.T) {
 		const chainID = "mychain"
 		now := time.Now()
 		ev := &DuplicateVoteEvidence{
-			VoteA:            makeVote(t, val, chainID, 0, 10, 2, 1, blockID, now),
-			VoteB:            makeVote(t, val, chainID, 0, 10, 2, 1, blockID2, now),
+			VoteA:            makeVote(t, val, chainID, 0, 10, 2, tmproto.PrevoteType, blockID, now),
+			VoteB:            makeVote(t, val, chainID, 0, 10, 2, tmproto.PrevoteType, blockID2, now),
 			TotalVotingPower: int64(100),
 			ValidatorPower:   int64(10),
 			Timestamp:        now,

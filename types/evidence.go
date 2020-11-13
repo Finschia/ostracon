@@ -19,17 +19,20 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
-func MaxEvidenceBytes(keyType PrivKeyType) int64 {
-	// MaxEvidenceBytes is a maximum size of any evidence (including amino overhead).
-	switch keyType {
-	case PrivKeyEd25519:
-		return 483
-	case PrivKeyComposite:
-		return 608
-	case PrivKeyBLS:
-		return 563
+func MaxEvidenceBytes(ev Evidence) int64 {
+	switch ev := ev.(type) {
+	case *DuplicateVoteEvidence:
+		return (1 + MaxVoteBytes(len(ev.VoteA.Signature)) + 2) + // VoteA
+			(1 + MaxVoteBytes(len(ev.VoteB.Signature)) + 2) + // VoteB
+			(1 + 9) + // TotalVotingPower
+			(1 + 9) + // ValidatorPower
+			(1 + 17 + 1) // Timestamp
+	case *LightClientAttackEvidence:
+		// FIXME 🏺 need this?
+		return 0
+	default:
+		panic(fmt.Sprintf("unsupported evidence: %+v", ev))
 	}
-	panic(fmt.Sprintf("unknown private key type: %d", keyType))
 }
 
 // Evidence represents any provable malicious activity by a validator.

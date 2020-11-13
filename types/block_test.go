@@ -282,7 +282,7 @@ func TestMaxCommitBytes(t *testing.T) {
 
 	pbSig := cs.ToProto()
 	// test that a single commit sig doesn't exceed max commit sig bytes
-	assert.EqualValues(t, MaxCommitSigBytes, int64(pbSig.Size()))
+	assert.EqualValues(t, MaxCommitSigBytes(len(cs.Signature)), int64(pbSig.Size()))
 
 	// check size with a single commit
 	commit := &Commit{
@@ -291,7 +291,7 @@ func TestMaxCommitBytes(t *testing.T) {
 		BlockID: BlockID{
 			Hash: tmhash.Sum([]byte("blockID_hash")),
 			PartSetHeader: PartSetHeader{
-				Total: math.MaxInt32,
+				Total: math.MaxUint32,
 				Hash:  tmhash.Sum([]byte("blockID_part_set_header_hash")),
 			},
 		},
@@ -300,16 +300,21 @@ func TestMaxCommitBytes(t *testing.T) {
 
 	pb := commit.ToProto()
 
-	assert.EqualValues(t, MaxCommitBytes(1), int64(pb.Size()))
+	assert.EqualValues(t, MaxCommitBytes([]int{len(commit.Signatures[0].Signature)}), int64(pb.Size()))
+	assert.EqualValues(t, commit.MaxCommitBytes(), int64(pb.Size()))
 
 	// check the upper bound of the commit size
+	sigsBytes := make([]int, MaxVotesCount)
+	sigsBytes[0] = len(commit.Signatures[0].Signature)
 	for i := 1; i < MaxVotesCount; i++ {
 		commit.Signatures = append(commit.Signatures, cs)
+		sigsBytes[i] = len(commit.Signatures[i].Signature)
 	}
 
 	pb = commit.ToProto()
 
-	assert.EqualValues(t, MaxCommitBytes(MaxVotesCount), int64(pb.Size()))
+	assert.EqualValues(t, MaxCommitBytes(sigsBytes), int64(pb.Size()))
+	assert.EqualValues(t, commit.MaxCommitBytes(), int64(pb.Size()))
 
 	pv1 := NewMockPV(PrivKeyEd25519)
 	pv2 := NewMockPV(PrivKeyComposite)
@@ -320,7 +325,7 @@ func TestMaxCommitBytes(t *testing.T) {
 	pub3, _ := pv3.GetPubKey()
 
 	blockID := BlockID{tmrand.Bytes(tmhash.Size),
-		PartSetHeader{math.MaxInt32, tmrand.Bytes(tmhash.Size)}}
+		PartSetHeader{math.MaxUint32, tmrand.Bytes(tmhash.Size)}}
 
 	chainID := "mychain2"
 
@@ -333,7 +338,8 @@ func TestMaxCommitBytes(t *testing.T) {
 		Type:             tmproto.PrecommitType,
 		BlockID:          blockID,
 	}
-	assert.NoError(t, pv1.SignVote(chainID, vote1.ToProto()))
+	pbVote1 := vote1.ToProto()
+	assert.NoError(t, pv1.SignVote(chainID, pbVote1))
 
 	vote2 := &Vote{
 		ValidatorAddress: pub2.Address(),
@@ -344,7 +350,8 @@ func TestMaxCommitBytes(t *testing.T) {
 		Type:             tmproto.PrecommitType,
 		BlockID:          blockID,
 	}
-	assert.NoError(t, pv2.SignVote(chainID, vote2.ToProto()))
+	pbVote2 := vote2.ToProto()
+	assert.NoError(t, pv2.SignVote(chainID, pbVote2))
 
 	vote3 := &Vote{
 		ValidatorAddress: pub2.Address(),
@@ -355,12 +362,13 @@ func TestMaxCommitBytes(t *testing.T) {
 		Type:             tmproto.PrecommitType,
 		BlockID:          blockID,
 	}
+	pbVote3 := vote3.ToProto()
 	// does not sign vote3
 
 	commitSig := make([]CommitSig, 3)
-	commitSig[0] = NewCommitSigForBlock(vote1.Signature, pub1.Address(), timestamp)
-	commitSig[1] = NewCommitSigForBlock(vote2.Signature, pub2.Address(), timestamp)
-	commitSig[2] = NewCommitSigForBlock(vote3.Signature, pub3.Address(), timestamp)
+	commitSig[0] = NewCommitSigForBlock(pbVote1.Signature, pub1.Address(), timestamp)
+	commitSig[1] = NewCommitSigForBlock(pbVote2.Signature, pub2.Address(), timestamp)
+	commitSig[2] = NewCommitSigForBlock(pbVote3.Signature, pub3.Address(), timestamp)
 
 	commit = NewCommit(math.MaxInt64, math.MaxInt32, blockID, commitSig)
 	commit.AggregatedSignature = tmrand.Bytes(bls.SignatureSize)
@@ -370,8 +378,10 @@ func TestMaxCommitBytes(t *testing.T) {
 	assert.NoError(t, err1)
 	bz2, err2 := commit.ToProto().Marshal()
 	assert.NoError(t, err2)
-	assert.True(t, CommitBlockIDMaxLen == len(bz1))
-	assert.True(t, commit.MaxCommitBytes() == int64(len(bz2)))
+	assert.Equal(t, len(bz1), protoBlockID.Size())
+	assert.Equal(t, len(bz2), commit.ToProto().Size())
+	assert.Equal(t, CommitBlockIDMaxLen, protoBlockID.Size())
+	assert.Equal(t, commit.MaxCommitBytes(), int64(commit.ToProto().Size()))
 }
 
 func TestHeaderHash(t *testing.T) {
@@ -543,7 +553,8 @@ func TestCommitSigNumOfBytes(t *testing.T) {
 		Type:             tmproto.PrecommitType,
 		BlockID:          blockID,
 	}
-	assert.NoError(t, pv1.SignVote(chainID, vote1.ToProto()))
+	pbVote1 := vote1.ToProto()
+	assert.NoError(t, pv1.SignVote(chainID, pbVote1))
 
 	vote2 := &Vote{
 		ValidatorAddress: pub2.Address(),
@@ -554,10 +565,11 @@ func TestCommitSigNumOfBytes(t *testing.T) {
 		Type:             tmproto.PrecommitType,
 		BlockID:          blockID,
 	}
-	assert.NoError(t, pv2.SignVote(chainID, vote2.ToProto()))
+	pbVote2 := vote2.ToProto()
+	assert.NoError(t, pv2.SignVote(chainID, pbVote2))
 
 	vote3 := &Vote{
-		ValidatorAddress: pub2.Address(),
+		ValidatorAddress: pub3.Address(),
 		ValidatorIndex:   math.MaxInt32,
 		Height:           math.MaxInt64,
 		Round:            math.MaxInt32,
@@ -565,28 +577,29 @@ func TestCommitSigNumOfBytes(t *testing.T) {
 		Type:             tmproto.PrecommitType,
 		BlockID:          blockID,
 	}
-	assert.NoError(t, pv3.SignVote(chainID, vote3.ToProto()))
+	pbVote3 := vote3.ToProto()
+	assert.NoError(t, pv3.SignVote(chainID, pbVote3))
 
-	commitSig1 := NewCommitSigForBlock(vote1.Signature, pub1.Address(), timestamp)
-	commitSig2 := NewCommitSigForBlock(vote2.Signature, pub2.Address(), timestamp)
-	commitSig3 := NewCommitSigForBlock(vote3.Signature, pub3.Address(), timestamp)
+	commitSig1 := NewCommitSigForBlock(pbVote1.Signature, pub1.Address(), timestamp)
+	commitSig2 := NewCommitSigForBlock(pbVote2.Signature, pub2.Address(), timestamp)
+	commitSig3 := NewCommitSigForBlock(pbVote3.Signature, pub3.Address(), timestamp)
 	aggregatedCommitSig := NewCommitSigForBlock(nil, pub2.Address(), timestamp)
 
 	b1, err1 := commitSig1.ToProto().Marshal()
 	assert.NoError(t, err1)
-	assert.True(t, int64(len(b1)) == commitSig1.MaxCommitSigBytes())
+	assert.Equal(t, int64(len(b1)), commitSig1.MaxCommitSigBytes())
 
 	b2, err2 := commitSig2.ToProto().Marshal()
 	assert.NoError(t, err2)
-	assert.True(t, int64(len(b2)) == commitSig2.MaxCommitSigBytes())
+	assert.Equal(t, int64(len(b2)), commitSig2.MaxCommitSigBytes())
 
 	b3, err3 := commitSig3.ToProto().Marshal()
 	assert.NoError(t, err3)
-	assert.True(t, int64(len(b3)) == commitSig3.MaxCommitSigBytes())
+	assert.Equal(t, int64(len(b3)), commitSig3.MaxCommitSigBytes())
 
 	b4, err4 := aggregatedCommitSig.ToProto().Marshal()
 	assert.NoError(t, err4)
-	assert.True(t, int64(len(b4)) == aggregatedCommitSig.MaxCommitSigBytes())
+	assert.Equal(t, int64(len(b4)), aggregatedCommitSig.MaxCommitSigBytes())
 }
 
 func TestMaxCommitBytesMany(t *testing.T) {
@@ -616,7 +629,7 @@ func TestMaxCommitBytesMany(t *testing.T) {
 	commit := NewCommit(math.MaxInt64, math.MaxInt32, blockID, commitSig)
 	bz, err := commit.ToProto().Marshal()
 	assert.NoError(t, err)
-	assert.True(t, commit.MaxCommitBytes() == int64(len(bz)))
+	assert.Equal(t, commit.MaxCommitBytes(), int64(len(bz)))
 }
 
 func TestMaxCommitBytesAggregated(t *testing.T) {
@@ -647,7 +660,7 @@ func TestMaxCommitBytesAggregated(t *testing.T) {
 
 	bz, err := commit.ToProto().Marshal()
 	assert.NoError(t, err)
-	assert.True(t, commit.MaxCommitBytes() == int64(len(bz)))
+	assert.Equal(t, commit.MaxCommitBytes(), int64(len(bz)))
 }
 
 func TestMaxCommitBytesMixed(t *testing.T) {
@@ -683,7 +696,7 @@ func TestMaxCommitBytesMixed(t *testing.T) {
 
 	bz, err := commit.ToProto().Marshal()
 	assert.NoError(t, err)
-	assert.True(t, commit.MaxCommitBytes() == int64(len(bz)))
+	assert.Equal(t, commit.MaxCommitBytes(), int64(len(bz)))
 }
 
 func TestBlockMaxDataBytes(t *testing.T) {
@@ -724,9 +737,9 @@ func TestBlockMaxDataBytes(t *testing.T) {
 	}{
 		0: {-10, commit, []Evidence{dupEv}, true, 0},
 		1: {10, commit, []Evidence{dupEv}, true, 0},
-		2: {1700, commit, []Evidence{dupEv}, true, 0},
-		3: {1735, commit, []Evidence{dupEv}, false, 0},
-		4: {1736, commit, []Evidence{dupEv}, false, 1},
+		2: {1600, commit, []Evidence{dupEv}, true, 0},
+		3: {1692, commit, []Evidence{dupEv}, false, 0},
+		4: {1693, commit, []Evidence{dupEv}, false, 1},
 	}
 
 	for i, tc := range testCases {

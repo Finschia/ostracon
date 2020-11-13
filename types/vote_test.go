@@ -245,13 +245,13 @@ func TestMaxVoteBytes(t *testing.T) {
 
 	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
 		privVal := NewMockPV(kt)
-		err := privVal.SignVote("test_chain_id", vote.ToProto())
+		pbVote := vote.ToProto()
+		err := privVal.SignVote("test_chain_id", pbVote)
 		require.NoError(t, err)
 
-		bz, err := vote.ToProto().Marshal()
+		bz, err := pbVote.Marshal()
 		require.NoError(t, err)
-
-		assert.True(t, MaxCommitBytes(1) >= int64(len(bz)))
+		assert.Equal(t, MaxVoteBytes(len(pbVote.Signature)), int64(len(bz)))
 	})
 }
 

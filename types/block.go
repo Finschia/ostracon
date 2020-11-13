@@ -7,14 +7,15 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/crypto/ed25519"
+
+	"github.com/tendermint/tendermint/crypto/bls"
 	"github.com/tendermint/tendermint/crypto/composite"
 
 	"github.com/gogo/protobuf/proto"
 	gogotypes "github.com/gogo/protobuf/types"
 
 	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/bls"
-	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/crypto/merkle"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	"github.com/tendermint/tendermint/libs/bits"
@@ -282,7 +283,7 @@ func BlockFromProto(bp *tmproto.Block) (*Block, error) {
 func MaxDataBytes(maxBytes int64, commit *Commit, evidences []Evidence) int64 {
 	evidenceBytes := int64(0)
 	for _, ev := range evidences {
-		evidenceBytes += MaxEvidenceBytes(PrivKeyTypeByPubKey(ev.PublicKey()))
+		evidenceBytes += MaxEvidenceBytes(ev)
 	}
 	maxDataBytes := maxBytes -
 		MaxOverheadForBlock -
@@ -307,10 +308,14 @@ func MaxDataBytes(maxBytes int64, commit *Commit, evidences []Evidence) int64 {
 //
 // XXX: Panics on negative result.
 func MaxDataBytesNoEvidence(maxBytes int64, valsCount int) int64 {
+	signsBytes := make([]int, valsCount)
+	for i := range signsBytes {
+		signsBytes[i] = composite.MaxSignatureSize
+	}
 	maxDataBytes := maxBytes -
 		MaxOverheadForBlock -
 		MaxHeaderBytes -
-		MaxCommitBytes(valsCount)
+		MaxCommitBytes(signsBytes)
 
 	if maxDataBytes < 0 {
 		panic(fmt.Sprintf(
@@ -620,13 +625,24 @@ const (
 // MaxCommitOverheadBytes is max size of commit without any commitSigs -> 82 for BlockID, 8 for Height, 4 for Round.
 // NOTE: 🏺This size is for the ProtocolBuffers representation of Commit without CommitSig. Therefore, it includes
 // the overhead of ProtocolBuffers in addition to the above number.
-const MaxCommitOverheadBytes int64 = (76 + 2) + (8 + 2) + (4 + 2)
+const MaxCommitOverheadBytes int64 = (1 + 9) + // Height
+	(1 + 5) + // Round
+	(1 + 76 + 1) // BlockID
 
 // MaxCommitSigBytes is made up of 64 or 96 bytes for the signature, 20 bytes for the address,
 // 1 byte for the flag and 17 bytes for the timestamp.
 // NOTE: 🏺This size is for the ProtocolBuffers representation of CommitSig. Therefore, it includes the overhead of
 // ProtocolBuffers in addition to the above number.
-var MaxCommitSigBytes = (int64(composite.MaxSignatureSize) + 2) + (20 + 2) + (1 + 1) + (17 + 2)
+// var MaxCommitSigBytes = (int64(composite.MaxSignatureSize) + 2) + (20 + 2) + (1 + 1) + (17 + 2)
+func MaxCommitSigBytes(signBytes int) int64 {
+	var size int64 = (1 + 1) + // BlockIDFlag
+		(1 + 20 + 1) + // ValidatorAddress
+		(1 + 17 + 1) // Timestamp
+	if signBytes > 0 {
+		size += 1 + int64(signBytes) + 1 // Signature
+	}
+	return size
+}
 
 // CommitSig is a part of the Vote included in a Commit.
 type CommitSig struct {
@@ -654,23 +670,28 @@ func NewCommitSigForBlock(signature []byte, valAddr Address, ts time.Time) Commi
 	}
 }
 
-func MaxCommitBytes(valCount int) int64 {
+func MaxCommitBytes(sigSizes []int) int64 {
 	// From the repeated commit sig field
-	var protoEncodingOverhead int64 = 3
-	return MaxCommitOverheadBytes + ((MaxCommitSigBytes + protoEncodingOverhead) * int64(valCount))
+	var size = MaxCommitOverheadBytes // Height + Round + BlockID
+	for _, sigSize := range sigSizes {
+		var protoEncodingOverhead int64 = 1
+		switch sigSize {
+		case 0:
+			protoEncodingOverhead += 1
+		case ed25519.SignatureSize:
+			protoEncodingOverhead += 1
+		case bls.SignatureSize:
+			protoEncodingOverhead += 2
+		default:
+			panic(fmt.Sprintf("unexpected signature size: %d bytes", sigSize))
+		}
+		size += MaxCommitSigBytes(sigSize) + protoEncodingOverhead
+	}
+	return size
 }
 
 func (cs CommitSig) MaxCommitSigBytes() int64 {
-	commitSigBytesBase := BlockIDFlagLen + TimestampMaxLen + Bytes20AminoHeadLen + int64(len(cs.ValidatorAddress.Bytes()))
-	switch len(cs.Signature) {
-	case 0:
-		return commitSigBytesBase
-	case ed25519.SignatureSize:
-		return commitSigBytesBase + Bytes64AminoHeadLen + int64(len(cs.Signature))
-	case bls.SignatureSize:
-		return commitSigBytesBase + Bytes96AminoHeadLen + int64(len(cs.Signature))
-	}
-	panic(fmt.Sprintf("unknown signature size"))
+	return MaxCommitSigBytes(len(cs.Signature))
 }
 
 // NewCommitSigAbsent returns new CommitSig with BlockIDFlagAbsent. Other
@@ -824,24 +845,17 @@ func NewCommit(height int64, round int32, blockID BlockID, commitSigs []CommitSi
 const (
 	CommitHeighMaxtLen    = 11
 	CommitRoundMaxLen     = 6
-	CommitBlockIDMaxLen   = 77
+	CommitBlockIDMaxLen   = 76
 	CommitAminoOverhead   = 1
 	CommitAggrSigOverhead = 2
 )
 
 func (commit *Commit) MaxCommitBytes() int64 {
-	sigBytes := int64(0)
-	for _, s := range commit.Signatures {
-		sigBytes += CommitAminoOverhead + s.MaxCommitSigBytes()
+	sigSizes := make([]int, len(commit.Signatures))
+	for i := range sigSizes {
+		sigSizes[i] = len(commit.Signatures[i].Signature)
 	}
-	if sigBytes > 0 {
-		sigBytes += CommitAminoOverhead
-	}
-	bytesLen := CommitHeighMaxtLen + CommitRoundMaxLen + CommitAminoOverhead + CommitBlockIDMaxLen + sigBytes
-	if len(commit.AggregatedSignature) > 0 {
-		bytesLen += CommitAggrSigOverhead + int64(len(commit.AggregatedSignature))
-	}
-	return bytesLen
+	return MaxCommitBytes(sigSizes)
 }
 
 // CommitToVoteSet constructs a VoteSet from the Commit and validator set.
