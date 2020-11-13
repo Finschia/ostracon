@@ -142,13 +142,8 @@ func TestVoteProposalNotEq(t *testing.T) {
 }
 
 func TestVoteVerifySignature(t *testing.T) {
-	testCases := []PvKeyType{
-		PvKeyEd25519,
-		PvKeyComposite,
-		PvKeyBLS,
-	}
-	for _, tc := range testCases {
-		privVal := NewMockPV(tc)
+	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
+		privVal := NewMockPV(kt)
 		pubkey, err := privVal.GetPubKey()
 		require.NoError(t, err)
 
@@ -175,7 +170,7 @@ func TestVoteVerifySignature(t *testing.T) {
 		require.Equal(t, string(signBytes), string(newSignBytes))
 		valid = pubkey.VerifyBytes(newSignBytes, precommit.Signature)
 		require.True(t, valid)
-	}
+	})
 }
 
 func TestIsVoteTypeValid(t *testing.T) {
@@ -200,13 +195,8 @@ func TestIsVoteTypeValid(t *testing.T) {
 }
 
 func TestVoteVerify(t *testing.T) {
-	testCases := []PvKeyType{
-		PvKeyEd25519,
-		PvKeyComposite,
-		PvKeyBLS,
-	}
-	for _, tc := range testCases {
-		privVal := NewMockPV(tc)
+	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
+		privVal := NewMockPV(kt)
 		pubkey, err := privVal.GetPubKey()
 		require.NoError(t, err)
 
@@ -222,7 +212,7 @@ func TestVoteVerify(t *testing.T) {
 		if assert.Error(t, err) {
 			assert.Equal(t, ErrVoteInvalidSignature, err)
 		}
-	}
+	})
 }
 
 func TestMaxVoteBytes(t *testing.T) {
@@ -246,13 +236,8 @@ func TestMaxVoteBytes(t *testing.T) {
 		},
 	}
 
-	testCases := []PvKeyType{
-		PvKeyEd25519,
-		PvKeyComposite,
-		PvKeyBLS,
-	}
-	for _, tc := range testCases {
-		privVal := NewMockPV(tc)
+	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
+		privVal := NewMockPV(kt)
 		err := privVal.SignVote("test_chain_id", vote)
 		require.NoError(t, err)
 
@@ -260,7 +245,7 @@ func TestMaxVoteBytes(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.True(t, MaxCommitBytes >= len(bz))
-	}
+	})
 }
 
 func TestVoteString(t *testing.T) {
@@ -278,12 +263,7 @@ func TestVoteString(t *testing.T) {
 }
 
 func TestVoteValidateBasic(t *testing.T) {
-	keyTypeCases := []PvKeyType{
-		PvKeyEd25519,
-		PvKeyComposite,
-		PvKeyBLS,
-	}
-	for _, kt := range keyTypeCases {
+	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
 		privVal := NewMockPV(kt)
 
 		testCases := []struct {
@@ -312,16 +292,11 @@ func TestVoteValidateBasic(t *testing.T) {
 				assert.Equal(t, tc.expectErr, vote.ValidateBasic() != nil, "Validate Basic had an unexpected result")
 			})
 		}
-	}
+	})
 }
 
 func TestVoteProtobuf(t *testing.T) {
-	keyTypeCases := []PvKeyType{
-		PvKeyEd25519,
-		PvKeyComposite,
-		PvKeyBLS,
-	}
-	for _, kt := range keyTypeCases {
+	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
 		privVal := NewMockPV(kt)
 		vote := examplePrecommit()
 		err := privVal.SignVote("test_chain_id", vote)
@@ -347,5 +322,5 @@ func TestVoteProtobuf(t *testing.T) {
 				require.Error(t, err)
 			}
 		}
-	}
+	})
 }

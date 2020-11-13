@@ -235,7 +235,7 @@ func (b *Block) Unmarshal(bs []byte) error {
 func MaxDataBytes(maxBytes int64, commit *Commit, evidences []Evidence) int64 {
 	evidenceBytes := int64(0)
 	for _, ev := range evidences {
-		evidenceBytes += MaxEvidenceBytes(PvKeyTypeByPubKey(ev.PublicKey()))
+		evidenceBytes += MaxEvidenceBytes(PrivKeyTypeByPubKey(ev.PublicKey()))
 	}
 	maxDataBytes := maxBytes -
 		MaxAminoOverheadForBlock -
@@ -579,18 +579,16 @@ func NewCommitSigForBlock(signature []byte, valAddr Address, ts time.Time) Commi
 }
 
 func (cs CommitSig) MaxCommitSigBytes() int64 {
+	commitSigBytesBase := BlockIDFlagLen + TimestampMaxLen + Bytes20AminoHeadLen + int64(len(cs.ValidatorAddress.Bytes()))
 	switch len(cs.Signature) {
 	case 0:
-		return BlockIDFlagLen + TimestampMaxLen + Bytes20AminoHeadLen + int64(len(cs.ValidatorAddress.Bytes()))
+		return commitSigBytesBase
 	case ed25519.SignatureSize:
-		return BlockIDFlagLen + TimestampMaxLen + Bytes20AminoHeadLen + int64(len(cs.ValidatorAddress.Bytes())) +
-			Bytes64AminoHeadLen + int64(len(cs.Signature))
+		return commitSigBytesBase + Bytes64AminoHeadLen + int64(len(cs.Signature))
 	case bls.SignatureSize:
-		return BlockIDFlagLen + TimestampMaxLen + Bytes20AminoHeadLen + int64(len(cs.ValidatorAddress.Bytes())) +
-			Bytes96AminoHeadLen + int64(len(cs.Signature))
+		return commitSigBytesBase + Bytes96AminoHeadLen + int64(len(cs.Signature))
 	}
-	return BlockIDFlagLen + TimestampMaxLen + Bytes20AminoHeadLen + int64(len(cs.ValidatorAddress.Bytes())) +
-		Bytes96AminoHeadLen + int64(len(cs.Signature))
+	panic(fmt.Sprintf("unknown signature size"))
 }
 
 // ForBlock returns true if CommitSig is for the block.

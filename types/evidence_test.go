@@ -39,12 +39,7 @@ func makeVote(
 }
 
 func TestEvidence(t *testing.T) {
-	keyTypes := []PvKeyType{
-		PvKeyEd25519,
-		PvKeyComposite,
-		PvKeyBLS,
-	}
-	for _, kt := range keyTypes {
+	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
 		val := NewMockPV(kt)
 		val2 := NewMockPV(kt)
 
@@ -87,46 +82,31 @@ func TestEvidence(t *testing.T) {
 				assert.NotNil(t, ev.Verify(chainID, pubKey), "evidence should be invalid")
 			}
 		}
-	}
+	})
 }
 
 func TestDuplicatedVoteEvidence(t *testing.T) {
-	keyTypes := []PvKeyType{
-		PvKeyEd25519,
-		PvKeyComposite,
-		PvKeyBLS,
-	}
-	for _, kt := range keyTypes {
+	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
 		ev := randomDuplicatedVoteEvidence(kt, t)
 
 		assert.True(t, ev.Equal(ev))
 		assert.False(t, ev.Equal(&DuplicateVoteEvidence{}))
-	}
+	})
 }
 
 func TestEvidenceList(t *testing.T) {
-	keyTypes := []PvKeyType{
-		PvKeyEd25519,
-		PvKeyComposite,
-		PvKeyBLS,
-	}
-	for _, kt := range keyTypes {
+	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
 		ev := randomDuplicatedVoteEvidence(kt, t)
 		evl := EvidenceList([]Evidence{ev})
 
 		assert.NotNil(t, evl.Hash())
 		assert.True(t, evl.Has(ev))
 		assert.False(t, evl.Has(&DuplicateVoteEvidence{}))
-	}
+	})
 }
 
 func TestMaxEvidenceBytes(t *testing.T) {
-	keyTypes := []PvKeyType{
-		PvKeyEd25519,
-		PvKeyComposite,
-		PvKeyBLS,
-	}
-	for _, kt := range keyTypes {
+	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
 		val := NewMockPV(kt)
 		randomPartHash := rand.Bytes(int(rand.Uint32() % 1000))
 		randomHash1 := rand.Bytes(int(rand.Uint32() % 1000))
@@ -145,10 +125,10 @@ func TestMaxEvidenceBytes(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.EqualValues(t, MaxEvidenceBytes(kt), len(bz))
-	}
+	})
 }
 
-func randomDuplicatedVoteEvidence(keyType PvKeyType, t *testing.T) *DuplicateVoteEvidence {
+func randomDuplicatedVoteEvidence(keyType PrivKeyType, t *testing.T) *DuplicateVoteEvidence {
 	val := NewMockPV(keyType)
 	blockID := makeBlockID([]byte("blockhash"), 1000, []byte("partshash"))
 	blockID2 := makeBlockID([]byte("blockhash2"), 1000, []byte("partshash"))
@@ -160,12 +140,7 @@ func randomDuplicatedVoteEvidence(keyType PvKeyType, t *testing.T) *DuplicateVot
 }
 
 func TestDuplicateVoteEvidenceValidation(t *testing.T) {
-	keyTypes := []PvKeyType{
-		PvKeyEd25519,
-		PvKeyComposite,
-		PvKeyBLS,
-	}
-	for _, kt := range keyTypes {
+	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
 		val := NewMockPV(kt)
 		blockID := makeBlockID(tmhash.Sum([]byte("blockhash")), math.MaxInt64, tmhash.Sum([]byte("partshash")))
 		blockID2 := makeBlockID(tmhash.Sum([]byte("blockhash2")), math.MaxInt64, tmhash.Sum([]byte("partshash")))
@@ -203,7 +178,7 @@ func TestDuplicateVoteEvidenceValidation(t *testing.T) {
 				assert.Equal(t, tc.expectErr, ev.ValidateBasic() != nil, "Validate Basic had an unexpected result")
 			})
 		}
-	}
+	})
 }
 
 func TestMockGoodEvidenceValidateBasic(t *testing.T) {
@@ -218,12 +193,7 @@ func TestMockBadEvidenceValidateBasic(t *testing.T) {
 
 func TestEvidenceProto(t *testing.T) {
 	// -------- Votes --------
-	keyTypes := []PvKeyType{
-		PvKeyEd25519,
-		PvKeyComposite,
-		PvKeyBLS,
-	}
-	for _, kt := range keyTypes {
+	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
 		val := NewMockPV(kt)
 		blockID := makeBlockID(tmhash.Sum([]byte("blockhash")), math.MaxInt64, tmhash.Sum([]byte("partshash")))
 		blockID2 := makeBlockID(tmhash.Sum([]byte("blockhash2")), math.MaxInt64, tmhash.Sum([]byte("partshash")))
@@ -261,5 +231,5 @@ func TestEvidenceProto(t *testing.T) {
 				require.Equal(t, tt.evidence, evi, tt.testName)
 			})
 		}
-	}
+	})
 }

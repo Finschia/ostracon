@@ -614,17 +614,6 @@ func MakeRoundHash(proofHash []byte, height int64, round int) []byte {
 	return hash.Sum(nil)
 }
 
-func randomKeyType() PvKeyType {
-	r := rand.Uint32() % 2
-	switch r {
-	case 0:
-		return PvKeyEd25519
-	case 1:
-		return PvKeyComposite
-	}
-	return PvKeyEd25519
-}
-
 // RandValidatorSet returns a randomized validator set, useful for testing.
 // NOTE: PrivValidator are in order.
 // UNSTABLE

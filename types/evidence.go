@@ -16,14 +16,14 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/types"
 )
 
-func MaxEvidenceBytes(keyType PvKeyType) int64 {
+func MaxEvidenceBytes(keyType PrivKeyType) int64 {
 	// MaxEvidenceBytes is a maximum size of any evidence (including amino overhead).
 	switch keyType {
-	case PvKeyEd25519:
+	case PrivKeyEd25519:
 		return 483
-	case PvKeyComposite:
+	case PrivKeyComposite:
 		return 608
-	case PvKeyBLS:
+	case PrivKeyBLS:
 		return 563
 	}
 	panic(fmt.Sprintf("unknown private key type: %d", keyType))
@@ -211,8 +211,8 @@ const (
 // See https://github.com/tendermint/tendermint/issues/2590
 func MaxEvidencePerBlock(blockMaxBytes int64) (int64, int64) {
 	maxBytes := blockMaxBytes / MaxEvidenceBytesDenominator
-	// Calculate based on PvKeyComposite, where evidence is the largest.
-	maxNum := maxBytes / MaxEvidenceBytes(PvKeyComposite)
+	// Calculate based on PrivKeyComposite, where evidence is the largest.
+	maxNum := maxBytes / MaxEvidenceBytes(PrivKeyComposite)
 	return maxNum, maxBytes
 }
 
@@ -401,6 +401,7 @@ type MockEvidence struct {
 	EvidenceHeight  int64
 	EvidenceTime    time.Time
 	EvidenceAddress []byte
+	EvidencePubKey  crypto.PubKey
 }
 
 var _ Evidence = &MockEvidence{}
@@ -410,13 +411,14 @@ func NewMockEvidence(height int64, eTime time.Time, idx int, address []byte) Moc
 	return MockEvidence{
 		EvidenceHeight:  height,
 		EvidenceTime:    eTime,
-		EvidenceAddress: address}
+		EvidenceAddress: address,
+		EvidencePubKey:  ed25519.GenPrivKey().PubKey()}
 }
 
 func (e MockEvidence) Height() int64            { return e.EvidenceHeight }
 func (e MockEvidence) Time() time.Time          { return e.EvidenceTime }
 func (e MockEvidence) Address() []byte          { return e.EvidenceAddress }
-func (e MockEvidence) PublicKey() crypto.PubKey { return ed25519.GenPrivKey().PubKey() }
+func (e MockEvidence) PublicKey() crypto.PubKey { return e.EvidencePubKey }
 
 func (e MockEvidence) Hash() []byte {
 	return []byte(fmt.Sprintf("%d-%x-%s",

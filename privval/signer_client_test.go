@@ -265,8 +265,8 @@ func brokenHandler(privVal types.PrivValidator, request SignerMessage, chainID s
 func TestSignerUnexpectedResponse(t *testing.T) {
 	for _, tc := range getSignerTestCases(t, false) {
 		// this should be executed before SignerServer starts to avoid race condition
-		tc.signerServer.privVal = types.NewMockPV(types.PvKeyEd25519)
-		tc.mockPV = types.NewMockPV(types.PvKeyEd25519)
+		tc.signerServer.privVal = types.NewMockPV(types.PrivKeyEd25519)
+		tc.mockPV = types.NewMockPV(types.PrivKeyEd25519)
 
 		tc.signerServer.SetRequestHandler(brokenHandler)
 		tc.signerServer.Start()
