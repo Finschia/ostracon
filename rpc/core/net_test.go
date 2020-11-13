@@ -14,7 +14,7 @@ import (
 
 func TestUnsafeDialSeeds(t *testing.T) {
 	sw := p2p.MakeSwitch(cfg.DefaultP2PConfig(), 1, "testing", "123.123.123",
-		func(n int, sw *p2p.Switch) *p2p.Switch { return sw })
+		func(n int, sw *p2p.Switch, config *cfg.P2PConfig) *p2p.Switch { return sw })
 	err := sw.Start()
 	require.NoError(t, err)
 	defer sw.Stop()
@@ -44,7 +44,7 @@ func TestUnsafeDialSeeds(t *testing.T) {
 
 func TestUnsafeDialPeers(t *testing.T) {
 	sw := p2p.MakeSwitch(cfg.DefaultP2PConfig(), 1, "testing", "123.123.123",
-		func(n int, sw *p2p.Switch) *p2p.Switch { return sw })
+		func(n int, sw *p2p.Switch, config *cfg.P2PConfig) *p2p.Switch { return sw })
 	err := sw.Start()
 	require.NoError(t, err)
 	defer sw.Stop()

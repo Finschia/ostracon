@@ -45,6 +45,7 @@ const (
 	defaultSendTimeout         = 10 * time.Second
 	defaultPingInterval        = 60 * time.Second
 	defaultPongTimeout         = 45 * time.Second
+	defaultRecvAsync           = true
 )
 
 type receiveCbFunc func(chID byte, msgBytes []byte)
@@ -133,6 +134,9 @@ type MConnConfig struct {
 
 	// Maximum wait time for pongs
 	PongTimeout time.Duration `mapstructure:"pong_timeout"`
+
+	// Action method of reactor's receive function
+	RecvAsync bool `mapstructure:"recv_async"`
 }
 
 // DefaultMConnConfig returns the default config.
@@ -144,6 +148,7 @@ func DefaultMConnConfig() MConnConfig {
 		FlushThrottle:           defaultFlushThrottle,
 		PingInterval:            defaultPingInterval,
 		PongTimeout:             defaultPongTimeout,
+		RecvAsync:               defaultRecvAsync,
 	}
 }
 

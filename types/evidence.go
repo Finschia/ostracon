@@ -388,7 +388,8 @@ func NewMockRandomEvidence(height int64, eTime time.Time, address []byte, randBy
 		MockEvidence{
 			EvidenceHeight:  height,
 			EvidenceTime:    eTime,
-			EvidenceAddress: address}, randBytes,
+			EvidenceAddress: address,
+			EvidencePubKey:  ed25519.GenPrivKey().PubKey()}, randBytes,
 	}
 }
 
