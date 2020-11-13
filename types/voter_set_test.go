@@ -447,20 +447,6 @@ func TestSelectVoterMaxVarious(t *testing.T) {
 	}
 }
 
-func makeByzantine(valSet *ValidatorSet, rate float64) map[string]bool {
-	result := make(map[string]bool)
-	byzantinePower := int64(0)
-	threshold := int64(float64(valSet.TotalStakingPower()) * rate)
-	for _, v := range valSet.Validators {
-		if byzantinePower+v.StakingPower > threshold {
-			break
-		}
-		result[v.Address.String()] = true
-		byzantinePower += v.StakingPower
-	}
-	return result
-}
-
 func TestVoterSetProtoBuf(t *testing.T) {
 	_, voterSet, _ := RandVoterSet(10, 100)
 	_, voterSet2, _ := RandVoterSet(10, 100)
