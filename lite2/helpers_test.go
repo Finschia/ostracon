@@ -146,7 +146,6 @@ func makeVote(header *types.Header, voterIdx int, key crypto.PrivKey, blockID ty
 		Timestamp:        tmtime.Now(),
 		Type:             types.PrecommitType,
 		BlockID:          blockID,
-		Signature:        []byte{},
 	}
 	// Sign it
 	signBytes := vote.SignBytes(header.ChainID)

@@ -701,18 +701,11 @@ type Commit struct {
 
 // NewCommit returns a new Commit.
 func NewCommit(height int64, round int, blockID BlockID, commitSigs []CommitSig) *Commit {
-	return NewCommitWithAggregatedSignature(height, round, blockID, commitSigs, nil)
-}
-
-// NewCommitWithAggregatedSignature returns a new Commit with .
-func NewCommitWithAggregatedSignature(
-	height int64, round int, blockID BlockID, commitSigs []CommitSig, aggrSig []byte) *Commit {
 	return &Commit{
-		Height:              height,
-		Round:               round,
-		BlockID:             blockID,
-		Signatures:          commitSigs,
-		AggregatedSignature: aggrSig,
+		Height:     height,
+		Round:      round,
+		BlockID:    blockID,
+		Signatures: commitSigs,
 	}
 }
 
@@ -720,6 +713,9 @@ func NewCommitWithAggregatedSignature(
 // Panics if signatures from the commit can't be added to the voteset.
 // Inverse of VoteSet.MakeCommit().
 func CommitToVoteSet(chainID string, commit *Commit, voters *VoterSet) *VoteSet {
+	if commit.AggregatedSignature != nil {
+		panic("Aggregated commit cannot make a VoteSet")
+	}
 	voteSet := NewVoteSet(chainID, commit.Height, commit.Round, PrecommitType, voters)
 	for idx, commitSig := range commit.Signatures {
 		if commitSig.Absent() {
@@ -730,8 +726,28 @@ func CommitToVoteSet(chainID string, commit *Commit, voters *VoterSet) *VoteSet 
 			panic(fmt.Sprintf("Failed to reconstruct LastCommit: %v", err))
 		}
 	}
-	voteSet.aggregatedSignature = commit.AggregatedSignature
 	return voteSet
+}
+
+func (commit *Commit) AggregateSignatures() {
+	if commit.AggregatedSignature != nil {
+		panic("The commit is already aggregated")
+	}
+	var err error
+	for i := 0; i < len(commit.Signatures); i++ {
+		if !commit.Signatures[i].Absent() && len(commit.Signatures[i].Signature) == bls.SignatureSize {
+			if commit.AggregatedSignature == nil {
+				commit.AggregatedSignature = commit.Signatures[i].Signature
+			} else {
+				commit.AggregatedSignature, err = bls.AddSignature(commit.AggregatedSignature,
+					commit.Signatures[i].Signature)
+				if err != nil {
+					panic(fmt.Sprintf("fail to aggregate signature: %s\n", err))
+				}
+			}
+			commit.Signatures[i].Signature = nil
+		}
+	}
 }
 
 // GetVote converts the CommitSig for the given valIdx to a Vote.
