@@ -65,7 +65,7 @@ jobs:
             **/**.go
             go.mod
             go.sum
-      - uses: actions/cache@v2.1.4
+      - uses: actions/cache@v1
         with:
           path: ~/go/bin
           key: ${{ runner.os }}-${{ github.sha }}-tm-binary
@@ -90,7 +90,7 @@ jobs:
             **/**.go
             go.mod
             go.sum
-      - uses: actions/cache@v2.1.4
+      - uses: actions/cache@v1
         with:
           path: ~/go/bin
           key: ${{ runner.os }}-${{ github.sha }}-tm-binary
@@ -114,18 +114,8 @@ jobs:
             **/**.go
             go.mod
             go.sum
-      - uses: actions/cache@v2.1.4
+      - uses: actions/cache@v1
         with:
-<<<<<<< HEAD
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-        if: env.GIT_DIFF
-      - uses: actions/cache@v2.1.4
-        with:
-=======
->>>>>>> e383e291b7... fix: github action failure
           path: ~/go/bin
           key: ${{ runner.os }}-${{ github.sha }}-tm-binary
         if: env.GIT_DIFF
