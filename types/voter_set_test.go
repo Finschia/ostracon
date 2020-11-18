@@ -368,11 +368,9 @@ func TestElectVotersNonDupByzantineTolerable(t *testing.T) {
 		copied := copyValidatorListShallow(voters)
 		sumStaking := int64(0)
 		sumVoting := int64(0)
-		picked := make([]*Validator, 0)
 		for {
 			var one *Validator
 			one, copied = pickRandomVoter(copied)
-			picked = append(picked, one)
 			if one == nil {
 				break
 			}
