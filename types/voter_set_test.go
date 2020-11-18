@@ -355,9 +355,10 @@ func TestElectVotersNonDupByzantineTolerable(t *testing.T) {
 	rand.Seed(seed)
 	t.Logf("used seed=%d", seed)
 	validatorSet := newValidatorSet(100, func(i int) int64 { return int64(rand.Uint32()%10000 + 100) })
-	tolerableByzantinePercentage := int(rand.Uint() % 33)
-	tolerableByzantinePower := getTolerableByzantinePower(validatorSet.TotalStakingPower(),
-		tolerableByzantinePercentage)
+	// this test has no mean if all validators are elected as voters.
+	// So limit the maximum to 15% not to elect all validators as voters
+	tolerableByzantinePercentage := int(rand.Uint() % 15)
+	tolerableByzantinePower := getTolerableByzantinePower(validatorSet.TotalStakingPower(), tolerableByzantinePercentage)
 	voters := electVotersNonDup(validatorSet.Validators, rand.Uint64(), tolerableByzantinePercentage, int(rand.Uint()%100))
 	totalVoting := int64(0)
 	for _, v := range voters {
@@ -367,9 +368,11 @@ func TestElectVotersNonDupByzantineTolerable(t *testing.T) {
 		copied := copyValidatorListShallow(voters)
 		sumStaking := int64(0)
 		sumVoting := int64(0)
+		picked := make([]*Validator, 0)
 		for {
 			var one *Validator
 			one, copied = pickRandomVoter(copied)
+			picked = append(picked, one)
 			if one == nil {
 				break
 			}
