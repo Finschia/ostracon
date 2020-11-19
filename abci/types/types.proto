@@ -329,6 +329,7 @@ message Evidence {
   int64                     height    = 3;
   google.protobuf.Timestamp time = 4 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
   int64                     total_voting_power = 5;
+  int64                     voting_power = 6;
 }
 
 //----------------------------------------
