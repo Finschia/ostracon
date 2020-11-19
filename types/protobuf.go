@@ -27,7 +27,7 @@ var ABCIPubKeyTypesToNames = map[string]string{
 	ABCIPubKeyTypeBls12WithEd25519: composite.PubKeyName,
 	ABCIPubKeyTypeEd25519:          ed25519.PubKeyName,
 	ABCIPubKeyTypeSecp256k1:        secp256k1.PubKeyName,
-	ABCIPubKeyTypeBls12:            secp256k1.PubKeyName,
+	ABCIPubKeyTypeBls12:            bls.PubKeyName,
 }
 
 //-------------------------------------------------------
