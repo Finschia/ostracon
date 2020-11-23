@@ -187,6 +187,7 @@ func (tm2pb) Evidence(ev Evidence, voterSet *VoterSet, evTime time.Time) abci.Ev
 		Height:           ev.Height(),
 		Time:             evTime,
 		TotalVotingPower: voterSet.TotalVotingPower(),
+		VotingPower:      val.VotingPower,
 	}
 }
 
