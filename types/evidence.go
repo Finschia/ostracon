@@ -8,18 +8,26 @@ import (
 
 	"github.com/pkg/errors"
 	amino "github.com/tendermint/go-amino"
-
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
 	"github.com/tendermint/tendermint/crypto/merkle"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	tmproto "github.com/tendermint/tendermint/proto/types"
 )
 
-const (
+func MaxEvidenceBytes(keyType PrivKeyType) int64 {
 	// MaxEvidenceBytes is a maximum size of any evidence (including amino overhead).
-	MaxEvidenceBytes int64 = 548
-)
+	switch keyType {
+	case PrivKeyEd25519:
+		return 483
+	case PrivKeyComposite:
+		return 608
+	case PrivKeyBLS:
+		return 563
+	}
+	panic(fmt.Sprintf("unknown private key type: %d", keyType))
+}
 
 // ErrEvidenceInvalid wraps a piece of evidence and the error denoting how or why it is invalid.
 type ErrEvidenceInvalid struct {
@@ -59,6 +67,7 @@ func (err *ErrEvidenceOverflow) Error() string {
 type Evidence interface {
 	Height() int64                                     // height of the equivocation
 	Time() time.Time                                   // time of the equivocation
+	PublicKey() crypto.PubKey                          // public key of the equivocating validator
 	Address() []byte                                   // address of the equivocating validator
 	Bytes() []byte                                     // bytes which comprise the evidence
 	Hash() []byte                                      // hash of the evidence
@@ -202,7 +211,8 @@ const (
 // See https://github.com/tendermint/tendermint/issues/2590
 func MaxEvidencePerBlock(blockMaxBytes int64) (int64, int64) {
 	maxBytes := blockMaxBytes / MaxEvidenceBytesDenominator
-	maxNum := maxBytes / MaxEvidenceBytes
+	// Calculate based on PrivKeyComposite, where evidence is the largest.
+	maxNum := maxBytes / MaxEvidenceBytes(PrivKeyComposite)
 	return maxNum, maxBytes
 }
 
@@ -258,6 +268,10 @@ func (dve *DuplicateVoteEvidence) Time() time.Time {
 // Address returns the address of the validator.
 func (dve *DuplicateVoteEvidence) Address() []byte {
 	return dve.PubKey.Address()
+}
+
+func (dve *DuplicateVoteEvidence) PublicKey() crypto.PubKey {
+	return dve.PubKey
 }
 
 // Hash returns the hash of the evidence.
@@ -374,7 +388,8 @@ func NewMockRandomEvidence(height int64, eTime time.Time, address []byte, randBy
 		MockEvidence{
 			EvidenceHeight:  height,
 			EvidenceTime:    eTime,
-			EvidenceAddress: address}, randBytes,
+			EvidenceAddress: address,
+			EvidencePubKey:  ed25519.GenPrivKey().PubKey()}, randBytes,
 	}
 }
 
@@ -387,6 +402,7 @@ type MockEvidence struct {
 	EvidenceHeight  int64
 	EvidenceTime    time.Time
 	EvidenceAddress []byte
+	EvidencePubKey  crypto.PubKey
 }
 
 var _ Evidence = &MockEvidence{}
@@ -396,12 +412,15 @@ func NewMockEvidence(height int64, eTime time.Time, idx int, address []byte) Moc
 	return MockEvidence{
 		EvidenceHeight:  height,
 		EvidenceTime:    eTime,
-		EvidenceAddress: address}
+		EvidenceAddress: address,
+		EvidencePubKey:  ed25519.GenPrivKey().PubKey()}
 }
 
-func (e MockEvidence) Height() int64   { return e.EvidenceHeight }
-func (e MockEvidence) Time() time.Time { return e.EvidenceTime }
-func (e MockEvidence) Address() []byte { return e.EvidenceAddress }
+func (e MockEvidence) Height() int64            { return e.EvidenceHeight }
+func (e MockEvidence) Time() time.Time          { return e.EvidenceTime }
+func (e MockEvidence) Address() []byte          { return e.EvidenceAddress }
+func (e MockEvidence) PublicKey() crypto.PubKey { return e.EvidencePubKey }
+
 func (e MockEvidence) Hash() []byte {
 	return []byte(fmt.Sprintf("%d-%x-%s",
 		e.EvidenceHeight, e.EvidenceAddress, e.EvidenceTime))

@@ -142,33 +142,35 @@ func TestVoteProposalNotEq(t *testing.T) {
 }
 
 func TestVoteVerifySignature(t *testing.T) {
-	privVal := NewMockPV()
-	pubkey, err := privVal.GetPubKey()
-	require.NoError(t, err)
+	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
+		privVal := NewMockPV(kt)
+		pubkey, err := privVal.GetPubKey()
+		require.NoError(t, err)
 
-	vote := examplePrecommit()
-	signBytes := vote.SignBytes("test_chain_id")
+		vote := examplePrecommit()
+		signBytes := vote.SignBytes("test_chain_id")
 
-	// sign it
-	err = privVal.SignVote("test_chain_id", vote)
-	require.NoError(t, err)
+		// sign it
+		err = privVal.SignVote("test_chain_id", vote)
+		require.NoError(t, err)
 
-	// verify the same vote
-	valid := pubkey.VerifyBytes(vote.SignBytes("test_chain_id"), vote.Signature)
-	require.True(t, valid)
+		// verify the same vote
+		valid := pubkey.VerifyBytes(vote.SignBytes("test_chain_id"), vote.Signature)
+		require.True(t, valid)
 
-	// serialize, deserialize and verify again....
-	precommit := new(Vote)
-	bs, err := cdc.MarshalBinaryLengthPrefixed(vote)
-	require.NoError(t, err)
-	err = cdc.UnmarshalBinaryLengthPrefixed(bs, &precommit)
-	require.NoError(t, err)
+		// serialize, deserialize and verify again....
+		precommit := new(Vote)
+		bs, err := cdc.MarshalBinaryLengthPrefixed(vote)
+		require.NoError(t, err)
+		err = cdc.UnmarshalBinaryLengthPrefixed(bs, &precommit)
+		require.NoError(t, err)
 
-	// verify the transmitted vote
-	newSignBytes := precommit.SignBytes("test_chain_id")
-	require.Equal(t, string(signBytes), string(newSignBytes))
-	valid = pubkey.VerifyBytes(newSignBytes, precommit.Signature)
-	require.True(t, valid)
+		// verify the transmitted vote
+		newSignBytes := precommit.SignBytes("test_chain_id")
+		require.Equal(t, string(signBytes), string(newSignBytes))
+		valid = pubkey.VerifyBytes(newSignBytes, precommit.Signature)
+		require.True(t, valid)
+	})
 }
 
 func TestIsVoteTypeValid(t *testing.T) {
@@ -193,23 +195,25 @@ func TestIsVoteTypeValid(t *testing.T) {
 }
 
 func TestVoteVerify(t *testing.T) {
-	privVal := NewMockPV()
-	pubkey, err := privVal.GetPubKey()
-	require.NoError(t, err)
+	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
+		privVal := NewMockPV(kt)
+		pubkey, err := privVal.GetPubKey()
+		require.NoError(t, err)
 
-	vote := examplePrevote()
-	vote.ValidatorAddress = pubkey.Address()
-	vote.Signature = []byte{}
+		vote := examplePrevote()
+		vote.ValidatorAddress = pubkey.Address()
+		vote.Signature = []byte{}
 
-	err = vote.Verify("test_chain_id", ed25519.GenPrivKey().PubKey())
-	if assert.Error(t, err) {
-		assert.Equal(t, ErrVoteInvalidValidatorAddress, err)
-	}
+		err = vote.Verify("test_chain_id", ed25519.GenPrivKey().PubKey())
+		if assert.Error(t, err) {
+			assert.Equal(t, ErrVoteInvalidValidatorAddress, err)
+		}
 
-	err = vote.Verify("test_chain_id", pubkey)
-	if assert.Error(t, err) {
-		assert.Equal(t, ErrVoteInvalidSignature, err)
-	}
+		err = vote.Verify("test_chain_id", pubkey)
+		if assert.Error(t, err) {
+			assert.Equal(t, ErrVoteInvalidSignature, err)
+		}
+	})
 }
 
 func TestMaxVoteBytes(t *testing.T) {
@@ -233,14 +237,16 @@ func TestMaxVoteBytes(t *testing.T) {
 		},
 	}
 
-	privVal := NewMockPV()
-	err := privVal.SignVote("test_chain_id", vote)
-	require.NoError(t, err)
+	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
+		privVal := NewMockPV(kt)
+		err := privVal.SignVote("test_chain_id", vote)
+		require.NoError(t, err)
 
-	bz, err := cdc.MarshalBinaryLengthPrefixed(vote)
-	require.NoError(t, err)
+		bz, err := cdc.MarshalBinaryLengthPrefixed(vote)
+		require.NoError(t, err)
 
-	assert.EqualValues(t, MaxVoteBytes, len(bz))
+		assert.True(t, MaxCommitBytes >= len(bz))
+	})
 }
 
 func TestVoteString(t *testing.T) {
@@ -258,60 +264,64 @@ func TestVoteString(t *testing.T) {
 }
 
 func TestVoteValidateBasic(t *testing.T) {
-	privVal := NewMockPV()
+	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
+		privVal := NewMockPV(kt)
 
-	testCases := []struct {
-		testName     string
-		malleateVote func(*Vote)
-		expectErr    bool
-	}{
-		{"Good Vote", func(v *Vote) {}, false},
-		{"Negative Height", func(v *Vote) { v.Height = -1 }, true},
-		{"Negative Round", func(v *Vote) { v.Round = -1 }, true},
-		{"Invalid BlockID", func(v *Vote) {
-			v.BlockID = BlockID{[]byte{1, 2, 3}, PartSetHeader{111, []byte("blockparts")}}
-		}, true},
-		{"Invalid Address", func(v *Vote) { v.ValidatorAddress = make([]byte, 1) }, true},
-		{"Invalid ValidatorIndex", func(v *Vote) { v.ValidatorIndex = -1 }, true},
-		{"Invalid Signature", func(v *Vote) { v.Signature = []byte{} }, true},
-		{"Too big Signature", func(v *Vote) { v.Signature = make([]byte, MaxSignatureSize+1) }, true},
-	}
-	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.testName, func(t *testing.T) {
-			vote := examplePrecommit()
-			err := privVal.SignVote("test_chain_id", vote)
-			require.NoError(t, err)
-			tc.malleateVote(vote)
-			assert.Equal(t, tc.expectErr, vote.ValidateBasic() != nil, "Validate Basic had an unexpected result")
-		})
-	}
+		testCases := []struct {
+			testName     string
+			malleateVote func(*Vote)
+			expectErr    bool
+		}{
+			{"Good Vote", func(v *Vote) {}, false},
+			{"Negative Height", func(v *Vote) { v.Height = -1 }, true},
+			{"Negative Round", func(v *Vote) { v.Round = -1 }, true},
+			{"Invalid BlockID", func(v *Vote) {
+				v.BlockID = BlockID{[]byte{1, 2, 3}, PartSetHeader{111, []byte("blockparts")}}
+			}, true},
+			{"Invalid Address", func(v *Vote) { v.ValidatorAddress = make([]byte, 1) }, true},
+			{"Invalid ValidatorIndex", func(v *Vote) { v.ValidatorIndex = -1 }, true},
+			{"Invalid Signature", func(v *Vote) { v.Signature = []byte{} }, true},
+			{"Too big Signature", func(v *Vote) { v.Signature = make([]byte, MaxSignatureSize+1) }, true},
+		}
+		for _, tc := range testCases {
+			tc := tc
+			t.Run(tc.testName, func(t *testing.T) {
+				vote := examplePrecommit()
+				err := privVal.SignVote("test_chain_id", vote)
+				require.NoError(t, err)
+				tc.malleateVote(vote)
+				assert.Equal(t, tc.expectErr, vote.ValidateBasic() != nil, "Validate Basic had an unexpected result")
+			})
+		}
+	})
 }
 
 func TestVoteProtobuf(t *testing.T) {
-	privVal := NewMockPV()
-	vote := examplePrecommit()
-	err := privVal.SignVote("test_chain_id", vote)
-	require.NoError(t, err)
+	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
+		privVal := NewMockPV(kt)
+		vote := examplePrecommit()
+		err := privVal.SignVote("test_chain_id", vote)
+		require.NoError(t, err)
 
-	testCases := []struct {
-		msg     string
-		v1      *Vote
-		expPass bool
-	}{
-		{"success", vote, true},
-		{"fail vote validate basic", &Vote{}, false},
-		{"failure nil", nil, false},
-	}
-	for _, tc := range testCases {
-		protoProposal := tc.v1.ToProto()
-
-		v, err := VoteFromProto(protoProposal)
-		if tc.expPass {
-			require.NoError(t, err)
-			require.Equal(t, tc.v1, v, tc.msg)
-		} else {
-			require.Error(t, err)
+		testCases := []struct {
+			msg     string
+			v1      *Vote
+			expPass bool
+		}{
+			{"success", vote, true},
+			{"fail vote validate basic", &Vote{}, false},
+			{"failure nil", nil, false},
 		}
-	}
+		for _, tc := range testCases {
+			protoProposal := tc.v1.ToProto()
+
+			v, err := VoteFromProto(protoProposal)
+			if tc.expPass {
+				require.NoError(t, err)
+				require.Equal(t, tc.v1, v, tc.msg)
+			} else {
+				require.Error(t, err)
+			}
+		}
+	})
 }
