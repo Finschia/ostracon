@@ -909,14 +909,18 @@ func TestCommitToVoteSet(t *testing.T) {
 	voteSet2 := CommitToVoteSet(chainID, commit, voterSet)
 
 	for i := int32(0); int(i) < len(vals); i++ {
-		vote1 := voteSet2.GetByIndex(i)
-		vote2 := commit.GetVote(i)
+		vote1 := voteSet.GetByIndex(i)
+		vote2 := voteSet2.GetByIndex(i)
+		vote3 := commit.GetVote(i)
 
 		vote1bz, err := vote1.ToProto().Marshal()
 		require.NoError(t, err)
 		vote2bz, err := vote2.ToProto().Marshal()
 		require.NoError(t, err)
+		vote3bz, err := vote3.ToProto().Marshal()
+		require.NoError(t, err)
 		assert.Equal(t, vote1bz, vote2bz)
+		assert.Equal(t, vote1bz, vote3bz)
 	}
 }
 

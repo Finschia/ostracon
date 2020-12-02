@@ -209,7 +209,6 @@ func TestVoteVerify(t *testing.T) {
 
 		vote := examplePrevote()
 		vote.ValidatorAddress = pubkey.Address()
-		vote.Signature = []byte{}
 
 		err = vote.Verify("test_chain_id", ed25519.GenPrivKey().PubKey())
 		if assert.Error(t, err) {
@@ -284,7 +283,7 @@ func TestVoteValidateBasic(t *testing.T) {
 		}, true},
 		{"Invalid Address", func(v *Vote) { v.ValidatorAddress = make([]byte, 1) }, true},
 		{"Invalid ValidatorIndex", func(v *Vote) { v.ValidatorIndex = -1 }, true},
-		{"Invalid Signature", func(v *Vote) { v.Signature = []byte{} }, true},
+		{"Invalid Signature", func(v *Vote) { v.Signature = nil }, true},
 		{"Too big Signature", func(v *Vote) { v.Signature = make([]byte, MaxSignatureSize+1) }, true},
 	}
 	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
