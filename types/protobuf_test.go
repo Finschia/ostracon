@@ -134,24 +134,26 @@ func TestABCIHeader(t *testing.T) {
 }
 
 func TestABCIEvidence(t *testing.T) {
-	val := NewMockPV()
-	blockID := makeBlockID([]byte("blockhash"), 1000, []byte("partshash"))
-	blockID2 := makeBlockID([]byte("blockhash2"), 1000, []byte("partshash"))
-	const chainID = "mychain"
-	pubKey, err := val.GetPubKey()
-	require.NoError(t, err)
-	ev := &DuplicateVoteEvidence{
-		PubKey: pubKey,
-		VoteA:  makeVote(t, val, chainID, 0, 10, 2, 1, blockID),
-		VoteB:  makeVote(t, val, chainID, 0, 10, 2, 1, blockID2),
-	}
-	abciEv := TM2PB.Evidence(
-		ev,
-		ToVoterAll([]*Validator{NewValidator(pubKey, 10)}),
-		time.Now(),
-	)
+	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
+		val := NewMockPV(kt)
+		blockID := makeBlockID([]byte("blockhash"), 1000, []byte("partshash"))
+		blockID2 := makeBlockID([]byte("blockhash2"), 1000, []byte("partshash"))
+		const chainID = "mychain"
+		pubKey, err := val.GetPubKey()
+		require.NoError(t, err)
+		ev := &DuplicateVoteEvidence{
+			PubKey: pubKey,
+			VoteA:  makeVote(t, val, chainID, 0, 10, 2, 1, blockID),
+			VoteB:  makeVote(t, val, chainID, 0, 10, 2, 1, blockID2),
+		}
+		abciEv := TM2PB.Evidence(
+			ev,
+			ToVoterAll([]*Validator{NewValidator(pubKey, 10)}),
+			time.Now(),
+		)
 
-	assert.Equal(t, "duplicate/vote", abciEv.Type)
+		assert.Equal(t, "duplicate/vote", abciEv.Type)
+	})
 }
 
 type pubKeyEddie struct{}

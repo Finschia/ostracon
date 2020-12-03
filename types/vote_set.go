@@ -193,9 +193,6 @@ func (voteSet *VoteSet) addVote(vote *Vote) (added bool, err error) {
 
 	// If we already know of this vote, return false.
 	if existing, ok := voteSet.getVote(valIndex, blockKey); ok {
-		if existing.Signature == nil {
-			return false, nil // probably aggregated
-		}
 		if bytes.Equal(existing.Signature, vote.Signature) {
 			return false, nil // duplicate
 		}
@@ -215,7 +212,6 @@ func (voteSet *VoteSet) addVote(vote *Vote) (added bool, err error) {
 	if !added {
 		panic("Expected to add non-conflicting vote")
 	}
-
 	return added, nil
 }
 
@@ -581,8 +577,7 @@ func (voteSet *VoteSet) MakeCommit() *Commit {
 		commitSigs[i] = commitSig
 	}
 
-	return NewCommit(
-		voteSet.GetHeight(), voteSet.GetRound(), *voteSet.maj23, commitSigs)
+	return NewCommit(voteSet.GetHeight(), voteSet.GetRound(), *voteSet.maj23, commitSigs)
 }
 
 //--------------------------------------------------------------------------------

@@ -12,14 +12,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/bls"
 	"github.com/tendermint/tendermint/crypto/composite"
 	"github.com/tendermint/tendermint/crypto/ed25519"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/merkle"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	"github.com/tendermint/tendermint/libs/bits"
@@ -481,31 +479,289 @@ func hexBytesFromString(s string) bytes.HexBytes {
 	return bytes.HexBytes(b)
 }
 
+func TestCommitSigNumOfBytes(t *testing.T) {
+	pv1 := NewMockPV(PrivKeyEd25519)
+	pv2 := NewMockPV(PrivKeyComposite)
+	pv3 := NewMockPV(PrivKeyBLS)
+
+	pub1, _ := pv1.GetPubKey()
+	pub2, _ := pv2.GetPubKey()
+	pub3, _ := pv3.GetPubKey()
+
+	blockID := BlockID{tmrand.Bytes(tmhash.Size),
+		PartSetHeader{math.MaxInt32, tmrand.Bytes(tmhash.Size)}}
+	chainID := "mychain1"
+	timestamp := time.Date(math.MaxInt64, 0, 0, 0, 0, 0, math.MaxInt64, time.UTC)
+
+	vote1 := &Vote{
+		ValidatorAddress: pub1.Address(),
+		ValidatorIndex:   math.MaxInt64,
+		Height:           math.MaxInt64,
+		Round:            math.MaxInt64,
+		Timestamp:        timestamp,
+		Type:             PrecommitType,
+		BlockID:          blockID,
+	}
+	assert.NoError(t, pv1.SignVote(chainID, vote1))
+
+	vote2 := &Vote{
+		ValidatorAddress: pub2.Address(),
+		ValidatorIndex:   math.MaxInt64,
+		Height:           math.MaxInt64,
+		Round:            math.MaxInt64,
+		Timestamp:        timestamp,
+		Type:             PrecommitType,
+		BlockID:          blockID,
+	}
+	assert.NoError(t, pv2.SignVote(chainID, vote2))
+
+	vote3 := &Vote{
+		ValidatorAddress: pub2.Address(),
+		ValidatorIndex:   math.MaxInt64,
+		Height:           math.MaxInt64,
+		Round:            math.MaxInt64,
+		Timestamp:        timestamp,
+		Type:             PrecommitType,
+		BlockID:          blockID,
+	}
+	assert.NoError(t, pv3.SignVote(chainID, vote3))
+
+	commitSig1 := NewCommitSigForBlock(vote1.Signature, pub1.Address(), timestamp)
+	commitSig2 := NewCommitSigForBlock(vote2.Signature, pub2.Address(), timestamp)
+	commitSig3 := NewCommitSigForBlock(vote3.Signature, pub3.Address(), timestamp)
+	aggregatedCommitSig := NewCommitSigForBlock(nil, pub2.Address(), timestamp)
+
+	b1, err1 := cdc.MarshalBinaryLengthPrefixed(commitSig1)
+	assert.NoError(t, err1)
+	assert.True(t, int64(len(b1)) == commitSig1.MaxCommitSigBytes())
+
+	b2, err2 := cdc.MarshalBinaryLengthPrefixed(commitSig2)
+	assert.NoError(t, err2)
+	assert.True(t, int64(len(b2)) == commitSig2.MaxCommitSigBytes())
+
+	b3, err3 := cdc.MarshalBinaryLengthPrefixed(commitSig3)
+	assert.NoError(t, err3)
+	assert.True(t, int64(len(b3)) == commitSig3.MaxCommitSigBytes())
+
+	b4, err4 := cdc.MarshalBinaryLengthPrefixed(aggregatedCommitSig)
+	assert.NoError(t, err4)
+	assert.True(t, int64(len(b4)) == aggregatedCommitSig.MaxCommitSigBytes())
+}
+
+func TestMaxCommitBytes(t *testing.T) {
+	pv1 := NewMockPV(PrivKeyEd25519)
+	pv2 := NewMockPV(PrivKeyComposite)
+	pv3 := NewMockPV(PrivKeyComposite)
+
+	pub1, _ := pv1.GetPubKey()
+	pub2, _ := pv2.GetPubKey()
+	pub3, _ := pv3.GetPubKey()
+
+	blockID := BlockID{tmrand.Bytes(tmhash.Size),
+		PartSetHeader{math.MaxInt32, tmrand.Bytes(tmhash.Size)}}
+
+	chainID := "mychain2"
+	timestamp := time.Date(math.MaxInt64, 0, 0, 0, 0, 0, math.MaxInt64, time.UTC)
+
+	vote1 := &Vote{
+		ValidatorAddress: pub1.Address(),
+		ValidatorIndex:   math.MaxInt64,
+		Height:           math.MaxInt64,
+		Round:            math.MaxInt64,
+		Timestamp:        timestamp,
+		Type:             PrecommitType,
+		BlockID:          blockID,
+	}
+	assert.NoError(t, pv1.SignVote(chainID, vote1))
+
+	vote2 := &Vote{
+		ValidatorAddress: pub2.Address(),
+		ValidatorIndex:   math.MaxInt64,
+		Height:           math.MaxInt64,
+		Round:            math.MaxInt64,
+		Timestamp:        timestamp,
+		Type:             PrecommitType,
+		BlockID:          blockID,
+	}
+	assert.NoError(t, pv2.SignVote(chainID, vote2))
+
+	vote3 := &Vote{
+		ValidatorAddress: pub2.Address(),
+		ValidatorIndex:   math.MaxInt64,
+		Height:           math.MaxInt64,
+		Round:            math.MaxInt64,
+		Timestamp:        timestamp,
+		Type:             PrecommitType,
+		BlockID:          blockID,
+	}
+	// does not sign vote3
+
+	commitSig := make([]CommitSig, 3)
+	commitSig[0] = NewCommitSigForBlock(vote1.Signature, pub1.Address(), timestamp)
+	commitSig[1] = NewCommitSigForBlock(vote2.Signature, pub2.Address(), timestamp)
+	commitSig[2] = NewCommitSigForBlock(vote3.Signature, pub3.Address(), timestamp)
+
+	commit := NewCommit(math.MaxInt64, math.MaxInt32, blockID, commitSig)
+	commit.AggregatedSignature = tmrand.Bytes(bls.SignatureSize)
+
+	bz1, err1 := cdc.MarshalBinaryLengthPrefixed(blockID)
+	assert.NoError(t, err1)
+	bz2, err2 := cdc.MarshalBinaryLengthPrefixed(commit)
+	assert.NoError(t, err2)
+	assert.True(t, CommitBlockIDMaxLen == len(bz1))
+	assert.True(t, commit.MaxCommitBytes() == int64(len(bz2)))
+}
+
+func TestMaxCommitBytesMany(t *testing.T) {
+	commitCount := 100
+	commitSig := make([]CommitSig, commitCount)
+	blockID := BlockID{tmrand.Bytes(tmhash.Size),
+		PartSetHeader{math.MaxInt32, tmrand.Bytes(tmhash.Size)}}
+
+	chainID := "mychain3"
+	timestamp := time.Date(math.MaxInt64, 0, 0, 0, 0, 0, math.MaxInt64, time.UTC)
+
+	for i := 0; i < commitCount; i++ {
+		pv := NewMockPV(PrivKeyEd25519)
+		pub, _ := pv.GetPubKey()
+		vote := &Vote{
+			ValidatorAddress: pub.Address(),
+			ValidatorIndex:   math.MaxInt64,
+			Height:           math.MaxInt64,
+			Round:            math.MaxInt64,
+			Timestamp:        timestamp,
+			Type:             PrecommitType,
+			BlockID:          blockID,
+		}
+		assert.NoError(t, pv.SignVote(chainID, vote))
+		commitSig[i] = NewCommitSigForBlock(vote.Signature, pub.Address(), timestamp)
+	}
+	commit := NewCommit(math.MaxInt64, math.MaxInt32, blockID, commitSig)
+	bz, err := cdc.MarshalBinaryLengthPrefixed(commit)
+	assert.NoError(t, err)
+	assert.True(t, commit.MaxCommitBytes() == int64(len(bz)))
+}
+
+func TestMaxCommitBytesAggregated(t *testing.T) {
+	commitCount := 100
+	commitSig := make([]CommitSig, commitCount)
+	blockID := BlockID{tmrand.Bytes(tmhash.Size),
+		PartSetHeader{math.MaxInt32, tmrand.Bytes(tmhash.Size)}}
+
+	timestamp := time.Date(math.MaxInt64, 0, 0, 0, 0, 0, math.MaxInt64, time.UTC)
+
+	for i := 0; i < commitCount; i++ {
+		pv := NewMockPV(PrivKeyComposite)
+		pub, _ := pv.GetPubKey()
+		vote := &Vote{
+			ValidatorAddress: pub.Address(),
+			ValidatorIndex:   math.MaxInt64,
+			Height:           math.MaxInt64,
+			Round:            math.MaxInt64,
+			Timestamp:        timestamp,
+			Type:             PrecommitType,
+			BlockID:          blockID,
+		}
+		// do not sign
+		commitSig[i] = NewCommitSigForBlock(vote.Signature, pub.Address(), timestamp)
+	}
+	commit := NewCommit(math.MaxInt64, math.MaxInt32, blockID, commitSig)
+	commit.AggregatedSignature = tmrand.Bytes(bls.SignatureSize)
+
+	bz, err := cdc.MarshalBinaryLengthPrefixed(commit)
+	assert.NoError(t, err)
+	assert.True(t, commit.MaxCommitBytes() == int64(len(bz)))
+}
+
+func TestMaxCommitBytesMixed(t *testing.T) {
+	commitCount := 100
+	commitSig := make([]CommitSig, commitCount)
+	blockID := BlockID{tmrand.Bytes(tmhash.Size),
+		PartSetHeader{math.MaxInt32, tmrand.Bytes(tmhash.Size)}}
+
+	chainID := "mychain4"
+	timestamp := time.Date(math.MaxInt64, 0, 0, 0, 0, 0, math.MaxInt64, time.UTC)
+
+	for i := 0; i < commitCount; i++ {
+		keyType := RandomKeyType()
+		pv := NewMockPV(keyType)
+		pub, _ := pv.GetPubKey()
+		vote := &Vote{
+			ValidatorAddress: pub.Address(),
+			ValidatorIndex:   math.MaxInt64,
+			Height:           math.MaxInt64,
+			Round:            math.MaxInt64,
+			Timestamp:        timestamp,
+			Type:             PrecommitType,
+			BlockID:          blockID,
+		}
+		// sign only if key type is ed25519
+		if keyType == PrivKeyEd25519 {
+			assert.NoError(t, pv.SignVote(chainID, vote))
+		}
+		commitSig[i] = NewCommitSigForBlock(vote.Signature, pub.Address(), timestamp)
+	}
+	commit := NewCommit(math.MaxInt64, math.MaxInt32, blockID, commitSig)
+	commit.AggregatedSignature = tmrand.Bytes(bls.SignatureSize)
+
+	bz, err := cdc.MarshalBinaryLengthPrefixed(commit)
+	assert.NoError(t, err)
+	assert.True(t, commit.MaxCommitBytes() == int64(len(bz)))
+}
+
 func TestBlockMaxDataBytes(t *testing.T) {
+	pv1 := NewMockPV(PrivKeyEd25519)
+	pv2 := NewMockPV(PrivKeyComposite)
+	pv3 := NewMockPV(PrivKeyBLS)
+
+	pub1, _ := pv1.GetPubKey()
+	pub2, _ := pv2.GetPubKey()
+	pub3, _ := pv3.GetPubKey()
+
+	val := make([]*Validator, 3)
+	val[0] = newValidator(pub1.Address(), 100)
+	val[1] = newValidator(pub2.Address(), 200)
+	val[2] = newValidator(pub3.Address(), 300)
+	valSet := NewValidatorSet(val)
+	blockID := makeBlockIDRandom()
+	chainID := "mychain5"
+	vote1, _ := MakeVote(1, blockID, valSet, pv1, chainID, tmtime.Now())
+	vote2, _ := MakeVote(1, blockID, valSet, pv2, chainID, tmtime.Now())
+	vote3, _ := MakeVote(1, blockID, valSet, pv3, chainID, tmtime.Now())
+	vote4, _ := MakeVote(1, makeBlockIDRandom(), valSet, pv3, chainID, tmtime.Now())
+
+	commitSig := make([]CommitSig, 3)
+	commitSig[0] = NewCommitSigForBlock(vote1.Signature, pub1.Address(), tmtime.Now())
+	commitSig[1] = NewCommitSigForBlock(vote2.Signature, pub2.Address(), tmtime.Now())
+	commitSig[2] = NewCommitSigForBlock(vote3.Signature, pub3.Address(), tmtime.Now())
+
+	commit := NewCommit(1, 0, blockID, commitSig)
+	dupEv := NewDuplicateVoteEvidence(pub3, vote3, vote4)
+
 	testCases := []struct {
-		maxBytes      int64
-		valsCount     int
-		evidenceCount int
-		panics        bool
-		result        int64
+		maxBytes int64
+		commit   *Commit
+		evidence []Evidence
+		panics   bool
+		result   int64
 	}{
-		0: {-10, 1, 0, true, 0},
-		1: {10, 1, 0, true, 0},
-		2: {865, 1, 0, true, 0},
-		3: {932, 1, 0, false, 0},
-		4: {933, 1, 0, false, 1},
+		0: {-10, commit, []Evidence{dupEv}, true, 0},
+		1: {10, commit, []Evidence{dupEv}, true, 0},
+		2: {1700, commit, []Evidence{dupEv}, true, 0},
+		3: {1735, commit, []Evidence{dupEv}, false, 0},
+		4: {1736, commit, []Evidence{dupEv}, false, 1},
 	}
 
 	for i, tc := range testCases {
 		tc := tc
 		if tc.panics {
 			assert.Panics(t, func() {
-				MaxDataBytes(tc.maxBytes, tc.valsCount, tc.evidenceCount)
+				MaxDataBytes(tc.maxBytes, tc.commit, tc.evidence)
 			}, "#%v", i)
 		} else {
 			assert.Equal(t,
 				tc.result,
-				MaxDataBytes(tc.maxBytes, tc.valsCount, tc.evidenceCount),
+				MaxDataBytes(tc.maxBytes, tc.commit, tc.evidence),
 				"#%v", i)
 		}
 	}
@@ -552,12 +808,15 @@ func TestCommitToVoteSet(t *testing.T) {
 	voteSet2 := CommitToVoteSet(chainID, commit, valSet)
 
 	for i := 0; i < len(vals); i++ {
-		vote1 := voteSet2.GetByIndex(i)
-		vote2 := commit.GetVote(i)
+		vote1 := voteSet.GetByIndex(i)
+		vote2 := voteSet2.GetByIndex(i)
+		vote3 := commit.GetVote(i)
 
 		vote1bz := cdc.MustMarshalBinaryBare(vote1)
 		vote2bz := cdc.MustMarshalBinaryBare(vote2)
+		vote3bz := cdc.MustMarshalBinaryBare(vote3)
 		assert.Equal(t, vote1bz, vote2bz)
+		assert.Equal(t, vote1bz, vote3bz)
 	}
 }
 

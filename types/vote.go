@@ -12,9 +12,7 @@ import (
 )
 
 const (
-	// MaxVoteBytes is a maximum vote size (including amino overhead).
-	MaxVoteBytes int64  = 255
-	nilVoteStr   string = "nil-Vote"
+	nilVoteStr string = "nil-Vote"
 )
 
 var (
@@ -127,7 +125,7 @@ func (vote *Vote) Verify(chainID string, pubKey crypto.PubKey) error {
 		return ErrVoteInvalidValidatorAddress
 	}
 
-	if vote.Signature != nil && !pubKey.VerifyBytes(vote.SignBytes(chainID), vote.Signature) {
+	if !pubKey.VerifyBytes(vote.SignBytes(chainID), vote.Signature) {
 		return ErrVoteInvalidSignature
 	}
 	return nil
@@ -164,10 +162,10 @@ func (vote *Vote) ValidateBasic() error {
 	if vote.ValidatorIndex < 0 {
 		return errors.New("negative ValidatorIndex")
 	}
-	if vote.Signature != nil && len(vote.Signature) == 0 {
+	if len(vote.Signature) == 0 {
 		return errors.New("signature is missing")
 	}
-	if vote.Signature != nil && len(vote.Signature) > MaxSignatureSize {
+	if len(vote.Signature) > MaxSignatureSize {
 		return fmt.Errorf("signature is too big %d (max: %d)", len(vote.Signature), MaxSignatureSize)
 	}
 	return nil

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"math"
 	"math/big"
-	s "sort"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -176,7 +176,7 @@ func TestSelectVoterReasonableStakingPower(t *testing.T) {
 }
 
 func findLargestStakingPowerGap(t *testing.T, loopCount int, minMaxRate int, maxVoters int) {
-	valSet, privMap := randValidatorSetWithMinMax(30, 100, 100*int64(minMaxRate))
+	valSet, privMap := randValidatorSetWithMinMax(PrivKeyEd25519, 30, 100, 100*int64(minMaxRate))
 	genDoc := &GenesisDoc{
 		GenesisTime: tmtime.Now(),
 		ChainID:     "tendermint-test",
@@ -222,7 +222,7 @@ func TestSelectVoterMaxVarious(t *testing.T) {
 		t.Logf("<<< min: 100, max: %d >>>", 100*minMaxRate)
 		for validators := 16; validators <= 256; validators *= 4 {
 			for voters := 1; voters <= validators; voters += 10 {
-				valSet, _ := randValidatorSetWithMinMax(validators, 100, 100*int64(minMaxRate))
+				valSet, _ := randValidatorSetWithMinMax(PrivKeyEd25519, validators, 100, 100*int64(minMaxRate))
 				voterSet := SelectVoter(valSet, []byte{byte(hash)}, &VoterParams{int32(voters), 20})
 				if voterSet.Size() < voters {
 					t.Logf("Cannot elect voters up to MaxVoters: validators=%d, MaxVoters=%d, actual voters=%d",
@@ -717,10 +717,10 @@ func sameVoters(c1 []*Validator, c2 []*Validator) bool {
 	if len(c1) != len(c2) {
 		return false
 	}
-	s.Slice(c1, func(i, j int) bool {
+	sort.Slice(c1, func(i, j int) bool {
 		return bytes.Compare(c1[i].Address.Bytes(), c1[j].Address.Bytes()) == -1
 	})
-	s.Slice(c2, func(i, j int) bool {
+	sort.Slice(c2, func(i, j int) bool {
 		return bytes.Compare(c2[i].Address.Bytes(), c2[j].Address.Bytes()) == -1
 	})
 	for i := 0; i < len(c1); i++ {
