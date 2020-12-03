@@ -684,7 +684,7 @@ OUTER_LOOP:
 			// Load the seen commit for prs.Height,
 			// which contains precommit signatures for prs.Height.
 			// Originally the block commit was used, but with the addition of the BLS signature-aggregation,
-			// we use seen commit instead of the block commit because block commit has no no individual signature.
+			// we use seen commit instead of the block commit because block commit has no individual signature.
 			if commit := conR.conS.blockStore.LoadSeenCommit(prs.Height); commit != nil {
 				if ps.PickSendVote(commit) {
 					logger.Debug("Picked Catchup commit to send", "height", prs.Height)
