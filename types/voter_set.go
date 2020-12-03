@@ -8,14 +8,13 @@ import (
 	"sort"
 	"strings"
 
-	tmproto "github.com/tendermint/tendermint/proto/types"
-
 	"github.com/pkg/errors"
 
 	"github.com/tendermint/tendermint/crypto/merkle"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	tmmath "github.com/tendermint/tendermint/libs/math"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
+	tmproto "github.com/tendermint/tendermint/proto/types"
 )
 
 // VoterSet represent a set of *Validator at a given height.
@@ -155,11 +154,6 @@ func (voters *VoterSet) VerifyCommit(chainID string, blockID BlockID,
 		// This means we don't need the validator address or to do any lookup.
 		val := voters.Voters[idx]
 
-		// Validate signature.
-		voteSignBytes := commit.VoteSignBytes(chainID, idx)
-		if !val.PubKey.VerifyBytes(voteSignBytes, commitSig.Signature) {
-			return fmt.Errorf("wrong signature (#%d): %X", idx, commitSig.Signature)
-		}
 		// Good!
 		if blockID.Equals(commitSig.BlockID(commit.BlockID)) {
 			talliedVotingPower += val.VotingPower
@@ -168,6 +162,11 @@ func (voters *VoterSet) VerifyCommit(chainID string, blockID BlockID,
 		// It's OK that the BlockID doesn't match.  We include stray
 		// signatures (~votes for nil) to measure validator availability.
 		// }
+	}
+
+	// Validate signature.
+	if err := commit.VerifySignatures(chainID, voters.Voters); err != nil {
+		return err
 	}
 
 	if got, needed := talliedVotingPower, votingPowerNeeded; got <= needed {
@@ -213,16 +212,14 @@ func (voters *VoterSet) VerifyCommitLight(chainID string, blockID BlockID,
 		// This means we don't need the validator address or to do any lookup.
 		val := voters.Voters[idx]
 
-		// Validate signature.
-		voteSignBytes := commit.VoteSignBytes(chainID, idx)
-		if !val.PubKey.VerifyBytes(voteSignBytes, commitSig.Signature) {
-			return fmt.Errorf("wrong signature (#%d): %X", idx, commitSig.Signature)
-		}
-
 		talliedVotingPower += val.VotingPower
 
 		// return as soon as +2/3 of the signatures are verified
 		if talliedVotingPower > votingPowerNeeded {
+			// Validate signature.
+			if err := commit.VerifySignatures(chainID, voters.Voters); err != nil {
+				return err
+			}
 			return nil
 		}
 	}
@@ -273,23 +270,20 @@ func (voters *VoterSet) VerifyFutureCommit(newSet *VoterSet, chainID string,
 	oldVotingPower := int64(0)
 	seen := map[int]bool{}
 
-	for idx, commitSig := range commit.Signatures {
+	vals := make([]*Validator, 0, len(commit.Signatures))
+	for _, commitSig := range commit.Signatures {
 		if commitSig.Absent() {
 			continue // OK, some signatures can be absent.
 		}
 
 		// See if this validator is in oldVals.
 		oldIdx, val := oldVoters.GetByAddress(commitSig.ValidatorAddress)
+		vals = append(vals, val)
 		if val == nil || seen[oldIdx] {
 			continue // missing or double vote...
 		}
 		seen[oldIdx] = true
 
-		// Validate signature.
-		voteSignBytes := commit.VoteSignBytes(chainID, idx)
-		if !val.PubKey.VerifyBytes(voteSignBytes, commitSig.Signature) {
-			return errors.Errorf("wrong signature (#%d): %X", idx, commitSig.Signature)
-		}
 		// Good!
 		if blockID.Equals(commitSig.BlockID(commit.BlockID)) {
 			oldVotingPower += val.VotingPower
@@ -298,6 +292,11 @@ func (voters *VoterSet) VerifyFutureCommit(newSet *VoterSet, chainID string,
 		// It's OK that the BlockID doesn't match.  We include stray
 		// signatures (~votes for nil) to measure validator availability.
 		// }
+	}
+
+	// Validate signature.
+	if err := commit.VerifySignatures(chainID, vals); err != nil {
+		return err
 	}
 
 	if got, needed := oldVotingPower, oldVoters.TotalVotingPower()*2/3; got <= needed {
@@ -333,6 +332,7 @@ func (voters *VoterSet) VerifyCommitTrusting(chainID string, blockID BlockID,
 	}
 	votingPowerNeeded := totalVotingPowerMulByNumerator / trustLevel.Denominator
 
+	vals := make([]*Validator, 0, len(commit.Signatures))
 	for idx, commitSig := range commit.Signatures {
 		if commitSig.Absent() {
 			continue // OK, some signatures can be absent.
@@ -341,6 +341,7 @@ func (voters *VoterSet) VerifyCommitTrusting(chainID string, blockID BlockID,
 		// We don't know the validators that committed this block, so we have to
 		// check for each vote if its validator is already known.
 		valIdx, val := voters.GetByAddress(commitSig.ValidatorAddress)
+		vals = append(vals, val)
 
 		if firstIndex, ok := seenVals[valIdx]; ok { // double vote
 			secondIndex := idx
@@ -349,12 +350,6 @@ func (voters *VoterSet) VerifyCommitTrusting(chainID string, blockID BlockID,
 
 		if val != nil {
 			seenVals[valIdx] = idx
-
-			// Validate signature.
-			voteSignBytes := commit.VoteSignBytes(chainID, idx)
-			if !val.PubKey.VerifyBytes(voteSignBytes, commitSig.Signature) {
-				return errors.Errorf("wrong signature (#%d): %X", idx, commitSig.Signature)
-			}
 
 			// Good!
 			if blockID.Equals(commitSig.BlockID(commit.BlockID)) {
@@ -369,6 +364,11 @@ func (voters *VoterSet) VerifyCommitTrusting(chainID string, blockID BlockID,
 				return nil
 			}
 		}
+	}
+
+	// Validate signature.
+	if err := commit.VerifySignatures(chainID, vals); err != nil {
+		return err
 	}
 
 	return ErrNotEnoughVotingPowerSigned{Got: talliedVotingPower, Needed: votingPowerNeeded}
@@ -427,15 +427,18 @@ func (voters *VoterSet) VerifyCommitLightTrusting(chainID string, blockID BlockI
 			}
 			seenVals[valIdx] = idx
 
-			// Validate signature.
-			voteSignBytes := commit.VoteSignBytes(chainID, idx)
-			if !val.PubKey.VerifyBytes(voteSignBytes, commitSig.Signature) {
-				return errors.Errorf("wrong signature (#%d): %X", idx, commitSig.Signature)
-			}
-
 			talliedVotingPower += val.VotingPower
 
 			if talliedVotingPower > votingPowerNeeded {
+				// Validate signature.
+				vals := make([]*Validator, 0, len(commit.Signatures))
+				for _, cs := range commit.Signatures {
+					_, val := voters.GetByAddress(cs.ValidatorAddress)
+					vals = append(vals, val)
+				}
+				if err := commit.VerifySignatures(chainID, vals); err != nil {
+					return err
+				}
 				return nil
 			}
 		}

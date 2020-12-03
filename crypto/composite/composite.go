@@ -3,11 +3,10 @@ package composite
 import (
 	"bytes"
 
+	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/bls"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/crypto/tmhash"
-
-	"github.com/tendermint/tendermint/crypto"
 )
 
 // PubKeyComposite and PrivKeyComposite are intended to allow public key algorithms to be selected for each function.

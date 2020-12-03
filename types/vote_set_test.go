@@ -2,7 +2,13 @@ package types
 
 import (
 	"bytes"
+	"fmt"
+	"sort"
 	"testing"
+
+	"github.com/tendermint/tendermint/crypto/bls"
+	"github.com/tendermint/tendermint/crypto/composite"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,6 +28,31 @@ func randVoteSet(
 ) (*VoteSet, *ValidatorSet, *VoterSet, []PrivValidator) {
 	valSet, voterSet, privValidators := RandVoterSet(numValidators, votingPower)
 	return NewVoteSet("test_chain_id", height, round, signedMsgType, voterSet), valSet, voterSet, privValidators
+}
+
+func randVoteSetForPrivKeys(
+	height int64,
+	round int,
+	signedMsgType SignedMsgType,
+	privKeys []crypto.PrivKey,
+	votingPower int64,
+) (*VoteSet, *ValidatorSet, *VoterSet, []PrivValidator) {
+	valz := make([]*Validator, len(privKeys))
+	privValidators := make([]PrivValidator, len(privKeys))
+	for i := 0; i < len(privKeys); i++ {
+		privVal := MockPV{privKeys[i], false, false}
+		pubKey, err := privVal.GetPubKey()
+		if err != nil {
+			panic(fmt.Errorf("could not retrieve pubkey %w", err))
+		}
+		val := NewValidator(pubKey, votingPower)
+		valz[i] = val
+		privValidators[i] = privVal
+	}
+	vals := NewValidatorSet(valz)
+	sort.Sort(PrivValidatorsByAddress(privValidators))
+	voterSet := SelectVoter(vals, []byte{}, DefaultVoterParams())
+	return NewVoteSet("test_chain_id", height, round, signedMsgType, voterSet), vals, voterSet, privValidators
 }
 
 // Convenience: Return new vote with different validator address/index
@@ -594,4 +625,51 @@ func TestMakeCommit(t *testing.T) {
 	if err := commit.ValidateBasic(); err != nil {
 		t.Errorf("error in Commit.ValidateBasic(): %v", err)
 	}
+
+	// Signature aggregation
+	t.Run("SignatureAggregation", func(t *testing.T) {
+		privKeys := [...]crypto.PrivKey{
+			bls.GenPrivKey(),
+			composite.GenPrivKey(),
+			ed25519.GenPrivKey(),
+			bls.GenPrivKey(),
+		}
+		voteSet, _, _, privValidators := randVoteSetForPrivKeys(height, round, PrecommitType, privKeys[:], 1)
+		for i := range privKeys {
+			pubKey, err := privValidators[i].GetPubKey()
+			if err != nil {
+				t.Fatal(err)
+			}
+			addr := pubKey.Address()
+			vote := withValidator(voteProto, addr, i)
+			fmt.Printf("*** %v - %v\n", vote.ValidatorAddress, addr)
+			if _, err := signAddVote(privValidators[i], vote, voteSet); err != nil {
+				t.Error(err)
+			}
+		}
+
+		commit := voteSet.MakeCommit()
+		commit.AggregateSignatures()
+
+		assert.Equal(t, height, commit.Height)
+		assert.Equal(t, round, commit.Round)
+		assert.NotNil(t, commit.AggregatedSignature)
+		// The order of commit.Signatures is sorted by address.
+		for i := range commit.Signatures {
+			idx := 0
+			for {
+				if bytes.Equal(privKeys[idx].PubKey().Address(), commit.Signatures[i].ValidatorAddress) {
+					break
+				}
+				idx++
+			}
+			if _, ok := privKeys[idx].(ed25519.PrivKeyEd25519); ok {
+				assert.NotNil(t, commit.Signatures[i].Signature)
+			} else if _, ok := privKeys[idx].(bls.PrivKeyBLS12); ok {
+				assert.Nil(t, commit.Signatures[i].Signature)
+			} else if _, ok := privKeys[idx].(composite.PrivKeyComposite); ok {
+				assert.Nil(t, commit.Signatures[i].Signature)
+			}
+		}
+	})
 }

@@ -564,7 +564,6 @@ func deepcpVote(vote *types.Vote) (res *types.Vote) {
 			Hash:        make([]byte, len(vote.BlockID.Hash)),
 			PartsHeader: vote.BlockID.PartsHeader,
 		},
-		Signature: make([]byte, len(vote.Signature)),
 	}
 	copy(res.ValidatorAddress, vote.ValidatorAddress)
 	copy(res.BlockID.Hash, vote.BlockID.Hash)
