@@ -131,10 +131,14 @@ func (blockExec *BlockExecutor) ApplyBlock(
 		return state, 0, ErrInvalidBlock(err)
 	}
 
-	startTime := time.Now().UnixNano()
+	execStartTime := time.Now().UnixNano()
 	abciResponses, err := execBlockOnProxyApp(blockExec.logger, blockExec.proxyApp, block, blockExec.db)
-	endTime := time.Now().UnixNano()
-	blockExec.metrics.BlockProcessingTime.Observe(float64(endTime-startTime) / 1000000)
+	execEndTime := time.Now().UnixNano()
+
+	execTimeMs := float64(execEndTime-execStartTime) / 1000000
+	blockExec.metrics.BlockProcessingTime.Observe(execTimeMs)
+	blockExec.metrics.BlockExecutionTime.Set(execTimeMs)
+
 	if err != nil {
 		return state, 0, ErrProxyAppConn(err)
 	}
@@ -167,7 +171,13 @@ func (blockExec *BlockExecutor) ApplyBlock(
 	}
 
 	// Lock mempool, commit app state, update mempoool.
+	commitStartTime := time.Now().UnixNano()
 	appHash, retainHeight, err := blockExec.Commit(state, block, abciResponses.DeliverTxs)
+	commitEndTime := time.Now().UnixNano()
+
+	commitTimeMs := float64(commitEndTime-commitStartTime) / 1000000
+	blockExec.metrics.BlockCommitTime.Set(commitTimeMs)
+
 	if err != nil {
 		return state, 0, fmt.Errorf("commit failed for application: %v", err)
 	}
@@ -213,7 +223,13 @@ func (blockExec *BlockExecutor) Commit(
 	}
 
 	// Commit block, get hash back
+	appCommitStartTime := time.Now().UnixNano()
 	res, err := blockExec.proxyApp.CommitSync()
+	appCommitEndTime := time.Now().UnixNano()
+
+	appCommitTimeMs := float64(appCommitEndTime-appCommitStartTime) / 1000000
+	blockExec.metrics.BlockAppCommitTime.Set(appCommitTimeMs)
+
 	if err != nil {
 		blockExec.logger.Error(
 			"Client error during proxyAppConn.CommitSync",
@@ -231,6 +247,7 @@ func (blockExec *BlockExecutor) Commit(
 	)
 
 	// Update mempool.
+	updateMempoolStartTime := time.Now().UnixNano()
 	err = blockExec.mempool.Update(
 		block.Height,
 		block.Txs,
@@ -238,6 +255,10 @@ func (blockExec *BlockExecutor) Commit(
 		TxPreCheck(state),
 		TxPostCheck(state),
 	)
+	updateMempoolEndTime := time.Now().UnixNano()
+
+	updateMempoolTimeMs := float64(updateMempoolEndTime-updateMempoolStartTime) / 1000000
+	blockExec.metrics.BlockUpdateMempoolTime.Set(updateMempoolTimeMs)
 
 	return res.Data, res.RetainHeight, err
 }
