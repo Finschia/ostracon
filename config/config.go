@@ -737,7 +737,7 @@ func (cfg *MempoolConfig) ValidateBasic() error {
 	return nil
 }
 
-// -----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // FastSyncConfig
 
 // FastSyncConfig defines the configuration for the Tendermint fast sync service
@@ -771,7 +771,7 @@ func (cfg *FastSyncConfig) ValidateBasic() error {
 	}
 }
 
-// -----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // ConsensusConfig
 
 // ConsensusConfig defines the configuration for the Tendermint consensus service,
@@ -917,7 +917,7 @@ func (cfg *ConsensusConfig) ValidateBasic() error {
 	return nil
 }
 
-// -----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // TxIndexConfig
 // Remember that Event has the following structure:
 // type: [
@@ -969,7 +969,7 @@ func TestTxIndexConfig() *TxIndexConfig {
 	return DefaultTxIndexConfig()
 }
 
-// -----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // InstrumentationConfig
 
 // InstrumentationConfig defines the configuration for metrics reporting.
@@ -1018,7 +1018,7 @@ func (cfg *InstrumentationConfig) ValidateBasic() error {
 	return nil
 }
 
-// -----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Utils
 
 // helper function to make config creation independent of root dir
@@ -1029,7 +1029,7 @@ func rootify(path, root string) string {
 	return filepath.Join(root, path)
 }
 
-// -----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Moniker
 
 var defaultMoniker = getDefaultMoniker()
