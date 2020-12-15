@@ -352,6 +352,10 @@ func (c *Client) TxSearch(query string, prove bool, page, perPage int, orderBy s
 	return c.next.TxSearch(query, prove, page, perPage, orderBy)
 }
 
+func (c *Client) TxByHeight(height int64, prove bool, orderBy string) (*ctypes.ResultTxSearch, error) {
+	return c.next.TxByHeight(height, prove, orderBy)
+}
+
 // Validators fetches and verifies validators.
 //
 // WARNING: only full validator sets are verified (when length of validators is

@@ -166,6 +166,10 @@ func (c *Local) TxSearch(query string, prove bool, page, perPage int, orderBy st
 	return core.TxSearch(c.ctx, query, prove, page, perPage, orderBy)
 }
 
+func (c *Local) TxByHeight(height int64, prove bool, orderBy string) (*ctypes.ResultTxSearch, error) {
+	return core.TxByHeight(c.ctx, height, prove, orderBy)
+}
+
 func (c *Local) BroadcastEvidence(ev types.Evidence) (*ctypes.ResultBroadcastEvidence, error) {
 	return core.BroadcastEvidence(c.ctx, ev)
 }
