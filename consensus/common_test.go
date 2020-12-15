@@ -836,7 +836,7 @@ func randConsensusNetWithPeers(
 				panic(err)
 			}
 
-			privVal, _ = privval.GenFilePV(tempKeyFile.Name(), tempStateFile.Name(), privval.PrevKeyTypeEd25519)
+			privVal, _ = privval.GenFilePV(tempKeyFile.Name(), tempStateFile.Name(), privval.PrivKeyTypeEd25519)
 		}
 
 		app := appFunc(path.Join(config.DBDir(), fmt.Sprintf("%s_%d", testName, i)))

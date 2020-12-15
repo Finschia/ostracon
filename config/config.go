@@ -239,7 +239,7 @@ func DefaultBaseConfig() BaseConfig {
 		FilterPeers:        false,
 		DBBackend:          "goleveldb",
 		DBPath:             "data",
-		PrivKeyType:        privval.PrevKeyTypeEd25519,
+		PrivKeyType:        privval.PrivKeyTypeEd25519,
 	}
 }
 

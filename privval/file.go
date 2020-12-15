@@ -34,8 +34,8 @@ const (
 )
 
 const (
-	PrevKeyTypeEd25519   string = "ed25519"
-	PrevKeyTypeComposite string = "composite"
+	PrivKeyTypeEd25519   string = "ed25519"
+	PrivKeyTypeComposite string = "composite"
 )
 
 // A vote is either stepPrevote or stepPrecommit.
@@ -182,9 +182,9 @@ func NewFilePV(privKey crypto.PrivKey, keyFilePath, stateFilePath string) *FileP
 func GenFilePV(keyFilePath, stateFilePath, privKeyType string) (filePV *FilePV, err error) {
 	var privKey crypto.PrivKey
 	switch strings.ToLower(privKeyType) {
-	case PrevKeyTypeEd25519:
+	case PrivKeyTypeEd25519:
 		privKey = ed25519.GenPrivKey()
-	case PrevKeyTypeComposite:
+	case PrivKeyTypeComposite:
 		privKey = composite.NewPrivKeyComposite(bls.GenPrivKey(), ed25519.GenPrivKey())
 	default:
 		return nil, fmt.Errorf("undefined private key type: %s", privKeyType)
