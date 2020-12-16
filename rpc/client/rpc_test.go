@@ -554,6 +554,36 @@ func TestTxSearch(t *testing.T) {
 	}
 }
 
+func TestTxsByHeight(t *testing.T) {
+	c := getHTTPClient()
+
+	heights := make([]int64, 10)
+
+	// first we broadcast a few txs
+	for i := 0; i < 10; i++ {
+		_, _, tx := MakeTxKV()
+		result, err := c.BroadcastTxCommit(tx)
+		require.NoError(t, err)
+		heights[i] = result.Height
+	}
+
+	// not prove and orderBy asc
+	for _, height := range heights {
+		res, err := c.TxsByHeight(height, false, "asc")
+		require.NoError(t, err)
+		require.Equal(t, 1, res.TotalCount)
+		require.Equal(t, 1, len(res.Txs))
+	}
+
+	// prove and orderBy desc
+	for _, height := range heights {
+		res, err := c.TxsByHeight(height, true, "desc")
+		require.NoError(t, err)
+		require.Equal(t, 1, res.TotalCount)
+		require.Equal(t, 1, len(res.Txs))
+	}
+}
+
 func deepcpVote(vote *types.Vote) (res *types.Vote) {
 	res = &types.Vote{
 		ValidatorAddress: make([]byte, len(vote.ValidatorAddress)),
