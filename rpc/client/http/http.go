@@ -408,16 +408,16 @@ func (c *baseRPCClient) TxSearch(query string, prove bool, page, perPage int, or
 	return result, nil
 }
 
-func (c *baseRPCClient) TxByHeight(height int64, prove bool, orderBy string) (*ctypes.ResultTxSearch, error) {
+func (c *baseRPCClient) TxsByHeight(height int64, prove bool, orderBy string) (*ctypes.ResultTxSearch, error) {
 	result := new(ctypes.ResultTxSearch)
 	params := map[string]interface{}{
 		"height":   height,
 		"prove":    prove,
 		"order_by": orderBy,
 	}
-	_, err := c.caller.Call("tx_by_height", params, result)
+	_, err := c.caller.Call("txs_by_height", params, result)
 	if err != nil {
-		return nil, errors.Wrap(err, "TxByHeight")
+		return nil, errors.Wrap(err, "TxsByHeight")
 	}
 	return result, nil
 }

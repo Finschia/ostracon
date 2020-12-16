@@ -554,7 +554,7 @@ func TestTxSearch(t *testing.T) {
 	}
 }
 
-func TestTxByHeight(t *testing.T) {
+func TestTxsByHeight(t *testing.T) {
 	c := getHTTPClient()
 
 	heights := make([]int64, 10)
@@ -569,7 +569,7 @@ func TestTxByHeight(t *testing.T) {
 
 	// not prove and orderBy asc
 	for _, height := range heights {
-		res, err := c.TxByHeight(height, false, "asc")
+		res, err := c.TxsByHeight(height, false, "asc")
 		require.NoError(t, err)
 		require.Equal(t, 1, res.TotalCount)
 		require.Equal(t, 1, len(res.Txs))
@@ -577,7 +577,7 @@ func TestTxByHeight(t *testing.T) {
 
 	// prove and orderBy desc
 	for _, height := range heights {
-		res, err := c.TxByHeight(height, true, "desc")
+		res, err := c.TxsByHeight(height, true, "desc")
 		require.NoError(t, err)
 		require.Equal(t, 1, res.TotalCount)
 		require.Equal(t, 1, len(res.Txs))

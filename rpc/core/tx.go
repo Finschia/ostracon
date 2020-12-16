@@ -125,7 +125,7 @@ func TxSearch(ctx *rpctypes.Context, query string, prove bool, page, perPage int
 	return &ctypes.ResultTxSearch{Txs: apiResults, TotalCount: totalCount}, nil
 }
 
-func TxByHeight(ctx *rpctypes.Context, height int64, prove bool, orderBy string) (*ctypes.ResultTxSearch, error) {
+func TxsByHeight(ctx *rpctypes.Context, height int64, prove bool, orderBy string) (*ctypes.ResultTxSearch, error) {
 	// if index is disabled, return error
 	if _, ok := env.TxIndexer.(*null.TxIndex); ok {
 		return nil, errors.New("transaction indexing is disabled")
