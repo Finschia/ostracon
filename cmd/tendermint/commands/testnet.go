@@ -73,7 +73,7 @@ func init() {
 		"P2P Port")
 	TestnetFilesCmd.Flags().BoolVar(&randomMonikers, "random-monikers", false,
 		"Randomize the moniker for each generated node")
-	TestnetFilesCmd.Flags().StringVar(&privKeyType, "priv_key_type", privval.PrevKeyTypeEd25519,
+	TestnetFilesCmd.Flags().StringVar(&privKeyType, "priv_key_type", privval.PrivKeyTypeEd25519,
 		"Specify validator's private key type (ed25519 | composite)")
 }
 
