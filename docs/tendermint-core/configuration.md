@@ -27,9 +27,8 @@ like the file below, however, double check by inspecting the
 
 ##### main base config options #####
 
-# TCP or UNIX socket address of the ABCI application,
-# or the name of an ABCI application compiled in with the Tendermint binary
-proxy_app = "tcp://127.0.0.1:26658"
+# the name of an ABCI application compiled in with the Tendermint binary
+proxy_app = "kvstore"
 
 # A custom human readable name for this node
 moniker = "anonymous"

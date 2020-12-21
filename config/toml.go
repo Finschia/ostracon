@@ -74,8 +74,7 @@ const defaultConfigTemplate = `# This is a TOML config file.
 
 ##### main base config options #####
 
-# TCP or UNIX socket address of the ABCI application,
-# or the name of an ABCI application compiled in with the Tendermint binary
+# the name of an ABCI application compiled in with the Tendermint binary
 proxy_app = "{{ .BaseConfig.ProxyApp }}"
 
 # A custom human readable name for this node
@@ -130,9 +129,6 @@ priv_validator_laddr = "{{ .BaseConfig.PrivValidatorListenAddr }}"
 
 # Path to the JSON file containing the private key to use for node authentication in the p2p protocol
 node_key_file = "{{ js .BaseConfig.NodeKey }}"
-
-# Mechanism to connect to the ABCI application: socket | grpc
-abci = "{{ .BaseConfig.ABCI }}"
 
 # TCP or UNIX socket address for the profiling server to listen on
 prof_laddr = "{{ .BaseConfig.ProfListenAddress }}"

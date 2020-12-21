@@ -1,7 +1,6 @@
 package abcicli
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/tendermint/tendermint/abci/types"
@@ -47,22 +46,6 @@ type Client interface {
 	InitChainSync(types.RequestInitChain) (*types.ResponseInitChain, error)
 	BeginBlockSync(types.RequestBeginBlock) (*types.ResponseBeginBlock, error)
 	EndBlockSync(types.RequestEndBlock) (*types.ResponseEndBlock, error)
-}
-
-//----------------------------------------
-
-// NewClient returns a new ABCI client of the specified transport type.
-// It returns an error if the transport is not "socket" or "grpc"
-func NewClient(addr, transport string, mustConnect bool) (client Client, err error) {
-	switch transport {
-	case "socket":
-		client = NewSocketClient(addr, mustConnect)
-	case "grpc":
-		client = NewGRPCClient(addr, mustConnect)
-	default:
-		err = fmt.Errorf("unknown abci transport %s", transport)
-	}
-	return
 }
 
 //----------------------------------------
