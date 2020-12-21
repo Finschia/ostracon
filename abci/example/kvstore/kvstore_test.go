@@ -2,19 +2,13 @@ package kvstore
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/libs/service"
-
-	abcicli "github.com/tendermint/tendermint/abci/client"
 	"github.com/tendermint/tendermint/abci/example/code"
-	abciserver "github.com/tendermint/tendermint/abci/server"
 	"github.com/tendermint/tendermint/abci/types"
 )
 
@@ -224,119 +218,4 @@ func valsEqual(t *testing.T, vals1, vals2 []types.ValidatorUpdate) {
 			t.Fatalf("vals dont match at index %d. got %X/%d , expected %X/%d", i, v2.PubKey, v2.Power, v1.PubKey, v1.Power)
 		}
 	}
-}
-
-func makeSocketClientServer(app types.Application, name string) (abcicli.Client, service.Service, error) {
-	// Start the listener
-	socket := fmt.Sprintf("unix://%s.sock", name)
-	logger := log.TestingLogger()
-
-	server := abciserver.NewSocketServer(socket, app)
-	server.SetLogger(logger.With("module", "abci-server"))
-	if err := server.Start(); err != nil {
-		return nil, nil, err
-	}
-
-	// Connect to the socket
-	client := abcicli.NewSocketClient(socket, false)
-	client.SetLogger(logger.With("module", "abci-client"))
-	if err := client.Start(); err != nil {
-		server.Stop()
-		return nil, nil, err
-	}
-
-	return client, server, nil
-}
-
-func makeGRPCClientServer(app types.Application, name string) (abcicli.Client, service.Service, error) {
-	// Start the listener
-	socket := fmt.Sprintf("unix://%s.sock", name)
-	logger := log.TestingLogger()
-
-	gapp := types.NewGRPCApplication(app)
-	server := abciserver.NewGRPCServer(socket, gapp)
-	server.SetLogger(logger.With("module", "abci-server"))
-	if err := server.Start(); err != nil {
-		return nil, nil, err
-	}
-
-	client := abcicli.NewGRPCClient(socket, true)
-	client.SetLogger(logger.With("module", "abci-client"))
-	if err := client.Start(); err != nil {
-		server.Stop()
-		return nil, nil, err
-	}
-	return client, server, nil
-}
-
-func TestClientServer(t *testing.T) {
-	// set up socket app
-	kvstore := NewApplication()
-	client, server, err := makeSocketClientServer(kvstore, "kvstore-socket")
-	require.Nil(t, err)
-	defer server.Stop()
-	defer client.Stop()
-
-	runClientTests(t, client)
-
-	// set up grpc app
-	kvstore = NewApplication()
-	gclient, gserver, err := makeGRPCClientServer(kvstore, "kvstore-grpc")
-	require.Nil(t, err)
-	defer gserver.Stop()
-	defer gclient.Stop()
-
-	runClientTests(t, gclient)
-}
-
-func runClientTests(t *testing.T, client abcicli.Client) {
-	// run some tests....
-	key := testKey
-	value := key
-	tx := []byte(key)
-	testClient(t, client, tx, key, value)
-
-	value = testValue
-	tx = []byte(key + "=" + value)
-	testClient(t, client, tx, key, value)
-}
-
-func testClient(t *testing.T, app abcicli.Client, tx []byte, key, value string) {
-	ar, err := app.DeliverTxSync(types.RequestDeliverTx{Tx: tx})
-	require.NoError(t, err)
-	require.False(t, ar.IsErr(), ar)
-	// repeating tx doesn't raise error
-	ar, err = app.DeliverTxSync(types.RequestDeliverTx{Tx: tx})
-	require.NoError(t, err)
-	require.False(t, ar.IsErr(), ar)
-	// commit
-	_, err = app.CommitSync()
-	require.NoError(t, err)
-
-	info, err := app.InfoSync(types.RequestInfo{})
-	require.NoError(t, err)
-	require.NotZero(t, info.LastBlockHeight)
-
-	// make sure query is fine
-	resQuery, err := app.QuerySync(types.RequestQuery{
-		Path: "/store",
-		Data: []byte(key),
-	})
-	require.Nil(t, err)
-	require.Equal(t, code.CodeTypeOK, resQuery.Code)
-	require.Equal(t, key, string(resQuery.Key))
-	require.Equal(t, value, string(resQuery.Value))
-	require.EqualValues(t, info.LastBlockHeight, resQuery.Height)
-
-	// make sure proof is fine
-	resQuery, err = app.QuerySync(types.RequestQuery{
-		Path:  "/store",
-		Data:  []byte(key),
-		Prove: true,
-	})
-	require.Nil(t, err)
-	require.Equal(t, code.CodeTypeOK, resQuery.Code)
-	require.Equal(t, key, string(resQuery.Key))
-	require.Equal(t, value, string(resQuery.Value))
-	require.EqualValues(t, info.LastBlockHeight, resQuery.Height)
 }
