@@ -203,7 +203,7 @@ type BaseConfig struct { //nolint: maligned
 	// A JSON file containing the private key to use for p2p authenticated encryption
 	NodeKey string `mapstructure:"node_key_file"`
 
-	// Mechanism to connect to the ABCI application: socket | grpc
+	// Mechanism to connect to the ABCI application: grpc
 	ABCI string `mapstructure:"abci"`
 
 	// TCP or UNIX socket address for the profiling server to listen on
@@ -223,7 +223,7 @@ func DefaultBaseConfig() BaseConfig {
 		NodeKey:            defaultNodeKeyPath,
 		Moniker:            defaultMoniker,
 		ProxyApp:           "tcp://127.0.0.1:26658",
-		ABCI:               "socket",
+		ABCI:               "grpc",
 		LogLevel:           DefaultPackageLogLevels(),
 		LogFormat:          LogFormatPlain,
 		ProfListenAddress:  "",

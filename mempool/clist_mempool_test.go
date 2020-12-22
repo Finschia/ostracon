@@ -583,10 +583,10 @@ func newRemoteApp(
 	clientCreator proxy.ClientCreator,
 	server service.Service,
 ) {
-	clientCreator = proxy.NewRemoteClientCreator(addr, "socket", true)
+	clientCreator = proxy.NewRemoteClientCreator(addr, "grpc", true)
 
 	// Start server
-	server = abciserver.NewSocketServer(addr, app)
+	server = abciserver.NewGRPCServer(addr, abci.NewGRPCApplication(app))
 	server.SetLogger(log.TestingLogger().With("module", "abci-server"))
 	if err := server.Start(); err != nil {
 		t.Fatalf("Error starting socket server: %v", err.Error())

@@ -44,7 +44,7 @@ Available Commands:
   set_option  Set an options on the application
 
 Flags:
-      --abci string      socket or grpc (default "socket")
+      --abci string      grpc (default "grpc")
       --address string   address of application socket (default "tcp://127.0.0.1:26658")
   -h, --help             help for abci-cli
   -v, --verbose          print the command and results as if it were a console session

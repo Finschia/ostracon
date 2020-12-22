@@ -81,8 +81,8 @@ priv_validator_laddr = ""
 # Path to the JSON file containing the private key to use for node authentication in the p2p protocol
 node_key_file = "config/node_key.json"
 
-# Mechanism to connect to the ABCI application: socket | grpc
-abci = "socket"
+# Mechanism to connect to the ABCI application: grpc
+abci = "grpc"
 
 # TCP or UNIX socket address for the profiling server to listen on
 prof_laddr = ""
