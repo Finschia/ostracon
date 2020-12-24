@@ -159,6 +159,7 @@ func TestABCIEvidence(t *testing.T) {
 type pubKeyEddie struct{}
 
 func (pubKeyEddie) Address() Address                                                { return []byte{} }
+func (pubKeyEddie) GetPubKey() crypto.PubKey                                        { return nil }
 func (pubKeyEddie) Bytes() []byte                                                   { return []byte{} }
 func (pubKeyEddie) VerifyBytes(msg []byte, sig []byte) bool                         { return false }
 func (pubKeyEddie) VRFVerify(proof crypto.Proof, msg []byte) (crypto.Output, error) { return nil, nil }

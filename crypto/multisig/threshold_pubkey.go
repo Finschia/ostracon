@@ -84,6 +84,10 @@ func (pk PubKeyMultisigThreshold) Address() crypto.Address {
 	return crypto.AddressHash(pk.Bytes())
 }
 
+func (pk PubKeyMultisigThreshold) GetPubKey() crypto.PubKey {
+	return pk
+}
+
 // Equals returns true iff pk and other both have the same number of keys, and
 // all constituent keys are the same, and in the same order.
 func (pk PubKeyMultisigThreshold) Equals(other crypto.PubKey) bool {

@@ -26,6 +26,7 @@ type Output []byte
 
 type PubKey interface {
 	Address() Address
+	GetPubKey() PubKey
 	Bytes() []byte
 	VerifyBytes(msg []byte, sig []byte) bool
 	VRFVerify(proof Proof, seed []byte) (Output, error)

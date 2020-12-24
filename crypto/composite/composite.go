@@ -29,6 +29,10 @@ func (pk PubKeyComposite) Address() crypto.Address {
 	return crypto.Address(tmhash.SumTruncated(pk.Bytes()))
 }
 
+func (pk PubKeyComposite) GetPubKey() crypto.PubKey {
+	return pk.VrfKey
+}
+
 func (pk PubKeyComposite) Bytes() []byte {
 	msg := bytes.NewBuffer(pk.SignKey.Bytes())
 	msg.Write(pk.VrfKey.Bytes())

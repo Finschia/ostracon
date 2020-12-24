@@ -185,6 +185,7 @@ func (privkey testPriv) Equals(other crypto.PrivKey) bool { return true }
 type testPub []byte
 
 func (key testPub) Address() crypto.Address { return crypto.Address{} }
+func (key testPub) GetPubKey() crypto.PubKey { return key }
 func (key testPub) Bytes() []byte {
 	return testCdc.MustMarshalBinaryBare(key)
 }

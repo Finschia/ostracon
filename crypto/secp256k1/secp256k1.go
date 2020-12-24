@@ -154,6 +154,10 @@ func (pubKey PubKeySecp256k1) Address() crypto.Address {
 	return crypto.Address(hasherRIPEMD160.Sum(nil))
 }
 
+func (pubKey PubKeySecp256k1) GetPubKey() crypto.PubKey {
+	return pubKey
+}
+
 // Bytes returns the pubkey marshalled with amino encoding.
 func (pubKey PubKeySecp256k1) Bytes() []byte {
 	bz, err := cdc.MarshalBinaryBare(pubKey)

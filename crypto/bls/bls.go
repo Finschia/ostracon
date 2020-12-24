@@ -186,6 +186,10 @@ func (pubKey PubKeyBLS12) Address() crypto.Address {
 	return tmhash.SumTruncated(pubKey[:])
 }
 
+func (pubKey PubKeyBLS12) GetPubKey() crypto.PubKey {
+	return pubKey
+}
+
 // Bytes marshals the PubKey using amino encoding.
 func (pubKey PubKeyBLS12) Bytes() []byte {
 	bz, err := cdc.MarshalBinaryBare(pubKey)
