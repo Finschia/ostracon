@@ -12,7 +12,7 @@ import (
 
 func TestClientServerNoAddrPrefix(t *testing.T) {
 	addr := "localhost:26658"
-	transport := "socket"
+	transport := "grpc"
 	app := kvstore.NewApplication()
 
 	server, err := abciserver.NewServer(addr, transport, app)
