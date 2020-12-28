@@ -274,25 +274,8 @@ func makeGRPCClientServer(app types.Application, name string) (abcicli.Client, s
 }
 
 func TestClientServer(t *testing.T) {
-	// set up socket app
-	kvstore := NewApplication()
-	client, server, err := makeSocketClientServer(kvstore, "kvstore-socket")
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		if err := server.Stop(); err != nil {
-			t.Error(err)
-		}
-	})
-	t.Cleanup(func() {
-		if err := client.Stop(); err != nil {
-			t.Error(err)
-		}
-	})
-
-	runClientTests(t, client)
-
 	// set up grpc app
-	kvstore = NewApplication()
+	kvstore := NewApplication()
 	gclient, gserver, err := makeGRPCClientServer(kvstore, "kvstore-grpc")
 	require.NoError(t, err)
 
