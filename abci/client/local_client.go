@@ -44,11 +44,6 @@ func (app *localClient) Error() error {
 	return nil
 }
 
-func (app *localClient) FlushAsync() *ReqRes {
-	// Do nothing
-	return newLocalReqRes(types.ToRequestFlush(), nil)
-}
-
 func (app *localClient) EchoAsync(msg string) *ReqRes {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()

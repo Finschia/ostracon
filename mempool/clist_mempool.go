@@ -176,11 +176,6 @@ func (mem *CListMempool) TxsBytes() int64 {
 	return atomic.LoadInt64(&mem.txsBytes)
 }
 
-// Lock() must be help by the caller during execution.
-func (mem *CListMempool) FlushAppConn() error {
-	return mem.proxyAppConn.FlushSync()
-}
-
 // XXX: Unsafe! Calling Flush may leave mempool in inconsistent state.
 func (mem *CListMempool) Flush() {
 	mem.updateMtx.RLock()
@@ -640,8 +635,6 @@ func (mem *CListMempool) recheckTxs() {
 			Type: abci.CheckTxType_Recheck,
 		})
 	}
-
-	mem.proxyAppConn.FlushAsync()
 }
 
 //--------------------------------------------------------------------------------
