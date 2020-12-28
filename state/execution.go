@@ -211,9 +211,6 @@ func (blockExec *BlockExecutor) Commit(
 	block *types.Block,
 	deliverTxResponses []*abci.ResponseDeliverTx,
 ) ([]byte, int64, error) {
-	blockExec.mempool.Lock()
-	defer blockExec.mempool.Unlock()
-
 	// Commit block, get hash back
 	appCommitStartTime := time.Now().UnixNano()
 	res, err := blockExec.proxyApp.CommitSync()
@@ -240,6 +237,8 @@ func (blockExec *BlockExecutor) Commit(
 
 	// Update mempool.
 	updateMempoolStartTime := time.Now().UnixNano()
+	blockExec.mempool.Lock()
+	defer blockExec.mempool.Unlock()
 	err = blockExec.mempool.Update(block.Height, block.Txs, deliverTxResponses, TxPreCheck(state))
 	updateMempoolEndTime := time.Now().UnixNano()
 
