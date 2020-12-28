@@ -570,8 +570,6 @@ func TestMempoolRemoteAppConcurrency(t *testing.T) {
 		// this will err with ErrTxInCache many times ...
 		mempool.CheckTx(tx, nil, TxInfo{SenderID: uint16(peerID)})
 	}
-	err := mempool.FlushAppConn()
-	require.NoError(t, err)
 }
 
 // caller must close server
