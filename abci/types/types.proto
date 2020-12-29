@@ -28,16 +28,18 @@ option (gogoproto.testgen_all)  = true;
 
 message Request {
   oneof value {
-    RequestEcho       echo        = 2;
-    RequestInfo       info        = 4;
-    RequestSetOption  set_option  = 5;
-    RequestInitChain  init_chain  = 6;
-    RequestQuery      query       = 7;
-    RequestBeginBlock begin_block = 8;
-    RequestCheckTx    check_tx    = 9;
-    RequestDeliverTx  deliver_tx  = 19;
-    RequestEndBlock   end_block   = 11;
-    RequestCommit     commit      = 12;
+    RequestEcho           echo              = 2;
+    RequestInfo           info              = 3;
+    RequestSetOption      set_option        = 4;
+    RequestInitChain      init_chain        = 5;
+    RequestQuery          query             = 6;
+    RequestBeginBlock     begin_block       = 7;
+    RequestCheckTx        check_tx          = 8;
+    RequestDeliverTx      deliver_tx        = 9;
+    RequestEndBlock       end_block         = 10;
+    RequestCommit         commit            = 11;
+    RequestBeginRecheckTx begin_recheck_tx  = 12;
+    RequestEndRecheckTx   end_recheck_tx    = 13;
   }
 }
 
@@ -99,22 +101,32 @@ message RequestEndBlock {
 
 message RequestCommit {}
 
+message RequestBeginRecheckTx {
+  Header header = 1 [(gogoproto.nullable) = false];
+}
+
+message RequestEndRecheckTx {
+  int64 height = 1;
+}
+
 //----------------------------------------
 // Response types
 
 message Response {
   oneof value {
-    ResponseException  exception   = 1;
-    ResponseEcho       echo        = 2;
-    ResponseInfo       info        = 4;
-    ResponseSetOption  set_option  = 5;
-    ResponseInitChain  init_chain  = 6;
-    ResponseQuery      query       = 7;
-    ResponseBeginBlock begin_block = 8;
-    ResponseCheckTx    check_tx    = 9;
-    ResponseDeliverTx  deliver_tx  = 10;
-    ResponseEndBlock   end_block   = 11;
-    ResponseCommit     commit      = 12;
+    ResponseException       exception         = 1;
+    ResponseEcho            echo              = 2;
+    ResponseInfo            info              = 3;
+    ResponseSetOption       set_option        = 4;
+    ResponseInitChain       init_chain        = 5;
+    ResponseQuery           query             = 6;
+    ResponseBeginBlock      begin_block       = 7;
+    ResponseCheckTx         check_tx          = 8;
+    ResponseDeliverTx       deliver_tx        = 9;
+    ResponseEndBlock        end_block         = 10;
+    ResponseCommit          commit            = 11;
+    ResponseBeginRecheckTx  begin_recheck_tx  = 12;
+    ResponseEndRecheckTx    end_recheck_tx    = 13;
   }
 }
 
@@ -203,6 +215,14 @@ message ResponseCommit {
   // reserve 1
   bytes data          = 2;
   int64 retain_height = 3;
+}
+
+message ResponseBeginRecheckTx {
+  uint32 code = 1;
+}
+
+message ResponseEndRecheckTx {
+  uint32 code = 1;
 }
 
 //----------------------------------------
@@ -337,4 +357,6 @@ service ABCIApplication {
   rpc InitChain(RequestInitChain) returns (ResponseInitChain);
   rpc BeginBlock(RequestBeginBlock) returns (ResponseBeginBlock);
   rpc EndBlock(RequestEndBlock) returns (ResponseEndBlock);
+  rpc BeginRecheckTx(RequestBeginRecheckTx) returns (ResponseBeginRecheckTx);
+  rpc EndRecheckTx(RequestEndRecheckTx) returns (ResponseEndRecheckTx);
 }
