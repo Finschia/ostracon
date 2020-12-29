@@ -3,10 +3,11 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/tendermint/tendermint/abci/types"
-	tmnet "github.com/tendermint/tendermint/libs/net"
 	"io"
 	"log"
+
+	"github.com/tendermint/tendermint/abci/types"
+	tmnet "github.com/tendermint/tendermint/libs/net"
 )
 
 func main() {
