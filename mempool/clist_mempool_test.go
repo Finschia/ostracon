@@ -162,7 +162,7 @@ func TestMempoolFilters(t *testing.T) {
 		{10, PreCheckAminoMaxBytes(30), 10},
 	}
 	for tcIndex, tt := range tests {
-		mempool.Update(1, emptyTxArr, abciResponses(len(emptyTxArr), abci.CodeTypeOK), tt.preFilter)
+		mempool.Update(newTestBlock(1, emptyTxArr), abciResponses(len(emptyTxArr), abci.CodeTypeOK), tt.preFilter)
 		checkTxs(t, mempool, tt.numTxsToCreate, UnknownPeerID)
 		require.Equal(t, tt.expectedNumTxs, mempool.Size(), "mempool had the incorrect size, on test case %d", tcIndex)
 		mempool.Flush()
@@ -177,7 +177,7 @@ func TestMempoolUpdate(t *testing.T) {
 
 	// 1. Adds valid txs to the cache
 	{
-		mempool.Update(1, []types.Tx{[]byte{0x01}}, abciResponses(1, abci.CodeTypeOK), nil)
+		mempool.Update(newTestBlock(1, []types.Tx{[]byte{0x01}}), abciResponses(1, abci.CodeTypeOK), nil)
 		err := mempool.CheckTx([]byte{0x01}, nil, TxInfo{})
 		if assert.Error(t, err) {
 			assert.Equal(t, ErrTxInCache, err)
@@ -188,7 +188,7 @@ func TestMempoolUpdate(t *testing.T) {
 	{
 		err := mempool.CheckTx([]byte{0x02}, nil, TxInfo{})
 		require.NoError(t, err)
-		mempool.Update(1, []types.Tx{[]byte{0x02}}, abciResponses(1, abci.CodeTypeOK), nil)
+		mempool.Update(newTestBlock(1, []types.Tx{[]byte{0x02}}), abciResponses(1, abci.CodeTypeOK), nil)
 		assert.Zero(t, mempool.Size())
 	}
 
@@ -196,7 +196,7 @@ func TestMempoolUpdate(t *testing.T) {
 	{
 		err := mempool.CheckTx([]byte{0x03}, nil, TxInfo{})
 		require.NoError(t, err)
-		mempool.Update(1, []types.Tx{[]byte{0x03}}, abciResponses(1, 1), nil)
+		mempool.Update(newTestBlock(1, []types.Tx{[]byte{0x03}}), abciResponses(1, 1), nil)
 		assert.Zero(t, mempool.Size())
 
 		err = mempool.CheckTx([]byte{0x03}, nil, TxInfo{})
@@ -225,7 +225,7 @@ func TestTxsAvailable(t *testing.T) {
 	// it should fire once now for the new height
 	// since there are still txs left
 	committedTxs, txs := txs[:50], txs[50:]
-	if err := mempool.Update(1, committedTxs, abciResponses(len(committedTxs), abci.CodeTypeOK), nil); err != nil {
+	if err := mempool.Update(newTestBlock(1, committedTxs), abciResponses(len(committedTxs), abci.CodeTypeOK), nil); err != nil {
 		t.Error(err)
 	}
 	ensureFire(t, mempool.TxsAvailable(), timeoutMS)
@@ -237,7 +237,7 @@ func TestTxsAvailable(t *testing.T) {
 
 	// now call update with all the txs. it should not fire as there are no txs left
 	committedTxs = append(txs, moreTxs...) //nolint: gocritic
-	if err := mempool.Update(2, committedTxs, abciResponses(len(committedTxs), abci.CodeTypeOK), nil); err != nil {
+	if err := mempool.Update(newTestBlock(2, committedTxs), abciResponses(len(committedTxs), abci.CodeTypeOK), nil); err != nil {
 		t.Error(err)
 	}
 	ensureNoFire(t, mempool.TxsAvailable(), timeoutMS)
@@ -296,7 +296,7 @@ func TestSerialReap(t *testing.T) {
 			binary.BigEndian.PutUint64(txBytes, uint64(i))
 			txs = append(txs, txBytes)
 		}
-		if err := mempool.Update(0, txs, abciResponses(len(txs), abci.CodeTypeOK), nil); err != nil {
+		if err := mempool.Update(newTestBlock(0, txs), abciResponses(len(txs), abci.CodeTypeOK), nil); err != nil {
 			t.Error(err)
 		}
 	}
@@ -480,7 +480,7 @@ func TestMempoolTxsBytes(t *testing.T) {
 	assert.EqualValues(t, 1, mempool.TxsBytes())
 
 	// 3. zero again after tx is removed by Update
-	mempool.Update(1, []types.Tx{[]byte{0x01}}, abciResponses(1, abci.CodeTypeOK), nil)
+	mempool.Update(newTestBlock(1, []types.Tx{[]byte{0x01}}), abciResponses(1, abci.CodeTypeOK), nil)
 	assert.EqualValues(t, 0, mempool.TxsBytes())
 
 	// 4. zero after Flush
@@ -525,7 +525,7 @@ func TestMempoolTxsBytes(t *testing.T) {
 	require.NotEmpty(t, res2.Data)
 
 	// Pretend like we committed nothing so txBytes gets rechecked and removed.
-	mempool.Update(1, []types.Tx{}, abciResponses(0, abci.CodeTypeOK), nil)
+	mempool.Update(newTestBlock(1, []types.Tx{}), abciResponses(0, abci.CodeTypeOK), nil)
 	assert.EqualValues(t, 0, mempool.TxsBytes())
 }
 
@@ -563,6 +563,17 @@ func TestMempoolRemoteAppConcurrency(t *testing.T) {
 	}
 }
 
+func newTestBlock(height int64, txs types.Txs) *types.Block {
+	return &types.Block{
+		Header: types.Header{
+			Height: height,
+		},
+		Data: types.Data{
+			Txs: txs,
+		},
+	}
+}
+
 // caller must close server
 func newRemoteApp(
 	t *testing.T,
@@ -582,6 +593,7 @@ func newRemoteApp(
 	}
 	return clientCreator, server
 }
+
 func checksumIt(data []byte) string {
 	h := sha256.New()
 	h.Write(data)
