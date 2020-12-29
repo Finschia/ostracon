@@ -118,6 +118,17 @@ func (app *GRPCApplication) CheckTx(ctx context.Context, req *RequestCheckTx) (*
 	return &res, nil
 }
 
+func (app *GRPCApplication) BeginRecheckTx(ctx context.Context, req *RequestBeginRecheckTx) (
+	*ResponseBeginRecheckTx, error) {
+	res := app.app.BeginRecheckTx(*req)
+	return &res, nil
+}
+
+func (app *GRPCApplication) EndRecheckTx(ctx context.Context, req *RequestEndRecheckTx) (*ResponseEndRecheckTx, error) {
+	res := app.app.EndRecheckTx(*req)
+	return &res, nil
+}
+
 func (app *GRPCApplication) Query(ctx context.Context, req *RequestQuery) (*ResponseQuery, error) {
 	res := app.app.Query(*req)
 	return &res, nil
