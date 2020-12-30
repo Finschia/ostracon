@@ -75,12 +75,6 @@ func ToRequestEcho(message string) *Request {
 	}
 }
 
-func ToRequestFlush() *Request {
-	return &Request{
-		Value: &Request_Flush{&RequestFlush{}},
-	}
-}
-
 func ToRequestInfo(req RequestInfo) *Request {
 	return &Request{
 		Value: &Request_Info{&req},
@@ -182,12 +176,6 @@ func ToResponseException(errStr string) *Response {
 func ToResponseEcho(message string) *Response {
 	return &Response{
 		Value: &Response_Echo{&ResponseEcho{Message: message}},
-	}
-}
-
-func ToResponseFlush() *Response {
-	return &Response{
-		Value: &Response_Flush{&ResponseFlush{}},
 	}
 }
 
