@@ -50,7 +50,6 @@ func TestProperSyncCalls(t *testing.T) {
 	go func() {
 		// This is BeginBlockSync unrolled....
 		reqres := c.BeginBlockAsync(types.RequestBeginBlock{})
-		c.FlushSync()
 		res := reqres.Response.GetBeginBlock()
 		require.NotNil(t, res)
 		resp <- c.Error()

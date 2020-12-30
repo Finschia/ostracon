@@ -88,10 +88,6 @@ func (app *GRPCApplication) Echo(ctx context.Context, req *RequestEcho) (*Respon
 	return &ResponseEcho{Message: req.Message}, nil
 }
 
-func (app *GRPCApplication) Flush(ctx context.Context, req *RequestFlush) (*ResponseFlush, error) {
-	return &ResponseFlush{}, nil
-}
-
 func (app *GRPCApplication) Info(ctx context.Context, req *RequestInfo) (*ResponseInfo, error) {
 	res := app.app.Info(*req)
 	return &res, nil

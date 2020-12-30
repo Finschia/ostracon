@@ -46,11 +46,6 @@ type Mempool interface {
 		newPostFn PostCheckFunc,
 	) error
 
-	// FlushAppConn flushes the mempool connection to ensure async reqResCb calls are
-	// done. E.g. from CheckTx.
-	// NOTE: Lock/Unlock must be managed by caller
-	FlushAppConn() error
-
 	// Flush removes all transactions from the mempool and cache
 	Flush()
 

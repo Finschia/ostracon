@@ -24,7 +24,6 @@ type Client interface {
 	SetResponseCallback(Callback)
 	Error() error
 
-	FlushAsync() *ReqRes
 	EchoAsync(msg string) *ReqRes
 	InfoAsync(types.RequestInfo) *ReqRes
 	SetOptionAsync(types.RequestSetOption) *ReqRes
@@ -36,7 +35,6 @@ type Client interface {
 	BeginBlockAsync(types.RequestBeginBlock) *ReqRes
 	EndBlockAsync(types.RequestEndBlock) *ReqRes
 
-	FlushSync() error
 	EchoSync(msg string) (*types.ResponseEcho, error)
 	InfoSync(types.RequestInfo) (*types.ResponseInfo, error)
 	SetOptionSync(types.RequestSetOption) (*types.ResponseSetOption, error)
