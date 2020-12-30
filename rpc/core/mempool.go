@@ -41,6 +41,10 @@ func BroadcastTxSync(ctx *rpctypes.Context, tx types.Tx) (*ctypes.ResultBroadcas
 		return nil, err
 	}
 	res := <-resCh
+	except := res.GetException()
+	if except != nil {
+		return nil, fmt.Errorf(except.Error)
+	}
 	r := res.GetCheckTx()
 	return &ctypes.ResultBroadcastTx{
 		Code:      r.Code,
@@ -84,6 +88,11 @@ func BroadcastTxCommit(ctx *rpctypes.Context, tx types.Tx) (*ctypes.ResultBroadc
 		return nil, fmt.Errorf("error on broadcastTxCommit: %v", err)
 	}
 	checkTxResMsg := <-checkTxResCh
+	checkTxExcept := checkTxResMsg.GetException()
+	if checkTxExcept != nil {
+		env.Logger.Error("Error on broadcastTxCommit", "err", checkTxExcept.Error)
+		return nil, fmt.Errorf("error on broadcastTxCommit: %v", checkTxExcept.Error)
+	}
 	checkTxRes := checkTxResMsg.GetCheckTx()
 	if checkTxRes.Code != abci.CodeTypeOK {
 		return &ctypes.ResultBroadcastTxCommit{

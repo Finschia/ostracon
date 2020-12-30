@@ -334,7 +334,13 @@ func (mem *CListMempool) reqResCb(
 			panic("recheck cursor is not nil in reqResCb")
 		}
 
-		mem.resCbFirstTime(tx, peerID, peerP2PID, res)
+		err := mem.resCbFirstTime(tx, peerID, peerP2PID, res)
+		if err != nil {
+			if externalCb != nil {
+				externalCb(abci.ToResponseException(err.Error()))
+			}
+			return
+		}
 
 		// update metrics
 		mem.metrics.Size.Set(float64(mem.Size()))
@@ -394,11 +400,11 @@ func (mem *CListMempool) resCbFirstTime(
 	peerID uint16,
 	peerP2PID p2p.ID,
 	res *abci.Response,
-) {
+) error {
 	switch r := res.Value.(type) {
 	case *abci.Response_CheckTx:
 		var postCheckErr error
-		if mem.postCheck != nil {
+		if (r.CheckTx.Code == abci.CodeTypeOK) && mem.postCheck != nil {
 			postCheckErr = mem.postCheck(tx, r.CheckTx)
 		}
 		if (r.CheckTx.Code == abci.CodeTypeOK) && postCheckErr == nil {
@@ -408,7 +414,7 @@ func (mem *CListMempool) resCbFirstTime(
 				// remove from cache (mempool might have a space later)
 				mem.cache.Remove(tx)
 				mem.logger.Error(err.Error())
-				return
+				return err
 			}
 
 			memTx := &mempoolTx{
@@ -432,10 +438,13 @@ func (mem *CListMempool) resCbFirstTime(
 			mem.metrics.FailedTxs.Add(1)
 			// remove from cache (it might be good later)
 			mem.cache.Remove(tx)
+			return postCheckErr
 		}
 	default:
 		// ignore other messages
 	}
+
+	return nil
 }
 
 // callback, which is called after the app rechecked the tx.
