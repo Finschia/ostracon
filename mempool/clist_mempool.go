@@ -271,11 +271,15 @@ func (mem *CListMempool) CheckTx(tx types.Tx, cb func(*abci.Response), txInfo Tx
 
 	// NOTE: proxyAppConn may error if tx buffer is full
 	if err := mem.proxyAppConn.Error(); err != nil {
+		// remove from cache
+		mem.cache.Remove(tx)
 		return err
 	}
 
 	// reserve mempool that should be called just before calling `mem.proxyAppConn.CheckTxAsync()`
 	if err := mem.reserve(int64(txSize)); err != nil {
+		// remove from cache
+		mem.cache.Remove(tx)
 		return err
 	}
 
