@@ -394,8 +394,8 @@ func (mem *CListMempool) reserve(txSize int64) error {
 
 	if memSize+mem.reserved >= mem.config.Size || txSize+mem.reservedBytes+txsBytes > mem.config.MaxTxsBytes {
 		return ErrMempoolIsFull{
-			memSize, mem.config.Size,
-			txsBytes, mem.config.MaxTxsBytes,
+			memSize + mem.reserved, mem.config.Size,
+			txsBytes + mem.reservedBytes, mem.config.MaxTxsBytes,
 		}
 	}
 
