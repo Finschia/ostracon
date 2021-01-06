@@ -38,7 +38,7 @@ func init() {
 	nameTable[reflect.TypeOf(sr25519.PubKeySr25519{})] = sr25519.PubKeyAminoName
 	nameTable[reflect.TypeOf(secp256k1.PubKeySecp256k1{})] = secp256k1.PubKeyAminoName
 	nameTable[reflect.TypeOf(multisig.PubKeyMultisigThreshold{})] = multisig.PubKeyMultisigThresholdAminoRoute
-	nameTable[reflect.TypeOf(composite.PubKeyComposite{})] = composite.PubKeyCompositeAminoName
+	nameTable[reflect.TypeOf(composite.PubKeyComposite{})] = composite.PubKeyAminoName
 }
 
 // PubkeyAminoName returns the amino route of a pubkey
@@ -64,7 +64,7 @@ func RegisterAmino(cdc *amino.Codec) {
 	cdc.RegisterConcrete(multisig.PubKeyMultisigThreshold{},
 		multisig.PubKeyMultisigThresholdAminoRoute, nil)
 	cdc.RegisterConcrete(composite.PubKeyComposite{},
-		composite.PubKeyCompositeAminoName, nil)
+		composite.PubKeyAminoName, nil)
 
 	cdc.RegisterInterface((*crypto.PrivKey)(nil), nil)
 	cdc.RegisterConcrete(bls.PrivKeyBLS12{},
@@ -76,7 +76,7 @@ func RegisterAmino(cdc *amino.Codec) {
 	cdc.RegisterConcrete(secp256k1.PrivKeySecp256k1{},
 		secp256k1.PrivKeyAminoName, nil)
 	cdc.RegisterConcrete(composite.PrivKeyComposite{},
-		composite.PrivKeyCompositeAminoName, nil)
+		composite.PrivKeyAminoName, nil)
 }
 
 // RegisterKeyType registers an external key type to allow decoding it from bytes
