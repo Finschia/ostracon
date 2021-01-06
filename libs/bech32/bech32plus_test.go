@@ -1,7 +1,3 @@
-// Copyright (c) 2017 The btcsuite developers
-// Use of this source code is governed by an ISC
-// license that can be found in the LICENSE file.
-
 package bech32_test
 
 import (
@@ -21,13 +17,16 @@ func TestBech32(t *testing.T) {
 		{"abcdef1qpzry9x8gf2tvdw0s3jn54khce6mua7lmqqqxw", true},
 		{"11qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqc8247j", true},
 		{"split1checkupstagehandshakeupstreamerranterredcaperred2y9e3w", true},
-		{"split1checkupstagehandshakeupstreamerranterredcaperred2y9e2w", false},                   // invalid checksum
-		{"s lit1checkupstagehandshakeupstreamerranterredcaperredp8hs2p", false},                   // invalid character (space) in hrp
-		{"spl" + string(127) + "t1checkupstagehandshakeupstreamerranterredcaperred2y9e3w", false}, // invalid character (DEL) in hrp
+		{"split1checkupstagehandshakeupstreamerranterredcaperred2y9e2w", false},                         // invalid checksum
+		{"s lit1checkupstagehandshakeupstreamerranterredcaperredp8hs2p", false},                         // invalid character (space) in hrp
+		{"spl" + string(rune(127)) + "t1checkupstagehandshakeupstreamerranterredcaperred2y9e3w", false}, // invalid character (DEL) in hrp
 		{"split1cheo2y9e2w", false}, // invalid character (o) in data part
 		{"split1a2y9w", false},      // too short data part
-		{"1checkupstagehandshakeupstreamerranterredcaperred2y9e3w", false},                                     // empty hrp
-		{"11qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqsqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqc8247j", false}, // too long
+		{"1checkupstagehandshakeupstreamerranterredcaperred2y9e3w", false}, // empty hrp
+		// 165 characters plus using LIMIT
+		{"linkvalconspub1668lhsfs4zxq4gakkq5yj8ujn22g43s7qz7498el7k57cw88t30y56sxa6eszusd470ncx3j79slqg3aphy2c93ymejzqxzpu36pjrv5u0wphpf5eluc7am08m0ekkfns4jcnrj7u2hc5f6240tlze", true},
+		// 201 characters plus using LIMIT
+		{"linkvalconspub1668lhsfs4zxq4gakkq5yj8ujn22g43s7qz7498el7k57cw88t30y56sxa6eszusd470ncx3j79slqg3aphy2c93ymejzqxzpu36pjrv5u0wphpf5eluc7am08m0ekkfns4jcnrj7u2hc5f6240tlze668lhsfs4zxq4gakkq5yj8ujn22g43s7qz74", false},
 	}
 
 	for _, test := range tests {
