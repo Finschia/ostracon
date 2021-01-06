@@ -223,6 +223,10 @@ func (mem *CListMempool) CheckTx(tx types.Tx, cb func(*abci.Response), txInfo Tx
 
 	txSize := len(tx)
 
+	if err := mem.isFull(txSize); err != nil {
+		return err
+	}
+
 	// The size of the corresponding amino-encoded TxMessage
 	// can't be larger than the maxMsgSize, otherwise we can't
 	// relay it to peers.
@@ -365,6 +369,22 @@ func (mem *CListMempool) removeTx(tx types.Tx, elem *clist.CElement, removeFromC
 	if removeFromCache {
 		mem.cache.Remove(tx)
 	}
+}
+
+func (mem *CListMempool) isFull(txSize int) error {
+	var (
+		memSize  = mem.Size()
+		txsBytes = mem.TxsBytes()
+	)
+
+	if memSize >= mem.config.Size || int64(txSize)+txsBytes > mem.config.MaxTxsBytes {
+		return ErrMempoolIsFull{
+			memSize, mem.config.Size,
+			txsBytes, mem.config.MaxTxsBytes,
+		}
+	}
+
+	return nil
 }
 
 func (mem *CListMempool) reserve(txSize int64) error {
