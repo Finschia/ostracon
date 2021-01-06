@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/tendermint/go-amino"
@@ -253,7 +254,7 @@ func TestEnvironmentalCompatibility(t *testing.T) {
 		// compare addresses to assumed value
 		compositePrivKey := composite.NewPrivKeyComposite(blsPrivKey, ed25519PrivKey)
 		compositePubKey := compositePrivKey.PubKey()
-		address, err := hex.DecodeString("7A68265205CB115AE35A13515C423F1721E87BB4")
+		address, err := hex.DecodeString(strings.ToUpper("72dd758835404175940f698cf3ddc29dd0d04afa"))
 		if err != nil {
 			t.Fatal(err)
 		}
