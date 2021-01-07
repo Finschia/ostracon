@@ -27,7 +27,7 @@ type Application interface {
 	Commit() ResponseCommit                          // Commit the state and return the application Merkle root hash
 }
 
-// -------------------------------------------------------
+//-------------------------------------------------------
 // BaseApplication is a base form of Application
 
 var _ Application = (*BaseApplication)(nil)
@@ -83,7 +83,7 @@ func (BaseApplication) EndBlock(req RequestEndBlock) ResponseEndBlock {
 	return ResponseEndBlock{}
 }
 
-// -------------------------------------------------------
+//-------------------------------------------------------
 
 // GRPCApplication is a GRPC wrapper for Application
 type GRPCApplication struct {
