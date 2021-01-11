@@ -15,7 +15,9 @@ type Application interface {
 	Query(RequestQuery) ResponseQuery             // Query for state
 
 	// Mempool Connection
-	CheckTx(RequestCheckTx) ResponseCheckTx // Validate a tx for the mempool
+	CheckTx(RequestCheckTx) ResponseCheckTx                      // Validate a tx for the mempool
+	BeginRecheckTx(RequestBeginRecheckTx) ResponseBeginRecheckTx // Signals the beginning of rechecking
+	EndRecheckTx(RequestEndRecheckTx) ResponseEndRecheckTx       // Signals the end of rechecking
 
 	// Consensus Connection
 	InitChain(RequestInitChain) ResponseInitChain    // Initialize blockchain w validators/other info from TendermintCore
@@ -51,6 +53,14 @@ func (BaseApplication) DeliverTx(req RequestDeliverTx) ResponseDeliverTx {
 
 func (BaseApplication) CheckTx(req RequestCheckTx) ResponseCheckTx {
 	return ResponseCheckTx{Code: CodeTypeOK}
+}
+
+func (BaseApplication) BeginRecheckTx(req RequestBeginRecheckTx) ResponseBeginRecheckTx {
+	return ResponseBeginRecheckTx{Code: CodeTypeOK}
+}
+
+func (BaseApplication) EndRecheckTx(req RequestEndRecheckTx) ResponseEndRecheckTx {
+	return ResponseEndRecheckTx{Code: CodeTypeOK}
 }
 
 func (BaseApplication) Commit() ResponseCommit {
@@ -105,6 +115,17 @@ func (app *GRPCApplication) DeliverTx(ctx context.Context, req *RequestDeliverTx
 
 func (app *GRPCApplication) CheckTx(ctx context.Context, req *RequestCheckTx) (*ResponseCheckTx, error) {
 	res := app.app.CheckTx(*req)
+	return &res, nil
+}
+
+func (app *GRPCApplication) BeginRecheckTx(ctx context.Context, req *RequestBeginRecheckTx) (
+	*ResponseBeginRecheckTx, error) {
+	res := app.app.BeginRecheckTx(*req)
+	return &res, nil
+}
+
+func (app *GRPCApplication) EndRecheckTx(ctx context.Context, req *RequestEndRecheckTx) (*ResponseEndRecheckTx, error) {
+	res := app.app.EndRecheckTx(*req)
 	return &res, nil
 }
 
