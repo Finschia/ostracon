@@ -613,20 +613,23 @@ func (mem *CListMempool) Update(
 	// Either recheck non-committed txs to see if they became invalid
 	// or just notify there're some txs left.
 	recheckStartTime := time.Now().UnixNano()
-	if mem.Size() > 0 {
-		if mem.config.Recheck {
-			mem.logger.Info("Recheck txs", "numtxs", mem.Size(), "height", block.Height)
-			mem.proxyAppConn.BeginRecheckTxSync(abci.RequestBeginRecheckTx{
-				Header: types.TM2PB.Header(&block.Header),
-			})
-			mem.recheckTxs()
-			mem.proxyAppConn.EndRecheckTxSync(abci.RequestEndRecheckTx{Height: block.Height})
-			// At this point, mem.txs are being rechecked.
-			// mem.recheckCursor re-scans mem.txs and possibly removes some txs.
-			// Before mem.Reap(), we should wait for mem.recheckCursor to be nil.
-		} else {
-			mem.notifyTxsAvailable()
+	_, err := mem.proxyAppConn.BeginRecheckTxSync(abci.RequestBeginRecheckTx{
+		Header: types.TM2PB.Header(&block.Header),
+	})
+	if err == nil {
+		if mem.Size() > 0 {
+			if mem.config.Recheck {
+				mem.logger.Info("Recheck txs", "numtxs", mem.Size(), "height", block.Height)
+				mem.recheckTxs()
+				// At this point, mem.txs are being rechecked.
+				// mem.recheckCursor re-scans mem.txs and possibly removes some txs.
+				// Before mem.Reap(), we should wait for mem.recheckCursor to be nil.
+			} else {
+				mem.notifyTxsAvailable()
+			}
 		}
+
+		_, err = mem.proxyAppConn.EndRecheckTxSync(abci.RequestEndRecheckTx{Height: block.Height})
 	}
 	recheckEndTime := time.Now().UnixNano()
 
@@ -636,7 +639,7 @@ func (mem *CListMempool) Update(
 	// Update metrics
 	mem.metrics.Size.Set(float64(mem.Size()))
 
-	return nil
+	return err
 }
 
 func (mem *CListMempool) recheckTxs() {
