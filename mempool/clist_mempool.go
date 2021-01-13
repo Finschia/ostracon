@@ -577,7 +577,7 @@ func (mem *CListMempool) Update(
 	block *types.Block,
 	deliverTxResponses []*abci.ResponseDeliverTx,
 	preCheck PreCheckFunc,
-) error {
+) (err error) {
 	// Set height
 	mem.height = block.Height
 	mem.notifiedTxsAvailable = false
@@ -610,38 +610,49 @@ func (mem *CListMempool) Update(
 		}
 	}
 
-	// Either recheck non-committed txs to see if they became invalid
-	// or just notify there're some txs left.
-	recheckStartTime := time.Now().UnixNano()
-	if mem.Size() > 0 {
-		if mem.config.Recheck {
-			mem.logger.Info("Recheck txs", "numtxs", mem.Size(), "height", block.Height)
-			mem.proxyAppConn.BeginRecheckTxSync(abci.RequestBeginRecheckTx{
-				Header: types.TM2PB.Header(&block.Header),
-			})
-			mem.recheckTxs()
-			mem.proxyAppConn.EndRecheckTxSync(abci.RequestEndRecheckTx{Height: block.Height})
-			// At this point, mem.txs are being rechecked.
-			// mem.recheckCursor re-scans mem.txs and possibly removes some txs.
-			// Before mem.Reap(), we should wait for mem.recheckCursor to be nil.
-		} else {
+	if mem.config.Recheck {
+		// recheck non-committed txs to see if they became invalid
+		recheckStartTime := time.Now().UnixNano()
+
+		_, err = mem.proxyAppConn.BeginRecheckTxSync(abci.RequestBeginRecheckTx{
+			Header: types.TM2PB.Header(&block.Header),
+		})
+		if err != nil {
+			mem.logger.Error("Error in proxyAppConn.BeginRecheckTxSync", "err", err)
+		}
+
+		mem.logger.Info("Recheck txs", "numtxs", mem.Size(), "height", block.Height)
+		mem.recheckTxs()
+
+		_, err = mem.proxyAppConn.EndRecheckTxSync(abci.RequestEndRecheckTx{Height: block.Height})
+		if err != nil {
+			mem.logger.Error("Error in proxyAppConn.EndRecheckTxSync", "err", err)
+		}
+
+		recheckEndTime := time.Now().UnixNano()
+
+		recheckTimeMs := float64(recheckEndTime-recheckStartTime) / 1000000
+		mem.metrics.RecheckTime.Set(recheckTimeMs)
+
+		// At this point, mem.txs are being rechecked.
+		// mem.recheckCursor re-scans mem.txs and possibly removes some txs.
+		// Before mem.Reap(), we should wait for mem.recheckCursor to be nil.
+	} else {
+		// just notify there're some txs left.
+		if mem.Size() > 0 {
 			mem.notifyTxsAvailable()
 		}
 	}
-	recheckEndTime := time.Now().UnixNano()
-
-	recheckTimeMs := float64(recheckEndTime-recheckStartTime) / 1000000
-	mem.metrics.RecheckTime.Set(recheckTimeMs)
 
 	// Update metrics
 	mem.metrics.Size.Set(float64(mem.Size()))
 
-	return nil
+	return err
 }
 
 func (mem *CListMempool) recheckTxs() {
 	if mem.Size() == 0 {
-		panic("recheckTxs is called, but the mempool is empty")
+		return
 	}
 
 	mem.recheckCursor = mem.txs.Front()
