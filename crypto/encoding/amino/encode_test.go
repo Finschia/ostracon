@@ -1,9 +1,12 @@
 package cryptoamino
 
 import (
+	"github.com/tendermint/tendermint/crypto/bls"
 	"os"
 	"reflect"
 	"testing"
+
+	"github.com/tendermint/tendermint/crypto/composite"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,7 +34,6 @@ func checkAminoBinary(t *testing.T, src, dst interface{}, size int) {
 	}
 	// Make sure we have the expected length.
 	assert.Equal(t, size, len(bz), "Amino binary size mismatch")
-
 	// Unmarshal.
 	err = cdc.UnmarshalBinaryBare(bz, dst)
 	require.Nil(t, err, "%+v", err)
@@ -94,10 +96,21 @@ func TestKeyEncodings(t *testing.T) {
 			pubSize:  38,
 			sigSize:  65,
 		},
+		{
+			privKey:  bls.GenPrivKey(),
+			privSize: 37,
+			pubSize:  53,
+			sigSize:  97,
+		},
+		{
+			privKey:  *composite.GenPrivKey(),
+			privSize: 114,
+			pubSize:  98,
+			sigSize:  97,
+		},
 	}
 
 	for tcIndex, tc := range cases {
-
 		// Check (de/en)codings of PrivKeys.
 		var priv2, priv3 crypto.PrivKey
 		checkAminoBinary(t, tc.privKey, &priv2, tc.privSize)
@@ -155,6 +168,7 @@ func TestPubkeyAminoName(t *testing.T) {
 		{ed25519.PubKeyEd25519{}, ed25519.PubKeyAminoName, true},
 		{sr25519.PubKeySr25519{}, sr25519.PubKeyAminoName, true},
 		{secp256k1.PubKeySecp256k1{}, secp256k1.PubKeyAminoName, true},
+		{composite.PubKeyComposite{}, composite.PubKeyAminoName, true},
 		{multisig.PubKeyMultisigThreshold{}, multisig.PubKeyMultisigThresholdAminoRoute, true},
 	}
 	for i, tc := range tests {
