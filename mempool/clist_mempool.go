@@ -662,15 +662,24 @@ func (mem *CListMempool) recheckTxs() {
 		return
 	}
 
+	wg := sync.WaitGroup{}
+
 	// Push txs to proxyAppConn
 	// NOTE: globalCb may be called concurrently.
 	for e := mem.txs.Front(); e != nil; e = e.Next() {
+		wg.Add(1)
+
 		memTx := e.Value.(*mempoolTx)
-		mem.proxyAppConn.CheckTxAsync(abci.RequestCheckTx{
+		reqRes := mem.proxyAppConn.CheckTxAsync(abci.RequestCheckTx{
 			Tx:   memTx.tx,
 			Type: abci.CheckTxType_Recheck,
 		})
+		reqRes.SetCallback(func(res *abci.Response) {
+			wg.Done()
+		})
 	}
+
+	wg.Wait()
 }
 
 //--------------------------------------------------------------------------------
