@@ -87,12 +87,19 @@ func (app *localClient) DeliverTxAsync(params types.RequestDeliverTx) *ReqRes {
 	)
 }
 
-func (app *localClient) CheckTxAsync(req types.RequestCheckTx) *ReqRes {
-	res := app.Application.CheckTx(req)
-	return app.callback(
-		types.ToRequestCheckTx(req),
-		types.ToResponseCheckTx(res),
-	)
+func (app *localClient) CheckTxAsync(params types.RequestCheckTx) *ReqRes {
+	req := types.ToRequestCheckTx(params)
+	reqRes := NewReqRes(req)
+
+	app.Application.CheckTxAsync(params, func(r types.ResponseCheckTx) {
+		res := types.ToResponseCheckTx(r)
+		app.Callback(req, res)
+		reqRes.Response = res
+		reqRes.SetDone()
+		reqRes.Done()
+	})
+
+	return reqRes
 }
 
 func (app *localClient) QueryAsync(req types.RequestQuery) *ReqRes {
