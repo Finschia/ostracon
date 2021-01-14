@@ -219,10 +219,9 @@ func (mem *CListMempool) CheckTxSync(tx types.Tx, txInfo TxInfo) (res *abci.Resp
 		return res, err
 	}
 
-	mem.reqResCb(tx, txInfo.SenderID, txInfo.SenderP2PID, nil)
-
 	// TODO refactor to pass a `pointer` directly
 	res = abci.ToResponseCheckTx(*r)
+	mem.reqResCb(tx, txInfo.SenderID, txInfo.SenderP2PID, nil)(res)
 	return res, err
 }
 
