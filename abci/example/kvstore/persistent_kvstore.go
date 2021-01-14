@@ -84,6 +84,10 @@ func (app *PersistentKVStoreApplication) CheckTx(req types.RequestCheckTx) types
 	return app.app.CheckTx(req)
 }
 
+func (app *PersistentKVStoreApplication) CheckTxAsync(req types.RequestCheckTx, callback types.CheckTxCallback) {
+	app.app.CheckTxAsync(req, callback)
+}
+
 func (app *PersistentKVStoreApplication) BeginRecheckTx(req types.RequestBeginRecheckTx) types.ResponseBeginRecheckTx {
 	return app.app.BeginRecheckTx(req)
 }

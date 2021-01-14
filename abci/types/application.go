@@ -4,6 +4,8 @@ import (
 	context "golang.org/x/net/context"
 )
 
+type CheckTxCallback func(ResponseCheckTx)
+
 // Application is an interface that enables any finite, deterministic state machine
 // to be driven by a blockchain-based replication engine via the ABCI.
 // All methods take a RequestXxx argument and return a ResponseXxx argument,
@@ -16,6 +18,7 @@ type Application interface {
 
 	// Mempool Connection
 	CheckTx(RequestCheckTx) ResponseCheckTx                      // Validate a tx for the mempool
+	CheckTxAsync(RequestCheckTx, CheckTxCallback)                // Asynchronously validate a tx for the mempool
 	BeginRecheckTx(RequestBeginRecheckTx) ResponseBeginRecheckTx // Signals the beginning of rechecking
 	EndRecheckTx(RequestEndRecheckTx) ResponseEndRecheckTx       // Signals the end of rechecking
 
@@ -53,6 +56,10 @@ func (BaseApplication) DeliverTx(req RequestDeliverTx) ResponseDeliverTx {
 
 func (BaseApplication) CheckTx(req RequestCheckTx) ResponseCheckTx {
 	return ResponseCheckTx{Code: CodeTypeOK}
+}
+
+func (BaseApplication) CheckTxAsync(req RequestCheckTx, callback CheckTxCallback) {
+	callback(ResponseCheckTx{Code: CodeTypeOK})
 }
 
 func (BaseApplication) BeginRecheckTx(req RequestBeginRecheckTx) ResponseBeginRecheckTx {
