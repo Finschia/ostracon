@@ -8,6 +8,7 @@ import (
 	"github.com/tendermint/tendermint/proxy"
 )
 
+// TODO we need to benchmark with `CheckTxAsync` as well
 func BenchmarkReap(b *testing.B) {
 	app := kvstore.NewApplication()
 	cc := proxy.NewLocalClientCreator(app)
@@ -18,7 +19,7 @@ func BenchmarkReap(b *testing.B) {
 	for i := 0; i < size; i++ {
 		tx := make([]byte, 8)
 		binary.BigEndian.PutUint64(tx, uint64(i))
-		mempool.CheckTx(tx, nil, TxInfo{})
+		mempool.CheckTxSync(tx, TxInfo{})
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -26,6 +27,7 @@ func BenchmarkReap(b *testing.B) {
 	}
 }
 
+// TODO we need to benchmark with `CheckTxAsync` as well
 func BenchmarkCheckTx(b *testing.B) {
 	app := kvstore.NewApplication()
 	cc := proxy.NewLocalClientCreator(app)
@@ -35,7 +37,7 @@ func BenchmarkCheckTx(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		tx := make([]byte, 8)
 		binary.BigEndian.PutUint64(tx, uint64(i))
-		mempool.CheckTx(tx, nil, TxInfo{})
+		mempool.CheckTxSync(tx, TxInfo{})
 	}
 }
 

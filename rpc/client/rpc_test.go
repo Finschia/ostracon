@@ -336,7 +336,7 @@ func TestUnconfirmedTxs(t *testing.T) {
 	_, _, tx := MakeTxKV()
 
 	mempool := node.Mempool()
-	_ = mempool.CheckTx(tx, nil, mempl.TxInfo{})
+	_, _ = mempool.CheckTxSync(tx, mempl.TxInfo{})
 
 	for i, c := range GetClients() {
 		mc, ok := c.(client.MempoolClient)
@@ -357,7 +357,7 @@ func TestNumUnconfirmedTxs(t *testing.T) {
 	_, _, tx := MakeTxKV()
 
 	mempool := node.Mempool()
-	_ = mempool.CheckTx(tx, nil, mempl.TxInfo{})
+	_, _ = mempool.CheckTxSync(tx, mempl.TxInfo{})
 	mempoolSize := mempool.Size()
 
 	for i, c := range GetClients() {
