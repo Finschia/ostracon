@@ -233,7 +233,15 @@ func (app *CounterApplication) DeliverTx(req abci.RequestDeliverTx) abci.Respons
 	return abci.ResponseDeliverTx{Code: code.CodeTypeOK}
 }
 
-func (app *CounterApplication) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
+func (app *CounterApplication) CheckTxSync(req abci.RequestCheckTx) abci.ResponseCheckTx {
+	return app.checkTx(req)
+}
+
+func (app *CounterApplication) CheckTxAsync(req abci.RequestCheckTx, callback abci.CheckTxCallback) {
+	callback(app.checkTx(req))
+}
+
+func (app *CounterApplication) checkTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 	txValue := txAsUint64(req.Tx)
 	app.mempoolTxCountMtx.Lock()
 	defer app.mempoolTxCountMtx.Unlock()

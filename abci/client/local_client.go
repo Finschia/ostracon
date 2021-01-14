@@ -208,7 +208,7 @@ func (app *localClient) DeliverTxSync(req types.RequestDeliverTx) (*types.Respon
 }
 
 func (app *localClient) CheckTxSync(req types.RequestCheckTx) (*types.ResponseCheckTx, error) {
-	res := app.Application.CheckTx(req)
+	res := app.Application.CheckTxSync(req)
 	return &res, nil
 }
 

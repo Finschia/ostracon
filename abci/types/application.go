@@ -17,7 +17,7 @@ type Application interface {
 	Query(RequestQuery) ResponseQuery             // Query for state
 
 	// Mempool Connection
-	CheckTx(RequestCheckTx) ResponseCheckTx                      // Validate a tx for the mempool
+	CheckTxSync(RequestCheckTx) ResponseCheckTx                  // Validate a tx for the mempool
 	CheckTxAsync(RequestCheckTx, CheckTxCallback)                // Asynchronously validate a tx for the mempool
 	BeginRecheckTx(RequestBeginRecheckTx) ResponseBeginRecheckTx // Signals the beginning of rechecking
 	EndRecheckTx(RequestEndRecheckTx) ResponseEndRecheckTx       // Signals the end of rechecking
@@ -54,7 +54,7 @@ func (BaseApplication) DeliverTx(req RequestDeliverTx) ResponseDeliverTx {
 	return ResponseDeliverTx{Code: CodeTypeOK}
 }
 
-func (BaseApplication) CheckTx(req RequestCheckTx) ResponseCheckTx {
+func (BaseApplication) CheckTxSync(req RequestCheckTx) ResponseCheckTx {
 	return ResponseCheckTx{Code: CodeTypeOK}
 }
 
@@ -121,7 +121,7 @@ func (app *GRPCApplication) DeliverTx(ctx context.Context, req *RequestDeliverTx
 }
 
 func (app *GRPCApplication) CheckTx(ctx context.Context, req *RequestCheckTx) (*ResponseCheckTx, error) {
-	res := app.app.CheckTx(*req)
+	res := app.app.CheckTxSync(*req)
 	return &res, nil
 }
 
