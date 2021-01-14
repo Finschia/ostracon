@@ -1,7 +1,6 @@
 package mempool
 
 import (
-	"bytes"
 	"container/list"
 	"crypto/sha256"
 	"fmt"
@@ -52,12 +51,6 @@ type CListMempool struct {
 	txs          *clist.CList   // concurrent linked-list of good txs
 	proxyAppConn proxy.AppConnMempool
 
-	// Track whether we're rechecking txs.
-	// These are not protected by a mutex and are expected to be mutated in
-	// serial (ie. by abci responses which are called in serial).
-	recheckCursor *clist.CElement // next expected response
-	recheckEnd    *clist.CElement // re-checking stops here
-
 	// Map for quick access to txs to record sender in CheckTx.
 	// txsMap: txKey -> CElement
 	txsMap sync.Map
@@ -84,14 +77,12 @@ func NewCListMempool(
 	options ...CListMempoolOption,
 ) *CListMempool {
 	mempool := &CListMempool{
-		config:        config,
-		proxyAppConn:  proxyAppConn,
-		txs:           clist.New(),
-		height:        height,
-		recheckCursor: nil,
-		recheckEnd:    nil,
-		logger:        log.NewNopLogger(),
-		metrics:       NopMetrics(),
+		config:       config,
+		proxyAppConn: proxyAppConn,
+		txs:          clist.New(),
+		height:       height,
+		logger:       log.NewNopLogger(),
+		metrics:      NopMetrics(),
 	}
 	if config.CacheSize > 0 {
 		mempool.cache = newMapTxCache(config.CacheSize)
@@ -304,15 +295,18 @@ func (mem *CListMempool) CheckTx(tx types.Tx, cb func(*abci.Response), txInfo Tx
 // When rechecking, we don't need the peerID, so the recheck callback happens
 // here.
 func (mem *CListMempool) globalCb(req *abci.Request, res *abci.Response) {
-	if mem.recheckCursor == nil {
+	checkTxReq := req.GetCheckTx()
+	if checkTxReq == nil {
 		return
 	}
 
-	mem.metrics.RecheckCount.Add(1)
-	mem.resCbRecheck(req, res)
+	if checkTxReq.Type == abci.CheckTxType_Recheck {
+		mem.metrics.RecheckCount.Add(1)
+		mem.resCbRecheck(req, res)
 
-	// update metrics
-	mem.metrics.Size.Set(float64(mem.Size()))
+		// update metrics
+		mem.metrics.Size.Set(float64(mem.Size()))
+	}
 }
 
 // Request specific callback that should be set on individual reqRes objects
@@ -331,11 +325,6 @@ func (mem *CListMempool) reqResCb(
 	externalCb func(*abci.Response),
 ) func(res *abci.Response) {
 	return func(res *abci.Response) {
-		if mem.recheckCursor != nil {
-			// this should never happen
-			panic("recheck cursor is not nil in reqResCb")
-		}
-
 		mem.resCbFirstTime(tx, peerID, peerP2PID, res)
 
 		// update metrics
@@ -467,34 +456,19 @@ func (mem *CListMempool) resCbRecheck(req *abci.Request, res *abci.Response) {
 	switch r := res.Value.(type) {
 	case *abci.Response_CheckTx:
 		tx := req.GetCheckTx().Tx
-		memTx := mem.recheckCursor.Value.(*mempoolTx)
-		if !bytes.Equal(tx, memTx.tx) {
-			panic(fmt.Sprintf(
-				"Unexpected tx response from proxy during recheck\nExpected %X, got %X",
-				memTx.tx,
-				tx))
-		}
-		if r.CheckTx.Code == abci.CodeTypeOK {
-			// Good, nothing to do.
-		} else {
-			// Tx became invalidated due to newly committed block.
-			mem.logger.Info("Tx is no longer valid", "tx", txID(tx), "res", r)
-			// NOTE: we remove tx from the cache because it might be good later
-			mem.removeTx(tx, mem.recheckCursor, true)
-		}
-		if mem.recheckCursor == mem.recheckEnd {
-			mem.recheckCursor = nil
-		} else {
-			mem.recheckCursor = mem.recheckCursor.Next()
-		}
-		if mem.recheckCursor == nil {
-			// Done!
-			mem.logger.Info("Done rechecking txs")
-
-			// incase the recheck removed all txs
-			if mem.Size() > 0 {
-				mem.notifyTxsAvailable()
+		txHash := txKey(tx)
+		if e, ok := mem.txsMap.Load(txHash); ok {
+			celem := e.(*clist.CElement)
+			if r.CheckTx.Code == abci.CodeTypeOK {
+				// Good, nothing to do.
+			} else {
+				// Tx became invalidated due to newly committed block.
+				mem.logger.Info("Tx is no longer valid", "tx", txID(tx), "res", r)
+				// NOTE: we remove tx from the cache because it might be good later
+				mem.removeTx(tx, celem, true)
 			}
+		} else {
+			panic(fmt.Sprintf("Unexpected tx response from proxy during recheck\ntxHash=%s, tx=%X", txHash, tx))
 		}
 	default:
 		// ignore other messages
@@ -637,11 +611,11 @@ func (mem *CListMempool) Update(
 		// At this point, mem.txs are being rechecked.
 		// mem.recheckCursor re-scans mem.txs and possibly removes some txs.
 		// Before mem.Reap(), we should wait for mem.recheckCursor to be nil.
-	} else {
-		// just notify there're some txs left.
-		if mem.Size() > 0 {
-			mem.notifyTxsAvailable()
-		}
+	}
+
+	// notify there're some txs left.
+	if mem.Size() > 0 {
+		mem.notifyTxsAvailable()
 	}
 
 	// Update metrics
@@ -654,9 +628,6 @@ func (mem *CListMempool) recheckTxs() {
 	if mem.Size() == 0 {
 		return
 	}
-
-	mem.recheckCursor = mem.txs.Front()
-	mem.recheckEnd = mem.txs.Back()
 
 	// Push txs to proxyAppConn
 	// NOTE: globalCb may be called concurrently.
