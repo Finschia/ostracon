@@ -253,7 +253,7 @@ func (mem *CListMempool) CheckTxAsync(tx types.Tx, txInfo TxInfo, cb func(*abci.
 	// CONTRACT: `app.CheckTxAsync()` should check whether `GasWanted` is valid (0 <= GasWanted <= block.masGas)
 	reqRes := mem.proxyAppConn.CheckTxAsync(abci.RequestCheckTx{Tx: tx})
 	reqRes.SetCallback(func(res *abci.Response) {
-		mem.reqResCb(tx, txInfo.SenderID, txInfo.SenderP2PID, cb)
+		mem.reqResCb(tx, txInfo.SenderID, txInfo.SenderP2PID, cb)(res)
 		mem.updateMtx.RUnlock()
 	})
 
