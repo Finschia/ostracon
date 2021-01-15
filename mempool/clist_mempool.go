@@ -231,20 +231,33 @@ func (mem *CListMempool) CheckTxSync(tx types.Tx, txInfo TxInfo) (res *abci.Resp
 // CONTRACT: Either cb will get called, or err returned.
 //
 // Safe for concurrent use by multiple goroutines.
-func (mem *CListMempool) CheckTxAsync(tx types.Tx, txInfo TxInfo, cb func(*abci.Response)) error {
+func (mem *CListMempool) CheckTxAsync(tx types.Tx, txInfo TxInfo, cb func(*abci.Response)) (err error) {
 	mem.updateMtx.RLock()
 	// use defer to unlock mutex because application (*local client*) might panic
-	defer mem.updateMtx.RUnlock()
+	defer func() {
+		if err != nil {
+			mem.updateMtx.RUnlock()
+			return
+		}
 
-	if err := mem.prepareCheckTx(tx, txInfo); err != nil {
+		if r := recover(); r != nil {
+			mem.updateMtx.RUnlock()
+			panic(r)
+		}
+	}()
+
+	if err = mem.prepareCheckTx(tx, txInfo); err != nil {
 		return err
 	}
 
 	// CONTRACT: `app.CheckTxAsync()` should check whether `GasWanted` is valid (0 <= GasWanted <= block.masGas)
 	reqRes := mem.proxyAppConn.CheckTxAsync(abci.RequestCheckTx{Tx: tx})
-	reqRes.SetCallback(mem.reqResCb(tx, txInfo.SenderID, txInfo.SenderP2PID, cb))
+	reqRes.SetCallback(func(res *abci.Response) {
+		mem.reqResCb(tx, txInfo.SenderID, txInfo.SenderP2PID, cb)
+		mem.updateMtx.RUnlock()
+	})
 
-	return nil
+	return err
 }
 
 // CONTRACT: `caller` should held `mem.updateMtx.RLock()`
