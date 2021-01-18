@@ -80,12 +80,14 @@ func (app *localClient) SetOptionAsync(req types.RequestSetOption, cb ResponseCa
 }
 
 func (app *localClient) DeliverTxAsync(req types.RequestDeliverTx, cb ResponseCallback) *ReqRes {
-	app.mtx.Lock()
-	defer app.mtx.Unlock()
-
 	reqRes := NewReqRes(types.ToRequestDeliverTx(req), cb)
-	res := app.Application.DeliverTx(req)
-	return app.done(reqRes, types.ToResponseDeliverTx(res))
+
+	app.Application.DeliverTxAsync(req, func(r types.ResponseDeliverTx) {
+		res := types.ToResponseDeliverTx(r)
+		app.done(reqRes, res)
+	})
+
+	return reqRes
 }
 
 func (app *localClient) CheckTxAsync(req types.RequestCheckTx, cb ResponseCallback) *ReqRes {
@@ -183,10 +185,7 @@ func (app *localClient) SetOptionSync(req types.RequestSetOption) (*types.Respon
 }
 
 func (app *localClient) DeliverTxSync(req types.RequestDeliverTx) (*types.ResponseDeliverTx, error) {
-	app.mtx.Lock()
-	defer app.mtx.Unlock()
-
-	res := app.Application.DeliverTx(req)
+	res := app.Application.DeliverTxSync(req)
 	return &res, nil
 }
 

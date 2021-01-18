@@ -25,10 +25,10 @@ const (
 
 func testKVStore(t *testing.T, app types.Application, tx []byte, key, value string) {
 	req := types.RequestDeliverTx{Tx: tx}
-	ar := app.DeliverTx(req)
+	ar := app.DeliverTxSync(req)
 	require.False(t, ar.IsErr(), ar)
 	// repeating tx doesn't raise error
-	ar = app.DeliverTx(req)
+	ar = app.DeliverTxSync(req)
 	require.False(t, ar.IsErr(), ar)
 	// commit
 	app.Commit()
@@ -199,7 +199,7 @@ func makeApplyBlock(
 
 	kvstore.BeginBlock(types.RequestBeginBlock{Hash: hash, Header: header})
 	for _, tx := range txs {
-		if r := kvstore.DeliverTx(types.RequestDeliverTx{Tx: tx}); r.IsErr() {
+		if r := kvstore.DeliverTxSync(types.RequestDeliverTx{Tx: tx}); r.IsErr() {
 			t.Fatal(r)
 		}
 	}

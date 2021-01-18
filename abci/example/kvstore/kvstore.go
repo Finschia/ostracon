@@ -83,8 +83,16 @@ func (app *Application) Info(req types.RequestInfo) (resInfo types.ResponseInfo)
 	}
 }
 
+func (app *Application) DeliverTxSync(req types.RequestDeliverTx) types.ResponseDeliverTx {
+	return app.deliverTx(req)
+}
+
+func (app *Application) DeliverTxAsync(req types.RequestDeliverTx, callback types.DeliverTxCallback) {
+	callback(app.deliverTx(req))
+}
+
 // tx is either "key=value" or just arbitrary bytes
-func (app *Application) DeliverTx(req types.RequestDeliverTx) types.ResponseDeliverTx {
+func (app *Application) deliverTx(req types.RequestDeliverTx) types.ResponseDeliverTx {
 	var key, value []byte
 	parts := bytes.Split(req.Tx, []byte("="))
 	if len(parts) == 2 {

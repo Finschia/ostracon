@@ -67,7 +67,7 @@ func (app *PersistentKVStoreApplication) SetOption(req types.RequestSetOption) t
 }
 
 // tx is either "val:pubkey!power" or "key=value" or just arbitrary bytes
-func (app *PersistentKVStoreApplication) DeliverTx(req types.RequestDeliverTx) types.ResponseDeliverTx {
+func (app *PersistentKVStoreApplication) DeliverTxSync(req types.RequestDeliverTx) types.ResponseDeliverTx {
 	// if it starts with "val:", update the validator set
 	// format is "val:pubkey!power"
 	if isValidatorTx(req.Tx) {
@@ -77,7 +77,21 @@ func (app *PersistentKVStoreApplication) DeliverTx(req types.RequestDeliverTx) t
 	}
 
 	// otherwise, update the key-value store
-	return app.app.DeliverTx(req)
+	return app.app.DeliverTxSync(req)
+}
+
+func (app *PersistentKVStoreApplication) DeliverTxAsync(req types.RequestDeliverTx, callback types.DeliverTxCallback) {
+	// if it starts with "val:", update the validator set
+	// format is "val:pubkey!power"
+	if isValidatorTx(req.Tx) {
+		// update validators in the merkle tree
+		// and in app.ValUpdates
+		callback(app.execValidatorTx(req.Tx))
+		return
+	}
+
+	// otherwise, update the key-value store
+	app.app.DeliverTxAsync(req, callback)
 }
 
 func (app *PersistentKVStoreApplication) CheckTxSync(req types.RequestCheckTx) types.ResponseCheckTx {
