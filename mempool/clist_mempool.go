@@ -221,7 +221,7 @@ func (mem *CListMempool) CheckTxSync(tx types.Tx, txInfo TxInfo) (res *abci.Resp
 
 	// TODO refactor to pass a `pointer` directly
 	res = abci.ToResponseCheckTx(*r)
-	mem.reqResCb(tx, txInfo.SenderID, txInfo.SenderP2PID, nil)(res)
+	mem.reqResCb(tx, txInfo.SenderID, txInfo.SenderP2PID, res, nil)
 	return res, err
 }
 
@@ -253,7 +253,7 @@ func (mem *CListMempool) CheckTxAsync(tx types.Tx, txInfo TxInfo, cb func(*abci.
 	// CONTRACT: `app.CheckTxAsync()` should check whether `GasWanted` is valid (0 <= GasWanted <= block.masGas)
 	reqRes := mem.proxyAppConn.CheckTxAsync(abci.RequestCheckTx{Tx: tx})
 	reqRes.SetCallback(func(res *abci.Response) {
-		mem.reqResCb(tx, txInfo.SenderID, txInfo.SenderP2PID, cb)(res)
+		mem.reqResCb(tx, txInfo.SenderID, txInfo.SenderP2PID, res, cb)
 		mem.updateMtx.RUnlock()
 	})
 
@@ -368,18 +368,17 @@ func (mem *CListMempool) reqResCb(
 	tx []byte,
 	peerID uint16,
 	peerP2PID p2p.ID,
+	res *abci.Response,
 	externalCb func(*abci.Response),
-) func(res *abci.Response) {
-	return func(res *abci.Response) {
-		mem.resCbFirstTime(tx, peerID, peerP2PID, res)
+) {
+	mem.resCbFirstTime(tx, peerID, peerP2PID, res)
 
-		// update metrics
-		mem.metrics.Size.Set(float64(mem.Size()))
+	// update metrics
+	mem.metrics.Size.Set(float64(mem.Size()))
 
-		// passed in by the caller of CheckTx, eg. the RPC
-		if externalCb != nil {
-			externalCb(res)
-		}
+	// passed in by the caller of CheckTx, eg. the RPC
+	if externalCb != nil {
+		externalCb(res)
 	}
 }
 
