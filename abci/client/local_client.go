@@ -273,5 +273,6 @@ func newLocalReqRes(req *types.Request, res *types.Response) *ReqRes {
 	reqRes := NewReqRes(req)
 	reqRes.Response = res
 	reqRes.SetDone()
+	reqRes.Done()
 	return reqRes
 }
