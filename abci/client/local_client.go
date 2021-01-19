@@ -95,8 +95,8 @@ func (app *localClient) CheckTxAsync(params types.RequestCheckTx) *ReqRes {
 		res := types.ToResponseCheckTx(r)
 		app.Callback(req, res)
 		reqRes.Response = res
-		reqRes.SetDone()
 		reqRes.Done()
+		reqRes.SetDone()
 
 		// Notify reqRes listener if set
 		if cb := reqRes.GetCallback(); cb != nil {
@@ -277,7 +277,7 @@ func (app *localClient) callback(req *types.Request, res *types.Response) *ReqRe
 func newLocalReqRes(req *types.Request, res *types.Response) *ReqRes {
 	reqRes := NewReqRes(req)
 	reqRes.Response = res
-	reqRes.SetDone()
 	reqRes.Done()
+	reqRes.SetDone()
 	return reqRes
 }
