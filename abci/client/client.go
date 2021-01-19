@@ -21,23 +21,24 @@ const (
 type Client interface {
 	service.Service
 
-	SetResponseCallback(Callback)
+	SetGlobalCallback(GlobalCallback)
+	GetGlobalCallback() GlobalCallback
 	Error() error
 
-	EchoAsync(msg string) *ReqRes
-	InfoAsync(types.RequestInfo) *ReqRes
-	SetOptionAsync(types.RequestSetOption) *ReqRes
-	DeliverTxAsync(types.RequestDeliverTx) *ReqRes
-	CheckTxAsync(types.RequestCheckTx) *ReqRes
-	QueryAsync(types.RequestQuery) *ReqRes
-	CommitAsync() *ReqRes
-	InitChainAsync(types.RequestInitChain) *ReqRes
-	BeginBlockAsync(types.RequestBeginBlock) *ReqRes
-	EndBlockAsync(types.RequestEndBlock) *ReqRes
-	BeginRecheckTxAsync(types.RequestBeginRecheckTx) *ReqRes
-	EndRecheckTxAsync(types.RequestEndRecheckTx) *ReqRes
+	EchoAsync(string, ResponseCallback) *ReqRes
+	InfoAsync(types.RequestInfo, ResponseCallback) *ReqRes
+	SetOptionAsync(types.RequestSetOption, ResponseCallback) *ReqRes
+	DeliverTxAsync(types.RequestDeliverTx, ResponseCallback) *ReqRes
+	CheckTxAsync(types.RequestCheckTx, ResponseCallback) *ReqRes
+	QueryAsync(types.RequestQuery, ResponseCallback) *ReqRes
+	CommitAsync(ResponseCallback) *ReqRes
+	InitChainAsync(types.RequestInitChain, ResponseCallback) *ReqRes
+	BeginBlockAsync(types.RequestBeginBlock, ResponseCallback) *ReqRes
+	EndBlockAsync(types.RequestEndBlock, ResponseCallback) *ReqRes
+	BeginRecheckTxAsync(types.RequestBeginRecheckTx, ResponseCallback) *ReqRes
+	EndRecheckTxAsync(types.RequestEndRecheckTx, ResponseCallback) *ReqRes
 
-	EchoSync(msg string) (*types.ResponseEcho, error)
+	EchoSync(string) (*types.ResponseEcho, error)
 	InfoSync(types.RequestInfo) (*types.ResponseInfo, error)
 	SetOptionSync(types.RequestSetOption) (*types.ResponseSetOption, error)
 	DeliverTxSync(types.RequestDeliverTx) (*types.ResponseDeliverTx, error)
@@ -67,59 +68,54 @@ func NewClient(addr, transport string, mustConnect bool) (client Client, err err
 
 //----------------------------------------
 
-type Callback func(*types.Request, *types.Response)
+type GlobalCallback func(*types.Request, *types.Response)
+type ResponseCallback func(*types.Response)
 
 //----------------------------------------
 
 type ReqRes struct {
 	*types.Request
-	*sync.WaitGroup
 	*types.Response // Not set atomically, so be sure to use WaitGroup.
 
 	mtx  sync.Mutex
-	done bool                  // Gets set to true once *after* WaitGroup.Done().
-	cb   func(*types.Response) // A single callback that may be set.
+	wg   *sync.WaitGroup
+	done bool
+	cb   ResponseCallback
 }
 
-func NewReqRes(req *types.Request) *ReqRes {
+func NewReqRes(req *types.Request, cb ResponseCallback) *ReqRes {
 	return &ReqRes{
-		Request:   req,
-		WaitGroup: waitGroup1(),
-		Response:  nil,
+		Request:  req,
+		Response: nil,
 
+		wg:   waitGroup1(),
 		done: false,
-		cb:   nil,
+		cb:   cb,
 	}
-}
-
-// Sets the callback for this ReqRes atomically.
-// If reqRes is already done, calls cb immediately.
-// NOTE: reqRes.cb should not change if reqRes.done.
-// NOTE: only one callback is supported.
-func (reqRes *ReqRes) SetCallback(cb func(res *types.Response)) {
-	reqRes.mtx.Lock()
-
-	if reqRes.done {
-		reqRes.mtx.Unlock()
-		cb(reqRes.Response)
-		return
-	}
-
-	reqRes.cb = cb
-	reqRes.mtx.Unlock()
-}
-
-func (reqRes *ReqRes) GetCallback() func(*types.Response) {
-	reqRes.mtx.Lock()
-	defer reqRes.mtx.Unlock()
-	return reqRes.cb
 }
 
 // NOTE: it should be safe to read reqRes.cb without locks after this.
-func (reqRes *ReqRes) SetDone() {
+func (reqRes *ReqRes) SetDone(res *types.Response) (set bool) {
 	reqRes.mtx.Lock()
-	reqRes.done = true
+	// TODO should we panic if it's already done?
+	set = !reqRes.done
+	if set {
+		reqRes.Response = res
+		reqRes.done = true
+		reqRes.wg.Done()
+	}
 	reqRes.mtx.Unlock()
+
+	// NOTE `reqRes.cb` is immutable so we're safe to access it at here without `mtx`
+	if set && reqRes.cb != nil {
+		reqRes.cb(res)
+	}
+
+	return set
+}
+
+func (reqRes *ReqRes) Wait() {
+	reqRes.wg.Wait()
 }
 
 func waitGroup1() (wg *sync.WaitGroup) {

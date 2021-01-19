@@ -18,7 +18,9 @@ type localClient struct {
 
 	mtx *sync.Mutex
 	types.Application
-	Callback
+
+	globalCbMtx sync.Mutex
+	globalCb    GlobalCallback
 }
 
 func NewLocalClient(mtx *sync.Mutex, app types.Application) Client {
@@ -33,10 +35,17 @@ func NewLocalClient(mtx *sync.Mutex, app types.Application) Client {
 	return cli
 }
 
-func (app *localClient) SetResponseCallback(cb Callback) {
-	app.mtx.Lock()
-	app.Callback = cb
-	app.mtx.Unlock()
+func (app *localClient) SetGlobalCallback(globalCb GlobalCallback) {
+	app.globalCbMtx.Lock()
+	app.globalCb = globalCb
+	app.globalCbMtx.Unlock()
+}
+
+func (app *localClient) GetGlobalCallback() (cb GlobalCallback) {
+	app.globalCbMtx.Lock()
+	cb = app.globalCb
+	app.globalCbMtx.Unlock()
+	return cb
 }
 
 // TODO: change types.Application to include Error()?
@@ -44,138 +53,107 @@ func (app *localClient) Error() error {
 	return nil
 }
 
-func (app *localClient) EchoAsync(msg string) *ReqRes {
+func (app *localClient) EchoAsync(msg string, cb ResponseCallback) *ReqRes {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
-	return app.callback(
-		types.ToRequestEcho(msg),
-		types.ToResponseEcho(msg),
-	)
+	reqRes := NewReqRes(types.ToRequestEcho(msg), cb)
+	return app.done(reqRes, types.ToResponseEcho(msg))
 }
 
-func (app *localClient) InfoAsync(req types.RequestInfo) *ReqRes {
+func (app *localClient) InfoAsync(req types.RequestInfo, cb ResponseCallback) *ReqRes {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
+	reqRes := NewReqRes(types.ToRequestInfo(req), cb)
 	res := app.Application.Info(req)
-	return app.callback(
-		types.ToRequestInfo(req),
-		types.ToResponseInfo(res),
-	)
+	return app.done(reqRes, types.ToResponseInfo(res))
 }
 
-func (app *localClient) SetOptionAsync(req types.RequestSetOption) *ReqRes {
+func (app *localClient) SetOptionAsync(req types.RequestSetOption, cb ResponseCallback) *ReqRes {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
+	reqRes := NewReqRes(types.ToRequestSetOption(req), cb)
 	res := app.Application.SetOption(req)
-	return app.callback(
-		types.ToRequestSetOption(req),
-		types.ToResponseSetOption(res),
-	)
+	return app.done(reqRes, types.ToResponseSetOption(res))
 }
 
-func (app *localClient) DeliverTxAsync(params types.RequestDeliverTx) *ReqRes {
+func (app *localClient) DeliverTxAsync(req types.RequestDeliverTx, cb ResponseCallback) *ReqRes {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
-	res := app.Application.DeliverTx(params)
-	return app.callback(
-		types.ToRequestDeliverTx(params),
-		types.ToResponseDeliverTx(res),
-	)
+	reqRes := NewReqRes(types.ToRequestDeliverTx(req), cb)
+	res := app.Application.DeliverTx(req)
+	return app.done(reqRes, types.ToResponseDeliverTx(res))
 }
 
-func (app *localClient) CheckTxAsync(params types.RequestCheckTx) *ReqRes {
-	req := types.ToRequestCheckTx(params)
-	reqRes := NewReqRes(req)
+func (app *localClient) CheckTxAsync(req types.RequestCheckTx, cb ResponseCallback) *ReqRes {
+	reqRes := NewReqRes(types.ToRequestCheckTx(req), cb)
 
-	app.Application.CheckTxAsync(params, func(r types.ResponseCheckTx) {
+	app.Application.CheckTxAsync(req, func(r types.ResponseCheckTx) {
 		res := types.ToResponseCheckTx(r)
-		app.Callback(req, res)
-		reqRes.Response = res
-		reqRes.Done()
-		reqRes.SetDone()
-
-		// Notify reqRes listener if set
-		if cb := reqRes.GetCallback(); cb != nil {
-			cb(res)
-		}
+		app.done(reqRes, res)
 	})
 
 	return reqRes
 }
 
-func (app *localClient) QueryAsync(req types.RequestQuery) *ReqRes {
+func (app *localClient) QueryAsync(req types.RequestQuery, cb ResponseCallback) *ReqRes {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
+	reqRes := NewReqRes(types.ToRequestQuery(req), cb)
 	res := app.Application.Query(req)
-	return app.callback(
-		types.ToRequestQuery(req),
-		types.ToResponseQuery(res),
-	)
+	return app.done(reqRes, types.ToResponseQuery(res))
 }
 
-func (app *localClient) CommitAsync() *ReqRes {
+func (app *localClient) CommitAsync(cb ResponseCallback) *ReqRes {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
+	reqRes := NewReqRes(types.ToRequestCommit(), cb)
 	res := app.Application.Commit()
-	return app.callback(
-		types.ToRequestCommit(),
-		types.ToResponseCommit(res),
-	)
+	return app.done(reqRes, types.ToResponseCommit(res))
 }
 
-func (app *localClient) InitChainAsync(req types.RequestInitChain) *ReqRes {
+func (app *localClient) InitChainAsync(req types.RequestInitChain, cb ResponseCallback) *ReqRes {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
+	reqRes := NewReqRes(types.ToRequestInitChain(req), cb)
 	res := app.Application.InitChain(req)
-	return app.callback(
-		types.ToRequestInitChain(req),
-		types.ToResponseInitChain(res),
-	)
+	return app.done(reqRes, types.ToResponseInitChain(res))
 }
 
-func (app *localClient) BeginBlockAsync(req types.RequestBeginBlock) *ReqRes {
+func (app *localClient) BeginBlockAsync(req types.RequestBeginBlock, cb ResponseCallback) *ReqRes {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
+	reqRes := NewReqRes(types.ToRequestBeginBlock(req), cb)
 	res := app.Application.BeginBlock(req)
-	return app.callback(
-		types.ToRequestBeginBlock(req),
-		types.ToResponseBeginBlock(res),
-	)
+	return app.done(reqRes, types.ToResponseBeginBlock(res))
 }
 
-func (app *localClient) EndBlockAsync(req types.RequestEndBlock) *ReqRes {
+func (app *localClient) EndBlockAsync(req types.RequestEndBlock, cb ResponseCallback) *ReqRes {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
+	reqRes := NewReqRes(types.ToRequestEndBlock(req), cb)
 	res := app.Application.EndBlock(req)
-	return app.callback(
-		types.ToRequestEndBlock(req),
-		types.ToResponseEndBlock(res),
-	)
+	return app.done(reqRes, types.ToResponseEndBlock(res))
 }
 
-func (app *localClient) BeginRecheckTxAsync(req types.RequestBeginRecheckTx) *ReqRes {
+func (app *localClient) BeginRecheckTxAsync(req types.RequestBeginRecheckTx, cb ResponseCallback) *ReqRes {
+	reqRes := NewReqRes(types.ToRequestBeginRecheckTx(req), cb)
 	res := app.Application.BeginRecheckTx(req)
-	return app.callback(
-		types.ToRequestBeginRecheckTx(req),
-		types.ToResponseBeginRecheckTx(res),
-	)
+	return app.done(reqRes, types.ToResponseBeginRecheckTx(res))
 }
 
-func (app *localClient) EndRecheckTxAsync(req types.RequestEndRecheckTx) *ReqRes {
+func (app *localClient) EndRecheckTxAsync(req types.RequestEndRecheckTx, cb ResponseCallback) *ReqRes {
+	reqRes := NewReqRes(types.ToRequestEndRecheckTx(req), cb)
 	res := app.Application.EndRecheckTx(req)
-	return app.callback(
-		types.ToRequestEndRecheckTx(req),
-		types.ToResponseEndRecheckTx(res),
-	)
+	return app.done(reqRes, types.ToResponseEndRecheckTx(res))
 }
 
 //-------------------------------------------------------
@@ -269,15 +247,12 @@ func (app *localClient) EndRecheckTxSync(req types.RequestEndRecheckTx) (*types.
 
 //-------------------------------------------------------
 
-func (app *localClient) callback(req *types.Request, res *types.Response) *ReqRes {
-	app.Callback(req, res)
-	return newLocalReqRes(req, res)
-}
-
-func newLocalReqRes(req *types.Request, res *types.Response) *ReqRes {
-	reqRes := NewReqRes(req)
-	reqRes.Response = res
-	reqRes.Done()
-	reqRes.SetDone()
+func (app *localClient) done(reqRes *ReqRes, res *types.Response) *ReqRes {
+	set := reqRes.SetDone(res)
+	if set {
+		if globalCb := app.GetGlobalCallback(); globalCb != nil {
+			globalCb(reqRes.Request, res)
+		}
+	}
 	return reqRes
 }

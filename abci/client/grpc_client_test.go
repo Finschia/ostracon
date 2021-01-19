@@ -49,7 +49,8 @@ func TestProperSyncCalls(t *testing.T) {
 	resp := make(chan error, 1)
 	go func() {
 		// This is BeginBlockSync unrolled....
-		reqres := c.BeginBlockAsync(types.RequestBeginBlock{})
+		reqres := c.BeginBlockAsync(types.RequestBeginBlock{}, nil)
+		reqres.Wait()
 		res := reqres.Response.GetBeginBlock()
 		require.NotNil(t, res)
 		resp <- c.Error()
