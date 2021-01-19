@@ -97,6 +97,11 @@ func (app *localClient) CheckTxAsync(params types.RequestCheckTx) *ReqRes {
 		reqRes.Response = res
 		reqRes.SetDone()
 		reqRes.Done()
+
+		// Notify reqRes listener if set
+		if cb := reqRes.GetCallback(); cb != nil {
+			cb(res)
+		}
 	})
 
 	return reqRes
