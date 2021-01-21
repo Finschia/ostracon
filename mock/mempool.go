@@ -18,8 +18,9 @@ func (Mempool) Size() int { return 0 }
 func (Mempool) CheckTxSync(_ types.Tx, _ mempl.TxInfo) (*abci.Response, error) {
 	return nil, nil
 }
-func (Mempool) CheckTxAsync(_ types.Tx, _ mempl.TxInfo, cb func(*abci.Response, error)) {
-	cb(nil, nil)
+func (Mempool) CheckTxAsync(_ types.Tx, _ mempl.TxInfo, prepareCb func(error), checkTxCb func(*abci.Response)) {
+	prepareCb(nil)
+	checkTxCb(nil)
 }
 func (Mempool) ReapMaxBytesMaxGas(_, _ int64) types.Txs { return types.Txs{} }
 func (Mempool) ReapMaxTxs(n int) types.Txs              { return types.Txs{} }

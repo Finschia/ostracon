@@ -9,7 +9,6 @@ import (
 
 	amino "github.com/tendermint/go-amino"
 
-	abci "github.com/tendermint/tendermint/abci/types"
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/libs/clist"
 	"github.com/tendermint/tendermint/libs/log"
@@ -175,11 +174,11 @@ func (memR *Reactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 		if src != nil {
 			txInfo.SenderP2PID = src.ID()
 		}
-		memR.mempool.CheckTxAsync(msg.Tx, txInfo, func(res *abci.Response, err error) {
+		memR.mempool.CheckTxAsync(msg.Tx, txInfo, func(err error) {
 			if err != nil {
 				memR.Logger.Info("Could not check tx", "tx", txID(msg.Tx), "err", err)
 			}
-		})
+		}, nil)
 		// broadcasting happens from go routines per peer
 	default:
 		memR.Logger.Error(fmt.Sprintf("Unknown message type %v", reflect.TypeOf(msg)))

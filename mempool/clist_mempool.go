@@ -67,9 +67,10 @@ type CListMempool struct {
 }
 
 type requestCheckTxAsync struct {
-	tx     types.Tx
-	txInfo TxInfo
-	cb     func(*abci.Response, error)
+	tx        types.Tx
+	txInfo    TxInfo
+	prepareCb func(error)
+	checkTxCb func(*abci.Response)
 }
 
 var _ Mempool = &CListMempool{}
@@ -239,18 +240,18 @@ func (mem *CListMempool) CheckTxSync(tx types.Tx, txInfo TxInfo) (res *abci.Resp
 //     It gets called from another goroutine.
 //
 // Safe for concurrent use by multiple goroutines.
-func (mem *CListMempool) CheckTxAsync(tx types.Tx, txInfo TxInfo, cb func(*abci.Response, error)) {
-	mem.chReqCheckTx <- &requestCheckTxAsync{tx: tx, txInfo: txInfo, cb: cb}
+func (mem *CListMempool) CheckTxAsync(tx types.Tx, txInfo TxInfo, prepareCb func(error), checkTxCb func(*abci.Response)) {
+	mem.chReqCheckTx <- &requestCheckTxAsync{tx: tx, txInfo: txInfo, prepareCb: prepareCb, checkTxCb: checkTxCb}
 }
 
 func (mem *CListMempool) checkTxAsyncReactor() {
 	for req := range mem.chReqCheckTx {
-		mem.checkTxAsync(req.tx, req.txInfo, req.cb)
+		mem.checkTxAsync(req.tx, req.txInfo, req.prepareCb, req.checkTxCb)
 	}
 }
 
 // It blocks if we're waiting on Update() or Reap().
-func (mem *CListMempool) checkTxAsync(tx types.Tx, txInfo TxInfo, cb func(*abci.Response, error)) {
+func (mem *CListMempool) checkTxAsync(tx types.Tx, txInfo TxInfo, prepareCb func(error), checkTxCb func(*abci.Response)) {
 	mem.updateMtx.RLock()
 	defer func() {
 		if r := recover(); r != nil {
@@ -259,8 +260,9 @@ func (mem *CListMempool) checkTxAsync(tx types.Tx, txInfo TxInfo, cb func(*abci.
 		}
 	}()
 
-	if err := mem.prepareCheckTx(tx, txInfo); err != nil {
-		cb(nil, err)
+	err := mem.prepareCheckTx(tx, txInfo)
+	prepareCb(err)
+	if err != nil {
 		mem.updateMtx.RUnlock()
 		return
 	}
@@ -269,8 +271,8 @@ func (mem *CListMempool) checkTxAsync(tx types.Tx, txInfo TxInfo, cb func(*abci.
 	reqRes := mem.proxyAppConn.CheckTxAsync(abci.RequestCheckTx{Tx: tx})
 	reqRes.SetCallback(func(res *abci.Response) {
 		mem.reqResCb(tx, txInfo.SenderID, txInfo.SenderP2PID, res, func(response *abci.Response) {
-			if cb != nil {
-				cb(response, nil)
+			if checkTxCb != nil {
+				checkTxCb(response)
 			}
 			mem.updateMtx.RUnlock()
 		})
