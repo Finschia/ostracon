@@ -261,7 +261,9 @@ func (mem *CListMempool) checkTxAsync(tx types.Tx, txInfo TxInfo, prepareCb func
 	}()
 
 	err := mem.prepareCheckTx(tx, txInfo)
-	prepareCb(err)
+	if prepareCb != nil {
+		prepareCb(err)
+	}
 	if err != nil {
 		mem.updateMtx.RUnlock()
 		return
