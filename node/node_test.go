@@ -267,7 +267,7 @@ func TestCreateProposalBlock(t *testing.T) {
 	txLength := 1000
 	for i := 0; i < maxBytes/txLength; i++ {
 		tx := tmrand.Bytes(txLength)
-		err := mempool.CheckTx(tx, nil, mempl.TxInfo{})
+		_, err := mempool.CheckTxSync(tx, mempl.TxInfo{})
 		assert.NoError(t, err)
 	}
 
