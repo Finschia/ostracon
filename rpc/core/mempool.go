@@ -21,11 +21,7 @@ import (
 // CheckTx nor DeliverTx results.
 // More: https://docs.tendermint.com/master/rpc/#/Tx/broadcast_tx_async
 func BroadcastTxAsync(ctx *rpctypes.Context, tx types.Tx) (*ctypes.ResultBroadcastTx, error) {
-	err := env.Mempool.CheckTxAsync(tx, mempl.TxInfo{}, nil)
-
-	if err != nil {
-		return nil, err
-	}
+	env.Mempool.CheckTxAsync(tx, mempl.TxInfo{}, nil)
 	return &ctypes.ResultBroadcastTx{Hash: tx.Hash()}, nil
 }
 

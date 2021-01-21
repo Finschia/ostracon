@@ -47,6 +47,8 @@ type CListMempool struct {
 	updateMtx sync.RWMutex
 	preCheck  PreCheckFunc
 
+	chReqCheckTx chan *requestCheckTxAsync
+
 	wal          *auto.AutoFile // a log of mempool txs
 	txs          *clist.CList   // concurrent linked-list of good txs
 	proxyAppConn proxy.AppConnMempool
@@ -62,6 +64,12 @@ type CListMempool struct {
 	logger log.Logger
 
 	metrics *Metrics
+}
+
+type requestCheckTxAsync struct {
+	tx     types.Tx
+	txInfo TxInfo
+	cb     func(*abci.Response, error)
 }
 
 var _ Mempool = &CListMempool{}
@@ -81,6 +89,7 @@ func NewCListMempool(
 		proxyAppConn: proxyAppConn,
 		txs:          clist.New(),
 		height:       height,
+		chReqCheckTx: make(chan *requestCheckTxAsync, config.Size),
 		logger:       log.NewNopLogger(),
 		metrics:      NopMetrics(),
 	}
@@ -93,6 +102,7 @@ func NewCListMempool(
 	for _, option := range options {
 		option(mempool)
 	}
+	go mempool.checkTxAsyncReactor()
 	return mempool
 }
 
@@ -231,33 +241,41 @@ func (mem *CListMempool) CheckTxSync(tx types.Tx, txInfo TxInfo) (res *abci.Resp
 // CONTRACT: Either cb will get called, or err returned.
 //
 // Safe for concurrent use by multiple goroutines.
-func (mem *CListMempool) CheckTxAsync(tx types.Tx, txInfo TxInfo, cb func(*abci.Response)) (err error) {
-	mem.updateMtx.RLock()
-	// use defer to unlock mutex because application (*local client*) might panic
-	defer func() {
-		if err != nil {
-			mem.updateMtx.RUnlock()
-			return
-		}
+func (mem *CListMempool) CheckTxAsync(tx types.Tx, txInfo TxInfo, cb func(*abci.Response, error)) {
+	mem.chReqCheckTx <- &requestCheckTxAsync{tx: tx, txInfo: txInfo, cb: cb}
+}
 
+func (mem *CListMempool) checkTxAsyncReactor() {
+	for req := range mem.chReqCheckTx {
+		mem.checkTxAsync(req.tx, req.txInfo, req.cb)
+	}
+}
+
+func (mem *CListMempool) checkTxAsync(tx types.Tx, txInfo TxInfo, cb func(*abci.Response, error)) {
+	mem.updateMtx.RLock()
+	defer func() {
 		if r := recover(); r != nil {
 			mem.updateMtx.RUnlock()
 			panic(r)
 		}
 	}()
 
-	if err = mem.prepareCheckTx(tx, txInfo); err != nil {
-		return err
+	if err := mem.prepareCheckTx(tx, txInfo); err != nil {
+		cb(nil, err)
+		mem.updateMtx.RUnlock()
+		return
 	}
 
 	// CONTRACT: `app.CheckTxAsync()` should check whether `GasWanted` is valid (0 <= GasWanted <= block.masGas)
 	reqRes := mem.proxyAppConn.CheckTxAsync(abci.RequestCheckTx{Tx: tx})
 	reqRes.SetCallback(func(res *abci.Response) {
-		mem.reqResCb(tx, txInfo.SenderID, txInfo.SenderP2PID, res, cb)
-		mem.updateMtx.RUnlock()
+		mem.reqResCb(tx, txInfo.SenderID, txInfo.SenderP2PID, res, func(response *abci.Response) {
+			if cb != nil {
+				cb(response, nil)
+			}
+			mem.updateMtx.RUnlock()
+		})
 	})
-
-	return err
 }
 
 // CONTRACT: `caller` should held `mem.updateMtx.RLock()`
