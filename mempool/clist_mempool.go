@@ -235,10 +235,8 @@ func (mem *CListMempool) CheckTxSync(tx types.Tx, txInfo TxInfo) (res *abci.Resp
 	return res, err
 }
 
-// It blocks if we're waiting on Update() or Reap().
 // cb: A callback from the CheckTx command.
 //     It gets called from another goroutine.
-// CONTRACT: Either cb will get called, or err returned.
 //
 // Safe for concurrent use by multiple goroutines.
 func (mem *CListMempool) CheckTxAsync(tx types.Tx, txInfo TxInfo, cb func(*abci.Response, error)) {
@@ -251,6 +249,7 @@ func (mem *CListMempool) checkTxAsyncReactor() {
 	}
 }
 
+// It blocks if we're waiting on Update() or Reap().
 func (mem *CListMempool) checkTxAsync(tx types.Tx, txInfo TxInfo, cb func(*abci.Response, error)) {
 	mem.updateMtx.RLock()
 	defer func() {
