@@ -622,7 +622,7 @@ func ensureVote(voteCh <-chan tmpubsub.Message, height int64, round int,
 
 func ensureNewEventOnChannel(ch <-chan tmpubsub.Message) {
 	select {
-	case <-time.After(ensureTimeout * 1000):
+	case <-time.After(ensureTimeout):
 		panic("Timeout expired while waiting for new activity on the channel")
 	case <-ch:
 	}
