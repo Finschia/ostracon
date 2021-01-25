@@ -99,7 +99,7 @@ func NewCListMempool(
 	} else {
 		mempool.cache = nopTxCache{}
 	}
-	proxyAppConn.SetResponseCallback(mempool.globalCb)
+	proxyAppConn.SetGlobalCallback(mempool.globalCb)
 	for _, option := range options {
 		option(mempool)
 	}
@@ -270,8 +270,7 @@ func (mem *CListMempool) checkTxAsync(tx types.Tx, txInfo TxInfo, prepareCb func
 	}
 
 	// CONTRACT: `app.CheckTxAsync()` should check whether `GasWanted` is valid (0 <= GasWanted <= block.masGas)
-	reqRes := mem.proxyAppConn.CheckTxAsync(abci.RequestCheckTx{Tx: tx})
-	reqRes.SetCallback(func(res *abci.Response) {
+	mem.proxyAppConn.CheckTxAsync(abci.RequestCheckTx{Tx: tx}, func(res *abci.Response) {
 		mem.reqResCb(tx, txInfo.SenderID, txInfo.SenderP2PID, res, func(response *abci.Response) {
 			if checkTxCb != nil {
 				checkTxCb(response)
@@ -703,11 +702,12 @@ func (mem *CListMempool) recheckTxs() {
 		wg.Add(1)
 
 		memTx := e.Value.(*mempoolTx)
-		reqRes := mem.proxyAppConn.CheckTxAsync(abci.RequestCheckTx{
+		req := abci.RequestCheckTx{
 			Tx:   memTx.tx,
 			Type: abci.CheckTxType_Recheck,
-		})
-		reqRes.SetCallback(func(res *abci.Response) {
+		}
+
+		mem.proxyAppConn.CheckTxAsync(req, func(res *abci.Response) {
 			wg.Done()
 		})
 	}

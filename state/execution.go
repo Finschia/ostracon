@@ -281,7 +281,7 @@ func execBlockOnProxyApp(
 			txIndex++
 		}
 	}
-	proxyAppConn.SetResponseCallback(proxyCb)
+	proxyAppConn.SetGlobalCallback(proxyCb)
 
 	commitInfo, byzVals := getBeginBlockValidatorInfo(block, stateDB)
 
@@ -300,7 +300,7 @@ func execBlockOnProxyApp(
 
 	// Run txs of block.
 	for _, tx := range block.Txs {
-		proxyAppConn.DeliverTxAsync(abci.RequestDeliverTx{Tx: tx})
+		proxyAppConn.DeliverTxAsync(abci.RequestDeliverTx{Tx: tx}, nil)
 		if err := proxyAppConn.Error(); err != nil {
 			return nil, err
 		}
