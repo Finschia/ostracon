@@ -6,6 +6,7 @@ import (
 
 	dbm "github.com/tendermint/tm-db"
 
+	abcicli "github.com/tendermint/tendermint/abci/client"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/fail"
 	"github.com/tendermint/tendermint/libs/log"
@@ -299,12 +300,28 @@ func execBlockOnProxyApp(
 	}
 
 	// Run txs of block.
+	deliverStartTime := time.Now().UnixNano()
+	reqReses := make([]*abcicli.ReqRes, 0, len(block.Txs))
 	for _, tx := range block.Txs {
-		proxyAppConn.DeliverTxAsync(abci.RequestDeliverTx{Tx: tx}, nil)
+		reqRes := proxyAppConn.DeliverTxAsync(abci.RequestDeliverTx{Tx: tx}, nil)
+		reqReses = append(reqReses, reqRes)
 		if err := proxyAppConn.Error(); err != nil {
 			return nil, err
 		}
 	}
+	deliverTimeMs := float64(time.Now().UnixNano()-deliverStartTime) / 1000000
+	logger.Info("execBlockOnProxyApp", "deliverTimeMs", deliverTimeMs)
+
+	waitStartTime := time.Now().UnixNano()
+	for i, reqRes := range reqReses {
+		reqRes.Wait()
+
+		if r, ok := reqRes.Response.Value.(*abci.Response_DeliverTx); ok {
+			abciResponses.DeliverTxs[i] = r.DeliverTx
+		}
+	}
+	waitTimeMs := float64(time.Now().UnixNano()-waitStartTime) / 1000000
+	logger.Info("execBlockOnProxyApp", "waitTimeMs", waitTimeMs)
 
 	// End block.
 	abciResponses.EndBlock, err = proxyAppConn.EndBlockSync(abci.RequestEndBlock{Height: block.Height})
