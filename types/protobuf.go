@@ -32,7 +32,7 @@ const (
 // TODO: Make non-global by allowing for registration of more pubkey types
 
 var ABCIPubKeyTypesToAminoNames = map[string]string{
-	ABCIPubKeyTypeComposite: composite.PubKeyCompositeAminoName,
+	ABCIPubKeyTypeComposite: composite.PubKeyAminoName,
 	ABCIPubKeyTypeEd25519:   ed25519.PubKeyAminoName,
 	ABCIPubKeyTypeSr25519:   sr25519.PubKeyAminoName,
 	ABCIPubKeyTypeSecp256k1: secp256k1.PubKeyAminoName,

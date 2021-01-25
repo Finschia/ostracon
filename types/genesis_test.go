@@ -3,7 +3,10 @@ package types
 import (
 	"io/ioutil"
 	"os"
+	"reflect"
 	"testing"
+
+	"github.com/tendermint/tendermint/crypto/composite"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,6 +25,28 @@ func TestGenesisBad(t *testing.T) {
 		// missing pub_key type
 		[]byte(
 			`{"validators":[{"pub_key":{"value":"AT/+aaL1eB0477Mud9JMm8Sh8BIvOYlPGC9KkIUmFaE="},"power":"10","name":""}]}`,
+		),
+		// missing pub_key type with composite
+		[]byte(
+			`{"validators":[{"pub_key":{"value": ` +
+				`{"sign": {"type": "tendermint/PubKeyBLS12",` +
+				`"value": "mD+qWAgrBtbtQIxnQZ32LbbGvNJfo87gvbp9bGrtjSRRCdleoG/YuZJtCmv5rd1p"},` +
+				`"vrf": {"type": "tendermint/PubKeyEd25519","value": "KKGRprl+IjD3fG7KZ9YF+3oVpD+LvE2cd5m5N54dnKM="}}},` +
+				`"power":"10","name":""}]}`,
+		),
+		// missing pub_key type with composite sign
+		[]byte(
+			`{"validators":[{"pub_key":{"type": "tendermint/PubKeyComposite","value": ` +
+				`{"sign": {"value": "mD+qWAgrBtbtQIxnQZ32LbbGvNJfo87gvbp9bGrtjSRRCdleoG/YuZJtCmv5rd1p"},` +
+				`"vrf": {"type": "tendermint/PubKeyEd25519","value": "KKGRprl+IjD3fG7KZ9YF+3oVpD+LvE2cd5m5N54dnKM="}}},` +
+				`"power":"10","name":""}]}`,
+		),
+		// missing pub_key type with composite vrf
+		[]byte(
+			`{"validators":[{"pub_key":{"type": "tendermint/PubKeyComposite","value": ` +
+				`{"sign": {"type": "tendermint/PubKeyBLS12",` +
+				`"value": "mD+qWAgrBtbtQIxnQZ32LbbGvNJfo87gvbp9bGrtjSRRCdleoG/YuZJtCmv5rd1p"},` +
+				`"vrf": {"value": "KKGRprl+IjD3fG7KZ9YF+3oVpD+LvE2cd5m5N54dnKM="}}},"power":"10","name":""}]}`,
 		),
 		// missing chain_id
 		[]byte(
@@ -118,6 +143,52 @@ func TestGenesisGood(t *testing.T) {
 		_, err := GenesisDocFromJSON(tc)
 		assert.NoError(t, err)
 	}
+}
+
+func TestGenesisGoodComposite(t *testing.T) {
+	// test a good one by raw json with composite
+	genDocBytes := []byte(
+		`{"genesis_time":"0001-01-01T00:00:00Z","chain_id":"test-chain-QDKdJr","consensus_params":null,"validators":[` +
+			`{"pub_key":{"type": "tendermint/PubKeyComposite","value": ` +
+			`{"sign": {"type": "tendermint/PubKeyBLS12",` +
+			`"value": "mD+qWAgrBtbtQIxnQZ32LbbGvNJfo87gvbp9bGrtjSRRCdleoG/YuZJtCmv5rd1p"},` +
+			`"vrf": {"type": "tendermint/PubKeyEd25519","value": "KKGRprl+IjD3fG7KZ9YF+3oVpD+LvE2cd5m5N54dnKM="}}},` +
+			`"power":"10","name":""}` + `],"voter_params":null, "app_hash":"","app_state":{"account_owner": "Bob"}}`)
+	_, err := GenesisDocFromJSON(genDocBytes)
+	assert.NoError(t, err, "expected no error for good genDoc json")
+
+	pubkey := composite.GenPrivKey().PubKey()
+	// create a base gendoc from struct with composite
+	baseGenDoc := &GenesisDoc{
+		ChainID:    "abc",
+		Validators: []GenesisValidator{{pubkey.Address(), pubkey, 10, "myval"}},
+	}
+	genDocBytes, err = cdc.MarshalJSON(baseGenDoc)
+	assert.NoError(t, err, "error marshalling genDoc")
+
+	// test base gendoc and check consensus params were filled
+	genDoc, err := GenesisDocFromJSON(genDocBytes)
+	assert.NoError(t, err, "expected no error for valid genDoc json")
+	assert.NotNil(t, genDoc.ConsensusParams, "expected consensus params to be filled in")
+
+	// check validator's address is filled
+	assert.NotNil(t, genDoc.Validators[0].Address, "expected validator's address to be filled in")
+
+	// check validator's key type is composite
+	assert.EqualValues(t, reflect.TypeOf(composite.PubKeyComposite{}), reflect.TypeOf(genDoc.Validators[0].PubKey))
+
+	// create json with consensus params filled
+	genDocBytes, err = cdc.MarshalJSON(genDoc)
+	assert.NoError(t, err, "error marshalling genDoc")
+	genDoc, err = GenesisDocFromJSON(genDocBytes)
+	assert.NoError(t, err, "expected no error for valid genDoc json")
+
+	// test with invalid consensus params
+	genDoc.ConsensusParams.Block.MaxBytes = 0
+	genDocBytes, err = cdc.MarshalJSON(genDoc)
+	assert.NoError(t, err, "error marshalling genDoc")
+	_, err = GenesisDocFromJSON(genDocBytes)
+	assert.Error(t, err, "expected error for genDoc json with block size of 0")
 }
 
 func TestGenesisSaveAs(t *testing.T) {
