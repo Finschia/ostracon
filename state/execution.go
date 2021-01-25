@@ -2,6 +2,7 @@ package state
 
 import (
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	dbm "github.com/tendermint/tm-db"
@@ -260,9 +261,8 @@ func execBlockOnProxyApp(
 	block *types.Block,
 	stateDB dbm.DB,
 ) (*ABCIResponses, error) {
-	var validTxs, invalidTxs = 0, 0
+	var validTxs, invalidTxs int64 = 0, 0
 
-	txIndex := 0
 	abciResponses := NewABCIResponses(block)
 
 	// Execute transactions and get hash.
@@ -273,13 +273,11 @@ func execBlockOnProxyApp(
 			// Blocks may include invalid txs.
 			txRes := r.DeliverTx
 			if txRes.Code == abci.CodeTypeOK {
-				validTxs++
+				atomic.AddInt64(&validTxs, 1)
 			} else {
 				logger.Debug("Invalid tx", "code", txRes.Code, "log", txRes.Log)
-				invalidTxs++
+				atomic.AddInt64(&invalidTxs, 1)
 			}
-			abciResponses.DeliverTxs[txIndex] = txRes
-			txIndex++
 		}
 	}
 	proxyAppConn.SetGlobalCallback(proxyCb)
