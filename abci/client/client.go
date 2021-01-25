@@ -94,7 +94,6 @@ func NewReqRes(req *types.Request, cb ResponseCallback) *ReqRes {
 	}
 }
 
-// NOTE: it should be safe to read reqRes.cb without locks after this.
 func (reqRes *ReqRes) SetDone(res *types.Response) (set bool) {
 	reqRes.mtx.Lock()
 	// TODO should we panic if it's already done?
