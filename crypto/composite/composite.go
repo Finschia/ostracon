@@ -1,8 +1,7 @@
 package composite
 
 import (
-	"bytes"
-
+	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/bls"
 	"github.com/tendermint/tendermint/crypto/ed25519"
@@ -10,11 +9,29 @@ import (
 )
 
 // PubKeyComposite and PrivKeyComposite are intended to allow public key algorithms to be selected for each function.
-
 const (
-	PubKeyCompositeAminoName  = "tendermint/PubKeyComposite"
-	PrivKeyCompositeAminoName = "tendermint/PrivKeyComposite"
+	PrivKeyAminoName = "tendermint/PrivKeyComposite"
+	PubKeyAminoName  = "tendermint/PubKeyComposite"
 )
+
+var cdc = amino.NewCodec()
+
+func init() {
+	cdc.RegisterInterface((*crypto.PubKey)(nil), nil)
+	cdc.RegisterConcrete(PubKeyComposite{},
+		PubKeyAminoName, nil)
+	cdc.RegisterConcrete(bls.PubKeyBLS12{},
+		bls.PubKeyAminoName, nil)
+	cdc.RegisterConcrete(ed25519.PubKeyEd25519{},
+		ed25519.PubKeyAminoName, nil)
+	cdc.RegisterInterface((*crypto.PrivKey)(nil), nil)
+	cdc.RegisterConcrete(PrivKeyComposite{},
+		PrivKeyAminoName, nil)
+	cdc.RegisterConcrete(bls.PrivKeyBLS12{},
+		bls.PrivKeyAminoName, nil)
+	cdc.RegisterConcrete(ed25519.PrivKeyEd25519{},
+		ed25519.PrivKeyAminoName, nil)
+}
 
 type PubKeyComposite struct {
 	SignKey crypto.PubKey `json:"sign"`
@@ -30,9 +47,11 @@ func (pk PubKeyComposite) Address() crypto.Address {
 }
 
 func (pk PubKeyComposite) Bytes() []byte {
-	msg := bytes.NewBuffer(pk.SignKey.Bytes())
-	msg.Write(pk.VrfKey.Bytes())
-	return msg.Bytes()
+	bz, err := cdc.MarshalBinaryBare(pk)
+	if err != nil {
+		panic(err)
+	}
+	return bz
 }
 
 func (pk PubKeyComposite) VerifyBytes(msg []byte, sig []byte) bool {
@@ -67,7 +86,7 @@ func (sk PrivKeyComposite) Identity() crypto.PrivKey {
 }
 
 func (sk PrivKeyComposite) Bytes() []byte {
-	return sk.Identity().Bytes()
+	return cdc.MustMarshalBinaryBare(sk)
 }
 
 func (sk PrivKeyComposite) Sign(msg []byte) ([]byte, error) {
