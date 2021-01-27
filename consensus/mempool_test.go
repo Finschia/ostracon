@@ -141,7 +141,7 @@ func TestMempoolRmBadTx(t *testing.T) {
 	txBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(txBytes, uint64(0))
 
-	resDeliver := app.DeliverTx(abci.RequestDeliverTx{Tx: txBytes})
+	resDeliver := app.DeliverTxSync(abci.RequestDeliverTx{Tx: txBytes})
 	assert.False(t, resDeliver.IsErr(), fmt.Sprintf("expected no error. got %v", resDeliver))
 
 	resCommit := app.Commit()
@@ -210,7 +210,9 @@ func TestMempoolRmBadTx(t *testing.T) {
 type CounterApplication struct {
 	abci.BaseApplication
 
-	txCount           int
+	txCount    int
+	txCountMtx sync.Mutex
+
 	mempoolTxCount    int
 	mempoolTxCountMtx sync.Mutex
 }
@@ -223,8 +225,18 @@ func (app *CounterApplication) Info(req abci.RequestInfo) abci.ResponseInfo {
 	return abci.ResponseInfo{Data: fmt.Sprintf("txs:%v", app.txCount)}
 }
 
-func (app *CounterApplication) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
+func (app *CounterApplication) DeliverTxSync(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
+	return app.deliverTx(req)
+}
+
+func (app *CounterApplication) DeliverTxAsync(req abci.RequestDeliverTx, callback abci.DeliverTxCallback) {
+	callback(app.deliverTx(req))
+}
+
+func (app *CounterApplication) deliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
 	txValue := txAsUint64(req.Tx)
+	app.txCountMtx.Lock()
+	defer app.txCountMtx.Unlock()
 	if txValue != uint64(app.txCount) {
 		return abci.ResponseDeliverTx{
 			Code: code.CodeTypeBadNonce,

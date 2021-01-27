@@ -52,7 +52,7 @@ func (a ABCIApp) BroadcastTxCommit(tx types.Tx) (*ctypes.ResultBroadcastTxCommit
 	if res.CheckTx.IsErr() {
 		return &res, nil
 	}
-	res.DeliverTx = a.App.DeliverTx(abci.RequestDeliverTx{Tx: tx})
+	res.DeliverTx = a.App.DeliverTxSync(abci.RequestDeliverTx{Tx: tx})
 	res.Height = -1 // TODO
 	return &res, nil
 }
@@ -64,7 +64,7 @@ func (a ABCIApp) BroadcastTxAsync(tx types.Tx) (*ctypes.ResultBroadcastTx, error
 	})
 	c := <-chRes
 	// and this gets written in a background thread...
-	go func() { a.App.DeliverTx(abci.RequestDeliverTx{Tx: tx}) }() // nolint: errcheck
+	go func() { a.App.DeliverTxSync(abci.RequestDeliverTx{Tx: tx}) }() // nolint: errcheck
 	return &ctypes.ResultBroadcastTx{
 		Code:      c.Code,
 		Data:      c.Data,
@@ -78,7 +78,7 @@ func (a ABCIApp) BroadcastTxSync(tx types.Tx) (*ctypes.ResultBroadcastTx, error)
 	c := a.App.CheckTxSync(abci.RequestCheckTx{Tx: tx})
 	// and this gets written in a background thread...
 	if !c.IsErr() {
-		go func() { a.App.DeliverTx(abci.RequestDeliverTx{Tx: tx}) }() // nolint: errcheck
+		go func() { a.App.DeliverTxSync(abci.RequestDeliverTx{Tx: tx}) }() // nolint: errcheck
 	}
 	return &ctypes.ResultBroadcastTx{
 		Code:      c.Code,

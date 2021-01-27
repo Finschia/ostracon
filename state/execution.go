@@ -2,10 +2,12 @@ package state
 
 import (
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	dbm "github.com/tendermint/tm-db"
 
+	abcicli "github.com/tendermint/tendermint/abci/client"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/fail"
 	"github.com/tendermint/tendermint/libs/log"
@@ -259,9 +261,8 @@ func execBlockOnProxyApp(
 	block *types.Block,
 	stateDB dbm.DB,
 ) (*ABCIResponses, error) {
-	var validTxs, invalidTxs = 0, 0
+	var validTxs, invalidTxs int64 = 0, 0
 
-	txIndex := 0
 	abciResponses := NewABCIResponses(block)
 
 	// Execute transactions and get hash.
@@ -272,13 +273,11 @@ func execBlockOnProxyApp(
 			// Blocks may include invalid txs.
 			txRes := r.DeliverTx
 			if txRes.Code == abci.CodeTypeOK {
-				validTxs++
+				atomic.AddInt64(&validTxs, 1)
 			} else {
 				logger.Debug("Invalid tx", "code", txRes.Code, "log", txRes.Log)
-				invalidTxs++
+				atomic.AddInt64(&invalidTxs, 1)
 			}
-			abciResponses.DeliverTxs[txIndex] = txRes
-			txIndex++
 		}
 	}
 	proxyAppConn.SetGlobalCallback(proxyCb)
@@ -299,12 +298,28 @@ func execBlockOnProxyApp(
 	}
 
 	// Run txs of block.
+	deliverStartTime := time.Now().UnixNano()
+	reqReses := make([]*abcicli.ReqRes, 0, len(block.Txs))
 	for _, tx := range block.Txs {
-		proxyAppConn.DeliverTxAsync(abci.RequestDeliverTx{Tx: tx}, nil)
+		reqRes := proxyAppConn.DeliverTxAsync(abci.RequestDeliverTx{Tx: tx}, nil)
+		reqReses = append(reqReses, reqRes)
 		if err := proxyAppConn.Error(); err != nil {
 			return nil, err
 		}
 	}
+	deliverTimeMs := float64(time.Now().UnixNano()-deliverStartTime) / 1000000
+	logger.Info("execBlockOnProxyApp", "deliverTimeMs", deliverTimeMs)
+
+	waitStartTime := time.Now().UnixNano()
+	for i, reqRes := range reqReses {
+		reqRes.Wait()
+
+		if r, ok := reqRes.Response.Value.(*abci.Response_DeliverTx); ok {
+			abciResponses.DeliverTxs[i] = r.DeliverTx
+		}
+	}
+	waitTimeMs := float64(time.Now().UnixNano()-waitStartTime) / 1000000
+	logger.Info("execBlockOnProxyApp", "waitTimeMs", waitTimeMs)
 
 	// End block.
 	abciResponses.EndBlock, err = proxyAppConn.EndBlockSync(abci.RequestEndBlock{Height: block.Height})

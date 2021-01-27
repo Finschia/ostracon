@@ -270,8 +270,12 @@ func (app *testApp) EndBlock(req abci.RequestEndBlock) abci.ResponseEndBlock {
 	return abci.ResponseEndBlock{ValidatorUpdates: app.ValidatorUpdates}
 }
 
-func (app *testApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
+func (app *testApp) DeliverTxSync(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
 	return abci.ResponseDeliverTx{Events: []abci.Event{}}
+}
+
+func (app *testApp) DeliverTxASync(req abci.RequestDeliverTx, callback abci.DeliverTxCallback) {
+	callback(abci.ResponseDeliverTx{Events: []abci.Event{}})
 }
 
 func (app *testApp) CheckTxSync(req abci.RequestCheckTx) abci.ResponseCheckTx {

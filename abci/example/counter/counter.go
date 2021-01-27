@@ -42,7 +42,15 @@ func (app *Application) SetOption(req types.RequestSetOption) types.ResponseSetO
 	return types.ResponseSetOption{}
 }
 
-func (app *Application) DeliverTx(req types.RequestDeliverTx) types.ResponseDeliverTx {
+func (app *Application) DeliverTxSync(req types.RequestDeliverTx) types.ResponseDeliverTx {
+	return app.deliverTx(req)
+}
+
+func (app *Application) DeliverTxAsync(req types.RequestDeliverTx, callback types.DeliverTxCallback) {
+	callback(app.deliverTx(req))
+}
+
+func (app *Application) deliverTx(req types.RequestDeliverTx) types.ResponseDeliverTx {
 	if app.serial {
 		if len(req.Tx) > 8 {
 			return types.ResponseDeliverTx{
