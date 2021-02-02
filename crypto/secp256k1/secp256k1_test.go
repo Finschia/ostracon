@@ -9,7 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
+	cryptoamino "github.com/tendermint/tendermint/crypto/encoding/amino"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
 	underlyingSecp256k1 "github.com/btcsuite/btcd/btcec"
@@ -114,4 +116,15 @@ func TestGenPrivKeySecp256k1(t *testing.T) {
 			require.True(t, fe.Sign() > 0)
 		})
 	}
+}
+
+func TestMarshal(t *testing.T) {
+	cdc := amino.NewCodec()
+	cryptoamino.RegisterAmino(cdc)
+
+	privKey := secp256k1.GenPrivKey()
+	pubKey := privKey.PubKey()
+
+	require.Equal(t, cdc.MustMarshalBinaryBare(privKey), privKey.Bytes())
+	require.Equal(t, cdc.MustMarshalBinaryBare(pubKey), pubKey.Bytes())
 }

@@ -69,6 +69,7 @@ func (pk PubKeyMultisigThreshold) VerifyBytes(msg []byte, marshalledSig []byte) 
 
 // Bytes returns the amino encoded version of the PubKeyMultisigThreshold
 func (pk PubKeyMultisigThreshold) Bytes() []byte {
+	// TODO custom marshaller
 	return cdc.MustMarshalBinaryBare(pk)
 }
 

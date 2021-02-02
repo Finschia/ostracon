@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
+	amino "github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 
@@ -18,6 +19,8 @@ const PubKeySr25519Size = 32
 // PubKeySr25519 implements crypto.PubKey for the Sr25519 signature scheme.
 type PubKeySr25519 [PubKeySr25519Size]byte
 
+var _, pubKeyPrefix = amino.NameToDisfix(PubKeyAminoName)
+
 // Address is the SHA256-20 of the raw pubkey bytes.
 func (pubKey PubKeySr25519) Address() crypto.Address {
 	return crypto.Address(tmhash.SumTruncated(pubKey[:]))
@@ -25,11 +28,17 @@ func (pubKey PubKeySr25519) Address() crypto.Address {
 
 // Bytes marshals the PubKey using amino encoding.
 func (pubKey PubKeySr25519) Bytes() []byte {
-	bz, err := cdc.MarshalBinaryBare(pubKey)
-	if err != nil {
-		panic(err)
+	// bz, err := cdc.MarshalBinaryBare(pubKey)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// return bz
+	buf := bytes.NewBuffer(nil)
+	buf.Write(pubKeyPrefix[:])
+	if err := amino.EncodeByteSlice(buf, pubKey[:]); err != nil {
+		panic(err.Error())
 	}
-	return bz
+	return buf.Bytes()
 }
 
 func (pubKey PubKeySr25519) VerifyBytes(msg []byte, sig []byte) bool {

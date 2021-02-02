@@ -6,7 +6,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
+	cryptoamino "github.com/tendermint/tendermint/crypto/encoding/amino"
 	"github.com/tendermint/tendermint/crypto/sr25519"
 )
 
@@ -28,4 +30,15 @@ func TestSignAndValidateSr25519(t *testing.T) {
 	sig[7] ^= byte(0x01)
 
 	assert.False(t, pubKey.VerifyBytes(msg, sig))
+}
+
+func TestMarshal(t *testing.T) {
+	cdc := amino.NewCodec()
+	cryptoamino.RegisterAmino(cdc)
+
+	privKey := sr25519.GenPrivKey()
+	pubKey := privKey.PubKey()
+
+	require.Equal(t, cdc.MustMarshalBinaryBare(privKey), privKey.Bytes())
+	require.Equal(t, cdc.MustMarshalBinaryBare(pubKey), pubKey.Bytes())
 }

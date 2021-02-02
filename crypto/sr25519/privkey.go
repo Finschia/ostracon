@@ -1,10 +1,12 @@
 package sr25519
 
 import (
+	"bytes"
 	"crypto/subtle"
 	"fmt"
 	"io"
 
+	amino "github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
 
 	schnorrkel "github.com/ChainSafe/go-schnorrkel"
@@ -16,9 +18,17 @@ const PrivKeySr25519Size = 32
 // PrivKeySr25519 implements crypto.PrivKey.
 type PrivKeySr25519 [PrivKeySr25519Size]byte
 
+var _, privKeyPrefix = amino.NameToDisfix(PrivKeyAminoName)
+
 // Bytes marshals the privkey using amino encoding.
 func (privKey PrivKeySr25519) Bytes() []byte {
-	return cdc.MustMarshalBinaryBare(privKey)
+	// return cdc.MustMarshalBinaryBare(privKey)
+	buf := bytes.NewBuffer(nil)
+	buf.Write(privKeyPrefix[:])
+	if err := amino.EncodeByteSlice(buf, privKey[:]); err != nil {
+		panic(err.Error())
+	}
+	return buf.Bytes()
 }
 
 // Sign produces a signature on the provided message.
