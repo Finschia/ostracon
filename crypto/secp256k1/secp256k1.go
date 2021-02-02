@@ -34,7 +34,7 @@ func init() {
 		PrivKeyAminoName, nil)
 }
 
-var _, pubKeyPrefix = amino.NameToDisfix(PubKeyAminoName)
+var _, PubKeyPrefix = amino.NameToDisfix(PubKeyAminoName)
 var _, privKeyPrefix = amino.NameToDisfix(PrivKeyAminoName)
 
 //-------------------------------------
@@ -46,7 +46,6 @@ type PrivKeySecp256k1 [32]byte
 
 // Bytes marshalls the private key using amino encoding.
 func (privKey PrivKeySecp256k1) Bytes() []byte {
-	// return cdc.MustMarshalBinaryBare(privKey)
 	buf := bytes.NewBuffer(nil)
 	buf.Write(privKeyPrefix[:])
 	if err := amino.EncodeByteSlice(buf, privKey[:]); err != nil {
@@ -160,13 +159,8 @@ func (pubKey PubKeySecp256k1) Address() crypto.Address {
 
 // Bytes returns the pubkey marshalled with amino encoding.
 func (pubKey PubKeySecp256k1) Bytes() []byte {
-	// bz, err := cdc.MarshalBinaryBare(pubKey)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// return bz
 	buf := bytes.NewBuffer(nil)
-	buf.Write(pubKeyPrefix[:])
+	buf.Write(PubKeyPrefix[:])
 	if err := amino.EncodeByteSlice(buf, pubKey[:]); err != nil {
 		panic(err.Error())
 	}

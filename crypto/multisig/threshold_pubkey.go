@@ -1,6 +1,7 @@
 package multisig
 
 import (
+	amino "github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
 )
 
@@ -11,6 +12,8 @@ type PubKeyMultisigThreshold struct {
 }
 
 var _ crypto.PubKey = PubKeyMultisigThreshold{}
+
+var _, PubKeyPrefix = amino.NameToDisfix(PubKeyMultisigThresholdAminoRoute)
 
 // NewPubKeyMultisigThreshold returns a new PubKeyMultisigThreshold.
 // Panics if len(pubkeys) < k or 0 >= k.

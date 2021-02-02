@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"io"
 
+	amino "github.com/tendermint/go-amino"
 	"golang.org/x/crypto/ed25519"
 
-	amino "github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 )
@@ -37,7 +37,7 @@ func init() {
 		PrivKeyAminoName, nil)
 }
 
-var _, pubKeyPrefix = amino.NameToDisfix(PubKeyAminoName)
+var _, PubKeyPrefix = amino.NameToDisfix(PubKeyAminoName)
 var _, privKeyPrefix = amino.NameToDisfix(PrivKeyAminoName)
 
 // PrivKeyEd25519 implements crypto.PrivKey.
@@ -45,7 +45,6 @@ type PrivKeyEd25519 [64]byte
 
 // Bytes marshals the privkey using amino encoding.
 func (privKey PrivKeyEd25519) Bytes() []byte {
-	// return cdc.MustMarshalBinaryBare(privKey)
 	buf := bytes.NewBuffer(nil)
 	buf.Write(privKeyPrefix[:])
 	if err := amino.EncodeByteSlice(buf, privKey[:]); err != nil {
@@ -150,13 +149,8 @@ func (pubKey PubKeyEd25519) Address() crypto.Address {
 
 // Bytes marshals the PubKey using amino encoding.
 func (pubKey PubKeyEd25519) Bytes() []byte {
-	// bz, err := cdc.MarshalBinaryBare(pubKey)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// return bz
 	buf := bytes.NewBuffer(nil)
-	buf.Write(pubKeyPrefix[:])
+	buf.Write(PubKeyPrefix[:])
 	if err := amino.EncodeByteSlice(buf, pubKey[:]); err != nil {
 		panic(err.Error())
 	}

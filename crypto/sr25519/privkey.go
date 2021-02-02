@@ -22,7 +22,6 @@ var _, privKeyPrefix = amino.NameToDisfix(PrivKeyAminoName)
 
 // Bytes marshals the privkey using amino encoding.
 func (privKey PrivKeySr25519) Bytes() []byte {
-	// return cdc.MustMarshalBinaryBare(privKey)
 	buf := bytes.NewBuffer(nil)
 	buf.Write(privKeyPrefix[:])
 	if err := amino.EncodeByteSlice(buf, privKey[:]); err != nil {
