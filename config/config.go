@@ -342,6 +342,30 @@ type RPCConfig struct {
 	// 1024 - 40 - 10 - 50 = 924 = ~900
 	MaxOpenConnections int `mapstructure:"max_open_connections"`
 
+	// mirrors http.Server#ReadTimeout
+	// ReadTimeout is the maximum duration for reading the entire
+	// request, including the body.
+	//
+	// Because ReadTimeout does not let Handlers make per-request
+	// decisions on each request body's acceptable deadline or
+	// upload rate, most users will prefer to use
+	// ReadHeaderTimeout. It is valid to use them both.
+	ReadTimeout time.Duration `mapstructure:"read_timeout"`
+
+	// mirrors http.Server#WriteTimeout
+	// WriteTimeout is the maximum duration before timing out
+	// writes of the response. It is reset whenever a new
+	// request's header is read. Like ReadTimeout, it does not
+	// let Handlers make decisions on a per-request basis.
+	WriteTimeout time.Duration `mapstructure:"write_timeout"`
+
+	// mirrors http.Server#IdleTimeout
+	// IdleTimeout is the maximum amount of time to wait for the
+	// next request when keep-alives are enabled. If IdleTimeout
+	// is zero, the value of ReadTimeout is used. If both are
+	// zero, there is no timeout.
+	IdleTimeout time.Duration `mapstructure:"idle_timeout"`
+
 	// Maximum number of unique clientIDs that can /subscribe
 	// If you're using /broadcast_tx_commit, set to the estimated maximum number
 	// of broadcast_tx_commit calls per block.
@@ -353,7 +377,7 @@ type RPCConfig struct {
 	MaxSubscriptionsPerClient int `mapstructure:"max_subscriptions_per_client"`
 
 	// How long to wait for a tx to be committed during /broadcast_tx_commit
-	// WARNING: Using a value larger than 10s will result in increasing the
+	// WARNING: Using a value larger than 'WriteTimeout' will result in increasing the
 	// global HTTP write timeout, which applies to all connections and endpoints.
 	// See https://github.com/tendermint/tendermint/issues/3435
 	TimeoutBroadcastTxCommit time.Duration `mapstructure:"timeout_broadcast_tx_commit"`
@@ -398,6 +422,9 @@ func DefaultRPCConfig() *RPCConfig {
 
 		Unsafe:             false,
 		MaxOpenConnections: 900,
+		ReadTimeout:        10 * time.Second,
+		WriteTimeout:       10 * time.Second,
+		IdleTimeout:        60 * time.Second,
 
 		MaxSubscriptionClients:    100,
 		MaxSubscriptionsPerClient: 5,
@@ -428,6 +455,15 @@ func (cfg *RPCConfig) ValidateBasic() error {
 	}
 	if cfg.MaxOpenConnections < 0 {
 		return errors.New("max_open_connections can't be negative")
+	}
+	if cfg.ReadTimeout < 0 {
+		return errors.New("read_timeout can't be negative")
+	}
+	if cfg.WriteTimeout < 0 {
+		return errors.New("write_timeout can't be negative")
+	}
+	if cfg.IdleTimeout < 0 {
+		return errors.New("idle_timeout can't be negative")
 	}
 	if cfg.MaxSubscriptionClients < 0 {
 		return errors.New("max_subscription_clients can't be negative")
