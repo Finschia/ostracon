@@ -33,6 +33,10 @@ type CListMempool struct {
 	height   int64 // the last block Update()'d to
 	txsBytes int64 // total size of mempool, in bytes
 
+	reserved      int   // the number of checking tx and it should be considered when checking mempool full
+	reservedBytes int64 // size of checking tx and it should be considered when checking mempool full
+	reservedMtx   sync.Mutex
+
 	// notify listeners (ie. consensus) when txs are available
 	notifiedTxsAvailable bool
 	txsAvailable         chan struct{} // fires once for each height, when the mempool is not empty
@@ -43,7 +47,6 @@ type CListMempool struct {
 	// CheckTx or ReapMaxBytesMaxGas(ReapMaxTxs) methods.
 	updateMtx sync.RWMutex
 	preCheck  PreCheckFunc
-	postCheck PostCheckFunc
 
 	wal          *auto.AutoFile // a log of mempool txs
 	txs          *clist.CList   // concurrent linked-list of good txs
@@ -116,12 +119,6 @@ func (mem *CListMempool) SetLogger(l log.Logger) {
 // false. This is ran before CheckTx.
 func WithPreCheck(f PreCheckFunc) CListMempoolOption {
 	return func(mem *CListMempool) { mem.preCheck = f }
-}
-
-// WithPostCheck sets a filter for the mempool to reject a tx if f(tx) returns
-// false. This is ran after CheckTx.
-func WithPostCheck(f PostCheckFunc) CListMempoolOption {
-	return func(mem *CListMempool) { mem.postCheck = f }
 }
 
 // WithMetrics sets the metrics.
@@ -283,9 +280,19 @@ func (mem *CListMempool) CheckTx(tx types.Tx, cb func(*abci.Response), txInfo Tx
 
 	// NOTE: proxyAppConn may error if tx buffer is full
 	if err := mem.proxyAppConn.Error(); err != nil {
+		// remove from cache
+		mem.cache.Remove(tx)
 		return err
 	}
 
+	// reserve mempool that should be called just before calling `mem.proxyAppConn.CheckTxAsync()`
+	if err := mem.reserve(int64(txSize)); err != nil {
+		// remove from cache
+		mem.cache.Remove(tx)
+		return err
+	}
+
+	// CONTRACT: `app.CheckTxAsync()` should check whether `GasWanted` is valid (0 <= GasWanted <= block.masGas)
 	reqRes := mem.proxyAppConn.CheckTxAsync(abci.RequestCheckTx{Tx: tx})
 	reqRes.SetCallback(mem.reqResCb(tx, txInfo.SenderID, txInfo.SenderP2PID, cb))
 
@@ -385,6 +392,35 @@ func (mem *CListMempool) isFull(txSize int) error {
 	return nil
 }
 
+func (mem *CListMempool) reserve(txSize int64) error {
+	mem.reservedMtx.Lock()
+	defer mem.reservedMtx.Unlock()
+
+	var (
+		memSize  = mem.Size()
+		txsBytes = mem.TxsBytes()
+	)
+
+	if memSize+mem.reserved >= mem.config.Size || txSize+mem.reservedBytes+txsBytes > mem.config.MaxTxsBytes {
+		return ErrMempoolIsFull{
+			memSize + mem.reserved, mem.config.Size,
+			txsBytes + mem.reservedBytes, mem.config.MaxTxsBytes,
+		}
+	}
+
+	mem.reserved++
+	mem.reservedBytes += txSize
+	return nil
+}
+
+func (mem *CListMempool) releaseReserve(txSize int64) {
+	mem.reservedMtx.Lock()
+	defer mem.reservedMtx.Unlock()
+
+	mem.reserved--
+	mem.reservedBytes -= txSize
+}
+
 // callback, which is called after the app checked the tx for the first time.
 //
 // The case where the app checks the tx for the second and subsequent times is
@@ -397,20 +433,7 @@ func (mem *CListMempool) resCbFirstTime(
 ) {
 	switch r := res.Value.(type) {
 	case *abci.Response_CheckTx:
-		var postCheckErr error
-		if mem.postCheck != nil {
-			postCheckErr = mem.postCheck(tx, r.CheckTx)
-		}
-		if (r.CheckTx.Code == abci.CodeTypeOK) && postCheckErr == nil {
-			// Check mempool isn't full again to reduce the chance of exceeding the
-			// limits.
-			if err := mem.isFull(len(tx)); err != nil {
-				// remove from cache (mempool might have a space later)
-				mem.cache.Remove(tx)
-				mem.logger.Error(err.Error())
-				return
-			}
-
+		if r.CheckTx.Code == abci.CodeTypeOK {
 			memTx := &mempoolTx{
 				height:    mem.height,
 				gasWanted: r.CheckTx.GasWanted,
@@ -428,11 +451,14 @@ func (mem *CListMempool) resCbFirstTime(
 		} else {
 			// ignore bad transaction
 			mem.logger.Info("Rejected bad transaction",
-				"tx", txID(tx), "peerID", peerP2PID, "res", r, "err", postCheckErr)
+				"tx", txID(tx), "peerID", peerP2PID, "res", r)
 			mem.metrics.FailedTxs.Add(1)
 			// remove from cache (it might be good later)
 			mem.cache.Remove(tx)
 		}
+
+		// release `reserve` regardless it's OK or not (it might be good later)
+		mem.releaseReserve(int64(len(tx)))
 	default:
 		// ignore other messages
 	}
@@ -453,15 +479,11 @@ func (mem *CListMempool) resCbRecheck(req *abci.Request, res *abci.Response) {
 				memTx.tx,
 				tx))
 		}
-		var postCheckErr error
-		if mem.postCheck != nil {
-			postCheckErr = mem.postCheck(tx, r.CheckTx)
-		}
-		if (r.CheckTx.Code == abci.CodeTypeOK) && postCheckErr == nil {
+		if r.CheckTx.Code == abci.CodeTypeOK {
 			// Good, nothing to do.
 		} else {
 			// Tx became invalidated due to newly committed block.
-			mem.logger.Info("Tx is no longer valid", "tx", txID(tx), "res", r, "err", postCheckErr)
+			mem.logger.Info("Tx is no longer valid", "tx", txID(tx), "res", r)
 			// NOTE: we remove tx from the cache because it might be good later
 			mem.removeTx(tx, mem.recheckCursor, true)
 		}
@@ -555,13 +577,12 @@ func (mem *CListMempool) ReapMaxTxs(max int) types.Txs {
 	return txs
 }
 
-// Lock() must be help by the caller during execution.
+// Lock() must be held by the caller during execution.
 func (mem *CListMempool) Update(
 	height int64,
 	txs types.Txs,
 	deliverTxResponses []*abci.ResponseDeliverTx,
 	preCheck PreCheckFunc,
-	postCheck PostCheckFunc,
 ) error {
 	// Set height
 	mem.height = height
@@ -569,9 +590,6 @@ func (mem *CListMempool) Update(
 
 	if preCheck != nil {
 		mem.preCheck = preCheck
-	}
-	if postCheck != nil {
-		mem.postCheck = postCheck
 	}
 
 	for i, tx := range txs {
