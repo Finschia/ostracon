@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	amino "github.com/tendermint/go-amino"
+
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"

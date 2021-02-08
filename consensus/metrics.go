@@ -56,6 +56,8 @@ type Metrics struct {
 	BlockSizeBytes metrics.Gauge
 	// Total number of transactions.
 	TotalTxs metrics.Gauge
+	// Total byte-size of blocks.
+	TotalBlockSizeBytes metrics.Counter
 	// The latest block height.
 	CommittedHeight metrics.Gauge
 	// Whether or not a node is fast syncing. 1 if yes, 0 if no.
@@ -197,6 +199,12 @@ func PrometheusMetrics(namespace string, labelsAndValues ...string) *Metrics {
 			Name:      "total_txs",
 			Help:      "Total number of transactions.",
 		}, labels).With(labelsAndValues...),
+		TotalBlockSizeBytes: prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "total_block_size_bytes",
+			Help:      "Total byte-size of blocks since process startup.",
+		}, labels).With(labelsAndValues...),
 		CommittedHeight: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
@@ -323,12 +331,13 @@ func NopMetrics() *Metrics {
 
 		BlockIntervalSeconds: discard.NewGauge(),
 
-		NumTxs:          discard.NewGauge(),
-		BlockSizeBytes:  discard.NewGauge(),
-		TotalTxs:        discard.NewGauge(),
-		CommittedHeight: discard.NewGauge(),
-		FastSyncing:     discard.NewGauge(),
-		BlockParts:      discard.NewCounter(),
+		NumTxs:              discard.NewGauge(),
+		BlockSizeBytes:      discard.NewGauge(),
+		TotalTxs:            discard.NewGauge(),
+		TotalBlockSizeBytes: discard.NewCounter(),
+		CommittedHeight:     discard.NewGauge(),
+		FastSyncing:         discard.NewGauge(),
+		BlockParts:          discard.NewCounter(),
 
 		MissingProposal: discard.NewGauge(),
 		RoundFailures:   discard.NewHistogram(),
