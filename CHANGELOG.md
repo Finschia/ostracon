@@ -1,7 +1,7 @@
 # Changelog
 
 ## v0.3
-* The voter to be elected has been changed so that it can be determined in the n-1 block 
+* The voter to be elected has been changed so that it can be determined in the n-1 block
 from the one determined by the n-2 block.
 * A BLS signature library was added. The ability to use the BLS signature library will be added in the next version.
 * When distributing rewards in Cosmos-SDK, some ABCIs have been modified to distribute the voting power of elected voters.
@@ -14,13 +14,11 @@ from the one determined by the n-2 block.
 
 - P2P Protocol
   - [abci] [\#100](https://github.com/line/tendermint/pull/100) Add `voters_hash` field, which is needed for verification of a block header
-  - [abci] [\#102](https://github.com/line/tendermint/pull/102) Add voting power in `VoterInfo` of abci 
+  - [abci] [\#102](https://github.com/line/tendermint/pull/102) Add voting power in `VoterInfo` of abci
 
 ### FEATURES:
 - [BLS] [\#81](https://github.com/line/tendermint/issues/81) Modify to generate at the same time as Ed25519 key generation
 - [lite] [\#100](https://github.com/line/tendermint/pull/100) Lite calls `Genesis()` rpc when it starts up
-
-
 
 ## v0.2
 * Changed from the consensus way which the entire validator agrees to a part of the validators is elected as a voter to consensus.
