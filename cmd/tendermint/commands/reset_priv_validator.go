@@ -24,6 +24,10 @@ var keepAddrBook bool
 
 func init() {
 	ResetAllCmd.Flags().BoolVar(&keepAddrBook, "keep-addr-book", false, "keep the address book intact")
+	ResetAllCmd.Flags().String("priv_key_type", config.PrivKeyType,
+		"Specify validator's private key type (ed25519 | composite)")
+	ResetPrivValidatorCmd.Flags().String("priv_key_type", config.PrivKeyType,
+		"Specify validator's private key type (ed25519 | composite)")
 }
 
 // ResetPrivValidatorCmd resets the private validator files.
