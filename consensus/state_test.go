@@ -2138,6 +2138,11 @@ func proposeBlock(t *testing.T, cs *State, round int32, vssMap map[string]*valid
 	if err := cs.SetProposalAndBlock(prop, propBlock, propBlockParts, "some peer"); err != nil {
 		t.Fatal(err)
 	}
+
+	assert.Equal(t,
+		cs.Validators.SelectProposer(cs.state.LastProofHash, cs.Height, round).Address,
+		propBlock.ProposerAddress)
+
 	return types.BlockID{Hash: propBlockHash, PartSetHeader: propBlockParts.Header()}
 }
 
