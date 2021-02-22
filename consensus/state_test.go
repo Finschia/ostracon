@@ -1918,6 +1918,11 @@ func proposeBlock(t *testing.T, cs *State, round int, vssMap map[crypto.PubKey]*
 	if err := cs.SetProposalAndBlock(proposal, newBlock, blockParts, "some peer"); err != nil {
 		t.Fatal(err)
 	}
+
+	assert.Equal(t,
+		cs.Validators.SelectProposer(cs.state.LastProofHash, cs.Height, round).Address,
+		newBlock.ProposerAddress)
+
 	return types.BlockID{Hash: newBlock.Hash(), PartsHeader: blockParts.Header()}
 }
 

@@ -1096,14 +1096,14 @@ func (cs *State) createProposalBlock(round int) (block *types.Block, blockParts 
 	if cs.privValidator == nil {
 		panic("entered createProposalBlock with privValidator being nil")
 	}
-	pubKey, err := cs.privValidator.GetPubKey()
+	_, err := cs.privValidator.GetPubKey()
 	if err != nil {
 		// If this node is a validator & proposer in the current round, it will
 		// miss the opportunity to create a block.
 		cs.Logger.Error("Error on retrival of pubkey", "err", err)
 		return
 	}
-	proposerAddr := pubKey.Address()
+	proposerAddr := cs.Validators.SelectProposer(cs.state.LastProofHash, cs.Height, round).Address
 	message := cs.state.MakeHashMessage(round)
 
 	proof, err := cs.privValidator.GenerateVRFProof(message)
