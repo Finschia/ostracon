@@ -1252,7 +1252,7 @@ func (cs *State) createProposalBlock(round int32) (block *types.Block, blockPart
 		return
 	}
 
-	proposerAddr := cs.Validators.SelectProposer(cs.state.LastProofHash, cs.Height, round).Address
+	proposerAddr := cs.privValidatorPubKey.Address()
 
 	message := cs.state.MakeHashMessage(round)
 
