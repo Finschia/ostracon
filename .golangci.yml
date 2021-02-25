@@ -5,7 +5,7 @@ linters:
     - depguard
     - dogsled
     - dupl
-    - errcheck
+    # - errcheck
     # - funlen
     # - gochecknoglobals
     # - gochecknoinits
@@ -20,7 +20,7 @@ linters:
     - gosimple
     - govet
     - ineffassign
-    # - interfacer
+    - interfacer
     - lll
     - misspell
     # - maligned
@@ -38,17 +38,14 @@ linters:
     # - whitespace
     # - wsl
     # - gocognit
-    - nolintlint
+  disable:
+    - errcheck
 
 issues:
   exclude-rules:
-    - path: _test\.go
-      linters:
-        - gosec
     - linters:
         - lll
       source: "https://"
-  max-same-issues: 50
 
 linters-settings:
   dogsled:
@@ -59,3 +56,20 @@ linters-settings:
   #   check-shadowing: true
   golint:
     min-confidence: 0
+#   gocyclo:
+#     min-complexity: 10
+#   misspell:
+#     locale: US
+#   gocritic:
+#     enabled-tags:
+#       - performance
+#       - style
+#       - experimental
+#     disabled-checks:
+#       - wrapperFunc
+#       - commentFormatting # https://github.com/go-critic/go-critic/issues/755
+
+# options for analysis running
+run:
+  # timeout for analysis, e.g. 30s, 5m, default is 1m
+  timeout: 5m

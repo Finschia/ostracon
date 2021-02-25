@@ -15,9 +15,9 @@ ENV TMHOME /tendermint
 # could execute bash commands.
 RUN apk update && \
     apk upgrade && \
-    apk --no-cache add curl jq bash && \
-    addgroup tmuser && \
-    adduser -S -G tmuser tmuser -h "$TMHOME"
+    apk --no-cache add git make gcc libc-dev build-base curl jq bash && \
+    addgroup --g 503 tmuser && \
+    adduser -S -G tmuser --uid 503 tmuser -h "$TMHOME"
 
 # Run the container with tmuser by default. (UID=100, GID=1000)
 USER tmuser
@@ -31,6 +31,21 @@ STOPSIGNAL SIGTERM
 
 ARG BINARY=tendermint
 COPY $BINARY /usr/bin/tendermint
+
+# Create default configuration for docker run.
+RUN /usr/bin/tendermint init && \
+    sed -i \
+      -e 's/^proxy_app\s*=.*/proxy_app = "kvstore"/' \
+      -e 's/^moniker\s*=.*/moniker = "dockernode"/' \
+      -e 's/^addr_book_strict\s*=.*/addr_book_strict = false/' \
+      -e 's/^timeout_commit\s*=.*/timeout_commit = "500ms"/' \
+      -e 's/^index_all_tags\s*=.*/index_all_tags = true/' \
+      -e 's,^laddr = "tcp://127.0.0.1:26657",laddr = "tcp://0.0.0.0:26657",' \
+      -e 's/^prometheus\s*=.*/prometheus = true/' \
+      $TMHOME/config/config.toml && \
+    sed -i \
+      -e 's/^\s*"chain_id":.*/  "chain_id": "dockerchain",/' \
+      $TMHOME/config/genesis.json
 
 # You can overwrite these before the first run to influence
 # config.json and genesis.json. Additionally, you can override

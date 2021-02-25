@@ -1,9 +1,23 @@
 PACKAGES=$(shell go list ./...)
+SRCPATH=$(shell pwd)
 OUTPUT?=build/tendermint
 
 BUILD_TAGS?=tendermint
 VERSION := $(shell git describe --always)
-LD_FLAGS = -X github.com/tendermint/tendermint/version.TMCoreSemVer=$(VERSION)
+LIBSODIUM_TARGET=
+PREPARE_LIBSODIUM_TARGET=
+ifeq ($(LIBSODIUM), 1)
+  BUILD_TAGS='libsodium tendermint'
+  LIBSODIUM_TARGET=libsodium
+  ifneq ($(OS), Windows_NT)
+    ifeq ($(shell uname -s), Linux)
+      PREPARE_LIBSODIUM_TARGET=prepare-libsodium-linux
+    endif
+  endif
+endif
+LIBSODIM_BUILD_TAGS='libsodium tendermint'
+LD_FLAGS = -X github.com/tendermint/tendermint/version.GitCommit=`git rev-parse --short=8 HEAD` -s -w
+# LD_FLAGS = -X github.com/tendermint/tendermint/version.TMCoreSemVer=$(VERSION)
 BUILD_FLAGS = -mod=readonly -ldflags "$(LD_FLAGS)"
 HTTPS_GIT := https://github.com/tendermint/tendermint.git
 DOCKER_BUF := docker run -v $(shell pwd):/workspace --workdir /workspace bufbuild/buf
@@ -46,7 +60,7 @@ endif
 # allow users to pass additional flags via the conventional LDFLAGS variable
 LD_FLAGS += $(LDFLAGS)
 
-all: check build test install
+all: check $(LIBSODIUM_TARGET) build test install
 .PHONY: all
 
 # The below include contains the tools.
@@ -57,7 +71,7 @@ include tests.mk
 ###                                Build Tendermint                        ###
 ###############################################################################
 
-build:
+build: $(LIBSODIUM_TARGET)
 	CGO_ENABLED=$(CGO_ENABLED) go build $(BUILD_FLAGS) -tags '$(BUILD_TAGS)' -o $(OUTPUT) ./cmd/tendermint/
 .PHONY: build
 
@@ -114,6 +128,22 @@ build_abci:
 install_abci:
 	@go install -mod=readonly ./abci/cmd/...
 .PHONY: install_abci
+
+###############################################################################
+###                              libsodium                                  ###
+###############################################################################
+
+prepare-libsodium-linux:
+	apt-get update && apt-get -y install libtool libboost-all-dev autoconf build-essential
+.PHONY: prepare_libsodium
+
+libsodium:
+	cd $(SRCPATH)/crypto/vrf/internal/vrf/libsodium && \
+    		./autogen.sh && \
+    		./configure --disable-shared --prefix="$(SRCPATH)/crypto/vrf/internal/vrf/" &&	\
+    		$(MAKE) && \
+    		$(MAKE) install
+.PHONY: libsodium
 
 ###############################################################################
 ###                              Distribution                               ###
@@ -179,7 +209,10 @@ format:
 
 lint:
 	@echo "--> Running linter"
-	@golangci-lint run
+	sh -c "$(CURDIR)/scripts/current_branch_lint.sh"
+	find . -name '*.go' -type f -not -path "*.git*" | xargs gofmt -d -s
+	go mod verify
+#	@golangci-lint run
 .PHONY: lint
 
 DESTINATION = ./index.html.md
@@ -220,9 +253,25 @@ build-docker: build-linux
 ###                       Local testnet using docker                        ###
 ###############################################################################
 
+DOCKER_HOME = /go/src/github.com/tendermint/tendermint
+DOCKER_CMD = docker run --rm \
+                        -v `pwd`:$(DOCKER_HOME) \
+                        -w $(DOCKER_HOME)
+DOCKER_IMG = golang:1.14.6-alpine3.12
+BUILD_CMD = apk add --update --no-cache git make gcc libc-dev build-base curl jq file gmp-dev clang \
+	&& cd $(DOCKER_HOME) \
+	&& make build
+
+# Login docker-container for confirmation building linux binary
+build-shell:
+	$(DOCKER_CMD) -it --entrypoint '' ${DOCKER_IMG} /bin/sh
+.PHONY: build-shell
+
 # Build linux binary on other platforms
 build-linux: tools
-	GOOS=linux GOARCH=amd64 $(MAKE) build
+	# Build Linux binary
+	$(DOCKER_CMD) ${DOCKER_IMG} /bin/sh -c "$(BUILD_CMD)"
+#	GOOS=linux GOARCH=amd64 $(MAKE) build
 .PHONY: build-linux
 
 build-docker-localnode:
@@ -239,7 +288,7 @@ build_c-amazonlinux:
 
 # Run a 4-node testnet locally
 localnet-start: localnet-stop build-docker-localnode
-	@if ! [ -f build/node0/config/genesis.json ]; then docker run --rm -v $(CURDIR)/build:/tendermint:Z tendermint/localnode testnet --config /etc/tendermint/config-template.toml --o . --starting-ip-address 192.167.10.2; fi
+	@if ! [ -f build/node0/config/genesis.json ]; then docker run --rm -v $(CURDIR)/build:/tendermint:Z tendermint/localnode testnet --config /etc/tendermint/config-template.toml --v 4 --o . --populate-persistent-peers --starting-ip-address 192.167.10.2; fi
 	docker-compose up
 .PHONY: localnet-start
 
@@ -262,6 +311,6 @@ endif
 # prerequisits: build-contract-tests-hooks build-linux
 # the two build commands were not added to let this command run from generic containers or machines.
 # The binaries should be built beforehand
-contract-tests:
+contract-tests: build-docker-localnode
 	dredd
 .PHONY: contract-tests

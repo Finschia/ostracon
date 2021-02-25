@@ -62,7 +62,12 @@ check_tools:
 certstrap: $(CERTSTRAP)
 $(CERTSTRAP):
 	@echo "Get Certstrap"
+    # TODO remove this
+	@echo "GOPATH=$(GOPATH)"
+	@ls $(GOPATH)
+	@go version
 	@go get github.com/square/certstrap@v1.2.0
+	@ls $(GOPATH)/bin/
 .PHONY: certstrap
 
 protobuf: $(PROTOBUF)
