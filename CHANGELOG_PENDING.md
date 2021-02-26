@@ -27,4 +27,3 @@
 - [encoding/decoding] [\#159](https://github.com/line/tendermint/pull/159) Extend the maximum number of characters that can be decoded to 200 characters
 
 ### BUG FIXES:
-
