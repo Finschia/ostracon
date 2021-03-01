@@ -800,6 +800,28 @@ func randConsensusNet(nValidators int, testName string, tickerFunc func() Timeou
 	}
 }
 
+// nPeers = nValidators(ed25519 or composite) + nNotValidator
+// (0 <= numOfComposite <= nValidators)
+func consensusNetWithPeers(
+	nValidators,
+	nPeers int,
+	testName string,
+	tickerFunc func() TimeoutTicker,
+	appFunc func(string) abci.Application,
+	nValsWithComposite int,
+) ([]*State, *types.GenesisDoc, *cfg.Config, cleanupFunc) {
+	genDoc, privVals := genesisDoc(nValidators, testMinPower, types.DefaultVoterParams(), nValsWithComposite)
+
+	css, peer0Config, configRootDirs := createPeersAndValidators(nValidators, nPeers, testName,
+		genDoc, privVals, tickerFunc, appFunc)
+
+	return css, genDoc, peer0Config, func() {
+		for _, dir := range configRootDirs {
+			os.RemoveAll(dir)
+		}
+	}
+}
+
 // nPeers = nValidators + nNotValidator
 func randConsensusNetWithPeers(
 	nValidators,
@@ -809,6 +831,19 @@ func randConsensusNetWithPeers(
 	appFunc func(string) abci.Application,
 ) ([]*State, *types.GenesisDoc, *cfg.Config, cleanupFunc) {
 	genDoc, privVals := randGenesisDoc(nValidators, false, testMinPower, types.DefaultVoterParams())
+	css, peer0Config, configRootDirs := createPeersAndValidators(nValidators, nPeers, testName,
+		genDoc, privVals, tickerFunc, appFunc)
+
+	return css, genDoc, peer0Config, func() {
+		for _, dir := range configRootDirs {
+			os.RemoveAll(dir)
+		}
+	}
+}
+
+func createPeersAndValidators(nValidators, nPeers int, testName string,
+	genDoc *types.GenesisDoc, privVals []types.PrivValidator, tickerFunc func() TimeoutTicker,
+	appFunc func(string) abci.Application) ([]*State, *cfg.Config, []string) {
 	css := make([]*State, nPeers)
 	logger := consensusLogger()
 	var peer0Config *cfg.Config
@@ -852,11 +887,8 @@ func randConsensusNetWithPeers(
 		css[i].SetTimeoutTicker(tickerFunc())
 		css[i].SetLogger(logger.With("validator", i, "module", "consensus"))
 	}
-	return css, genDoc, peer0Config, func() {
-		for _, dir := range configRootDirs {
-			os.RemoveAll(dir)
-		}
-	}
+
+	return css, peer0Config, configRootDirs
 }
 
 func getSwitchIndex(switches []*p2p.Switch, peer p2p.Peer) int {
@@ -870,6 +902,41 @@ func getSwitchIndex(switches []*p2p.Switch, peer p2p.Peer) int {
 
 //-------------------------------------------------------------------------------
 // genesis
+func genesisDoc(
+	numValidators int,
+	minPower int64,
+	voterParams *types.VoterParams,
+	nValsWithComposite int,
+) (*types.GenesisDoc, []types.PrivValidator) {
+	validators := make([]types.GenesisValidator, numValidators)
+	privValidators := make([]types.PrivValidator, numValidators)
+	var val *types.Validator
+	var privVal types.PrivValidator
+	for i := 0; i < nValsWithComposite; i++ {
+		val, privVal = createTestValidator(minPower, types.PrivKeyComposite)
+		validators[i] = types.GenesisValidator{
+			PubKey: val.PubKey,
+			Power:  val.StakingPower,
+		}
+		privValidators[i] = privVal
+	}
+	for i := nValsWithComposite; i < numValidators; i++ {
+		val, privVal = createTestValidator(minPower, types.PrivKeyEd25519)
+		validators[i] = types.GenesisValidator{
+			PubKey: val.PubKey,
+			Power:  val.StakingPower,
+		}
+		privValidators[i] = privVal
+	}
+	sort.Sort(types.PrivValidatorsByAddress(privValidators))
+
+	return &types.GenesisDoc{
+		GenesisTime: tmtime.Now(),
+		ChainID:     config.ChainID(),
+		Validators:  validators,
+		VoterParams: voterParams,
+	}, privValidators
+}
 
 func randGenesisDoc(
 	numValidators int,
@@ -969,4 +1036,19 @@ func newPersistentKVStore() abci.Application {
 
 func newPersistentKVStoreWithPath(dbDir string) abci.Application {
 	return kvstore.NewPersistentKVStoreApplication(dbDir)
+}
+
+//----------------------------------------
+// Validator
+func createTestValidator(minPower int64, keytype types.PrivKeyType) (*types.Validator, types.PrivValidator) {
+	privVal := types.NewMockPV(keytype)
+	stakingPower := minPower
+	stakingPower += 100
+
+	pubKey, err := privVal.GetPubKey()
+	if err != nil {
+		panic(fmt.Errorf("could not retrieve pubkey %w", err))
+	}
+	val := types.NewValidator(pubKey, stakingPower)
+	return val, privVal
 }

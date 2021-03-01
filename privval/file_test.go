@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"reflect"
 	"testing"
 	"time"
+
+	"github.com/tendermint/tendermint/crypto/composite"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,6 +23,23 @@ import (
 	"github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
 )
+
+func TestGenFilePV(t *testing.T) {
+	tempKeyFile, err := ioutil.TempFile("", "priv_validator_key_")
+	require.Nil(t, err)
+	tempStateFile, err := ioutil.TempFile("", "priv_validator_state_")
+	require.Nil(t, err)
+
+	privValEd25519, err := GenFilePV(tempKeyFile.Name(), tempStateFile.Name(), PrivKeyTypeEd25519)
+	require.EqualValues(t, reflect.TypeOf(ed25519.PubKeyEd25519{}), reflect.TypeOf(privValEd25519.Key.PubKey))
+
+	privValComposite, err := GenFilePV(tempKeyFile.Name(), tempStateFile.Name(), PrivKeyTypeComposite)
+	require.EqualValues(t, reflect.TypeOf(composite.PubKeyComposite{}), reflect.TypeOf(privValComposite.Key.PubKey))
+
+	privValUndefinedPrivKeyType, err := GenFilePV(tempKeyFile.Name(), tempStateFile.Name(), "")
+	require.NotNil(t, err)
+	require.Nil(t, privValUndefinedPrivKeyType)
+}
 
 func TestGenLoadValidator(t *testing.T) {
 	assert := assert.New(t)
