@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	abci "github.com/line/ostracon/abci/types"
 	cfg "github.com/line/ostracon/config"
@@ -305,7 +306,7 @@ func (mem *CListMempool) globalCb(req *abci.Request, res *abci.Response) {
 		return
 	}
 
-	mem.metrics.RecheckTimes.Add(1)
+	mem.metrics.RecheckCount.Add(1)
 	mem.resCbRecheck(req, res)
 
 	// update metrics
@@ -610,6 +611,7 @@ func (mem *CListMempool) Update(
 
 	// Either recheck non-committed txs to see if they became invalid
 	// or just notify there're some txs left.
+	recheckStartTime := time.Now().UnixNano()
 	if mem.Size() > 0 {
 		if mem.config.Recheck {
 			mem.logger.Info("Recheck txs", "numtxs", mem.Size(), "height", height)
@@ -621,6 +623,10 @@ func (mem *CListMempool) Update(
 			mem.notifyTxsAvailable()
 		}
 	}
+	recheckEndTime := time.Now().UnixNano()
+
+	recheckTimeMs := float64(recheckEndTime-recheckStartTime) / 1000000
+	mem.metrics.RecheckTime.Set(recheckTimeMs)
 
 	// Update metrics
 	mem.metrics.Size.Set(float64(mem.Size()))
