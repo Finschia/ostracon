@@ -1,23 +1,18 @@
-# Tendermint
+# Linemint
 
-![banner](docs/tendermint-core-image.jpg)
+![banner](docs/linemint-image.jpg)
 
 [Byzantine-Fault Tolerant](https://en.wikipedia.org/wiki/Byzantine_fault_tolerance)
 [State Machines](https://en.wikipedia.org/wiki/State_machine_replication).
 Or [Blockchain](<https://en.wikipedia.org/wiki/Blockchain_(database)>), for short.
 
-[![version](https://img.shields.io/github/tag/tendermint/tendermint.svg)](https://github.com/tendermint/tendermint/releases/latest)
-[![API Reference](https://camo.githubusercontent.com/915b7be44ada53c290eb157634330494ebe3e30a/68747470733a2f2f676f646f632e6f72672f6769746875622e636f6d2f676f6c616e672f6764646f3f7374617475732e737667)](https://pkg.go.dev/github.com/tendermint/tendermint)
 [![Go version](https://img.shields.io/badge/go-1.15-blue.svg)](https://github.com/moovweb/gvm)
-[![Discord chat](https://img.shields.io/discord/669268347736686612.svg)](https://discord.gg/AzefAFd)
-[![license](https://img.shields.io/github/license/tendermint/tendermint.svg)](https://github.com/tendermint/tendermint/blob/master/LICENSE)
-[![tendermint/tendermint](https://tokei.rs/b1/github/tendermint/tendermint?category=lines)](https://github.com/tendermint/tendermint)
-[![Sourcegraph](https://sourcegraph.com/github.com/tendermint/tendermint/-/badge.svg)](https://sourcegraph.com/github.com/tendermint/tendermint?badge)
 
 | Branch | Tests                                                                                                                                                                                                                                                  | Coverage                                                                                                                             | Linting                                                                    |
 | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
-| master | [![CircleCI](https://circleci.com/gh/tendermint/tendermint/tree/master.svg?style=shield)](https://circleci.com/gh/tendermint/tendermint/tree/master) </br> ![Tests](https://github.com/tendermint/tendermint/workflows/Tests/badge.svg?branch=master) | [![codecov](https://codecov.io/gh/tendermint/tendermint/branch/master/graph/badge.svg)](https://codecov.io/gh/tendermint/tendermint) | ![Lint](https://github.com/tendermint/tendermint/workflows/Lint/badge.svg) |
+| ebony  | [![CircleCI](https://circleci.com/gh/line/linemint/tree/ebony.svg?style=shield)](https://circleci.com/gh/line/linemint/tree/ebony) </br> ![Tests](https://github.com/tendermint/tendermint/workflows/Tests/badge.svg?branch=master) | [![codecov](https://codecov.io/gh/tendermint/tendermint/branch/master/graph/badge.svg)](https://codecov.io/gh/tendermint/tendermint) | ![Lint](https://github.com/line/linemint/workflows/Lint/badge.svg) |
 
+Linemint Core is derived from Tendermint Core.
 Tendermint Core is Byzantine Fault Tolerant (BFT) middleware that takes a state transition machine - written in any programming language -
 and securely replicates it on many machines.
 
@@ -28,7 +23,7 @@ see our recent paper, "[The latest gossip on BFT consensus](https://arxiv.org/ab
 
 ## Releases
 
-Please do not depend on master as your production branch. Use [releases](https://github.com/tendermint/tendermint/releases) instead.
+Please do not depend on master as your production branch. Use [releases](https://github.com/line/linemint/releases) instead.
 
 Tendermint is being used in production in both private and public environments,
 most notably the blockchains of the [Cosmos Network](https://cosmos.network/).
@@ -149,6 +144,9 @@ Additional tooling can be found in [/docs/tools](/docs/tools).
 
 ### Applications
 
+- [LBM SDK](http://github.com/line/lbm-sdk); a line blockchain mainnet framework
+- [LBM](http://github.com/line/lbm); line blockchain mainnet
+- [OSTRACON](http://github.com/line/ostracon); tendermint-based BFT algorithm using VRF random sampling
 - [Cosmos SDK](http://github.com/cosmos/cosmos-sdk); a cryptocurrency application framework
 - [Ethermint](http://github.com/cosmos/ethermint); Ethereum on Tendermint
 - [Many more](https://tendermint.com/ecosystem)
