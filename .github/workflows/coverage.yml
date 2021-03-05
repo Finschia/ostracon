@@ -2,9 +2,9 @@ name: Test Coverage
 on:
   pull_request:
   push:
-    branches:
-      - master
-      - release/**
+#    branches:
+#      - master
+#      - release/**
 
 jobs:
   split-test-files:

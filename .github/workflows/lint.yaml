@@ -5,8 +5,8 @@ name: Lint
 on:
   pull_request:
   push:
-    branches:
-      - master
+#    branches:
+#      - master
 jobs:
   golangci:
     name: golangci-lint
