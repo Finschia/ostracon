@@ -10,7 +10,7 @@ Or [Blockchain](<https://en.wikipedia.org/wiki/Blockchain_(database)>), for shor
 
 | Branch | Tests                                                                                                                                                                                                                                                  | Coverage                                                                                                                             | Linting                                                                    |
 | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
-| ebony  | [![CircleCI](https://circleci.com/gh/line/linemint/tree/ebony.svg?style=shield)](https://circleci.com/gh/line/linemint/tree/ebony) </br> ![Tests](https://github.com/tendermint/tendermint/workflows/Tests/badge.svg?branch=master) | [![codecov](https://codecov.io/gh/tendermint/tendermint/branch/master/graph/badge.svg)](https://codecov.io/gh/tendermint/tendermint) | ![Lint](https://github.com/line/linemint/workflows/Lint/badge.svg) |
+| ebony  | [![CircleCI](https://circleci.com/gh/line/ostracon/tree/ebony.svg?style=shield)](https://circleci.com/gh/line/ostracon/tree/ebony) </br> ![Tests](https://github.com/tendermint/tendermint/workflows/Tests/badge.svg?branch=master) | [![codecov](https://codecov.io/gh/tendermint/tendermint/branch/master/graph/badge.svg)](https://codecov.io/gh/tendermint/tendermint) | ![Lint](https://github.com/line/ostracon/workflows/Lint/badge.svg) |
 
 Linemint Core is derived from Tendermint Core.
 Tendermint Core is Byzantine Fault Tolerant (BFT) middleware that takes a state transition machine - written in any programming language -
@@ -23,7 +23,7 @@ see our recent paper, "[The latest gossip on BFT consensus](https://arxiv.org/ab
 
 ## Releases
 
-Please do not depend on master as your production branch. Use [releases](https://github.com/line/linemint/releases) instead.
+Please do not depend on master as your production branch. Use [releases](https://github.com/line/ostracon/releases) instead.
 
 Tendermint is being used in production in both private and public environments,
 most notably the blockchains of the [Cosmos Network](https://cosmos.network/).
