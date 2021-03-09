@@ -194,9 +194,11 @@ func decideProposal(
 	if !cs1PubKey.Equals(vsPubKey) {
 		// block creator must be the cs.privValidator
 		cs1.privValidator = vs.PrivValidator
+		cs1.privValidatorPubKey = vsPubKey
 	}
 	block, blockParts := cs1.createProposalBlock(round)
 	cs1.privValidator = oldPrivValidator
+	cs1.privValidatorPubKey = cs1PubKey
 	validRound := cs1.ValidRound
 	chainID := cs1.state.ChainID
 	cs1.mtx.Unlock()
