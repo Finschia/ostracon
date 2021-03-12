@@ -7,9 +7,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	tmmath "github.com/tendermint/tendermint/libs/math"
-	"github.com/tendermint/tendermint/light"
-	"github.com/tendermint/tendermint/types"
+	tmmath "github.com/line/ostracon/libs/math"
+	"github.com/line/ostracon/light"
+	"github.com/line/ostracon/types"
 )
 
 const (

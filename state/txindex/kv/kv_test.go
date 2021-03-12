@@ -13,11 +13,11 @@ import (
 
 	db "github.com/tendermint/tm-db"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/pubsub/query"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
-	"github.com/tendermint/tendermint/state/txindex"
-	"github.com/tendermint/tendermint/types"
+	abci "github.com/line/ostracon/abci/types"
+	"github.com/line/ostracon/libs/pubsub/query"
+	tmrand "github.com/line/ostracon/libs/rand"
+	"github.com/line/ostracon/state/txindex"
+	"github.com/line/ostracon/types"
 )
 
 func TestTxIndex(t *testing.T) {
@@ -295,7 +295,7 @@ func TestTxSearchMultipleTxs(t *testing.T) {
 	require.NoError(t, err)
 
 	// indexed fourth (to test we don't include txs with similar events)
-	// https://github.com/tendermint/tendermint/issues/2908
+	// https://github.com/line/ostracon/issues/2908
 	txResult4 := txResultWithEvents([]abci.Event{
 		{Type: "account", Attributes: []abci.EventAttribute{{Key: []byte("number.id"), Value: []byte("1"), Index: true}}},
 	})

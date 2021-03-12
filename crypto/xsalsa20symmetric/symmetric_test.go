@@ -8,7 +8,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/tendermint/tendermint/crypto"
+	"github.com/line/ostracon/crypto"
 )
 
 func TestSimple(t *testing.T) {

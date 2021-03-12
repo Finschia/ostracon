@@ -1,8 +1,8 @@
 package sr25519
 
 import (
-	"github.com/tendermint/tendermint/crypto"
-	tmjson "github.com/tendermint/tendermint/libs/json"
+	"github.com/line/ostracon/crypto"
+	tmjson "github.com/line/ostracon/libs/json"
 )
 
 var _ crypto.PrivKey = PrivKey{}

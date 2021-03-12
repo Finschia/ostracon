@@ -8,12 +8,12 @@ import (
 	"reflect"
 	"time"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto/merkle"
-	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/proxy"
-	sm "github.com/tendermint/tendermint/state"
-	"github.com/tendermint/tendermint/types"
+	abci "github.com/line/ostracon/abci/types"
+	"github.com/line/ostracon/crypto/merkle"
+	"github.com/line/ostracon/libs/log"
+	"github.com/line/ostracon/proxy"
+	sm "github.com/line/ostracon/state"
+	"github.com/line/ostracon/types"
 )
 
 var crc32c = crc32.MakeTable(crc32.Castagnoli)

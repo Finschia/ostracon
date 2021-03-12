@@ -49,7 +49,7 @@ perturb = ["restart"]
 [node.validator03]
 seeds = ["seed01"]
 database = "badgerdb"
-# FIXME: should be grpc, disabled due to https://github.com/tendermint/tendermint/issues/5439
+# FIXME: should be grpc, disabled due to https://github.com/line/ostracon/issues/5439
 #abci_protocol = "grpc"
 privval_protocol = "unix"
 persist_interval = 3
@@ -67,7 +67,7 @@ start_at = 1005 # Becomes part of the validator set at 1010
 seeds = ["seed02"]
 database = "cleveldb"
 fast_sync = "v0"
-# FIXME: should be grpc, disabled due to https://github.com/tendermint/tendermint/issues/5439
+# FIXME: should be grpc, disabled due to https://github.com/line/ostracon/issues/5439
 #abci_protocol = "grpc"
 privval_protocol = "tcp"
 perturb = ["kill", "pause", "disconnect", "restart"]

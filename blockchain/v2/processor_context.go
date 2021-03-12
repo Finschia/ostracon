@@ -3,8 +3,8 @@ package v2
 import (
 	"fmt"
 
-	"github.com/tendermint/tendermint/state"
-	"github.com/tendermint/tendermint/types"
+	"github.com/line/ostracon/state"
+	"github.com/line/ostracon/types"
 )
 
 type processorContext interface {

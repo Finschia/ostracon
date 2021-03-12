@@ -3,13 +3,13 @@ package pex
 import (
 	"net"
 
-	"github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/libs/service"
-	"github.com/tendermint/tendermint/p2p"
-	"github.com/tendermint/tendermint/p2p/pex"
-	"github.com/tendermint/tendermint/version"
+	"github.com/line/ostracon/config"
+	"github.com/line/ostracon/crypto/ed25519"
+	"github.com/line/ostracon/libs/log"
+	"github.com/line/ostracon/libs/service"
+	"github.com/line/ostracon/p2p"
+	"github.com/line/ostracon/p2p/pex"
+	"github.com/line/ostracon/version"
 )
 
 var (

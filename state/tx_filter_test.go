@@ -9,9 +9,9 @@ import (
 
 	dbm "github.com/tendermint/tm-db"
 
-	tmrand "github.com/tendermint/tendermint/libs/rand"
-	sm "github.com/tendermint/tendermint/state"
-	"github.com/tendermint/tendermint/types"
+	tmrand "github.com/line/ostracon/libs/rand"
+	sm "github.com/line/ostracon/state"
+	"github.com/line/ostracon/types"
 )
 
 func TestTxFilter(t *testing.T) {

@@ -6,9 +6,9 @@ import (
 	"io"
 	"log"
 
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/tendermint/tendermint/libs/async"
-	sc "github.com/tendermint/tendermint/p2p/conn"
+	"github.com/line/ostracon/crypto/ed25519"
+	"github.com/line/ostracon/libs/async"
+	sc "github.com/line/ostracon/p2p/conn"
 )
 
 func Fuzz(data []byte) int {
