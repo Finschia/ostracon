@@ -5,7 +5,7 @@
 *June 24th, 2018*
 
 BREAKING:
- - [events, pubsub] Removed - moved to github.com/line/ostracon
+ - [events, pubsub] Removed - moved to github.com/tendermint/tendermint
  - [merkle] Use 20-bytes of SHA256 instead of RIPEMD160. NOTE: this package is
    moving to github.com/tendermint/go-crypto !
  - [common] Remove gogoproto from KVPair types

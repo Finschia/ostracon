@@ -16,7 +16,7 @@ For Binary encoding, please refer to the [Tendermint encoding specification](htt
 
 ## JSON Encoding
 
-JSON encoding is done using tendermint's internal json encoder. For more information on JSON encoding, please refer to [Tendermint JSON encoding](https://github.com/line/ostracon/blob/ccc990498df70f5a3df06d22476c9bb83812cbe3/libs/json/doc.go)
+JSON encoding is done using tendermint's internal json encoder. For more information on JSON encoding, please refer to [Tendermint JSON encoding](https://github.com/tendermint/tendermint/blob/ccc990498df70f5a3df06d22476c9bb83812cbe3/libs/json/doc.go)
 
 ```go
 Example JSON encodings:
