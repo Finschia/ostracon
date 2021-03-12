@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/line/ostracon/crypto"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/types"
 )
 

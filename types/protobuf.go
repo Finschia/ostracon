@@ -6,7 +6,7 @@ import (
 	"github.com/line/ostracon/crypto/ed25519"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
 	"github.com/line/ostracon/crypto/secp256k1"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 //-------------------------------------------------------

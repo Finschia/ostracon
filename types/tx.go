@@ -8,7 +8,7 @@ import (
 	"github.com/line/ostracon/crypto/merkle"
 	"github.com/line/ostracon/crypto/tmhash"
 	tmbytes "github.com/line/ostracon/libs/bytes"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 // Tx is an arbitrary byte array.

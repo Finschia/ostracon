@@ -8,7 +8,7 @@ import (
 	cfg "github.com/line/ostracon/config"
 	"github.com/line/ostracon/crypto/tmhash"
 	tmrand "github.com/line/ostracon/libs/rand"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/types"
 	tmtime "github.com/line/ostracon/types/time"
 )

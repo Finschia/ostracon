@@ -23,7 +23,7 @@ import (
 	"github.com/line/ostracon/libs/service"
 	tmsync "github.com/line/ostracon/libs/sync"
 	"github.com/line/ostracon/p2p"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"
 	tmtime "github.com/line/ostracon/types/time"

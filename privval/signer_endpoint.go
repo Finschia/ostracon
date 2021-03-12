@@ -8,7 +8,7 @@ import (
 	"github.com/line/ostracon/libs/protoio"
 	"github.com/line/ostracon/libs/service"
 	tmsync "github.com/line/ostracon/libs/sync"
-	privvalproto "github.com/line/ostracon/proto/tendermint/privval"
+	privvalproto "github.com/line/ostracon/proto/ostracon/privval"
 )
 
 const (

@@ -7,7 +7,7 @@ import (
 
 	"github.com/line/ostracon/libs/bytes"
 	tmstrings "github.com/line/ostracon/libs/strings"
-	tmp2p "github.com/line/ostracon/proto/tendermint/p2p"
+	tmp2p "github.com/line/ostracon/proto/ostracon/p2p"
 	"github.com/line/ostracon/version"
 )
 

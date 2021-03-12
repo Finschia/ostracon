@@ -7,7 +7,7 @@ import (
 	"github.com/line/ostracon/crypto/ed25519"
 	"github.com/line/ostracon/crypto/secp256k1"
 	"github.com/line/ostracon/libs/json"
-	pc "github.com/line/ostracon/proto/tendermint/crypto"
+	pc "github.com/line/ostracon/proto/ostracon/crypto"
 )
 
 func init() {

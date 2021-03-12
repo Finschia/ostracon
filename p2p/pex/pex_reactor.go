@@ -14,7 +14,7 @@ import (
 	"github.com/line/ostracon/libs/service"
 	"github.com/line/ostracon/p2p"
 	"github.com/line/ostracon/p2p/conn"
-	tmp2p "github.com/line/ostracon/proto/tendermint/p2p"
+	tmp2p "github.com/line/ostracon/proto/ostracon/p2p"
 )
 
 type Peer = p2p.Peer

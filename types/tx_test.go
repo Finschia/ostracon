@@ -9,7 +9,7 @@ import (
 
 	tmrand "github.com/line/ostracon/libs/rand"
 	ctest "github.com/line/ostracon/libs/test"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 func makeTxs(cnt, size int) Txs {

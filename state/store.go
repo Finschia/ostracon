@@ -10,8 +10,8 @@ import (
 	abci "github.com/line/ostracon/abci/types"
 	tmmath "github.com/line/ostracon/libs/math"
 	tmos "github.com/line/ostracon/libs/os"
-	tmstate "github.com/line/ostracon/proto/tendermint/state"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmstate "github.com/line/ostracon/proto/ostracon/state"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/types"
 )
 

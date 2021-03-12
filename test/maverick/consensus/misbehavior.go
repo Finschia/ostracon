@@ -5,7 +5,7 @@ import (
 
 	tmcon "github.com/line/ostracon/consensus"
 	cstypes "github.com/line/ostracon/consensus/types"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/types"
 )
 

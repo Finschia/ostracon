@@ -12,7 +12,7 @@ import (
 	"github.com/line/ostracon/crypto/ed25519"
 	"github.com/line/ostracon/crypto/tmhash"
 	"github.com/line/ostracon/libs/protoio"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 func examplePrevote() *Vote {

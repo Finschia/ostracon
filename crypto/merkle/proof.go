@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/line/ostracon/crypto/tmhash"
-	tmcrypto "github.com/line/ostracon/proto/tendermint/crypto"
+	tmcrypto "github.com/line/ostracon/proto/ostracon/crypto"
 )
 
 const (

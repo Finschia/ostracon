@@ -15,7 +15,7 @@ import (
 	"github.com/line/ostracon/abci/example/code"
 	abciserver "github.com/line/ostracon/abci/server"
 	"github.com/line/ostracon/abci/types"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 const (

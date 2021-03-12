@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	bcproto "github.com/line/ostracon/proto/tendermint/blockchain"
+	bcproto "github.com/line/ostracon/proto/ostracon/blockchain"
 	"github.com/line/ostracon/types"
 )
 

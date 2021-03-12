@@ -10,7 +10,7 @@ import (
 
 	tmsync "github.com/line/ostracon/libs/sync"
 	"github.com/line/ostracon/light/store"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/types"
 )
 

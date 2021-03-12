@@ -17,7 +17,7 @@ import (
 	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/p2p"
 	"github.com/line/ostracon/p2p/mock"
-	tmp2p "github.com/line/ostracon/proto/tendermint/p2p"
+	tmp2p "github.com/line/ostracon/proto/ostracon/p2p"
 )
 
 var (

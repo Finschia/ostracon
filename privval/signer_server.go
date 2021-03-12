@@ -5,7 +5,7 @@ import (
 
 	"github.com/line/ostracon/libs/service"
 	tmsync "github.com/line/ostracon/libs/sync"
-	privvalproto "github.com/line/ostracon/proto/tendermint/privval"
+	privvalproto "github.com/line/ostracon/proto/ostracon/privval"
 	"github.com/line/ostracon/types"
 )
 

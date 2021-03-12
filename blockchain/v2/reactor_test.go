@@ -22,7 +22,7 @@ import (
 	"github.com/line/ostracon/mempool/mock"
 	"github.com/line/ostracon/p2p"
 	"github.com/line/ostracon/p2p/conn"
-	bcproto "github.com/line/ostracon/proto/tendermint/blockchain"
+	bcproto "github.com/line/ostracon/proto/ostracon/blockchain"
 	"github.com/line/ostracon/proxy"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/store"

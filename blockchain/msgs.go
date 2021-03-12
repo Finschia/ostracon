@@ -6,7 +6,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 
-	bcproto "github.com/line/ostracon/proto/tendermint/blockchain"
+	bcproto "github.com/line/ostracon/proto/ostracon/blockchain"
 	"github.com/line/ostracon/types"
 )
 

@@ -17,7 +17,7 @@ import (
 	"github.com/line/ostracon/libs/log"
 	tmos "github.com/line/ostracon/libs/os"
 	"github.com/line/ostracon/libs/service"
-	tmcons "github.com/line/ostracon/proto/tendermint/consensus"
+	tmcons "github.com/line/ostracon/proto/ostracon/consensus"
 	tmtime "github.com/line/ostracon/types/time"
 )
 

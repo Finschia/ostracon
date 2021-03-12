@@ -15,7 +15,7 @@ import (
 
 	clist "github.com/line/ostracon/libs/clist"
 	"github.com/line/ostracon/libs/log"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"
 )

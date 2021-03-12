@@ -13,7 +13,7 @@ import (
 	"github.com/line/ostracon/abci/types"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
 	"github.com/line/ostracon/libs/log"
-	pc "github.com/line/ostracon/proto/tendermint/crypto"
+	pc "github.com/line/ostracon/proto/ostracon/crypto"
 )
 
 const (

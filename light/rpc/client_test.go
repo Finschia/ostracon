@@ -17,7 +17,7 @@ import (
 	"github.com/line/ostracon/crypto/merkle"
 	"github.com/line/ostracon/libs/bytes"
 	lcmock "github.com/line/ostracon/light/rpc/mocks"
-	tmcrypto "github.com/line/ostracon/proto/tendermint/crypto"
+	tmcrypto "github.com/line/ostracon/proto/ostracon/crypto"
 	rpcmock "github.com/line/ostracon/rpc/client/mocks"
 	ctypes "github.com/line/ostracon/rpc/core/types"
 	"github.com/line/ostracon/types"

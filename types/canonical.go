@@ -3,7 +3,7 @@ package types
 import (
 	"time"
 
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	tmtime "github.com/line/ostracon/types/time"
 )
 

@@ -9,7 +9,7 @@ import (
 	"github.com/line/ostracon/crypto"
 	tmbytes "github.com/line/ostracon/libs/bytes"
 	"github.com/line/ostracon/libs/protoio"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 const (

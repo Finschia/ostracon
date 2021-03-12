@@ -7,7 +7,7 @@ import (
 	"github.com/line/ostracon/libs/log"
 	tmrand "github.com/line/ostracon/libs/rand"
 	"github.com/line/ostracon/p2p"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/types"
 )
 

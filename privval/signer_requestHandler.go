@@ -5,9 +5,9 @@ import (
 
 	"github.com/line/ostracon/crypto"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
-	cryptoproto "github.com/line/ostracon/proto/tendermint/crypto"
-	privvalproto "github.com/line/ostracon/proto/tendermint/privval"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	cryptoproto "github.com/line/ostracon/proto/ostracon/crypto"
+	privvalproto "github.com/line/ostracon/proto/ostracon/privval"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/types"
 )
 

@@ -20,7 +20,7 @@ import (
 	tmrand "github.com/line/ostracon/libs/rand"
 	"github.com/line/ostracon/p2p"
 	"github.com/line/ostracon/p2p/mock"
-	memproto "github.com/line/ostracon/proto/tendermint/mempool"
+	memproto "github.com/line/ostracon/proto/ostracon/mempool"
 	"github.com/line/ostracon/proxy"
 	"github.com/line/ostracon/types"
 )

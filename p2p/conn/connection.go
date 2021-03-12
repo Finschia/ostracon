@@ -21,7 +21,7 @@ import (
 	"github.com/line/ostracon/libs/service"
 	tmsync "github.com/line/ostracon/libs/sync"
 	"github.com/line/ostracon/libs/timer"
-	tmp2p "github.com/line/ostracon/proto/tendermint/p2p"
+	tmp2p "github.com/line/ostracon/proto/ostracon/p2p"
 )
 
 const (

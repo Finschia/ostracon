@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/line/ostracon/crypto"
-	tmversion "github.com/line/ostracon/proto/tendermint/version"
+	tmversion "github.com/line/ostracon/proto/ostracon/version"
 	"github.com/line/ostracon/version"
 )
 

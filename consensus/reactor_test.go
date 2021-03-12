@@ -31,7 +31,7 @@ import (
 	mempl "github.com/line/ostracon/mempool"
 	"github.com/line/ostracon/p2p"
 	p2pmock "github.com/line/ostracon/p2p/mock"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	sm "github.com/line/ostracon/state"
 	statemocks "github.com/line/ostracon/state/mocks"
 	"github.com/line/ostracon/store"

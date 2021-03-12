@@ -10,7 +10,7 @@ import (
 	"github.com/line/ostracon/libs/log"
 	tmsync "github.com/line/ostracon/libs/sync"
 	"github.com/line/ostracon/p2p"
-	bcproto "github.com/line/ostracon/proto/tendermint/blockchain"
+	bcproto "github.com/line/ostracon/proto/ostracon/blockchain"
 	"github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"
 )

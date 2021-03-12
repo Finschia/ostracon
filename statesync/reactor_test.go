@@ -11,7 +11,7 @@ import (
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/p2p"
 	p2pmocks "github.com/line/ostracon/p2p/mocks"
-	ssproto "github.com/line/ostracon/proto/tendermint/statesync"
+	ssproto "github.com/line/ostracon/proto/ostracon/statesync"
 	proxymocks "github.com/line/ostracon/proxy/mocks"
 )
 

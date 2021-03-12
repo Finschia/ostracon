@@ -8,7 +8,7 @@ import (
 	"github.com/line/ostracon/libs/bits"
 	tmjson "github.com/line/ostracon/libs/json"
 	tmsync "github.com/line/ostracon/libs/sync"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 const (

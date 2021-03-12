@@ -8,8 +8,8 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	tmsync "github.com/line/ostracon/libs/sync"
-	tmstore "github.com/line/ostracon/proto/tendermint/store"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmstore "github.com/line/ostracon/proto/ostracon/store"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/types"
 )
 

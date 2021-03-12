@@ -10,7 +10,7 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	abci "github.com/line/ostracon/abci/types"
-	tmstate "github.com/line/ostracon/proto/tendermint/state"
+	tmstate "github.com/line/ostracon/proto/ostracon/state"
 	ctypes "github.com/line/ostracon/rpc/core/types"
 	rpctypes "github.com/line/ostracon/rpc/jsonrpc/types"
 	sm "github.com/line/ostracon/state"

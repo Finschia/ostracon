@@ -12,7 +12,7 @@ import (
 	"github.com/line/ostracon/crypto/tmhash"
 	"github.com/line/ostracon/libs/protoio"
 	tmrand "github.com/line/ostracon/libs/rand"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 var (

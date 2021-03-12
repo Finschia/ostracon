@@ -7,7 +7,7 @@ import (
 
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto/tmhash"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 const (

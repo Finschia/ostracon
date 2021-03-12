@@ -15,7 +15,7 @@ import (
 	lighthttp "github.com/line/ostracon/light/provider/http"
 	lightrpc "github.com/line/ostracon/light/rpc"
 	lightdb "github.com/line/ostracon/light/store/db"
-	tmstate "github.com/line/ostracon/proto/tendermint/state"
+	tmstate "github.com/line/ostracon/proto/ostracon/state"
 	rpchttp "github.com/line/ostracon/rpc/client/http"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"

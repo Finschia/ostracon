@@ -10,8 +10,8 @@ import (
 	"github.com/line/ostracon/libs/fail"
 	"github.com/line/ostracon/libs/log"
 	mempl "github.com/line/ostracon/mempool"
-	tmstate "github.com/line/ostracon/proto/tendermint/state"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmstate "github.com/line/ostracon/proto/ostracon/state"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/proxy"
 	"github.com/line/ostracon/types"
 )

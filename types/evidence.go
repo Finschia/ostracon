@@ -14,7 +14,7 @@ import (
 	"github.com/line/ostracon/crypto/tmhash"
 	tmjson "github.com/line/ostracon/libs/json"
 	tmrand "github.com/line/ostracon/libs/rand"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 // Evidence represents any provable malicious activity by a validator.

@@ -7,7 +7,7 @@ import (
 
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/ed25519"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 // PrivValidator defines the functionality of a local Tendermint validator

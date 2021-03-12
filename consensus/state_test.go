@@ -17,7 +17,7 @@ import (
 	tmpubsub "github.com/line/ostracon/libs/pubsub"
 	tmrand "github.com/line/ostracon/libs/rand"
 	p2pmock "github.com/line/ostracon/p2p/mock"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/types"
 )
 

@@ -33,7 +33,7 @@ import (
 	mempl "github.com/line/ostracon/mempool"
 	"github.com/line/ostracon/p2p"
 	"github.com/line/ostracon/privval"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/store"
 	"github.com/line/ostracon/types"

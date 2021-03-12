@@ -16,7 +16,7 @@ import (
 	tmos "github.com/line/ostracon/libs/os"
 	"github.com/line/ostracon/libs/protoio"
 	"github.com/line/ostracon/libs/tempfile"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/types"
 	tmtime "github.com/line/ostracon/types/time"
 )

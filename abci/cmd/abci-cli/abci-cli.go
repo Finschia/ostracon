@@ -22,7 +22,7 @@ import (
 	servertest "github.com/line/ostracon/abci/tests/server"
 	"github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/abci/version"
-	"github.com/line/ostracon/proto/tendermint/crypto"
+	"github.com/line/ostracon/proto/ostracon/crypto"
 )
 
 // client is a global variable so it can be reused by the console

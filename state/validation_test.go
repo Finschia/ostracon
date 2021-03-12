@@ -13,7 +13,7 @@ import (
 	"github.com/line/ostracon/crypto/tmhash"
 	"github.com/line/ostracon/libs/log"
 	memmock "github.com/line/ostracon/mempool/mock"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/state/mocks"
 	"github.com/line/ostracon/types"

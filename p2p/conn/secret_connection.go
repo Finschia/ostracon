@@ -27,7 +27,7 @@ import (
 	"github.com/line/ostracon/libs/async"
 	"github.com/line/ostracon/libs/protoio"
 	tmsync "github.com/line/ostracon/libs/sync"
-	tmp2p "github.com/line/ostracon/proto/tendermint/p2p"
+	tmp2p "github.com/line/ostracon/proto/ostracon/p2p"
 )
 
 // 4 + 1024 == 1028 total frame size

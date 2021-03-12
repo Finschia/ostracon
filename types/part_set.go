@@ -12,7 +12,7 @@ import (
 	tmjson "github.com/line/ostracon/libs/json"
 	tmmath "github.com/line/ostracon/libs/math"
 	tmsync "github.com/line/ostracon/libs/sync"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 var (

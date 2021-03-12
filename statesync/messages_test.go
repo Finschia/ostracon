@@ -7,8 +7,8 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/require"
 
-	ssproto "github.com/line/ostracon/proto/tendermint/statesync"
-	tmproto "github.com/line/ostracon/proto/tendermint/types"
+	ssproto "github.com/line/ostracon/proto/ostracon/statesync"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 func TestValidateMsg(t *testing.T) {

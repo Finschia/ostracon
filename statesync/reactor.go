@@ -8,7 +8,7 @@ import (
 	abci "github.com/line/ostracon/abci/types"
 	tmsync "github.com/line/ostracon/libs/sync"
 	"github.com/line/ostracon/p2p"
-	ssproto "github.com/line/ostracon/proto/tendermint/statesync"
+	ssproto "github.com/line/ostracon/proto/ostracon/statesync"
 	"github.com/line/ostracon/proxy"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"
