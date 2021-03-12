@@ -5,7 +5,7 @@ BUILD_TAGS?=tendermint
 VERSION := $(shell git describe --always)
 LD_FLAGS = -X github.com/line/ostracon/version.TMCoreSemVer=$(VERSION)
 BUILD_FLAGS = -mod=readonly -ldflags "$(LD_FLAGS)"
-HTTPS_GIT := https://github.com/line/ostracon.git
+HTTPS_GIT := https://github.com/tendermint/tendermint.git
 DOCKER_BUF := docker run -v $(shell pwd):/workspace --workdir /workspace bufbuild/buf
 CGO_ENABLED ?= 0
 
