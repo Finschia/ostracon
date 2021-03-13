@@ -13,6 +13,7 @@ jobs:
       - uses: actions/checkout@master
       - name: lint
         run: make proto-lint
+# TODO comment out this. We need to check proto-breakage
 #  proto-breakage:
 #    runs-on: ubuntu-latest
 #    timeout-minutes: 4

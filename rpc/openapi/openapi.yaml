@@ -3,7 +3,7 @@ info:
   title: Tendermint RPC
   contact:
     name: Tendermint RPC
-    url: https://github.com/line/ostracon/issues/new/choose
+    url: https://github.com/tendermint/tendermint/issues/new/choose
   description: |
     Tendermint supports the following RPC protocols:
 
@@ -91,7 +91,7 @@ paths:
         1. malicious node can drop or pretend it had committed your tx
         2. malicious proposer (not necessary the one you're communicating with) can
         drop transactions, which might become valid in the future
-        (https://github.com/line/ostracon/issues/3322)
+        (https://github.com/tendermint/tendermint/issues/3322)
 
 
         Please refer to
@@ -135,7 +135,7 @@ paths:
         1. malicious node can drop or pretend it had committed your tx
         2. malicious proposer (not necessary the one you're communicating with) can
         drop transactions, which might become valid in the future
-        (https://github.com/line/ostracon/issues/3322)
+        (https://github.com/tendermint/tendermint/issues/3322)
         3. node can be offline
 
         Please refer to
