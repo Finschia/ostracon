@@ -8,8 +8,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/tendermint/tendermint/light/provider"
-	"github.com/tendermint/tendermint/types"
+	"github.com/line/ostracon/light/provider"
+	"github.com/line/ostracon/types"
 )
 
 // The detector component of the light client detect and handles attacks on the light client.

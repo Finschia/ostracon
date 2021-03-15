@@ -1,8 +1,8 @@
 package types
 
 import (
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto/merkle"
+	abci "github.com/line/ostracon/abci/types"
+	"github.com/line/ostracon/crypto/merkle"
 )
 
 // ABCIResults wraps the deliver tx results to return a proof.

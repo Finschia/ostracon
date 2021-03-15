@@ -1,8 +1,8 @@
 package p2p
 
 import (
-	"github.com/tendermint/tendermint/libs/service"
-	"github.com/tendermint/tendermint/p2p/conn"
+	"github.com/line/ostracon/libs/service"
+	"github.com/line/ostracon/p2p/conn"
 )
 
 // Reactor is responsible for handling incoming messages on one or more

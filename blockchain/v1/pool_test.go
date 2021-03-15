@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/p2p"
-	"github.com/tendermint/tendermint/types"
+	"github.com/line/ostracon/libs/log"
+	"github.com/line/ostracon/p2p"
+	"github.com/line/ostracon/types"
 )
 
 type testPeer struct {

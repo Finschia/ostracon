@@ -10,12 +10,12 @@ import (
 
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/tmhash"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
-	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
-	"github.com/tendermint/tendermint/types"
-	"github.com/tendermint/tendermint/version"
+	"github.com/line/ostracon/crypto"
+	"github.com/line/ostracon/crypto/tmhash"
+	tmrand "github.com/line/ostracon/libs/rand"
+	tmversion "github.com/line/ostracon/proto/ostracon/version"
+	"github.com/line/ostracon/types"
+	"github.com/line/ostracon/version"
 )
 
 func TestLast_FirstLightBlockHeight(t *testing.T) {

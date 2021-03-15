@@ -3,10 +3,10 @@ package consensus
 import (
 	"fmt"
 
-	tmcon "github.com/tendermint/tendermint/consensus"
-	cstypes "github.com/tendermint/tendermint/consensus/types"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	"github.com/tendermint/tendermint/types"
+	tmcon "github.com/line/ostracon/consensus"
+	cstypes "github.com/line/ostracon/consensus/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	"github.com/line/ostracon/types"
 )
 
 // MisbehaviorList encompasses a list of all possible behaviors

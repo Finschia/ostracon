@@ -13,17 +13,17 @@ import (
 
 	dbm "github.com/tendermint/tm-db"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-	cfg "github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/mempool/mock"
-	"github.com/tendermint/tendermint/p2p"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	"github.com/tendermint/tendermint/proxy"
-	sm "github.com/tendermint/tendermint/state"
-	"github.com/tendermint/tendermint/store"
-	"github.com/tendermint/tendermint/types"
-	tmtime "github.com/tendermint/tendermint/types/time"
+	abci "github.com/line/ostracon/abci/types"
+	cfg "github.com/line/ostracon/config"
+	"github.com/line/ostracon/libs/log"
+	"github.com/line/ostracon/mempool/mock"
+	"github.com/line/ostracon/p2p"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	"github.com/line/ostracon/proxy"
+	sm "github.com/line/ostracon/state"
+	"github.com/line/ostracon/store"
+	"github.com/line/ostracon/types"
+	tmtime "github.com/line/ostracon/types/time"
 )
 
 var config *cfg.Config

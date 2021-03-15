@@ -9,18 +9,18 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 
-	cstypes "github.com/tendermint/tendermint/consensus/types"
-	"github.com/tendermint/tendermint/libs/bits"
-	tmevents "github.com/tendermint/tendermint/libs/events"
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	"github.com/tendermint/tendermint/libs/log"
-	tmsync "github.com/tendermint/tendermint/libs/sync"
-	"github.com/tendermint/tendermint/p2p"
-	tmcons "github.com/tendermint/tendermint/proto/tendermint/consensus"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	sm "github.com/tendermint/tendermint/state"
-	"github.com/tendermint/tendermint/types"
-	tmtime "github.com/tendermint/tendermint/types/time"
+	cstypes "github.com/line/ostracon/consensus/types"
+	"github.com/line/ostracon/libs/bits"
+	tmevents "github.com/line/ostracon/libs/events"
+	tmjson "github.com/line/ostracon/libs/json"
+	"github.com/line/ostracon/libs/log"
+	tmsync "github.com/line/ostracon/libs/sync"
+	"github.com/line/ostracon/p2p"
+	tmcons "github.com/line/ostracon/proto/ostracon/consensus"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	sm "github.com/line/ostracon/state"
+	"github.com/line/ostracon/types"
+	tmtime "github.com/line/ostracon/types/time"
 )
 
 const (

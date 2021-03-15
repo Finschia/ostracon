@@ -7,9 +7,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/tendermint/tendermint/crypto"
-	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
-	"github.com/tendermint/tendermint/version"
+	"github.com/line/ostracon/crypto"
+	tmversion "github.com/line/ostracon/proto/ostracon/version"
+	"github.com/line/ostracon/version"
 )
 
 func TestLightBlockValidateBasic(t *testing.T) {

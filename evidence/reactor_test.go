@@ -15,17 +15,17 @@ import (
 
 	dbm "github.com/tendermint/tm-db"
 
-	cfg "github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/tmhash"
-	"github.com/tendermint/tendermint/evidence"
-	"github.com/tendermint/tendermint/evidence/mocks"
-	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/p2p"
-	p2pmocks "github.com/tendermint/tendermint/p2p/mocks"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	sm "github.com/tendermint/tendermint/state"
-	"github.com/tendermint/tendermint/types"
+	cfg "github.com/line/ostracon/config"
+	"github.com/line/ostracon/crypto"
+	"github.com/line/ostracon/crypto/tmhash"
+	"github.com/line/ostracon/evidence"
+	"github.com/line/ostracon/evidence/mocks"
+	"github.com/line/ostracon/libs/log"
+	"github.com/line/ostracon/p2p"
+	p2pmocks "github.com/line/ostracon/p2p/mocks"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	sm "github.com/line/ostracon/state"
+	"github.com/line/ostracon/types"
 )
 
 var (

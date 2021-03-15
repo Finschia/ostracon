@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tendermint/tendermint/libs/log"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
-	"github.com/tendermint/tendermint/p2p"
-	"github.com/tendermint/tendermint/types"
+	"github.com/line/ostracon/libs/log"
+	tmrand "github.com/line/ostracon/libs/rand"
+	"github.com/line/ostracon/p2p"
+	"github.com/line/ostracon/types"
 )
 
 func init() {
