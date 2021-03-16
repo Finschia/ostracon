@@ -11,7 +11,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	gogotypes "github.com/gogo/protobuf/types"
-	dbm "github.com/tendermint/tm-db"
+	dbm "github.com/line/tm-db/v2"
 
 	clist "github.com/line/ostracon/libs/clist"
 	"github.com/line/ostracon/libs/log"

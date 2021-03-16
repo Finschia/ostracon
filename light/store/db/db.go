@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strconv"
 
-	dbm "github.com/tendermint/tm-db"
+	dbm "github.com/line/tm-db/v2"
 
 	tmsync "github.com/line/ostracon/libs/sync"
 	"github.com/line/ostracon/light/store"
