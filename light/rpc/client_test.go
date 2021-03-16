@@ -8,10 +8,10 @@ import (
 
 	ics23 "github.com/confio/ics23/go"
 	"github.com/cosmos/iavl"
+	dbm "github.com/line/tm-db/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	dbm "github.com/tendermint/tm-db"
 
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto/merkle"

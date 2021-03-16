@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	dbm "github.com/tendermint/tm-db"
+	dbm "github.com/line/tm-db/v2"
 
 	"github.com/line/ostracon/abci/example/kvstore"
 	"github.com/line/ostracon/libs/log"

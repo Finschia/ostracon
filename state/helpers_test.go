@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	dbm "github.com/tendermint/tm-db"
+	dbm "github.com/line/tm-db/v2"
 
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto"

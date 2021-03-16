@@ -1,7 +1,7 @@
 package state
 
 import (
-	dbm "github.com/tendermint/tm-db"
+	dbm "github.com/line/tm-db/v2"
 
 	abci "github.com/line/ostracon/abci/types"
 	tmstate "github.com/line/ostracon/proto/ostracon/state"
