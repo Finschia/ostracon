@@ -5,7 +5,8 @@ import (
 	"strconv"
 
 	"github.com/gogo/protobuf/proto"
-	dbm "github.com/line/tm-db/v2"
+
+	tmdb "github.com/line/tm-db/v2"
 
 	tmsync "github.com/line/ostracon/libs/sync"
 	tmstore "github.com/line/ostracon/proto/ostracon/store"
@@ -31,7 +32,7 @@ The store can be assumed to contain all contiguous blocks between base and heigh
 // deserializing loaded data, indicating probable corruption on disk.
 */
 type BlockStore struct {
-	db dbm.DB
+	db tmdb.DB
 
 	// mtx guards access to the struct fields listed below it. We rely on the database to enforce
 	// fine-grained concurrency control for its data, and thus this mutex does not apply to
@@ -45,7 +46,7 @@ type BlockStore struct {
 
 // NewBlockStore returns a new BlockStore with the given DB,
 // initialized to the last height that was committed to the DB.
-func NewBlockStore(db dbm.DB) *BlockStore {
+func NewBlockStore(db tmdb.DB) *BlockStore {
 	bs := LoadBlockStoreState(db)
 	return &BlockStore{
 		base:   bs.Base,
@@ -264,7 +265,7 @@ func (bs *BlockStore) PruneBlocks(height int64) (uint64, error) {
 	pruned := uint64(0)
 	batch := bs.db.NewBatch()
 	defer batch.Close()
-	flush := func(batch dbm.Batch, base int64) error {
+	flush := func(batch tmdb.Batch, base int64) error {
 		// We can't trust batches to be atomic, so update base first to make sure noone
 		// tries to access missing blocks.
 		bs.mtx.Lock()
@@ -451,7 +452,7 @@ func calcBlockHashKey(hash []byte) []byte {
 var blockStoreKey = []byte("blockStore")
 
 // SaveBlockStoreState persists the blockStore state to the database.
-func SaveBlockStoreState(bsj *tmstore.BlockStoreState, db dbm.DB) {
+func SaveBlockStoreState(bsj *tmstore.BlockStoreState, db tmdb.DB) {
 	bytes, err := proto.Marshal(bsj)
 	if err != nil {
 		panic(fmt.Sprintf("Could not marshal state bytes: %v", err))
@@ -463,7 +464,7 @@ func SaveBlockStoreState(bsj *tmstore.BlockStoreState, db dbm.DB) {
 
 // LoadBlockStoreState returns the BlockStoreState as loaded from disk.
 // If no BlockStoreState was previously persisted, it returns the zero value.
-func LoadBlockStoreState(db dbm.DB) tmstore.BlockStoreState {
+func LoadBlockStoreState(db tmdb.DB) tmstore.BlockStoreState {
 	bytes, err := db.Get(blockStoreKey)
 	if err != nil {
 		panic(err)

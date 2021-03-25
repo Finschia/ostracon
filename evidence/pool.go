@@ -11,9 +11,10 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	gogotypes "github.com/gogo/protobuf/types"
-	dbm "github.com/line/tm-db/v2"
 
-	clist "github.com/line/ostracon/libs/clist"
+	tmdb "github.com/line/tm-db/v2"
+
+	"github.com/line/ostracon/libs/clist"
 	"github.com/line/ostracon/libs/log"
 	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	sm "github.com/line/ostracon/state"
@@ -29,7 +30,7 @@ const (
 type Pool struct {
 	logger log.Logger
 
-	evidenceStore dbm.DB
+	evidenceStore tmdb.DB
 	evidenceList  *clist.CList // concurrent linked-list of evidence
 	evidenceSize  uint32       // amount of pending evidence
 
@@ -52,7 +53,7 @@ type Pool struct {
 
 // NewPool creates an evidence pool. If using an existing evidence store,
 // it will add all pending evidence to the concurrent list.
-func NewPool(evidenceDB dbm.DB, stateDB sm.Store, blockStore BlockStore) (*Pool, error) {
+func NewPool(evidenceDB tmdb.DB, stateDB sm.Store, blockStore BlockStore) (*Pool, error) {
 
 	state, err := stateDB.Load()
 	if err != nil {
@@ -422,7 +423,7 @@ func (evpool *Pool) listEvidence(prefixKey byte, maxBytes int64) ([]types.Eviden
 		evList    tmproto.EvidenceList // used for calculating the bytes size
 	)
 
-	iter, err := dbm.IteratePrefix(evpool.evidenceStore, []byte{prefixKey})
+	iter, err := tmdb.IteratePrefix(evpool.evidenceStore, []byte{prefixKey})
 	if err != nil {
 		return nil, totalSize, fmt.Errorf("database error: %v", err)
 	}
@@ -458,7 +459,7 @@ func (evpool *Pool) listEvidence(prefixKey byte, maxBytes int64) ([]types.Eviden
 }
 
 func (evpool *Pool) removeExpiredPendingEvidence() (int64, time.Time) {
-	iter, err := dbm.IteratePrefix(evpool.evidenceStore, []byte{baseKeyPending})
+	iter, err := tmdb.IteratePrefix(evpool.evidenceStore, []byte{baseKeyPending})
 	if err != nil {
 		evpool.logger.Error("Unable to iterate over pending evidence", "err", err)
 		return evpool.State().LastBlockHeight, evpool.State().LastBlockTime

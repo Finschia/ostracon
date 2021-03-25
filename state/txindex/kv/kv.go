@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	dbm "github.com/line/tm-db/v2"
+	tmdb "github.com/line/tm-db/v2"
 
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/pubsub/query"
@@ -26,11 +26,11 @@ var _ txindex.TxIndexer = (*TxIndex)(nil)
 
 // TxIndex is the simplest possible indexer, backed by key-value storage (levelDB).
 type TxIndex struct {
-	store dbm.DB
+	store tmdb.DB
 }
 
 // NewTxIndex creates new KV indexer.
-func NewTxIndex(store dbm.DB) *TxIndex {
+func NewTxIndex(store tmdb.DB) *TxIndex {
 	return &TxIndex{
 		store: store,
 	}
@@ -132,7 +132,7 @@ func (txi *TxIndex) Index(result *abci.TxResult) error {
 	return b.WriteSync()
 }
 
-func (txi *TxIndex) indexEvents(result *abci.TxResult, hash []byte, store dbm.Batch) error {
+func (txi *TxIndex) indexEvents(result *abci.TxResult, hash []byte, store tmdb.Batch) error {
 	for _, event := range result.Result.Events {
 		// only index events with a non-empty type
 		if len(event.Type) == 0 {
@@ -407,7 +407,7 @@ func (txi *TxIndex) match(
 
 	switch {
 	case c.Op == query.OpEqual:
-		it, err := dbm.IteratePrefix(txi.store, startKeyBz)
+		it, err := tmdb.IteratePrefix(txi.store, startKeyBz)
 		if err != nil {
 			panic(err)
 		}
@@ -430,7 +430,7 @@ func (txi *TxIndex) match(
 	case c.Op == query.OpExists:
 		// XXX: can't use startKeyBz here because c.Operand is nil
 		// (e.g. "account.owner/<nil>/" won't match w/ a single row)
-		it, err := dbm.IteratePrefix(txi.store, startKey(c.CompositeKey))
+		it, err := tmdb.IteratePrefix(txi.store, startKey(c.CompositeKey))
 		if err != nil {
 			panic(err)
 		}
@@ -454,7 +454,7 @@ func (txi *TxIndex) match(
 		// XXX: startKey does not apply here.
 		// For example, if startKey = "account.owner/an/" and search query = "account.owner CONTAINS an"
 		// we can't iterate with prefix "account.owner/an/" because we might miss keys like "account.owner/Ulan/"
-		it, err := dbm.IteratePrefix(txi.store, startKey(c.CompositeKey))
+		it, err := tmdb.IteratePrefix(txi.store, startKey(c.CompositeKey))
 		if err != nil {
 			panic(err)
 		}
@@ -534,7 +534,7 @@ func (txi *TxIndex) matchRange(
 	lowerBound := r.lowerBoundValue()
 	upperBound := r.upperBoundValue()
 
-	it, err := dbm.IteratePrefix(txi.store, startKey)
+	it, err := tmdb.IteratePrefix(txi.store, startKey)
 	if err != nil {
 		panic(err)
 	}

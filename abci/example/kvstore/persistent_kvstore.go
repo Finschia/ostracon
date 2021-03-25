@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	dbm "github.com/line/tm-db/v2"
+	"github.com/line/tm-db/v2/goleveldb"
 
 	"github.com/line/ostracon/abci/example/code"
 	"github.com/line/ostracon/abci/types"
@@ -37,7 +37,7 @@ type PersistentKVStoreApplication struct {
 
 func NewPersistentKVStoreApplication(dbDir string) *PersistentKVStoreApplication {
 	name := "kvstore"
-	db, err := dbm.NewGoLevelDB(name, dbDir)
+	db, err := goleveldb.NewDB(name, dbDir)
 	if err != nil {
 		panic(err)
 	}

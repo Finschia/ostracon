@@ -1,13 +1,12 @@
 package state_test
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	dbm "github.com/line/tm-db/v2"
+	"github.com/line/tm-db/v2/memdb"
 
 	tmrand "github.com/line/ostracon/libs/rand"
 	sm "github.com/line/ostracon/state"
@@ -31,8 +30,8 @@ func TestTxFilter(t *testing.T) {
 	}
 
 	for i, tc := range testCases {
-		stateDB, err := dbm.NewDB("state", "memdb", os.TempDir())
-		require.NoError(t, err)
+		stateDB := memdb.NewDB()
+
 		stateStore := sm.NewStore(stateDB)
 		state, err := stateStore.LoadFromDBOrGenesisDoc(genDoc)
 		require.NoError(t, err)

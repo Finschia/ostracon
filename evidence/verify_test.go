@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	dbm "github.com/line/tm-db/v2"
+	"github.com/line/tm-db/v2/memdb"
 
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/tmhash"
@@ -103,7 +103,7 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 	blockStore.On("LoadBlockCommit", int64(4)).Return(commit)
 	blockStore.On("LoadBlockCommit", int64(10)).Return(trustedCommit)
 
-	pool, err := evidence.NewPool(dbm.NewMemDB(), stateStore, blockStore)
+	pool, err := evidence.NewPool(memdb.NewDB(), stateStore, blockStore)
 	require.NoError(t, err)
 	pool.SetLogger(log.TestingLogger())
 
@@ -201,7 +201,7 @@ func TestVerifyLightClientAttack_Equivocation(t *testing.T) {
 	blockStore.On("LoadBlockMeta", int64(10)).Return(&types.BlockMeta{Header: *trustedHeader})
 	blockStore.On("LoadBlockCommit", int64(10)).Return(trustedCommit)
 
-	pool, err := evidence.NewPool(dbm.NewMemDB(), stateStore, blockStore)
+	pool, err := evidence.NewPool(memdb.NewDB(), stateStore, blockStore)
 	require.NoError(t, err)
 	pool.SetLogger(log.TestingLogger())
 
@@ -276,7 +276,7 @@ func TestVerifyLightClientAttack_Amnesia(t *testing.T) {
 	blockStore.On("LoadBlockMeta", int64(10)).Return(&types.BlockMeta{Header: *trustedHeader})
 	blockStore.On("LoadBlockCommit", int64(10)).Return(trustedCommit)
 
-	pool, err := evidence.NewPool(dbm.NewMemDB(), stateStore, blockStore)
+	pool, err := evidence.NewPool(memdb.NewDB(), stateStore, blockStore)
 	require.NoError(t, err)
 	pool.SetLogger(log.TestingLogger())
 
@@ -369,7 +369,7 @@ func TestVerifyDuplicateVoteEvidence(t *testing.T) {
 	blockStore := &mocks.BlockStore{}
 	blockStore.On("LoadBlockMeta", int64(10)).Return(&types.BlockMeta{Header: types.Header{Time: defaultEvidenceTime}})
 
-	pool, err := evidence.NewPool(dbm.NewMemDB(), stateStore, blockStore)
+	pool, err := evidence.NewPool(memdb.NewDB(), stateStore, blockStore)
 	require.NoError(t, err)
 
 	evList := types.EvidenceList{goodEv}

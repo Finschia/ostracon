@@ -8,7 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	dbm "github.com/line/tm-db/v2"
+	"github.com/line/tm-db/v2/memdb"
+	"github.com/line/tm-db/v2/metadb"
 
 	abci "github.com/line/ostracon/abci/types"
 	cfg "github.com/line/ostracon/config"
@@ -22,7 +23,7 @@ import (
 )
 
 func TestStoreLoadValidators(t *testing.T) {
-	stateDB := dbm.NewMemDB()
+	stateDB := memdb.NewDB()
 	stateStore := sm.NewStore(stateDB)
 	val, _ := types.RandValidator(true, 10)
 	vals := types.NewValidatorSet([]*types.Validator{val})
@@ -51,8 +52,8 @@ func BenchmarkLoadValidators(b *testing.B) {
 
 	config := cfg.ResetTestRoot("state_")
 	defer os.RemoveAll(config.RootDir)
-	dbType := dbm.BackendType(config.DBBackend)
-	stateDB, err := dbm.NewDB("state", dbType, config.DBDir())
+	dbType := metadb.BackendType(config.DBBackend)
+	stateDB, err := metadb.NewDB("state", dbType, config.DBDir())
 	require.NoError(b, err)
 	stateStore := sm.NewStore(stateDB)
 	state, err := stateStore.LoadFromDBOrGenesisFile(config.GenesisFile())
@@ -106,7 +107,7 @@ func TestPruneStates(t *testing.T) {
 	for name, tc := range testcases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			db := dbm.NewMemDB()
+			db := memdb.NewDB()
 			stateStore := sm.NewStore(db)
 			pk := ed25519.GenPrivKey().PubKey()
 

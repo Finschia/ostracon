@@ -14,7 +14,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	dbm "github.com/line/tm-db/v2"
+	tmdb "github.com/line/tm-db/v2"
+	"github.com/line/tm-db/v2/goleveldb"
 
 	"github.com/line/ostracon/crypto/merkle"
 	"github.com/line/ostracon/libs/log"
@@ -122,7 +123,7 @@ func runProxy(cmd *cobra.Command, args []string) error {
 		witnessesAddrs = strings.Split(witnessAddrsJoined, ",")
 	}
 
-	db, err := dbm.NewGoLevelDB("light-client-db", home)
+	db, err := goleveldb.NewDB("light-client-db", home)
 	if err != nil {
 		return fmt.Errorf("can't create a db: %w", err)
 	}
@@ -240,7 +241,7 @@ func runProxy(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func checkForExistingProviders(db dbm.DB) (string, []string, error) {
+func checkForExistingProviders(db tmdb.DB) (string, []string, error) {
 	primaryBytes, err := db.Get(primaryKey)
 	if err != nil {
 		return "", []string{""}, err
@@ -253,7 +254,7 @@ func checkForExistingProviders(db dbm.DB) (string, []string, error) {
 	return string(primaryBytes), witnessesAddrs, nil
 }
 
-func saveProviders(db dbm.DB, primaryAddr, witnessesAddrs string) error {
+func saveProviders(db tmdb.DB, primaryAddr, witnessesAddrs string) error {
 	err := db.Set(primaryKey, []byte(primaryAddr))
 	if err != nil {
 		return fmt.Errorf("failed to save primary provider: %w", err)

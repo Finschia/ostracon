@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strconv"
 
-	dbm "github.com/line/tm-db/v2"
+	tmdb "github.com/line/tm-db/v2"
 
 	tmsync "github.com/line/ostracon/libs/sync"
 	"github.com/line/ostracon/light/store"
@@ -19,7 +19,7 @@ var (
 )
 
 type dbs struct {
-	db     dbm.DB
+	db     tmdb.DB
 	prefix string
 
 	mtx  tmsync.RWMutex
@@ -28,7 +28,7 @@ type dbs struct {
 
 // New returns a Store that wraps any DB (with an optional prefix in case you
 // want to use one DB with many light clients).
-func New(db dbm.DB, prefix string) store.Store {
+func New(db tmdb.DB, prefix string) store.Store {
 
 	size := uint16(0)
 	bz, err := db.Get(sizeKey)

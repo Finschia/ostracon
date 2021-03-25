@@ -1,7 +1,7 @@
 package state
 
 import (
-	dbm "github.com/line/tm-db/v2"
+	tmdb "github.com/line/tm-db/v2"
 
 	abci "github.com/line/ostracon/abci/types"
 	tmstate "github.com/line/ostracon/proto/ostracon/state"
@@ -42,7 +42,7 @@ func ValidateValidatorUpdates(abciUpdates []abci.ValidatorUpdate, params tmproto
 
 // SaveValidatorsInfo is an alias for the private saveValidatorsInfo method in
 // store.go, exported exclusively and explicitly for testing.
-func SaveValidatorsInfo(db dbm.DB, height, lastHeightChanged int64, valSet *types.ValidatorSet) error {
+func SaveValidatorsInfo(db tmdb.DB, height, lastHeightChanged int64, valSet *types.ValidatorSet) error {
 	stateStore := dbStore{db}
 	return stateStore.saveValidatorsInfo(height, lastHeightChanged, valSet)
 }
