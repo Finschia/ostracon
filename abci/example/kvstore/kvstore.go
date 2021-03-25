@@ -6,7 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	dbm "github.com/line/tm-db/v2"
+	tmdb "github.com/line/tm-db/v2"
+	"github.com/line/tm-db/v2/memdb"
 
 	"github.com/line/ostracon/abci/example/code"
 	"github.com/line/ostracon/abci/types"
@@ -21,13 +22,13 @@ var (
 )
 
 type State struct {
-	db      dbm.DB
+	db      tmdb.DB
 	Size    int64  `json:"size"`
 	Height  int64  `json:"height"`
 	AppHash []byte `json:"app_hash"`
 }
 
-func loadState(db dbm.DB) State {
+func loadState(db tmdb.DB) State {
 	var state State
 	state.db = db
 	stateBytes, err := db.Get(stateKey)
@@ -71,7 +72,7 @@ type Application struct {
 }
 
 func NewApplication() *Application {
-	state := loadState(dbm.NewMemDB())
+	state := loadState(memdb.NewDB())
 	return &Application{state: state}
 }
 

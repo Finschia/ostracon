@@ -11,7 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	dbm "github.com/line/tm-db/v2"
+	tmdb "github.com/line/tm-db/v2"
+	"github.com/line/tm-db/v2/metadb"
 
 	abci "github.com/line/ostracon/abci/types"
 	cfg "github.com/line/ostracon/config"
@@ -25,10 +26,10 @@ import (
 )
 
 // setupTestCase does setup common to all test cases.
-func setupTestCase(t *testing.T) (func(t *testing.T), dbm.DB, sm.State) {
+func setupTestCase(t *testing.T) (func(t *testing.T), tmdb.DB, sm.State) {
 	config := cfg.ResetTestRoot("state_")
-	dbType := dbm.BackendType(config.DBBackend)
-	stateDB, err := dbm.NewDB("state", dbType, config.DBDir())
+	dbType := metadb.BackendType(config.DBBackend)
+	stateDB, err := metadb.NewDB("state", dbType, config.DBDir())
 	stateStore := sm.NewStore(stateDB)
 	require.NoError(t, err)
 	state, err := stateStore.LoadFromDBOrGenesisFile(config.GenesisFile())

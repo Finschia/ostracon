@@ -9,9 +9,11 @@ import (
 	"os"
 	"testing"
 
-	dbm "github.com/line/tm-db/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/line/tm-db/v2/goleveldb"
+	"github.com/line/tm-db/v2/memdb"
 
 	"github.com/line/ostracon/libs/log"
 )
@@ -21,7 +23,7 @@ func TestTrustMetricStoreSaveLoad(t *testing.T) {
 	require.NoError(t, err)
 	defer os.Remove(dir)
 
-	historyDB, err := dbm.NewDB("trusthistory", "goleveldb", dir)
+	historyDB, err := goleveldb.NewDB("trusthistory", dir)
 	require.NoError(t, err)
 
 	// 0 peers saved
@@ -84,8 +86,7 @@ func TestTrustMetricStoreSaveLoad(t *testing.T) {
 }
 
 func TestTrustMetricStoreConfig(t *testing.T) {
-	historyDB, err := dbm.NewDB("", "memdb", "")
-	require.NoError(t, err)
+	historyDB := memdb.NewDB()
 
 	config := MetricConfig{
 		ProportionalWeight: 0.5,
@@ -95,7 +96,7 @@ func TestTrustMetricStoreConfig(t *testing.T) {
 	// Create a store with custom config
 	store := NewTrustMetricStore(historyDB, config)
 	store.SetLogger(log.TestingLogger())
-	err = store.Start()
+	err := store.Start()
 	require.NoError(t, err)
 
 	// Have the store make us a metric with the config
@@ -109,12 +110,11 @@ func TestTrustMetricStoreConfig(t *testing.T) {
 }
 
 func TestTrustMetricStoreLookup(t *testing.T) {
-	historyDB, err := dbm.NewDB("", "memdb", "")
-	require.NoError(t, err)
+	historyDB := memdb.NewDB()
 
 	store := NewTrustMetricStore(historyDB, DefaultConfig())
 	store.SetLogger(log.TestingLogger())
-	err = store.Start()
+	err := store.Start()
 	require.NoError(t, err)
 
 	// Create 100 peers in the trust metric store
@@ -132,12 +132,11 @@ func TestTrustMetricStoreLookup(t *testing.T) {
 }
 
 func TestTrustMetricStorePeerScore(t *testing.T) {
-	historyDB, err := dbm.NewDB("", "memdb", "")
-	require.NoError(t, err)
+	historyDB := memdb.NewDB()
 
 	store := NewTrustMetricStore(historyDB, DefaultConfig())
 	store.SetLogger(log.TestingLogger())
-	err = store.Start()
+	err := store.Start()
 	require.NoError(t, err)
 
 	key := "TestKey"

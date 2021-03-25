@@ -5,7 +5,8 @@ import (
 	"fmt"
 
 	"github.com/gogo/protobuf/proto"
-	dbm "github.com/line/tm-db/v2"
+
+	tmdb "github.com/line/tm-db/v2"
 
 	abci "github.com/line/ostracon/abci/types"
 	tmmath "github.com/line/ostracon/libs/math"
@@ -72,13 +73,13 @@ type Store interface {
 
 // dbStore wraps a db (github.com/line/tm-db/v2)
 type dbStore struct {
-	db dbm.DB
+	db tmdb.DB
 }
 
 var _ Store = (*dbStore)(nil)
 
 // NewStore creates the dbStore of the state pkg.
-func NewStore(db dbm.DB) Store {
+func NewStore(db tmdb.DB) Store {
 	return dbStore{db}
 }
 
@@ -462,7 +463,7 @@ func lastStoredHeightFor(height, lastHeightChanged int64) int64 {
 }
 
 // CONTRACT: Returned ValidatorsInfo can be mutated.
-func loadValidatorsInfo(db dbm.DB, height int64) (*tmstate.ValidatorsInfo, error) {
+func loadValidatorsInfo(db tmdb.DB, height int64) (*tmstate.ValidatorsInfo, error) {
 	buf, err := db.Get(calcValidatorsKey(height))
 	if err != nil {
 		return nil, err

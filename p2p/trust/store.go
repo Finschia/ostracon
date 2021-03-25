@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	dbm "github.com/line/tm-db/v2"
+	tmdb "github.com/line/tm-db/v2"
 
 	"github.com/line/ostracon/libs/service"
 	tmsync "github.com/line/ostracon/libs/sync"
@@ -29,7 +29,7 @@ type MetricStore struct {
 	mtx tmsync.Mutex
 
 	// The db where peer trust metric history data will be stored
-	db dbm.DB
+	db tmdb.DB
 
 	// This configuration will be used when creating new TrustMetrics
 	config MetricConfig
@@ -38,7 +38,7 @@ type MetricStore struct {
 // NewTrustMetricStore returns a store that saves data to the DB
 // and uses the config when creating new trust metrics.
 // Use Start to to initialize the trust metric store
-func NewTrustMetricStore(db dbm.DB, tmc MetricConfig) *MetricStore {
+func NewTrustMetricStore(db tmdb.DB, tmc MetricConfig) *MetricStore {
 	tms := &MetricStore{
 		peerMetrics: make(map[string]*Metric),
 		db:          db,
