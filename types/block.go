@@ -761,17 +761,38 @@ func (commit *Commit) MaxCommitBytes() int64 {
 // Panics if signatures from the commit can't be added to the voteset.
 // Inverse of VoteSet.MakeCommit().
 func CommitToVoteSet(chainID string, commit *Commit, voters *VoterSet) *VoteSet {
-	if commit.AggregatedSignature != nil {
-		panic("Aggregated commit cannot make a VoteSet")
-	}
 	voteSet := NewVoteSet(chainID, commit.Height, commit.Round, PrecommitType, voters)
+	var blsPubkeys []bls.PubKeyBLS12
+	var msgs [][]byte
 	for idx, commitSig := range commit.Signatures {
 		if commitSig.Absent() {
 			continue // OK, some precommits can be missing.
 		}
-		added, err := voteSet.AddVote(commit.GetVote(idx))
-		if !added || err != nil {
-			panic(fmt.Sprintf("Failed to reconstruct LastCommit: %v", err))
+		vote := commit.GetVote(idx)
+		// if signature != nil
+		if vote.Signature != nil {
+			added, err := voteSet.AddVote(vote)
+			if !added || err != nil {
+				panic(fmt.Sprintf("Failed to reconstruct LastCommit: %v", err))
+			}
+		} else {
+			added, err := voteSet.AddAggregatedVote(vote)
+			if !added || err != nil {
+				panic(fmt.Sprintf("Failed to reconstruct LastCommit: %v", err))
+			}
+			_, voter := voters.GetByIndex(vote.ValidatorIndex)
+			msg, err := cdc.MarshalBinaryLengthPrefixed(CanonicalizeVote(chainID, vote))
+			if err != nil {
+				panic(err)
+			}
+			blsPubkeys = append(blsPubkeys, voter.PubKey.(composite.PubKeyComposite).SignKey.(bls.PubKeyBLS12))
+			msgs = append(msgs, msg)
+		}
+	}
+	if commit.AggregatedSignature != nil {
+		err := bls.VerifyAggregatedSignature(commit.AggregatedSignature, blsPubkeys, msgs)
+		if err != nil {
+			panic(err)
 		}
 	}
 	return voteSet
