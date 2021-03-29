@@ -762,37 +762,40 @@ func (commit *Commit) MaxCommitBytes() int64 {
 // Inverse of VoteSet.MakeCommit().
 func CommitToVoteSet(chainID string, commit *Commit, voters *VoterSet) *VoteSet {
 	voteSet := NewVoteSet(chainID, commit.Height, commit.Round, PrecommitType, voters)
-	var blsPubkeys []bls.PubKeyBLS12
+	var blsPubKeys []bls.PubKeyBLS12
 	var msgs [][]byte
 	for idx, commitSig := range commit.Signatures {
 		if commitSig.Absent() {
 			continue // OK, some precommits can be missing.
 		}
 		vote := commit.GetVote(idx)
-		// if signature != nil
 		if vote.Signature != nil {
 			added, err := voteSet.AddVote(vote)
 			if !added || err != nil {
-				panic(fmt.Sprintf("Failed to reconstruct LastCommit: %v", err))
+				panic(fmt.Sprintf("Failed to reconstruct LastCommit from Votes: %v", err))
 			}
 		} else {
 			added, err := voteSet.AddAggregatedVote(vote)
 			if !added || err != nil {
-				panic(fmt.Sprintf("Failed to reconstruct LastCommit: %v", err))
+				panic(fmt.Sprintf("Failed to reconstruct LastCommit from AggregatedVotes : %v", err))
 			}
-			_, voter := voters.GetByIndex(vote.ValidatorIndex)
+			// Ensure that signer is a validator.
+			addr, voter := voters.GetByIndex(vote.ValidatorIndex)
+			if voter == nil || addr == nil {
+				panic(fmt.Sprintf("Cannot find voter %d in voterSet of size %d", vote.ValidatorIndex, voters.Size()))
+			}
 			msg, err := cdc.MarshalBinaryLengthPrefixed(CanonicalizeVote(chainID, vote))
 			if err != nil {
-				panic(err)
+				panic(fmt.Sprintf("Failed to MarshalBinaryLengthPrefixed : %v", err))
 			}
-			blsPubkeys = append(blsPubkeys, voter.PubKey.(composite.PubKeyComposite).SignKey.(bls.PubKeyBLS12))
+			blsPubKeys = append(blsPubKeys, voter.PubKey.(composite.PubKeyComposite).SignKey.(bls.PubKeyBLS12))
 			msgs = append(msgs, msg)
 		}
 	}
 	if commit.AggregatedSignature != nil {
-		err := bls.VerifyAggregatedSignature(commit.AggregatedSignature, blsPubkeys, msgs)
+		err := bls.VerifyAggregatedSignature(commit.AggregatedSignature, blsPubKeys, msgs)
 		if err != nil {
-			panic(err)
+			panic(fmt.Sprintf("Failed to VerifyAggregatedSignature : %v", err))
 		}
 	}
 	return voteSet

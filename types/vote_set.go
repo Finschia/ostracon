@@ -148,35 +148,27 @@ func (voteSet *VoteSet) AddVote(vote *Vote) (added bool, err error) {
 	voteSet.mtx.Lock()
 	defer voteSet.mtx.Unlock()
 
-	return voteSet.addVote(vote, func(chainID string, pubKey crypto.PubKey) (added bool, err error) {
-		if !bytes.Equal(pubKey.Address(), vote.ValidatorAddress) {
-			return false, ErrVoteInvalidValidatorAddress
-		}
-		if !pubKey.VerifyBytes(vote.SignBytes(chainID), vote.Signature) {
-			return false, ErrVoteInvalidSignature
-		}
-		return true, nil
-	})
+	return voteSet.addVote(vote, vote.Verify)
 }
 
 func (voteSet *VoteSet) AddAggregatedVote(vote *Vote) (added bool, err error) {
 	if voteSet == nil {
-		panic("AddVote() on nil VoteSet")
+		panic("AddAggregatedVote() on nil VoteSet")
 	}
 	voteSet.mtx.Lock()
 	defer voteSet.mtx.Unlock()
 
-	return voteSet.addVote(vote, func(chainID string, pubKey crypto.PubKey) (added bool, err error) {
+	return voteSet.addVote(vote, func(chainID string, pubKey crypto.PubKey) (err error) {
 		if !bytes.Equal(pubKey.Address(), vote.ValidatorAddress) {
-			return false, ErrVoteInvalidValidatorAddress
+			return ErrVoteInvalidValidatorAddress
 		}
-		return true, nil
+		return nil
 	})
 }
 
 // NOTE: Validates as much as possible before attempting to verify the signature.
-func (voteSet *VoteSet) addVote(vote *Vote, execVerify func(chainID string,
-	pub crypto.PubKey) (added bool, err error)) (added bool, err error) {
+func (voteSet *VoteSet) addVote(vote *Vote, execVoteVerify func(chainID string,
+	pub crypto.PubKey) (err error)) (added bool, err error) {
 	if vote == nil {
 		return false, ErrVoteNil
 	}
@@ -224,7 +216,9 @@ func (voteSet *VoteSet) addVote(vote *Vote, execVerify func(chainID string,
 	}
 
 	// Check signature.
-	execVerify(voteSet.chainID, voter.PubKey)
+	if err := execVoteVerify(voteSet.chainID, voter.PubKey); err != nil {
+		errors.Wrapf(err, "Failed to verify vote with ChainID %s and PubKey %s", voteSet.chainID, voter.PubKey)
+	}
 
 	// Add vote and get conflicting vote if any.
 	added, conflicting := voteSet.addVerifiedVote(vote, blockKey, voter.VotingPower)
