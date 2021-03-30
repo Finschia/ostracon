@@ -762,8 +762,8 @@ func (commit *Commit) MaxCommitBytes() int64 {
 // Inverse of VoteSet.MakeCommit().
 func CommitToVoteSet(chainID string, commit *Commit, voters *VoterSet) *VoteSet {
 	voteSet := NewVoteSet(chainID, commit.Height, commit.Round, PrecommitType, voters)
-	var blsPubKeys []bls.PubKeyBLS12
-	var msgs [][]byte
+	blsPubKeys := make([]bls.PubKeyBLS12, 0, len(commit.Signatures))
+	msgs := make([][]byte, 0, len(commit.Signatures))
 	for idx, commitSig := range commit.Signatures {
 		if commitSig.Absent() {
 			continue // OK, some precommits can be missing.
