@@ -2,9 +2,9 @@ package types
 
 import (
 	"bytes"
-	"errors"
 	"encoding/binary"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math"
 	"math/big"
@@ -15,8 +15,8 @@ import (
 
 	"github.com/tendermint/tendermint/crypto/merkle"
 	tmmath "github.com/tendermint/tendermint/libs/math"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 const (
@@ -156,7 +156,7 @@ func (vals *ValidatorSet) ResetProposerAtRandom(hash []byte) {
 	}
 	seed := hashToSeed(hash)
 	proposer := vals.selectProposerAtRandom(seed)
-	proposerChanged(seed, vals.Proposer, proposer)
+	proposerChanged(vals, seed, hash, vals.Proposer, proposer)
 	vals.Proposer = proposer
 }
 
@@ -167,7 +167,7 @@ func hashToSeed(hash []byte) uint64 {
 	return binary.LittleEndian.Uint64(hash[:8])
 }
 
-func proposerChanged(seed uint64, p1 *Validator, p2 *Validator) {
+func proposerChanged(vals *ValidatorSet, seed uint64, hash []byte, p1 *Validator, p2 *Validator) {
 	from := "nil"
 	to := "nil"
 	if p1 != nil && p1.PubKey != nil && p1.PubKey.Bytes() != nil {
@@ -176,7 +176,17 @@ func proposerChanged(seed uint64, p1 *Validator, p2 *Validator) {
 	if p2 != nil && p2.PubKey != nil && p2.PubKey.Bytes() != nil {
 		to = hex.EncodeToString(p2.PubKey.Bytes()[:8])
 	}
-	fmt.Fprintf(os.Stderr, "******** ResetProposerAtRandom: Proposer [%d] %s -> %s\n", seed, from, to)
+	var i1 = -1
+	var i2 = -1
+	for i, val := range vals.Validators {
+		if p1 != nil && bytes.Equal(val.Address, p1.Address) {
+			i1 = i
+		}
+		if p2 != nil && bytes.Equal(val.Address, p2.Address) {
+			i2 = i
+		}
+	}
+	fmt.Fprintf(os.Stderr, "******** ResetProposerAtRandom: Proposer (seed=%d,hash=%X) [%d]%s -> [%d]%s\n", seed, hash, i1, from, i2, to)
 }
 
 // RescalePriorities rescales the priorities such that the distance between the maximum and minimum
@@ -701,6 +711,8 @@ func (vals *ValidatorSet) updateWithChangeSet(changes []*Validator, allowDeletes
 
 	// Reset proposer
 	vals.ResetProposerAtRandom([]byte{})
+
+	sort.Sort(ValidatorsByVotingPower(vals.Validators))
 
 	return nil
 }

@@ -254,6 +254,8 @@ func TestStateOversizedBlock(t *testing.T) {
 	height, round := cs1.Height, cs1.Round
 	vs2 := vss[1]
 
+	forceProposer(cs1, vss, []int{1, 1}, []int64{height, height}, []int32{round, round})
+
 	partSize := types.BlockPartSizeBytes
 
 	timeoutProposeCh := subscribe(cs1.eventBus, types.EventQueryTimeoutPropose)
@@ -815,6 +817,8 @@ func TestStateLockPOLUnlockOnUnknownBlock(t *testing.T) {
 		Round0 (cs1, A) // A A A A// A nil nil nil
 	*/
 
+	forceProposer(cs1, vss, []int{0, 1, 2}, []int64{height, height, height}, []int32{round, round + 1, round + 2})
+
 	// start round and wait for propose and prevote
 	startTestRound(cs1, height, round)
 
@@ -1245,6 +1249,8 @@ func TestValidateValidBlockOnCommit(t *testing.T) {
 	height, round := cs1.Height, cs1.Round
 
 	partSize := types.BlockPartSizeBytes
+
+	forceProposer(cs1, vss, []int{0, 1, 2}, []int64{height, height, height}, []int32{round, round + 1, round + 2})
 
 	proposalCh := subscribe(cs1.eventBus, types.EventQueryCompleteProposal)
 	timeoutWaitCh := subscribe(cs1.eventBus, types.EventQueryTimeoutWait)

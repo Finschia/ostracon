@@ -10,6 +10,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
+
 	cfg "github.com/tendermint/tendermint/config"
 	cstypes "github.com/tendermint/tendermint/consensus/types"
 	"github.com/tendermint/tendermint/crypto"
@@ -1829,6 +1830,9 @@ func (cs *State) defaultSetProposal(proposal *types.Proposal) error {
 	if !cs.Validators.GetProposer().PubKey.VerifySignature(
 		types.ProposalSignBytes(cs.state.ChainID, p), proposal.Signature,
 	) {
+		cs.Logger.Error(fmt.Sprintf("proposal signature verification failed: proposer=%X, bytes=%X, signature=%X",
+			cs.Validators.GetProposer().Address, types.ProposalSignBytes(cs.state.ChainID, p),
+			proposal.Signature))
 		return ErrInvalidProposalSignature
 	}
 

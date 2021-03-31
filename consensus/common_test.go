@@ -5,12 +5,15 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"os"
 	"path/filepath"
 	"sort"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/tendermint/tendermint/crypto/vrf"
 
 	"github.com/go-kit/kit/log/term"
 	"github.com/stretchr/testify/require"
@@ -436,6 +439,47 @@ func randState(nValidators int) (*State, []*validatorStub) {
 	return cs, vss
 }
 
+func theOthers(index int) int {
+	const theOtherIndex = math.MaxInt32
+	return theOtherIndex - index
+}
+
+func forceProposer(cs *State, vals []*validatorStub, index []int, height []int64, round []int32) {
+	for i := 0; i < 5000; i++ {
+		allMatch := true
+		firstHash := []byte{byte(i)}
+		cs.state.LastProofHash = firstHash
+		for j := 0; j < len(index); j++ {
+			hash := sm.MakeRoundHash(cs.state.LastProofHash, height[j], round[j])
+			var curVal *validatorStub
+			var mustBe bool
+			if index[j] < len(vals) {
+				curVal = vals[index[j]]
+				mustBe = true
+			} else {
+				curVal = vals[theOthers(index[j])]
+				mustBe = false
+			}
+			curValPubKey, _ := curVal.GetPubKey()
+			cs.Validators.ResetProposerAtRandom(hash)
+			if curValPubKey.Equals(cs.Validators.GetProposer().PubKey) != mustBe {
+				allMatch = false
+				break
+			}
+			// The case for moving to the next height
+			if j+1 < len(height) && height[j+1] > height[j] {
+				proof, _ := curVal.PrivValidator.GenerateVRFProof(hash)
+				cs.state.LastProofHash, _ = vrf.ProofToHash(proof)
+			}
+		}
+		if allMatch {
+			cs.state.LastProofHash = firstHash
+			return
+		}
+	}
+	panic("no such LastProofHash making index validator to be proposer")
+}
+
 //-------------------------------------------------------------------------------
 
 func ensureNoNewEvent(ch <-chan tmpubsub.Message, timeout time.Duration,
@@ -480,7 +524,7 @@ func ensureNoNewTimeout(stepCh <-chan tmpubsub.Message, timeout int64) {
 func ensureNewEvent(ch <-chan tmpubsub.Message, height int64, round int32, timeout time.Duration, errorMessage string) {
 	select {
 	case <-time.After(timeout):
-		panic(errorMessage)
+		panic(fmt.Sprintf("%s: %d nsec", errorMessage, timeout))
 	case msg := <-ch:
 		roundStateEvent, ok := msg.Data().(types.EventDataRoundState)
 		if !ok {

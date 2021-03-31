@@ -180,7 +180,10 @@ func TestByzantinePrevoteEquivocation(t *testing.T) {
 		}
 
 		// omit the last signature in the commit
-		commit.Signatures[len(commit.Signatures)-1] = types.NewCommitSigAbsent()
+		// except a proposal for the first block
+		if commit.Signatures != nil {
+			commit.Signatures[len(commit.Signatures)-1] = types.NewCommitSigAbsent()
+		}
 
 		if lazyProposer.privValidatorPubKey == nil {
 			// If this node is a validator & proposer in the current round, it will
