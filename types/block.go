@@ -864,17 +864,38 @@ func (commit *Commit) MaxCommitBytes() int64 {
 // Panics if signatures from the commit can't be added to the voteset.
 // Inverse of VoteSet.MakeCommit().
 func CommitToVoteSet(chainID string, commit *Commit, voters *VoterSet) *VoteSet {
-	if commit.AggregatedSignature != nil {
-		panic("Aggregated commit cannot make a VoteSet")
-	}
 	voteSet := NewVoteSet(chainID, commit.Height, commit.Round, tmproto.PrecommitType, voters)
+	blsPubKeys := make([]bls.PubKeyBLS12, 0, len(commit.Signatures))
+	msgs := make([][]byte, 0, len(commit.Signatures))
 	for idx, commitSig := range commit.Signatures {
 		if commitSig.Absent() {
 			continue // OK, some precommits can be missing.
 		}
-		added, err := voteSet.AddVote(commit.GetVote(int32(idx)))
-		if !added || err != nil {
-			panic(fmt.Sprintf("Failed to reconstruct LastCommit: %v", err))
+		vote := commit.GetVote(int32(idx))
+		if vote.Signature != nil {
+			added, err := voteSet.AddVote(vote)
+			if !added || err != nil {
+				panic(fmt.Sprintf("Failed to reconstruct LastCommit from Votes: %v", err))
+			}
+		} else {
+			added, err := voteSet.AddAggregatedVote(vote)
+			if !added || err != nil {
+				panic(fmt.Sprintf("Failed to reconstruct LastCommit from AggregatedVotes : %v", err))
+			}
+			// Ensure that signer is a validator.
+			addr, voter := voters.GetByIndex(vote.ValidatorIndex)
+			if voter == nil || addr == nil {
+				panic(fmt.Sprintf("Cannot find voter %d in voterSet of size %d", vote.ValidatorIndex, voters.Size()))
+			}
+			msg := VoteSignBytes(chainID, vote.ToProto())
+			blsPubKeys = append(blsPubKeys, voter.PubKey.(composite.PubKeyComposite).SignKey.(bls.PubKeyBLS12))
+			msgs = append(msgs, msg)
+		}
+	}
+	if commit.AggregatedSignature != nil {
+		err := bls.VerifyAggregatedSignature(commit.AggregatedSignature, blsPubKeys, msgs)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to VerifyAggregatedSignature : %v", err))
 		}
 	}
 	return voteSet

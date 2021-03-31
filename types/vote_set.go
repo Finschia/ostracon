@@ -3,12 +3,12 @@ package types
 import (
 	"bytes"
 	"fmt"
-	"strings"
-
+	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/libs/bits"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	tmsync "github.com/tendermint/tendermint/libs/sync"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	"strings"
 )
 
 const (
@@ -157,11 +157,27 @@ func (voteSet *VoteSet) AddVote(vote *Vote) (added bool, err error) {
 	voteSet.mtx.Lock()
 	defer voteSet.mtx.Unlock()
 
-	return voteSet.addVote(vote)
+	return voteSet.addVote(vote, vote.Verify)
+}
+
+func (voteSet *VoteSet) AddAggregatedVote(vote *Vote) (added bool, err error) {
+	if voteSet == nil {
+		panic("AddAggregatedVote() on nil VoteSet")
+	}
+	voteSet.mtx.Lock()
+	defer voteSet.mtx.Unlock()
+
+	return voteSet.addVote(vote, func(chainID string, pubKey crypto.PubKey) (err error) {
+		if !bytes.Equal(pubKey.Address(), vote.ValidatorAddress) {
+			return ErrVoteInvalidValidatorAddress
+		}
+		return nil
+	})
 }
 
 // NOTE: Validates as much as possible before attempting to verify the signature.
-func (voteSet *VoteSet) addVote(vote *Vote) (added bool, err error) {
+func (voteSet *VoteSet) addVote(vote *Vote, execVoteVerify func(chainID string,
+	pub crypto.PubKey) (err error)) (added bool, err error) {
 	if vote == nil {
 		return false, ErrVoteNil
 	}
@@ -210,7 +226,7 @@ func (voteSet *VoteSet) addVote(vote *Vote) (added bool, err error) {
 	}
 
 	// Check signature.
-	if err := vote.Verify(voteSet.chainID, voter.PubKey); err != nil {
+	if err := execVoteVerify(voteSet.chainID, voter.PubKey); err != nil {
 		return false, fmt.Errorf("failed to verify vote with ChainID %s and PubKey %s: %w", voteSet.chainID, voter.PubKey, err)
 	}
 
