@@ -49,12 +49,6 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Configure git for private modules
-        env:
-          TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: git config --global url."https://${GITHUB_TOKEN}:x-oauth-basic@github.com".insteadOf "https://github.com"
-      - uses: actions/checkout@v2
-
       - name: Publish to Docker Hub
         uses: docker/build-push-action@v2
         with:

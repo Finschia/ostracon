@@ -6,7 +6,7 @@ env:
 
 builds:
   - id: "Tendermint"
-    main: ./cmd/tendermint/main.go
+    main: ./cmd/ostracon/main.go
     ldflags:
       - -s -w -X github.com/line/ostracon/version.TMCoreSemVer={{ .Version }}
     env:
