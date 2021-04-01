@@ -2,9 +2,11 @@
 FROM golang:1.15-alpine as builder
 RUN apk update && \
     apk upgrade && \
-    apk --no-cache add make
+    apk --no-cache add make git
 COPY / /ostracon
 WORKDIR /ostracon
+RUN git config --global url."https://${TOKEN}:x-oauth-basic@github.com".insteadOf "https://github.com"
+RUN go mod download
 RUN make build-linux
 
 # stage 2
@@ -25,7 +27,7 @@ ENV TMHOME /ostracon
 # could execute bash commands.
 RUN apk update && \
     apk upgrade && \
-    apk --no-cache add curl jq git bash && \
+    apk --no-cache add curl jq bash && \
     addgroup tmuser && \
     adduser -S -G tmuser tmuser -h "$TMHOME"
 

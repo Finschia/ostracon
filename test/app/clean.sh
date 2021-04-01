@@ -1,3 +1,3 @@
-killall tendermint
+killall ostracon
 killall abci-cli
-rm -rf ~/.tendermint_app
+rm -rf ~/.ostracon_app

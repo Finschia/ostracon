@@ -17,6 +17,10 @@ jobs:
     name: Super linter
     runs-on: ubuntu-latest
     steps:
+      - name: Configure git for private modules
+        env:
+          TOKEN: ${{ secrets.TOKEN }}
+        run: git config --global url."https://${TOKEN}:x-oauth-basic@github.com".insteadOf "https://github.com"
       - name: Checkout Code
         uses: actions/checkout@v2
       - name: Lint Code Base
@@ -25,7 +29,7 @@ jobs:
           LINTER_RULES_PATH: .
           VALIDATE_ALL_CODEBASE: true
           DEFAULT_BRANCH: master
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TOKEN: ${{ secrets.TOKEN }}
           VALIDATE_MD: true
           MARKDOWN_CONFIG_FILE: .markdownlint.yml
           VALIDATE_OPAENAPI: true
