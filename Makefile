@@ -10,37 +10,34 @@ DOCKER_BUF := docker run -v $(shell pwd):/workspace --workdir /workspace bufbuil
 CGO_ENABLED ?= 0
 
 # handle nostrip
-ifeq (,$(findstring nostrip,$(TENDERMINT_BUILD_OPTIONS)))
+ifeq (,$(findstring nostrip,$(OSTRACON_BUILD_OPTIONS)))
   BUILD_FLAGS += -trimpath
   LD_FLAGS += -s -w
 endif
 
 # handle race
-ifeq (race,$(findstring race,$(TENDERMINT_BUILD_OPTIONS)))
+ifeq (race,$(findstring race,$(OSTRACON_BUILD_OPTIONS)))
   CGO_ENABLED=1
   BUILD_FLAGS += -race
 endif
 
-# handle cleveldb
-ifeq (cleveldb,$(findstring cleveldb,$(TENDERMINT_BUILD_OPTIONS)))
-  CGO_ENABLED=1
-  BUILD_TAGS += cleveldb
-endif
-
-# handle badgerdb
-ifeq (badgerdb,$(findstring badgerdb,$(TENDERMINT_BUILD_OPTIONS)))
-  BUILD_TAGS += badgerdb
-endif
-
-# handle rocksdb
-ifeq (rocksdb,$(findstring rocksdb,$(TENDERMINT_BUILD_OPTIONS)))
-  CGO_ENABLED=1
-  BUILD_TAGS += rocksdb
-endif
-
-# handle boltdb
-ifeq (boltdb,$(findstring boltdb,$(TENDERMINT_BUILD_OPTIONS)))
-  BUILD_TAGS += boltdb
+ifeq (,$(filter $(OSTRACON_BUILD_OPTIONS), cleveldb rocksdb boltdb badgerdb))
+   BUILD_TAGS += goleveldb
+else
+  ifeq (cleveldb,$(findstring cleveldb,$(OSTRACON_BUILD_OPTIONS)))
+    CGO_ENABLED=1
+    BUILD_TAGS += cleveldb
+  endif
+  ifeq (badgerdb,$(findstring badgerdb,$(OSTRACON_BUILD_OPTIONS)))
+    BUILD_TAGS += badgerdb
+  endif
+  ifeq (rocksdb,$(findstring rocksdb,$(OSTRACON_BUILD_OPTIONS)))
+    CGO_ENABLED=1
+    BUILD_TAGS += rocksdb
+  endif
+  ifeq (boltdb,$(findstring boltdb,$(OSTRACON_BUILD_OPTIONS)))
+    BUILD_TAGS += boltdb
+  endif
 endif
 
 # allow users to pass additional flags via the conventional LDFLAGS variable
@@ -60,7 +57,7 @@ build:
 .PHONY: build
 
 install:
-	CGO_ENABLED=$(CGO_ENABLED) go install $(BUILD_FLAGS) -tags $(BUILD_TAGS) ./cmd/tendermint
+	CGO_ENABLED=$(CGO_ENABLED) go install $(BUILD_FLAGS) -tags '$(BUILD_TAGS)' ./cmd/tendermint
 .PHONY: install
 
 ###############################################################################
@@ -219,7 +216,7 @@ build-docker-localnode:
 	@cd networks/local && make
 .PHONY: build-docker-localnode
 
-# Runs `make build TENDERMINT_BUILD_OPTIONS=cleveldb` from within an Amazon
+# Runs `make build OSTRACON_BUILD_OPTIONS=cleveldb` from within an Amazon
 # Linux (v2)-based Docker build container in order to build an Amazon
 # Linux-compatible binary. Produces a compatible binary at ./build/tendermint
 build_c-amazonlinux:
