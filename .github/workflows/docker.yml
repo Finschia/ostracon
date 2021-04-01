@@ -1,6 +1,6 @@
 name: Build & Push
-#  Build & Push rebuilds the tendermint docker image on every push to master and creation of tags
-# and pushes the image to https://hub.docker.com/r/interchainio/simapp/tags
+#  Build & Push rebuilds the ostracon docker image on every push to master and creation of tags
+# and pushes the image to https://http://docker-registry.linecorp.com/link-network/v2/lbm
 on:
   pull_request:
   push:
@@ -18,7 +18,7 @@ jobs:
       - name: Prepare
         id: prep
         run: |
-          DOCKER_IMAGE=tendermint/tendermint
+          DOCKER_IMAGE=ostracon/ostracon
           VERSION=noop
           if [[ $GITHUB_REF == refs/tags/* ]]; then
             VERSION=${GITHUB_REF#refs/tags/}
@@ -48,6 +48,12 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Configure git for private modules
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: git config --global url."https://${GITHUB_TOKEN}:x-oauth-basic@github.com".insteadOf "https://github.com"
+      - uses: actions/checkout@v2
 
       - name: Publish to Docker Hub
         uses: docker/build-push-action@v2
