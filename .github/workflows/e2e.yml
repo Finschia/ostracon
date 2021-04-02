@@ -8,8 +8,8 @@ on:
       - master
       - release/**
 
-# This is not possible, missing ci.toml from original tendermint
 jobs:
+# TODO ebony: This is not possible, missing ci.toml from original tendermint
 #  e2e-test:
 #    runs-on: ubuntu-latest
 #    timeout-minutes: 15

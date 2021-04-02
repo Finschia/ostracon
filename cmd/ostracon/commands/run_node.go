@@ -101,7 +101,7 @@ func NewRunNodeCmd(nodeProvider nm.Provider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "start",
 		Aliases: []string{"node", "run"},
-		Short:   "Run the tendermint node",
+		Short:   "Run the ostracon node",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := checkGenesisHash(config); err != nil {
 				return err
