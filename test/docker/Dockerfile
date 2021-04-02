@@ -5,7 +5,7 @@ RUN apt-get update && \
   apt-get install -y --no-install-recommends \
   jq bsdmainutils vim-common psmisc netcat curl
 
-# Setup tendermint repo
+# Setup ostracon repo
 ENV REPO $GOPATH/src/github.com/line/ostracon
 ENV GOBIN $GOPATH/bin
 WORKDIR $REPO
@@ -24,7 +24,7 @@ RUN make install_abci
 # install Tendermint
 RUN make install
 
-RUN tendermint testnet \
+RUN ostracon testnet \
   --config $REPO/test/docker/config-template.toml \
   --node-dir-prefix="mach" \
   --v=4 \

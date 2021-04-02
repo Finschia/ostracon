@@ -70,7 +70,7 @@ For comparison, the following are the number of Tendermint imports in the Cosmos
 ```
       1 github.com/tendermint/tendermint/abci/server
      73 github.com/tendermint/tendermint/abci/types
-      2 github.com/tendermint/tendermint/cmd/tendermint/commands
+      2 github.com/tendermint/tendermint/cmd/ostracon/commands
       7 github.com/tendermint/tendermint/config
      68 github.com/tendermint/tendermint/crypto
       1 github.com/tendermint/tendermint/crypto/armor

@@ -77,7 +77,7 @@ Sometimes it's necessary to rename libraries to avoid naming collisions or ambig
 * Separate imports into blocks - one for the standard lib, one for external libs and one for application libs.
 * Here are some common library labels for consistency:
     * dbm "github.com/tendermint/tm-db"
-    * tmcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
+    * tmcmd "github.com/tendermint/tendermint/cmd/ostracon/commands"
     * tmcfg "github.com/tendermint/tendermint/config/tendermint"
     * tmtypes "github.com/tendermint/tendermint/types"
 * Never use anonymous imports (the `.`), for example, `tmlibs/common` or anything else.

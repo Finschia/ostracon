@@ -14,10 +14,10 @@ import (
 	tmtime "github.com/line/ostracon/types/time"
 )
 
-// InitFilesCmd initialises a fresh Tendermint Core instance.
+// InitFilesCmd initialises a fresh Ostracon Core instance.
 var InitFilesCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Initialize Tendermint",
+	Short: "Initialize Ostracon",
 	RunE:  initFiles,
 }
 

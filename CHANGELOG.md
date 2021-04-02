@@ -3415,7 +3415,7 @@ IMPROVEMENTS:
 - Use `.Wrap()` and `.Unwrap()` instead of eg. `PubKeyS` for `go-crypto` types
 - RPC JSON responses use pretty printing (via `json.MarshalIndent`)
 - Color code different instances of the consensus for tests
-- Isolate viper to `cmd/tendermint/commands` and do not read config from file for tests
+- Isolate viper to `cmd/ostracon/commands` and do not read config from file for tests
 
 
 ## 0.9.2 (April 26, 2017)
