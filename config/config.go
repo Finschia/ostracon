@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/line/ostracon/types"
 )
 
 const (
@@ -232,7 +234,7 @@ func DefaultBaseConfig() BaseConfig {
 		LogFormat:          LogFormatPlain,
 		FastSyncMode:       true,
 		FilterPeers:        false,
-		DBBackend:          "goleveldb",
+		DBBackend:          types.DBBackend,
 		DBPath:             "data",
 	}
 }

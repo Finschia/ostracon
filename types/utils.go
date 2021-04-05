@@ -1,6 +1,19 @@
 package types
 
-import "reflect"
+import (
+	"reflect"
+)
+
+var (
+	// This is set at compile time. Could be cleveldb, defaults is goleveldb.
+	DBBackend = ""
+)
+
+func init() {
+	if len(DBBackend) == 0 {
+		DBBackend = "goleveldb"
+	}
+}
 
 // Go lacks a simple and safe way to see if something is a typed nil.
 // See:

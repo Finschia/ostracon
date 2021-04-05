@@ -4,7 +4,7 @@ OUTPUT?=build/ostracon
 BUILD_TAGS?=ostracon
 VERSION := $(shell git describe --always)
 LD_FLAGS = -X github.com/line/ostracon/version.TMCoreSemVer=$(VERSION)
-BUILD_FLAGS = -mod=readonly -ldflags "$(LD_FLAGS)"
+BUILD_FLAGS = -mod=readonly
 HTTPS_GIT := https://github.com/line/ostracon.git
 DOCKER_BUF := docker run -v $(shell pwd):/workspace --workdir /workspace bufbuild/buf
 CGO_ENABLED ?= 0
@@ -23,25 +23,29 @@ endif
 
 ifeq (,$(filter $(OSTRACON_BUILD_OPTIONS), cleveldb rocksdb boltdb badgerdb))
    BUILD_TAGS += goleveldb
+   LD_FLAGS += -X github.com/line/ostracon/types.DBBackend=goleveldb
 else
   ifeq (cleveldb,$(findstring cleveldb,$(OSTRACON_BUILD_OPTIONS)))
     CGO_ENABLED=1
     BUILD_TAGS += cleveldb
+    LD_FLAGS += -X github.com/line/ostracon/types.DBBackend=cleveldb
   endif
   ifeq (badgerdb,$(findstring badgerdb,$(OSTRACON_BUILD_OPTIONS)))
     BUILD_TAGS += badgerdb
+    LD_FLAGS += -X github.com/line/ostracon/types.DBBackend=badgerdb
   endif
   ifeq (rocksdb,$(findstring rocksdb,$(OSTRACON_BUILD_OPTIONS)))
     CGO_ENABLED=1
     BUILD_TAGS += rocksdb
+    LD_FLAGS += -X github.com/line/ostracon/types.DBBackend=rocksdb
   endif
   ifeq (boltdb,$(findstring boltdb,$(OSTRACON_BUILD_OPTIONS)))
     BUILD_TAGS += boltdb
+    LD_FLAGS += -X github.com/line/ostracon/types.DBBackend=boltdb
   endif
 endif
 
-# allow users to pass additional flags via the conventional LDFLAGS variable
-LD_FLAGS += $(LDFLAGS)
+BUILD_FLAGS += -ldflags "$(LD_FLAGS)"
 
 all: check build test install
 .PHONY: all
