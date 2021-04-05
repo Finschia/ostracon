@@ -822,8 +822,8 @@ func TestCommitToVoteSet(t *testing.T) {
 
 	chainID := voteSet.ChainID()
 	voteSet2 := CommitToVoteSet(chainID, commit, voterSet)
-	var isAggregate bool
-	isAggregate = false
+	var hasAggregated bool
+	hasAggregated = false
 	for i := 0; i < len(vals); i++ {
 		// This is the vote before `MakeCommit`.
 		vote1 := voteSet.GetByIndex(i)
@@ -839,7 +839,7 @@ func TestCommitToVoteSet(t *testing.T) {
 			assert.Equal(t, vote1bz, vote2bz)
 			assert.Equal(t, vote1bz, vote3bz)
 		} else {
-			isAggregate = true
+			hasAggregated = true
 			vote2bz := cdc.MustMarshalBinaryBare(vote2)
 			vote3bz := cdc.MustMarshalBinaryBare(vote3)
 			assert.Equal(t, vote2bz, vote3bz)
@@ -860,7 +860,7 @@ func TestCommitToVoteSet(t *testing.T) {
 			assert.True(t, isPanic)
 		}
 	}()
-	if isAggregate {
+	if hasAggregated {
 		voteSet2.MakeCommit()
 	}
 }
