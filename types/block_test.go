@@ -802,16 +802,6 @@ func TestBlockMaxDataBytesUnknownEvidence(t *testing.T) {
 	}
 }
 
-func isEqualVoteWithoutSignature(t *testing.T, vote1, vote2 *Vote) {
-	assert.Equal(t, vote1.Type, vote2.Type)
-	assert.Equal(t, vote1.Height, vote2.Height)
-	assert.Equal(t, vote1.Round, vote2.Round)
-	assert.Equal(t, vote1.BlockID, vote2.BlockID)
-	assert.Equal(t, vote1.Timestamp, vote2.Timestamp)
-	assert.Equal(t, vote1.ValidatorAddress, vote2.ValidatorAddress)
-	assert.Equal(t, vote1.ValidatorIndex, vote2.ValidatorIndex)
-}
-
 func TestCommitToVoteSet(t *testing.T) {
 	lastID := makeBlockIDRandom()
 	h := int64(3)
@@ -822,8 +812,6 @@ func TestCommitToVoteSet(t *testing.T) {
 
 	chainID := voteSet.ChainID()
 	voteSet2 := CommitToVoteSet(chainID, commit, voterSet)
-	var hasAggregated bool
-	hasAggregated = false
 	for i := 0; i < len(vals); i++ {
 		// This is the vote before `MakeCommit`.
 		vote1 := voteSet.GetByIndex(i)
@@ -847,10 +835,22 @@ func TestCommitToVoteSet(t *testing.T) {
 			assert.Nil(t, vote3.Signature)
 			isEqualVoteWithoutSignature(t, vote1, vote2)
 			isEqualVoteWithoutSignature(t, vote1, vote3)
-			hasAggregated = true
 		}
 	}
-	// panic test
+}
+
+func TestMakeCommitPanicByAggregatedCommitAndVoteSet(t *testing.T){
+	lastID := makeBlockIDRandom()
+	h := int64(3)
+
+	voteSet, _, voterSet, vals := randVoteSet(h-1, 1, PrecommitType, 10, 1)
+	commit, err := MakeCommit(lastID, h-1, 1, voteSet, vals, time.Now())
+	assert.NoError(t, err)
+
+	chainID := voteSet.ChainID()
+	voteSet2 := CommitToVoteSet(chainID, commit, voterSet)
+
+	//// panic test
 	defer func() {
 		err := recover()
 		if err != nil {
@@ -860,7 +860,7 @@ func TestCommitToVoteSet(t *testing.T) {
 			assert.True(t, isPanic)
 		}
 	}()
-	if hasAggregated {
+	if commit.AggregatedSignature != nil {
 		voteSet2.MakeCommit()
 	}
 }
