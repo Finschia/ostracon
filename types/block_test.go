@@ -839,7 +839,7 @@ func TestCommitToVoteSet(t *testing.T) {
 	}
 }
 
-func TestMakeCommitPanicByAggregatedCommitAndVoteSet(t *testing.T){
+func TestMakeCommitPanicByAggregatedCommitAndVoteSet(t *testing.T) {
 	lastID := makeBlockIDRandom()
 	h := int64(3)
 
@@ -850,18 +850,21 @@ func TestMakeCommitPanicByAggregatedCommitAndVoteSet(t *testing.T){
 	chainID := voteSet.ChainID()
 	voteSet2 := CommitToVoteSet(chainID, commit, voterSet)
 
-	//// panic test
+	// panic test
 	defer func() {
 		err := recover()
 		if err != nil {
-			wantStr := "This signature of commitSig is already aggregated: commitSig"
+			wantStr := "This signature of commitSig is already aggregated: commitSig: <"
 			gotStr := fmt.Sprintf("%v", err)
 			isPanic := strings.Contains(gotStr, wantStr)
 			assert.True(t, isPanic)
+		} else {
+			t.Log("Not aggregated")
 		}
 	}()
 	if commit.AggregatedSignature != nil {
 		voteSet2.MakeCommit()
+		assert.Fail(t, "Don't reach here")
 	}
 }
 
