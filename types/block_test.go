@@ -9,6 +9,7 @@ import (
 	"math"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -821,7 +822,8 @@ func TestCommitToVoteSet(t *testing.T) {
 
 	chainID := voteSet.ChainID()
 	voteSet2 := CommitToVoteSet(chainID, commit, voterSet)
-
+	var isAggregate bool
+	isAggregate = false
 	for i := 0; i < len(vals); i++ {
 		// This is the vote before `MakeCommit`.
 		vote1 := voteSet.GetByIndex(i)
@@ -837,6 +839,7 @@ func TestCommitToVoteSet(t *testing.T) {
 			assert.Equal(t, vote1bz, vote2bz)
 			assert.Equal(t, vote1bz, vote3bz)
 		} else {
+			isAggregate = true
 			vote2bz := cdc.MustMarshalBinaryBare(vote2)
 			vote3bz := cdc.MustMarshalBinaryBare(vote3)
 			assert.Equal(t, vote2bz, vote3bz)
@@ -846,6 +849,19 @@ func TestCommitToVoteSet(t *testing.T) {
 			isEqualVoteWithoutSignature(t, vote1, vote2)
 			isEqualVoteWithoutSignature(t, vote1, vote3)
 		}
+	}
+	// panic test
+	defer func() {
+		err := recover()
+		if err != nil {
+			wantStr := "This signature of commitSig is already aggregated: commitSig"
+			gotStr := fmt.Sprintf("%v", err)
+			isPanic := strings.Contains(gotStr, wantStr)
+			assert.True(t, isPanic)
+		}
+	}()
+	if isAggregate {
+		voteSet2.MakeCommit()
 	}
 }
 

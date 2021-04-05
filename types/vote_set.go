@@ -587,7 +587,7 @@ func (voteSet *VoteSet) MakeCommit() *Commit {
 	for i, v := range voteSet.votes {
 		commitSig := v.CommitSig()
 		if !commitSig.Absent() && commitSig.Signature == nil {
-			panic(fmt.Sprintf("This signature of commitSig %v is already aggregated ", commitSig))
+			panic(fmt.Sprintf("This signature of commitSig is already aggregated: commitSig: <%v>", commitSig))
 		}
 		// if block ID exists but doesn't match, exclude sig
 		if commitSig.ForBlock() && !v.BlockID.Equals(*voteSet.maj23) {
