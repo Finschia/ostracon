@@ -586,14 +586,19 @@ func (voteSet *VoteSet) MakeCommit() *Commit {
 	commitSigs := make([]CommitSig, len(voteSet.votes))
 	for i, v := range voteSet.votes {
 		commitSig := v.CommitSig()
+		if !commitSig.Absent() && commitSig.Signature == nil {
+			panic(fmt.Sprintf("This signature of commitSig %v is already aggregated ", commitSig))
+		}
 		// if block ID exists but doesn't match, exclude sig
 		if commitSig.ForBlock() && !v.BlockID.Equals(*voteSet.maj23) {
 			commitSig = NewCommitSigAbsent()
 		}
 		commitSigs[i] = commitSig
 	}
+	newCommit := NewCommit(voteSet.GetHeight(), voteSet.GetRound(), *voteSet.maj23, commitSigs)
+	newCommit.AggregateSignatures()
 
-	return NewCommit(voteSet.GetHeight(), voteSet.GetRound(), *voteSet.maj23, commitSigs)
+	return newCommit
 }
 
 //--------------------------------------------------------------------------------
