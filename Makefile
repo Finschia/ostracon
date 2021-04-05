@@ -199,7 +199,7 @@ sync-docs:
 
 build-docker: build-linux
 	cp $(OUTPUT) DOCKER/ostracon
-	docker build --label=ostracon --tag="ostracon/ostracon" DOCKER
+	docker build --build-arg GITHUB_TOKEN=$(GITHUB_TOKEN) --label=ostracon --tag="ostracon/ostracon" --file ./DOCKER/Dockerfile .
 	rm -rf DOCKER/ostracon
 .PHONY: build-docker
 

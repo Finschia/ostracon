@@ -1,19 +1,21 @@
-# stage 1 Generate Tendermint Binary
+# stage 1 Generate Ostracon Binary
 FROM golang:1.15-alpine as builder
+ARG GITHUB_TOKEN=""
 RUN apk update && \
     apk upgrade && \
     apk --no-cache add make git
 COPY / /ostracon
 WORKDIR /ostracon
-RUN git config --global url."https://${TOKEN}:x-oauth-basic@github.com".insteadOf "https://github.com"
+RUN go env -w GOPRIVATE=github.com/line/*
+RUN git config --global url."https://$GITHUB_TOKEN:x-oauth-basic@github.com".insteadOf "https://github.com"
 RUN go mod download
 RUN make build-linux
 
 # stage 2
 FROM golang:1.15-alpine
-LABEL maintainer="hello@ostracon.com"
+LABEL maintainer="ostracon@linecorp.com"
 
-# Tendermint will be looking for the genesis file in /ostracon/config/genesis.json
+# Ostracon will be looking for the genesis file in /ostracon/config/genesis.json
 # (unless you change `genesis_file` in config.toml). You can put your config.toml and
 # private validator file into /ostracon/config.
 #
@@ -42,13 +44,12 @@ EXPOSE 26656 26657 26660
 STOPSIGNAL SIGTERM
 
 COPY --from=builder /ostracon/build/ostracon /usr/bin/ostracon
+COPY --from=builder /ostracon/DOCKER/docker-entrypoint.sh /usr/local/bin/
 
 # You can overwrite these before the first run to influence
 # config.json and genesis.json. Additionally, you can override
 # CMD to add parameters to `ostracon node`.
 ENV PROXY_APP=kvstore MONIKER=dockernode CHAIN_ID=dockerchain
-
-COPY ./DOCKER/docker-entrypoint.sh /usr/local/bin/
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node"]
