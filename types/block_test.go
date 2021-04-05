@@ -839,7 +839,6 @@ func TestCommitToVoteSet(t *testing.T) {
 			assert.Equal(t, vote1bz, vote2bz)
 			assert.Equal(t, vote1bz, vote3bz)
 		} else {
-			hasAggregated = true
 			vote2bz := cdc.MustMarshalBinaryBare(vote2)
 			vote3bz := cdc.MustMarshalBinaryBare(vote3)
 			assert.Equal(t, vote2bz, vote3bz)
@@ -848,6 +847,7 @@ func TestCommitToVoteSet(t *testing.T) {
 			assert.Nil(t, vote3.Signature)
 			isEqualVoteWithoutSignature(t, vote1, vote2)
 			isEqualVoteWithoutSignature(t, vote1, vote3)
+			hasAggregated = true
 		}
 	}
 	// panic test
