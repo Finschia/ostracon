@@ -1087,7 +1087,6 @@ func (cs *State) createProposalBlock(round int) (block *types.Block, blockParts 
 	case cs.LastCommit.HasTwoThirdsMajority():
 		// Make the commit from LastCommit
 		commit = cs.LastCommit.MakeCommit()
-		commit.AggregateSignatures()
 	default: // This shouldn't happen.
 		cs.Logger.Error("enterPropose: Cannot propose anything: No commit for the previous block")
 		return
