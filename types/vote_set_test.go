@@ -583,7 +583,6 @@ func TestVoteSet_MakeCommit(t *testing.T) {
 		}
 
 		commit := voteSet.MakeCommit()
-		commit.AggregateSignatures()
 
 		assert.Equal(t, height, commit.Height)
 		assert.Equal(t, round, commit.Round)

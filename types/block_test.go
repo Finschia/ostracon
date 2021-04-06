@@ -9,6 +9,7 @@ import (
 	"math"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -303,7 +304,12 @@ func TestCommit(t *testing.T) {
 	require.NotNil(t, commit.BitArray())
 	assert.Equal(t, bits.NewBitArray(10).Size(), commit.BitArray().Size())
 
-	assert.Equal(t, voteSet.GetByIndex(0), commit.GetByIndex(0))
+	if len(voteSet.GetByIndex(0).Signature) != bls.SignatureSize {
+		assert.Equal(t, voteSet.GetByIndex(0), commit.GetByIndex(0))
+	} else {
+		assert.NotNil(t, commit.AggregatedSignature)
+		isEqualVoteWithoutSignature(t, voteSet.GetByIndex(0), commit.GetByIndex(0))
+	}
 }
 
 func TestCommitValidateBasic(t *testing.T) {
@@ -909,18 +915,62 @@ func TestCommitToVoteSet(t *testing.T) {
 	voteSet2 := CommitToVoteSet(chainID, commit, voterSet)
 
 	for i := int32(0); int(i) < len(vals); i++ {
+		// This is the vote before `MakeCommit`.
 		vote1 := voteSet.GetByIndex(i)
+		// This is the vote created from `CommitToVoteSet`
 		vote2 := voteSet2.GetByIndex(i)
+		// This is the vote created from `MakeCommit`
 		vote3 := commit.GetVote(i)
 
-		vote1bz, err := vote1.ToProto().Marshal()
-		require.NoError(t, err)
-		vote2bz, err := vote2.ToProto().Marshal()
-		require.NoError(t, err)
-		vote3bz, err := vote3.ToProto().Marshal()
-		require.NoError(t, err)
-		assert.Equal(t, vote1bz, vote2bz)
-		assert.Equal(t, vote1bz, vote3bz)
+		if len(vote1.Signature) != bls.SignatureSize {
+			vote1bz, err := vote1.ToProto().Marshal()
+			require.NoError(t, err)
+			vote2bz, err := vote2.ToProto().Marshal()
+			require.NoError(t, err)
+			vote3bz, err := vote3.ToProto().Marshal()
+			require.NoError(t, err)
+			assert.Equal(t, vote1bz, vote2bz)
+			assert.Equal(t, vote1bz, vote3bz)
+		} else {
+			vote2bz, err := vote2.ToProto().Marshal()
+			require.NoError(t, err)
+			vote3bz, err := vote3.ToProto().Marshal()
+			assert.Equal(t, vote2bz, vote3bz)
+			assert.NotNil(t, commit.AggregatedSignature)
+			assert.Nil(t, vote2.Signature)
+			assert.Nil(t, vote3.Signature)
+			isEqualVoteWithoutSignature(t, vote1, vote2)
+			isEqualVoteWithoutSignature(t, vote1, vote3)
+		}
+	}
+}
+
+func TestMakeCommitPanicByAggregatedCommitAndVoteSet(t *testing.T) {
+	lastID := makeBlockIDRandom()
+	h := int64(3)
+
+	voteSet, _, voterSet, vals := randVoteSet(h-1, 1, tmproto.PrecommitType, 10, 1)
+	commit, err := MakeCommit(lastID, h-1, 1, voteSet, vals, time.Now())
+	assert.NoError(t, err)
+
+	chainID := voteSet.ChainID()
+	voteSet2 := CommitToVoteSet(chainID, commit, voterSet)
+
+	// panic test
+	defer func() {
+		err := recover()
+		if err != nil {
+			wantStr := "This signature of commitSig is already aggregated: commitSig: <"
+			gotStr := fmt.Sprintf("%v", err)
+			isPanic := strings.Contains(gotStr, wantStr)
+			assert.True(t, isPanic)
+		} else {
+			t.Log("Not aggregated")
+		}
+	}()
+	if commit.AggregatedSignature != nil {
+		voteSet2.MakeCommit()
+		assert.Fail(t, "Don't reach here")
 	}
 }
 

@@ -47,6 +47,16 @@ func exampleVote(t byte) *Vote {
 	}
 }
 
+func isEqualVoteWithoutSignature(t *testing.T, vote1, vote2 *Vote) {
+	assert.Equal(t, vote1.Type, vote2.Type)
+	assert.Equal(t, vote1.Height, vote2.Height)
+	assert.Equal(t, vote1.Round, vote2.Round)
+	assert.Equal(t, vote1.BlockID, vote2.BlockID)
+	assert.Equal(t, vote1.Timestamp, vote2.Timestamp)
+	assert.Equal(t, vote1.ValidatorAddress, vote2.ValidatorAddress)
+	assert.Equal(t, vote1.ValidatorIndex, vote2.ValidatorIndex)
+}
+
 func TestVoteSignable(t *testing.T) {
 	vote := examplePrecommit()
 	v := vote.ToProto()

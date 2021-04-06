@@ -3,12 +3,13 @@ package types
 import (
 	"bytes"
 	"fmt"
+	"strings"
+
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/libs/bits"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	tmsync "github.com/tendermint/tendermint/libs/sync"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	"strings"
 )
 
 const (
@@ -617,14 +618,19 @@ func (voteSet *VoteSet) MakeCommit() *Commit {
 	commitSigs := make([]CommitSig, len(voteSet.votes))
 	for i, v := range voteSet.votes {
 		commitSig := v.CommitSig()
+		if !commitSig.Absent() && commitSig.Signature == nil {
+			panic(fmt.Sprintf("This signature of commitSig is already aggregated: commitSig: <%v>", commitSig))
+		}
 		// if block ID exists but doesn't match, exclude sig
 		if commitSig.ForBlock() && !v.BlockID.Equals(*voteSet.maj23) {
 			commitSig = NewCommitSigAbsent()
 		}
 		commitSigs[i] = commitSig
 	}
+	newCommit := NewCommit(voteSet.GetHeight(), voteSet.GetRound(), *voteSet.maj23, commitSigs)
+	newCommit.AggregateSignatures()
 
-	return NewCommit(voteSet.GetHeight(), voteSet.GetRound(), *voteSet.maj23, commitSigs)
+	return newCommit
 }
 
 //--------------------------------------------------------------------------------
