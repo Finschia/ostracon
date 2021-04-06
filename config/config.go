@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/line/tm-db/v2/metadb"
 )
 
 const (
@@ -23,6 +25,8 @@ const (
 
 	// DefaultLogLevel defines a default log level as INFO.
 	DefaultLogLevel = "info"
+
+	DefaultDBBackend = "goleveldb"
 )
 
 // NOTE: Most of the structs & relevant comments + the
@@ -218,8 +222,16 @@ type BaseConfig struct { //nolint: maligned
 	FilterPeers bool `mapstructure:"filter_peers"` // false
 }
 
-// DefaultBaseConfig returns a default base configuration for a Tendermint node
+// DefaultBaseConfig returns a default base configuration for a Ostracon node
 func DefaultBaseConfig() BaseConfig {
+	dbs := metadb.AvailableDBBackends()
+	defaultDBBackend := DefaultDBBackend
+	for _, b := range dbs {
+		defaultDBBackend = string(b)
+		if defaultDBBackend == DefaultDBBackend {
+			break
+		}
+	}
 	return BaseConfig{
 		Genesis:            defaultGenesisJSONPath,
 		PrivValidatorKey:   defaultPrivValKeyPath,
@@ -232,12 +244,12 @@ func DefaultBaseConfig() BaseConfig {
 		LogFormat:          LogFormatPlain,
 		FastSyncMode:       true,
 		FilterPeers:        false,
-		DBBackend:          "goleveldb",
+		DBBackend:          defaultDBBackend,
 		DBPath:             "data",
 	}
 }
 
-// TestBaseConfig returns a base configuration for testing a Tendermint node
+// TestBaseConfig returns a base configuration for testing a Ostracon node
 func TestBaseConfig() BaseConfig {
 	cfg := DefaultBaseConfig()
 	cfg.chainID = "tendermint_test"
