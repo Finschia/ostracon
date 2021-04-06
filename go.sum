@@ -322,8 +322,9 @@ github.com/lightstep/lightstep-tracer-go v0.18.1/go.mod h1:jlF1pusYV4pidLvZ+XD0U
 github.com/line/iavl/v2 v2.0.0-init.1.0.20210325055816-6304f1fd2f09 h1:11L4wU4iYYRfOP20qo7909Q0gkd1NG8GOjSPu3Bblcg=
 github.com/line/iavl/v2 v2.0.0-init.1.0.20210325055816-6304f1fd2f09/go.mod h1:lOUXCMWnB9G5wDfungP5nhnHAFgVBwB0/iqFhH44OIs=
 github.com/line/ostracon v0.34.9-0.20210315041958-2a1f43c788f5/go.mod h1:1THU+kF+6fxLaNYQKcdNyLCO6t9LnqSMaExDMiLozbM=
-github.com/line/tm-db/v2 v2.0.0-init.1.0.20210325025547-0ea105c02281 h1:HwehzGvsgPHND01825UbjjiKgwfbqIYFAnvn6OheLQs=
 github.com/line/tm-db/v2 v2.0.0-init.1.0.20210325025547-0ea105c02281/go.mod h1:TiTwPFffNAqep0nV0YWaxPjElbCp6yG4K8SCxy69mE4=
+github.com/line/tm-db/v2 v2.0.0-init.1.0.20210406051157-55cfe684c8e9 h1:SwkBD02z/oO5bnRtYWWhfCX4ezouxyDqsYASq62632o=
+github.com/line/tm-db/v2 v2.0.0-init.1.0.20210406051157-55cfe684c8e9/go.mod h1:TiTwPFffNAqep0nV0YWaxPjElbCp6yG4K8SCxy69mE4=
 github.com/lyft/protoc-gen-validate v0.0.13/go.mod h1:XbGvPuh87YZc5TdIa2/I4pLk0QoUACkjt2znoq26NVQ=
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
 github.com/magiconair/properties v1.8.1 h1:ZC2Vc7/ZFkGmsVC9KvOjumD+G5lXy2RtTKyzRKO2BQ4=
