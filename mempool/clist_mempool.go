@@ -20,6 +20,7 @@ import (
 	"github.com/line/ostracon/p2p"
 	"github.com/line/ostracon/proxy"
 	"github.com/line/ostracon/types"
+	"github.com/pkg/errors"
 )
 
 // TxKeySize is the size of the transaction key index
@@ -614,11 +615,27 @@ func (mem *CListMempool) Update(
 	if mem.Size() > 0 {
 		if mem.config.Recheck {
 			mem.logger.Debug("recheck txs", "numtxs", mem.Size(), "height", block.Height)
-			mem.proxyAppConn.BeginRecheckTxSync(abci.RequestBeginRecheckTx{
+			res, err := mem.proxyAppConn.BeginRecheckTxSync(abci.RequestBeginRecheckTx{
 				Header: types.OST2PB.Header(&block.Header),
 			})
-			mem.recheckTxs()
-			mem.proxyAppConn.EndRecheckTxSync(abci.RequestEndRecheckTx{Height: block.Height})
+			if res.Code == abci.CodeTypeOK && err == nil {
+				mem.recheckTxs()
+				res2, err2 := mem.proxyAppConn.EndRecheckTxSync(abci.RequestEndRecheckTx{Height: block.Height})
+				if res2.Code != abci.CodeTypeOK {
+					return errors.New("the function EndRecheckTxSync does not respond CodeTypeOK")
+				}
+				if err2 != nil {
+					return errors.Wrap(err2, "the function EndRecheckTxSync returns an error")
+				}
+			} else {
+				if res.Code != abci.CodeTypeOK {
+					return errors.New("the function BeginRecheckTxSync does not respond CodeTypeOK")
+				}
+				if err != nil {
+					return errors.Wrap(err, "the function BeginRecheckTxSync returns an error")
+				}
+			}
+
 			// At this point, mem.txs are being rechecked.
 			// mem.recheckCursor re-scans mem.txs and possibly removes some txs.
 			// Before mem.Reap(), we should wait for mem.recheckCursor to be nil.

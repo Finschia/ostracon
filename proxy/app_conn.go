@@ -5,6 +5,7 @@ import (
 	"github.com/line/ostracon/abci/types"
 )
 
+//nolint
 //go:generate mockery --case underscore --name AppConnConsensus|AppConnMempool|AppConnQuery|AppConnSnapshot|ClientCreator
 
 //----------------------------------------------------------------------------------------
