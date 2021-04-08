@@ -166,8 +166,8 @@ func makeHeaderPartsResponsesValPubKeyChange(
 	if !bytes.Equal(pubkey.Bytes(), val.PubKey.Bytes()) {
 		abciResponses.EndBlock = &abci.ResponseEndBlock{
 			ValidatorUpdates: []abci.ValidatorUpdate{
-				types.TM2PB.NewValidatorUpdate(val.PubKey, 0),
-				types.TM2PB.NewValidatorUpdate(pubkey, 10),
+				types.OST2PB.NewValidatorUpdate(val.PubKey, 0),
+				types.OST2PB.NewValidatorUpdate(pubkey, 10),
 			},
 		}
 	}
@@ -191,7 +191,7 @@ func makeHeaderPartsResponsesValPowerChange(
 	if val.VotingPower != power {
 		abciResponses.EndBlock = &abci.ResponseEndBlock{
 			ValidatorUpdates: []abci.ValidatorUpdate{
-				types.TM2PB.NewValidatorUpdate(val.PubKey, power),
+				types.OST2PB.NewValidatorUpdate(val.PubKey, power),
 			},
 		}
 	}
@@ -207,7 +207,7 @@ func makeHeaderPartsResponsesParams(
 	block := makeBlock(state, state.LastBlockHeight+1)
 	abciResponses := &tmstate.ABCIResponses{
 		BeginBlock: &abci.ResponseBeginBlock{},
-		EndBlock:   &abci.ResponseEndBlock{ConsensusParamUpdates: types.TM2PB.ConsensusParams(&params)},
+		EndBlock:   &abci.ResponseEndBlock{ConsensusParamUpdates: types.OST2PB.ConsensusParams(&params)},
 	}
 	return block.Header, types.BlockID{Hash: block.Hash(), PartSetHeader: types.PartSetHeader{}}, abciResponses
 }

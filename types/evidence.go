@@ -205,7 +205,7 @@ func (l *LightClientAttackEvidence) ABCI() []abci.Evidence {
 	for idx, val := range l.ByzantineValidators {
 		abciEv[idx] = abci.Evidence{
 			Type:             abci.EvidenceType_LIGHT_CLIENT_ATTACK,
-			Validator:        TM2PB.Validator(val),
+			Validator:        OST2PB.Validator(val),
 			Height:           l.Height(),
 			Time:             l.Timestamp,
 			TotalVotingPower: l.TotalVotingPower,

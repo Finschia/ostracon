@@ -798,7 +798,7 @@ func buildAppStateFromChain(proxyApp proxy.AppConns, stateStore sm.Store,
 	defer proxyApp.Stop() //nolint:errcheck // ignore
 
 	state.Version.Consensus.App = kvstore.ProtocolVersion // simulate handshake, receive app version
-	validators := types.TM2PB.ValidatorUpdates(state.Validators)
+	validators := types.OST2PB.ValidatorUpdates(state.Validators)
 	if _, err := proxyApp.Consensus().InitChainSync(abci.RequestInitChain{
 		Validators: validators,
 	}); err != nil {
@@ -848,7 +848,7 @@ func buildTMStateFromChain(
 	defer proxyApp.Stop() //nolint:errcheck
 
 	state.Version.Consensus.App = kvstore.ProtocolVersion // simulate handshake, receive app version
-	validators := types.TM2PB.ValidatorUpdates(state.Validators)
+	validators := types.OST2PB.ValidatorUpdates(state.Validators)
 	if _, err := proxyApp.Consensus().InitChainSync(abci.RequestInitChain{
 		Validators: validators,
 	}); err != nil {
@@ -1218,7 +1218,7 @@ func (bs *mockBlockStore) PruneBlocks(height int64) (uint64, error) {
 func TestHandshakeUpdatesValidators(t *testing.T) {
 	val, _ := types.RandValidator(true, 10)
 	vals := types.NewValidatorSet([]*types.Validator{val})
-	app := &initChainApp{vals: types.TM2PB.ValidatorUpdates(vals)}
+	app := &initChainApp{vals: types.OST2PB.ValidatorUpdates(vals)}
 	clientCreator := proxy.NewLocalClientCreator(app)
 
 	config := ResetConfig("handshake_test_")

@@ -181,14 +181,14 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 			Type:             abci.EvidenceType_DUPLICATE_VOTE,
 			Height:           3,
 			Time:             defaultEvidenceTime,
-			Validator:        types.TM2PB.Validator(state.Validators.Validators[0]),
+			Validator:        types.OST2PB.Validator(state.Validators.Validators[0]),
 			TotalVotingPower: 10,
 		},
 		{
 			Type:             abci.EvidenceType_LIGHT_CLIENT_ATTACK,
 			Height:           8,
 			Time:             defaultEvidenceTime,
-			Validator:        types.TM2PB.Validator(state.Validators.Validators[0]),
+			Validator:        types.OST2PB.Validator(state.Validators.Validators[0]),
 			TotalVotingPower: 12,
 		},
 	}
