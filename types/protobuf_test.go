@@ -35,18 +35,18 @@ func TestABCIValidators(t *testing.T) {
 
 	tmVal := NewValidator(pkEd, 10)
 
-	abciVal := TM2PB.ValidatorUpdate(tmVal)
+	abciVal := OST2PB.ValidatorUpdate(tmVal)
 	tmVals, err := PB2TM.ValidatorUpdates([]abci.ValidatorUpdate{abciVal})
 	assert.Nil(t, err)
 	assert.Equal(t, tmValExpected, tmVals[0])
 
-	abciVals := TM2PB.ValidatorUpdates(NewValidatorSet(tmVals))
+	abciVals := OST2PB.ValidatorUpdates(NewValidatorSet(tmVals))
 	assert.Equal(t, []abci.ValidatorUpdate{abciVal}, abciVals)
 
 	// val with address
 	tmVal.Address = pkEd.Address()
 
-	abciVal = TM2PB.ValidatorUpdate(tmVal)
+	abciVal = OST2PB.ValidatorUpdate(tmVal)
 	tmVals, err = PB2TM.ValidatorUpdates([]abci.ValidatorUpdate{abciVal})
 	assert.Nil(t, err)
 	assert.Equal(t, tmValExpected, tmVals[0])
@@ -54,7 +54,7 @@ func TestABCIValidators(t *testing.T) {
 
 func TestABCIConsensusParams(t *testing.T) {
 	cp := DefaultConsensusParams()
-	abciCP := TM2PB.ConsensusParams(cp)
+	abciCP := OST2PB.ConsensusParams(cp)
 	cp2 := UpdateConsensusParams(*cp, abciCP)
 
 	assert.Equal(t, *cp, cp2)
@@ -72,17 +72,17 @@ func (pubKeyEddie) Type() string                                { return "pubKey
 func TestABCIValidatorFromPubKeyAndPower(t *testing.T) {
 	pubkey := ed25519.GenPrivKey().PubKey()
 
-	abciVal := TM2PB.NewValidatorUpdate(pubkey, 10)
+	abciVal := OST2PB.NewValidatorUpdate(pubkey, 10)
 	assert.Equal(t, int64(10), abciVal.Power)
 
-	assert.Panics(t, func() { TM2PB.NewValidatorUpdate(nil, 10) })
-	assert.Panics(t, func() { TM2PB.NewValidatorUpdate(pubKeyEddie{}, 10) })
+	assert.Panics(t, func() { OST2PB.NewValidatorUpdate(nil, 10) })
+	assert.Panics(t, func() { OST2PB.NewValidatorUpdate(pubKeyEddie{}, 10) })
 }
 
 func TestABCIValidatorWithoutPubKey(t *testing.T) {
 	pkEd := ed25519.GenPrivKey().PubKey()
 
-	abciVal := TM2PB.Validator(NewValidator(pkEd, 10))
+	abciVal := OST2PB.Validator(NewValidator(pkEd, 10))
 
 	// pubkey must be nil
 	tmValExpected := abci.Validator{

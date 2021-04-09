@@ -258,8 +258,7 @@ func (blockExec *BlockExecutor) Commit(
 	// Update mempool.
 	updateMempoolStartTime := time.Now().UnixNano()
 	err = blockExec.mempool.Update(
-		block.Height,
-		block.Txs,
+		block,
 		deliverTxResponses,
 		TxPreCheck(state),
 		TxPostCheck(state),
@@ -383,7 +382,7 @@ func getBeginBlockValidatorInfo(block *types.Block, store Store,
 		for i, val := range lastValSet.Validators {
 			commitSig := block.LastCommit.Signatures[i]
 			voteInfos[i] = abci.VoteInfo{
-				Validator:       types.TM2PB.Validator(val),
+				Validator:       types.OST2PB.Validator(val),
 				SignedLastBlock: !commitSig.Absent(),
 			}
 		}

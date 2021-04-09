@@ -5,7 +5,8 @@ import (
 	"github.com/line/ostracon/abci/types"
 )
 
-//go:generate mockery --case underscore --name AppConnConsensus|AppConnMempool|AppConnQuery|AppConnSnapshot
+//nolint
+//go:generate mockery --case underscore --name AppConnConsensus|AppConnMempool|AppConnQuery|AppConnSnapshot|ClientCreator
 
 //----------------------------------------------------------------------------------------
 // Enforce which abci msgs can be sent on a connection at the type level
@@ -27,7 +28,12 @@ type AppConnMempool interface {
 	Error() error
 
 	CheckTxAsync(types.RequestCheckTx) *abcicli.ReqRes
+	BeginRecheckTxAsync(types.RequestBeginRecheckTx) *abcicli.ReqRes
+	EndRecheckTxAsync(types.RequestEndRecheckTx) *abcicli.ReqRes
+
 	CheckTxSync(types.RequestCheckTx) (*types.ResponseCheckTx, error)
+	BeginRecheckTxSync(types.RequestBeginRecheckTx) (*types.ResponseBeginRecheckTx, error)
+	EndRecheckTxSync(types.RequestEndRecheckTx) (*types.ResponseEndRecheckTx, error)
 
 	FlushAsync() *abcicli.ReqRes
 	FlushSync() error
@@ -126,8 +132,24 @@ func (app *appConnMempool) CheckTxAsync(req types.RequestCheckTx) *abcicli.ReqRe
 	return app.appConn.CheckTxAsync(req)
 }
 
+func (app *appConnMempool) BeginRecheckTxAsync(req types.RequestBeginRecheckTx) *abcicli.ReqRes {
+	return app.appConn.BeginRecheckTxAsync(req)
+}
+
+func (app *appConnMempool) EndRecheckTxAsync(req types.RequestEndRecheckTx) *abcicli.ReqRes {
+	return app.appConn.EndRecheckTxAsync(req)
+}
+
 func (app *appConnMempool) CheckTxSync(req types.RequestCheckTx) (*types.ResponseCheckTx, error) {
 	return app.appConn.CheckTxSync(req)
+}
+
+func (app *appConnMempool) BeginRecheckTxSync(req types.RequestBeginRecheckTx) (*types.ResponseBeginRecheckTx, error) {
+	return app.appConn.BeginRecheckTxSync(req)
+}
+
+func (app *appConnMempool) EndRecheckTxSync(req types.RequestEndRecheckTx) (*types.ResponseEndRecheckTx, error) {
+	return app.appConn.EndRecheckTxSync(req)
 }
 
 //------------------------------------------------
