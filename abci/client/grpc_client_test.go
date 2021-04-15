@@ -9,11 +9,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	abcicli "github.com/tendermint/tendermint/abci/client"
-	"github.com/tendermint/tendermint/abci/server"
-	"github.com/tendermint/tendermint/abci/types"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
-	"github.com/tendermint/tendermint/libs/service"
+	abcicli "github.com/line/ostracon/abci/client"
+	"github.com/line/ostracon/abci/server"
+	"github.com/line/ostracon/abci/types"
+	ostrand "github.com/line/ostracon/libs/rand"
+	"github.com/line/ostracon/libs/service"
 )
 
 type errorStopper interface {
@@ -68,7 +68,7 @@ func TestProperSyncCalls(t *testing.T) {
 func setupClientServer(t *testing.T, app types.Application) (
 	service.Service, abcicli.Client) {
 	// some port between 20k and 30k
-	port := 20000 + tmrand.Int32()%10000
+	port := 20000 + ostrand.Int32()%10000
 	addr := fmt.Sprintf("localhost:%d", port)
 
 	s, err := server.NewServer(addr, "grpc", app)
