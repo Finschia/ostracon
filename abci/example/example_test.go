@@ -5,7 +5,6 @@ import (
 	"math/rand"
 	"net"
 	"os"
-	"reflect"
 	"testing"
 	"time"
 
@@ -16,7 +15,6 @@ import (
 	"github.com/line/ostracon/libs/log"
 	tmnet "github.com/line/ostracon/libs/net"
 
-	abcicli "github.com/line/ostracon/abci/client"
 	"github.com/line/ostracon/abci/example/code"
 	"github.com/line/ostracon/abci/example/kvstore"
 	abciserver "github.com/line/ostracon/abci/server"

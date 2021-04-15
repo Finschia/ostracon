@@ -226,30 +226,6 @@ func valsEqual(t *testing.T, vals1, vals2 []types.ValidatorUpdate) {
 	}
 }
 
-func makeSocketClientServer(app types.Application, name string) (abcicli.Client, service.Service, error) {
-	// Start the listener
-	socket := fmt.Sprintf("unix://%s.sock", name)
-	logger := log.TestingLogger()
-
-	server := abciserver.NewSocketServer(socket, app)
-	server.SetLogger(logger.With("module", "abci-server"))
-	if err := server.Start(); err != nil {
-		return nil, nil, err
-	}
-
-	// Connect to the socket
-	client := abcicli.NewSocketClient(socket, false)
-	client.SetLogger(logger.With("module", "abci-client"))
-	if err := client.Start(); err != nil {
-		if err = server.Stop(); err != nil {
-			return nil, nil, err
-		}
-		return nil, nil, err
-	}
-
-	return client, server, nil
-}
-
 func makeGRPCClientServer(app types.Application, name string) (abcicli.Client, service.Service, error) {
 	// Start the listener
 	socket := fmt.Sprintf("unix://%s.sock", name)
