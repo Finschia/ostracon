@@ -8,7 +8,7 @@ set -ex
 # TODO: install everything
 
 export PATH="$GOBIN:$PATH"
-export OSTHOME=$HOME/.ostracon_app
+export OSTHOME=$HOME/.ostracon
 
 function kvstore_over_grpc(){
     rm -rf $OSTHOME
