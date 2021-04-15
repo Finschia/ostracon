@@ -1,6 +1,7 @@
 package abcicli_test
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -14,6 +15,29 @@ import (
 	ostrand "github.com/line/ostracon/libs/rand"
 	"github.com/line/ostracon/libs/service"
 )
+
+type errorStopper interface {
+	StopForError(error)
+}
+
+func TestSocketClientStopForErrorDeadlock(t *testing.T) {
+	c := abcicli.NewGRPCClient(":80", false).(errorStopper)
+	err := errors.New("foo-ostracon")
+
+	// See Issue https://github.com/tendermint/abci/issues/114
+	doneChan := make(chan bool)
+	go func() {
+		defer close(doneChan)
+		c.StopForError(err)
+		c.StopForError(err)
+	}()
+
+	select {
+	case <-doneChan:
+	case <-time.After(time.Second * 4):
+		t.Fatalf("Test took too long, potential deadlock still exists")
+	}
+}
 
 func TestProperSyncCalls(t *testing.T) {
 	app := slowApp{}
@@ -47,48 +71,6 @@ func TestProperSyncCalls(t *testing.T) {
 	case err, ok := <-resp:
 		require.True(t, ok, "Must not close channel")
 		assert.NoError(t, err, "This should return success")
-	}
-}
-
-func TestHangingSyncCalls(t *testing.T) {
-	app := slowApp{}
-
-	s, c := setupClientServer(t, app)
-	t.Cleanup(func() {
-		if err := s.Stop(); err != nil {
-			t.Log(err)
-		}
-	})
-	t.Cleanup(func() {
-		if err := c.Stop(); err != nil {
-			t.Log(err)
-		}
-	})
-
-	resp := make(chan error, 1)
-	go func() {
-		// Start BeginBlock and flush it
-		reqres := c.BeginBlockAsync(types.RequestBeginBlock{})
-		flush := c.FlushAsync()
-		// wait 20 ms for all events to travel socket, but
-		// no response yet from server
-		time.Sleep(20 * time.Millisecond)
-		// kill the server, so the connections break
-		err := s.Stop()
-		require.NoError(t, err)
-
-		// wait for the response from BeginBlock
-		reqres.Wait()
-		flush.Wait()
-		resp <- c.Error()
-	}()
-
-	select {
-	case <-time.After(time.Second):
-		require.Fail(t, "No response arrived")
-	case err, ok := <-resp:
-		require.True(t, ok, "Must not close channel")
-		assert.Error(t, err, "We should get EOF error")
 	}
 }
 
