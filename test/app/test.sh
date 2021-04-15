@@ -11,7 +11,7 @@ export PATH="$GOBIN:$PATH"
 export OSTHOME=$HOME/.ostracon_app
 
 function kvstore_over_grpc(){
-    rm -rf OSTHOME
+    rm -rf $OSTHOME
     ostracon init
     echo "Starting kvstore_over_grpc"
     abci-cli kvstore --abci grpc > /dev/null &
@@ -28,7 +28,7 @@ function kvstore_over_grpc(){
 
 # start ostraconi first
 function kvstore_over_grpc_reorder(){
-    rm -rf OSTHOME
+    rm -rf $OSTHOME
     ostracon init
     echo "Starting kvstore_over_grpc_reorder (ie. start ostracon first)"
     ostracon node --abci grpc > ostracon.log &
@@ -45,7 +45,7 @@ function kvstore_over_grpc_reorder(){
 }
 
 function counter_over_grpc() {
-    rm -rf OSTHOME
+    rm -rf $OSTHOME
     ostracon init
     echo "Starting counter_over_grpc"
     abci-cli counter --serial --abci grpc > /dev/null &
@@ -61,7 +61,7 @@ function counter_over_grpc() {
 }
 
 function counter_over_grpc_grpc() {
-    rm -rf OSTHOME
+    rm -rf $OSTHOME
     ostracon init
     echo "Starting counter_over_grpc_grpc (ie. with grpc broadcast_tx)"
     abci-cli counter --serial --abci grpc > /dev/null &
