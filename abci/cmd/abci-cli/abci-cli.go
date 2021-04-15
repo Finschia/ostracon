@@ -116,7 +116,7 @@ func addGlobalFlags() {
 		"",
 		"tcp://0.0.0.0:26658",
 		"address of application socket")
-	RootCmd.PersistentFlags().StringVarP(&flagAbci, "abci", "", "socket", "either socket or grpc")
+	RootCmd.PersistentFlags().StringVarP(&flagAbci, "abci", "", "grpc", "grpc")
 	RootCmd.PersistentFlags().BoolVarP(&flagVerbose,
 		"verbose",
 		"v",

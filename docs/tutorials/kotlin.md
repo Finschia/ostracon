@@ -27,7 +27,7 @@ If you use Golang, you can run your app and Tendermint Core in the same process 
 Please refer to [Writing a built-in Tendermint Core application in Go](./go-built-in.md) guide for details.
 
 If you choose another language, like we did in this guide, you have to write a separate app,
-which will communicate with Tendermint Core via a socket (UNIX or TCP) or gRPC.
+which will communicate with Tendermint Core via a gRPC.
 This guide will show you how to build external application using RPC server.
 
 Having a separate application might give you better security guarantees as two

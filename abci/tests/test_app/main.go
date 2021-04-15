@@ -16,7 +16,7 @@ var abciType string
 func init() {
 	abciType = os.Getenv("ABCI")
 	if abciType == "" {
-		abciType = "socket"
+		abciType = "grpc"
 	}
 }
 

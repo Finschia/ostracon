@@ -43,17 +43,17 @@ func (app *appConnTest) InfoSync(req types.RequestInfo) (*types.ResponseInfo, er
 
 //----------------------------------------
 
-var SOCKET = "socket"
+var GRPC = "grpc"
 
 func TestEcho(t *testing.T) {
 	sockPath := fmt.Sprintf("unix:///tmp/echo_%v.sock", tmrand.Str(6))
-	clientCreator := NewRemoteClientCreator(sockPath, SOCKET, true)
+	clientCreator := NewRemoteClientCreator(sockPath, GRPC, true)
 
 	// Start server
-	s := server.NewSocketServer(sockPath, kvstore.NewApplication())
+	s := server.NewGRPCServer(sockPath, types.NewGRPCApplication(kvstore.NewApplication()))
 	s.SetLogger(log.TestingLogger().With("module", "abci-server"))
 	if err := s.Start(); err != nil {
-		t.Fatalf("Error starting socket server: %v", err.Error())
+		t.Fatalf("Error starting grpc server: %v", err.Error())
 	}
 	t.Cleanup(func() {
 		if err := s.Stop(); err != nil {
@@ -85,13 +85,13 @@ func TestEcho(t *testing.T) {
 func BenchmarkEcho(b *testing.B) {
 	b.StopTimer() // Initialize
 	sockPath := fmt.Sprintf("unix:///tmp/echo_%v.sock", tmrand.Str(6))
-	clientCreator := NewRemoteClientCreator(sockPath, SOCKET, true)
+	clientCreator := NewRemoteClientCreator(sockPath, GRPC, true)
 
 	// Start server
-	s := server.NewSocketServer(sockPath, kvstore.NewApplication())
+	s := server.NewGRPCServer(sockPath, types.NewGRPCApplication(kvstore.NewApplication()))
 	s.SetLogger(log.TestingLogger().With("module", "abci-server"))
 	if err := s.Start(); err != nil {
-		b.Fatalf("Error starting socket server: %v", err.Error())
+		b.Fatalf("Error starting grpc server: %v", err.Error())
 	}
 	b.Cleanup(func() {
 		if err := s.Stop(); err != nil {
@@ -128,13 +128,13 @@ func BenchmarkEcho(b *testing.B) {
 
 func TestInfo(t *testing.T) {
 	sockPath := fmt.Sprintf("unix:///tmp/echo_%v.sock", tmrand.Str(6))
-	clientCreator := NewRemoteClientCreator(sockPath, SOCKET, true)
+	clientCreator := NewRemoteClientCreator(sockPath, GRPC, true)
 
 	// Start server
-	s := server.NewSocketServer(sockPath, kvstore.NewApplication())
+	s := server.NewGRPCServer(sockPath, types.NewGRPCApplication(kvstore.NewApplication()))
 	s.SetLogger(log.TestingLogger().With("module", "abci-server"))
 	if err := s.Start(); err != nil {
-		t.Fatalf("Error starting socket server: %v", err.Error())
+		t.Fatalf("Error starting grpc server: %v", err.Error())
 	}
 	t.Cleanup(func() {
 		if err := s.Stop(); err != nil {
