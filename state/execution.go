@@ -264,7 +264,6 @@ func (blockExec *BlockExecutor) Commit(
 		block,
 		deliverTxResponses,
 		TxPreCheck(state),
-		TxPostCheck(state),
 	)
 	updateMempoolEndTime := time.Now().UnixNano()
 

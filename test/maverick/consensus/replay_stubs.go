@@ -27,7 +27,6 @@ func (emptyMempool) Update(
 	_ *types.Block,
 	_ []*abci.ResponseDeliverTx,
 	_ mempl.PreCheckFunc,
-	_ mempl.PostCheckFunc,
 ) error {
 	return nil
 }
