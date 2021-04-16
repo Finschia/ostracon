@@ -69,7 +69,7 @@ func TestCacheAfterUpdate(t *testing.T) {
 			updateTxs = append(updateTxs, tx)
 		}
 		err := mempool.Update(newTestBlock(int64(tcIndex), updateTxs),
-			abciResponses(len(updateTxs), abci.CodeTypeOK), nil, nil)
+			abciResponses(len(updateTxs), abci.CodeTypeOK), nil)
 		require.NoError(t, err)
 
 		for _, v := range tc.reAddIndices {
