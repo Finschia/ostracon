@@ -22,7 +22,6 @@ import "gogoproto/gogo.proto";
 message Request {
   oneof value {
     RequestEcho               echo                 = 1;
-    RequestFlush              flush                = 2;
     RequestInfo               info                 = 3;
     RequestSetOption          set_option           = 4;
     RequestInitChain          init_chain           = 5;
@@ -44,8 +43,6 @@ message Request {
 message RequestEcho {
   string message = 1;
 }
-
-message RequestFlush {}
 
 message RequestInfo {
   string version       = 1;
@@ -142,7 +139,6 @@ message Response {
   oneof value {
     ResponseException          exception            = 1;
     ResponseEcho               echo                 = 2;
-    ResponseFlush              flush                = 3;
     ResponseInfo               info                 = 4;
     ResponseSetOption          set_option           = 5;
     ResponseInitChain          init_chain           = 6;
@@ -169,8 +165,6 @@ message ResponseException {
 message ResponseEcho {
   string message = 1;
 }
-
-message ResponseFlush {}
 
 message ResponseInfo {
   string data = 1;
@@ -410,7 +404,6 @@ message Snapshot {
 
 service ABCIApplication {
   rpc Echo(RequestEcho) returns (ResponseEcho);
-  rpc Flush(RequestFlush) returns (ResponseFlush);
   rpc Info(RequestInfo) returns (ResponseInfo);
   rpc SetOption(RequestSetOption) returns (ResponseSetOption);
   rpc DeliverTx(RequestDeliverTx) returns (ResponseDeliverTx);
