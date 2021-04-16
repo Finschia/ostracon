@@ -2,8 +2,8 @@ package types
 
 import (
 	"bytes"
-	"errors"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"math"
 	"math/big"

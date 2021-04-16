@@ -2,8 +2,9 @@ package e2e_test
 
 import (
 	"bytes"
-	"github.com/tendermint/tendermint/crypto/vrf"
 	"testing"
+
+	"github.com/tendermint/tendermint/crypto/vrf"
 
 	"github.com/stretchr/testify/require"
 

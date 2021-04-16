@@ -260,7 +260,10 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 		require.Nil(t, err, tc.desc)
 	}
 
-	block := makeBlock(state, 12)
+	proposer := types.SelectProposer(state.Validators, state.LastProofHash, 12, 0)
+	privVal = privVals[proposer.Address.String()]
+
+	block := makeBlockWithPrivVal(state, privVal, 12)
 	block.Evidence = types.EvidenceData{Evidence: ev}
 	block.Header.EvidenceHash = block.Evidence.Hash()
 	blockID = types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}

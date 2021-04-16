@@ -673,6 +673,7 @@ func (cs *State) updateToState(state sm.State) {
 	cs.CommitRound = -1
 	cs.LastValidators = state.LastValidators
 	cs.TriggeredTimeoutPrecommit = false
+	cs.Proposer = types.SelectProposer(validators, state.LastProofHash, cs.Height, cs.Round)
 
 	cs.state = state
 

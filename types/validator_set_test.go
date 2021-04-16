@@ -49,7 +49,6 @@ func TestValidatorSetBasic(t *testing.T) {
 	assert.Nil(t, val)
 	assert.Zero(t, vset.Size())
 	assert.Equal(t, int64(0), vset.TotalVotingPower())
-	assert.Nil(t, vset.Hash())
 	assert.Equal(t, []byte{0xe3, 0xb0, 0xc4, 0x42, 0x98, 0xfc, 0x1c, 0x14, 0x9a, 0xfb, 0xf4,
 		0xc8, 0x99, 0x6f, 0xb9, 0x24, 0x27, 0xae, 0x41, 0xe4, 0x64, 0x9b, 0x93, 0x4c, 0xa4, 0x95,
 		0x99, 0x1b, 0x78, 0x52, 0xb8, 0x55}, vset.Hash())
@@ -102,13 +101,6 @@ func TestValidatorSetValidateBasic(t *testing.T) {
 			},
 			err: true,
 			msg: "validator set is nil or empty",
-		},
-		{
-			vals: ValidatorSet{
-				Validators: []*Validator{val},
-			},
-			err: true,
-			msg: "proposer failed validate basic, error: nil validator",
 		},
 		{
 			vals: ValidatorSet{
@@ -563,14 +555,14 @@ func TestAveragingInIncrementProposerPriorityWithVotingPower(t *testing.T) {
 			[]int64{
 				0 + 10*vp0 - 8*total, // after 10 iters this is mostest again
 				0 + 10*vp1 - total,   // after 6 iters this val is "mostest" once and not in between
-				0 + 10*vp2 - total}, // in between 10 iters this val is "mostest" once
+				0 + 10*vp2 - total},  // in between 10 iters this val is "mostest" once
 			10,
 			vals.Validators[0]},
 		10: {
 			vals.Copy(),
 			[]int64{
 				0 + 11*vp0 - 9*total,
-				0 + 11*vp1 - total, // after 6 iters this val is "mostest" once and not in between
+				0 + 11*vp1 - total,  // after 6 iters this val is "mostest" once and not in between
 				0 + 11*vp2 - total}, // after 10 iters this val is "mostest" once
 			11,
 			vals.Validators[1]},

@@ -543,6 +543,7 @@ func TestProposerPriorityDoesNotGetResetToZero(t *testing.T) {
 }
 
 func TestProposerPriorityProposerAlternates(t *testing.T) {
+	t.Skip("Ostracon doesn't select a Proposer based on ProposerPriority")
 	// Regression test that would fail if the inner workings of
 	// IncrementProposerPriority change.
 	// Additionally, make sure that same power validators alternate if both
