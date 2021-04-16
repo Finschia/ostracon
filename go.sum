@@ -330,6 +330,8 @@ github.com/line/iavl/v2 v2.0.0-init.1.0.20210406065347-cfd73e5acce0/go.mod h1:Z2
 github.com/line/ostracon v0.34.9-0.20210315041958-2a1f43c788f5/go.mod h1:1THU+kF+6fxLaNYQKcdNyLCO6t9LnqSMaExDMiLozbM=
 github.com/line/tm-db/v2 v2.0.0-init.1.0.20210406062110-9424ca70955a h1:qSt/WwORC5+nVRnNqx+A0oo5gOCsoVJ0HmHF5Db1YvY=
 github.com/line/tm-db/v2 v2.0.0-init.1.0.20210406062110-9424ca70955a/go.mod h1:wmkyPabXjtVZ1dvRofmurjaceghywtCSYGqFuFS+TbI=
+github.com/line/tm-db/v2 v2.0.0-init.1.0.20210413083915-5bb60e117524 h1:eKXXnUm1SblC0AIXAMNDaSyvIbQ50yXqFbh9+Q8Kjvg=
+github.com/line/tm-db/v2 v2.0.0-init.1.0.20210413083915-5bb60e117524/go.mod h1:wmkyPabXjtVZ1dvRofmurjaceghywtCSYGqFuFS+TbI=
 github.com/lyft/protoc-gen-validate v0.0.13/go.mod h1:XbGvPuh87YZc5TdIa2/I4pLk0QoUACkjt2znoq26NVQ=
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
 github.com/magiconair/properties v1.8.1 h1:ZC2Vc7/ZFkGmsVC9KvOjumD+G5lXy2RtTKyzRKO2BQ4=
