@@ -176,15 +176,6 @@ func (cli *grpcClient) EchoAsync(msg string) *ReqRes {
 	return cli.finishAsyncCall(req, &types.Response{Value: &types.Response_Echo{Echo: res}})
 }
 
-func (cli *grpcClient) FlushAsync() *ReqRes {
-	req := types.ToRequestFlush()
-	res, err := cli.client.Flush(context.Background(), req.GetFlush(), grpc.WaitForReady(true))
-	if err != nil {
-		cli.StopForError(err)
-	}
-	return cli.finishAsyncCall(req, &types.Response{Value: &types.Response_Flush{Flush: res}})
-}
-
 func (cli *grpcClient) InfoAsync(params types.RequestInfo) *ReqRes {
 	req := types.ToRequestInfo(params)
 	res, err := cli.client.Info(context.Background(), req.GetInfo(), grpc.WaitForReady(true))

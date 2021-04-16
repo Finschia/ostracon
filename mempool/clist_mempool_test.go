@@ -643,8 +643,6 @@ func TestMempoolRemoteAppConcurrency(t *testing.T) {
 		// this will err with ErrTxInCache many times ...
 		mempool.CheckTx(tx, nil, TxInfo{SenderID: uint16(peerID)}) //nolint: errcheck // will error
 	}
-	err := mempool.FlushAppConn()
-	require.NoError(t, err)
 }
 
 func newTestBlock(height int64, txs types.Txs) *types.Block {

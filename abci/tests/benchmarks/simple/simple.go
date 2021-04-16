@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"reflect"
 
 	"github.com/line/ostracon/abci/types"
 	tmnet "github.com/line/ostracon/libs/net"
@@ -41,10 +40,6 @@ func makeRequest(conn io.ReadWriter, req *types.Request) (*types.Response, error
 	if err != nil {
 		return nil, err
 	}
-	err = types.WriteMessage(types.ToRequestFlush(), bufWriter)
-	if err != nil {
-		return nil, err
-	}
 	err = bufWriter.Flush()
 	if err != nil {
 		return nil, err
@@ -60,9 +55,6 @@ func makeRequest(conn io.ReadWriter, req *types.Request) (*types.Response, error
 	err = types.ReadMessage(conn, resFlush)
 	if err != nil {
 		return nil, err
-	}
-	if _, ok := resFlush.Value.(*types.Response_Flush); !ok {
-		return nil, fmt.Errorf("expected flush response but got something else: %v", reflect.TypeOf(resFlush))
 	}
 
 	return res, nil
