@@ -658,7 +658,7 @@ func (mem *CListMempool) Update(
 
 func (mem *CListMempool) recheckTxs() {
 	if mem.Size() == 0 {
-		panic("recheckTxs is called, but the mempool is empty")
+		return
 	}
 
 	mem.recheckCursor = mem.txs.Front()
