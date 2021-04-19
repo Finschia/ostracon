@@ -645,11 +645,9 @@ func (mem *CListMempool) Update(
 		// At this point, mem.txs are being rechecked.
 		// mem.recheckCursor re-scans mem.txs and possibly removes some txs.
 		// Before mem.Reap(), we should wait for mem.recheckCursor to be nil.
-	} else {
+	} else if mem.Size() > 0 {
 		// just notify there're some txs left.
-		if mem.Size() > 0 {
-			mem.notifyTxsAvailable()
-		}
+		mem.notifyTxsAvailable()
 	}
 
 	// Update metrics
