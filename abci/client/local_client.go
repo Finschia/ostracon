@@ -15,6 +15,8 @@ var _ Client = (*localClient)(nil)
 type localClient struct {
 	service.BaseService
 
+	// TODO: remove `mtx` to increase concurrency.
+	// CONTRACT: The application should protect itself from concurrency as an abci server.
 	mtx *tmsync.Mutex
 	types.Application
 	Callback
@@ -87,8 +89,6 @@ func (app *localClient) DeliverTxAsync(params types.RequestDeliverTx) *ReqRes {
 }
 
 func (app *localClient) CheckTxAsync(req types.RequestCheckTx) *ReqRes {
-	// CONTRACT: Application should handle concurrent `CheckTx`
-	// In this abci client layer, we don't protect `CheckTx` with a mutex for concurrency
 	res := app.Application.CheckTx(req)
 	return app.callback(
 		types.ToRequestCheckTx(req),
@@ -152,9 +152,6 @@ func (app *localClient) EndBlockAsync(req types.RequestEndBlock) *ReqRes {
 }
 
 func (app *localClient) BeginRecheckTxAsync(req types.RequestBeginRecheckTx) *ReqRes {
-	app.mtx.Lock()
-	defer app.mtx.Unlock()
-
 	res := app.Application.BeginRecheckTx(req)
 	return app.callback(
 		types.ToRequestBeginRecheckTx(req),
@@ -163,9 +160,6 @@ func (app *localClient) BeginRecheckTxAsync(req types.RequestBeginRecheckTx) *Re
 }
 
 func (app *localClient) EndRecheckTxAsync(req types.RequestEndRecheckTx) *ReqRes {
-	app.mtx.Lock()
-	defer app.mtx.Unlock()
-
 	res := app.Application.EndRecheckTx(req)
 	return app.callback(
 		types.ToRequestEndRecheckTx(req),
@@ -252,8 +246,6 @@ func (app *localClient) DeliverTxSync(req types.RequestDeliverTx) (*types.Respon
 }
 
 func (app *localClient) CheckTxSync(req types.RequestCheckTx) (*types.ResponseCheckTx, error) {
-	// CONTRACT: Application should handle concurrent `CheckTx`
-	// In this abci client layer, we don't protect `CheckTx` with a mutex for concurrency
 	res := app.Application.CheckTx(req)
 	return &res, nil
 }
