@@ -522,7 +522,7 @@ func (mem *CListMempool) resCbRecheck(req *abci.Request, res *abci.Response) {
 				mem.removeTx(tx, celem, true)
 			}
 		} else {
-			panic(fmt.Sprintf("unexpected tx response from proxy during recheck\ntxHash=%s, tx=%X", txHash, tx))
+			panic(fmt.Sprintf("unexpected tx response from proxy during recheck\ntxHash=%X, tx=%X", txHash, tx))
 		}
 	default:
 		// ignore other messages
