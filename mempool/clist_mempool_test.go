@@ -671,7 +671,7 @@ func newRemoteApp(
 
 func checksumIt(data []byte) string {
 	h := sha256.New()
-	h.Write(data)
+	h.Write(data) // nolint: errcheck // ignore errcheck
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
