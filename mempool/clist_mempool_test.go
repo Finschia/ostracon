@@ -100,7 +100,8 @@ func TestReapMaxBytesMaxGas(t *testing.T) {
 	checkTxs(t, mempool, 1, UnknownPeerID)
 	tx0 := mempool.TxsFront().Value.(*mempoolTx)
 	// assert that kv store has gas wanted = 1.
-	require.Equal(t, app.CheckTxSync(abci.RequestCheckTx{Tx: tx0.tx}).GasWanted, int64(1), "KVStore had a gas value neq to 1")
+	require.Equal(t,
+		app.CheckTxSync(abci.RequestCheckTx{Tx: tx0.tx}).GasWanted, int64(1), "KVStore had a gas value neq to 1")
 	require.Equal(t, tx0.gasWanted, int64(1), "transactions gas was set incorrectly")
 	// ensure each tx is 20 bytes long
 	require.Equal(t, len(tx0.tx), 20, "Tx is longer than 20 bytes")
@@ -300,7 +301,7 @@ func TestTxsAvailable(t *testing.T) {
 	ensureNoFire(t, mempool.TxsAvailable(), timeoutMS)
 
 	// now call update with all the txs. it should not fire as there are no txs left
-	committedTxs = append(txs, moreTxs...) //nolint: gocritic
+	committedTxs = append(txs, moreTxs...) // nolint: gocritic
 	if err := mempool.Update(newTestBlock(2, committedTxs),
 		abciResponses(len(committedTxs), abci.CodeTypeOK), nil); err != nil {
 		t.Error(err)
@@ -390,7 +391,7 @@ func TestSerialReap(t *testing.T) {
 		}
 	}
 
-	//----------------------------------------
+	// ----------------------------------------
 
 	// Deliver some txs.
 	deliverTxsRange(0, 100)
@@ -633,7 +634,7 @@ func TestMempoolRemoteAppConcurrency(t *testing.T) {
 		tx := txs[txNum]
 
 		// this will err with ErrTxInCache many times ...
-		mempool.CheckTxSync(tx, TxInfo{SenderID: uint16(peerID)})
+		mempool.CheckTxSync(tx, TxInfo{SenderID: uint16(peerID)}) // nolint: errcheck
 	}
 }
 
@@ -670,7 +671,7 @@ func newRemoteApp(
 
 func checksumIt(data []byte) string {
 	h := sha256.New()
-	h.Write(data) //nolint: errcheck // ignore errcheck
+	h.Write(data)
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
