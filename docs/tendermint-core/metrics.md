@@ -30,7 +30,7 @@ The following metrics are available:
 | consensus_missing_validators_power     | Gauge     |               | Total voting power of the missing validators                           |
 | consensus_byzantine_validators         | Gauge     |               | Number of validators who tried to double sign                          |
 | consensus_byzantine_validators_power   | Gauge     |               | Total voting power of the byzantine validators                         |
-| consensus_block_interval_seconds       | Histogram |               | Time between this and last block (Block.Header.Time) in seconds        |
+| consensus_block_interval_seconds       | Gauge     |               | Time between this and last block (Block.Header.Time) in seconds        |
 | consensus_rounds                       | Gauge     |               | Number of rounds                                                       |
 | consensus_num_txs                      | Gauge     |               | Number of transactions                                                 |
 | consensus_total_txs                    | Gauge     |               | Total number of transactions committed                                 |
