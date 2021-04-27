@@ -26,7 +26,7 @@ const TxKeySize = sha256.Size
 
 var newline = []byte("\n")
 
-//--------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
 
 // CListMempool is an ordered in-memory pool for transactions before they are
 // proposed in a consensus round. Transaction validity is checked using the
@@ -247,7 +247,8 @@ func (mem *CListMempool) CheckTxSync(tx types.Tx, txInfo TxInfo) (res *abci.Resp
 //     It gets called from another goroutine.
 //
 // Safe for concurrent use by multiple goroutines.
-func (mem *CListMempool) CheckTxAsync(tx types.Tx, txInfo TxInfo, prepareCb func(error), checkTxCb func(*abci.Response)) {
+func (mem *CListMempool) CheckTxAsync(tx types.Tx, txInfo TxInfo, prepareCb func(error),
+	checkTxCb func(*abci.Response)) {
 	mem.chReqCheckTx <- &requestCheckTxAsync{tx: tx, txInfo: txInfo, prepareCb: prepareCb, checkTxCb: checkTxCb}
 }
 
@@ -258,7 +259,8 @@ func (mem *CListMempool) checkTxAsyncReactor() {
 }
 
 // It blocks if we're waiting on Update() or Reap().
-func (mem *CListMempool) checkTxAsync(tx types.Tx, txInfo TxInfo, prepareCb func(error), checkTxCb func(*abci.Response)) {
+func (mem *CListMempool) checkTxAsync(tx types.Tx, txInfo TxInfo, prepareCb func(error),
+	checkTxCb func(*abci.Response)) {
 	mem.updateMtx.RLock()
 	defer func() {
 		if r := recover(); r != nil {
@@ -723,7 +725,7 @@ func (mem *CListMempool) recheckTxs() {
 	wg.Wait()
 }
 
-//--------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
 
 // mempoolTx is a transaction that successfully ran
 type mempoolTx struct {
@@ -741,7 +743,7 @@ func (memTx *mempoolTx) Height() int64 {
 	return atomic.LoadInt64(&memTx.height)
 }
 
-//--------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
 
 type txCache interface {
 	Reset()
@@ -824,7 +826,7 @@ func (nopTxCache) Reset()             {}
 func (nopTxCache) Push(types.Tx) bool { return true }
 func (nopTxCache) Remove(types.Tx)    {}
 
-//--------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
 
 // TxKey is the fixed length array hash used as the key in maps.
 func TxKey(tx types.Tx) [TxKeySize]byte {
