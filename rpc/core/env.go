@@ -19,7 +19,10 @@ import (
 const (
 	// see README
 	defaultPerPage = 30
-	maxPerPage     = 100
+
+	// Temporarily set it to a sufficient value to reduce the number of tx search queries during the test.
+	// TODO It will be modified later to be configurable. (Also, add a option to get all tx of block)
+	maxPerPage = 10000
 
 	// SubscribeTimeout is the maximum time we wait to subscribe for an event.
 	// must be less than the server's write timeout (see rpcserver.DefaultConfig)
