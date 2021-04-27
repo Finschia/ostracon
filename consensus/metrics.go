@@ -48,7 +48,7 @@ type Metrics struct {
 	ByzantineVotersPower metrics.Gauge
 
 	// Time between this and the last block.
-	BlockIntervalSeconds metrics.Histogram
+	BlockIntervalSeconds metrics.Gauge
 
 	// Number of transactions.
 	NumTxs metrics.Gauge
@@ -173,7 +173,7 @@ func PrometheusMetrics(namespace string, labelsAndValues ...string) *Metrics {
 			Name:      "byzantine_voters_power",
 			Help:      "Total power of the byzantine voters.",
 		}, labels).With(labelsAndValues...),
-		BlockIntervalSeconds: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+		BlockIntervalSeconds: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
 			Name:      "block_interval_seconds",
@@ -327,7 +327,7 @@ func NopMetrics() *Metrics {
 		ByzantineVoters:      discard.NewGauge(),
 		ByzantineVotersPower: discard.NewGauge(),
 
-		BlockIntervalSeconds: discard.NewHistogram(),
+		BlockIntervalSeconds: discard.NewGauge(),
 
 		NumTxs:          discard.NewGauge(),
 		BlockSizeBytes:  discard.NewGauge(),
