@@ -161,23 +161,24 @@ func TestMempoolRmBadTx(t *testing.T) {
 	resEndRecheckTx := app.EndRecheckTx(abci.RequestEndRecheckTx{})
 	assert.Equal(t, code.CodeTypeOK, resEndRecheckTx.Code)
 
-	emptyMempoolCh := make(chan struct{})
+	checkTxErrorCh := make(chan error)
 	checkTxRespCh := make(chan struct{})
+	emptyMempoolCh := make(chan struct{})
 	go func() {
 		// Try to send the tx through the mempool.
 		// CheckTx should not err, but the app should return a bad abci code
 		// and the tx should get removed from the pool
-		err := assertMempool(cs.txNotifier).CheckTxAsync(txBytes, mempl.TxInfo{}, func(r *abci.Response) {
+		assertMempool(cs.txNotifier).CheckTxAsync(txBytes, mempl.TxInfo{}, func(err error) {
+			checkTxErrorCh <- err
+		}, func(r *abci.Response) {
 			if r.GetCheckTx().Code != code.CodeTypeBadNonce {
 				t.Errorf("expected checktx to return bad nonce, got %v", r)
 				return
 			}
 			checkTxRespCh <- struct{}{}
 		})
-		if err != nil {
-			t.Errorf("error after CheckTx: %v", err)
-			return
-		}
+
+		<-checkTxErrorCh
 
 		// check for the tx
 		for {

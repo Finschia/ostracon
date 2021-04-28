@@ -26,7 +26,7 @@ const TxKeySize = sha256.Size
 
 var newline = []byte("\n")
 
-//--------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
 
 // CListMempool is an ordered in-memory pool for transactions before they are
 // proposed in a consensus round. Transaction validity is checked using the
@@ -53,6 +53,8 @@ type CListMempool struct {
 	updateMtx tmsync.RWMutex
 	preCheck  PreCheckFunc
 
+	chReqCheckTx chan *requestCheckTxAsync
+
 	wal          *auto.AutoFile // a log of mempool txs
 	txs          *clist.CList   // concurrent linked-list of good txs
 	proxyAppConn proxy.AppConnMempool
@@ -68,6 +70,13 @@ type CListMempool struct {
 	logger log.Logger
 
 	metrics *Metrics
+}
+
+type requestCheckTxAsync struct {
+	tx        types.Tx
+	txInfo    TxInfo
+	prepareCb func(error)
+	checkTxCb func(*abci.Response)
 }
 
 var _ Mempool = &CListMempool{}
@@ -87,6 +96,7 @@ func NewCListMempool(
 		proxyAppConn: proxyAppConn,
 		txs:          clist.New(),
 		height:       height,
+		chReqCheckTx: make(chan *requestCheckTxAsync, config.Size),
 		logger:       log.NewNopLogger(),
 		metrics:      NopMetrics(),
 	}
@@ -99,6 +109,7 @@ func NewCListMempool(
 	for _, option := range options {
 		option(mempool)
 	}
+	go mempool.checkTxAsyncReactor()
 	return mempool
 }
 
@@ -237,39 +248,51 @@ func (mem *CListMempool) CheckTxSync(tx types.Tx, txInfo TxInfo) (res *abci.Resp
 	return res, err
 }
 
-// It blocks if we're waiting on Update() or Reap().
 // cb: A callback from the CheckTx command.
 //     It gets called from another goroutine.
-// CONTRACT: Either cb will get called, or err returned.
 //
 // Safe for concurrent use by multiple goroutines.
-func (mem *CListMempool) CheckTxAsync(tx types.Tx, txInfo TxInfo, cb func(*abci.Response)) (err error) {
-	mem.updateMtx.RLock()
-	// use defer to unlock mutex because application (*local client*) might panic
-	defer func() {
-		if err != nil {
-			mem.updateMtx.RUnlock()
-			return
-		}
+func (mem *CListMempool) CheckTxAsync(tx types.Tx, txInfo TxInfo, prepareCb func(error),
+	checkTxCb func(*abci.Response)) {
+	mem.chReqCheckTx <- &requestCheckTxAsync{tx: tx, txInfo: txInfo, prepareCb: prepareCb, checkTxCb: checkTxCb}
+}
 
+func (mem *CListMempool) checkTxAsyncReactor() {
+	for req := range mem.chReqCheckTx {
+		mem.checkTxAsync(req.tx, req.txInfo, req.prepareCb, req.checkTxCb)
+	}
+}
+
+// It blocks if we're waiting on Update() or Reap().
+func (mem *CListMempool) checkTxAsync(tx types.Tx, txInfo TxInfo, prepareCb func(error),
+	checkTxCb func(*abci.Response)) {
+	mem.updateMtx.RLock()
+	defer func() {
 		if r := recover(); r != nil {
 			mem.updateMtx.RUnlock()
 			panic(r)
 		}
 	}()
 
-	if err = mem.prepareCheckTx(tx, txInfo); err != nil {
-		return err
+	err := mem.prepareCheckTx(tx, txInfo)
+	if prepareCb != nil {
+		prepareCb(err)
+	}
+	if err != nil {
+		mem.updateMtx.RUnlock()
+		return
 	}
 
 	// CONTRACT: `app.CheckTxAsync()` should check whether `GasWanted` is valid (0 <= GasWanted <= block.masGas)
 	reqRes := mem.proxyAppConn.CheckTxAsync(abci.RequestCheckTx{Tx: tx})
 	reqRes.SetCallback(func(res *abci.Response) {
-		mem.reqResCb(tx, txInfo.SenderID, txInfo.SenderP2PID, res, cb)
-		mem.updateMtx.RUnlock()
+		mem.reqResCb(tx, txInfo.SenderID, txInfo.SenderP2PID, res, func(response *abci.Response) {
+			if checkTxCb != nil {
+				checkTxCb(response)
+			}
+			mem.updateMtx.RUnlock()
+		})
 	})
-
-	return err
 }
 
 // CONTRACT: `caller` should held `mem.updateMtx.RLock()`
@@ -708,7 +731,7 @@ func (mem *CListMempool) recheckTxs() {
 	wg.Wait()
 }
 
-//--------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
 
 // mempoolTx is a transaction that successfully ran
 type mempoolTx struct {
@@ -726,7 +749,7 @@ func (memTx *mempoolTx) Height() int64 {
 	return atomic.LoadInt64(&memTx.height)
 }
 
-//--------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
 
 type txCache interface {
 	Reset()
@@ -809,7 +832,7 @@ func (nopTxCache) Reset()             {}
 func (nopTxCache) Push(types.Tx) bool { return true }
 func (nopTxCache) Remove(types.Tx)    {}
 
-//--------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
 
 // TxKey is the fixed length array hash used as the key in maps.
 func TxKey(tx types.Tx) [TxKeySize]byte {
