@@ -175,7 +175,7 @@ func (_m *AppConnMempool) FlushSync() error {
 	return r0
 }
 
-// SetResponseCallback provides a mock function with given fields: _a0
-func (_m *AppConnMempool) SetResponseCallback(_a0 abcicli.Callback) {
+// SetGlobalCallback provides a mock function with given fields: _a0
+func (_m *AppConnMempool) SetGlobalCallback(_a0 abcicli.GlobalCallback) {
 	_m.Called(_a0)
 }
