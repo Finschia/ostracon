@@ -276,7 +276,8 @@ func (cli *grpcClient) ApplySnapshotChunkAsync(params types.RequestApplySnapshot
 	if err != nil {
 		cli.StopForError(err)
 	}
-	return cli.finishAsyncCall(req, &types.Response{Value: &types.Response_ApplySnapshotChunk{ApplySnapshotChunk: res}}, cb)
+	return cli.finishAsyncCall(req,
+		&types.Response{Value: &types.Response_ApplySnapshotChunk{ApplySnapshotChunk: res}}, cb)
 }
 
 func (cli *grpcClient) finishAsyncCall(req *types.Request, res *types.Response, cb ResponseCallback) *ReqRes {
