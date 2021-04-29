@@ -136,7 +136,7 @@ func (_m *AppConnConsensus) InitChainSync(_a0 types.RequestInitChain) (*types.Re
 	return r0, r1
 }
 
-// SetResponseCallback provides a mock function with given fields: _a0
-func (_m *AppConnConsensus) SetResponseCallback(_a0 abcicli.Callback) {
+// SetGlobalCallback provides a mock function with given fields: _a0
+func (_m *AppConnConsensus) SetGlobalCallback(_a0 abcicli.GlobalCallback) {
 	_m.Called(_a0)
 }
