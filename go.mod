@@ -17,7 +17,6 @@ require (
 	github.com/gorilla/websocket v1.4.2
 	github.com/gtank/merlin v0.1.1
 	github.com/libp2p/go-buffer-pool v0.0.2
-	github.com/line/iavl/v2 v2.0.0-init.1.0.20210406065347-cfd73e5acce0
 	github.com/line/tm-db/v2 v2.0.0-init.1.0.20210413083915-5bb60e117524
 	github.com/minio/highwayhash v1.0.1
 	github.com/pkg/errors v0.9.1
