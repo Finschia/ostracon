@@ -36,15 +36,15 @@ func TestABCIQuery(t *testing.T) {
 
 	// We comment out this code to remove the dependency of iavl
 	/*
-	tree, err := iavl.NewMutableTree(memdb.NewDB(), 100)
-	require.NoError(t, err)
+		tree, err := iavl.NewMutableTree(memdb.NewDB(), 100)
+		require.NoError(t, err)
 
-	tree.Set(key, value)
+		tree.Set(key, value)
 
-	commitmentProof, err := tree.GetMembershipProof(key)
-	require.NoError(t, err)
-	data, _ := commitmentProof.Marshal()
-	fmt.Printf("%v\n", data)
+		commitmentProof, err := tree.GetMembershipProof(key)
+		require.NoError(t, err)
+		data, _ := commitmentProof.Marshal()
+		fmt.Printf("%v\n", data)
 	*/
 
 	op := &testOp{
