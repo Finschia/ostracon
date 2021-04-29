@@ -7,7 +7,10 @@ import (
 	"testing"
 
 	ics23 "github.com/confio/ics23/go"
-	"github.com/line/iavl/v2"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto/merkle"
 	"github.com/line/ostracon/libs/bytes"
@@ -24,22 +27,34 @@ import (
 
 // TestABCIQuery tests ABCIQuery requests and verifies proofs. HAPPY PATH 😀
 func TestABCIQuery(t *testing.T) {
-	tree, err := iavl.NewMutableTree(memdb.NewDB(), 100)
-	require.NoError(t, err)
-
 	var (
 		key   = []byte("foo")
 		value = []byte("bar")
 	)
-	tree.Set(key, value)
 
-	commitmentProof, err := tree.GetMembershipProof(key)
+	// You can get this proof binary with following code.
+	proof := []byte{10, 23, 10, 3, 102, 111, 111, 18, 3, 98, 97, 114, 26, 11, 8, 1, 24, 1, 32, 1, 42, 3, 0, 2, 2}
+	var commitmentProof ics23.CommitmentProof
+	err := commitmentProof.Unmarshal(proof)
 	require.NoError(t, err)
+
+	// We comment out this code to remove the dependency of iavl
+	/*
+		tree, err := iavl.NewMutableTree(memdb.NewDB(), 100)
+		require.NoError(t, err)
+
+		tree.Set(key, value)
+
+		commitmentProof, err := tree.GetMembershipProof(key)
+		require.NoError(t, err)
+		data, _ := commitmentProof.Marshal()
+		fmt.Printf("%v\n", data)
+	*/
 
 	op := &testOp{
 		Spec:  ics23.IavlSpec,
 		Key:   key,
-		Proof: commitmentProof,
+		Proof: &commitmentProof,
 	}
 
 	next := &rpcmock.Client{}

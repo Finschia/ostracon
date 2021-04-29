@@ -19,8 +19,7 @@ require (
 	github.com/gtank/merlin v0.1.1
 	github.com/herumi/bls-eth-go-binary v0.0.0-20200923072303-32b29e5d8cbf
 	github.com/libp2p/go-buffer-pool v0.0.2
-	github.com/line/iavl/v2 v2.0.0-init.1.0.20210406065347-cfd73e5acce0
-	github.com/line/tm-db/v2 v2.0.0-init.1.0.20210406062110-9424ca70955a
+	github.com/line/tm-db/v2 v2.0.0-init.1.0.20210413083915-5bb60e117524
 	github.com/minio/highwayhash v1.0.1
 	github.com/pelletier/go-toml v1.6.0 // indirect
 	github.com/pkg/errors v0.9.1
