@@ -33,8 +33,8 @@ func TestProperSyncCalls(t *testing.T) {
 	resp := make(chan error, 1)
 	go func() {
 		// This is BeginBlockSync unrolled....
-		reqres := c.BeginBlockAsync(types.RequestBeginBlock{})
-		err := c.FlushSync()
+		reqres := c.BeginBlockAsync(types.RequestBeginBlock{}, nil)
+		_, err := c.FlushSync()
 		require.NoError(t, err)
 		res := reqres.Response.GetBeginBlock()
 		require.NotNil(t, res)
@@ -68,8 +68,8 @@ func TestHangingSyncCalls(t *testing.T) {
 	resp := make(chan error, 1)
 	go func() {
 		// Start BeginBlock and flush it
-		reqres := c.BeginBlockAsync(types.RequestBeginBlock{})
-		flush := c.FlushAsync()
+		reqres := c.BeginBlockAsync(types.RequestBeginBlock{}, nil)
+		flush := c.FlushAsync(nil)
 		// wait 20 ms for all events to travel socket, but
 		// no response yet from server
 		time.Sleep(20 * time.Millisecond)

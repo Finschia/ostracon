@@ -26,7 +26,7 @@ const TxKeySize = sha256.Size
 
 var newline = []byte("\n")
 
-// --------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------
 
 // CListMempool is an ordered in-memory pool for transactions before they are
 // proposed in a consensus round. Transaction validity is checked using the
@@ -105,7 +105,7 @@ func NewCListMempool(
 	} else {
 		mempool.cache = nopTxCache{}
 	}
-	proxyAppConn.SetResponseCallback(mempool.globalCb)
+	proxyAppConn.SetGlobalCallback(mempool.globalCb)
 	for _, option := range options {
 		option(mempool)
 	}
@@ -184,13 +184,14 @@ func (mem *CListMempool) TxsBytes() int64 {
 
 // Lock() must be help by the caller during execution.
 func (mem *CListMempool) FlushAppConn() error {
-	return mem.proxyAppConn.FlushSync()
+	_, err := mem.proxyAppConn.FlushSync()
+	return err
 }
 
 // XXX: Unsafe! Calling Flush may leave mempool in inconsistent state.
 func (mem *CListMempool) Flush() {
-	mem.updateMtx.RLock()
-	defer mem.updateMtx.RUnlock()
+	mem.updateMtx.Lock()
+	defer mem.updateMtx.Unlock()
 
 	_ = atomic.SwapInt64(&mem.txsBytes, 0)
 	mem.cache.Reset()
@@ -284,8 +285,7 @@ func (mem *CListMempool) checkTxAsync(tx types.Tx, txInfo TxInfo, prepareCb func
 	}
 
 	// CONTRACT: `app.CheckTxAsync()` should check whether `GasWanted` is valid (0 <= GasWanted <= block.masGas)
-	reqRes := mem.proxyAppConn.CheckTxAsync(abci.RequestCheckTx{Tx: tx})
-	reqRes.SetCallback(func(res *abci.Response) {
+	mem.proxyAppConn.CheckTxAsync(abci.RequestCheckTx{Tx: tx}, func(res *abci.Response) {
 		mem.reqResCb(tx, txInfo.SenderID, txInfo.SenderP2PID, res, func(response *abci.Response) {
 			if checkTxCb != nil {
 				checkTxCb(response)
@@ -718,20 +718,21 @@ func (mem *CListMempool) recheckTxs() {
 		wg.Add(1)
 
 		memTx := e.Value.(*mempoolTx)
-		reqRes := mem.proxyAppConn.CheckTxAsync(abci.RequestCheckTx{
+		req := abci.RequestCheckTx{
 			Tx:   memTx.tx,
 			Type: abci.CheckTxType_Recheck,
-		})
-		reqRes.SetCallback(func(res *abci.Response) {
+		}
+
+		mem.proxyAppConn.CheckTxAsync(req, func(res *abci.Response) {
 			wg.Done()
 		})
 	}
 
-	mem.proxyAppConn.FlushAsync()
+	mem.proxyAppConn.FlushAsync(func(res *abci.Response) { })
 	wg.Wait()
 }
 
-// --------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------
 
 // mempoolTx is a transaction that successfully ran
 type mempoolTx struct {
@@ -749,7 +750,7 @@ func (memTx *mempoolTx) Height() int64 {
 	return atomic.LoadInt64(&memTx.height)
 }
 
-// --------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------
 
 type txCache interface {
 	Reset()
@@ -832,7 +833,7 @@ func (nopTxCache) Reset()             {}
 func (nopTxCache) Push(types.Tx) bool { return true }
 func (nopTxCache) Remove(types.Tx)    {}
 
-// --------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------
 
 // TxKey is the fixed length array hash used as the key in maps.
 func TxKey(tx types.Tx) [TxKeySize]byte {
