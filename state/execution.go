@@ -208,12 +208,9 @@ func (blockExec *BlockExecutor) ApplyBlock(
 		return state, 0, fmt.Errorf("commit failed for application: %v", err)
 	}
 
-	if stepTimes != nil {
-		stepTimes.ToCommitCommitting()
-	}
 	// Lock mempool, commit app state, update mempoool.
 	commitStartTime := time.Now().UnixNano()
-	appHash, retainHeight, err := blockExec.Commit(state, block, abciResponses.DeliverTxs)
+	appHash, retainHeight, err := blockExec.Commit(state, block, abciResponses.DeliverTxs, stepTimes)
 	commitEndTime := time.Now().UnixNano()
 
 	commitTimeMs := float64(commitEndTime-commitStartTime) / 1000000
@@ -256,6 +253,7 @@ func (blockExec *BlockExecutor) Commit(
 	state State,
 	block *types.Block,
 	deliverTxResponses []*abci.ResponseDeliverTx,
+	stepTimes *CommitStepTimes,
 ) ([]byte, int64, error) {
 	blockExec.mempool.Lock()
 	defer blockExec.mempool.Unlock()
@@ -280,6 +278,10 @@ func (blockExec *BlockExecutor) Commit(
 		"num_txs", len(block.Txs),
 		"app_hash", fmt.Sprintf("%X", res.Data),
 	)
+
+	if stepTimes != nil {
+		stepTimes.ToCommitCommitting()
+	}
 
 	// Update mempool.
 	updateMempoolStartTime := time.Now().UnixNano()
