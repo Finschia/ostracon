@@ -65,7 +65,7 @@ type StepTimes struct {
 
 func (st *StepTimes) StartNewRound() time.Time {
 	now := tmtime.Now()
-	if st.Current != nil {
+	if st.Current == &st.WaitingForNewRound {
 		st.Current.End = now
 	}
 	st.Current = &st.Proposal
@@ -86,7 +86,20 @@ func (st *StepTimes) ToCommitExecuting() time.Time {
 }
 
 func (st *StepTimes) EndRound() time.Time {
-	return st.ToNextStep(&st.CommitRechecking, &st.WaitingForNewRound)
+	now := tmtime.Now()
+	if st.Current == &st.CommitRechecking {
+		st.Current.End = now
+		st.Current = &st.WaitingForNewRound
+	}
+	return now
+}
+
+func (st *StepTimes) StartWaiting() time.Time {
+	now := tmtime.Now()
+	if st.Current == &st.WaitingForNewRound {
+		st.Current.Start = now
+	}
+	return now
 }
 
 func (ti *timeoutInfo) String() string {
@@ -1725,6 +1738,8 @@ func (cs *State) finalizeCommit(height int64) {
 	// * cs.Height has been increment to height+1
 	// * cs.Step is now cstypes.RoundStepNewHeight
 	// * cs.StartTime is set to when we will start round0.
+
+	cs.stepTimes.StartWaiting()
 }
 
 func (cs *State) pruneBlocks(retainHeight int64) (uint64, error) {
