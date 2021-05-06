@@ -53,9 +53,6 @@ type CommitStepTimes struct {
 }
 
 func (st *CommitStepTimes) ToNextStep(from, next *types.StepDuration) time.Time {
-	if st.Current == nil {
-		panic("StepTimes is not started yet")
-	}
 	now := tmtime.Now()
 	if st.Current == from {
 		from.End, next.Start = now, now
