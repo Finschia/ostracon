@@ -301,11 +301,12 @@ func NopMetrics() *Metrics {
 		MissingProposal: discard.NewGauge(),
 		RoundFailures:   discard.NewHistogram(),
 
-		DurationProposal:         discard.NewHistogram(),
-		DurationPrevote:          discard.NewHistogram(),
-		DurationPrecommit:        discard.NewHistogram(),
-		DurationCommitExecuting:  discard.NewHistogram(),
-		DurationCommitCommitting: discard.NewHistogram(),
-		DurationCommitRechecking: discard.NewHistogram(),
+		DurationProposal:           discard.NewHistogram(),
+		DurationPrevote:            discard.NewHistogram(),
+		DurationPrecommit:          discard.NewHistogram(),
+		DurationCommitExecuting:    discard.NewHistogram(),
+		DurationCommitCommitting:   discard.NewHistogram(),
+		DurationCommitRechecking:   discard.NewHistogram(),
+		DurationWaitingForNewRound: discard.NewHistogram(),
 	}
 }
