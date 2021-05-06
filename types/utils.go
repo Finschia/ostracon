@@ -6,8 +6,8 @@ import (
 )
 
 type StepDuration struct {
-	Start   time.Time
-	End     time.Time
+	Start time.Time
+	End   time.Time
 }
 
 func (sd *StepDuration) GetDuration() float64 {

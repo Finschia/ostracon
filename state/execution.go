@@ -46,10 +46,10 @@ type BlockExecutor struct {
 type BlockExecutorOption func(executor *BlockExecutor)
 
 type CommitStepTimes struct {
-	CommitExecuting    types.StepDuration
-	CommitCommitting   types.StepDuration
-	CommitRechecking   types.StepDuration
-	Current            *types.StepDuration
+	CommitExecuting  types.StepDuration
+	CommitCommitting types.StepDuration
+	CommitRechecking types.StepDuration
+	Current          *types.StepDuration
 }
 
 func (st *CommitStepTimes) ToNextStep(from, next *types.StepDuration) time.Time {
