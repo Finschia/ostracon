@@ -1,6 +1,21 @@
 package types
 
-import "reflect"
+import (
+	"reflect"
+	"time"
+)
+
+type StepDuration struct {
+	Start time.Time
+	End   time.Time
+}
+
+func (sd *StepDuration) GetDuration() float64 {
+	if sd.End.After(sd.Start) {
+		return float64(sd.End.Sub(sd.Start).Microseconds()) / 1000
+	}
+	return 0
+}
 
 // Go lacks a simple and safe way to see if something is a typed nil.
 // See:

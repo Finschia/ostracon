@@ -14,6 +14,7 @@ import (
 	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/proxy"
 	"github.com/line/ostracon/types"
+	tmtime "github.com/line/ostracon/types/time"
 )
 
 //-----------------------------------------------------------------------------
@@ -43,6 +44,30 @@ type BlockExecutor struct {
 }
 
 type BlockExecutorOption func(executor *BlockExecutor)
+
+type CommitStepTimes struct {
+	CommitExecuting  types.StepDuration
+	CommitCommitting types.StepDuration
+	CommitRechecking types.StepDuration
+	Current          *types.StepDuration
+}
+
+func (st *CommitStepTimes) ToNextStep(from, next *types.StepDuration) time.Time {
+	now := tmtime.Now()
+	if st.Current == from {
+		from.End, next.Start = now, now
+		st.Current = next
+	}
+	return now
+}
+
+func (st *CommitStepTimes) ToCommitCommitting() time.Time {
+	return st.ToNextStep(&st.CommitExecuting, &st.CommitCommitting)
+}
+
+func (st *CommitStepTimes) ToCommitRechecking() time.Time {
+	return st.ToNextStep(&st.CommitCommitting, &st.CommitRechecking)
+}
 
 func BlockExecutorWithMetrics(metrics *Metrics) BlockExecutorOption {
 	return func(blockExec *BlockExecutor) {
@@ -129,7 +154,7 @@ func (blockExec *BlockExecutor) ValidateBlock(state State, block *types.Block) e
 // from outside this package to process and commit an entire block.
 // It takes a blockID to avoid recomputing the parts hash.
 func (blockExec *BlockExecutor) ApplyBlock(
-	state State, blockID types.BlockID, block *types.Block,
+	state State, blockID types.BlockID, block *types.Block, stepTimes *CommitStepTimes,
 ) (State, int64, error) {
 
 	if err := validateBlock(state, block); err != nil {
@@ -180,9 +205,13 @@ func (blockExec *BlockExecutor) ApplyBlock(
 		return state, 0, fmt.Errorf("commit failed for application: %v", err)
 	}
 
+	if stepTimes != nil {
+		stepTimes.ToCommitCommitting()
+	}
+
 	// Lock mempool, commit app state, update mempoool.
 	commitStartTime := time.Now().UnixNano()
-	appHash, retainHeight, err := blockExec.Commit(state, block, abciResponses.DeliverTxs)
+	appHash, retainHeight, err := blockExec.Commit(state, block, abciResponses.DeliverTxs, stepTimes)
 	commitEndTime := time.Now().UnixNano()
 
 	commitTimeMs := float64(commitEndTime-commitStartTime) / 1000000
@@ -222,6 +251,7 @@ func (blockExec *BlockExecutor) Commit(
 	state State,
 	block *types.Block,
 	deliverTxResponses []*abci.ResponseDeliverTx,
+	stepTimes *CommitStepTimes,
 ) ([]byte, int64, error) {
 	blockExec.mempool.Lock()
 	defer blockExec.mempool.Unlock()
@@ -246,6 +276,10 @@ func (blockExec *BlockExecutor) Commit(
 		"num_txs", len(block.Txs),
 		"app_hash", fmt.Sprintf("%X", res.Data),
 	)
+
+	if stepTimes != nil {
+		stepTimes.ToCommitRechecking()
+	}
 
 	// Update mempool.
 	updateMempoolStartTime := time.Now().UnixNano()

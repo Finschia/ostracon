@@ -55,6 +55,53 @@ type timeoutInfo struct {
 	Step     cstypes.RoundStepType `json:"step"`
 }
 
+type StepTimes struct {
+	Proposal  types.StepDuration
+	Prevote   types.StepDuration
+	Precommit types.StepDuration
+	sm.CommitStepTimes
+	WaitingForNewRound types.StepDuration
+}
+
+func (st *StepTimes) StartNewRound() time.Time {
+	now := tmtime.Now()
+	if st.Current == &st.WaitingForNewRound {
+		st.Current.End = now
+	}
+	st.Current = &st.Proposal
+	st.Current.Start = now
+	return now
+}
+
+func (st *StepTimes) ToPrevoteStep() time.Time {
+	return st.ToNextStep(&st.Proposal, &st.Prevote)
+}
+
+func (st *StepTimes) ToPrecommitStep() time.Time {
+	return st.ToNextStep(&st.Prevote, &st.Precommit)
+}
+
+func (st *StepTimes) ToCommitExecuting() time.Time {
+	return st.ToNextStep(&st.Precommit, &st.CommitExecuting)
+}
+
+func (st *StepTimes) EndRound() time.Time {
+	now := tmtime.Now()
+	if st.Current == &st.CommitRechecking {
+		st.Current.End = now
+		st.Current = &st.WaitingForNewRound
+	}
+	return now
+}
+
+func (st *StepTimes) StartWaiting() time.Time {
+	now := tmtime.Now()
+	if st.Current == &st.WaitingForNewRound {
+		st.Current.Start = now
+	}
+	return now
+}
+
 func (ti *timeoutInfo) String() string {
 	return fmt.Sprintf("%v ; %d/%d %v", ti.Duration, ti.Height, ti.Round, ti.Step)
 }
@@ -139,6 +186,9 @@ type State struct {
 
 	// for reporting metrics
 	metrics *Metrics
+
+	// times of each step
+	stepTimes *StepTimes
 }
 
 // StateOption sets an optional parameter on the State.
@@ -169,6 +219,7 @@ func NewState(
 		evpool:           evpool,
 		evsw:             tmevents.NewEventSwitch(),
 		metrics:          NopMetrics(),
+		stepTimes:        &StepTimes{},
 	}
 
 	// set function defaults (may be overwritten before calling Start)
@@ -968,7 +1019,8 @@ func (cs *State) enterNewRound(height int64, round int32) {
 		return
 	}
 
-	if now := tmtime.Now(); cs.StartTime.After(now) {
+	now := cs.stepTimes.StartNewRound()
+	if cs.StartTime.After(now) {
 		logger.Debug("need to set a buffer and log message here for sanity", "start_time", cs.StartTime, "now", now)
 	}
 
@@ -1221,6 +1273,7 @@ func (cs *State) enterPrevote(height int64, round int32) {
 		// Done enterPrevote:
 		cs.updateRoundStep(round, cstypes.RoundStepPrevote)
 		cs.newStep()
+		cs.stepTimes.ToPrevoteStep()
 	}()
 
 	logger.Debug("entering prevote step", "current", fmt.Sprintf("%v/%v/%v", cs.Height, cs.Round, cs.Step))
@@ -1246,6 +1299,8 @@ func (cs *State) defaultDoPrevote(height int64, round int32) {
 	if cs.ProposalBlock == nil {
 		logger.Debug("prevote step: ProposalBlock is nil")
 		cs.signAddVote(tmproto.PrevoteType, nil, types.PartSetHeader{})
+		// increase missing proposal by one
+		cs.metrics.MissingProposal.Add(1)
 		return
 	}
 
@@ -1319,6 +1374,7 @@ func (cs *State) enterPrecommit(height int64, round int32) {
 		// Done enterPrecommit:
 		cs.updateRoundStep(round, cstypes.RoundStepPrecommit)
 		cs.newStep()
+		cs.stepTimes.ToPrecommitStep()
 	}()
 
 	// check for a polka
@@ -1632,6 +1688,7 @@ func (cs *State) finalizeCommit(height int64) {
 		retainHeight int64
 	)
 
+	cs.stepTimes.ToCommitExecuting()
 	stateCopy, retainHeight, err = cs.blockExec.ApplyBlock(
 		stateCopy,
 		types.BlockID{
@@ -1639,6 +1696,7 @@ func (cs *State) finalizeCommit(height int64) {
 			PartSetHeader: blockParts.Header(),
 		},
 		block,
+		&cs.stepTimes.CommitStepTimes,
 	)
 	if err != nil {
 		logger.Error("failed to apply block", "err", err)
@@ -1656,6 +1714,8 @@ func (cs *State) finalizeCommit(height int64) {
 			logger.Debug("pruned blocks", "pruned", pruned, "retain_height", retainHeight)
 		}
 	}
+
+	cs.stepTimes.EndRound()
 
 	// must be called before we update state
 	cs.recordMetrics(height, block)
@@ -1678,6 +1738,8 @@ func (cs *State) finalizeCommit(height int64) {
 	// * cs.Height has been increment to height+1
 	// * cs.Step is now cstypes.RoundStepNewHeight
 	// * cs.StartTime is set to when we will start round0.
+
+	cs.stepTimes.StartWaiting()
 }
 
 func (cs *State) pruneBlocks(retainHeight int64) (uint64, error) {
@@ -1782,6 +1844,15 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 	cs.metrics.TotalTxs.Add(float64(len(block.Data.Txs)))
 	cs.metrics.BlockSizeBytes.Set(float64(block.Size()))
 	cs.metrics.CommittedHeight.Set(float64(block.Height))
+
+	cs.metrics.RoundFailures.Observe(float64(cs.Round))
+	cs.metrics.DurationProposal.Observe(cs.stepTimes.Proposal.GetDuration())
+	cs.metrics.DurationPrevote.Observe(cs.stepTimes.Prevote.GetDuration())
+	cs.metrics.DurationPrecommit.Observe(cs.stepTimes.Precommit.GetDuration())
+	cs.metrics.DurationCommitExecuting.Observe(cs.stepTimes.CommitExecuting.GetDuration())
+	cs.metrics.DurationCommitCommitting.Observe(cs.stepTimes.CommitCommitting.GetDuration())
+	cs.metrics.DurationCommitRechecking.Observe(cs.stepTimes.CommitRechecking.GetDuration())
+	cs.metrics.DurationWaitingForNewRound.Observe(cs.stepTimes.WaitingForNewRound.GetDuration())
 }
 
 //-----------------------------------------------------------------------------
