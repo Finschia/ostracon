@@ -1702,6 +1702,8 @@ func (cs *State) finalizeCommit(height int64) {
 		}
 	}
 
+	cs.stepTimes.EndRound()
+
 	// must be called before we update state
 	cs.recordMetrics(height, block)
 
@@ -1723,7 +1725,6 @@ func (cs *State) finalizeCommit(height int64) {
 	// * cs.Height has been increment to height+1
 	// * cs.Step is now cstypes.RoundStepNewHeight
 	// * cs.StartTime is set to when we will start round0.
-	cs.stepTimes.EndRound()
 }
 
 func (cs *State) pruneBlocks(retainHeight int64) (uint64, error) {

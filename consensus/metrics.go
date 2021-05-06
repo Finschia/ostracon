@@ -258,7 +258,7 @@ func PrometheusMetrics(namespace string, labelsAndValues ...string) *Metrics {
 			Subsystem: MetricsSubsystem,
 			Name:      "duration_commit_rechecking",
 			Help:      "Duration of rechecking mempool txs",
-			Buckets:   stdprometheus.LinearBuckets(50, 50, 10),
+			Buckets:   stdprometheus.LinearBuckets(100, 100, 10),
 		}, labels).With(labelsAndValues...),
 		DurationWaitingForNewRound: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
 			Namespace: namespace,
