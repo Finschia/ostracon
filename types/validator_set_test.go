@@ -3,14 +3,15 @@ package types
 import (
 	"bytes"
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"math"
 	"math/big"
 	"sort"
 	"strings"
 	"testing"
 	"testing/quick"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
@@ -306,11 +307,14 @@ func TestProposerSelection3(t *testing.T) {
 		newValidator([]byte("dvalidator_address12"), 1),
 	})
 
-	proposerOrder := make([]*Validator, 4)
-	for i := 0; i < 4; i++ {
+	for i := 0; i < len(vset.Validators); i++ {
 		// need to give all validators to have keys
 		pk := ed25519.GenPrivKey().PubKey()
 		vset.Validators[i].PubKey = pk
+	}
+
+	proposerOrder := make([]*Validator, 10000)
+	for i := 0; i < len(proposerOrder); i++ {
 		proposerOrder[i] = vset.SelectProposer([]byte{}, int64(i), 0)
 		vset.IncrementProposerPriority(1)
 	}
@@ -320,13 +324,12 @@ func TestProposerSelection3(t *testing.T) {
 	// we should go in order for ever, despite some IncrementProposerPriority with times > 1
 	var (
 		i int
-		j int32
 	)
-	for ; i < 10000; i++ {
+	for ; i < len(proposerOrder); i++ {
 		got := vset.SelectProposer([]byte{}, int64(i), 0).Address
-		expected := proposerOrder[j%4].Address
+		expected := proposerOrder[i].Address
 		if !bytes.Equal(got, expected) {
-			t.Fatalf(fmt.Sprintf("vset.Proposer (%X) does not match expected proposer (%X) for (%d, %d)", got, expected, i, j))
+			t.Fatalf(fmt.Sprintf("vset.Proposer (%X) does not match expected proposer (%X) for %d", got, expected, i))
 		}
 
 		// serialize, deserialize, check proposer
@@ -338,26 +341,15 @@ func TestProposerSelection3(t *testing.T) {
 			if !bytes.Equal(got, computed.Address) {
 				t.Fatalf(
 					fmt.Sprintf(
-						"vset.Proposer (%X) does not match computed proposer (%X) for (%d, %d)",
+						"vset.Proposer (%X) does not match computed proposer (%X) for %d",
 						got,
 						computed.Address,
 						i,
-						j,
 					),
 				)
 			}
 		}
-
-		// times is usually 1
-		times := int32(1)
-		mod := (tmrand.Int() % 5) + 1
-		if tmrand.Int()%mod > 0 {
-			// sometimes its up to 5
-			times = (tmrand.Int31() % 4) + 1
-		}
-		vset.IncrementProposerPriority(times)
-
-		j += times
+		vset.IncrementProposerPriority(1)
 	}
 }
 

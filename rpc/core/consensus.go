@@ -57,7 +57,9 @@ func voters(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *int,
 	return &ctypes.ResultVoters{
 		BlockHeight:  height,
 		Validators:   v,
-		VoterIndices: voterIndices}, nil
+		VoterIndices: voterIndices,
+		Count:        len(v),
+		Total:        totalCount}, nil
 }
 
 // DumpConsensusState dumps consensus state.

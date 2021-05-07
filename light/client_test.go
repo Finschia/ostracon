@@ -265,7 +265,7 @@ func TestClient_SkippingVerification(t *testing.T) {
 	testCases := []struct {
 		name         string
 		otherHeaders map[int64]*types.SignedHeader // all except ^
-		voters         map[int64]*types.VoterSet
+		voters       map[int64]*types.VoterSet
 		initErr      bool
 		verifyErr    bool
 	}{
@@ -1035,7 +1035,7 @@ func TestClientEnsureValidHeadersAndValSets(t *testing.T) {
 
 	testCases := []struct {
 		headers map[int64]*types.SignedHeader
-		voters    map[int64]*types.VoterSet
+		voters  map[int64]*types.VoterSet
 		err     bool
 	}{
 		{

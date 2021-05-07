@@ -1,13 +1,15 @@
 package types
 
 import (
-	"github.com/stretchr/testify/require"
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	tmmath "github.com/tendermint/tendermint/libs/math"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	"math"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/tendermint/tendermint/crypto/ed25519"
+	tmmath "github.com/tendermint/tendermint/libs/math"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/stretchr/testify/assert"
 
@@ -168,31 +170,31 @@ func TestVoterSet_VerifyCommitLightTrusting_ReturnsAsSoonAsTrustLevelOfVotingPow
 
 func TestValidatorSet_VerifyCommitLightTrusting(t *testing.T) {
 	var (
-		blockID                       = makeBlockIDRandom()
-		voteSet, _, voterSet, vals    = randVoteSet(1, 1, tmproto.PrecommitType, 6, 1)
-		commit, err                   = MakeCommit(blockID, 1, 1, voteSet, vals, time.Now())
-		_, newVoterSet, _             = RandVoterSet(2, 1)
+		blockID                    = makeBlockIDRandom()
+		voteSet, _, voterSet, vals = randVoteSet(1, 1, tmproto.PrecommitType, 6, 1)
+		commit, err                = MakeCommit(blockID, 1, 1, voteSet, vals, time.Now())
+		_, newVoterSet, _          = RandVoterSet(2, 1)
 	)
 	require.NoError(t, err)
 
 	testCases := []struct {
 		voterSet *VoterSet
-		err    bool
+		err      bool
 	}{
 		// good
 		0: {
 			voterSet: voterSet,
-			err:    false,
+			err:      false,
 		},
 		// bad - no overlap between voter sets
 		1: {
 			voterSet: newVoterSet,
-			err:    true,
+			err:      true,
 		},
 		// good - first two are different but the rest of the same -> >1/3
 		2: {
 			voterSet: NewVoterSet(append(newVoterSet.Voters, voterSet.Voters...)),
-			err:    false,
+			err:      false,
 		},
 	}
 

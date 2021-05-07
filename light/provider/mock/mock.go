@@ -25,7 +25,7 @@ func New(chainID string, headers map[int64]*types.SignedHeader, voters map[int64
 	return &Mock{
 		chainID:          chainID,
 		headers:          headers,
-		voters:            voters,
+		voters:           voters,
 		evidenceToReport: make(map[string]types.Evidence),
 	}
 }

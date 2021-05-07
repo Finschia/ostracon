@@ -329,7 +329,7 @@ func TestHeaderHash(t *testing.T) {
 			ProposerAddress: crypto.AddressHash([]byte("proposer_address")),
 			Round:           1,
 			Proof:           tmhash.Sum([]byte("proof")),
-		}, hexBytesFromString("0ECEA9AA5613ECD1673C223FA92A4651727C3DD7AF61E2C5FA979EEDBCC05F37")},
+		}, hexBytesFromString("51CD141FDF26F10AD9416FF2F68AAFAD298E8D9F23379CE6D8AEEA6AEC5D1487")},
 		{"nil header yields nil", nil, nil},
 		{"nil VotersHash yields nil", &Header{
 			Version:         tmversion.Consensus{Block: 1, App: 2},

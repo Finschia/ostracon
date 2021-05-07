@@ -26,7 +26,7 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 	var (
 		keys = genPrivKeys(4)
 		// 20, 30, 40, 50 - the first 3 don't have 2/3, the last 3 do!
-		voters     = types.ToVoterAll(keys.ToValidators(20, 10))
+		voters   = types.ToVoterAll(keys.ToValidators(20, 10))
 		bTime, _ = time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
 		header   = keys.GenSignedHeader(chainID, lastHeight, bTime, nil, voters, voters,
 			hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys))
@@ -34,7 +34,7 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 
 	testCases := []struct {
 		newHeader      *types.SignedHeader
-		newVoters        *types.VoterSet
+		newVoters      *types.VoterSet
 		trustingPeriod time.Duration
 		now            time.Time
 		expErr         error
@@ -179,27 +179,27 @@ func TestVerifyNonAdjacentHeaders(t *testing.T) {
 	var (
 		keys = genPrivKeys(4)
 		// 20, 30, 40, 50 - the first 3 don't have 2/3, the last 3 do!
-		voters     = types.ToVoterAll(keys.ToValidators(20, 10))
+		voters   = types.ToVoterAll(keys.ToValidators(20, 10))
 		bTime, _ = time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
 		header   = keys.GenSignedHeader(chainID, lastHeight, bTime, nil, voters, voters,
 			hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys))
 
 		// 30, 40, 50
-		twoThirds     = keys[1:]
+		twoThirds       = keys[1:]
 		twoThirdsVoters = types.ToVoterAll(twoThirds.ToValidators(30, 10))
 
 		// 50
-		oneThird     = keys[len(keys)-1:]
+		oneThird       = keys[len(keys)-1:]
 		oneThirdVoters = types.ToVoterAll(oneThird.ToValidators(50, 10))
 
 		// 20
-		lessThanOneThird     = keys[0:1]
+		lessThanOneThird       = keys[0:1]
 		lessThanOneThirdVoters = types.ToVoterAll(lessThanOneThird.ToValidators(20, 10))
 	)
 
 	testCases := []struct {
 		newHeader      *types.SignedHeader
-		newVoters        *types.VoterSet
+		newVoters      *types.VoterSet
 		trustingPeriod time.Duration
 		now            time.Time
 		expErr         error
@@ -295,7 +295,7 @@ func TestVerifyReturnsErrorIfTrustLevelIsInvalid(t *testing.T) {
 	var (
 		keys = genPrivKeys(4)
 		// 20, 30, 40, 50 - the first 3 don't have 2/3, the last 3 do!
-		voters     = types.ToVoterAll(keys.ToValidators(20, 10))
+		voters   = types.ToVoterAll(keys.ToValidators(20, 10))
 		bTime, _ = time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
 		header   = keys.GenSignedHeader(chainID, lastHeight, bTime, nil, voters, voters,
 			hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys))

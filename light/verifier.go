@@ -30,10 +30,10 @@ var (
 // maxClockDrift defines how much untrustedHeader.Time can drift into the
 // future.
 func VerifyNonAdjacent(
-	trustedHeader *types.SignedHeader,   // height=X
-	trustedVoters *types.VoterSet,       // height=X or height=X+1
+	trustedHeader *types.SignedHeader, // height=X
+	trustedVoters *types.VoterSet, // height=X or height=X+1
 	untrustedHeader *types.SignedHeader, // height=Y
-	untrustedVoters *types.VoterSet,     // height=Y
+	untrustedVoters *types.VoterSet, // height=Y
 	trustingPeriod time.Duration,
 	now time.Time,
 	maxClockDrift time.Duration,
@@ -133,10 +133,10 @@ func VerifyAdjacent(
 
 // Verify combines both VerifyAdjacent and VerifyNonAdjacent functions.
 func Verify(
-	trustedHeader *types.SignedHeader,   // height=X
-	trustedVoters *types.VoterSet,       // height=X or height=X+1
+	trustedHeader *types.SignedHeader, // height=X
+	trustedVoters *types.VoterSet, // height=X or height=X+1
 	untrustedHeader *types.SignedHeader, // height=Y
-	untrustedVoters *types.VoterSet,     // height=Y
+	untrustedVoters *types.VoterSet, // height=Y
 	trustingPeriod time.Duration,
 	now time.Time,
 	maxClockDrift time.Duration,

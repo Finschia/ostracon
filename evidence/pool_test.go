@@ -77,12 +77,12 @@ func TestEvidencePoolBasic(t *testing.T) {
 		blockStore = &mocks.BlockStore{}
 	)
 
-	valSet, _, privVals := types.RandVoterSet(1, 10)
+	valSet, voterSet, privVals := types.RandVoterSet(1, 10)
 
 	blockStore.On("LoadBlockMeta", mock.AnythingOfType("int64")).Return(
 		&types.BlockMeta{Header: types.Header{Time: defaultEvidenceTime}},
 	)
-	stateStore.On("LoadValidators", mock.AnythingOfType("int64")).Return(valSet, nil)
+	stateStore.On("LoadValidators", mock.AnythingOfType("int64")).Return(valSet, voterSet, nil)
 	stateStore.On("Load").Return(createState(height+1, valSet), nil)
 
 	pool, err := evidence.NewPool(evidenceDB, stateStore, blockStore)
@@ -319,7 +319,7 @@ func TestCheckEvidenceWithLightClientAttack(t *testing.T) {
 		ConsensusParams: *types.DefaultConsensusParams(),
 	}
 	stateStore := &smmocks.Store{}
-	stateStore.On("LoadValidators", height).Return(conflictingVals, nil)
+	stateStore.On("LoadValidators", height).Return(conflictingVals, conflictingVoters, nil)
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
 	blockStore.On("LoadBlockMeta", height).Return(&types.BlockMeta{Header: *trustedHeader})
@@ -402,7 +402,9 @@ func initializeStateFromValidatorSet(valSet *types.ValidatorSet, height int64) s
 		LastBlockTime:               defaultEvidenceTime,
 		Validators:                  valSet,
 		NextValidators:              valSet.Copy(),
+		Voters:                      types.ToVoterAll(valSet),
 		LastVoters:                  types.ToVoterAll(valSet),
+		NextVoters:                  types.ToVoterAll(valSet),
 		LastHeightValidatorsChanged: 1,
 		ConsensusParams: tmproto.ConsensusParams{
 			Block: tmproto.BlockParams{
