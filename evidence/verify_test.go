@@ -98,7 +98,7 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 		ConsensusParams: *types.DefaultConsensusParams(),
 	}
 	stateStore := &smmocks.Store{}
-	stateStore.On("LoadValidators", int64(4)).Return(commonVals, nil)
+	stateStore.On("LoadValidators", int64(4)).Return(commonVals, commonVoters, nil)
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
 	blockStore.On("LoadBlockMeta", int64(4)).Return(&types.BlockMeta{Header: *commonHeader})
@@ -199,7 +199,7 @@ func TestVerifyLightClientAttack_Equivocation(t *testing.T) {
 		ConsensusParams: *types.DefaultConsensusParams(),
 	}
 	stateStore := &smmocks.Store{}
-	stateStore.On("LoadValidators", int64(10)).Return(conflictingVals, nil)
+	stateStore.On("LoadValidators", int64(10)).Return(conflictingVals, conflictingVoters, nil)
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
 	blockStore.On("LoadBlockMeta", int64(10)).Return(&types.BlockMeta{Header: *trustedHeader})
@@ -275,7 +275,7 @@ func TestVerifyLightClientAttack_Amnesia(t *testing.T) {
 		ConsensusParams: *types.DefaultConsensusParams(),
 	}
 	stateStore := &smmocks.Store{}
-	stateStore.On("LoadValidators", int64(10)).Return(conflictingVals, nil)
+	stateStore.On("LoadValidators", int64(10)).Return(conflictingVals, conflictingVoters, nil)
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
 	blockStore.On("LoadBlockMeta", int64(10)).Return(&types.BlockMeta{Header: *trustedHeader})
@@ -302,7 +302,8 @@ type voteData struct {
 func TestVerifyDuplicateVoteEvidence(t *testing.T) {
 	val := types.NewMockPV()
 	val2 := types.NewMockPV()
-	valSet := types.WrapValidatorsToVoterSet([]*types.Validator{val.ExtractIntoValidator(1)})
+	valSet := types.NewValidatorSet([]*types.Validator{val.ExtractIntoValidator(1)})
+	voterSet := types.ToVoterAll(valSet.Validators)
 
 	blockID := makeBlockID([]byte("blockhash"), 1000, []byte("partshash"))
 	blockID2 := makeBlockID([]byte("blockhash2"), 1000, []byte("partshash"))
@@ -348,9 +349,9 @@ func TestVerifyDuplicateVoteEvidence(t *testing.T) {
 			Timestamp:        defaultEvidenceTime,
 		}
 		if c.valid {
-			assert.Nil(t, evidence.VerifyDuplicateVote(ev, chainID, valSet), "evidence should be valid")
+			assert.Nil(t, evidence.VerifyDuplicateVote(ev, chainID, voterSet), "evidence should be valid")
 		} else {
-			assert.NotNil(t, evidence.VerifyDuplicateVote(ev, chainID, valSet), "evidence should be invalid")
+			assert.NotNil(t, evidence.VerifyDuplicateVote(ev, chainID, voterSet), "evidence should be invalid")
 		}
 	}
 
@@ -369,7 +370,7 @@ func TestVerifyDuplicateVoteEvidence(t *testing.T) {
 		ConsensusParams: *types.DefaultConsensusParams(),
 	}
 	stateStore := &smmocks.Store{}
-	stateStore.On("LoadValidators", int64(10)).Return(valSet, nil)
+	stateStore.On("LoadValidators", int64(10)).Return(valSet, voterSet, nil)
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
 	blockStore.On("LoadBlockMeta", int64(10)).Return(&types.BlockMeta{Header: types.Header{Time: defaultEvidenceTime}})

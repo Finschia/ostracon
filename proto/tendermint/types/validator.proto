@@ -22,6 +22,9 @@ message Validator {
   tendermint.crypto.PublicKey pub_key           = 2 [(gogoproto.nullable) = false];
   int64                       staking_power     = 3;
   int64                       proposer_priority = 4;
+
+  // *** Ostracon Extended Fields ***
+  int64                       voting_power = 1000;
 }
 
 message SimpleValidator {

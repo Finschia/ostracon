@@ -144,8 +144,12 @@ message SignedHeader {
 }
 
 message LightBlock {
-  SignedHeader              signed_header = 1;
-  tendermint.types.VoterSet voter_set     = 2;
+  SignedHeader                  signed_header = 1;
+  tendermint.types.ValidatorSet validator_set = 2;
+
+  // *** Ostracon Extended Fields ***
+
+  tendermint.types.VoterSet voter_set = 1000;
 }
 
 message BlockMeta {

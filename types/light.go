@@ -74,6 +74,12 @@ func (lb *LightBlock) ToProto() (*tmproto.LightBlock, error) {
 	if lb.SignedHeader != nil {
 		lbp.SignedHeader = lb.SignedHeader.ToProto()
 	}
+	if lb.ValidatorSet != nil {
+		lbp.ValidatorSet, err = lb.ValidatorSet.ToProto()
+		if err != nil {
+			return nil, err
+		}
+	}
 	if lb.VoterSet != nil {
 		lbp.VoterSet, err = lb.VoterSet.ToProto()
 		if err != nil {
@@ -99,6 +105,14 @@ func LightBlockFromProto(pb *tmproto.LightBlock) (*LightBlock, error) {
 			return nil, err
 		}
 		lb.SignedHeader = sh
+	}
+
+	if pb.ValidatorSet != nil {
+		vals, err := ValidatorSetFromProto(pb.ValidatorSet)
+		if err != nil {
+			return nil, err
+		}
+		lb.ValidatorSet = vals
 	}
 
 	if pb.VoterSet != nil {

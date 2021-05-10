@@ -88,6 +88,7 @@ func TestLightBlockProtobuf(t *testing.T) {
 	for _, tc := range testCases {
 		lightBlock := &LightBlock{
 			SignedHeader: tc.sh,
+			ValidatorSet: NewValidatorSet(tc.vals.Voters),
 			VoterSet:     tc.vals,
 		}
 		lbp, err := lightBlock.ToProto()

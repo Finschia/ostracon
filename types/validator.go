@@ -153,6 +153,7 @@ func (v *Validator) ToProto() (*tmproto.Validator, error) {
 		Address:          v.Address,
 		PubKey:           pk,
 		StakingPower:     v.StakingPower,
+		VotingPower:      v.VotingPower,
 		ProposerPriority: v.ProposerPriority,
 	}
 
@@ -174,6 +175,7 @@ func ValidatorFromProto(vp *tmproto.Validator) (*Validator, error) {
 	v.Address = vp.GetAddress()
 	v.PubKey = pk
 	v.StakingPower = vp.GetStakingPower()
+	v.VotingPower = vp.GetVotingPower()
 	v.ProposerPriority = vp.GetProposerPriority()
 
 	return v, nil

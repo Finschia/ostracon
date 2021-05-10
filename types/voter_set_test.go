@@ -26,7 +26,7 @@ func TestVoterSet_VerifyCommit_All(t *testing.T) {
 		privKey = ed25519.GenPrivKey()
 		pubKey  = privKey.PubKey()
 		v1      = NewValidator(pubKey, 1000)
-		vset    = WrapValidatorsToVoterSet([]*Validator{v1})
+		vset    = ToVoterAll([]*Validator{v1})
 
 		chainID = "Lalande21185"
 	)
