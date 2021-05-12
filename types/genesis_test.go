@@ -168,6 +168,7 @@ func randomGenesisDoc() *GenesisDoc {
 		GenesisTime:     tmtime.Now(),
 		ChainID:         "abc",
 		InitialHeight:   1000,
+		VoterParams:     DefaultVoterParams(),
 		Validators:      []GenesisValidator{{pubkey.Address(), pubkey, 10, "myval"}},
 		ConsensusParams: DefaultConsensusParams(),
 		AppHash:         []byte{1, 2, 3},

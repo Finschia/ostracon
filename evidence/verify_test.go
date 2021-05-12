@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/mock"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -98,7 +100,7 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 		ConsensusParams: *types.DefaultConsensusParams(),
 	}
 	stateStore := &smmocks.Store{}
-	stateStore.On("LoadValidators", int64(4)).Return(commonVals, commonVoters, nil)
+	stateStore.On("LoadVoters", int64(4), mock.AnythingOfType("*types.VoterParams")).Return(commonVoters, nil)
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
 	blockStore.On("LoadBlockMeta", int64(4)).Return(&types.BlockMeta{Header: *commonHeader})
@@ -199,7 +201,7 @@ func TestVerifyLightClientAttack_Equivocation(t *testing.T) {
 		ConsensusParams: *types.DefaultConsensusParams(),
 	}
 	stateStore := &smmocks.Store{}
-	stateStore.On("LoadValidators", int64(10)).Return(conflictingVals, conflictingVoters, nil)
+	stateStore.On("LoadVoters", int64(10), mock.AnythingOfType("*types.VoterParams")).Return(conflictingVoters, nil)
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
 	blockStore.On("LoadBlockMeta", int64(10)).Return(&types.BlockMeta{Header: *trustedHeader})
@@ -275,7 +277,7 @@ func TestVerifyLightClientAttack_Amnesia(t *testing.T) {
 		ConsensusParams: *types.DefaultConsensusParams(),
 	}
 	stateStore := &smmocks.Store{}
-	stateStore.On("LoadValidators", int64(10)).Return(conflictingVals, conflictingVoters, nil)
+	stateStore.On("LoadVoters", int64(10), mock.AnythingOfType("*types.VoterParams")).Return(conflictingVoters, nil)
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
 	blockStore.On("LoadBlockMeta", int64(10)).Return(&types.BlockMeta{Header: *trustedHeader})
@@ -370,7 +372,7 @@ func TestVerifyDuplicateVoteEvidence(t *testing.T) {
 		ConsensusParams: *types.DefaultConsensusParams(),
 	}
 	stateStore := &smmocks.Store{}
-	stateStore.On("LoadValidators", int64(10)).Return(valSet, voterSet, nil)
+	stateStore.On("LoadVoters", int64(10), mock.AnythingOfType("*types.VoterParams")).Return(voterSet, nil)
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
 	blockStore.On("LoadBlockMeta", int64(10)).Return(&types.BlockMeta{Header: types.Header{Time: defaultEvidenceTime}})

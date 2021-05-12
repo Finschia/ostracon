@@ -320,7 +320,8 @@ func TestCheckEvidenceWithLightClientAttack(t *testing.T) {
 		ConsensusParams: *types.DefaultConsensusParams(),
 	}
 	stateStore := &smmocks.Store{}
-	stateStore.On("LoadValidators", height).Return(conflictingVals, conflictingVoters, nil)
+	stateStore.On("LoadValidators", height).Return(conflictingVals, nil)
+	stateStore.On("LoadVoters", height, mock.AnythingOfType("*types.VoterParams")).Return(conflictingVoters, nil)
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
 	blockStore.On("LoadBlockMeta", height).Return(&types.BlockMeta{Header: *trustedHeader})
@@ -397,13 +398,9 @@ func initializeStateFromValidatorSet(valSet *types.ValidatorSet, height int64) s
 	stateDB := dbm.NewMemDB()
 	stateStore := sm.NewStore(stateDB)
 	state := sm.State{
-		ChainID:       evidenceChainID,
-		InitialHeight: 1,
-		VoterParams: &types.VoterParams{
-			VoterElectionThreshold:          1,
-			MaxTolerableByzantinePercentage: 33,
-			ElectionPrecision:               2,
-		},
+		ChainID:                     evidenceChainID,
+		InitialHeight:               1,
+		VoterParams:                 types.DefaultVoterParams(),
 		LastBlockHeight:             height,
 		LastBlockTime:               defaultEvidenceTime,
 		Validators:                  valSet,

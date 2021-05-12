@@ -45,6 +45,14 @@ type VoterParams struct {
 	ElectionPrecision int `json:"election_precision"`
 }
 
+func (vp *VoterParams) DefaultVoterParams() *VoterParams {
+	return &VoterParams{
+		DefaultVoterElectionThreshold,
+		DefaultMaxTolerableByzantinePercentage,
+		DefaultElectionPrecision,
+	}
+}
+
 func (vp *VoterParams) ToProto() *tmprotostate.VoterParams {
 	if vp == nil {
 		return nil
@@ -147,7 +155,11 @@ func (genDoc *GenesisDoc) ValidateAndComplete() error {
 
 // Hash returns the hash of the GenesisDoc
 func (genDoc *GenesisDoc) Hash() []byte {
-	return cdcEncode(genDoc)
+	genDocBytes, err := tmjson.Marshal(genDoc)
+	if err != nil {
+		return nil
+	}
+	return crypto.Sha256(genDocBytes)
 }
 
 //------------------------------------------------------------
