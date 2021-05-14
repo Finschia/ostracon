@@ -234,6 +234,20 @@ func (blockExec *BlockExecutor) ApplyBlock(
 
 	fail.Fail() // XXX
 
+	blockGenerationTimeMs := float64(time.Now().UnixNano()-execStartTime) / 1000000
+	numTxs := len(block.Txs)
+	tps := 0
+	if blockGenerationTimeMs > 0 {
+		tps = int(float64(numTxs) / blockGenerationTimeMs * 1000)
+	}
+	blockExec.logger.Info(
+		"block generated",
+		"height", block.Height,
+		"num_txs", numTxs,
+		"generation_time", blockGenerationTimeMs,
+		"tps", tps,
+	)
+
 	// Events are fired after everything else.
 	// NOTE: if we crash between Commit and Save, events wont be fired during replay
 	fireEvents(blockExec.logger, blockExec.eventBus, block, abciResponses, validatorUpdates)
@@ -270,12 +284,6 @@ func (blockExec *BlockExecutor) Commit(
 	}
 
 	// ResponseCommit has no error code - just data
-	blockExec.logger.Info(
-		"committed state",
-		"height", block.Height,
-		"num_txs", len(block.Txs),
-		"app_hash", fmt.Sprintf("%X", res.Data),
-	)
 
 	if stepTimes != nil {
 		stepTimes.ToCommitRechecking()
@@ -292,6 +300,15 @@ func (blockExec *BlockExecutor) Commit(
 
 	updateMempoolTimeMs := float64(updateMempoolEndTime-updateMempoolStartTime) / 1000000
 	blockExec.metrics.BlockUpdateMempoolTime.Set(updateMempoolTimeMs)
+
+	blockExec.logger.Info(
+		"committed state",
+		"height", block.Height,
+		"num_txs", len(block.Txs),
+		"app_hash", fmt.Sprintf("%X", res.Data),
+		"commit_time", appCommitTimeMs,
+		"update_mempool_time", updateMempoolTimeMs,
+	)
 
 	return res.Data, res.RetainHeight, err
 }
@@ -335,6 +352,7 @@ func execBlockOnProxyApp(
 	}
 	proxyAppConn.SetGlobalCallback(proxyCb)
 
+	execBlockStartTime := time.Now().UnixNano()
 	commitInfo := getBeginBlockValidatorInfo(block, store, initialHeight)
 
 	byzVals := make([]abci.Evidence, 0)
@@ -375,7 +393,13 @@ func execBlockOnProxyApp(
 		return nil, err
 	}
 
-	logger.Info("executed block", "height", block.Height, "num_valid_txs", validTxs, "num_invalid_txs", invalidTxs)
+	execBlockEndTime := time.Now().UnixNano()
+	execBlockTimeMs := float64(execBlockEndTime-execBlockStartTime) / 1000000
+	tps := 0
+	if execBlockTimeMs > 0 {
+		tps = int(float64(validTxs+invalidTxs) / execBlockTimeMs * 1000)
+	}
+	logger.Info("executed block", "height", block.Height, "num_valid_txs", validTxs, "num_invalid_txs", invalidTxs, "execution_time", execBlockTimeMs, "tps", tps)
 	return abciResponses, nil
 }
 
