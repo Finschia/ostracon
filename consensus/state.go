@@ -1919,6 +1919,14 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 	cs.metrics.DurationCommitCommitting.Observe(cs.stepTimes.CommitCommitting.GetDuration())
 	cs.metrics.DurationCommitRechecking.Observe(cs.stepTimes.CommitRechecking.GetDuration())
 	cs.metrics.DurationWaitingForNewRound.Observe(cs.stepTimes.WaitingForNewRound.GetDuration())
+
+	cs.metrics.DurationGaugeProposal.Set(cs.stepTimes.Proposal.GetDuration())
+	cs.metrics.DurationGaugePrevote.Set(cs.stepTimes.Prevote.GetDuration())
+	cs.metrics.DurationGaugePrecommit.Set(cs.stepTimes.Precommit.GetDuration())
+	cs.metrics.DurationGaugeCommitExecuting.Set(cs.stepTimes.CommitExecuting.GetDuration())
+	cs.metrics.DurationGaugeCommitCommitting.Set(cs.stepTimes.CommitCommitting.GetDuration())
+	cs.metrics.DurationGaugeCommitRechecking.Set(cs.stepTimes.CommitRechecking.GetDuration())
+	cs.metrics.DurationGaugeWaitingForNewRound.Set(cs.stepTimes.WaitingForNewRound.GetDuration())
 }
 
 //-----------------------------------------------------------------------------

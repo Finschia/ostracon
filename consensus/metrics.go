@@ -84,6 +84,14 @@ type Metrics struct {
 	DurationCommitCommitting   metrics.Histogram
 	DurationCommitRechecking   metrics.Histogram
 	DurationWaitingForNewRound metrics.Histogram
+
+	DurationGaugeProposal           metrics.Gauge
+	DurationGaugePrevote            metrics.Gauge
+	DurationGaugePrecommit          metrics.Gauge
+	DurationGaugeCommitExecuting    metrics.Gauge
+	DurationGaugeCommitCommitting   metrics.Gauge
+	DurationGaugeCommitRechecking   metrics.Gauge
+	DurationGaugeWaitingForNewRound metrics.Gauge
 }
 
 // PrometheusMetrics returns Metrics build using Prometheus client library.
@@ -284,6 +292,48 @@ func PrometheusMetrics(namespace string, labelsAndValues ...string) *Metrics {
 			Help:      "Duration of waiting for next new round",
 			Buckets:   stdprometheus.LinearBuckets(100, 100, 10),
 		}, labels).With(labelsAndValues...),
+		DurationGaugeProposal: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "duration_gauge_proposal",
+			Help:      "Duration of proposal step",
+		}, labels).With(labelsAndValues...),
+		DurationGaugePrevote: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "duration_gauge_prevote",
+			Help:      "Duration of prevote step",
+		}, labels).With(labelsAndValues...),
+		DurationGaugePrecommit: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "duration_gauge_precommit",
+			Help:      "Duration of precommit step",
+		}, labels).With(labelsAndValues...),
+		DurationGaugeCommitExecuting: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "duration_gauge_commit_executing",
+			Help:      "Duration of executing block txs",
+		}, labels).With(labelsAndValues...),
+		DurationGaugeCommitCommitting: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "duration_gauge_commit_committing",
+			Help:      "Duration of committing updated state",
+		}, labels).With(labelsAndValues...),
+		DurationGaugeCommitRechecking: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "duration_gauge_commit_rechecking",
+			Help:      "Duration of rechecking mempool txs",
+		}, labels).With(labelsAndValues...),
+		DurationGaugeWaitingForNewRound: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "duration_gauge_waiting_for_new_round",
+			Help:      "Duration of waiting for next new round",
+		}, labels).With(labelsAndValues...),
 	}
 }
 
@@ -327,5 +377,13 @@ func NopMetrics() *Metrics {
 		DurationCommitCommitting:   discard.NewHistogram(),
 		DurationCommitRechecking:   discard.NewHistogram(),
 		DurationWaitingForNewRound: discard.NewHistogram(),
+
+		DurationGaugeProposal:           discard.NewGauge(),
+		DurationGaugePrevote:            discard.NewGauge(),
+		DurationGaugePrecommit:          discard.NewGauge(),
+		DurationGaugeCommitExecuting:    discard.NewGauge(),
+		DurationGaugeCommitCommitting:   discard.NewGauge(),
+		DurationGaugeCommitRechecking:   discard.NewGauge(),
+		DurationGaugeWaitingForNewRound: discard.NewGauge(),
 	}
 }
