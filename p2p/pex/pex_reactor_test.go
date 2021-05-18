@@ -82,14 +82,15 @@ func TestPEXReactorRunning(t *testing.T) {
 
 	// create switches
 	for i := 0; i < N; i++ {
-		switches[i] = p2p.MakeSwitch(cfg, i, "testing", "123.123.123", func(i int, sw *p2p.Switch) *p2p.Switch {
+		switches[i] = p2p.MakeSwitch(cfg, i, "testing", "123.123.123", func(i int, sw *p2p.Switch,
+			config *config.P2PConfig) *p2p.Switch {
 			books[i] = NewAddrBook(filepath.Join(dir, fmt.Sprintf("addrbook%d.json", i)), false)
 			books[i].SetLogger(logger.With("pex", i))
 			sw.SetAddrBook(books[i])
 
 			sw.SetLogger(logger.With("pex", i))
 
-			r := NewReactor(books[i], &ReactorConfig{})
+			r := NewReactor(books[i], config.RecvAsync, &ReactorConfig{})
 			r.SetLogger(logger.With("pex", i))
 			r.SetEnsurePeersPeriod(250 * time.Millisecond)
 			sw.AddReactor("pex", r)
@@ -418,19 +419,20 @@ func TestPEXReactorSeedModeFlushStop(t *testing.T) {
 
 	// create switches
 	for i := 0; i < N; i++ {
-		switches[i] = p2p.MakeSwitch(cfg, i, "testing", "123.123.123", func(i int, sw *p2p.Switch) *p2p.Switch {
+		switches[i] = p2p.MakeSwitch(cfg, i, "testing", "123.123.123", func(i int, sw *p2p.Switch,
+			config *config.P2PConfig) *p2p.Switch {
 			books[i] = NewAddrBook(filepath.Join(dir, fmt.Sprintf("addrbook%d.json", i)), false)
 			books[i].SetLogger(logger.With("pex", i))
 			sw.SetAddrBook(books[i])
 
 			sw.SetLogger(logger.With("pex", i))
 
-			config := &ReactorConfig{}
+			pexConfig := &ReactorConfig{}
 			if i == 0 {
 				// first one is a seed node
-				config = &ReactorConfig{SeedMode: true}
+				pexConfig = &ReactorConfig{SeedMode: true}
 			}
-			r := NewReactor(books[i], config)
+			r := NewReactor(books[i], config.RecvAsync, pexConfig)
 			r.SetLogger(logger.With("pex", i))
 			r.SetEnsurePeersPeriod(250 * time.Millisecond)
 			sw.AddReactor("pex", r)
@@ -577,13 +579,13 @@ func assertPeersWithTimeout(
 }
 
 // Creates a peer with the provided config
-func testCreatePeerWithConfig(dir string, id int, config *ReactorConfig) *p2p.Switch {
+func testCreatePeerWithConfig(dir string, id int, pexConfig *ReactorConfig) *p2p.Switch {
 	peer := p2p.MakeSwitch(
 		cfg,
 		id,
 		"127.0.0.1",
 		"123.123.123",
-		func(i int, sw *p2p.Switch) *p2p.Switch {
+		func(i int, sw *p2p.Switch, config *config.P2PConfig) *p2p.Switch {
 			book := NewAddrBook(filepath.Join(dir, fmt.Sprintf("addrbook%d.json", id)), false)
 			book.SetLogger(log.TestingLogger())
 			sw.SetAddrBook(book)
@@ -592,7 +594,8 @@ func testCreatePeerWithConfig(dir string, id int, config *ReactorConfig) *p2p.Sw
 
 			r := NewReactor(
 				book,
-				config,
+				config.RecvAsync,
+				pexConfig,
 			)
 			r.SetLogger(log.TestingLogger())
 			sw.AddReactor("pex", r)
@@ -615,7 +618,7 @@ func testCreateSeed(dir string, id int, knownAddrs, srcAddrs []*p2p.NetAddress) 
 		id,
 		"127.0.0.1",
 		"123.123.123",
-		func(i int, sw *p2p.Switch) *p2p.Switch {
+		func(i int, sw *p2p.Switch, config *config.P2PConfig) *p2p.Switch {
 			book := NewAddrBook(filepath.Join(dir, "addrbookSeed.json"), false)
 			book.SetLogger(log.TestingLogger())
 			for j := 0; j < len(knownAddrs); j++ {
@@ -626,7 +629,7 @@ func testCreateSeed(dir string, id int, knownAddrs, srcAddrs []*p2p.NetAddress) 
 
 			sw.SetLogger(log.TestingLogger())
 
-			r := NewReactor(book, &ReactorConfig{})
+			r := NewReactor(book, config.RecvAsync, &ReactorConfig{})
 			r.SetLogger(log.TestingLogger())
 			sw.AddReactor("pex", r)
 			return sw
@@ -653,7 +656,7 @@ func createReactor(conf *ReactorConfig) (r *Reactor, book AddrBook) {
 	book = NewAddrBook(filepath.Join(dir, "addrbook.json"), true)
 	book.SetLogger(log.TestingLogger())
 
-	r = NewReactor(book, conf)
+	r = NewReactor(book, cfg.RecvAsync, conf)
 	r.SetLogger(log.TestingLogger())
 	return
 }
@@ -667,7 +670,8 @@ func teardownReactor(book AddrBook) {
 }
 
 func createSwitchAndAddReactors(reactors ...p2p.Reactor) *p2p.Switch {
-	sw := p2p.MakeSwitch(cfg, 0, "127.0.0.1", "123.123.123", func(i int, sw *p2p.Switch) *p2p.Switch { return sw })
+	sw := p2p.MakeSwitch(cfg, 0, "127.0.0.1", "123.123.123",
+		func(i int, sw *p2p.Switch, config *config.P2PConfig) *p2p.Switch { return sw })
 	sw.SetLogger(log.TestingLogger())
 	for _, r := range reactors {
 		sw.AddReactor(r.String(), r)

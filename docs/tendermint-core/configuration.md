@@ -258,9 +258,17 @@ allow_duplicate_ip = false
 handshake_timeout = "20s"
 dial_timeout = "3s"
 
-#######################################################
-###          Mempool Configurattion Option          ###
-#######################################################
+# Sync/async of reactor's receive function
+recv_async = true
+
+# Size of channel buffer of reactor
+pex_recv_buf_size = 1000
+mempool_recv_buf_size = 1000
+evidence_recv_buf_size = 1000
+consensus_recv_buf_size = 1000
+blockchain_recv_buf_size = 1000
+
+##### mempool configuration options #####
 [mempool]
 
 recheck = true

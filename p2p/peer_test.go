@@ -81,7 +81,7 @@ func createOutboundPeerAndPerformHandshake(
 	chDescs := []*tmconn.ChannelDescriptor{
 		{ID: testCh, Priority: 1},
 	}
-	reactorsByCh := map[byte]Reactor{testCh: NewTestReactor(chDescs, true)}
+	reactorsByCh := map[byte]Reactor{testCh: NewTestReactor(chDescs, true, 1000, true)}
 	pk := ed25519.GenPrivKey()
 	pc, err := testOutboundPeerConn(addr, config, false, pk)
 	if err != nil {

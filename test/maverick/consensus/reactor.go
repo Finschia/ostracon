@@ -55,13 +55,13 @@ type ReactorOption func(*Reactor)
 
 // NewReactor returns a new Reactor with the given
 // consensusState.
-func NewReactor(consensusState *State, waitSync bool, options ...ReactorOption) *Reactor {
+func NewReactor(consensusState *State, waitSync bool, async bool, recvBufSize int, options ...ReactorOption) *Reactor {
 	conR := &Reactor{
 		conS:     consensusState,
 		waitSync: waitSync,
 		Metrics:  tmcon.NopMetrics(),
 	}
-	conR.BaseReactor = *p2p.NewBaseReactor("Consensus", conR)
+	conR.BaseReactor = *p2p.NewBaseReactor("Consensus", conR, async, recvBufSize)
 
 	for _, option := range options {
 		option(conR)

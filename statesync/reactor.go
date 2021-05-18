@@ -44,7 +44,7 @@ func NewReactor(conn proxy.AppConnSnapshot, connQuery proxy.AppConnQuery, tempDi
 		conn:      conn,
 		connQuery: connQuery,
 	}
-	r.BaseReactor = *p2p.NewBaseReactor("StateSync", r)
+	r.BaseReactor = *p2p.NewBaseReactor("StateSync", r, false, 0)
 	return r
 }
 

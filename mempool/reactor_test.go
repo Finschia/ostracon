@@ -130,6 +130,9 @@ func TestReactorConcurrency(t *testing.T) {
 // ensure peer gets no txs.
 func TestReactorNoBroadcastToSender(t *testing.T) {
 	config := cfg.TestConfig()
+	// In this test, a reactor receives 1000 tx message from a peer.
+	// A reactor has 3 peer, so up to 3000 txs can be stacked
+	config.P2P.MempoolRecvBufSize = 3000
 	const N = 2
 	reactors := makeAndConnectReactors(config, N)
 	defer func() {
@@ -306,12 +309,11 @@ func makeAndConnectReactors(config *cfg.Config, n int) []*Reactor {
 		cc := proxy.NewLocalClientCreator(app)
 		mempool, cleanup := newMempoolWithApp(cc)
 		defer cleanup()
-
-		reactors[i] = NewReactor(config.Mempool, mempool) // so we dont start the consensus states
+		reactors[i] = NewReactor(config.Mempool, config.P2P.RecvAsync, config.P2P.MempoolRecvBufSize, mempool) // so we dont start the consensus states
 		reactors[i].SetLogger(logger.With("validator", i))
 	}
 
-	p2p.MakeConnectedSwitches(config.P2P, n, func(i int, s *p2p.Switch) *p2p.Switch {
+	p2p.MakeConnectedSwitches(config.P2P, n, func(i int, s *p2p.Switch, config *cfg.P2PConfig) *p2p.Switch {
 		s.AddReactor("MEMPOOL", reactors[i])
 		return s
 
