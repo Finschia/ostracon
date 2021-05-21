@@ -1,8 +1,8 @@
 # Ostracon
 
-[![codecov](https://codecov.io/gh/line/lbm/branch/v3/develop/graph/badge.svg?token=JFFuUevpzJ)](https://codecov.io/gh/line/lbm)
+[![codecov](https://codecov.io/gh/line/ostracon/branch/main/graph/badge.svg?token=JFFuUevpzJ)](https://codecov.io/gh/line/ostracon)
 
-This repository hosts `LINE Ostracon`.
+This repository hosts `LINE Blockchain`.
 
 **Node**: Requires [Go 1.15+](https://golang.org/dl/)
 
@@ -16,7 +16,7 @@ Build the linux binary in ./build
 make build-linux              # build docker image
 ```
 or
-(optionally) Build tendermint/localnode image
+(optionally) Build ostracon/localnode image
 ```sh
 make build-docker-localnode
 ```
