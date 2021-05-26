@@ -130,9 +130,6 @@ func TestReactorConcurrency(t *testing.T) {
 // ensure peer gets no txs.
 func TestReactorNoBroadcastToSender(t *testing.T) {
 	config := cfg.TestConfig()
-	// In this test, a reactor receives 1000 tx message from a peer.
-	// A reactor has 3 peer, so up to 3000 txs can be stacked
-	config.P2P.MempoolRecvBufSize = 3000
 	const N = 2
 	reactors := makeAndConnectReactors(config, N)
 	defer func() {
