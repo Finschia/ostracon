@@ -141,7 +141,10 @@ func (bcR *BlockchainReactor) OnStart() error {
 	bcR.swReporter = behaviour.NewSwitchReporter(bcR.BaseReactor.Switch)
 	if bcR.fastSync {
 		// call BaseReactor's OnStart()
-		bcR.BaseReactor.OnStart()
+		err := bcR.BaseReactor.OnStart()
+		if err != nil {
+			return err
+		}
 
 		go bcR.poolRoutine()
 	}

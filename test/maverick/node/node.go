@@ -407,9 +407,11 @@ func createBlockchainReactor(config *cfg.Config,
 
 	switch config.FastSync.Version {
 	case "v0":
-		bcReactor = bcv0.NewBlockchainReactor(state.Copy(), blockExec, blockStore, fastSync, config.P2P.RecvAsync, config.P2P.BlockchainRecvBufSize)
+		bcReactor = bcv0.NewBlockchainReactor(state.Copy(), blockExec, blockStore, fastSync,
+			config.P2P.RecvAsync, config.P2P.BlockchainRecvBufSize)
 	case "v1":
-		bcReactor = bcv1.NewBlockchainReactor(state.Copy(), blockExec, blockStore, fastSync, config.P2P.RecvAsync, config.P2P.BlockchainRecvBufSize)
+		bcReactor = bcv1.NewBlockchainReactor(state.Copy(), blockExec, blockStore, fastSync,
+			config.P2P.RecvAsync, config.P2P.BlockchainRecvBufSize)
 	case "v2":
 		bcReactor = bcv2.NewBlockchainReactor(state.Copy(), blockExec, blockStore, fastSync)
 	default:
@@ -447,7 +449,8 @@ func createConsensusReactor(config *cfg.Config,
 	if privValidator != nil {
 		consensusState.SetPrivValidator(privValidator)
 	}
-	consensusReactor := cs.NewReactor(consensusState, waitSync, config.P2P.RecvAsync, config.P2P.ConsensusRecvBufSize, cs.ReactorMetrics(csMetrics))
+	consensusReactor := cs.NewReactor(consensusState, waitSync, config.P2P.RecvAsync,
+		config.P2P.ConsensusRecvBufSize, cs.ReactorMetrics(csMetrics))
 	consensusReactor.SetLogger(consensusLogger)
 	// services which will be publishing and/or subscribing for messages (events)
 	// consensusReactor will set it on consensusState and blockExecutor

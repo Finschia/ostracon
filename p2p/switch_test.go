@@ -901,8 +901,8 @@ const (
 func TestSyncReactor(t *testing.T) {
 	cfg.RecvAsync = false
 	s1, s2 := MakeSwitchPair(t, getInitSwitchFunc(0))
-	defer s1.Stop()
-	defer s2.Stop()
+	defer s1.Stop() //nolint:errcheck
+	defer s2.Stop() //nolint:errcheck
 
 	normalReactor := s2.Reactor(reactorNameNormal).(*NormalReactor)
 	blockedReactor := s2.Reactor(reactorNameBlocked).(*BlockedReactor)
@@ -925,8 +925,8 @@ func TestSyncReactor(t *testing.T) {
 func TestAsyncReactor(t *testing.T) {
 	cfg.RecvAsync = true
 	s1, s2 := MakeSwitchPair(t, getInitSwitchFunc(1))
-	defer s1.Stop()
-	defer s2.Stop()
+	defer s1.Stop() //nolint:errcheck
+	defer s2.Stop() //nolint:errcheck
 
 	normalReactor := s2.Reactor(reactorNameNormal).(*NormalReactor)
 	s1.Broadcast(0x01, []byte{1})      // the message for blocked reactor is first

@@ -206,7 +206,8 @@ func TestBadBlockStopsPeer(t *testing.T) {
 
 	// Other chain needs a different validator set
 	otherGenDoc, otherPrivVals := randGenesisDoc(1, false, 30)
-	otherChain := newBlockchainReactor(log.TestingLogger(), otherGenDoc, otherPrivVals, maxBlockHeight, config.P2P.RecvAsync, config.P2P.BlockchainRecvBufSize)
+	otherChain := newBlockchainReactor(log.TestingLogger(), otherGenDoc, otherPrivVals, maxBlockHeight,
+		config.P2P.RecvAsync, config.P2P.BlockchainRecvBufSize)
 
 	defer func() {
 		err := otherChain.reactor.Stop()
