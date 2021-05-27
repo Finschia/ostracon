@@ -18,8 +18,10 @@ var (
 )
 
 func init() {
+	cfg := config.DefaultP2PConfig()
+
 	addrB := pex.NewAddrBook("./testdata/addrbook1", false)
-	pexR := pex.NewReactor(addrB, &pex.ReactorConfig{SeedMode: false})
+	pexR := pex.NewReactor(addrB, cfg.RecvAsync, &pex.ReactorConfig{SeedMode: false, RecvBufSize: cfg.PexRecvBufSize})
 	if pexR == nil {
 		panic("NewReactor returned nil")
 	}
@@ -33,9 +35,10 @@ func Fuzz(data []byte) int {
 	// MakeSwitch uses log.TestingLogger which can't be executed in init()
 	cfg := config.DefaultP2PConfig()
 	cfg.PexReactor = true
-	sw := p2p.MakeSwitch(cfg, 0, "127.0.0.1", "123.123.123", func(i int, sw *p2p.Switch) *p2p.Switch {
-		return sw
-	})
+	sw := p2p.MakeSwitch(cfg, 0, "127.0.0.1", "123.123.123",
+		func(i int, sw *p2p.Switch, cfg *config.P2PConfig) *p2p.Switch {
+			return sw
+		})
 	pexR.SetSwitch(sw)
 
 	pexR.Receive(pex.PexChannel, peer, data)

@@ -33,11 +33,11 @@ type Reactor struct {
 }
 
 // NewReactor returns a new Reactor with the given config and evpool.
-func NewReactor(evpool *Pool) *Reactor {
+func NewReactor(evpool *Pool, async bool, recvBufSize int) *Reactor {
 	evR := &Reactor{
 		evpool: evpool,
 	}
-	evR.BaseReactor = *p2p.NewBaseReactor("Evidence", evR)
+	evR.BaseReactor = *p2p.NewBaseReactor("Evidence", evR, async, recvBufSize)
 	return evR
 }
 

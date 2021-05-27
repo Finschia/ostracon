@@ -146,7 +146,8 @@ func newBlockchainReactor(
 		blockStore.SaveBlock(thisBlock, thisParts, lastCommit)
 	}
 
-	bcReactor := NewBlockchainReactor(state.Copy(), blockExec, blockStore, fastSync)
+	bcReactor := NewBlockchainReactor(state.Copy(), blockExec, blockStore, fastSync,
+		config.P2P.RecvAsync, config.P2P.BlockchainRecvBufSize)
 	bcReactor.SetLogger(logger.With("module", "blockchain"))
 
 	return bcReactor
@@ -160,7 +161,8 @@ func newBlockchainReactorPair(
 	maxBlockHeight int64) BlockchainReactorPair {
 
 	consensusReactor := &consensusReactorTest{}
-	consensusReactor.BaseReactor = *p2p.NewBaseReactor("Consensus reactor", consensusReactor)
+	consensusReactor.BaseReactor = *p2p.NewBaseReactor("Consensus reactor", consensusReactor,
+		config.P2P.RecvAsync, config.P2P.ConsensusRecvBufSize)
 
 	return BlockchainReactorPair{
 		newBlockchainReactor(t, logger, genDoc, privVals, maxBlockHeight),
@@ -193,7 +195,7 @@ func TestFastSyncNoBlockResponse(t *testing.T) {
 	reactorPairs[0] = newBlockchainReactorPair(t, logger, genDoc, privVals, maxBlockHeight)
 	reactorPairs[1] = newBlockchainReactorPair(t, logger, genDoc, privVals, 0)
 
-	p2p.MakeConnectedSwitches(config.P2P, 2, func(i int, s *p2p.Switch) *p2p.Switch {
+	p2p.MakeConnectedSwitches(config.P2P, 2, func(i int, s *p2p.Switch, config *cfg.P2PConfig) *p2p.Switch {
 		s.AddReactor("BLOCKCHAIN", reactorPairs[i].bcR)
 		s.AddReactor("CONSENSUS", reactorPairs[i].conR)
 		moduleName := fmt.Sprintf("blockchain-%v", i)
@@ -273,7 +275,8 @@ func TestFastSyncBadBlockStopsPeer(t *testing.T) {
 		reactorPairs[i] = newBlockchainReactorPair(t, logger[i], genDoc, privVals, height)
 	}
 
-	switches := p2p.MakeConnectedSwitches(config.P2P, numNodes, func(i int, s *p2p.Switch) *p2p.Switch {
+	switches := p2p.MakeConnectedSwitches(config.P2P, numNodes, func(i int, s *p2p.Switch,
+		config *cfg.P2PConfig) *p2p.Switch {
 		reactorPairs[i].conR.mtx.Lock()
 		s.AddReactor("BLOCKCHAIN", reactorPairs[i].bcR)
 		s.AddReactor("CONSENSUS", reactorPairs[i].conR)
@@ -315,7 +318,8 @@ outerFor:
 	lastReactorPair := newBlockchainReactorPair(t, lastLogger, genDoc, privVals, 0)
 	reactorPairs = append(reactorPairs, lastReactorPair)
 
-	switches = append(switches, p2p.MakeConnectedSwitches(config.P2P, 1, func(i int, s *p2p.Switch) *p2p.Switch {
+	switches = append(switches, p2p.MakeConnectedSwitches(config.P2P, 1, func(i int, s *p2p.Switch,
+		config *cfg.P2PConfig) *p2p.Switch {
 		s.AddReactor("BLOCKCHAIN", reactorPairs[len(reactorPairs)-1].bcR)
 		s.AddReactor("CONSENSUS", reactorPairs[len(reactorPairs)-1].conR)
 		moduleName := fmt.Sprintf("blockchain-%v", len(reactorPairs)-1)

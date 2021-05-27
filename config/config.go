@@ -584,6 +584,16 @@ type P2PConfig struct { //nolint: maligned
 	HandshakeTimeout time.Duration `mapstructure:"handshake_timeout"`
 	DialTimeout      time.Duration `mapstructure:"dial_timeout"`
 
+	// Reactor async receive
+	RecvAsync bool `mapstructure:"recv_async"`
+
+	// Size of receive buffer used in async receiving
+	PexRecvBufSize        int `mapstructure:"pex_recv_buf_size"`
+	EvidenceRecvBufSize   int `mapstructure:"evidence_recv_buf_size"`
+	MempoolRecvBufSize    int `mapstructure:"mempool_recv_buf_size"`
+	ConsensusRecvBufSize  int `mapstructure:"consensus_recv_buf_size"`
+	BlockchainRecvBufSize int `mapstructure:"blockchain_recv_buf_size"`
+
 	// Testing params.
 	// Force dial to fail
 	TestDialFail bool `mapstructure:"test_dial_fail"`
@@ -612,6 +622,12 @@ func DefaultP2PConfig() *P2PConfig {
 		AllowDuplicateIP:             false,
 		HandshakeTimeout:             20 * time.Second,
 		DialTimeout:                  3 * time.Second,
+		RecvAsync:                    true,
+		PexRecvBufSize:               1000,
+		EvidenceRecvBufSize:          1000,
+		MempoolRecvBufSize:           1000,
+		ConsensusRecvBufSize:         1000,
+		BlockchainRecvBufSize:        1000,
 		TestDialFail:                 false,
 		TestFuzz:                     false,
 		TestFuzzConfig:               DefaultFuzzConnConfig(),
