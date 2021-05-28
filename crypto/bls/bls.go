@@ -5,8 +5,9 @@ import (
 	"crypto/subtle"
 	"fmt"
 
+	tmjson "github.com/tendermint/tendermint/libs/json"
+
 	"github.com/herumi/bls-eth-go-binary/bls"
-	amino "github.com/tendermint/go-amino"
 
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/tmhash"
@@ -15,24 +16,17 @@ import (
 var _ crypto.PrivKey = PrivKeyBLS12{}
 
 const (
-	PrivKeyAminoName = "tendermint/PrivKeyBLS12"
-	PubKeyAminoName  = "tendermint/PubKeyBLS12"
+	PrivKeyName      = "tendermint/PrivKeyBLS12"
+	PubKeyName       = "tendermint/PubKeyBLS12"
 	PrivKeyBLS12Size = 32
 	PubKeyBLS12Size  = 48
 	SignatureSize    = 96
 	KeyType          = "bls12-381"
 )
 
-var cdc = amino.NewCodec()
-
 func init() {
-	cdc.RegisterInterface((*crypto.PubKey)(nil), nil)
-	cdc.RegisterConcrete(PubKeyBLS12{},
-		PubKeyAminoName, nil)
-
-	cdc.RegisterInterface((*crypto.PrivKey)(nil), nil)
-	cdc.RegisterConcrete(PrivKeyBLS12{},
-		PrivKeyAminoName, nil)
+	tmjson.RegisterType(PubKeyBLS12{}, PubKeyName)
+	tmjson.RegisterType(PrivKeyBLS12{}, PrivKeyName)
 
 	err := bls.Init(bls.BLS12_381)
 	if err != nil {
@@ -52,17 +46,24 @@ func GenPrivKey() PrivKeyBLS12 {
 	sigKey := bls.SecretKey{}
 	sigKey.SetByCSPRNG()
 	sigKeyBinary := PrivKeyBLS12{}
-	copy(sigKeyBinary[:], sigKey.Serialize())
+	binary := sigKey.Serialize()
+	if len(binary) != PrivKeyBLS12Size {
+		panic(fmt.Sprintf("unexpected BLS private key size: %d != %d", len(binary), PrivKeyBLS12Size))
+	}
+	copy(sigKeyBinary[:], binary)
 	return sigKeyBinary
 }
 
 // Bytes marshals the privkey using amino encoding.
 func (privKey PrivKeyBLS12) Bytes() []byte {
-	return cdc.MustMarshalBinaryBare(privKey)
+	return privKey[:]
 }
 
 // Sign produces a signature on the provided message.
 func (privKey PrivKeyBLS12) Sign(msg []byte) ([]byte, error) {
+	if msg == nil {
+		panic(fmt.Sprintf("Nil specified as the message"))
+	}
 	blsKey := bls.SecretKey{}
 	err := blsKey.Deserialize(privKey[:])
 	if err != nil {
@@ -70,6 +71,11 @@ func (privKey PrivKeyBLS12) Sign(msg []byte) ([]byte, error) {
 	}
 	sign := blsKey.SignByte(msg)
 	return sign.Serialize(), nil
+}
+
+// VRFProve is not supported in BLS12.
+func (privKey PrivKeyBLS12) VRFProve(seed []byte) (crypto.Proof, error) {
+	return nil, fmt.Errorf("VRF prove is not supported by the BLS12")
 }
 
 // PubKey gets the corresponding public key from the private key.
@@ -81,7 +87,11 @@ func (privKey PrivKeyBLS12) PubKey() crypto.PubKey {
 	}
 	pubKey := blsKey.GetPublicKey()
 	pubKeyBinary := PubKeyBLS12{}
-	copy(pubKeyBinary[:], pubKey.Serialize())
+	binary := pubKey.Serialize()
+	if len(binary) != PubKeyBLS12Size {
+		panic(fmt.Sprintf("unexpected BLS public key size: %d != %d", len(binary), PubKeyBLS12Size))
+	}
+	copy(pubKeyBinary[:], binary)
 	return pubKeyBinary
 }
 
@@ -111,11 +121,7 @@ func (pubKey PubKeyBLS12) Address() crypto.Address {
 
 // Bytes marshals the PubKey using amino encoding.
 func (pubKey PubKeyBLS12) Bytes() []byte {
-	bz, err := cdc.MarshalBinaryBare(pubKey)
-	if err != nil {
-		panic(err)
-	}
-	return bz
+	return pubKey[:]
 }
 
 func (pubKey PubKeyBLS12) VerifySignature(msg []byte, sig []byte) bool {
@@ -135,6 +141,11 @@ func (pubKey PubKeyBLS12) VerifySignature(msg []byte, sig []byte) bool {
 		return false
 	}
 	return blsSign.VerifyByte(&blsPubKey, msg)
+}
+
+// VRFVerify is not supported in BLS12.
+func (pubKey PubKeyBLS12) VRFVerify(proof crypto.Proof, seed []byte) (crypto.Output, error) {
+	return nil, fmt.Errorf("VRF verify is not supported by the BLS12")
 }
 
 func (pubKey PubKeyBLS12) String() string {

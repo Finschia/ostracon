@@ -175,7 +175,7 @@ jobs:
           name: run localnet and exit on failure
           command: |
             set -x
-            docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang:1.14.1-alpine /bin/sh -c "apk add --update git make gcc libc-dev build-base && make build"
+            make build-linux
             make localnet-start &
             ./scripts/localnet-blocks-test.sh 40 5 10 localhost
 
@@ -389,7 +389,7 @@ jobs:
   #           ./scripts/get_nodejs.sh
   #           # build the binaries with a proper version of Go
   #           # Build Tendermint
-  #           docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang:1.14.1-alpine /bin/sh -c "apk add --update git make gcc libc-dev build-base && make build"
+  #           make build-linux
   #           # Build contract-tests
   #           docker run --rm -v "$PWD":/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint ubuntu:20.10 ./scripts/prepare_dredd_test.sh
   #           # This docker image works with go 1.7, we can install here the hook handler that contract-tests is going to use

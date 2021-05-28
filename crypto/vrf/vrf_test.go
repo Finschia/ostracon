@@ -1,17 +1,16 @@
 package vrf
 
 import (
+	"crypto/ed25519"
 	"encoding/hex"
 	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/tendermint/tendermint/crypto/ed25519"
 )
 
 const (
-	SEEDBYTES = 64
+	SEEDBYTES = ed25519.SeedSize
 )
 
 var (
@@ -35,7 +34,7 @@ func enc(s []byte) string {
 
 func TestProofToHash(t *testing.T) {
 	secret := [SEEDBYTES]byte{}
-	privateKey := ed25519.GenPrivKeyFromSecret(secret[:])
+	privateKey := ed25519.NewKeyFromSeed(secret[:])
 	message := []byte("hello, world")
 
 	proof, err1 := Prove(privateKey, message)
@@ -61,8 +60,8 @@ func TestProofToHash(t *testing.T) {
 
 func TestProve(t *testing.T) {
 	secret := [SEEDBYTES]byte{}
-	privateKey := ed25519.GenPrivKeyFromSecret(secret[:])
-	publicKey, _ := privateKey.PubKey().(ed25519.PubKey)
+	privateKey := ed25519.NewKeyFromSeed(secret[:])
+	publicKey := privateKey.Public().(ed25519.PublicKey)
 
 	t.Logf("private key: [%s]", enc(privateKey[:]))
 	t.Logf("public  key: [%s]", enc(publicKey[:]))
@@ -90,7 +89,7 @@ func TestProve(t *testing.T) {
 
 func TestAvalancheEffect(t *testing.T) {
 	secret := [SEEDBYTES]byte{}
-	privateKey := ed25519.GenPrivKeyFromSecret(secret[:])
+	privateKey := ed25519.NewKeyFromSeed(secret[:])
 
 	for _, messageString := range Message {
 		message := []byte(messageString)

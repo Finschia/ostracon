@@ -167,7 +167,7 @@ func ValidatorFromProto(vp *tmproto.Validator) (*Validator, error) {
 		return nil, errors.New("nil validator")
 	}
 
-	pk, err := ce.PubKeyFromProto(vp.PubKey)
+	pk, err := ce.PubKeyFromProto(&vp.PubKey)
 	if err != nil {
 		return nil, err
 	}

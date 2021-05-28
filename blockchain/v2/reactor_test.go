@@ -59,6 +59,8 @@ func (mp mockPeer) TrySend(byte, []byte) bool { return true }
 func (mp mockPeer) Set(string, interface{}) {}
 func (mp mockPeer) Get(string) interface{}  { return struct{}{} }
 
+func (mp mockPeer) String() string { return fmt.Sprintf("%v", mp.id) }
+
 //nolint:unused
 type mockBlockStore struct {
 	blocks map[int64]*types.Block

@@ -10,6 +10,7 @@ import (
 
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/tmhash"
+	"github.com/tendermint/tendermint/crypto/vrf"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 )
 
@@ -57,6 +58,15 @@ func (privKey PrivKey) Bytes() []byte {
 func (privKey PrivKey) Sign(msg []byte) ([]byte, error) {
 	signatureBytes := ed25519.Sign(ed25519.PrivateKey(privKey), msg)
 	return signatureBytes, nil
+}
+
+// VRFProve generates a VRF Proof for given seed to generate a verifiable random.
+func (privKey PrivKey) VRFProve(seed []byte) (crypto.Proof, error) {
+	proof, err := vrf.Prove(privKey[:], seed)
+	if err != nil {
+		return nil, err
+	}
+	return crypto.Proof(proof[:]), nil
 }
 
 // PubKey gets the corresponding public key from the private key.
@@ -160,6 +170,22 @@ func (pubKey PubKey) String() string {
 
 func (pubKey PubKey) Type() string {
 	return KeyType
+}
+
+// VRFVerify verifies that the given VRF Proof was generated from the seed by the owner of this public key.
+func (pubKey PubKey) VRFVerify(proof crypto.Proof, seed []byte) (crypto.Output, error) {
+	valid, err := vrf.Verify(pubKey[:], vrf.Proof(proof), seed)
+	if err != nil {
+		return nil, fmt.Errorf("the specified proof is not a valid ed25519 proof: %v", proof)
+	}
+	if !valid {
+		return nil, fmt.Errorf("the specified Proof is not generated with this pair-key: %v", proof)
+	}
+	output, err := vrf.ProofToHash(vrf.Proof(proof))
+	if err != nil {
+		return nil, err
+	}
+	return crypto.Output(output), nil
 }
 
 func (pubKey PubKey) Equals(other crypto.PubKey) bool {

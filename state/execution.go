@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/tendermint/tendermint/crypto"
+
 	abci "github.com/tendermint/tendermint/abci/types"
 	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
 	"github.com/tendermint/tendermint/crypto/vrf"
@@ -97,7 +99,7 @@ func (blockExec *BlockExecutor) CreateProposalBlock(
 	state State, commit *types.Commit,
 	proposerAddr []byte,
 	round int32,
-	proof vrf.Proof,
+	proof crypto.Proof,
 ) (*types.Block, *types.PartSet) {
 
 	maxBytes := state.ConsensusParams.Block.MaxBytes
@@ -390,7 +392,7 @@ func validateValidatorUpdates(abciUpdates []abci.ValidatorUpdate,
 		}
 
 		// Check if validator's pubkey matches an ABCI type in the consensus params
-		pk, err := cryptoenc.PubKeyFromProto(valUpdate.PubKey)
+		pk, err := cryptoenc.PubKeyFromProto(&valUpdate.PubKey)
 		if err != nil {
 			return err
 		}

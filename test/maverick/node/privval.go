@@ -266,12 +266,13 @@ func (pv *FilePV) SignProposal(chainID string, proposal *tmproto.Proposal) error
 	return nil
 }
 
-func (pv *FilePV) GenerateVRFProof(message []byte) (vrf.Proof, error) {
+func (pv *FilePV) GenerateVRFProof(message []byte) (crypto.Proof, error) {
 	privKey, ok := pv.Key.PrivKey.(ed25519.PrivKey)
 	if !ok {
 		return nil, fmt.Errorf("VRF proof unsupported")
 	}
-	return vrf.Prove(privKey, message)
+	proof, err := vrf.Prove(privKey, message)
+	return crypto.Proof(proof), err
 }
 
 // Save persists the FilePV to disk.

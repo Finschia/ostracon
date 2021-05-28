@@ -4,16 +4,16 @@ import (
 	"bytes"
 	"testing"
 
+	"crypto/ed25519"
+
 	coniksimpl "github.com/coniks-sys/coniks-go/crypto/vrf"
 	"github.com/stretchr/testify/require"
-
-	"github.com/tendermint/tendermint/crypto/ed25519"
 )
 
 func TestProveAndVerifyConiks(t *testing.T) {
 	secret := [SEEDBYTES]byte{}
-	privateKey := ed25519.GenPrivKeyFromSecret(secret[:])
-	publicKey, _ := privateKey.PubKey().(ed25519.PubKey)
+	privateKey := ed25519.NewKeyFromSeed(secret[:])
+	publicKey := privateKey.Public().(ed25519.PublicKey)
 
 	t.Logf("private key: [%s]", enc(privateKey[:]))
 	t.Logf("public  key: [%s]", enc(publicKey[:]))
@@ -42,8 +42,8 @@ func TestProveAndVerifyConiks(t *testing.T) {
 
 func TestKeyPairCompatibilityConiks(t *testing.T) {
 	secret := [SEEDBYTES]byte{}
-	privateKey := ed25519.GenPrivKeyFromSecret(secret[:])
-	publicKey, _ := privateKey.PubKey().(ed25519.PubKey)
+	privateKey := ed25519.NewKeyFromSeed(secret[:])
+	publicKey, _ := privateKey.Public().(ed25519.PublicKey)
 
 	privateKey2 := coniksimpl.PrivateKey(make([]byte, 64))
 	copy(privateKey2, privateKey[:])
@@ -56,7 +56,7 @@ func TestKeyPairCompatibilityConiks(t *testing.T) {
 	publicKey2, _ = privateKey2.Public()
 
 	copy(privateKey[:], privateKey2[:])
-	publicKey = privateKey.PubKey().(ed25519.PubKey)
+	publicKey = privateKey.Public().(ed25519.PublicKey)
 	if !bytes.Equal(publicKey[:], publicKey2) {
 		t.Error("public key is not matched(tm key -> coniks key")
 	}

@@ -10,13 +10,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	tmmath "github.com/tendermint/tendermint/libs/math"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-
-	"github.com/stretchr/testify/assert"
-
-	"github.com/tendermint/tendermint/crypto/vrf"
 	tmtime "github.com/tendermint/tendermint/types/time"
 )
 
@@ -408,7 +406,8 @@ func findLargestStakingPowerGap(t *testing.T, loopCount int, minMaxRate int, max
 		proposer := valSet.SelectProposer(hash, int64(i), 0)
 		message := MakeRoundHash(hash, int64(i), 0)
 		proof, _ := privMap[proposer.Address.String()].GenerateVRFProof(message)
-		hash, _ = vrf.ProofToHash(proof)
+		pubKey, _ := privMap[proposer.Address.String()].GetPubKey()
+		hash, _ = pubKey.VRFVerify(proof, message)
 		totalVoters += voterSet.Size()
 	}
 	largestGap := float64(0)
@@ -534,7 +533,8 @@ func electVotersForLoop(t *testing.T, hash []byte, valSet *ValidatorSet, privMap
 		proposer := valSet.SelectProposer(hash, int64(i), 0)
 		message := MakeRoundHash(hash, int64(i), 0)
 		proof, _ := privMap[proposer.Address.String()].GenerateVRFProof(message)
-		hash, _ = vrf.ProofToHash(proof)
+		pubKey, _ := privMap[proposer.Address.String()].GetPubKey()
+		hash, _ = pubKey.VRFVerify(proof, message)
 	}
 	t.Logf("[accuracy=%f] voters=%d, fault=%d, avg byzantines=%f", accuracyFromElectionPrecision(accuracy),
 		totalVoters/loopCount, byzantineFault, float64(totalByzantines)/float64(loopCount))

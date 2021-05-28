@@ -3,7 +3,9 @@ package types
 import (
 	"testing"
 
-	"github.com/golang/protobuf/proto"
+	"github.com/tendermint/tendermint/crypto/secp256k1"
+
+	"github.com/golang/protobuf/proto" // nolint: staticcheck // still used by gogoproto
 	"github.com/tendermint/go-amino"
 
 	"github.com/tendermint/tendermint/proto/tendermint/version"
@@ -14,20 +16,28 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/bls"
+	"github.com/tendermint/tendermint/crypto/composite"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
 )
 
 func TestABCIPubKey(t *testing.T) {
 	pkEd := ed25519.GenPrivKey().PubKey()
+	pkSecp := secp256k1.GenPrivKey().PubKey()
+	pkComposite := composite.NewPrivKeyComposite(bls.GenPrivKey(), ed25519.GenPrivKey()).PubKey()
 	err := testABCIPubKey(t, pkEd, ABCIPubKeyTypeEd25519)
+	assert.NoError(t, err)
+	err = testABCIPubKey(t, pkSecp, ABCIPubKeyTypeSecp256k1)
+	assert.NoError(t, err)
+	err = testABCIPubKey(t, pkComposite, ABCIPubKeyTypeBls12WithEd25519)
 	assert.NoError(t, err)
 }
 
 func testABCIPubKey(t *testing.T, pk crypto.PubKey, typeStr string) error {
 	abciPubKey, err := cryptoenc.PubKeyToProto(pk)
 	require.NoError(t, err)
-	pk2, err := cryptoenc.PubKeyFromProto(abciPubKey)
+	pk2, err := cryptoenc.PubKeyFromProto(&abciPubKey)
 	require.NoError(t, err)
 	require.Equal(t, pk, pk2)
 	return nil
@@ -143,12 +153,13 @@ func TestABCIEvidence(t *testing.T) {
 
 type pubKeyEddie struct{}
 
-func (pubKeyEddie) Address() Address                            { return []byte{} }
-func (pubKeyEddie) Bytes() []byte                               { return []byte{} }
-func (pubKeyEddie) VerifySignature(msg []byte, sig []byte) bool { return false }
-func (pubKeyEddie) Equals(crypto.PubKey) bool                   { return false }
-func (pubKeyEddie) String() string                              { return "" }
-func (pubKeyEddie) Type() string                                { return "pubKeyEddie" }
+func (pubKeyEddie) Address() Address                                                { return []byte{} }
+func (pubKeyEddie) Bytes() []byte                                                   { return []byte{} }
+func (pubKeyEddie) VerifySignature(msg []byte, sig []byte) bool                     { return false }
+func (pubKeyEddie) VRFVerify(proof crypto.Proof, msg []byte) (crypto.Output, error) { return nil, nil }
+func (pubKeyEddie) Equals(crypto.PubKey) bool                                       { return false }
+func (pubKeyEddie) String() string                                                  { return "" }
+func (pubKeyEddie) Type() string                                                    { return "pubKeyEddie" }
 
 func TestABCIValidatorFromPubKeyAndPower(t *testing.T) {
 	pubkey := ed25519.GenPrivKey().PubKey()

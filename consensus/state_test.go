@@ -14,7 +14,6 @@ import (
 
 	"github.com/tendermint/tendermint/abci/example/counter"
 	cstypes "github.com/tendermint/tendermint/consensus/types"
-	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	"github.com/tendermint/tendermint/libs/log"
 	tmpubsub "github.com/tendermint/tendermint/libs/pubsub"
@@ -2077,21 +2076,21 @@ func subscribeUnBuffered(eventBus *types.EventBus, q tmpubsub.Query) <-chan tmpu
 	return sub.Out()
 }
 
-func makeVssMap(vss []*validatorStub) map[crypto.PubKey]*validatorStub {
-	vssMap := make(map[crypto.PubKey]*validatorStub)
+func makeVssMap(vss []*validatorStub) map[string]*validatorStub {
+	vssMap := make(map[string]*validatorStub)
 	for _, pv := range vss {
 		pubKey, _ := pv.GetPubKey()
-		vssMap[pubKey] = pv
+		vssMap[pubKey.Address().String()] = pv
 	}
 	return vssMap
 }
 
-func votersPrivVals(voterSet *types.VoterSet, vssMap map[crypto.PubKey]*validatorStub) []*validatorStub {
+func votersPrivVals(voterSet *types.VoterSet, vssMap map[string]*validatorStub) []*validatorStub {
 	totalVotingPower := voterSet.TotalVotingPower()
 	votingPower := int64(0)
 	voters := 0
 	for i, v := range voterSet.Voters {
-		vssMap[v.PubKey].Index = int32(i) // NOTE: re-indexing for new voters
+		vssMap[v.PubKey.Address().String()].Index = int32(i) // NOTE: re-indexing for new voters
 		if votingPower < totalVotingPower*2/3+1 {
 			votingPower += v.VotingPower
 			voters++
@@ -2099,7 +2098,7 @@ func votersPrivVals(voterSet *types.VoterSet, vssMap map[crypto.PubKey]*validato
 	}
 	result := make([]*validatorStub, voters)
 	for i := 0; i < voters; i++ {
-		result[i] = vssMap[voterSet.Voters[i].PubKey]
+		result[i] = vssMap[voterSet.Voters[i].PubKey.Address().String()]
 	}
 	return result
 }
@@ -2130,19 +2129,16 @@ func createProposalBlockByOther(cs *State, other *validatorStub, round int32) (
 	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerAddr, round, proof)
 }
 
-func proposeBlock(t *testing.T, cs *State, round int32, vssMap map[crypto.PubKey]*validatorStub) types.BlockID {
-	newBlock, blockParts := createProposalBlockByOther(cs, vssMap[cs.Proposer.PubKey], round)
-	proposal := types.NewProposal(cs.Height, round, -1, types.BlockID{
-		Hash: newBlock.Hash(), PartSetHeader: blockParts.Header()})
-	if err := vssMap[cs.Proposer.PubKey].SignProposal(config.ChainID(), proposal.ToProto()); err != nil {
-		t.Fatal("failed to sign bad proposal", err)
-	}
+func proposeBlock(t *testing.T, cs *State, round int32, vssMap map[string]*validatorStub) types.BlockID {
+	prop, propBlock := decideProposal(cs, vssMap[cs.Proposer.PubKey.Address().String()], cs.Height, round)
+	propBlockHash := propBlock.Hash()
+	propBlockParts := propBlock.MakePartSet(types.BlockPartSizeBytes)
 
 	// set the proposal block
-	if err := cs.SetProposalAndBlock(proposal, newBlock, blockParts, "some peer"); err != nil {
+	if err := cs.SetProposalAndBlock(prop, propBlock, propBlockParts, "some peer"); err != nil {
 		t.Fatal(err)
 	}
-	return types.BlockID{Hash: newBlock.Hash(), PartSetHeader: blockParts.Header()}
+	return types.BlockID{Hash: propBlockHash, PartSetHeader: propBlockParts.Header()}
 }
 
 func TestStateFullRoundWithSelectedVoter(t *testing.T) {
@@ -2278,6 +2274,8 @@ func TestStateBadVoterWithSelectedVoter(t *testing.T) {
 	vssMap := makeVssMap(vss)
 	height, round := cs.Height, cs.Round
 
+	forceProposer(cs, vss, []int{0, 0}, []int64{height, height + 1}, []int32{round, 0})
+
 	voteCh := subscribeUnBuffered(cs.eventBus, types.EventQueryVote)
 	propCh := subscribe(cs.eventBus, types.EventQueryCompleteProposal)
 	newRoundCh := subscribe(cs.eventBus, types.EventQueryNewRound)
@@ -2367,7 +2365,7 @@ func TestStateBadVoterWithSelectedVoter(t *testing.T) {
 	ensureNewRound(newRoundCh, height+1, 0)
 }
 
-func addValidator(cs *State, vssMap map[crypto.PubKey]*validatorStub, height int64) {
+func addValidator(cs *State, vssMap map[string]*validatorStub, height int64) {
 	newVal, privVal := types.RandValidator(false, 10)
 	val, err := newVal.ToProto()
 	if err != nil {
@@ -2375,8 +2373,8 @@ func addValidator(cs *State, vssMap map[crypto.PubKey]*validatorStub, height int
 	}
 	newValidatorTx := kvstore.MakeValSetChangeTx(val.PubKey, 10)
 	_ = assertMempool(cs.txNotifier).CheckTx(newValidatorTx, nil, mempl.TxInfo{})
-	vssMap[newVal.PubKey] = newValidatorStub(privVal, int32(len(vssMap)+1))
-	vssMap[newVal.PubKey].Height = height
+	vssMap[newVal.PubKey.Address().String()] = newValidatorStub(privVal, int32(len(vssMap)+1))
+	vssMap[newVal.PubKey.Address().String()].Height = height
 }
 
 func TestStateAllVoterToSelectedVoter(t *testing.T) {

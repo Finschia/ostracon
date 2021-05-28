@@ -8,7 +8,6 @@ import (
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/crypto/tmhash"
-	"github.com/tendermint/tendermint/crypto/vrf"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/libs/rand"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -203,8 +202,8 @@ func (pkz privKeys) GenSignedHeader(chainID string, height int64, bTime time.Tim
 	secret := [64]byte{}
 	privateKey := ed25519.GenPrivKeyFromSecret(secret[:])
 	message := rand.Bytes(10)
-	proof, _ := vrf.Prove(privateKey, message)
-	proofHash, _ := vrf.ProofToHash(proof)
+	proof, _ := privateKey.VRFProve(message)
+	proofHash, _ := privateKey.PubKey().VRFVerify(proof, message)
 	voterSet := types.SelectVoter(valset, proofHash, voterParams)
 
 	header := genHeader(chainID, height, bTime, txs, voterSet, valset, nextValset, appHash, consHash, resHash,
@@ -222,8 +221,8 @@ func (pkz privKeys) GenSignedHeaderByRate(chainID string, height int64, bTime ti
 	secret := [64]byte{}
 	privateKey := ed25519.GenPrivKeyFromSecret(secret[:])
 	message := rand.Bytes(10)
-	proof, _ := vrf.Prove(privateKey, message)
-	proofHash, _ := vrf.ProofToHash(proof)
+	proof, _ := privateKey.VRFProve(message)
+	proofHash, _ := privateKey.PubKey().VRFVerify(proof, message)
 	voterSet := types.SelectVoter(valset, proofHash, voterParams)
 
 	header := genHeader(chainID, height, bTime, txs, voterSet, valset, nextValset, appHash, consHash, resHash,
@@ -242,8 +241,8 @@ func (pkz privKeys) GenSignedHeaderLastBlockID(chainID string, height int64, bTi
 	secret := [64]byte{}
 	privateKey := ed25519.GenPrivKeyFromSecret(secret[:])
 	message := rand.Bytes(10)
-	proof, _ := vrf.Prove(privateKey, message)
-	proofHash, _ := vrf.ProofToHash(proof)
+	proof, _ := privateKey.VRFProve(message)
+	proofHash, _ := privateKey.PubKey().VRFVerify(proof, message)
 	voterSet := types.SelectVoter(valset, proofHash, voterParams)
 
 	header := genHeader(chainID, height, bTime, txs, voterSet, valset, nextValset, appHash, consHash, resHash,

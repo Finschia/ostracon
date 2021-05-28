@@ -424,7 +424,7 @@ func shareAuthSignature(sc io.ReadWriter, pubKey crypto.PubKey, signature []byte
 				return nil, true, err // abort
 			}
 
-			pk, err := cryptoenc.PubKeyFromProto(pba.PubKey)
+			pk, err := cryptoenc.PubKeyFromProto(&pba.PubKey)
 			if err != nil {
 				return nil, true, err // abort
 			}

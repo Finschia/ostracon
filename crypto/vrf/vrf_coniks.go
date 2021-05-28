@@ -5,8 +5,6 @@ import (
 	"errors"
 
 	coniksimpl "github.com/coniks-sys/coniks-go/crypto/vrf"
-
-	"github.com/tendermint/tendermint/crypto/ed25519"
 )
 
 //nolint
@@ -25,7 +23,7 @@ func newVrfEd25519ConiksForVerifier(output Output, proof Proof) *vrfEd25519Conik
 	return &vrfEd25519Coniks{output, proof}
 }
 
-func (base *vrfEd25519Coniks) Prove(privateKey ed25519.PrivKey, message []byte) (Proof, error) {
+func (base *vrfEd25519Coniks) Prove(privateKey []byte, message []byte) (Proof, error) {
 	if len(privateKey) != coniksimpl.PrivateKeySize {
 		return nil, errors.New("private key size is invalid")
 	}
@@ -37,7 +35,7 @@ func (base *vrfEd25519Coniks) Prove(privateKey ed25519.PrivKey, message []byte) 
 	return proof, nil
 }
 
-func (base *vrfEd25519Coniks) Verify(publicKey ed25519.PubKey, proof Proof, message []byte) (bool, error) {
+func (base *vrfEd25519Coniks) Verify(publicKey []byte, proof Proof, message []byte) (bool, error) {
 	if base.generatedHash == nil {
 		return false, errors.New("vrf hash was not given")
 	}

@@ -525,7 +525,8 @@ var testGenesisFmt = `{
 		},
 		"validator": {
 			"pub_key_types": [
-				"ed25519"
+				"ed25519",
+                "composite(bls12-381,ed25519)"
 			]
 		},
 		"version": {}

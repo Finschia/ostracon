@@ -485,6 +485,7 @@ func (r *BlockchainReactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 				r.logger.Error("Could not send block message to peer: ", err)
 			}
 		} else {
+			src.String()
 			r.logger.Info("peer asking for a block we don't have", "src", src, "height", msg.Height)
 			peerID := src.ID()
 			if err = r.io.sendBlockNotFound(msg.Height, peerID); err != nil {

@@ -19,10 +19,16 @@ func AddressHash(bz []byte) Address {
 	return Address(tmhash.SumTruncated(bz))
 }
 
+// Proof represents the VRF Proof.
+// It should be defined separately from Ed25519 VRF Proof to avoid circular import.
+type Proof []byte
+type Output []byte
+
 type PubKey interface {
 	Address() Address
 	Bytes() []byte
 	VerifySignature(msg []byte, sig []byte) bool
+	VRFVerify(proof Proof, seed []byte) (Output, error) // TODO 🏺 rename to VerifyVRFProof to match VerifySignature
 	Equals(PubKey) bool
 	Type() string
 }
@@ -30,6 +36,7 @@ type PubKey interface {
 type PrivKey interface {
 	Bytes() []byte
 	Sign(msg []byte) ([]byte, error)
+	VRFProve(seed []byte) (Proof, error)
 	PubKey() PubKey
 	Equals(PrivKey) bool
 	Type() string

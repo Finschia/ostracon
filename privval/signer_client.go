@@ -6,7 +6,6 @@ import (
 
 	"github.com/tendermint/tendermint/crypto"
 	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
-	"github.com/tendermint/tendermint/crypto/vrf"
 	privvalproto "github.com/tendermint/tendermint/proto/tendermint/privval"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	"github.com/tendermint/tendermint/types"
@@ -83,7 +82,7 @@ func (sc *SignerClient) GetPubKey() (crypto.PubKey, error) {
 		return nil, &RemoteSignerError{Code: int(resp.Error.Code), Description: resp.Error.Description}
 	}
 
-	pk, err := cryptoenc.PubKeyFromProto(resp.PubKey)
+	pk, err := cryptoenc.PubKeyFromProto(&resp.PubKey)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +133,7 @@ func (sc *SignerClient) SignProposal(chainID string, proposal *tmproto.Proposal)
 }
 
 // GenerateVRFProof requests a remote signer to generate a VRF proof
-func (sc *SignerClient) GenerateVRFProof(message []byte) (vrf.Proof, error) {
+func (sc *SignerClient) GenerateVRFProof(message []byte) (crypto.Proof, error) {
 	msg := &privvalproto.VRFProofRequest{Message: message}
 	response, err := sc.endpoint.SendRequest(mustWrapMsg(msg))
 	if err != nil {

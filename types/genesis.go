@@ -134,7 +134,7 @@ func (genDoc *GenesisDoc) ValidateAndComplete() error {
 func (genDoc *GenesisDoc) Hash() []byte {
 	genDocBytes, err := tmjson.Marshal(genDoc)
 	if err != nil {
-		return nil
+		panic(err)
 	}
 	return crypto.Sha256(genDocBytes)
 }

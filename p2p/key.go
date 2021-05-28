@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 
 	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/bls"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	tmos "github.com/tendermint/tendermint/libs/os"
@@ -27,8 +26,7 @@ const IDByteLength = crypto.AddressSize
 // NodeKey is the persistent peer key.
 // It contains the nodes private key for authentication.
 type NodeKey struct {
-	PrivKey crypto.PrivKey   `json:"priv_key"` // our priv key
-	SigKey  bls.PrivKeyBLS12 `json:"sig_key"`  // for signature aggregation
+	PrivKey crypto.PrivKey `json:"priv_key"` // our priv key
 }
 
 // ID returns the peer's canonical ID - the hash of its public key.
@@ -39,10 +37,6 @@ func (nodeKey *NodeKey) ID() ID {
 // PubKey returns the peer's PubKey
 func (nodeKey *NodeKey) PubKey() crypto.PubKey {
 	return nodeKey.PrivKey.PubKey()
-}
-
-func (nodeKey *NodeKey) SigPubKey() crypto.PubKey {
-	return nodeKey.SigKey.PubKey()
 }
 
 // PubKeyToID returns the ID corresponding to the given PubKey.
@@ -63,10 +57,8 @@ func LoadOrGenNodeKey(filePath string) (*NodeKey, error) {
 	}
 
 	privKey := ed25519.GenPrivKey()
-	sigKey := bls.GenPrivKey()
 	nodeKey := &NodeKey{
 		PrivKey: privKey,
-		SigKey:  sigKey,
 	}
 
 	if err := nodeKey.SaveAs(filePath); err != nil {

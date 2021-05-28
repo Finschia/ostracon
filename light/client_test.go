@@ -6,11 +6,15 @@ import (
 	"testing"
 	"time"
 
+	tmrand "github.com/tendermint/tendermint/libs/rand"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	dbm "github.com/tendermint/tm-db"
 
+	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/crypto/vrf"
+	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/light"
 	"github.com/tendermint/tendermint/light/provider"
@@ -255,6 +259,25 @@ func TestClient_SequentialVerification(t *testing.T) {
 			false,
 			true,
 		},
+		{
+			"bad: voters from invalid proof",
+			map[int64]*types.SignedHeader{
+				// trusted header
+				1: h1,
+				// voters from invalid proof hash
+				2: genSignedHeaderWithInvalidProof(keys, chainID, 2, bTime.Add(1*time.Hour), nil,
+					vals, vals, []byte("app_hash"), []byte("cons_hash"), []byte("results_hash"), 0, len(keys),
+					voterParam),
+				// last header (1/3 signed)
+				3: keys.GenSignedHeader(chainID, 3, bTime.Add(2*time.Hour), nil,
+					vals, vals, []byte("app_hash"), []byte("cons_hash"), []byte("results_hash"), 0, len(keys),
+					voterParam),
+			},
+			valSet,
+			voterSet,
+			false,
+			true,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -296,6 +319,28 @@ func TestClient_SequentialVerification(t *testing.T) {
 				assert.NoError(t, err)
 			}
 		})
+	}
+}
+
+func genSignedHeaderWithInvalidProof(pkz privKeys, chainID string, height int64, bTime time.Time, txs types.Txs,
+	valset, nextValset *types.ValidatorSet, appHash, consHash, resHash []byte,
+	first, last int, voterParams *types.VoterParams) *types.SignedHeader {
+
+	secret := [64]byte{}
+	privateKey := ed25519.GenPrivKeyFromSecret(secret[:])
+	message := tmrand.Bytes(10)
+	proof, _ := privateKey.VRFProve(message)
+	proofHash, _ := privateKey.PubKey().VRFVerify(proof, message)
+	invalidProofHash := make([]byte, len(proofHash))
+	copy(invalidProofHash, proofHash)
+	invalidProofHash[0] ^= 0x01 // force invalid proof hash
+	voterSet := types.SelectVoter(valset, invalidProofHash, voterParams)
+
+	header := genHeader(chainID, height, bTime, txs, voterSet, valset, nextValset, appHash, consHash, resHash,
+		tmbytes.HexBytes(proof))
+	return &types.SignedHeader{
+		Header: header,
+		Commit: pkz.signHeader(header, voterSet, first, last),
 	}
 }
 

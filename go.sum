@@ -359,6 +359,8 @@ github.com/hashicorp/logutils v1.0.0/go.mod h1:QIAnNjmIWmVIIkWDTG1z5v++HQmx9WQRO
 github.com/hashicorp/mdns v1.0.0/go.mod h1:tL+uN++7HEJ6SQLQ2/p+z2pH24WQKWjBPkE0mNTz8vQ=
 github.com/hashicorp/memberlist v0.1.3/go.mod h1:ajVTdAv/9Im8oMAAj5G31PhhMCZJV2pPBoIllUwCN7I=
 github.com/hashicorp/serf v0.8.2/go.mod h1:6hOLApaqBFA1NXqRQAsxw9QxuDEvNxSQRwA/JwenrHc=
+github.com/herumi/bls v0.0.0-20200721070902-5e2af1489a06 h1:4w5HyoC9FiD1UcO9j6MBkBIeBaLTe8JJOYmSiIFlo8c=
+github.com/herumi/bls v0.0.0-20200721070902-5e2af1489a06/go.mod h1:i4wRNUUFF1nNmYFHM9UDl13MGoxEQkMVCLAd82qZz4s=
 github.com/herumi/bls-eth-go-binary v0.0.0-20200522010937-01d282b5380b h1:mu+F5uA3Y68oB6KXZqWlASKMetbNufhQx2stMI+sD+Y=
 github.com/herumi/bls-eth-go-binary v0.0.0-20200522010937-01d282b5380b/go.mod h1:luAnRm3OsMQeokhGzpYmc0ZKwawY7o87PUEP11Z7r7U=
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=

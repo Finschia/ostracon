@@ -17,7 +17,9 @@ Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermi
 - Go API
     - [types] [\#83](https://github.com/line/tendermint/pull/83) Add `StakingPower` to `Validator`
     - [consensus] [\#83](https://github.com/line/tendermint/pull/83) Change calculation of `VotingPower`
+
 - Blockchain Protocol
+- [consensus] [\#101](https://github.com/line/tendermint/pull/101) Introduce composite key to delegate features to each function key
 
 ### FEATURES
 

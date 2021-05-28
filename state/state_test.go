@@ -18,7 +18,6 @@ import (
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
-	"github.com/tendermint/tendermint/crypto/vrf"
 	"github.com/tendermint/tendermint/libs/rand"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
@@ -1198,7 +1197,8 @@ func TestState_MakeHashMessage(t *testing.T) {
 
 	privVal := makePrivVal()
 	proof, _ := privVal.GenerateVRFProof(message1)
-	output, _ := vrf.ProofToHash(proof)
+	pubKey, _ := privVal.GetPubKey()
+	output, _ := pubKey.VRFVerify(proof, message1)
 	state.LastProofHash = output
 	message3 := state.MakeHashMessage(0)
 	require.False(t, bytes.Equal(message1, message3))

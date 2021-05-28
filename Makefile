@@ -247,9 +247,42 @@ build-docker: build-linux
 ###                       Local testnet using docker                        ###
 ###############################################################################
 
+DOCKER_HOME = /go/src/github.com/tendermint/tendermint
+DOCKER_CMD = docker run --rm \
+                        -v `pwd`:$(DOCKER_HOME) \
+                        -w $(DOCKER_HOME)
+DOCKER_IMG = golang:1.14.6-alpine3.12
+APK_CMD = apk add --update --no-cache git make gcc libc-dev build-base curl jq file gmp-dev clang
+APK_CMD += && cd crypto/bls/internal/bls-eth-go-binary
+APK_CMD += && make CXX=clang++
+APK_CMD += && cd $(DOCKER_HOME)
+APK_CMD += && go mod edit -replace github.com/herumi/bls-eth-go-binary=./crypto/bls/internal/bls-eth-go-binary
+APK_CMD += && make build
+APK_CMD += && go mod edit -dropreplace github.com/herumi/bls-eth-go-binary
+
+# Login docker-container for confirmation building linux binary
+build-shell:
+	$(DOCKER_CMD) -it --entrypoint '' ${DOCKER_IMG} /bin/sh
+.PHONY: build-shell
+
 # Build linux binary on other platforms
+
 build-linux:
-	docker run --rm -v `pwd`:/go/src/github.com/tendermint/tendermint -w /go/src/github.com/tendermint/tendermint golang:1.14.1-alpine /bin/sh -c "apk add --update git make gcc libc-dev build-base && make build"
+	# Download, build and add the BSL local library to modules
+	if [ ! -d $(SRCPATH)/crypto/bls/internal/bls-eth-go-binary ]; then \
+		mkdir -p $(SRCPATH)/crypto/bls/internal && \
+		git clone https://github.com/herumi/mcl $(SRCPATH)/crypto/bls/internal/mcl && \
+		git clone https://github.com/herumi/bls $(SRCPATH)/crypto/bls/internal/bls && \
+		git clone https://github.com/herumi/bls-eth-go-binary $(SRCPATH)/crypto/bls/internal/bls-eth-go-binary; \
+	fi
+
+	# Build Linux binary
+	$(DOCKER_CMD) ${DOCKER_IMG} /bin/sh -c "$(APK_CMD)"
+
+	# Remove the BLS local library from modules
+	rm -rf $(SRCPATH)/crypto/bls/internal/mcl
+	rm -rf $(SRCPATH)/crypto/bls/internal/bls
+	rm -rf $(SRCPATH)/crypto/bls/internal/bls-eth-go-binary
 .PHONY: build-linux
 
 build-docker-localnode:

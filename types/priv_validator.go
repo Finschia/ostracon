@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/composite"
 	"github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/tendermint/tendermint/crypto/vrf"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
@@ -19,7 +19,7 @@ type PrivValidator interface {
 	SignVote(chainID string, vote *tmproto.Vote) error
 	SignProposal(chainID string, proposal *tmproto.Proposal) error
 
-	GenerateVRFProof(message []byte) (vrf.Proof, error)
+	GenerateVRFProof(message []byte) (crypto.Proof, error)
 }
 
 type PrivValidatorsByAddress []PrivValidator
@@ -57,7 +57,7 @@ type MockPV struct {
 }
 
 func NewMockPV() *MockPV {
-	return &MockPV{ed25519.GenPrivKey(), false, false}
+	return &MockPV{composite.GenPrivKey(), false, false}
 }
 
 // NewMockPVWithParams allows one to create a MockPV instance, but with finer
@@ -69,6 +69,9 @@ func NewMockPVWithParams(privKey crypto.PrivKey, breakProposalSigning, breakVote
 
 // Implements PrivValidator.
 func (pv MockPV) GetPubKey() (crypto.PubKey, error) {
+	//signKey := bls.GenPrivKey()
+	//vrfKey := ed25519.GenPrivKey()
+	//return composite.NewPrivKeyComposite(signKey, vrfKey).PubKey(), nil
 	return pv.PrivKey.PubKey(), nil
 }
 
@@ -113,13 +116,9 @@ func (pv MockPV) ExtractIntoValidator(stakingPower int64) *Validator {
 	}
 }
 
-// Implements PrivValidator.
-func (pv MockPV) GenerateVRFProof(message []byte) (vrf.Proof, error) {
-	privKey, ok := pv.PrivKey.(ed25519.PrivKey)
-	if !ok {
-		return nil, NewErrUnsupportedKey("ed25519")
-	}
-	return vrf.Prove(privKey, message)
+// GenerateVRFProof implements PrivValidator.
+func (pv MockPV) GenerateVRFProof(message []byte) (crypto.Proof, error) {
+	return pv.PrivKey.VRFProve(message)
 }
 
 // String returns a string representation of the MockPV.

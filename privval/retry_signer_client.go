@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/vrf"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	"github.com/tendermint/tendermint/types"
 )
@@ -96,9 +95,9 @@ func (sc *RetrySignerClient) SignProposal(chainID string, proposal *tmproto.Prop
 	return fmt.Errorf("exhausted all attempts to sign proposal: %w", err)
 }
 
-func (sc *RetrySignerClient) GenerateVRFProof(message []byte) (vrf.Proof, error) {
+func (sc *RetrySignerClient) GenerateVRFProof(message []byte) (crypto.Proof, error) {
 	var err error
-	var proof vrf.Proof
+	var proof crypto.Proof
 	for i := 0; i < sc.retries || sc.retries == 0; i++ {
 		proof, err = sc.next.GenerateVRFProof(message)
 		if err == nil {

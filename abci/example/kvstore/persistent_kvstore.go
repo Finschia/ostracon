@@ -195,11 +195,11 @@ func (app *PersistentKVStoreApplication) Validators() (validators []types.Valida
 }
 
 func MakeValSetChangeTx(pubkey pc.PublicKey, power int64) []byte {
-	pk, err := cryptoenc.PubKeyFromProto(pubkey)
+	pkBytes, err := pubkey.Marshal()
 	if err != nil {
 		panic(err)
 	}
-	pubStr := base64.StdEncoding.EncodeToString(pk.Bytes())
+	pubStr := base64.StdEncoding.EncodeToString(pkBytes)
 	return []byte(fmt.Sprintf("val:%s!%d", pubStr, power))
 }
 
@@ -222,11 +222,24 @@ func (app *PersistentKVStoreApplication) execValidatorTx(tx []byte) types.Respon
 	pubkeyS, powerS := pubKeyAndPower[0], pubKeyAndPower[1]
 
 	// decode the pubkey
-	pubkey, err := base64.StdEncoding.DecodeString(pubkeyS)
+	pkBytes, err := base64.StdEncoding.DecodeString(pubkeyS)
 	if err != nil {
 		return types.ResponseDeliverTx{
 			Code: code.CodeTypeEncodingError,
 			Log:  fmt.Sprintf("Pubkey (%s) is invalid base64", pubkeyS)}
+	}
+	var pkProto pc.PublicKey
+	err = pkProto.Unmarshal(pkBytes)
+	if err != nil {
+		return types.ResponseDeliverTx{
+			Code: code.CodeTypeEncodingError,
+			Log:  fmt.Sprintf("Pubkey (%s) is invalid binary", pubkeyS)}
+	}
+	pubkey, err := cryptoenc.PubKeyFromProto(&pkProto)
+	if err != nil {
+		return types.ResponseDeliverTx{
+			Code: code.CodeTypeEncodingError,
+			Log:  fmt.Sprintf("Pubkey (%s) is invalid binary", pubkeyS)}
 	}
 
 	// decode the power
@@ -238,14 +251,16 @@ func (app *PersistentKVStoreApplication) execValidatorTx(tx []byte) types.Respon
 	}
 
 	// update
-	return app.updateValidator(types.UpdateValidator(pubkey, power, ""))
+	return app.updateValidator(types.NewValidatorUpdate(pubkey, power))
 }
 
 // add, update, or remove a validator
 func (app *PersistentKVStoreApplication) updateValidator(v types.ValidatorUpdate) types.ResponseDeliverTx {
-	pubkey, err := cryptoenc.PubKeyFromProto(v.PubKey)
+	pubkey, err := cryptoenc.PubKeyFromProto(&v.PubKey)
 	if err != nil {
-		panic(fmt.Errorf("can't decode public key: %w", err))
+		return types.ResponseDeliverTx{
+			Code: code.CodeTypeEncodingError,
+			Log:  fmt.Sprintf("Error encoding Public Key: %s", err)}
 	}
 	key := []byte("val:" + string(pubkey.Bytes()))
 

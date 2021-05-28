@@ -7,13 +7,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tendermint/tendermint/crypto/composite"
+
 	"github.com/gogo/protobuf/proto"
 	gogotypes "github.com/gogo/protobuf/types"
 
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/merkle"
 	"github.com/tendermint/tendermint/crypto/tmhash"
-	"github.com/tendermint/tendermint/crypto/vrf"
 	"github.com/tendermint/tendermint/libs/bits"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	tmmath "github.com/tendermint/tendermint/libs/math"
@@ -364,7 +365,7 @@ func (h *Header) Populate(
 	consensusHash, appHash, lastResultsHash []byte,
 	proposerAddress Address,
 	round int32,
-	proof vrf.Proof,
+	proof crypto.Proof,
 ) {
 	h.Version = version
 	h.ChainID = chainID
@@ -610,13 +611,16 @@ const (
 	BlockIDFlagNil
 )
 
-const (
-	// Max size of commit without any commitSigs -> 82 for BlockID, 8 for Height, 4 for Round.
-	MaxCommitOverheadBytes int64 = 94
-	// Commit sig size is made up of 64 bytes for the signature, 20 bytes for the address,
-	// 1 byte for the flag and 14 bytes for the timestamp
-	MaxCommitSigBytes int64 = 109
-)
+// MaxCommitOverheadBytes is max size of commit without any commitSigs -> 82 for BlockID, 8 for Height, 4 for Round.
+// NOTE: 🏺This size is for the ProtocolBuffers representation of Commit without CommitSig. Therefore, it includes
+// the overhead of ProtocolBuffers in addition to the above number.
+const MaxCommitOverheadBytes int64 = (76 + 2) + (8 + 2) + (4 + 2)
+
+// MaxCommitSigBytes is made up of 64 or 96 bytes for the signature, 20 bytes for the address,
+// 1 byte for the flag and 17 bytes for the timestamp.
+// NOTE: 🏺This size is for the ProtocolBuffers representation of CommitSig. Therefore, it includes the overhead of
+// ProtocolBuffers in addition to the above number.
+var MaxCommitSigBytes = (int64(composite.MaxSignatureSize) + 2) + (20 + 2) + (1 + 1) + (17 + 2)
 
 // CommitSig is a part of the Vote included in a Commit.
 type CommitSig struct {
@@ -638,7 +642,7 @@ func NewCommitSigForBlock(signature []byte, valAddr Address, ts time.Time) Commi
 
 func MaxCommitBytes(valCount int) int64 {
 	// From the repeated commit sig field
-	var protoEncodingOverhead int64 = 2
+	var protoEncodingOverhead int64 = 3
 	return MaxCommitOverheadBytes + ((MaxCommitSigBytes + protoEncodingOverhead) * int64(valCount))
 }
 
@@ -724,7 +728,7 @@ func (cs CommitSig) ValidateBasic() error {
 			return errors.New("signature is missing")
 		}
 		if len(cs.Signature) > MaxSignatureSize {
-			return fmt.Errorf("signature is too big (max: %d)", MaxSignatureSize)
+			return fmt.Errorf("signature is too big %d (max: %d)", len(cs.Signature), MaxSignatureSize)
 		}
 	}
 
@@ -770,6 +774,8 @@ type Commit struct {
 	Round      int32       `json:"round"`
 	BlockID    BlockID     `json:"block_id"`
 	Signatures []CommitSig `json:"signatures"`
+
+	AggregatedSignature []byte `json:"aggregated_signature"`
 
 	// Memoized in first call to corresponding method.
 	// NOTE: can't memoize in constructor because constructor isn't used for

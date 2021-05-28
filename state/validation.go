@@ -6,8 +6,6 @@ import (
 	"fmt"
 
 	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/tendermint/tendermint/crypto/vrf"
 	"github.com/tendermint/tendermint/types"
 )
 
@@ -174,14 +172,12 @@ func validateBlock(state State, round int32, block *types.Block) error {
 	// validate vrf proof
 	message := state.MakeHashMessage(block.Round)
 	_, val := state.Validators.GetByAddress(block.ProposerAddress)
-	verified, err := vrf.Verify(val.PubKey.(ed25519.PubKey), block.Proof.Bytes(), message)
+	proof := crypto.Proof(block.Proof)
+	_, err := val.PubKey.VRFVerify(proof, message)
 	if err != nil {
 		return types.NewErrInvalidProof(fmt.Sprintf(
 			"verification failed: %s; proof: %v, prevProofHash: %v, height=%d, round=%d, addr: %v",
 			err.Error(), block.Proof, state.LastProofHash, state.LastBlockHeight, block.Round, block.ProposerAddress))
-	} else if !verified {
-		return types.NewErrInvalidProof(fmt.Sprintf("proof: %X, lastProofHash: %X, height=%d, round=%d, addr: %v, msg: %X",
-			block.Proof, state.LastProofHash, state.LastBlockHeight, block.Round, block.ProposerAddress, message))
 	}
 
 	return nil

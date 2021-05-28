@@ -134,9 +134,15 @@ func TestBlockMakePartSetWithEvidence(t *testing.T) {
 	ev := NewMockDuplicateVoteEvidenceWithValidator(h, time.Now(), vals[0], "block-test-chain")
 	evList := []Evidence{ev}
 
-	partSet := MakeBlock(h, []Tx{Tx("Hello World")}, commit, evList).MakePartSet(512)
+	block := MakeBlock(h, []Tx{Tx("Hello World")}, commit, evList)
+	blockProto, err := block.ToProto()
+	assert.NoError(t, err)
+	bz, err := blockProto.Marshal()
+	assert.NoError(t, err)
+	blockSize := len(bz)
+	partSet := block.MakePartSet(512)
 	assert.NotNil(t, partSet)
-	assert.EqualValues(t, 4, partSet.Total())
+	assert.Equal(t, uint32(math.Ceil(float64(blockSize)/512.0)), partSet.Total())
 }
 
 func TestBlockHashesTo(t *testing.T) {
@@ -275,7 +281,7 @@ func TestMaxCommitBytes(t *testing.T) {
 
 	pbSig := cs.ToProto()
 	// test that a single commit sig doesn't exceed max commit sig bytes
-	assert.EqualValues(t, MaxCommitSigBytes, pbSig.Size())
+	assert.EqualValues(t, MaxCommitSigBytes, int64(pbSig.Size()))
 
 	// check size with a single commit
 	commit := &Commit{
@@ -462,11 +468,11 @@ func TestBlockMaxDataBytes(t *testing.T) {
 	}{
 		0: {-10, 1, 0, true, 0},
 		1: {10, 1, 0, true, 0},
-		2: {841, 1, 0, true, 0},
-		3: {877, 1, 0, false, 0},
-		4: {878, 1, 0, false, 1},
-		5: {989, 2, 0, false, 1},
-		6: {1088, 2, 100, false, 0},
+		2: {909, 1, 0, true, 0},
+		3: {910, 1, 0, false, 0},
+		4: {911, 1, 0, false, 1},
+		5: {1055, 2, 0, false, 1},
+		6: {1154, 2, 100, false, 0},
 	}
 
 	for i, tc := range testCases {
@@ -476,6 +482,9 @@ func TestBlockMaxDataBytes(t *testing.T) {
 				MaxDataBytes(tc.maxBytes, tc.evidenceBytes, tc.valsCount)
 			}, "#%v", i)
 		} else {
+			assert.NotPanics(t, func() {
+				MaxDataBytes(tc.maxBytes, tc.evidenceBytes, tc.valsCount)
+			}, "#%v", i)
 			assert.Equal(t,
 				tc.result,
 				MaxDataBytes(tc.maxBytes, tc.evidenceBytes, tc.valsCount),
@@ -493,9 +502,9 @@ func TestBlockMaxDataBytesNoEvidence(t *testing.T) {
 	}{
 		0: {-10, 1, true, 0},
 		1: {10, 1, true, 0},
-		2: {876, 1, true, 0},
-		3: {877, 1, false, 0},
-		4: {878, 1, false, 1},
+		2: {909, 1, true, 0},
+		3: {910, 1, false, 0},
+		4: {911, 1, false, 1},
 	}
 
 	for i, tc := range testCases {
@@ -505,6 +514,9 @@ func TestBlockMaxDataBytesNoEvidence(t *testing.T) {
 				MaxDataBytesNoEvidence(tc.maxBytes, tc.valsCount)
 			}, "#%v", i)
 		} else {
+			assert.NotPanics(t, func() {
+				MaxDataBytesNoEvidence(tc.maxBytes, tc.valsCount)
+			}, "#%v", i)
 			assert.Equal(t,
 				tc.result,
 				MaxDataBytesNoEvidence(tc.maxBytes, tc.valsCount),
