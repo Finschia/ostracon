@@ -36,7 +36,7 @@ cd $GOPATH/src/github.com/tendermint
 git clone https://github.com/tendermint/tendermint.git
 cd tendermint
 ## build
-make tools
+#make tools # XXX Should remove "make tools": https://github.com/line/ostracon/commit/c6e0d20d4bf062921fcc1eb5b2399447a7d2226e#diff-76ed074a9305c04054cdebb9e9aad2d818052b07091de1f20cad0bbac34ffb52
 make build
 #** need to install the package, otherwise terdermint testnet will not execute
 make install

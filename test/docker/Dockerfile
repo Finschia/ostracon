@@ -16,7 +16,8 @@ COPY . $REPO
 
 # Install the vendored dependencies
 # docker caching prevents reinstall on code change!
-RUN make tools
+# XXX Should remove "make tools": https://github.com/line/ostracon/commit/c6e0d20d4bf062921fcc1eb5b2399447a7d2226e#diff-76ed074a9305c04054cdebb9e9aad2d818052b07091de1f20cad0bbac34ffb52
+#RUN make tools
 
 # install ABCI CLI
 RUN make install_abci
