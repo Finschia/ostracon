@@ -1,4 +1,4 @@
-# stage 1 Generate Tendermint Binary
+# stage 1 Generate Ostracon Binary
 FROM golang:1.15-alpine as builder
 RUN apk update && \
     apk upgrade && \
@@ -9,9 +9,9 @@ RUN make build-linux
 
 # stage 2
 FROM golang:1.15-alpine
-LABEL maintainer="hello@tendermint.com"
+LABEL maintainer="hello@blockchain.line.me"
 
-# Tendermint will be looking for the genesis file in /tendermint/config/genesis.json
+# Ostracon will be looking for the genesis file in /tendermint/config/genesis.json
 # (unless you change `genesis_file` in config.toml). You can put your config.toml and
 # private validator file into /tendermint/config.
 #
@@ -26,11 +26,11 @@ ENV TMHOME /tendermint
 RUN apk update && \
     apk upgrade && \
     apk --no-cache add curl jq bash && \
-    addgroup tmuser && \
-    adduser -S -G tmuser tmuser -h "$TMHOME"
+    addgroup ostracon && \
+    adduser -S -G ostracon ostracon -h "$TMHOME"
 
-# Run the container with tmuser by default. (UID=100, GID=1000)
-USER tmuser
+# Run the container with ostracon by default. (UID=100, GID=1000)
+USER ostracon
 
 WORKDIR $TMHOME
 

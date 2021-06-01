@@ -5,7 +5,7 @@ env:
   - GO111MODULE=on
 
 builds:
-  - id: "Tendermint"
+  - id: "Ostracon"
     main: ./cmd/tendermint/main.go
     ldflags:
       - -s -w -X github.com/tendermint/tendermint/version.TMCoreSemVer={{ .Version }}

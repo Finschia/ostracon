@@ -29,7 +29,7 @@ XC_OS=${XC_OS:-"solaris darwin freebsd linux windows"}
 XC_EXCLUDE=${XC_EXCLUDE:-" darwin/arm solaris/amd64 solaris/386 solaris/arm freebsd/amd64 windows/arm "}
 
 # Make sure build tools are available.
-make tools
+#make tools # XXX Should remove "make tools": https://github.com/line/ostracon/commit/c6e0d20d4bf062921fcc1eb5b2399447a7d2226e#diff-76ed074a9305c04054cdebb9e9aad2d818052b07091de1f20cad0bbac34ffb52
 
 # Build!
 # ldflags: -s Omit the symbol table and debug information.
