@@ -1,4 +1,3 @@
 # Merkle Tree
 
-For smaller static data structures that don't require immutable snapshots or mutability; 
-for instance the transactions and validation signatures of a block can be hashed using this simple merkle tree logic.
+Basically, see the [Tendermint v0.34.8 Merkle Tree spec](https://github.com/tendermint/tendermint/blob/v0.34.8/crypto/merkle/README.md).

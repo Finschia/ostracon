@@ -1,11 +1,11 @@
 openapi: 3.0.0
 info:
-  title: Tendermint RPC
+  title: Ostracon RPC
   contact:
-    name: Tendermint RPC
-    url: https://github.com/tendermint/tendermint/issues/new/choose
+    name: Ostracon RPC
+    url: https://github.com/line/ostracon/issues/new/choose
   description: |
-    Tendermint supports the following RPC protocols:
+    Ostracon supports the following RPC protocols:
 
     * URI over HTTP
     * JSONRPC over HTTP
@@ -54,12 +54,10 @@ info:
   version: "Master"
   license:
     name: Apache 2.0
-    url: https://github.com/tendermint/tendermint/blob/master/LICENSE
+    url: https://github.com/ostracon/ostracon/blob/main/LICENSE
 servers:
-  - url: https://rpc.cosmos.network
-    description: Cosmos mainnet node to interact with the Tendermint RPC
   - url: http://localhost:26657
-    description: Interact with the Tendermint RPC locally on your device
+    description: Interact with the Ostracon RPC locally on your device
 tags:
   - name: Websocket
     description: Subscribe/unsubscribe are reserved for websocket events.
@@ -2826,7 +2824,7 @@ components:
               example:
                 - "ed25519"
 
-    # Events in tendermint
+    # Events in ostracon
     Event:
       type: object
       properties:
