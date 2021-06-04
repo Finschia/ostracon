@@ -149,3 +149,33 @@ func assertBadProof(t *testing.T, root []byte, bad []byte, good TxProof) {
 		}
 	}
 }
+
+func TestComputeProtoSizeForTxs(t *testing.T) {
+	tests := []struct {
+		count int
+	}{
+		{1},
+		{2},
+		{30},
+		{450},
+		{1352},
+		{2543},
+		{4000},
+	}
+
+	for _, tt := range tests {
+		allTxs := make(Txs, tt.count)
+		for i := 0; i < tt.count; i++ {
+			size := tmrand.Intn(500)
+			allTxs[i] = tmrand.Bytes(size)
+		}
+
+		txs := make([]Tx, 0, len(allTxs))
+		protoTxs := tmproto.Data{}
+		for _, tx := range allTxs {
+			protoTxs.Txs = append(protoTxs.Txs, tx)
+			txs = append(txs, tx)
+			require.Equal(t, int64(protoTxs.Size()), ComputeProtoSizeForTxs(txs))
+		}
+	}
+}

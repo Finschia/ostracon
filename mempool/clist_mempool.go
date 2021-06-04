@@ -17,6 +17,7 @@ import (
 	tmos "github.com/line/ostracon/libs/os"
 	tmsync "github.com/line/ostracon/libs/sync"
 	"github.com/line/ostracon/p2p"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/proxy"
 	"github.com/line/ostracon/types"
 )
@@ -581,13 +582,13 @@ func (mem *CListMempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Txs {
 	// size per tx, and set the initial capacity based off of that.
 	// txs := make([]types.Tx, 0, tmmath.MinInt(mem.txs.Len(), max/mem.avgTxSize))
 	txs := make([]types.Tx, 0, mem.txs.Len())
+	protoTxs := tmproto.Data{}
 	for e := mem.txs.Front(); e != nil; e = e.Next() {
 		memTx := e.Value.(*mempoolTx)
 
-		dataSize := types.ComputeProtoSizeForTxs(append(txs, memTx.tx))
-
+		protoTxs.Txs = append(protoTxs.Txs, memTx.tx)
 		// Check total size requirement
-		if maxBytes > -1 && dataSize > maxBytes {
+		if maxBytes > -1 && int64(protoTxs.Size()) > maxBytes {
 			return txs
 		}
 		// Check total gas requirement.
