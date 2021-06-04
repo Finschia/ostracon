@@ -399,7 +399,13 @@ func execBlockOnProxyApp(
 	if execBlockTimeMs > 0 {
 		tps = int(float64(validTxs+invalidTxs) / execBlockTimeMs * 1000)
 	}
-	logger.Info("executed block", "height", block.Height, "num_valid_txs", validTxs, "num_invalid_txs", invalidTxs, "execution_time", execBlockTimeMs, "tps", tps)
+	logger.Info(
+		"executed block",
+		"height", block.Height,
+		"num_valid_txs", validTxs,
+		"num_invalid_txs", invalidTxs,
+		"execution_time", execBlockTimeMs,
+		"tps", tps)
 	return abciResponses, nil
 }
 
