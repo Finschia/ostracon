@@ -151,7 +151,7 @@ func assertBadProof(t *testing.T, root []byte, bad []byte, good TxProof) {
 }
 
 func TestComputeProtoSizeForTxs(t *testing.T) {
-	tests := []struct{
+	tests := []struct {
 		count int
 	}{
 		{1},
