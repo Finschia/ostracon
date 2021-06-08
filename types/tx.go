@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"runtime"
+	"sync"
 
 	"github.com/line/ostracon/crypto/merkle"
 	"github.com/line/ostracon/crypto/tmhash"
@@ -35,10 +37,23 @@ func (txs Txs) Hash() []byte {
 	// These allocations will be removed once Txs is switched to [][]byte,
 	// ref #2603. This is because golang does not allow type casting slices without unsafe
 	txBzs := make([][]byte, len(txs))
+	// Semaphore is used to limit the maximum number of executable goroutines.
+	sem := make(chan int, runtime.NumCPU()*2)
+	var wg sync.WaitGroup
+	wg.Add(len(txs))
 	for i := 0; i < len(txs); i++ {
-		txBzs[i] = txs[i].Hash()
+		sem <- 1
+		i := i
+		go func() {
+			defer func() {
+				wg.Done()
+				<-sem
+			}()
+			txBzs[i] = txs[i].Hash()
+		}()
 	}
-	return merkle.HashFromByteSlices(txBzs)
+	wg.Wait()
+	return merkle.HashFromByteSlicesParallel(txBzs, 0)
 }
 
 // Index returns the index of this transaction in the list, or -1 if not found

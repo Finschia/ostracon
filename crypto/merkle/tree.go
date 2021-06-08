@@ -1,7 +1,10 @@
 package merkle
 
 import (
+	"math"
 	"math/bits"
+	"runtime"
+	"sync"
 )
 
 // HashFromByteSlices computes a Merkle tree where the leaves are the byte slice,
@@ -18,6 +21,43 @@ func HashFromByteSlices(items [][]byte) []byte {
 		right := HashFromByteSlices(items[k:])
 		return innerHash(left, right)
 	}
+}
+
+// HashFromByteSlicesParallel computes a Merkle tree in parallel
+// Since it uses the maximum CPU core, performance may decrease if called from multiple places at the same time.
+func HashFromByteSlicesParallel(items [][]byte, depth int) []byte {
+	switch len(items) {
+	case 0:
+		return emptyHash()
+	case 1:
+		return leafHash(items[0])
+	default:
+		k := getSplitPoint(int64(len(items)))
+		var left, right []byte
+		var wg sync.WaitGroup
+
+		if depth < maxDepthToLimitGoroutines() {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				left = HashFromByteSlicesParallel(items[:k], depth+1)
+			}()
+			right = HashFromByteSlicesParallel(items[k:], depth+1)
+			wg.Wait()
+
+		} else {
+			// If it is deeper than max depth, it executes sequentially.
+			left = HashFromByteSlicesParallel(items[:k], depth+1)
+			right = HashFromByteSlicesParallel(items[k:], depth+1)
+		}
+		return innerHash(left, right)
+	}
+}
+
+// The number of goroutines created up to the max depth should not be too large for the number of CPUs.
+// 2^max_depth < ceil(num_cpu*2)
+func maxDepthToLimitGoroutines() int {
+	return int(math.Ceil(math.Log2(float64(runtime.NumCPU() * 2))))
 }
 
 // HashFromByteSliceIterative is an iterative alternative to
