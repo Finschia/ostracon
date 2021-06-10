@@ -813,13 +813,18 @@ func (cs *State) receiveRoutine(maxSteps int) {
 			cs.handleMsg(mi)
 
 		case mi = <-cs.internalMsgQueue:
-			err := cs.wal.WriteSync(mi) // NOTE: fsync
-			if err != nil {
-				panic(fmt.Sprintf(
-					"failed to write %v msg to consensus WAL due to %v; check your file system and restart the node",
-					mi, err,
-				))
+			if err := cs.wal.Write(mi); err != nil {
+				cs.Logger.Error("failed writing to WAL", "err", err)
 			}
+			go func() {
+				if err := cs.wal.FlushAndSync(); err != nil {
+					cs.Logger.Error("CONSENSUS FAILURE!!!", "err", fmt.Sprintf(
+						"failed to write %v msg to consensus WAL due to %v; check your file system and restart the node",
+						mi, err,
+					), "stack", string(debug.Stack()))
+					onExit(cs)
+				}
+			}()
 
 			if _, ok := mi.Msg.(*VoteMessage); ok {
 				// we actually want to simulate failing during
