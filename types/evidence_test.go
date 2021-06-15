@@ -42,9 +42,7 @@ func TestMaxEvidenceBytes(t *testing.T) {
 		blockID := makeBlockID(tmhash.Sum(randomHash1), math.MaxUint32, tmhash.Sum(randomPartHash))
 		blockID2 := makeBlockID(tmhash.Sum(randomHash2), math.MaxUint32, tmhash.Sum(randomPartHash))
 		const chainID = "mychain"
-		pubKey, _ := val.GetPubKey()
 		ev := &DuplicateVoteEvidence{
-			PubKey:           pubKey, // use secp because it's pubkey is longer
 			TotalVotingPower: math.MaxInt64,
 			ValidatorPower:   math.MaxInt64,
 			Timestamp:        timestamp,

@@ -9,8 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tendermint/tendermint/crypto"
-
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/merkle"
 	"github.com/tendermint/tendermint/crypto/tmhash"
@@ -38,14 +36,13 @@ func MaxEvidenceBytes(ev Evidence) int64 {
 // Evidence represents any provable malicious activity by a validator.
 // Verification logic for each evidence is part of the evidence module.
 type Evidence interface {
-	ABCI() []abci.Evidence    // forms individual evidence to be sent to the application
-	Bytes() []byte            // bytes which comprise the evidence
-	Hash() []byte             // hash of the evidence
-	Height() int64            // height of the infraction
-	String() string           // string format of the evidence
-	Time() time.Time          // time of the infraction
-	ValidateBasic() error     // basic consistency check
-	PublicKey() crypto.PubKey // public key of the equivocating validator
+	ABCI() []abci.Evidence // forms individual evidence to be sent to the application
+	Bytes() []byte         // bytes which comprise the evidence
+	Hash() []byte          // hash of the evidence
+	Height() int64         // height of the infraction
+	String() string        // string format of the evidence
+	Time() time.Time       // time of the infraction
+	ValidateBasic() error  // basic consistency check
 }
 
 //--------------------------------------------------------------------------------------
@@ -59,8 +56,6 @@ type DuplicateVoteEvidence struct {
 	TotalVotingPower int64
 	ValidatorPower   int64
 	Timestamp        time.Time
-
-	PubKey crypto.PubKey
 }
 
 var _ Evidence = &DuplicateVoteEvidence{}
@@ -116,10 +111,6 @@ func (dve *DuplicateVoteEvidence) Bytes() []byte {
 	}
 
 	return bz
-}
-
-func (dve *DuplicateVoteEvidence) PublicKey() crypto.PubKey {
-	return dve.PubKey
 }
 
 // Hash returns the hash of the evidence.
@@ -241,10 +232,6 @@ func (l *LightClientAttackEvidence) ABCI() []abci.Evidence {
 		}
 	}
 	return abciEv
-}
-
-func (l *LightClientAttackEvidence) PublicKey() crypto.PubKey {
-	panic("implement me")
 }
 
 // Bytes returns the proto-encoded evidence as a byte array
