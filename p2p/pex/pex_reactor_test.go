@@ -607,7 +607,7 @@ func testCreatePeerWithConfig(dir string, id int, pexConfig *ReactorConfig) *p2p
 
 // Creates a peer with the default config
 func testCreateDefaultPeer(dir string, id int) *p2p.Switch {
-	return testCreatePeerWithConfig(dir, id, &ReactorConfig{})
+	return testCreatePeerWithConfig(dir, id, &ReactorConfig{RecvBufSize: cfg.PexRecvBufSize})
 }
 
 // Creates a seed which knows about the provided addresses / source address pairs.
@@ -629,7 +629,7 @@ func testCreateSeed(dir string, id int, knownAddrs, srcAddrs []*p2p.NetAddress) 
 
 			sw.SetLogger(log.TestingLogger())
 
-			r := NewReactor(book, config.RecvAsync, &ReactorConfig{})
+			r := NewReactor(book, config.RecvAsync, &ReactorConfig{RecvBufSize: cfg.PexRecvBufSize})
 			r.SetLogger(log.TestingLogger())
 			sw.AddReactor("pex", r)
 			return sw
@@ -643,6 +643,7 @@ func testCreateSeed(dir string, id int, knownAddrs, srcAddrs []*p2p.NetAddress) 
 func testCreatePeerWithSeed(dir string, id int, seed *p2p.Switch) *p2p.Switch {
 	conf := &ReactorConfig{
 		Seeds: []string{seed.NetAddress().String()},
+		RecvBufSize: cfg.PexRecvBufSize,
 	}
 	return testCreatePeerWithConfig(dir, id, conf)
 }
