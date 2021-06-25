@@ -122,6 +122,11 @@ func sendTxs(ctx context.Context, cs *State) {
 
 // TestWALCrash uses crashing WAL to test we can recover from any WAL failure.
 func TestWALCrash(t *testing.T) {
+	// TODO The execution result of this test case often fail for indeterminate reasons.
+	// The reason for the fail is a timeout with an "Timed out waiting for new block" or "WAL did not panic for
+	// XX seconds" message, but the behavior that causes it is not reproducible. This issue also occurs in Tendermint,
+	// but seems to be somewhat more pronounced with some changes in Ostracon.
+	// See also: https://github.com/tendermint/tendermint/issues/1040
 	testCases := []struct {
 		name         string
 		initFn       func(dbm.DB, *State, context.Context)
