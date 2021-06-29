@@ -20,7 +20,7 @@ endif
 LIBSODIM_BUILD_TAGS='libsodium tendermint'
 LD_FLAGS = -X github.com/tendermint/tendermint/version.TMCoreSemVer=$(VERSION)
 BUILD_FLAGS = -mod=readonly -ldflags "$(LD_FLAGS)"
-HTTPS_GIT := https://github.com/tendermint/tendermint.git
+HTTPS_GIT := https://github.com/line/ostracon.git
 DOCKER_BUF := docker run -v $(shell pwd):/workspace --workdir /workspace bufbuild/buf
 CGO_ENABLED ?= 0
 
@@ -65,7 +65,7 @@ all: check build test install
 include tests.mk
 
 ###############################################################################
-###                                Build Tendermint                        ###
+###                                Build Ostracon                           ###
 ###############################################################################
 
 build: $(LIBSODIUM_TARGET)
@@ -81,7 +81,7 @@ install:
 ###############################################################################
 
 mock-gen:
-	go generate
+	go generate ./...
 .PHONY: mock
 
 ###############################################################################
@@ -94,7 +94,7 @@ proto-all: proto-gen proto-lint proto-check-breaking
 proto-gen:
 	@docker pull -q tendermintdev/docker-build-proto
 	@echo "Generating Protobuf files"
-	@docker run -v $(shell pwd):/workspace --workdir /workspace tendermintdev/docker-build-proto sh ./scripts/protocgen.sh
+	@docker run --rm -v $(shell pwd):/workspace --workdir /workspace tendermintdev/docker-build-proto sh ./scripts/protocgen.sh
 .PHONY: proto-gen
 
 proto-lint:
@@ -103,7 +103,7 @@ proto-lint:
 
 proto-format:
 	@echo "Formatting Protobuf files"
-	docker run -v $(shell pwd):/workspace --workdir /workspace tendermintdev/docker-build-proto find ./ -not -path "./third_party/*" -name *.proto -exec clang-format -i {} \;
+	docker run --rm -v $(shell pwd):/workspace --workdir /workspace tendermintdev/docker-build-proto find ./ -not -path "./third_party/*" -name *.proto -exec clang-format -i {} \;
 .PHONY: proto-format
 
 proto-check-breaking:
@@ -181,9 +181,9 @@ get_deps_bin_size:
 
 # generates certificates for TLS testing in remotedb and RPC server
 gen_certs: clean_certs
-	certstrap init --common-name "tendermint.com" --passphrase ""
+	certstrap init --common-name "blockchain.line.me" --passphrase ""
 	certstrap request-cert --common-name "server" -ip "127.0.0.1" --passphrase ""
-	certstrap sign "server" --CA "tendermint.com" --passphrase ""
+	certstrap sign "server" --CA "blockchain.line.me" --passphrase ""
 	mv out/server.crt rpc/jsonrpc/server/test.crt
 	mv out/server.key rpc/jsonrpc/server/test.key
 	rm -rf out
@@ -251,7 +251,7 @@ DOCKER_HOME = /go/src/github.com/tendermint/tendermint
 DOCKER_CMD = docker run --rm \
                         -v `pwd`:$(DOCKER_HOME) \
                         -w $(DOCKER_HOME)
-DOCKER_IMG = golang:1.14.6-alpine3.12
+DOCKER_IMG = golang:1.15-alpine
 BUILD_CMD = apk add --update --no-cache git make gcc libc-dev build-base curl jq file gmp-dev clang \
 	&& cd $(DOCKER_HOME) \
 	&& make build

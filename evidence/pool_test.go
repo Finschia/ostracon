@@ -19,14 +19,12 @@ import (
 	"github.com/tendermint/tendermint/evidence"
 	"github.com/tendermint/tendermint/evidence/mocks"
 	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/libs/rand"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 	sm "github.com/tendermint/tendermint/state"
 	smmocks "github.com/tendermint/tendermint/state/mocks"
 	"github.com/tendermint/tendermint/store"
 	"github.com/tendermint/tendermint/types"
-	tmtime "github.com/tendermint/tendermint/types/time"
 	"github.com/tendermint/tendermint/version"
 )
 
@@ -42,41 +40,6 @@ var (
 	defaultEvidenceTime           = time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
 	defaultEvidenceMaxBytes int64 = 1000
 )
-
-// TODO v0.34.8 apply: make sure that in a future commit this function will be merged with the one of the same name
-// defined at the back of this file.
-func initializeValidatorState___(valAddr []byte, height int64) dbm.DB {
-	stateDB := dbm.NewMemDB()
-	stateStore := sm.NewStore(stateDB)
-
-	// create validator set and state
-	vals := []*types.Validator{
-		{Address: valAddr, StakingPower: 1},
-	}
-	state := sm.State{
-		VoterParams:                 types.DefaultVoterParams(),
-		LastBlockHeight:             0,
-		LastBlockTime:               tmtime.Now(),
-		LastProofHash:               rand.Bytes(10),
-		Validators:                  types.NewValidatorSet(vals),
-		NextValidators:              types.NewValidatorSet(vals),
-		Voters:                      types.ToVoterAll(vals),
-		LastHeightValidatorsChanged: 1,
-		ConsensusParams: tmproto.ConsensusParams{
-			Evidence: tmproto.EvidenceParams{
-				MaxAgeNumBlocks: 10000,
-				MaxAgeDuration:  48 * time.Hour,
-			},
-		},
-	}
-	// save all states up to height
-	for i := int64(0); i < height; i++ {
-		state.LastBlockHeight = i
-		stateStore.Save(state)
-	}
-
-	return stateDB
-}
 
 func TestEvidencePoolBasic(t *testing.T) {
 	var (
@@ -129,9 +92,9 @@ func TestEvidencePoolBasic(t *testing.T) {
 	switch keyType := voterSet.Voters[0].PubKey.(type) {
 	case ed25519.PubKey:
 		evidenceBytes = 372
-	case bls.PubKeyBLS12:
+	case bls.PubKey:
 		evidenceBytes = 436
-	case composite.PubKeyComposite:
+	case composite.PubKey:
 		evidenceBytes = 436
 	default:
 		assert.Fail(t, fmt.Sprintf("unknown public key: %s", keyType))
@@ -298,7 +261,7 @@ func TestCheckEvidenceWithLightClientAttack(t *testing.T) {
 	trustedHeader.Time = defaultEvidenceTime
 
 	conflictingHeader := makeHeaderRandom(height)
-	conflictingHeader.VotersHash = conflictingVals.Hash()
+	conflictingHeader.VotersHash = conflictingVoters.Hash()
 
 	trustedHeader.VotersHash = conflictingHeader.VotersHash
 	trustedHeader.NextValidatorsHash = conflictingHeader.NextValidatorsHash

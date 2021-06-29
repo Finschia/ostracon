@@ -191,7 +191,7 @@ func TestVoterSet_VerifyCommitLightTrusting_ReturnsAsSoonAsTrustLevelOfVotingPow
 	assert.NoError(t, err)
 }
 
-func TestValidatorSet_VerifyCommitLightTrusting(t *testing.T) {
+func TestVoterSet_VerifyCommitLightTrusting(t *testing.T) {
 	var (
 		blockID                    = makeBlockIDRandom()
 		voteSet, _, voterSet, vals = randVoteSet(1, 1, tmproto.PrecommitType, 6, 1)
@@ -232,7 +232,7 @@ func TestValidatorSet_VerifyCommitLightTrusting(t *testing.T) {
 	}
 }
 
-func TestValidatorSet_VerifyCommitLightTrustingErrorsOnOverflow(t *testing.T) {
+func TestVoterSet_VerifyCommitLightTrustingErrorsOnOverflow(t *testing.T) {
 	var (
 		blockID                    = makeBlockIDRandom()
 		voteSet, _, voterSet, vals = randVoteSet(1, 1, tmproto.PrecommitType, 1, MaxTotalStakingPower)

@@ -84,9 +84,9 @@ func PrivKeyTypeByPubKey(pubKey crypto.PubKey) PrivKeyType {
 	switch pubKey.(type) {
 	case ed25519.PubKey:
 		return PrivKeyEd25519
-	case composite.PubKeyComposite:
+	case composite.PubKey:
 		return PrivKeyComposite
-	case bls.PubKeyBLS12:
+	case bls.PubKey:
 		return PrivKeyBLS
 	}
 	panic(fmt.Sprintf("unknown public key type: %v", pubKey))

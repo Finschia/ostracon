@@ -1430,7 +1430,6 @@ func (cs *State) tryFinalizeCommit(height int64) {
 		return
 	}
 
-	//	go
 	cs.finalizeCommit(height)
 }
 

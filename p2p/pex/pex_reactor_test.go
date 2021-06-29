@@ -642,7 +642,7 @@ func testCreateSeed(dir string, id int, knownAddrs, srcAddrs []*p2p.NetAddress) 
 // Starting and stopping the peer is left to the caller
 func testCreatePeerWithSeed(dir string, id int, seed *p2p.Switch) *p2p.Switch {
 	conf := &ReactorConfig{
-		Seeds: []string{seed.NetAddress().String()},
+		Seeds:       []string{seed.NetAddress().String()},
 		RecvBufSize: cfg.PexRecvBufSize,
 	}
 	return testCreatePeerWithConfig(dir, id, conf)

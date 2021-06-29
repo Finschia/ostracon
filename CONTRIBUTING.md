@@ -1,42 +1,28 @@
 # Contributing
 
-Thank you for your interest in contributing to Tendermint! Before
+Thank you for your interest in contributing to Ostracon! Before
 contributing, it may be helpful to understand the goal of the project. The goal
-of Tendermint is to develop a BFT consensus engine robust enough to
+of Ostracon is to develop a BFT consensus engine robust enough to
 support permissionless value-carrying networks. While all contributions are
 welcome, contributors should bear this goal in mind in deciding if they should
-target the main Tendermint project or a potential fork. When targeting the
-main Tendermint project, the following process leads to the best chance of
-landing changes in master.
+target the main Ostracon project or a potential fork. When targeting the
+main Ostracon project, the following process leads to the best chance of
+landing changes in `main`.
 
 All work on the code base should be motivated by a [Github
-Issue](https://github.com/tendermint/tendermint/issues).
-[Search](https://github.com/tendermint/tendermint/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22)
+Issue](https://github.com/line/ostracon/issues).
+[Search](https://github.com/line/ostracon/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22)
 is a good place start when looking for places to contribute. If you
 would like to work on an issue which already exists, please indicate so
 by leaving a comment.
 
 All new contributions should start with a [Github
-Issue](https://github.com/tendermint/tendermint/issues/new/choose). The
+Issue](https://github.com/line/ostracon/issues/new/choose). The
 issue helps capture the problem you're trying to solve and allows for
 early feedback. Once the issue is created the process can proceed in different
 directions depending on how well defined the problem and potential
 solution are. If the change is simple and well understood, maintainers
 will indicate their support with a heartfelt emoji.
-
-If the issue would benefit from thorough discussion, maintainers may
-request that you create a [Request For
-Comment](https://github.com/tendermint/spec/tree/master/rfc). Discussion
-at the RFC stage will build collective understanding of the dimensions
-of the problems and help structure conversations around trade-offs.
-
-When the problem is well understood but the solution leads to large structural
-changes to the code base, these changes should be proposed in the form of an
-[Architectural Decision Record (ADR)](./docs/architecture/). The ADR will help
-build consensus on an overall strategy to ensure the code base maintains
-coherence in the larger context. If you are not comfortable with writing an
-ADR, you can open a less-formal issue and the maintainers will help you turn it
-into an ADR.
 
 > How to pick a number for the ADR?
 
@@ -45,46 +31,44 @@ Find the largest existing ADR number and bump it by 1.
 When the problem as well as proposed solution are well understood,
 changes should start with a [draft
 pull request](https://github.blog/2019-02-14-introducing-draft-pull-requests/)
-against master. The draft signals that work is underway. When the work
+against `main`. The draft signals that work is underway. When the work
 is ready for feedback, hitting "Ready for Review" will signal to the
 maintainers to take a look.
 
-![Contributing flow](./docs/imgs/contributing.png)
-
 Each stage of the process is aimed at creating feedback cycles which align contributors and maintainers to make sure:
 
-- Contributors don’t waste their time implementing/proposing features which won’t land in master.
+- Contributors don’t waste their time implementing/proposing features which won’t land in `main`.
 - Maintainers have the necessary context in order to support and review contributions.
 
 ## Forking
 
 Please note that Go requires code to live under absolute paths, which complicates forking.
-While my fork lives at `https://github.com/ebuchman/tendermint`,
-the code should never exist at `$GOPATH/src/github.com/ebuchman/tendermint`.
+While my fork lives at `https://github.com/ebuchman/ostracon`,
+the code should never exist at `$GOPATH/src/github.com/ebuchman/ostracon`.
 Instead, we use `git remote` to add the fork as a new remote for the original repo,
-`$GOPATH/src/github.com/tendermint/tendermint`, and do all the work there.
+`$GOPATH/src/github.com/line/ostracon`, and do all the work there.
 
 For instance, to create a fork and work on a branch of it, I would:
 
 - Create the fork on GitHub, using the fork button.
-- Go to the original repo checked out locally (i.e. `$GOPATH/src/github.com/tendermint/tendermint`)
+- Go to the original repo checked out locally (i.e. `$GOPATH/src/github.com/line/ostracon`)
 - `git remote rename origin upstream`
 - `git remote add origin git@github.com:ebuchman/basecoin.git`
 
-Now `origin` refers to my fork and `upstream` refers to the Tendermint version.
-So I can `git push -u origin master` to update my fork, and make pull requests to tendermint from there.
+Now `origin` refers to my fork and `upstream` refers to the Ostracon version.
+So I can `git push -u origin main` to update my fork, and make pull requests to ostracon from there.
 Of course, replace `ebuchman` with your git handle.
 
 To pull in updates from the origin repo, run
 
 - `git fetch upstream`
-- `git rebase upstream/master` (or whatever branch you want)
+- `git rebase upstream/main` (or whatever branch you want)
 
 ## Dependencies
 
 We use [go modules](https://github.com/golang/go/wiki/Modules) to manage dependencies.
 
-That said, the master branch of every Tendermint repository should just build
+That said, the `main` branch of every Ostracon repository should just build
 with `go get`, which means they should be kept up-to-date with their
 dependencies so we can get away with telling people they can just `go get` our
 software.
@@ -100,11 +84,11 @@ up-to-date.
 When updating dependencies, please only update the particular dependencies you
 need. Instead of running `go get -u=patch`, which will update anything,
 specify exactly the dependency you want to update, eg.
-`GO111MODULE=on go get -u github.com/tendermint/go-amino@master`.
+`GO111MODULE=on go get -u github.com/line/tm-db@main`.
 
 ## Protobuf
 
-We use [Protocol Buffers](https://developers.google.com/protocol-buffers) along with [gogoproto](https://github.com/gogo/protobuf) to generate code for use across Tendermint Core.
+We use [Protocol Buffers](https://developers.google.com/protocol-buffers) along with [gogoproto](https://github.com/gogo/protobuf) to generate code for use across Ostracon Core.
 
 For linting and checking breaking changes, we use [buf](https://buf.build/). If you would like to run linting and check if the changes you have made are breaking then you will need to have docker running locally. Then the linting cmd will be `make proto-lint` and the breaking changes check will be `make proto-check-breaking`.
 
@@ -113,7 +97,7 @@ We use [Docker](https://www.docker.com/) to generate the protobuf stubs. To gene
 ## Vagrant
 
 If you are a [Vagrant](https://www.vagrantup.com/) user, you can get started
-hacking Tendermint with the commands below.
+hacking Ostracon with the commands below.
 
 NOTE: In case you installed Vagrant in 2017, you might need to run
 `vagrant box update` to upgrade to the latest `ubuntu/xenial64`.
@@ -160,30 +144,43 @@ removed from the header in RPC responses as well.
 
 ## Branching Model and Release
 
-The main development branch is master.
+User-facing repos should adhere to the trunk based development branching model: https://trunkbaseddevelopment.com/.
+
+Libraries need not follow the model strictly, but would be wise to.
+
+The SDK utilizes [semantic versioning](https://semver.org/).
+
+The main development branch is `main`.
 
 Every release is maintained in a release branch named `vX.Y.Z`.
 
-Pending minor releases have long-lived release candidate ("RC") branches. Minor release changes should be merged to these long-lived RC branches at the same time that the changes are merged to master.
+Pending minor releases have long-lived release candidate ("RC") branches. Minor release changes should be merged to these long-lived RC branches at the same time that the changes are merged to `main`.
 
 Note all pull requests should be squash merged except for merging to a release branch (named `vX.Y`). This keeps the commit history clean and makes it
 easy to reference the pull request where a change was introduced.
 
 ### Development Procedure
 
-The latest state of development is on `master`, which must never fail `make test`. _Never_ force push `master`, unless fixing broken git history (which we rarely do anyways).
+The latest state of development is on `main`, which must never fail `make test`. _Never_ force push `main`, unless fixing broken git history (which we rarely do anyways).
 
-To begin contributing, create a development branch either on `github.com/tendermint/tendermint`, or your fork (using `git remote add origin`).
+To begin contributing, create a development branch either on `github.com/line/ostracon`, or your fork (using `git remote add origin`).
 
-Make changes, and before submitting a pull request, update the `CHANGELOG_PENDING.md` to record your change. Also, run either `git rebase` or `git merge` on top of the latest `master`. (Since pull requests are squash-merged, either is fine!)
+Make changes, and before submitting a pull request, update the `CHANGELOG_PENDING.md` to record your change. Also, run either `git rebase` or `git merge` on top of the latest `main`. (Since pull requests are squash-merged, either is fine!)
 
 Update the `UPGRADING.md` if the change you've made is breaking and the
 instructions should be in place for a user on how he/she can upgrade it's
-software (ABCI application, Tendermint-based blockchain, light client, wallet).
+software (ABCI application, Ostracon-based blockchain, light client, wallet).
 
 Once you have submitted a pull request label the pull request with either `R:minor`, if the change should be included in the next minor release, or `R:major`, if the change is meant for a major release.
 
-Sometimes (often!) pull requests get out-of-date with master, as other people merge different pull requests to master. It is our convention that pull request authors are responsible for updating their branches with master. (This also means that you shouldn't update someone else's branch for them; even if it seems like you're doing them a favor, you may be interfering with their git flow in some way!)
+Sometimes (often!) pull requests get out-of-date with `main`, as other people merge different pull requests to `main`. It is our convention that pull request authors are responsible for updating their branches with `main`. (This also means that you shouldn't update someone else's branch for them; even if it seems like you're doing them a favor, you may be interfering with their git flow in some way!)
+
+#### PR Targeting
+
+Ensure that you base and target your PR on the `main` branch.
+
+All feature additions should be targeted against `main`. Bug fixes for an outstanding release candidate
+should be targeted against the release candidate branch.
 
 #### Merging Pull Requests
 
@@ -191,20 +188,20 @@ It is also our convention that authors merge their own pull requests, when possi
 
 Before merging a pull request:
 
-- Ensure pull branch is up-to-date with a recent `master` (GitHub won't let you merge without this!)
+- Ensure pull branch is up-to-date with a recent `main` (GitHub won't let you merge without this!)
 - Run `make test` to ensure that all tests pass
 - [Squash](https://stackoverflow.com/questions/5189560/squash-my-last-x-commits-together-using-git) merge pull request
 
 #### Pull Requests for Minor Releases
 
-If your change should be included in a minor release, please also open a PR against the long-lived minor release candidate branch (e.g., `rc1/v0.33.5`) _immediately after your change has been merged to master_.
+If your change should be included in a minor release, please also open a PR against the long-lived minor release candidate branch (e.g., `rc1/v0.33.5`) _immediately after your change has been merged to `main`_.
 
-You can do this by cherry-picking your commit off master:
+You can do this by cherry-picking your commit off `main`:
 
 ```sh
 $ git checkout rc1/v0.33.5
 $ git checkout -b {new branch name}
-$ git cherry-pick {commit SHA from master}
+$ git cherry-pick {commit SHA from `main`}
 # may need to fix conflicts, and then use git add and git cherry-pick --continue
 $ git push origin {new branch name}
 ```
@@ -213,7 +210,7 @@ After this, you can open a PR. Please note in the PR body if there were merge co
 
 ### Git Commit Style
 
-We follow the [Go style guide on commit messages](https://tip.golang.org/doc/contribute.html#commit_messages). Write concise commits that start with the package name and have a description that finishes the sentence "This change modifies Tendermint to...". For example,
+We follow the [Go style guide on commit messages](https://tip.golang.org/doc/contribute.html#commit_messages). Write concise commits that start with the package name and have a description that finishes the sentence "This change modifies Ostracon to...". For example,
 
 ```sh
 cmd/debug: execute p.Signal only when p is not nil
@@ -223,15 +220,15 @@ cmd/debug: execute p.Signal only when p is not nil
 Fixes #nnnn
 ```
 
-Each PR should have one commit once it lands on `master`; this can be accomplished by using the "squash and merge" button on Github. Be sure to edit your commit message, though!
+Each PR should have one commit once it lands on `main`; this can be accomplished by using the "squash and merge" button on Github. Be sure to edit your commit message, though!
 
 ### Release Procedure
 
 #### Major Release
 
-1. Start on `master`
+1. Start on `main`
 2. Run integration tests (see `test_integrations` in Makefile)
-3. Prepare release in a pull request against `master` (to be squash merged):
+3. Prepare release in a pull request against `main` (to be squash merged):
    - Copy `CHANGELOG_PENDING.md` to top of `CHANGELOG.md`; if this release
       had release candidates, squash all the RC updates into one
    - Run `python ./scripts/linkify_changelog.py CHANGELOG.md` to add links for
@@ -247,12 +244,12 @@ Each PR should have one commit once it lands on `master`; this can be accomplish
 4. Push a tag with prepared release details (this will trigger the release `vX.X.0`)
    - `git tag -a vX.X.x -m 'Release vX.X.x'`
    - `git push origin vX.X.x`
-5. Update the changelog.md file on master with the releases changelog.
+5. Update the changelog.md file on `main` with the releases changelog.
 6. Delete any RC branches and tags for this release (if applicable)
 
 #### Minor Release
 
-Minor releases are done differently from major releases: They are built off of long-lived release candidate branches, rather than from master.
+Minor releases are done differently from major releases: They are built off of long-lived release candidate branches, rather than from `main`.
 
 1. Checkout the long-lived release candidate branch: `git checkout rcX/vX.X.X`
 2. Run integration tests: `make test_integrations`
@@ -272,9 +269,9 @@ Minor releases are done differently from major releases: They are built off of l
 5. Once the release branch has been approved, make sure to pull it locally, then push a tag.
    - `git tag -a vX.X.x -m 'Release vX.X.x'`
    - `git push origin vX.X.x`
-6. Create a pull request back to master with the CHANGELOG & version changes from the latest release.
+6. Create a pull request back to `main` with the CHANGELOG & version changes from the latest release.
    - Remove all `R:minor` labels from the pull requests that were included in the release.
-   - Do not merge the release branch into master.
+   - Do not merge the release branch into `main`.
 7. Delete the former long lived release candidate branch once the release has been made.
 8. Create a new release candidate branch to be used for the next release.
 
@@ -299,12 +296,12 @@ the "standard" release naming conventions, with `-rcX` at the end (`vX.X.X-rcX`)
 have distinct names from the tags/release names.)
 
 1. Start from the RC branch (e.g. `RC0/v0.34.0`).
-2. Create the new tag, specifying a name and a tag "message":  
-   `git tag -a v0.34.0-rc0 -m "Release Candidate v0.34.0-rc0` 
-3. Push the tag back up to origin:  
-   `git push origin v0.34.0-rc4`  
-   Now the tag should be available on the repo's releases page. 
-4. Create a new release candidate branch for any possible updates to the RC:  
+2. Create the new tag, specifying a name and a tag "message":
+   `git tag -a v0.34.0-rc0 -m "Release Candidate v0.34.0-rc0`
+3. Push the tag back up to origin:
+   `git push origin v0.34.0-rc4`
+   Now the tag should be available on the repo's releases page.
+4. Create a new release candidate branch for any possible updates to the RC:
    `git checkout -b RC1/v0.34.0; git push origin RC1/v0.34.0`
 
 ## Testing
@@ -327,7 +324,7 @@ Run: `make test_integrations`
 
 ### End-to-end tests
 
-End-to-end tests are used to verify a fully integrated Tendermint network.
+End-to-end tests are used to verify a fully integrated Ostracon network.
 
 See [README](./test/e2e/README.md) for details.
 
@@ -360,10 +357,6 @@ tests using a combination of the [Apalache Model
 Checker](https://apalache.informal.systems/) and [tendermint-rs testgen
 util](https://github.com/informalsystems/tendermint-rs/tree/master/testgen).
 
-Now, I know there's a lot to take in. If you want to learn more, check out [
-this video](https://www.youtube.com/watch?v=aveoIMphzW8) by Andrey Kupriyanov
-& Igor Konnov.
-
 At the moment, we have model-based tests for the light client, located in the
 `./light/mbt` directory.
 
@@ -386,7 +379,7 @@ most probably (99.9%)*.
 
 [Jepsen](http://jepsen.io/) tests are used to verify the
 [linearizability](https://jepsen.io/consistency/models/linearizable) property
-of the Tendermint consensus. They are located in a separate repository
+of the Ostracon consensus. They are located in a separate repository
 -> <https://github.com/tendermint/jepsen>. Please refer to its README for more
 information.
 

@@ -268,7 +268,7 @@ func TestNewCommit(t *testing.T) {
 	assert.NotNil(t, commit.Signatures[3].Signature)
 	assert.True(t, pubKeys[2].VerifySignature(msgs[2], commit.Signatures[2].Signature))
 
-	blsPubKeys := []bls.PubKeyBLS12{
+	blsPubKeys := []bls.PubKey{
 		*GetSignatureKey(pubKeys[0]),
 		*GetSignatureKey(pubKeys[1]),
 		*GetSignatureKey(pubKeys[3]),

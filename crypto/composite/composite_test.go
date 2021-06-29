@@ -93,7 +93,7 @@ func TestPubKeyComposite_Address(t *testing.T) {
 	sign := bls.GenPrivKey()
 	vrf := ed25519.GenPrivKey()
 	sk := composite.NewPrivKeyComposite(sign, vrf)
-	pk := sk.PubKey().(composite.PubKeyComposite)
+	pk := sk.PubKey().(composite.PubKey)
 	// check the byte-size is the same
 	if len(pk.Address().Bytes()) != len(vrf.PubKey().Address().Bytes()) {
 		t.Errorf("The address length is not compatible")
@@ -104,7 +104,7 @@ func TestPubKeyComposite_Bytes(t *testing.T) {
 	sign := bls.GenPrivKey()
 	vrf := ed25519.GenPrivKey()
 	sk := composite.NewPrivKeyComposite(sign, vrf)
-	pk := sk.PubKey().(composite.PubKeyComposite)
+	pk := sk.PubKey().(composite.PubKey)
 	pk.Bytes()
 }
 
@@ -112,16 +112,16 @@ func TestPubKeyComposite_Equals(t *testing.T) {
 	sign := bls.GenPrivKey()
 	vrf := ed25519.GenPrivKey()
 	sk := composite.NewPrivKeyComposite(sign, vrf)
-	pk1 := sk.PubKey().(composite.PubKeyComposite)
+	pk1 := sk.PubKey().(composite.PubKey)
 	if !pk1.Equals(pk1) {
 		t.Errorf("Identical key is evaluated as different")
 	}
-	pk2 := sk.PubKey().(composite.PubKeyComposite)
+	pk2 := sk.PubKey().(composite.PubKey)
 	if !pk1.Equals(pk2) || !pk2.Equals(pk1) {
 		t.Errorf("The same keys are evaluated as different")
 	}
 	sk3 := composite.NewPrivKeyComposite(ed25519.GenPrivKey(), bls.GenPrivKey())
-	pk3 := sk3.PubKey().(composite.PubKeyComposite)
+	pk3 := sk3.PubKey().(composite.PubKey)
 	if pk1.Equals(pk3) || pk3.Equals(pk1) {
 		t.Errorf("The different keys are evaluated as the same")
 	}
@@ -134,7 +134,7 @@ func TestPubKeyComposite_Identity(t *testing.T) {
 	sign := bls.GenPrivKey()
 	vrf := ed25519.GenPrivKey()
 	sk := composite.NewPrivKeyComposite(sign, vrf)
-	pk := sk.PubKey().(composite.PubKeyComposite)
+	pk := sk.PubKey().(composite.PubKey)
 	pk.Identity()
 }
 
@@ -142,7 +142,7 @@ func TestPubKeyComposite_VerifyBytes(t *testing.T) {
 	sign := bls.GenPrivKey()
 	vrf := ed25519.GenPrivKey()
 	sk := composite.NewPrivKeyComposite(sign, vrf)
-	pk := sk.PubKey().(composite.PubKeyComposite)
+	pk := sk.PubKey().(composite.PubKey)
 	msg := []byte("hello, world")
 	s, err := sk.Sign(msg)
 	if err != nil {
@@ -160,7 +160,7 @@ func TestPubKeyComposite_VRFVerify(t *testing.T) {
 	sign := bls.GenPrivKey()
 	vrf := ed25519.GenPrivKey()
 	sk := composite.NewPrivKeyComposite(sign, vrf)
-	pk := sk.PubKey().(composite.PubKeyComposite)
+	pk := sk.PubKey().(composite.PubKey)
 	msg := []byte("hello, world")
 	proof, err := sk.VRFProve(msg)
 	if err != nil {
@@ -183,7 +183,7 @@ func TestEnvironmentalCompatibility(t *testing.T) {
 			composite.PrivKeyName,
 			bls.PrivKeyName, "FXBs3F3g3FGyDY8P8ipK8t6jwFgJR/jvUnYwiKLWnYQ=",
 			ed25519.PrivKeyName, "IzLJPy6KFiEGbV7SvJAIUBzYbjOpgtdKU+RFsGWYknuTZdNPe6iQzthTvKj4ZU1rkLqXg6ofcej1/89NXexfww==")
-		compositePrivKey := composite.PrivKeyComposite{}
+		compositePrivKey := composite.PrivKey{}
 		err := tmjson.Unmarshal([]byte(privKeyJson), &compositePrivKey)
 		if err != nil {
 			t.Fatal(err)
@@ -211,12 +211,12 @@ func TestEnvironmentalCompatibility(t *testing.T) {
 	t.Run("A reproduction test of issue #121", func(t *testing.T) {
 
 		// restore BLS private key from base64 string in priv_validator_key.json
-		blsPrivKey := bls.PrivKeyBLS12{}
+		blsPrivKey := bls.PrivKey{}
 		blsPrivKeyBytes, err := base64.StdEncoding.DecodeString("BpqODFajV6NnQhBfT8ERyvwyqPoZS664e1v35sfr76g=")
 		if err != nil {
 			t.Fatal(err)
-		} else if len(blsPrivKeyBytes) != bls.PrivKeyBLS12Size {
-			t.Fatalf("fixed private key size: %d != %d", len(blsPrivKeyBytes), bls.PrivKeyBLS12Size)
+		} else if len(blsPrivKeyBytes) != bls.PrivKeySize {
+			t.Fatalf("fixed private key size: %d != %d", len(blsPrivKeyBytes), bls.PrivKeySize)
 		}
 		copy(blsPrivKey[:], blsPrivKeyBytes)
 

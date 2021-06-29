@@ -166,7 +166,7 @@ func (voters *VoterSet) VerifyCommit(chainID string, blockID BlockID, height int
 
 	talliedVotingPower := int64(0)
 	votingPowerNeeded := voters.TotalVotingPower() * 2 / 3 // FIXME: 🏺 arithmetic overflow
-	blsPubKeys := make([]bls.PubKeyBLS12, 0, len(commit.Signatures))
+	blsPubKeys := make([]bls.PubKey, 0, len(commit.Signatures))
 	messages := make([][]byte, 0, len(commit.Signatures))
 	for idx, commitSig := range commit.Signatures {
 		if commitSig.Absent() {
@@ -233,7 +233,7 @@ func (voters *VoterSet) VerifyCommitLight(chainID string, blockID BlockID,
 	talliedVotingPower := int64(0)
 	talliedUnverifiedVotingPower := int64(0)
 	votingPowerNeeded := voters.TotalVotingPower() * 2 / 3 // FIXME: 🏺 arithmetic overflow
-	blsPubKeys := make([]bls.PubKeyBLS12, 0, len(commit.Signatures))
+	blsPubKeys := make([]bls.PubKey, 0, len(commit.Signatures))
 	messages := make([][]byte, 0, len(commit.Signatures))
 	for idx, commitSig := range commit.Signatures {
 		// No need to verify absent or nil votes.
@@ -302,7 +302,7 @@ func (voters *VoterSet) VerifyCommitLightTrusting(chainID string, commit *Commit
 	}
 	votingPowerNeeded := totalVotingPowerMulByNumerator / int64(trustLevel.Denominator)
 
-	blsPubKeys := make([]bls.PubKeyBLS12, 0, len(commit.Signatures))
+	blsPubKeys := make([]bls.PubKey, 0, len(commit.Signatures))
 	messages := make([][]byte, 0, len(commit.Signatures))
 	for idx, commitSig := range commit.Signatures {
 		// No need to verify absent or nil votes.
@@ -353,7 +353,7 @@ func (voters *VoterSet) VerifyCommitLightTrusting(chainID string, commit *Commit
 
 func verifySignatureOrCollectBlsPubKeysAndGetVotingPower(
 	idx int, commitSig CommitSig, val *Validator, voteSignBytes []byte,
-	blsPubKeys *[]bls.PubKeyBLS12, messages *[][]byte) (error, int64, int64) {
+	blsPubKeys *[]bls.PubKey, messages *[][]byte) (error, int64, int64) {
 	verifiedVotingPower := int64(0)
 	unverifiedVotingPower := int64(0)
 	if commitSig.Signature != nil {

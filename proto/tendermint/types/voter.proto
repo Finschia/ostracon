@@ -11,6 +11,6 @@ message VoterSet {
 }
 
 message VoterParams {
-  int32 VoterElectionThreshold          = 1;
-  int32 MaxTolerableByzantinePercentage = 2;
+  int32 voter_election_threshold           = 1;
+  int32 max_tolerable_byzantine_percentage = 2;
 }

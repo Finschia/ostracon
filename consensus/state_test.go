@@ -2103,32 +2103,6 @@ func votersPrivVals(voterSet *types.VoterSet, vssMap map[string]*validatorStub) 
 	return result
 }
 
-func createProposalBlockByOther(cs *State, other *validatorStub, round int32) (
-	block *types.Block, blockParts *types.PartSet) {
-	var commit *types.Commit
-	switch {
-	case cs.Height == 1:
-		commit = types.NewCommit(0, 0, types.BlockID{}, nil)
-	case cs.LastCommit.HasTwoThirdsMajority():
-		commit = cs.LastCommit.MakeCommit()
-	default:
-		return
-	}
-
-	pubKey, err := other.GetPubKey()
-	if err != nil {
-		return
-	}
-	proposerAddr := pubKey.Address()
-	message := cs.state.MakeHashMessage(round)
-
-	proof, err := other.GenerateVRFProof(message)
-	if err != nil {
-		return
-	}
-	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerAddr, round, proof)
-}
-
 func proposeBlock(t *testing.T, cs *State, round int32, vssMap map[string]*validatorStub) types.BlockID {
 	prop, propBlock := decideProposal(cs, vssMap[cs.Proposer.PubKey.Address().String()], cs.Height, round)
 	propBlockHash := propBlock.Hash()

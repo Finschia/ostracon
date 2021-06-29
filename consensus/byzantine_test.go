@@ -289,7 +289,7 @@ func TestByzantinePrevoteEquivocation(t *testing.T) {
 // and prevotes/precommits on both of them.
 // B sees a commit, A doesn't.
 // Heal partition and ensure A sees the commit
-func TestByzantine(t *testing.T) {
+func TestByzantineConflictingProposalsWithPartition(t *testing.T) {
 	N := 4
 	logger := consensusLogger().With("test", "byzantine")
 	app := newCounter

@@ -9,9 +9,6 @@ import (
 	"strings"
 	"testing"
 	"testing/quick"
-	"time"
-
-	tmtime "github.com/tendermint/tendermint/types/time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -712,64 +709,6 @@ func TestSafeSubClip(t *testing.T) {
 }
 
 //-------------------------------------------------------------------
-
-func TestValidatorSetVerifyCommit(t *testing.T) {
-	privKey := ed25519.GenPrivKey()
-	pubKey := privKey.PubKey()
-	v1 := NewValidator(pubKey, 1000)
-	vset := ToVoterAll([]*Validator{v1})
-
-	// good
-	var (
-		chainID = "mychainID"
-		blockID = makeBlockIDRandom()
-		height  = int64(5)
-	)
-	vote := &Vote{
-		ValidatorAddress: v1.Address,
-		ValidatorIndex:   0,
-		Height:           height,
-		Round:            0,
-		Timestamp:        tmtime.Now(),
-		Type:             tmproto.PrecommitType,
-		BlockID:          blockID,
-	}
-	sig, err := privKey.Sign(VoteSignBytes(chainID, vote.ToProto()))
-	assert.NoError(t, err)
-	vote.Signature = sig
-	commit := NewCommit(vote.Height, vote.Round, blockID, []CommitSig{vote.CommitSig()})
-
-	// bad
-	var (
-		badChainID = "notmychainID"
-		badBlockID = BlockID{Hash: []byte("goodbye")}
-		badHeight  = height + 1
-		badCommit  = NewCommit(badHeight, 0, blockID, []CommitSig{{BlockIDFlag: BlockIDFlagAbsent}})
-	)
-
-	// test some error cases
-	// TODO: test more cases!
-	cases := []struct {
-		chainID string
-		blockID BlockID
-		height  int64
-		commit  *Commit
-	}{
-		{badChainID, blockID, height, commit},
-		{chainID, badBlockID, height, commit},
-		{chainID, blockID, badHeight, commit},
-		{chainID, blockID, height, badCommit},
-	}
-
-	for i, c := range cases {
-		err := vset.VerifyCommit(c.chainID, c.blockID, c.height, c.commit)
-		assert.NotNil(t, err, i)
-	}
-
-	// test a good one
-	err = vset.VerifyCommit(chainID, blockID, height, commit)
-	assert.Nil(t, err)
-}
 
 func TestEmptySet(t *testing.T) {
 
@@ -1472,65 +1411,6 @@ func TestValSetUpdateOverflowRelated(t *testing.T) {
 			assert.Equal(t, tt.expectedVals, toTestValList(valSet.Validators))
 			verifyValidatorSet(t, valSet)
 		})
-	}
-}
-
-func TestVerifyCommitTrusting(t *testing.T) {
-	var (
-		blockID                                      = makeBlockIDRandom()
-		voteSet, _, originalVoterSet, privValidators = randVoteSet(1, 1, tmproto.PrecommitType, 6, 1)
-		commit, err                                  = MakeCommit(blockID, 1, 1, voteSet, privValidators, time.Now())
-		_, newVoterSet, _                            = RandVoterSet(2, 1)
-	)
-	require.NoError(t, err)
-
-	testCases := []struct {
-		// valSet *ValidatorSet
-		voterSet *VoterSet
-		err      bool
-	}{
-		// good
-		0: {
-			//valSet: originalValset,
-			voterSet: originalVoterSet,
-			err:      false,
-		},
-		// bad - no overlap between validator sets
-		1: {
-			voterSet: newVoterSet,
-			err:      true,
-		},
-		// good - first two are different but the rest of the same -> >1/3
-		2: {
-			//voterSet: WrapValidatorsToVoterSet(append(newValSet.Validators, originalValset.Validators...)),
-			voterSet: WrapValidatorsToVoterSet(append(newVoterSet.Voters, originalVoterSet.Voters...)),
-			err:      false,
-		},
-	}
-
-	for _, tc := range testCases {
-		err = tc.voterSet.VerifyCommitLightTrusting("test_chain_id", commit,
-			tmmath.Fraction{Numerator: 1, Denominator: 3})
-		if tc.err {
-			assert.Error(t, err)
-		} else {
-			assert.NoError(t, err)
-		}
-	}
-}
-
-func TestVerifyCommitTrustingErrorsOnOverflow(t *testing.T) {
-	var (
-		blockID                    = makeBlockIDRandom()
-		voteSet, _, voterSet, vals = randVoteSet(1, 1, tmproto.PrecommitType, 1, MaxTotalStakingPower)
-		commit, err                = MakeCommit(blockID, 1, 1, voteSet, vals, time.Now())
-	)
-	require.NoError(t, err)
-
-	err = voterSet.VerifyCommitLightTrusting("test_chain_id", commit,
-		tmmath.Fraction{Numerator: 25, Denominator: 55})
-	if assert.Error(t, err) {
-		assert.Contains(t, err.Error(), "int64 overflow")
 	}
 }
 

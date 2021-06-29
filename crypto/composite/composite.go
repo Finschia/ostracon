@@ -13,7 +13,7 @@ import (
 	"github.com/tendermint/tendermint/crypto/tmhash"
 )
 
-// PubKeyComposite and PrivKeyComposite are intended to allow public key algorithms to be selected for each function.
+// composite.PubKey and composite.PrivKey are intended to allow public key algorithms to be selected for each function.
 
 const (
 	PubKeyName  = "tendermint/PubKeyComposite"
@@ -26,90 +26,90 @@ const (
 var MaxSignatureSize = math.MaxInt(ed25519.SignatureSize, bls.SignatureSize)
 
 func init() {
-	tmjson.RegisterType(PubKeyComposite{}, PubKeyName)
-	tmjson.RegisterType(PrivKeyComposite{}, PrivKeyName)
+	tmjson.RegisterType(PubKey{}, PubKeyName)
+	tmjson.RegisterType(PrivKey{}, PrivKeyName)
 }
 
-type PubKeyComposite struct {
+type PubKey struct {
 	SignKey crypto.PubKey `json:"sign"`
 	VrfKey  crypto.PubKey `json:"vrf"`
 }
 
-func (pk *PubKeyComposite) Identity() crypto.PubKey {
+func (pk *PubKey) Identity() crypto.PubKey {
 	return pk.VrfKey
 }
 
-func (pk PubKeyComposite) Address() crypto.Address {
+func (pk PubKey) Address() crypto.Address {
 	return crypto.Address(tmhash.SumTruncated(pk.Bytes()))
 }
 
-func (pk PubKeyComposite) Bytes() []byte {
+func (pk PubKey) Bytes() []byte {
 	msg := bytes.NewBuffer(pk.SignKey.Bytes())
 	msg.Write(pk.VrfKey.Bytes())
 	return msg.Bytes()
 }
 
-func (pk PubKeyComposite) VerifySignature(msg []byte, sig []byte) bool {
+func (pk PubKey) VerifySignature(msg []byte, sig []byte) bool {
 	return pk.SignKey.VerifySignature(msg, sig)
 }
 
 // VRFVerify verifies that the given VRF Proof was generated from the seed by the owner of this public key.
-func (pk PubKeyComposite) VRFVerify(proof crypto.Proof, seed []byte) (crypto.Output, error) {
+func (pk PubKey) VRFVerify(proof crypto.Proof, seed []byte) (crypto.Output, error) {
 	return pk.VrfKey.VRFVerify(proof, seed)
 }
 
-func (pk PubKeyComposite) Equals(key crypto.PubKey) bool {
-	other, ok := key.(PubKeyComposite)
+func (pk PubKey) Equals(key crypto.PubKey) bool {
+	other, ok := key.(PubKey)
 	return ok && pk.SignKey.Equals(other.SignKey) && pk.VrfKey.Equals(other.VrfKey)
 }
 
-func (pk PubKeyComposite) Type() string {
+func (pk PubKey) Type() string {
 	return fmt.Sprintf("%s(%s,%s)", KeyType, pk.SignKey.Type(), pk.VrfKey.Type())
 }
 
-type PrivKeyComposite struct {
+type PrivKey struct {
 	SignKey crypto.PrivKey `json:"sign"`
 	VrfKey  crypto.PrivKey `json:"vrf"`
 }
 
-func GenPrivKey() *PrivKeyComposite {
+func GenPrivKey() *PrivKey {
 	return NewPrivKeyComposite(bls.GenPrivKey(), ed25519.GenPrivKey())
 }
 
-func NewPrivKeyComposite(sign crypto.PrivKey, vrf crypto.PrivKey) *PrivKeyComposite {
-	return &PrivKeyComposite{SignKey: sign, VrfKey: vrf}
+func NewPrivKeyComposite(sign crypto.PrivKey, vrf crypto.PrivKey) *PrivKey {
+	return &PrivKey{SignKey: sign, VrfKey: vrf}
 }
 
-func (sk PrivKeyComposite) Identity() crypto.PrivKey {
+func (sk PrivKey) Identity() crypto.PrivKey {
 	return sk.VrfKey
 }
 
-func (sk PrivKeyComposite) Bytes() []byte {
+func (sk PrivKey) Bytes() []byte {
 	return sk.Identity().Bytes()
 }
 
-func (sk PrivKeyComposite) Sign(msg []byte) ([]byte, error) {
+func (sk PrivKey) Sign(msg []byte) ([]byte, error) {
 	return sk.SignKey.Sign(msg)
 }
 
 // VRFProve generates a VRF Proof for given seed to generate a verifiable random.
-func (sk PrivKeyComposite) VRFProve(seed []byte) (crypto.Proof, error) {
+func (sk PrivKey) VRFProve(seed []byte) (crypto.Proof, error) {
 	return sk.VrfKey.VRFProve(seed)
 }
 
-func (sk PrivKeyComposite) PubKey() crypto.PubKey {
-	return PubKeyComposite{sk.SignKey.PubKey(), sk.VrfKey.PubKey()}
+func (sk PrivKey) PubKey() crypto.PubKey {
+	return PubKey{sk.SignKey.PubKey(), sk.VrfKey.PubKey()}
 }
 
-func (sk PrivKeyComposite) Equals(key crypto.PrivKey) bool {
+func (sk PrivKey) Equals(key crypto.PrivKey) bool {
 	switch other := key.(type) {
-	case *PrivKeyComposite:
+	case *PrivKey:
 		return sk.SignKey.Equals(other.SignKey) && sk.VrfKey.Equals(other.VrfKey)
 	default:
 		return false
 	}
 }
 
-func (sk PrivKeyComposite) Type() string {
+func (sk PrivKey) Type() string {
 	return fmt.Sprintf("%s(%s,%s)", KeyType, sk.SignKey.Type(), sk.VrfKey.Type())
 }

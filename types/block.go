@@ -865,7 +865,7 @@ func (commit *Commit) MaxCommitBytes() int64 {
 // Inverse of VoteSet.MakeCommit().
 func CommitToVoteSet(chainID string, commit *Commit, voters *VoterSet) *VoteSet {
 	voteSet := NewVoteSet(chainID, commit.Height, commit.Round, tmproto.PrecommitType, voters)
-	blsPubKeys := make([]bls.PubKeyBLS12, 0, len(commit.Signatures))
+	blsPubKeys := make([]bls.PubKey, 0, len(commit.Signatures))
 	msgs := make([][]byte, 0, len(commit.Signatures))
 	for idx, commitSig := range commit.Signatures {
 		if commitSig.Absent() {
@@ -888,7 +888,7 @@ func CommitToVoteSet(chainID string, commit *Commit, voters *VoterSet) *VoteSet 
 				panic(fmt.Sprintf("Cannot find voter %d in voterSet of size %d", vote.ValidatorIndex, voters.Size()))
 			}
 			msg := VoteSignBytes(chainID, vote.ToProto())
-			blsPubKeys = append(blsPubKeys, voter.PubKey.(composite.PubKeyComposite).SignKey.(bls.PubKeyBLS12))
+			blsPubKeys = append(blsPubKeys, voter.PubKey.(composite.PubKey).SignKey.(bls.PubKey))
 			msgs = append(msgs, msg)
 		}
 	}
@@ -1122,7 +1122,7 @@ func (commit *Commit) ToProto() *tmproto.Commit {
 
 // VerifySignatures validates the signatures in this commit.
 func (commit *Commit) VerifySignatures(chainID string, vals []*Validator) error {
-	blsPubKeys := make([]bls.PubKeyBLS12, 0, len(commit.Signatures))
+	blsPubKeys := make([]bls.PubKey, 0, len(commit.Signatures))
 	messages := make([][]byte, 0, len(commit.Signatures))
 	for idx, commitSig := range commit.Signatures {
 		if commitSig.Absent() {
@@ -1457,15 +1457,15 @@ func BlockIDFromProto(bID *tmproto.BlockID) (*BlockID, error) {
 
 // GetSignatureKey is a utility function for referencing a specified public key as a BLS key for signature.
 // If the key is not BLS, return nil
-func GetSignatureKey(pubKey crypto.PubKey) *bls.PubKeyBLS12 {
+func GetSignatureKey(pubKey crypto.PubKey) *bls.PubKey {
 	for {
-		if compPubKey, ok := pubKey.(composite.PubKeyComposite); ok {
+		if compPubKey, ok := pubKey.(composite.PubKey); ok {
 			pubKey = compPubKey.SignKey
 		} else {
 			break
 		}
 	}
-	if blsPubKey, ok := pubKey.(bls.PubKeyBLS12); ok {
+	if blsPubKey, ok := pubKey.(bls.PubKey); ok {
 		return &blsPubKey
 	}
 	return nil

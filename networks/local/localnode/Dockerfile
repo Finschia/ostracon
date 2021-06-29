@@ -1,5 +1,4 @@
-FROM golang:1.14-alpine
-MAINTAINER Greg Szabo <greg@tendermint.com>
+FROM golang:1.15-alpine
 
 RUN apk update && \
     apk upgrade && \

@@ -22,7 +22,7 @@ func init() {
 func PubKeyToProto(k crypto.PubKey) (pc.PublicKey, error) {
 	var kp pc.PublicKey
 	switch k := k.(type) {
-	case composite.PubKeyComposite:
+	case composite.PubKey:
 		sign, err := PubKeyToProto(k.SignKey)
 		if err != nil {
 			return kp, err
@@ -39,7 +39,7 @@ func PubKeyToProto(k crypto.PubKey) (pc.PublicKey, error) {
 				},
 			},
 		}
-	case bls.PubKeyBLS12:
+	case bls.PubKey:
 		kp = pc.PublicKey{
 			Sum: &pc.PublicKey_Bls12{
 				Bls12: k[:],
@@ -67,7 +67,7 @@ func PubKeyToProto(k crypto.PubKey) (pc.PublicKey, error) {
 func PubKeyFromProto(k *pc.PublicKey) (crypto.PubKey, error) {
 	switch k := k.Sum.(type) {
 	case *pc.PublicKey_Composite:
-		var pk composite.PubKeyComposite
+		var pk composite.PubKey
 		sign, err := PubKeyFromProto(k.Composite.SignKey)
 		if err != nil {
 			return pk, err
@@ -76,7 +76,7 @@ func PubKeyFromProto(k *pc.PublicKey) (crypto.PubKey, error) {
 		if err != nil {
 			return pk, err
 		}
-		pk = composite.PubKeyComposite{
+		pk = composite.PubKey{
 			SignKey: sign,
 			VrfKey:  vrf,
 		}
@@ -90,11 +90,11 @@ func PubKeyFromProto(k *pc.PublicKey) (crypto.PubKey, error) {
 		copy(pk, k.Ed25519)
 		return pk, nil
 	case *pc.PublicKey_Bls12:
-		if len(k.Bls12) != bls.PubKeyBLS12Size {
+		if len(k.Bls12) != bls.PubKeySize {
 			return nil, fmt.Errorf("invalid size for PubKeyBls12. Got %d, expected %d",
 				len(k.Bls12), ed25519.PubKeySize)
 		}
-		pk := bls.PubKeyBLS12{}
+		pk := bls.PubKey{}
 		copy(pk[:], k.Bls12)
 		return pk, nil
 	case *pc.PublicKey_Secp256K1:

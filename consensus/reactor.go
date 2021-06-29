@@ -77,9 +77,6 @@ func (conR *Reactor) OnStart() error {
 	// call BaseReactor's OnStart()
 	conR.BaseReactor.OnStart()
 
-	// call BaseReactor's OnStart()
-	conR.BaseReactor.OnStart()
-
 	// start routine that computes peer statistics for evaluating peer quality
 	go conR.peerStatsRoutine()
 

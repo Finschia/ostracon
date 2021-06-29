@@ -29,9 +29,9 @@ func TestBasicSignatureFunctions(t *testing.T) {
 		t.Fatalf("Private key deserialization failed.")
 	}
 
-	if len(privateKey.Serialize()) != bls.PrivKeyBLS12Size {
+	if len(privateKey.Serialize()) != bls.PrivKeySize {
 		t.Fatalf("The constant size %d of the private key is different from the actual size %d.",
-			bls.PrivKeyBLS12Size, len(privateKey.Serialize()))
+			bls.PrivKeySize, len(privateKey.Serialize()))
 	}
 
 	duplicatedPublicKey := b.PublicKey{}
@@ -40,9 +40,9 @@ func TestBasicSignatureFunctions(t *testing.T) {
 		t.Fatalf("Public key deserialization failed.")
 	}
 
-	if len(publicKey.Serialize()) != bls.PubKeyBLS12Size {
+	if len(publicKey.Serialize()) != bls.PubKeySize {
 		t.Fatalf("The constant size %d of the public key is different from the actual size %d.",
-			bls.PubKeyBLS12Size, len(publicKey.Serialize()))
+			bls.PubKeySize, len(publicKey.Serialize()))
 	}
 
 	duplicatedSignature := func(sig *b.Sign) *b.Sign {
@@ -174,8 +174,8 @@ func TestSignatureAggregationAndVerify(t *testing.T) {
 	}
 }
 
-func generatePubKeysAndSigns(t *testing.T, size int) ([]bls.PubKeyBLS12, [][]byte, [][]byte) {
-	pubKeys := make([]bls.PubKeyBLS12, size)
+func generatePubKeysAndSigns(t *testing.T, size int) ([]bls.PubKey, [][]byte, [][]byte) {
+	pubKeys := make([]bls.PubKey, size)
 	msgs := make([][]byte, len(pubKeys))
 	sigs := make([][]byte, len(pubKeys))
 	for i := 0; i < len(pubKeys); i++ {
@@ -194,8 +194,8 @@ func generatePubKeysAndSigns(t *testing.T, size int) ([]bls.PubKeyBLS12, [][]byt
 	return pubKeys, msgs, sigs
 }
 
-func blsPublicKey(t *testing.T, pubKey crypto.PubKey) bls.PubKeyBLS12 {
-	blsPubKey, ok := pubKey.(bls.PubKeyBLS12)
+func blsPublicKey(t *testing.T, pubKey crypto.PubKey) bls.PubKey {
+	blsPubKey, ok := pubKey.(bls.PubKey)
 	if !ok {
 		var keyType string
 		if t := reflect.TypeOf(pubKey); t.Kind() == reflect.Ptr {
@@ -240,7 +240,7 @@ func TestAggregatedSignature(t *testing.T) {
 
 	// validate with the public keys and messages pair in random order
 	t.Run("Doesn't Depend on the Order of PublicKey-Message Pairs", func(t *testing.T) {
-		shuffledPubKeys := make([]bls.PubKeyBLS12, len(pubKeys))
+		shuffledPubKeys := make([]bls.PubKey, len(pubKeys))
 		shuffledMsgs := make([][]byte, len(msgs))
 		copy(shuffledPubKeys, pubKeys)
 		copy(shuffledMsgs, msgs)
@@ -256,7 +256,7 @@ func TestAggregatedSignature(t *testing.T) {
 
 	// validate with the public keys in random order
 	t.Run("Incorrect Public Key Order", func(t *testing.T) {
-		shuffledPubKeys := make([]bls.PubKeyBLS12, len(pubKeys))
+		shuffledPubKeys := make([]bls.PubKey, len(pubKeys))
 		copy(shuffledPubKeys, pubKeys)
 		rand.Seed(time.Now().UnixNano())
 		rand.Shuffle(len(shuffledPubKeys), func(i, j int) {
@@ -282,8 +282,8 @@ func TestAggregatedSignature(t *testing.T) {
 
 	// replace one public key with another and detect
 	t.Run("Replace One Public Key", func(t *testing.T) {
-		pubKey, _ := bls.GenPrivKey().PubKey().(bls.PubKeyBLS12)
-		replacedPubKeys := make([]bls.PubKeyBLS12, len(pubKeys))
+		pubKey, _ := bls.GenPrivKey().PubKey().(bls.PubKey)
+		replacedPubKeys := make([]bls.PubKey, len(pubKeys))
 		copy(replacedPubKeys, pubKeys)
 		replacedPubKeys[0] = pubKey
 		if err := bls.VerifyAggregatedSignature(aggrSig, replacedPubKeys, msgs); err == nil {
@@ -310,7 +310,7 @@ func TestAggregatedSignature(t *testing.T) {
 		sig, err := privKey.Sign(msg)
 		assert.Nilf(t, err, "%s", err)
 		newAggrSig, _ := aggregateSignatures(aggrSig, [][]byte{sig})
-		newPubKeys := make([]bls.PubKeyBLS12, len(pubKeys))
+		newPubKeys := make([]bls.PubKey, len(pubKeys))
 		copy(newPubKeys, pubKeys)
 		newPubKeys = append(newPubKeys, blsPublicKey(t, pubKey))
 		newMsgs := make([][]byte, len(msgs))

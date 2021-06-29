@@ -25,6 +25,7 @@ Available endpoints:
 /health
 /unconfirmed_txs
 /unsafe_flush_mempool
+/validators
 /voters
 
 Endpoints that require arguments:

@@ -14,20 +14,20 @@ import (
 	"github.com/tendermint/tendermint/crypto/tmhash"
 )
 
-var _ crypto.PrivKey = PrivKeyBLS12{}
+var _ crypto.PrivKey = PrivKey{}
 
 const (
-	PrivKeyName      = "tendermint/PrivKeyBLS12"
-	PubKeyName       = "tendermint/PubKeyBLS12"
-	PrivKeyBLS12Size = 32
-	PubKeyBLS12Size  = 48
-	SignatureSize    = 96
-	KeyType          = "bls12-381"
+	PrivKeyName   = "tendermint/PrivKeyBLS12"
+	PubKeyName    = "tendermint/PubKeyBLS12"
+	PrivKeySize   = 32
+	PubKeySize    = 48
+	SignatureSize = 96
+	KeyType       = "bls12-381"
 )
 
 func init() {
-	tmjson.RegisterType(PubKeyBLS12{}, PubKeyName)
-	tmjson.RegisterType(PrivKeyBLS12{}, PrivKeyName)
+	tmjson.RegisterType(PubKey{}, PubKeyName)
+	tmjson.RegisterType(PrivKey{}, PrivKeyName)
 
 	err := bls.Init(bls.BLS12_381)
 	if err != nil {
@@ -39,8 +39,8 @@ func init() {
 	}
 }
 
-// PrivKeyBLS12 implements crypto.PrivKey.
-type PrivKeyBLS12 [PrivKeyBLS12Size]byte
+// PrivKey implements crypto.PrivKey.
+type PrivKey [PrivKeySize]byte
 
 // AddSignature adds a BLS signature to the init. When the init is nil, then a new aggregate signature is built
 // from specified signature.
@@ -73,7 +73,7 @@ func AddSignature(init []byte, signature []byte) (aggrSign []byte, err error) {
 	return
 }
 
-func VerifyAggregatedSignature(aggregatedSignature []byte, pubKeys []PubKeyBLS12, msgs [][]byte) error {
+func VerifyAggregatedSignature(aggregatedSignature []byte, pubKeys []PubKey, msgs [][]byte) error {
 	if len(pubKeys) != len(msgs) {
 		return fmt.Errorf("the number of public keys %d doesn't match the one of messages %d",
 			len(pubKeys), len(msgs))
@@ -108,25 +108,25 @@ func VerifyAggregatedSignature(aggregatedSignature []byte, pubKeys []PubKeyBLS12
 }
 
 // GenPrivKey generates a new BLS12-381 private key.
-func GenPrivKey() PrivKeyBLS12 {
+func GenPrivKey() PrivKey {
 	sigKey := bls.SecretKey{}
 	sigKey.SetByCSPRNG()
-	sigKeyBinary := PrivKeyBLS12{}
+	sigKeyBinary := PrivKey{}
 	binary := sigKey.Serialize()
-	if len(binary) != PrivKeyBLS12Size {
-		panic(fmt.Sprintf("unexpected BLS private key size: %d != %d", len(binary), PrivKeyBLS12Size))
+	if len(binary) != PrivKeySize {
+		panic(fmt.Sprintf("unexpected BLS private key size: %d != %d", len(binary), PrivKeySize))
 	}
 	copy(sigKeyBinary[:], binary)
 	return sigKeyBinary
 }
 
 // Bytes marshals the privkey using amino encoding.
-func (privKey PrivKeyBLS12) Bytes() []byte {
+func (privKey PrivKey) Bytes() []byte {
 	return privKey[:]
 }
 
 // Sign produces a signature on the provided message.
-func (privKey PrivKeyBLS12) Sign(msg []byte) ([]byte, error) {
+func (privKey PrivKey) Sign(msg []byte) ([]byte, error) {
 	if msg == nil {
 		panic(fmt.Sprintf("Nil specified as the message"))
 	}
@@ -141,22 +141,22 @@ func (privKey PrivKeyBLS12) Sign(msg []byte) ([]byte, error) {
 }
 
 // VRFProve is not supported in BLS12.
-func (privKey PrivKeyBLS12) VRFProve(seed []byte) (crypto.Proof, error) {
+func (privKey PrivKey) VRFProve(seed []byte) (crypto.Proof, error) {
 	return nil, fmt.Errorf("VRF prove is not supported by the BLS12")
 }
 
 // PubKey gets the corresponding public key from the private key.
-func (privKey PrivKeyBLS12) PubKey() crypto.PubKey {
+func (privKey PrivKey) PubKey() crypto.PubKey {
 	blsKey := bls.SecretKey{}
 	err := blsKey.Deserialize(privKey[:])
 	if err != nil {
 		panic(fmt.Sprintf("Not a BLS12-381 private key: %X", privKey[:]))
 	}
 	pubKey := blsKey.GetPublicKey()
-	pubKeyBinary := PubKeyBLS12{}
+	pubKeyBinary := PubKey{}
 	binary := pubKey.Serialize()
-	if len(binary) != PubKeyBLS12Size {
-		panic(fmt.Sprintf("unexpected BLS public key size: %d != %d", len(binary), PubKeyBLS12Size))
+	if len(binary) != PubKeySize {
+		panic(fmt.Sprintf("unexpected BLS public key size: %d != %d", len(binary), PubKeySize))
 	}
 	copy(pubKeyBinary[:], binary)
 	return pubKeyBinary
@@ -164,34 +164,34 @@ func (privKey PrivKeyBLS12) PubKey() crypto.PubKey {
 
 // Equals - you probably don't need to use this.
 // Runs in constant time based on length of the keys.
-func (privKey PrivKeyBLS12) Equals(other crypto.PrivKey) bool {
-	if otherEd, ok := other.(PrivKeyBLS12); ok {
+func (privKey PrivKey) Equals(other crypto.PrivKey) bool {
+	if otherEd, ok := other.(PrivKey); ok {
 		return subtle.ConstantTimeCompare(privKey[:], otherEd[:]) == 1
 	}
 	return false
 }
 
 // Type returns information to identify the type of this key.
-func (privKey PrivKeyBLS12) Type() string {
+func (privKey PrivKey) Type() string {
 	return KeyType
 }
 
-var _ crypto.PubKey = PubKeyBLS12{}
+var _ crypto.PubKey = PubKey{}
 
-// PubKeyBLS12 implements crypto.PubKey for the BLS12-381 signature scheme.
-type PubKeyBLS12 [PubKeyBLS12Size]byte
+// PubKey implements crypto.PubKey for the BLS12-381 signature scheme.
+type PubKey [PubKeySize]byte
 
 // Address is the SHA256-20 of the raw pubkey bytes.
-func (pubKey PubKeyBLS12) Address() crypto.Address {
+func (pubKey PubKey) Address() crypto.Address {
 	return tmhash.SumTruncated(pubKey[:])
 }
 
 // Bytes marshals the PubKey using amino encoding.
-func (pubKey PubKeyBLS12) Bytes() []byte {
+func (pubKey PubKey) Bytes() []byte {
 	return pubKey[:]
 }
 
-func (pubKey PubKeyBLS12) VerifySignature(msg []byte, sig []byte) bool {
+func (pubKey PubKey) VerifySignature(msg []byte, sig []byte) bool {
 	// make sure we use the same algorithm to sign
 	if len(sig) != SignatureSize {
 		return false
@@ -212,23 +212,23 @@ func (pubKey PubKeyBLS12) VerifySignature(msg []byte, sig []byte) bool {
 }
 
 // VRFVerify is not supported in BLS12.
-func (pubKey PubKeyBLS12) VRFVerify(proof crypto.Proof, seed []byte) (crypto.Output, error) {
+func (pubKey PubKey) VRFVerify(proof crypto.Proof, seed []byte) (crypto.Output, error) {
 	return nil, fmt.Errorf("VRF verify is not supported by the BLS12")
 }
 
-func (pubKey PubKeyBLS12) String() string {
-	return fmt.Sprintf("PubKeyBLS12{%X}", pubKey[:])
+func (pubKey PubKey) String() string {
+	return fmt.Sprintf("PubKey{%X}", pubKey[:])
 }
 
 // nolint: golint
-func (pubKey PubKeyBLS12) Equals(other crypto.PubKey) bool {
-	if otherEd, ok := other.(PubKeyBLS12); ok {
+func (pubKey PubKey) Equals(other crypto.PubKey) bool {
+	if otherEd, ok := other.(PubKey); ok {
 		return bytes.Equal(pubKey[:], otherEd[:])
 	}
 	return false
 }
 
 // Type returns information to identify the type of this key.
-func (pubKey PubKeyBLS12) Type() string {
+func (pubKey PubKey) Type() string {
 	return KeyType
 }

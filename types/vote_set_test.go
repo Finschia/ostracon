@@ -598,9 +598,9 @@ func TestVoteSet_MakeCommit(t *testing.T) {
 			}
 			if _, ok := privKeys[idx].(ed25519.PrivKey); ok {
 				assert.NotNil(t, commit.Signatures[i].Signature)
-			} else if _, ok := privKeys[idx].(bls.PrivKeyBLS12); ok {
+			} else if _, ok := privKeys[idx].(bls.PrivKey); ok {
 				assert.Nil(t, commit.Signatures[i].Signature)
-			} else if _, ok := privKeys[idx].(composite.PrivKeyComposite); ok {
+			} else if _, ok := privKeys[idx].(composite.PrivKey); ok {
 				assert.Nil(t, commit.Signatures[i].Signature)
 			}
 		}
