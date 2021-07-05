@@ -2,8 +2,8 @@ FROM golang:1.15-alpine
 
 RUN apk update && \
     apk upgrade && \
-    apk add --update --no-cache git make gcc libc-dev build-base curl jq file \
-                                gmp-dev clang
+    apk add --no-cache git make gcc libc-dev build-base curl jq bash file gmp-dev clang
+
 VOLUME [ "/tendermint" ]
 WORKDIR /tendermint
 EXPOSE 26656 26657

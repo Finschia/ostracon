@@ -9,40 +9,16 @@ Ostracon is forked from Tendermint Core at 2021-03-15.
 **Warnings**: Initial development is in progress, but there has not yet been a stable.
 
 # Quick Start
-## Docker
-**Build Docker Image**
-Build the linux binary in ./build
- ```sh
- make build-linux
- ```
-(optionally) Build ostracon/localnode image
- ```sh
- make build-docker-localnode
- ```
 
-**Run a testnet**
-To start a 4 node testnet run
- ```sh
- make localnet-start
- ```
-
-Before running it, don't forget to cleanup the old files
- ```sh
- rm -rf ./build/node*
- ```
-
-**visit with your browser**
-* Node: http://localhost:26657/
-
-## Local
+## Local Standalone
 **Build**
- ```
+ ```sh
  make build     # go help build
  make install   # go help install
  ```
 
 **Run**
- ```
+ ```sh
  ostracon init
  ostracon node --proxy_app=kvstore                # Run a node
  ```
@@ -53,5 +29,50 @@ Before running it, don't forget to cleanup the old files:
  rm -rf ~/.ostracon
  ```
 
-**visit with your browser**
+**Visit with your browser**
+* Node: http://localhost:26657/
+
+## Localnet(4 nodes) with Docker
+**Build Docker Image**
+
+(optionally) Build the linux binary for localnode in ./build
+ ```sh
+ make build-localnode
+ ```
+(optionally) Build ostracon/localnode image
+ ```sh
+ make build-localnode-docker
+ ```
+
+**Run localnet**
+
+To start 4 nodes
+ ```sh
+ make localnet-start
+ ```
+
+Before running it, don't forget to cleanup the old files
+ ```sh
+ rm -rf ./build/node*
+ ```
+
+**Visit with your browser**
+* Node: http://localhost:26657/
+
+## Linux Docker
+**Build Docker Image**
+
+Build the linux binary
+ ```sh
+ make build-linux-docker
+ ```
+
+**Run a linux docker node**
+
+To start a linux node
+ ```sh
+ make standalone-linux-docker
+ ```
+
+**Visit with your browser**
 * Node: http://localhost:26657/

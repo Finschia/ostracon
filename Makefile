@@ -59,7 +59,7 @@ endif
 # allow users to pass additional flags via the conventional LDFLAGS variable
 LD_FLAGS += $(LDFLAGS)
 
-all: check build test install
+all: build test install
 .PHONY: all
 
 include tests.mk
@@ -80,6 +80,15 @@ install:
 ###                                 Mockery                                 ###
 ###############################################################################
 
+###
+# https://github.com/vektra/mockery
+# Should install
+### brew
+# brew install mockery
+# brew upgrade mockery
+### go get
+# go get github.com/vektra/mockery/v2/.../
+
 mock-gen:
 	go generate ./...
 .PHONY: mock
@@ -87,6 +96,15 @@ mock-gen:
 ###############################################################################
 ###                                Protobuf                                 ###
 ###############################################################################
+
+###
+# https://github.com/protocolbuffers/protobuf
+# https://developers.google.com/protocol-buffers/docs/gotutorial
+# Should install
+### go install
+# go install google.golang.org/protobuf/cmd/protoc-gen-go
+### Docker for Protocol Buffer
+# https://hub.docker.com/r/bufbuild/buf
 
 proto-all: proto-gen proto-lint proto-check-breaking
 .PHONY: proto-all
@@ -98,7 +116,7 @@ proto-gen:
 .PHONY: proto-gen
 
 proto-lint:
-	@$(DOCKER_BUF) check lint --error-format=json
+	@$(DOCKER_BUF) lint --error-format=json
 .PHONY: proto-lint
 
 proto-format:
@@ -107,11 +125,11 @@ proto-format:
 .PHONY: proto-format
 
 proto-check-breaking:
-	@$(DOCKER_BUF) check breaking --against-input .git#branch=master
+	@$(DOCKER_BUF) breaking --against .git#branch=main
 .PHONY: proto-check-breaking
 
 proto-check-breaking-ci:
-	@$(DOCKER_BUF) check breaking --against-input $(HTTPS_GIT)#branch=master
+	@$(DOCKER_BUF) breaking --against $(HTTPS_GIT)#branch=main
 .PHONY: proto-check-breaking-ci
 
 ###############################################################################
@@ -237,11 +255,28 @@ sync-docs:
 ###                            Docker image                                 ###
 ###############################################################################
 
-build-docker: build-linux
-	cp $(OUTPUT) DOCKER/tendermint
-	docker build --label=tendermint --tag="tendermint/tendermint" DOCKER
-	rm -rf DOCKER/tendermint
-.PHONY: build-docker
+# Build linux binary on other platforms
+# Should run from within a linux if CGO_ENABLED=1
+build-linux:
+	GOOS=linux GOARCH=amd64 $(MAKE) build
+.PHONY: build-linux
+
+build-linux-docker:
+	docker build --label=tendermint --tag="tendermint/tendermint" -f ./DOCKER/Dockerfile .
+.PHONY: build-linux-docker
+
+standalone-linux-docker:
+	docker run -it --rm -v "/tmp:/tendermint" -p 26656:26656 -p 26657:26657 -p 26660:26660  tendermint/tendermint
+.PHONY: standalone-linux-docker
+
+# XXX Warning: Not test yet
+# Runs `make build TENDERMINT_BUILD_OPTIONS=cleveldb` from within an Amazon
+# Linux (v2)-based Docker build container in order to build an Amazon
+# Linux-compatible binary. Produces a compatible binary at ./build/tendermint
+build_c-amazonlinux:
+	$(MAKE) -C ./DOCKER build_amazonlinux_buildimage
+	docker run --rm -it -v `pwd`:/tendermint tendermint/tendermint:build_c-amazonlinux
+.PHONY: build_c-amazonlinux
 
 ###############################################################################
 ###                       Local testnet using docker                        ###
@@ -254,35 +289,23 @@ DOCKER_CMD = docker run --rm \
 DOCKER_IMG = golang:1.15-alpine
 BUILD_CMD = apk add --update --no-cache git make gcc libc-dev build-base curl jq file gmp-dev clang \
 	&& cd $(DOCKER_HOME) \
-	&& make build
+	&& make build-linux
 
 # Login docker-container for confirmation building linux binary
 build-shell:
 	$(DOCKER_CMD) -it --entrypoint '' ${DOCKER_IMG} /bin/sh
 .PHONY: build-shell
 
-# Build linux binary on other platforms
-
-build-linux:
-	# Build Linux binary
+build-localnode:
 	$(DOCKER_CMD) ${DOCKER_IMG} /bin/sh -c "$(BUILD_CMD)"
+.PHONY: build-localnode
 
-.PHONY: build-linux
-
-build-docker-localnode:
+build-localnode-docker: build-localnode
 	@cd networks/local && make
-.PHONY: build-docker-localnode
-
-# Runs `make build TENDERMINT_BUILD_OPTIONS=cleveldb` from within an Amazon
-# Linux (v2)-based Docker build container in order to build an Amazon
-# Linux-compatible binary. Produces a compatible binary at ./build/tendermint
-build_c-amazonlinux:
-	$(MAKE) -C ./DOCKER build_amazonlinux_buildimage
-	docker run --rm -it -v `pwd`:/tendermint tendermint/tendermint:build_c-amazonlinux
-.PHONY: build_c-amazonlinux
+.PHONY: build-localnode-docker
 
 # Run a 4-node testnet locally
-localnet-start: localnet-stop build-docker-localnode
+localnet-start: localnet-stop build-localnode-docker
 	@if ! [ -f build/node0/config/genesis.json ]; then docker run --rm -v $(CURDIR)/build:/tendermint:Z tendermint/localnode testnet --config /etc/tendermint/config-template.toml --o . --starting-ip-address 192.167.10.2; fi
 	docker-compose up
 .PHONY: localnet-start
@@ -291,21 +314,3 @@ localnet-start: localnet-stop build-docker-localnode
 localnet-stop:
 	docker-compose down
 .PHONY: localnet-stop
-
-# Build hooks for dredd, to skip or add information on some steps
-build-contract-tests-hooks:
-ifeq ($(OS),Windows_NT)
-	go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests.exe ./cmd/contract_tests
-else
-	go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests ./cmd/contract_tests
-endif
-.PHONY: build-contract-tests-hooks
-
-# Run a nodejs tool to test endpoints against a localnet
-# The command takes care of starting and stopping the network
-# prerequisits: build-contract-tests-hooks build-linux
-# the two build commands were not added to let this command run from generic containers or machines.
-# The binaries should be built beforehand
-contract-tests: build-docker-localnode
-	dredd
-.PHONY: contract-tests

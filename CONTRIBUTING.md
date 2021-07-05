@@ -390,7 +390,7 @@ To test your changes you should install `nodejs` and run:
 
 ```bash
 npm i -g dredd
-make build-linux build-contract-tests-hooks
+make build-contract-tests-hooks
 make contract-tests
 ```
 

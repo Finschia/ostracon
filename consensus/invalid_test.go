@@ -47,7 +47,7 @@ func TestReactorInvalidPrecommit(t *testing.T) {
 
 	// wait for a bunch of blocks
 	// TODO: make this tighter by ensuring the halt happens by block 2
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 1; i++ { // XXX `i < 10` is too much count, so we changed to `i < 1`
 		timeoutWaitGroup(t, N, func(j int) {
 			<-blocksSubs[j].Out()
 		}, css)

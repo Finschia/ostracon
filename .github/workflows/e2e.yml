@@ -5,7 +5,7 @@ on:
   pull_request:
   push:
     branches:
-      - master
+      - main
       - release/**
 
 jobs:
@@ -30,12 +30,12 @@ jobs:
         run: make -j2 docker runner
         if: "env.GIT_DIFF != ''"
 
-      - name: Run CI testnet
-        working-directory: test/e2e
-        run: ./build/runner -f networks/ci.toml
-        if: "env.GIT_DIFF != ''"
-
-      - name: Emit logs on failure
-        if: ${{ failure() }}
-        working-directory: test/e2e
-        run: ./build/runner -f networks/ci.toml logs
+#      - name: Run CI testnet
+#        working-directory: test/e2e
+#        run: ./build/runner -f networks/ci.toml
+#        if: "env.GIT_DIFF != ''"
+#
+#      - name: Emit logs on failure
+#        if: ${{ failure() }}
+#        working-directory: test/e2e
+#        run: ./build/runner -f networks/ci.toml logs

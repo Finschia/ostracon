@@ -2,7 +2,7 @@
 FROM golang:1.15-alpine as builder
 RUN apk update && \
     apk upgrade && \
-    apk --no-cache add make
+    apk add --no-cache git make gcc libc-dev build-base curl jq bash file gmp-dev clang
 COPY / /tendermint
 WORKDIR /tendermint
 RUN make build-linux
@@ -25,7 +25,7 @@ ENV TMHOME /tendermint
 # could execute bash commands.
 RUN apk update && \
     apk upgrade && \
-    apk --no-cache add git make gcc libc-dev build-base curl jq bash && \
+    apk add --no-cache git make gcc libc-dev build-base curl jq bash file gmp-dev clang && \
     addgroup ostracon && \
     adduser -S -G ostracon ostracon -h "$TMHOME"
 
