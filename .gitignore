@@ -4,8 +4,8 @@
 *.bak
 .DS_Store
 build/*
-rpc/test/.tendermint
-.tendermint
+rpc/test/.ostracon
+.ostracon
 remote_dump
 .revision
 vendor
@@ -37,7 +37,7 @@ scripts/cutWALUntil/cutWALUntil
 libs/pubsub/query/fuzz_test/output
 shunit2
 
-.tendermint-lite
+.ostracon-lite
 addrbook.json
 
 */vendor

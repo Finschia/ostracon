@@ -1,4 +1,4 @@
-project_name: tendermint
+project_name: ostracon
 
 env:
   # Require use of Go modules.
@@ -6,7 +6,7 @@ env:
 
 builds:
   - id: "Ostracon"
-    main: ./cmd/tendermint/main.go
+    main: ./cmd/ostracon/main.go
     ldflags:
       - -s -w -X github.com/line/ostracon/version.Version={{ .Version }}
     env:

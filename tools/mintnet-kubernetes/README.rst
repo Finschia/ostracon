@@ -2,9 +2,9 @@ Using Kubernetes
 ================
 
 .. figure:: assets/t_plus_k.png
-   :alt: Tendermint plus Kubernetes
+   :alt: Ostracon plus Kubernetes
 
-   Tendermint plus Kubernetes
+   Ostracon plus Kubernetes
 
 This should primarily be used for testing purposes or for
 tightly-defined chains operated by a single stakeholder (see `the
@@ -48,11 +48,11 @@ First wait until all the pods are ``Running``:
 
 ``kubectl get pods -w -o wide -L tm``
 
-then query the Tendermint app logs from the first pod:
+then query the Ostracon app logs from the first pod:
 
 ``kubectl logs -c tm -f tm-0``
 
-finally, use our `Rest API <https://tendermint.com/docs/tendermint-core/rpc.html>`__ to fetch the status of the second pod's Tendermint app.
+finally, use our `Rest API <https://tendermint.com/docs/tendermint-core/rpc.html>`__ to fetch the status of the second pod's Ostracon app.
 
 Note we are using ``kubectl exec`` because pods are not exposed (and should not be) to the
 outer network:
@@ -89,7 +89,7 @@ Setup a Kubernetes cluster
 
 Please refer to `the official
 documentation <https://kubernetes.io/docs/getting-started-guides/>`__
-for overview and comparison of different options. 
+for overview and comparison of different options.
 
 Kubernetes on Digital Ocean
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -112,7 +112,7 @@ Kubernetes on Google Cloud Engine
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Review the `Official Documentation <https://kubernetes.io/docs/getting-started-guides/gce/>`__ for Kubernetes on Google Compute
-Engine. 
+Engine.
 
 **Create a cluster**
 

@@ -2,14 +2,14 @@ PACKAGES=$(shell go list ./...)
 SRCPATH=$(shell pwd)
 OUTPUT?=build/tendermint
 
-INCLUDE = -I=${GOPATH}/src/github.com/tendermint/tendermint -I=${GOPATH}/src -I=${GOPATH}/src/github.com/gogo/protobuf/protobuf
-BUILD_TAGS?='tendermint'
+INCLUDE = -I=${GOPATH}/src/github.com/line/ostracon -I=${GOPATH}/src -I=${GOPATH}/src/github.com/gogo/protobuf/protobuf
+BUILD_TAGS?='ostracon'
 VERSION := $(shell git describe --always)
 CGO_OPTPTION=0
 LIBSODIUM_TARGET=
 PREPARE_LIBSODIUM_TARGET=
 ifeq ($(LIBSODIUM), 1)
-  BUILD_TAGS='libsodium tendermint'
+  BUILD_TAGS='libsodium ostracon'
   LIBSODIUM_TARGET=libsodium
 ifneq ($(OS), Windows_NT)
 ifeq ($(shell uname -s), Linux)
@@ -17,42 +17,42 @@ ifeq ($(shell uname -s), Linux)
 endif
 endif
 endif
-LIBSODIM_BUILD_TAGS='libsodium tendermint'
-LD_FLAGS = -X github.com/tendermint/tendermint/version.TMCoreSemVer=$(VERSION)
+LIBSODIM_BUILD_TAGS='libsodium ostracon'
+LD_FLAGS = -X github.com/line/ostracon/version.Version=$(VERSION)
 BUILD_FLAGS = -mod=readonly -ldflags "$(LD_FLAGS)"
 HTTPS_GIT := https://github.com/line/ostracon.git
 DOCKER_BUF := docker run -v $(shell pwd):/workspace --workdir /workspace bufbuild/buf
 CGO_ENABLED ?= 0
 
 # handle nostrip
-ifeq (,$(findstring nostrip,$(TENDERMINT_BUILD_OPTIONS)))
+ifeq (,$(findstring nostrip,$(OSTRACON_BUILD_OPTIONS)))
   BUILD_FLAGS += -trimpath
   LD_FLAGS += -s -w
 endif
 
 # handle race
-ifeq (race,$(findstring race,$(TENDERMINT_BUILD_OPTIONS)))
+ifeq (race,$(findstring race,$(OSTRACON_BUILD_OPTIONS)))
   BUILD_FLAGS += -race
 endif
 
 # handle cleveldb
-ifeq (cleveldb,$(findstring cleveldb,$(TENDERMINT_BUILD_OPTIONS)))
+ifeq (cleveldb,$(findstring cleveldb,$(OSTRACON_BUILD_OPTIONS)))
   BUILD_TAGS += cleveldb
 endif
 
 # handle badgerdb
-ifeq (badgerdb,$(findstring badgerdb,$(TENDERMINT_BUILD_OPTIONS)))
+ifeq (badgerdb,$(findstring badgerdb,$(OSTRACON_BUILD_OPTIONS)))
   BUILD_TAGS += badgerdb
 endif
 
 # handle rocksdb
-ifeq (rocksdb,$(findstring rocksdb,$(TENDERMINT_BUILD_OPTIONS)))
+ifeq (rocksdb,$(findstring rocksdb,$(OSTRACON_BUILD_OPTIONS)))
   CGO_ENABLED=1
   BUILD_TAGS += rocksdb
 endif
 
 # handle boltdb
-ifeq (boltdb,$(findstring boltdb,$(TENDERMINT_BUILD_OPTIONS)))
+ifeq (boltdb,$(findstring boltdb,$(OSTRACON_BUILD_OPTIONS)))
   BUILD_TAGS += boltdb
 endif
 
@@ -69,11 +69,11 @@ include tests.mk
 ###############################################################################
 
 build: $(LIBSODIUM_TARGET)
-	CGO_ENABLED=1 go build $(BUILD_FLAGS) -tags "$(BUILD_TAGS)" -o $(OUTPUT) ./cmd/tendermint/
+	CGO_ENABLED=1 go build $(BUILD_FLAGS) -tags "$(BUILD_TAGS)" -o $(OUTPUT) ./cmd/ostracon/
 .PHONY: build
 
 install:
-	CGO_ENABLED=1 go install $(BUILD_FLAGS) -tags "$(BUILD_TAGS)" ./cmd/tendermint
+	CGO_ENABLED=1 go install $(BUILD_FLAGS) -tags "$(BUILD_TAGS)" ./cmd/ostracon
 .PHONY: install
 
 ###############################################################################
@@ -110,9 +110,9 @@ proto-all: proto-gen proto-lint proto-check-breaking
 .PHONY: proto-all
 
 proto-gen:
-	@docker pull -q tendermintdev/docker-build-proto
+	@docker pull -q ostracondev/docker-build-proto
 	@echo "Generating Protobuf files"
-	@docker run --rm -v $(shell pwd):/workspace --workdir /workspace tendermintdev/docker-build-proto sh ./scripts/protocgen.sh
+	@docker run --rm -v $(shell pwd):/workspace --workdir /workspace ostracondev/docker-build-proto sh ./scripts/protocgen.sh
 .PHONY: proto-gen
 
 proto-lint:
@@ -121,7 +121,7 @@ proto-lint:
 
 proto-format:
 	@echo "Formatting Protobuf files"
-	docker run --rm -v $(shell pwd):/workspace --workdir /workspace tendermintdev/docker-build-proto find ./ -not -path "./third_party/*" -name *.proto -exec clang-format -i {} \;
+	docker run --rm -v $(shell pwd):/workspace --workdir /workspace ostracondev/docker-build-proto find ./ -not -path "./third_party/*" -name *.proto -exec clang-format -i {} \;
 .PHONY: proto-format
 
 proto-check-breaking:
@@ -183,12 +183,12 @@ go.sum: go.mod
 draw_deps:
 	@# requires brew install graphviz or apt-get install graphviz
 	go get github.com/RobotsAndPencils/goviz
-	@goviz -i github.com/tendermint/tendermint/cmd/tendermint -d 3 | dot -Tpng -o dependency-graph.png
+	@goviz -i github.com/line/ostracon/cmd/ostracon -d 3 | dot -Tpng -o dependency-graph.png
 .PHONY: draw_deps
 
 get_deps_bin_size:
 	@# Copy of build recipe with additional flags to perform binary size analysis
-	$(eval $(shell go build -work -a $(BUILD_FLAGS) -tags $(BUILD_TAGS) -o $(OUTPUT) ./cmd/tendermint/ 2>&1))
+	$(eval $(shell go build -work -a $(BUILD_FLAGS) -tags $(BUILD_TAGS) -o $(OUTPUT) ./cmd/ostracon/ 2>&1))
 	@find $(WORK) -type f -name "*.a" | xargs -I{} du -hxs "{}" | sort -rh | sed -e s:${WORK}/::g > deps_bin_size.log
 	@echo "Results can be found here: $(CURDIR)/deps_bin_size.log"
 .PHONY: get_deps_bin_size
@@ -219,7 +219,7 @@ clean_certs:
 
 format:
 	find . -name '*.go' -type f -not -path "*.git*" -not -name '*.pb.go' -not -name '*pb_test.go' | xargs gofmt -w -s
-	find . -name '*.go' -type f -not -path "*.git*"  -not -name '*.pb.go' -not -name '*pb_test.go' | xargs goimports -w -local github.com/tendermint/tendermint
+	find . -name '*.go' -type f -not -path "*.git*"  -not -name '*.pb.go' -not -name '*pb_test.go' | xargs goimports -w -local github.com/line/ostracon
 .PHONY: format
 
 lint:
@@ -262,27 +262,27 @@ build-linux:
 .PHONY: build-linux
 
 build-linux-docker:
-	docker build --label=tendermint --tag="tendermint/tendermint" -f ./DOCKER/Dockerfile .
+	docker build --label=ostracon --tag="ostracon/ostracon" -f ./DOCKER/Dockerfile .
 .PHONY: build-linux-docker
 
 standalone-linux-docker:
-	docker run -it --rm -v "/tmp:/tendermint" -p 26656:26656 -p 26657:26657 -p 26660:26660  tendermint/tendermint
+	docker run -it --rm -v "/tmp:/ostracon" -p 26656:26656 -p 26657:26657 -p 26660:26660  ostracon/ostracon
 .PHONY: standalone-linux-docker
 
 # XXX Warning: Not test yet
-# Runs `make build TENDERMINT_BUILD_OPTIONS=cleveldb` from within an Amazon
+# Runs `make build OSTRACON_BUILD_OPTIONS=cleveldb` from within an Amazon
 # Linux (v2)-based Docker build container in order to build an Amazon
-# Linux-compatible binary. Produces a compatible binary at ./build/tendermint
+# Linux-compatible binary. Produces a compatible binary at ./build/ostracon
 build_c-amazonlinux:
 	$(MAKE) -C ./DOCKER build_amazonlinux_buildimage
-	docker run --rm -it -v `pwd`:/tendermint tendermint/tendermint:build_c-amazonlinux
+	docker run --rm -it -v `pwd`:/ostracon ostracon/ostracon:build_c-amazonlinux
 .PHONY: build_c-amazonlinux
 
 ###############################################################################
 ###                       Local testnet using docker                        ###
 ###############################################################################
 
-DOCKER_HOME = /go/src/github.com/tendermint/tendermint
+DOCKER_HOME = /go/src/github.com/line/ostracon
 DOCKER_CMD = docker run --rm \
                         -v `pwd`:$(DOCKER_HOME) \
                         -w $(DOCKER_HOME)
@@ -306,7 +306,7 @@ build-localnode-docker: build-localnode
 
 # Run a 4-node testnet locally
 localnet-start: localnet-stop build-localnode-docker
-	@if ! [ -f build/node0/config/genesis.json ]; then docker run --rm -v $(CURDIR)/build:/tendermint:Z tendermint/localnode testnet --config /etc/tendermint/config-template.toml --o . --starting-ip-address 192.167.10.2; fi
+	@if ! [ -f build/node0/config/genesis.json ]; then docker run --rm -v $(CURDIR)/build:/ostracon:Z ostracon/localnode testnet --config /etc/ostracon/config-template.toml --o . --starting-ip-address 192.167.10.2; fi
 	docker-compose up
 .PHONY: localnet-start
 

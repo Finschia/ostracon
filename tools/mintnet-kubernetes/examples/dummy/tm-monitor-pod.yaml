@@ -6,7 +6,7 @@ metadata:
 spec:
   containers:
     - name: monitor
-      image: tendermint/monitor
+      image: ostracon/monitor
       args: ["-listen-addr=tcp://0.0.0.0:26670", "tm-0.dummy:26657,tm-1.dummy:26657,tm-2.dummy:26657,tm-3.dummy:26657"]
       ports:
         - containerPort: 26670
