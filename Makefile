@@ -1,6 +1,6 @@
 PACKAGES=$(shell go list ./...)
 SRCPATH=$(shell pwd)
-OUTPUT?=build/tendermint
+OUTPUT?=build/ostracon
 
 INCLUDE = -I=${GOPATH}/src/github.com/line/ostracon -I=${GOPATH}/src -I=${GOPATH}/src/github.com/gogo/protobuf/protobuf
 BUILD_TAGS?='ostracon'
