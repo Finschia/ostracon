@@ -1,8 +1,23 @@
 PACKAGES=$(shell go list ./...)
+SRCPATH=$(shell pwd)
 OUTPUT?=build/tendermint
 
-BUILD_TAGS?=tendermint
+INCLUDE = -I=${GOPATH}/src/github.com/tendermint/tendermint -I=${GOPATH}/src -I=${GOPATH}/src/github.com/gogo/protobuf/protobuf
+BUILD_TAGS?='tendermint'
 VERSION := $(shell git describe --always)
+CGO_OPTPTION=0
+LIBSODIUM_TARGET=
+PREPARE_LIBSODIUM_TARGET=
+ifeq ($(LIBSODIUM), 1)
+  BUILD_TAGS='libsodium tendermint'
+  LIBSODIUM_TARGET=libsodium
+ifneq ($(OS), Windows_NT)
+ifeq ($(shell uname -s), Linux)
+  PREPARE_LIBSODIUM_TARGET=prepare-libsodium-linux
+endif
+endif
+endif
+LIBSODIM_BUILD_TAGS='libsodium tendermint'
 LD_FLAGS = -X github.com/tendermint/tendermint/version.TMCoreSemVer=$(VERSION)
 BUILD_FLAGS = -mod=readonly -ldflags "$(LD_FLAGS)"
 HTTPS_GIT := https://github.com/line/ostracon.git
@@ -17,13 +32,11 @@ endif
 
 # handle race
 ifeq (race,$(findstring race,$(TENDERMINT_BUILD_OPTIONS)))
-  CGO_ENABLED=1
   BUILD_FLAGS += -race
 endif
 
 # handle cleveldb
 ifeq (cleveldb,$(findstring cleveldb,$(TENDERMINT_BUILD_OPTIONS)))
-  CGO_ENABLED=1
   BUILD_TAGS += cleveldb
 endif
 
@@ -55,13 +68,21 @@ include tests.mk
 ###                                Build Ostracon                           ###
 ###############################################################################
 
-build:
-	CGO_ENABLED=$(CGO_ENABLED) go build $(BUILD_FLAGS) -tags '$(BUILD_TAGS)' -o $(OUTPUT) ./cmd/tendermint/
+build: $(LIBSODIUM_TARGET)
+	CGO_ENABLED=1 go build $(BUILD_FLAGS) -tags "$(BUILD_TAGS)" -o $(OUTPUT) ./cmd/tendermint/
 .PHONY: build
 
 install:
-	CGO_ENABLED=$(CGO_ENABLED) go install $(BUILD_FLAGS) -tags $(BUILD_TAGS) ./cmd/tendermint
+	CGO_ENABLED=1 go install $(BUILD_FLAGS) -tags "$(BUILD_TAGS)" ./cmd/tendermint
 .PHONY: install
+
+###############################################################################
+###                                 Mockery                                 ###
+###############################################################################
+
+mock-gen:
+	go generate ./...
+.PHONY: mock
 
 ###############################################################################
 ###                                Protobuf                                 ###
@@ -73,7 +94,7 @@ proto-all: proto-gen proto-lint proto-check-breaking
 proto-gen:
 	@docker pull -q tendermintdev/docker-build-proto
 	@echo "Generating Protobuf files"
-	@docker run -v $(shell pwd):/workspace --workdir /workspace tendermintdev/docker-build-proto sh ./scripts/protocgen.sh
+	@docker run --rm -v $(shell pwd):/workspace --workdir /workspace tendermintdev/docker-build-proto sh ./scripts/protocgen.sh
 .PHONY: proto-gen
 
 proto-lint:
@@ -82,7 +103,7 @@ proto-lint:
 
 proto-format:
 	@echo "Formatting Protobuf files"
-	docker run -v $(shell pwd):/workspace --workdir /workspace tendermintdev/docker-build-proto find ./ -not -path "./third_party/*" -name *.proto -exec clang-format -i {} \;
+	docker run --rm -v $(shell pwd):/workspace --workdir /workspace tendermintdev/docker-build-proto find ./ -not -path "./third_party/*" -name *.proto -exec clang-format -i {} \;
 .PHONY: proto-format
 
 proto-check-breaking:
@@ -108,6 +129,22 @@ install_abci:
 ###############################################################################
 ###                              Distribution                               ###
 ###############################################################################
+
+########################################
+### libsodium
+
+prepare-libsodium-linux:
+	apt-get update && apt-get -y install libtool libboost-all-dev autoconf build-essential
+
+libsodium:
+	cd $(SRCPATH)/crypto/vrf/internal/vrf/libsodium && \
+    		./autogen.sh && \
+    		./configure --disable-shared --prefix="$(SRCPATH)/crypto/vrf/internal/vrf/" &&	\
+    		$(MAKE) && \
+    		$(MAKE) install
+
+########################################
+### Distribution
 
 # dist builds binaries for all platforms and packages them for distribution
 # TODO add abci to these scripts
@@ -210,9 +247,26 @@ build-docker: build-linux
 ###                       Local testnet using docker                        ###
 ###############################################################################
 
+DOCKER_HOME = /go/src/github.com/tendermint/tendermint
+DOCKER_CMD = docker run --rm \
+                        -v `pwd`:$(DOCKER_HOME) \
+                        -w $(DOCKER_HOME)
+DOCKER_IMG = golang:1.15-alpine
+BUILD_CMD = apk add --update --no-cache git make gcc libc-dev build-base curl jq file gmp-dev clang \
+	&& cd $(DOCKER_HOME) \
+	&& make build
+
+# Login docker-container for confirmation building linux binary
+build-shell:
+	$(DOCKER_CMD) -it --entrypoint '' ${DOCKER_IMG} /bin/sh
+.PHONY: build-shell
+
 # Build linux binary on other platforms
+
 build-linux:
-	GOOS=linux GOARCH=amd64 $(MAKE) build
+	# Build Linux binary
+	$(DOCKER_CMD) ${DOCKER_IMG} /bin/sh -c "$(BUILD_CMD)"
+
 .PHONY: build-linux
 
 build-docker-localnode:
@@ -252,6 +306,6 @@ endif
 # prerequisits: build-contract-tests-hooks build-linux
 # the two build commands were not added to let this command run from generic containers or machines.
 # The binaries should be built beforehand
-contract-tests:
+contract-tests: build-docker-localnode
 	dredd
 .PHONY: contract-tests

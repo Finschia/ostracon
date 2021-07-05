@@ -12,7 +12,8 @@ import (
 // It is the basis of the light client
 type LightBlock struct {
 	*SignedHeader `json:"signed_header"`
-	ValidatorSet  *ValidatorSet `json:"validator_set"`
+	ValidatorSet  *ValidatorSet `json:"validator_set"` // XXX Should we remove?
+	VoterSet      *VoterSet     `json:"voter_set"`
 }
 
 // ValidateBasic checks that the data is correct and consistent
@@ -22,21 +23,21 @@ func (lb LightBlock) ValidateBasic(chainID string) error {
 	if lb.SignedHeader == nil {
 		return errors.New("missing signed header")
 	}
-	if lb.ValidatorSet == nil {
-		return errors.New("missing validator set")
+	if lb.VoterSet == nil {
+		return errors.New("missing voter set")
 	}
 
 	if err := lb.SignedHeader.ValidateBasic(chainID); err != nil {
 		return fmt.Errorf("invalid signed header: %w", err)
 	}
-	if err := lb.ValidatorSet.ValidateBasic(); err != nil {
-		return fmt.Errorf("invalid validator set: %w", err)
+	if err := lb.VoterSet.ValidateBasic(); err != nil {
+		return fmt.Errorf("invalid voter set: %w", err)
 	}
 
 	// make sure the validator set is consistent with the header
-	if valSetHash := lb.ValidatorSet.Hash(); !bytes.Equal(lb.SignedHeader.ValidatorsHash, valSetHash) {
-		return fmt.Errorf("expected validator hash of header to match validator set hash (%X != %X)",
-			lb.SignedHeader.ValidatorsHash, valSetHash,
+	if voterSetHash := lb.VoterSet.Hash(); !bytes.Equal(lb.SignedHeader.VotersHash, voterSetHash) {
+		return fmt.Errorf("expected voter hash of header to match voter set hash (%X != %X)",
+			lb.SignedHeader.VotersHash, voterSetHash,
 		)
 	}
 
@@ -58,7 +59,7 @@ func (lb LightBlock) StringIndented(indent string) string {
 %s  %v
 %s}`,
 		indent, lb.SignedHeader.StringIndented(indent+"  "),
-		indent, lb.ValidatorSet.StringIndented(indent+"  "),
+		indent, lb.VoterSet.StringIndented(indent+"  "),
 		indent)
 }
 
@@ -75,6 +76,12 @@ func (lb *LightBlock) ToProto() (*tmproto.LightBlock, error) {
 	}
 	if lb.ValidatorSet != nil {
 		lbp.ValidatorSet, err = lb.ValidatorSet.ToProto()
+		if err != nil {
+			return nil, err
+		}
+	}
+	if lb.VoterSet != nil {
+		lbp.VoterSet, err = lb.VoterSet.ToProto()
 		if err != nil {
 			return nil, err
 		}
@@ -106,6 +113,14 @@ func LightBlockFromProto(pb *tmproto.LightBlock) (*LightBlock, error) {
 			return nil, err
 		}
 		lb.ValidatorSet = vals
+	}
+
+	if pb.VoterSet != nil {
+		voters, err := VoterSetFromProto(pb.VoterSet)
+		if err != nil {
+			return nil, err
+		}
+		lb.VoterSet = voters
 	}
 
 	return lb, nil

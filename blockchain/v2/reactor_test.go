@@ -59,6 +59,8 @@ func (mp mockPeer) TrySend(byte, []byte) bool { return true }
 func (mp mockPeer) Set(string, interface{}) {}
 func (mp mockPeer) Get(string) interface{}  { return struct{}{} }
 
+func (mp mockPeer) String() string { return fmt.Sprintf("%v", mp.id) }
+
 //nolint:unused
 type mockBlockStore struct {
 	blocks map[int64]*types.Block
@@ -350,7 +352,6 @@ func TestReactorHelperMode(t *testing.T) {
 	var (
 		channelID = byte(0x40)
 	)
-
 	config := cfg.ResetTestRoot("blockchain_reactor_v2_test")
 	defer os.RemoveAll(config.RootDir)
 	genDoc, privVals := randGenesisDoc(config.ChainID(), 1, false, 30)
@@ -452,8 +453,11 @@ func makeTxs(height int64) (txs []types.Tx) {
 	return txs
 }
 
-func makeBlock(height int64, state sm.State, lastCommit *types.Commit) *types.Block {
-	block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, nil, state.Validators.GetProposer().Address)
+func makeBlock(privVal types.PrivValidator, height int64, state sm.State, lastCommit *types.Commit) *types.Block {
+	message := state.MakeHashMessage(0)
+	proof, _ := privVal.GenerateVRFProof(message)
+	proposerAddr := state.Validators.SelectProposer(state.LastProofHash, height, 0).Address
+	block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, nil, proposerAddr, 0, proof)
 	return block
 }
 
@@ -469,7 +473,7 @@ func randGenesisDoc(chainID string, numValidators int, randPower bool, minPower 
 		val, privVal := types.RandValidator(randPower, minPower)
 		validators[i] = types.GenesisValidator{
 			PubKey: val.PubKey,
-			Power:  val.VotingPower,
+			Power:  val.StakingPower,
 		}
 		privValidators[i] = privVal
 	}
@@ -536,7 +540,7 @@ func newReactorStore(
 				lastBlockMeta.BlockID, []types.CommitSig{vote.CommitSig()})
 		}
 
-		thisBlock := makeBlock(blockHeight, state, lastCommit)
+		thisBlock := makeBlock(privVals[0], blockHeight, state, lastCommit)
 
 		thisParts := thisBlock.MakePartSet(types.BlockPartSizeBytes)
 		blockID := types.BlockID{Hash: thisBlock.Hash(), PartSetHeader: thisParts.Header()}

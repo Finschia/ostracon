@@ -1,10 +1,10 @@
-FROM alpine:3.7
+FROM golang:1.15-alpine
 
 RUN apk update && \
     apk upgrade && \
-    apk --no-cache add curl jq file
-
-VOLUME [ /tendermint ]
+    apk add --update --no-cache git make gcc libc-dev build-base curl jq file \
+                                gmp-dev clang
+VOLUME [ "/tendermint" ]
 WORKDIR /tendermint
 EXPOSE 26656 26657
 ENTRYPOINT ["/usr/bin/wrapper.sh"]

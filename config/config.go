@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/tendermint/tendermint/privval"
 )
 
 const (
@@ -216,6 +218,9 @@ type BaseConfig struct { //nolint: maligned
 	// If true, query the ABCI app on connecting to a new peer
 	// so the app can decide if we should keep the connection or not
 	FilterPeers bool `mapstructure:"filter_peers"` // false
+
+	// Specify validator's private key type
+	PrivKeyType string `mapstructure:"priv_key_type"`
 }
 
 // DefaultBaseConfig returns a default base configuration for a Tendermint node
@@ -234,6 +239,7 @@ func DefaultBaseConfig() BaseConfig {
 		FilterPeers:        false,
 		DBBackend:          "goleveldb",
 		DBPath:             "data",
+		PrivKeyType:        privval.PrivKeyTypeEd25519,
 	}
 }
 
@@ -274,6 +280,10 @@ func (cfg BaseConfig) NodeKeyFile() string {
 // DBDir returns the full path to the database directory
 func (cfg BaseConfig) DBDir() string {
 	return rootify(cfg.DBPath, cfg.RootDir)
+}
+
+func (cfg BaseConfig) PrivValidatorKeyType() string {
+	return cfg.PrivKeyType
 }
 
 // ValidateBasic performs basic validation (checking param bounds, etc.) and
@@ -536,6 +546,16 @@ type P2PConfig struct { //nolint: maligned
 	HandshakeTimeout time.Duration `mapstructure:"handshake_timeout"`
 	DialTimeout      time.Duration `mapstructure:"dial_timeout"`
 
+	// Reactor async receive
+	RecvAsync bool `mapstructure:"recv_async"`
+
+	// Size of receive buffer used in async receiving
+	PexRecvBufSize        int `mapstructure:"pex_recv_buf_size"`
+	EvidenceRecvBufSize   int `mapstructure:"evidence_recv_buf_size"`
+	MempoolRecvBufSize    int `mapstructure:"mempool_recv_buf_size"`
+	ConsensusRecvBufSize  int `mapstructure:"consensus_recv_buf_size"`
+	BlockchainRecvBufSize int `mapstructure:"blockchain_recv_buf_size"`
+
 	// Testing params.
 	// Force dial to fail
 	TestDialFail bool `mapstructure:"test_dial_fail"`
@@ -564,6 +584,12 @@ func DefaultP2PConfig() *P2PConfig {
 		AllowDuplicateIP:             false,
 		HandshakeTimeout:             20 * time.Second,
 		DialTimeout:                  3 * time.Second,
+		RecvAsync:                    true,
+		PexRecvBufSize:               1000,
+		EvidenceRecvBufSize:          1000,
+		MempoolRecvBufSize:           1000,
+		ConsensusRecvBufSize:         1000,
+		BlockchainRecvBufSize:        1000,
 		TestDialFail:                 false,
 		TestFuzz:                     false,
 		TestFuzzConfig:               DefaultFuzzConnConfig(),

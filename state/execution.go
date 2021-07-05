@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/tendermint/tendermint/crypto"
+
 	abci "github.com/tendermint/tendermint/abci/types"
 	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
+	"github.com/tendermint/tendermint/crypto/vrf"
 	"github.com/tendermint/tendermint/libs/fail"
 	"github.com/tendermint/tendermint/libs/log"
 	mempl "github.com/tendermint/tendermint/mempool"
@@ -95,31 +98,29 @@ func (blockExec *BlockExecutor) CreateProposalBlock(
 	height int64,
 	state State, commit *types.Commit,
 	proposerAddr []byte,
+	round int32,
+	proof crypto.Proof,
 ) (*types.Block, *types.PartSet) {
 
 	maxBytes := state.ConsensusParams.Block.MaxBytes
 	maxGas := state.ConsensusParams.Block.MaxGas
 
-	evidence, evSize := blockExec.evpool.PendingEvidence(state.ConsensusParams.Evidence.MaxBytes)
+	evidence, _ := blockExec.evpool.PendingEvidence(state.ConsensusParams.Evidence.MaxBytes)
 
 	// Fetch a limited amount of valid txs
-	maxDataBytes := types.MaxDataBytes(maxBytes, evSize, state.Validators.Size())
+	maxDataBytes := types.MaxDataBytes(maxBytes, commit, evidence)
 
 	txs := blockExec.mempool.ReapMaxBytesMaxGas(maxDataBytes, maxGas)
 
-	return state.MakeBlock(height, txs, commit, evidence, proposerAddr)
+	return state.MakeBlock(height, txs, commit, evidence, proposerAddr, round, proof)
 }
 
 // ValidateBlock validates the given block against the given state.
 // If the block is invalid, it returns an error.
 // Validation does not mutate state, but does require historical information from the stateDB,
 // ie. to verify evidence from a validator at an old height.
-func (blockExec *BlockExecutor) ValidateBlock(state State, block *types.Block) error {
-	err := validateBlock(state, block)
-	if err != nil {
-		return err
-	}
-	return blockExec.evpool.CheckEvidence(block.Evidence.Evidence)
+func (blockExec *BlockExecutor) ValidateBlock(state State, round int32, block *types.Block) error {
+	return validateBlock(state, round, block)
 }
 
 // ApplyBlock validates the block against the state, executes it against the app,
@@ -132,15 +133,20 @@ func (blockExec *BlockExecutor) ApplyBlock(
 	state State, blockID types.BlockID, block *types.Block,
 ) (State, int64, error) {
 
-	if err := validateBlock(state, block); err != nil {
+	startTime := time.Now().UnixNano()
+	// When doing ApplyBlock, we don't need to check whether the block.Round is same to current round,
+	// so we just put block.Round for the current round parameter
+	if err := blockExec.ValidateBlock(state, block.Round, block); err != nil {
 		return state, 0, ErrInvalidBlock(err)
 	}
-
-	startTime := time.Now().UnixNano()
-	abciResponses, err := execBlockOnProxyApp(
-		blockExec.logger, blockExec.proxyApp, block, blockExec.store, state.InitialHeight,
-	)
 	endTime := time.Now().UnixNano()
+	blockExec.metrics.BlockVerifyingTime.Observe(float64(endTime-startTime) / 1000000)
+
+	startTime = endTime
+	abciResponses, err := execBlockOnProxyApp(
+		blockExec.logger, blockExec.proxyApp, block, blockExec.store, state.InitialHeight, state.VoterParams,
+	)
+	endTime = time.Now().UnixNano()
 	blockExec.metrics.BlockProcessingTime.Observe(float64(endTime-startTime) / 1000000)
 	if err != nil {
 		return state, 0, ErrProxyAppConn(err)
@@ -176,11 +182,14 @@ func (blockExec *BlockExecutor) ApplyBlock(
 		return state, 0, fmt.Errorf("commit failed for application: %v", err)
 	}
 
+	startTime = time.Now().UnixNano()
 	// Lock mempool, commit app state, update mempoool.
 	appHash, retainHeight, err := blockExec.Commit(state, block, abciResponses.DeliverTxs)
 	if err != nil {
 		return state, 0, fmt.Errorf("commit failed for application: %v", err)
 	}
+	endTime = time.Now().UnixNano()
+	blockExec.metrics.BlockCommittingTime.Observe(float64(endTime-startTime) / 1000000)
 
 	// Update evpool with the latest state.
 	blockExec.evpool.Update(state, block.Evidence.Evidence)
@@ -262,6 +271,7 @@ func execBlockOnProxyApp(
 	block *types.Block,
 	store Store,
 	initialHeight int64,
+	voterParams *types.VoterParams,
 ) (*tmstate.ABCIResponses, error) {
 	var validTxs, invalidTxs = 0, 0
 
@@ -290,7 +300,7 @@ func execBlockOnProxyApp(
 	}
 	proxyAppConn.SetResponseCallback(proxyCb)
 
-	commitInfo := getBeginBlockValidatorInfo(block, store, initialHeight)
+	commitInfo := getBeginBlockValidatorInfo(block, store, initialHeight, voterParams)
 
 	byzVals := make([]abci.Evidence, 0)
 	for _, evidence := range block.Evidence.Evidence {
@@ -315,6 +325,7 @@ func execBlockOnProxyApp(
 		return nil, err
 	}
 
+	startTime := time.Now()
 	// run txs of block
 	for _, tx := range block.Txs {
 		proxyAppConn.DeliverTxAsync(abci.RequestDeliverTx{Tx: tx})
@@ -322,6 +333,8 @@ func execBlockOnProxyApp(
 			return nil, err
 		}
 	}
+	endTime := time.Now()
+	execTime := endTime.Sub(startTime)
 
 	// End block.
 	abciResponses.EndBlock, err = proxyAppConn.EndBlockSync(abci.RequestEndBlock{Height: block.Height})
@@ -330,18 +343,19 @@ func execBlockOnProxyApp(
 		return nil, err
 	}
 
-	logger.Info("executed block", "height", block.Height, "num_valid_txs", validTxs, "num_invalid_txs", invalidTxs)
+	logger.Info("executed block", "height", block.Height, "num_valid_txs", validTxs,
+		"num_invalid_txs", invalidTxs, "exec_time", execTime)
 	return abciResponses, nil
 }
 
 func getBeginBlockValidatorInfo(block *types.Block, store Store,
-	initialHeight int64) abci.LastCommitInfo {
+	initialHeight int64, voterParams *types.VoterParams) abci.LastCommitInfo {
 	voteInfos := make([]abci.VoteInfo, block.LastCommit.Size())
 	// Initial block -> LastCommitInfo.Votes are empty.
 	// Remember that the first LastCommit is intentionally empty, so it makes
 	// sense for LastCommitInfo.Votes to also be empty.
 	if block.Height > initialHeight {
-		lastValSet, err := store.LoadValidators(block.Height - 1)
+		lastVoterSet, err := store.LoadVoters(block.Height-1, voterParams)
 		if err != nil {
 			panic(err)
 		}
@@ -349,20 +363,22 @@ func getBeginBlockValidatorInfo(block *types.Block, store Store,
 		// Sanity check that commit size matches validator set size - only applies
 		// after first block.
 		var (
-			commitSize = block.LastCommit.Size()
-			valSetLen  = len(lastValSet.Validators)
+			commitSize  = block.LastCommit.Size()
+			voterSetLen = lastVoterSet.Size()
 		)
-		if commitSize != valSetLen {
+		if commitSize != voterSetLen {
 			panic(fmt.Sprintf(
-				"commit size (%d) doesn't match valset length (%d) at height %d\n\n%v\n\n%v",
-				commitSize, valSetLen, block.Height, block.LastCommit.Signatures, lastValSet.Validators,
+				"commit size (%d) doesn't match voterset length (%d) at height %d\n\n%v\n\n%v",
+				commitSize, voterSetLen, block.Height, block.LastCommit.Signatures, lastVoterSet.Voters,
 			))
 		}
 
-		for i, val := range lastValSet.Validators {
+		for i, voter := range lastVoterSet.Voters {
 			commitSig := block.LastCommit.Signatures[i]
 			voteInfos[i] = abci.VoteInfo{
-				Validator:       types.TM2PB.Validator(val),
+				Validator: types.TM2PB.Validator(voter),
+				// TODO We need to change distribution of cosmos-sdk in order to reference this power for reward later
+				VotingPower:     voter.VotingPower,
 				SignedLastBlock: !commitSig.Absent(),
 			}
 		}
@@ -386,7 +402,7 @@ func validateValidatorUpdates(abciUpdates []abci.ValidatorUpdate,
 		}
 
 		// Check if validator's pubkey matches an ABCI type in the consensus params
-		pk, err := cryptoenc.PubKeyFromProto(valUpdate.PubKey)
+		pk, err := cryptoenc.PubKeyFromProto(&valUpdate.PubKey)
 		if err != nil {
 			return err
 		}
@@ -409,7 +425,7 @@ func updateState(
 ) (State, error) {
 
 	// Copy the valset so we can apply changes from EndBlock
-	// and update s.LastValidators and s.Validators.
+	// and update s.LastVoters and s.Validators.
 	nValSet := state.NextValidators.Copy()
 
 	// Update the validator set with the latest abciResponses.
@@ -445,18 +461,30 @@ func updateState(
 
 	nextVersion := state.Version
 
+	// get proof hash from vrf proof
+	proofHash, err := vrf.ProofToHash(header.Proof.Bytes())
+	if err != nil {
+		return state, fmt.Errorf("error get proof of hash: %v", err)
+	}
+
+	validators := state.NextValidators.Copy()
+	voters := types.SelectVoter(validators, proofHash, state.VoterParams)
+
 	// NOTE: the AppHash has not been populated.
 	// It will be filled on state.Save.
 	return State{
 		Version:                          nextVersion,
 		ChainID:                          state.ChainID,
 		InitialHeight:                    state.InitialHeight,
+		VoterParams:                      state.VoterParams,
 		LastBlockHeight:                  header.Height,
 		LastBlockID:                      blockID,
 		LastBlockTime:                    header.Time,
+		LastProofHash:                    proofHash,
 		NextValidators:                   nValSet,
-		Validators:                       state.NextValidators.Copy(),
-		LastValidators:                   state.Validators.Copy(),
+		Validators:                       validators,
+		Voters:                           voters,
+		LastVoters:                       state.Voters.Copy(),
 		LastHeightValidatorsChanged:      lastHeightValsChanged,
 		ConsensusParams:                  nextParams,
 		LastHeightConsensusParamsChanged: lastHeightParamsChanged,
@@ -533,8 +561,9 @@ func ExecCommitBlock(
 	logger log.Logger,
 	store Store,
 	initialHeight int64,
+	voterParams *types.VoterParams,
 ) ([]byte, error) {
-	_, err := execBlockOnProxyApp(logger, appConnConsensus, block, store, initialHeight)
+	_, err := execBlockOnProxyApp(logger, appConnConsensus, block, store, initialHeight, voterParams)
 	if err != nil {
 		logger.Error("failed executing block on proxy app", "height", block.Height, "err", err)
 		return nil, err

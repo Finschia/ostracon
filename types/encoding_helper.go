@@ -20,6 +20,15 @@ func cdcEncode(item interface{}) []byte {
 				return nil
 			}
 			return bz
+		case int32:
+			i := gogotypes.Int32Value{
+				Value: item,
+			}
+			bz, err := i.Marshal()
+			if err != nil {
+				return nil
+			}
+			return bz
 		case int64:
 			i := gogotypes.Int64Value{
 				Value: item,
@@ -39,6 +48,7 @@ func cdcEncode(item interface{}) []byte {
 			}
 			return bz
 		default:
+			// REVIEW: 🏺This function has been modified in v0.34 to encode only certain primitive types. Should we panic?
 			return nil
 		}
 	}

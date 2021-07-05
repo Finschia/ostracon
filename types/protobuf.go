@@ -3,6 +3,8 @@ package types
 import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/bls"
+	"github.com/tendermint/tendermint/crypto/composite"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
@@ -13,15 +15,19 @@ import (
 // Use strings to distinguish types in ABCI messages
 
 const (
-	ABCIPubKeyTypeEd25519   = ed25519.KeyType
-	ABCIPubKeyTypeSecp256k1 = secp256k1.KeyType
+	ABCIPubKeyTypeBls12WithEd25519 = composite.KeyTypeBlsWithEd25519
+	ABCIPubKeyTypeEd25519          = ed25519.KeyType
+	ABCIPubKeyTypeSecp256k1        = secp256k1.KeyType
+	ABCIPubKeyTypeBls12            = bls.KeyType
 )
 
 // TODO: Make non-global by allowing for registration of more pubkey types
 
 var ABCIPubKeyTypesToNames = map[string]string{
-	ABCIPubKeyTypeEd25519:   ed25519.PubKeyName,
-	ABCIPubKeyTypeSecp256k1: secp256k1.PubKeyName,
+	ABCIPubKeyTypeBls12WithEd25519: composite.PubKeyName,
+	ABCIPubKeyTypeEd25519:          ed25519.PubKeyName,
+	ABCIPubKeyTypeSecp256k1:        secp256k1.PubKeyName,
+	ABCIPubKeyTypeBls12:            bls.PubKeyName,
 }
 
 //-------------------------------------------------------
@@ -44,7 +50,7 @@ func (tm2pb) Header(header *Header) tmproto.Header {
 		LastCommitHash: header.LastCommitHash,
 		DataHash:       header.DataHash,
 
-		ValidatorsHash:     header.ValidatorsHash,
+		VotersHash:         header.VotersHash,
 		NextValidatorsHash: header.NextValidatorsHash,
 		ConsensusHash:      header.ConsensusHash,
 		AppHash:            header.AppHash,
@@ -58,7 +64,7 @@ func (tm2pb) Header(header *Header) tmproto.Header {
 func (tm2pb) Validator(val *Validator) abci.Validator {
 	return abci.Validator{
 		Address: val.PubKey.Address(),
-		Power:   val.VotingPower,
+		Power:   val.StakingPower,
 	}
 }
 
@@ -84,7 +90,7 @@ func (tm2pb) ValidatorUpdate(val *Validator) abci.ValidatorUpdate {
 	}
 	return abci.ValidatorUpdate{
 		PubKey: pk,
-		Power:  val.VotingPower,
+		Power:  val.StakingPower,
 	}
 }
 
@@ -131,7 +137,7 @@ type pb2tm struct{}
 func (pb2tm) ValidatorUpdates(vals []abci.ValidatorUpdate) ([]*Validator, error) {
 	tmVals := make([]*Validator, len(vals))
 	for i, v := range vals {
-		pub, err := cryptoenc.PubKeyFromProto(v.PubKey)
+		pub, err := cryptoenc.PubKeyFromProto(&v.PubKey)
 		if err != nil {
 			return nil, err
 		}

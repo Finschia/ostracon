@@ -4,8 +4,6 @@ on:
     paths:
       - "tools/proto/*"
   push:
-    branches:
-      - master
     paths:
       - "tools/proto/*"
   schedule:

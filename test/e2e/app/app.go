@@ -8,6 +8,9 @@ import (
 	"os"
 	"path/filepath"
 
+	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
+	"github.com/tendermint/tendermint/proto/tendermint/crypto"
+
 	"github.com/tendermint/tendermint/abci/example/code"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -201,7 +204,16 @@ func (app *Application) validatorUpdates(height uint64) (abci.ValidatorUpdates, 
 		if err != nil {
 			return nil, fmt.Errorf("invalid base64 pubkey value %q: %w", keyString, err)
 		}
-		valUpdates = append(valUpdates, abci.UpdateValidator(keyBytes, int64(power), app.cfg.KeyType))
+		pubKeyProto := crypto.PublicKey{}
+		err = pubKeyProto.Unmarshal(keyBytes)
+		if err != nil {
+			return nil, fmt.Errorf("invalid pubkey binary %q: %w", keyString, err)
+		}
+		pubKey, err := cryptoenc.PubKeyFromProto(&pubKeyProto)
+		if err != nil {
+			return nil, fmt.Errorf("invalid pubkey protobuf %q: %w", keyString, err)
+		}
+		valUpdates = append(valUpdates, abci.NewValidatorUpdate(pubKey, int64(power)))
 	}
 	return valUpdates, nil
 }

@@ -101,7 +101,7 @@ paths:
           required: true
           schema:
             type: string
-          example: "456"
+          example: "0x343536"
           description: The transaction
       responses:
         "200":
@@ -145,7 +145,7 @@ paths:
           required: true
           schema:
             type: string
-            example: "123"
+          example: "0x313233"
           description: The transaction
       responses:
         "200":
@@ -187,7 +187,7 @@ paths:
           required: true
           schema:
             type: string
-            example: "785"
+          example: "0x373835"
           description: The transaction
       responses:
         "200":
@@ -367,7 +367,7 @@ paths:
           required: true
           schema:
             type: string
-            example: tm.event = 'Tx' AND tx.height = 5
+          example: tm.event = 'Tx' AND tx.height = 5
           description: |
             query is a string, which has a form: "condition AND condition ..." (no OR at the
             moment). condition has a form: "key operation operand". key is a string with
@@ -413,7 +413,7 @@ paths:
           required: true
           schema:
             type: string
-            example: tm.event = 'Tx' AND tx.height = 5
+          example: tm.event = 'Tx' AND tx.height = 5
           description: |
             query is a string, which has a form: "condition AND condition ..." (no OR at the
             moment). condition has a form: "key operation operand". key is a string with
@@ -611,13 +611,13 @@ paths:
           description: Minimum block height to return
           schema:
             type: integer
-            example: 1
+          example: 1
         - in: query
           name: maxHeight
           description: Maximum block height to return
           schema:
             type: integer
-            example: 2
+          example: 2
       tags:
         - Info
       description: |
@@ -647,7 +647,7 @@ paths:
           schema:
             type: integer
             default: 0
-            example: 1
+          example: 1
           description: height to return. If no height is provided, it will fetch the latest block.
       tags:
         - Info
@@ -677,7 +677,7 @@ paths:
           required: true
           schema:
             type: string
-            example: "0xD70952032620CC4E2737EB8AC379806359D8E0B17B0488F627997A0B043ABDED"
+          example: "0xD70952032620CC4E2737EB8AC379806359D8E0B17B0488F627997A0B043ABDED"
       tags:
         - Info
       description: |
@@ -706,7 +706,7 @@ paths:
           schema:
             type: integer
             default: 0
-            example: 1
+          example: 1
       tags:
         - Info
       description: |
@@ -735,7 +735,7 @@ paths:
           schema:
             type: integer
             default: 0
-            example: 1
+          example: 1
       tags:
         - Info
       description: |
@@ -756,10 +756,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-  /validators:
+  /voters:
     get:
-      summary: Get validator set at a specified height
-      operationId: validators
+      summary: Get voter set at a specified height
+      operationId: voters
       parameters:
         - in: query
           name: height
@@ -767,7 +767,7 @@ paths:
           schema:
             type: integer
             default: 0
-            example: 1
+          example: 1
         - in: query
           name: page
           description: "Page number (1-based)"
@@ -775,26 +775,26 @@ paths:
           schema:
             type: integer
             default: 1
-            example: 1
+          example: 1
         - in: query
           name: per_page
           description: "Number of entries per page (max: 100)"
           required: false
           schema:
             type: integer
-            example: 30
             default: 30
+          example: 30
       tags:
         - Info
       description: |
-        Get Validators. Validators are sorted by voting power.
+        Get Voters. Validators are sorted by voting power.
       responses:
         "200":
           description: Commit results.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ValidatorsResponse"
+                $ref: "#/components/schemas/VotersResponse"
         "500":
           description: Error
           content:
@@ -882,7 +882,7 @@ paths:
           schema:
             type: integer
             default: 0
-            example: 1
+          example: 1
       tags:
         - Info
       description: |
@@ -912,7 +912,7 @@ paths:
           schema:
             type: integer
             default: 30
-            example: 1
+          example: 1
       tags:
         - Info
       description: |
@@ -966,7 +966,7 @@ paths:
           required: true
           schema:
             type: string
-            example: "tx.height=1000"
+          example: "\"tx.height=1000\""
         - in: query
           name: prove
           description: Include proofs of the transactions inclusion in the block
@@ -974,7 +974,7 @@ paths:
           schema:
             type: boolean
             default: false
-            example: true
+          example: true
         - in: query
           name: page
           description: "Page number (1-based)"
@@ -982,7 +982,7 @@ paths:
           schema:
             type: integer
             default: 1
-            example: 1
+          example: 1
         - in: query
           name: per_page
           description: "Number of entries per page (max: 100)"
@@ -990,7 +990,7 @@ paths:
           schema:
             type: integer
             default: 30
-            example: 30
+          example: 30
         - in: query
           name: order_by
           description: Order in which transactions are sorted ("asc" or "desc"), by height & index. If empty, default sorting will be still applied.
@@ -998,7 +998,7 @@ paths:
           schema:
             type: string
             default: "asc"
-            example: "asc"
+          example: "\"asc\""
       tags:
         - Info
       responses:
@@ -1025,15 +1025,15 @@ paths:
           required: true
           schema:
             type: string
-            example: "0xD70952032620CC4E2737EB8AC379806359D8E0B17B0488F627997A0B043ABDED"
+          example: "0xD70952032620CC4E2737EB8AC379806359D8E0B17B0488F627997A0B043ABDED"
         - in: query
           name: prove
           description: Include proofs of the transactions inclusion in the block
           required: false
           schema:
             type: boolean
-            example: true
             default: false
+          example: true
       tags:
         - Info
       description: |
@@ -1083,30 +1083,30 @@ paths:
           required: true
           schema:
             type: string
-            example: "/a/b/c"
+          example: "/a/b/c"
         - in: query
           name: data
           description: Data
           required: true
           schema:
             type: string
-            example: "IHAVENOIDEA"
+          example: "IHAVENOIDEA"
         - in: query
           name: height
           description: Height (0 means latest)
           required: false
           schema:
             type: integer
-            example: 1
             default: 0
+          example: 1
         - in: query
           name: prove
           description: Include proofs of the transactions inclusion in the block
           required: false
           schema:
             type: boolean
-            example: true
             default: false
+          example: true
       tags:
         - ABCI
       description: |
@@ -1135,7 +1135,7 @@ paths:
           required: true
           schema:
             type: string
-            example: "JSON_EVIDENCE_encoded"
+          example: "JSON_EVIDENCE_encoded"
       tags:
         - Info
       description: |
@@ -1717,7 +1717,7 @@ components:
               type: boolean
               example: true
           type: object
-    ValidatorsResponse:
+    VotersResponse:
       type: object
       required:
         - "jsonrpc"
@@ -1733,12 +1733,12 @@ components:
         result:
           required:
             - "block_height"
-            - "validators"
+            - "voters"
           properties:
             block_height:
               type: string
               example: "55"
-            validators:
+            voters:
               type: array
               items:
                 $ref: "#/components/schemas/ValidatorPriority"
@@ -1846,7 +1846,8 @@ components:
                 - "step"
                 - "start_time"
                 - "commit_time"
-                - "validators"
+                - "voters"
+                - "proposer"
                 - "proposal"
                 - "proposal_block"
                 - "proposal_block_parts"
@@ -1859,7 +1860,7 @@ components:
                 - "votes"
                 - "commit_round"
                 - "last_commit"
-                - "last_validators"
+                - "last_voters"
                 - "triggered_timeout_precommit"
               properties:
                 height:
@@ -1877,17 +1878,14 @@ components:
                 commit_time:
                   type: string
                   example: "2019-08-05T11:28:44.064658805Z"
-                validators:
+                voters:
                   required:
-                    - "validators"
-                    - "proposer"
+                    - "voters"
                   properties:
-                    validators:
+                    voters:
                       type: array
                       items:
                         $ref: "#/components/schemas/ValidatorPriority"
-                    proposer:
-                      $ref: "#/components/schemas/ValidatorPriority"
                   type: object
                 locked_round:
                   type: integer
@@ -1947,22 +1945,46 @@ components:
                       properties: {}
                       type: object
                   type: object
-                last_validators:
+                last_voters:
                   required:
-                    - "validators"
-                    - "proposer"
+                    - "voters"
                   properties:
-                    validators:
+                    voters:
                       type: array
                       items:
                         $ref: "#/components/schemas/ValidatorPriority"
-                    proposer:
-                      $ref: "#/components/schemas/ValidatorPriority"
                   type: object
                 triggered_timeout_precommit:
                   type: boolean
                   example: false
               type: object
+            proposer:
+              required:
+                - "address"
+                - "pub_key"
+                - "voting_power"
+                - "proposer_priority"
+              properties:
+                address:
+                  type: "string"
+                  example: "708FDDCE121CDADA502F2B0252FEF13FDAA31E50"
+                pub_key:
+                  required:
+                    - "type"
+                    - "value"
+                  properties:
+                    type:
+                      example: "tendermint/PubKeyEd25519"
+                    value:
+                      type: "string"
+                      example: "VNMNfw7mrQBSpEvCtA9ykOe6BoR00RM9b/a9v3vXZhY="
+                  type: "object"
+                voting_power:
+                  type: "string"
+                  example: "295360"
+                proposer_priority:
+                  type: "string"
+                  example: "-88886833"
             peers:
               type: array
               items:
@@ -2667,7 +2689,7 @@ components:
               type: string
               example: ""
             codespace:
-              type: string
+              type: "string"
               example: "ibc"
             hash:
               type: string
@@ -2751,11 +2773,15 @@ components:
         evidence:
           type: object
           required:
-            - "max_age"
+            - "max_age_num_blocks"
+            - "max_age_duration"
           properties:
-            max_age:
+            max_age_num_blocks:
               type: string
               example: "100000"
+            max_age_duration:
+              type: "string"
+              example: "172800000000000"
         validator:
           type: object
           required:
@@ -2792,8 +2818,7 @@ components:
         - "last_block_id"
         - "last_commit_hash"
         - "data_hash"
-        - "validators_hash"
-        - "next_validators_hash"
+        - "voters_hash"
         - "consensus_hash"
         - "app_hash"
         - "last_results_hash"
@@ -2829,10 +2854,7 @@ components:
         data_hash:
           type: string
           example: "970886F99E77ED0D60DA8FCE0447C2676E59F2F77302B0C4AA10E1D02F18EF73"
-        validators_hash:
-          type: string
-          example: "D658BFD100CA8025CFD3BECFE86194322731D387286FBD26E059115FD5F2BCA0"
-        next_validators_hash:
+        voters_hash:
           type: string
           example: "D658BFD100CA8025CFD3BECFE86194322731D387286FBD26E059115FD5F2BCA0"
         consensus_hash:
@@ -2859,7 +2881,7 @@ components:
       properties:
         hash:
           type: string
-          example: "112BC173FD838FB68EB43476816CD7B4C6661B6884A9E357B417EE957E1CF8F7"
+          example: "D82C2734BB0E76C772A10994B210EF9D11505D1B98CB189D9CF7F9A5488672A5"
         parts:
           required:
             - "total"
@@ -2870,5 +2892,5 @@ components:
               example: 1
             hash:
               type: string
-              example: "38D4B26B5B725C4F13571EFE022C030390E4C33C8CF6F88EDD142EA769642DBD"
+              example: "CB02DCAA7FB46BF874052EC2273FD0B1F2CF2E1593298D9781E60FE9C3DB8638"
           type: object

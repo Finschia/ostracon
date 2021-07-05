@@ -27,6 +27,7 @@ var Routes = map[string]*rpc.RPCFunc{
 	"tx":                   rpc.NewRPCFunc(Tx, "hash,prove"),
 	"tx_search":            rpc.NewRPCFunc(TxSearch, "query,prove,page,per_page,order_by"),
 	"validators":           rpc.NewRPCFunc(Validators, "height,page,per_page"),
+	"voters":               rpc.NewRPCFunc(Voters, "height,page,per_page"),
 	"dump_consensus_state": rpc.NewRPCFunc(DumpConsensusState, ""),
 	"consensus_state":      rpc.NewRPCFunc(ConsensusState, ""),
 	"consensus_params":     rpc.NewRPCFunc(ConsensusParams, "height"),

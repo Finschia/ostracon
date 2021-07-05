@@ -454,8 +454,10 @@ func (c *Client) TxSearch(ctx context.Context, query string, prove bool, page, p
 }
 
 // Validators fetches and verifies validators.
-func (c *Client) Validators(ctx context.Context, height *int64, pagePtr, perPagePtr *int) (*ctypes.ResultValidators,
-	error) {
+//
+// WARNING: only full validator sets are verified (when length of validators is
+// less than +perPage+. +perPage+ default is 30, max is 100).
+func (c *Client) Validators(ctx context.Context, height *int64, pagePtr, perPagePtr *int) (*ctypes.ResultValidators, error) {
 	// Update the light client if we're behind and retrieve the light block at the requested height
 	// or at the latest height if no height is provided.
 	l, err := c.updateLightClientIfNeededTo(ctx, height)
@@ -477,6 +479,34 @@ func (c *Client) Validators(ctx context.Context, height *int64, pagePtr, perPage
 	return &ctypes.ResultValidators{
 		BlockHeight: l.Height,
 		Validators:  v,
+		Count:       len(v),
+		Total:       totalCount}, nil
+}
+
+// Voters fetches and verifies validators.
+func (c *Client) Voters(ctx context.Context, height *int64, pagePtr, perPagePtr *int) (*ctypes.ResultVoters,
+	error) {
+	// Update the light client if we're behind and retrieve the light block at the requested height
+	// or at the latest height if no height is provided.
+	l, err := c.updateLightClientIfNeededTo(ctx, height)
+	if err != nil {
+		return nil, err
+	}
+
+	totalCount := len(l.ValidatorSet.Validators)
+	perPage := validatePerPage(perPagePtr)
+	page, err := validatePage(pagePtr, perPage, totalCount)
+	if err != nil {
+		return nil, err
+	}
+
+	skipCount := validateSkipCount(page, perPage)
+
+	v := l.VoterSet.Voters[skipCount : skipCount+tmmath.MinInt(perPage, totalCount-skipCount)]
+
+	return &ctypes.ResultVoters{
+		BlockHeight: l.Height,
+		Voters:      v,
 		Count:       len(v),
 		Total:       totalCount}, nil
 }

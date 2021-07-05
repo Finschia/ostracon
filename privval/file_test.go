@@ -2,11 +2,15 @@ package privval
 
 import (
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"reflect"
 	"testing"
 	"time"
+
+	"github.com/tendermint/tendermint/crypto/composite"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,6 +24,23 @@ import (
 	tmtime "github.com/tendermint/tendermint/types/time"
 )
 
+func TestGenFilePV(t *testing.T) {
+	tempKeyFile, err := ioutil.TempFile("", "priv_validator_key_")
+	require.Nil(t, err)
+	tempStateFile, err := ioutil.TempFile("", "priv_validator_state_")
+	require.Nil(t, err)
+
+	privValEd25519, err := GenFilePV(tempKeyFile.Name(), tempStateFile.Name(), PrivKeyTypeEd25519)
+	require.EqualValues(t, reflect.TypeOf(ed25519.PubKey{}), reflect.TypeOf(privValEd25519.Key.PubKey))
+
+	privValComposite, err := GenFilePV(tempKeyFile.Name(), tempStateFile.Name(), PrivKeyTypeComposite)
+	require.EqualValues(t, reflect.TypeOf(composite.PubKey{}), reflect.TypeOf(privValComposite.Key.PubKey))
+
+	privValUndefinedPrivKeyType, err := GenFilePV(tempKeyFile.Name(), tempStateFile.Name(), "")
+	require.NotNil(t, err)
+	require.Nil(t, privValUndefinedPrivKeyType)
+}
+
 func TestGenLoadValidator(t *testing.T) {
 	assert := assert.New(t)
 
@@ -28,7 +49,8 @@ func TestGenLoadValidator(t *testing.T) {
 	tempStateFile, err := ioutil.TempFile("", "priv_validator_state_")
 	require.Nil(t, err)
 
-	privVal := GenFilePV(tempKeyFile.Name(), tempStateFile.Name())
+	privVal, err := GenFilePV(tempKeyFile.Name(), tempStateFile.Name(), PrivKeyTypeEd25519)
+	require.Nil(t, err)
 
 	height := int64(100)
 	privVal.LastSignState.Height = height
@@ -46,7 +68,9 @@ func TestResetValidator(t *testing.T) {
 	tempStateFile, err := ioutil.TempFile("", "priv_validator_state_")
 	require.Nil(t, err)
 
-	privVal := GenFilePV(tempKeyFile.Name(), tempStateFile.Name())
+	privVal, err := GenFilePV(tempKeyFile.Name(), tempStateFile.Name(), PrivKeyTypeEd25519)
+	require.Nil(t, err)
+
 	emptyState := FilePVLastSignState{filePath: tempStateFile.Name()}
 
 	// new priv val has empty state
@@ -86,9 +110,13 @@ func TestLoadOrGenValidator(t *testing.T) {
 		t.Error(err)
 	}
 
-	privVal := LoadOrGenFilePV(tempKeyFilePath, tempStateFilePath)
+	privVal, err := LoadOrGenFilePV(tempKeyFilePath, tempStateFilePath, PrivKeyTypeEd25519)
+	require.Nil(t, err)
+
 	addr := privVal.GetAddress()
-	privVal = LoadOrGenFilePV(tempKeyFilePath, tempStateFilePath)
+	privVal, err = LoadOrGenFilePV(tempKeyFilePath, tempStateFilePath, PrivKeyTypeEd25519)
+	require.Nil(t, err)
+
 	assert.Equal(addr, privVal.GetAddress(), "expected privval addr to be the same")
 }
 
@@ -164,7 +192,8 @@ func TestSignVote(t *testing.T) {
 	tempStateFile, err := ioutil.TempFile("", "priv_validator_state_")
 	require.Nil(t, err)
 
-	privVal := GenFilePV(tempKeyFile.Name(), tempStateFile.Name())
+	privVal, err := GenFilePV(tempKeyFile.Name(), tempStateFile.Name(), PrivKeyTypeEd25519)
+	require.Nil(t, err)
 
 	randbytes := tmrand.Bytes(tmhash.Size)
 	randbytes2 := tmrand.Bytes(tmhash.Size)
@@ -217,7 +246,8 @@ func TestSignProposal(t *testing.T) {
 	tempStateFile, err := ioutil.TempFile("", "priv_validator_state_")
 	require.Nil(t, err)
 
-	privVal := GenFilePV(tempKeyFile.Name(), tempStateFile.Name())
+	privVal, err := GenFilePV(tempKeyFile.Name(), tempStateFile.Name(), PrivKeyTypeEd25519)
+	require.Nil(t, err)
 
 	randbytes := tmrand.Bytes(tmhash.Size)
 	randbytes2 := tmrand.Bytes(tmhash.Size)
@@ -259,13 +289,36 @@ func TestSignProposal(t *testing.T) {
 	assert.Equal(sig, proposal.Signature)
 }
 
+func TestGenerateVRFProof(t *testing.T) {
+	tempKeyFile, err := ioutil.TempFile("", "priv_validator_key_")
+	require.Nil(t, err)
+	tempStateFile, err := ioutil.TempFile("", "priv_validator_state_")
+	require.Nil(t, err)
+
+	privVal, err := GenFilePV(tempKeyFile.Name(), tempStateFile.Name(), PrivKeyTypeEd25519)
+	require.Nil(t, err)
+
+	success := [][]byte{{}, {0x00}, make([]byte, 100)}
+	for _, msg := range success {
+		proof, err := privVal.GenerateVRFProof(msg)
+		require.Nil(t, err)
+		t.Log("  Message    : ", hex.EncodeToString(msg), " -> ", hex.EncodeToString(proof[:]))
+		pubKey, err := privVal.GetPubKey()
+		require.NoError(t, err)
+		output, err := pubKey.VRFVerify(proof, msg)
+		require.Nil(t, err)
+		require.NotNil(t, output)
+	}
+}
+
 func TestDifferByTimestamp(t *testing.T) {
 	tempKeyFile, err := ioutil.TempFile("", "priv_validator_key_")
 	require.Nil(t, err)
 	tempStateFile, err := ioutil.TempFile("", "priv_validator_state_")
 	require.Nil(t, err)
 
-	privVal := GenFilePV(tempKeyFile.Name(), tempStateFile.Name())
+	privVal, err := GenFilePV(tempKeyFile.Name(), tempStateFile.Name(), PrivKeyTypeEd25519)
+	require.Nil(t, err)
 	randbytes := tmrand.Bytes(tmhash.Size)
 	block1 := types.BlockID{Hash: randbytes, PartSetHeader: types.PartSetHeader{Total: 5, Hash: randbytes}}
 	height, round := int64(10), int32(1)

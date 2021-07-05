@@ -1,9 +1,14 @@
 package evidence_test
 
 import (
+	"fmt"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/tendermint/tendermint/crypto/bls"
+	"github.com/tendermint/tendermint/crypto/composite"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -44,12 +49,13 @@ func TestEvidencePoolBasic(t *testing.T) {
 		blockStore = &mocks.BlockStore{}
 	)
 
-	valSet, privVals := types.RandValidatorSet(1, 10)
+	valSet, voterSet, privVals := types.RandVoterSet(1, 10)
 
 	blockStore.On("LoadBlockMeta", mock.AnythingOfType("int64")).Return(
 		&types.BlockMeta{Header: types.Header{Time: defaultEvidenceTime}},
 	)
 	stateStore.On("LoadValidators", mock.AnythingOfType("int64")).Return(valSet, nil)
+	stateStore.On("LoadVoters", mock.AnythingOfType("int64"), mock.AnythingOfType("*types.VoterParams")).Return(voterSet, nil)
 	stateStore.On("Load").Return(createState(height+1, valSet), nil)
 
 	pool, err := evidence.NewPool(evidenceDB, stateStore, blockStore)
@@ -82,7 +88,17 @@ func TestEvidencePoolBasic(t *testing.T) {
 	next := pool.EvidenceFront()
 	assert.Equal(t, ev, next.Value.(types.Evidence))
 
-	const evidenceBytes int64 = 372
+	var evidenceBytes int64
+	switch keyType := voterSet.Voters[0].PubKey.(type) {
+	case ed25519.PubKey:
+		evidenceBytes = 372
+	case bls.PubKey:
+		evidenceBytes = 436
+	case composite.PubKey:
+		evidenceBytes = 436
+	default:
+		assert.Fail(t, fmt.Sprintf("unknown public key: %s", keyType))
+	}
 	evs, size = pool.PendingEvidence(evidenceBytes)
 	assert.Equal(t, 1, len(evs))
 	assert.Equal(t, evidenceBytes, size) // check that the size of the single evidence in bytes is correct
@@ -97,7 +113,7 @@ func TestEvidencePoolBasic(t *testing.T) {
 // Tests inbound evidence for the right time and height
 func TestAddExpiredEvidence(t *testing.T) {
 	var (
-		val                 = types.NewMockPV()
+		val                 = types.NewMockPV(types.PrivKeyComposite) // TODO 🏺 need to test by all key types
 		height              = int64(30)
 		stateStore          = initializeValidatorState(val, height)
 		evidenceDB          = dbm.NewMemDB()
@@ -168,7 +184,7 @@ func TestReportConflictingVotes(t *testing.T) {
 	state := pool.State()
 	state.LastBlockHeight++
 	state.LastBlockTime = ev.Time()
-	state.LastValidators = types.NewValidatorSet([]*types.Validator{val})
+	state.LastVoters = types.ToVoterAll([]*types.Validator{val})
 	pool.Update(state, []types.Evidence{})
 
 	// should be able to retrieve evidence from pool
@@ -240,14 +256,14 @@ func TestCheckEvidenceWithLightClientAttack(t *testing.T) {
 		validatorPower int64 = 10
 		height         int64 = 10
 	)
-	conflictingVals, conflictingPrivVals := types.RandValidatorSet(nValidators, validatorPower)
+	conflictingVals, conflictingVoters, conflictingPrivVals := types.RandVoterSet(nValidators, validatorPower)
 	trustedHeader := makeHeaderRandom(height)
 	trustedHeader.Time = defaultEvidenceTime
 
 	conflictingHeader := makeHeaderRandom(height)
-	conflictingHeader.ValidatorsHash = conflictingVals.Hash()
+	conflictingHeader.VotersHash = conflictingVoters.Hash()
 
-	trustedHeader.ValidatorsHash = conflictingHeader.ValidatorsHash
+	trustedHeader.VotersHash = conflictingHeader.VotersHash
 	trustedHeader.NextValidatorsHash = conflictingHeader.NextValidatorsHash
 	trustedHeader.ConsensusHash = conflictingHeader.ConsensusHash
 	trustedHeader.AppHash = conflictingHeader.AppHash
@@ -256,7 +272,7 @@ func TestCheckEvidenceWithLightClientAttack(t *testing.T) {
 	// for simplicity we are simulating a duplicate vote attack where all the validators in the
 	// conflictingVals set voted twice
 	blockID := makeBlockID(conflictingHeader.Hash(), 1000, []byte("partshash"))
-	voteSet := types.NewVoteSet(evidenceChainID, height, 1, tmproto.SignedMsgType(2), conflictingVals)
+	voteSet := types.NewVoteSet(evidenceChainID, height, 1, tmproto.SignedMsgType(2), conflictingVoters)
 	commit, err := types.MakeCommit(blockID, height, 1, voteSet, conflictingPrivVals, defaultEvidenceTime)
 	require.NoError(t, err)
 	ev := &types.LightClientAttackEvidence{
@@ -266,6 +282,7 @@ func TestCheckEvidenceWithLightClientAttack(t *testing.T) {
 				Commit: commit,
 			},
 			ValidatorSet: conflictingVals,
+			VoterSet:     conflictingVoters,
 		},
 		CommonHeight:        10,
 		TotalVotingPower:    int64(nValidators) * validatorPower,
@@ -274,7 +291,7 @@ func TestCheckEvidenceWithLightClientAttack(t *testing.T) {
 	}
 
 	trustedBlockID := makeBlockID(trustedHeader.Hash(), 1000, []byte("partshash"))
-	trustedVoteSet := types.NewVoteSet(evidenceChainID, height, 1, tmproto.SignedMsgType(2), conflictingVals)
+	trustedVoteSet := types.NewVoteSet(evidenceChainID, height, 1, tmproto.SignedMsgType(2), conflictingVoters)
 	trustedCommit, err := types.MakeCommit(trustedBlockID, height, 1, trustedVoteSet, conflictingPrivVals,
 		defaultEvidenceTime)
 	require.NoError(t, err)
@@ -286,6 +303,7 @@ func TestCheckEvidenceWithLightClientAttack(t *testing.T) {
 	}
 	stateStore := &smmocks.Store{}
 	stateStore.On("LoadValidators", height).Return(conflictingVals, nil)
+	stateStore.On("LoadVoters", height, mock.AnythingOfType("*types.VoterParams")).Return(conflictingVoters, nil)
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
 	blockStore.On("LoadBlockMeta", height).Return(&types.BlockMeta{Header: *trustedHeader})
@@ -312,7 +330,7 @@ func TestCheckEvidenceWithLightClientAttack(t *testing.T) {
 // pending evidence and continue to gossip it
 func TestRecoverPendingEvidence(t *testing.T) {
 	height := int64(10)
-	val := types.NewMockPV()
+	val := types.NewMockPV(types.PrivKeyComposite) // TODO 🏺 need to test by all key types
 	valAddress := val.PrivKey.PubKey().Address()
 	evidenceDB := dbm.NewMemDB()
 	stateStore := initializeValidatorState(val, height)
@@ -364,11 +382,13 @@ func initializeStateFromValidatorSet(valSet *types.ValidatorSet, height int64) s
 	state := sm.State{
 		ChainID:                     evidenceChainID,
 		InitialHeight:               1,
+		VoterParams:                 types.DefaultVoterParams(),
 		LastBlockHeight:             height,
 		LastBlockTime:               defaultEvidenceTime,
 		Validators:                  valSet,
-		NextValidators:              valSet.CopyIncrementProposerPriority(1),
-		LastValidators:              valSet,
+		NextValidators:              valSet.Copy(),
+		Voters:                      types.ToVoterAll(valSet.Validators),
+		LastVoters:                  types.ToVoterAll(valSet.Validators),
 		LastHeightValidatorsChanged: 1,
 		ConsensusParams: tmproto.ConsensusParams{
 			Block: tmproto.BlockParams{
@@ -381,6 +401,7 @@ func initializeStateFromValidatorSet(valSet *types.ValidatorSet, height int64) s
 				MaxBytes:        1000,
 			},
 		},
+		LastProofHash: []byte{0, 0, 0, 0},
 	}
 
 	// save all states up to height
@@ -397,12 +418,11 @@ func initializeStateFromValidatorSet(valSet *types.ValidatorSet, height int64) s
 func initializeValidatorState(privVal types.PrivValidator, height int64) sm.Store {
 
 	pubKey, _ := privVal.GetPubKey()
-	validator := &types.Validator{Address: pubKey.Address(), VotingPower: 10, PubKey: pubKey}
+	validator := &types.Validator{Address: pubKey.Address(), StakingPower: 10, PubKey: pubKey}
 
 	// create validator set and state
 	valSet := &types.ValidatorSet{
 		Validators: []*types.Validator{validator},
-		Proposer:   validator,
 	}
 
 	return initializeStateFromValidatorSet(valSet, height)
@@ -414,9 +434,11 @@ func initializeBlockStore(db dbm.DB, state sm.State, valAddr []byte) *store.Bloc
 	blockStore := store.NewBlockStore(db)
 
 	for i := int64(1); i <= state.LastBlockHeight; i++ {
+		round := int32(0)
 		lastCommit := makeCommit(i-1, valAddr)
+		proof := state.MakeHashMessage(round)
 		block, _ := state.MakeBlock(i, []types.Tx{}, lastCommit, nil,
-			state.Validators.GetProposer().Address)
+			state.Validators.SelectProposer(proof, i, round).Address, round, proof)
 		block.Header.Time = defaultEvidenceTime.Add(time.Duration(i) * time.Minute)
 		block.Header.Version = tmversion.Consensus{Block: version.BlockProtocol, App: 1}
 		const parts = 1
@@ -440,7 +462,7 @@ func makeCommit(height int64, valAddr []byte) *types.Commit {
 }
 
 func defaultTestPool(height int64) (*evidence.Pool, types.MockPV) {
-	val := types.NewMockPV()
+	val := types.NewMockPV(types.PrivKeyComposite) // TODO 🏺 need to test by all key types
 	valAddress := val.PrivKey.PubKey().Address()
 	evidenceDB := dbm.NewMemDB()
 	stateStore := initializeValidatorState(val, height)

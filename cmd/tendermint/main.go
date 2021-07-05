@@ -15,7 +15,6 @@ func main() {
 	rootCmd := cmd.RootCmd
 	rootCmd.AddCommand(
 		cmd.GenValidatorCmd,
-		cmd.InitFilesCmd,
 		cmd.ProbeUpnpCmd,
 		cmd.LightCmd,
 		cmd.ReplayCmd,
@@ -42,6 +41,7 @@ func main() {
 	nodeFunc := nm.DefaultNewNode
 
 	// Create & start node
+	rootCmd.AddCommand(cmd.NewInitCmd())
 	rootCmd.AddCommand(cmd.NewRunNodeCmd(nodeFunc))
 
 	cmd := cli.PrepareBaseCmd(rootCmd, "TM", os.ExpandEnv(filepath.Join("$HOME", cfg.DefaultTendermintDir)))

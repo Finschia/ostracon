@@ -29,6 +29,10 @@ func calcValidatorsKey(height int64) []byte {
 	return []byte(fmt.Sprintf("validatorsKey:%v", height))
 }
 
+func calcProofHashKey(height int64) []byte {
+	return []byte(fmt.Sprintf("proofHashKey:%v", height))
+}
+
 func calcConsensusParamsKey(height int64) []byte {
 	return []byte(fmt.Sprintf("consensusParamsKey:%v", height))
 }
@@ -56,6 +60,8 @@ type Store interface {
 	Load() (State, error)
 	// LoadValidators loads the validator set at a given height
 	LoadValidators(int64) (*types.ValidatorSet, error)
+	// LoadVoters loads the voter set at a given height
+	LoadVoters(int64, *types.VoterParams) (*types.VoterSet, error)
 	// LoadABCIResponses loads the abciResponse for a given height
 	LoadABCIResponses(int64) (*tmstate.ABCIResponses, error)
 	// LoadConsensusParams loads the consensus params for a given height
@@ -177,6 +183,12 @@ func (store dbStore) save(state State, key []byte) error {
 		state.LastHeightConsensusParamsChanged, state.ConsensusParams); err != nil {
 		return err
 	}
+
+	// Save current proof hash
+	if err := store.db.Set(calcProofHashKey(nextHeight), state.LastProofHash); err != nil {
+		return err
+	}
+
 	err := store.db.SetSync(key, state.Bytes())
 	if err != nil {
 		return err
@@ -184,15 +196,17 @@ func (store dbStore) save(state State, key []byte) error {
 	return nil
 }
 
-// BootstrapState saves a new state, used e.g. by state sync when starting from non-zero height.
+// Bootstrap saves a new state, used e.g. by state sync when starting from non-zero height.
 func (store dbStore) Bootstrap(state State) error {
 	height := state.LastBlockHeight + 1
 	if height == 1 {
 		height = state.InitialHeight
 	}
 
-	if height > 1 && !state.LastValidators.IsNilOrEmpty() {
-		if err := store.saveValidatorsInfo(height-1, height-1, state.LastValidators); err != nil {
+	if height > 1 && !state.LastVoters.IsNilOrEmpty() {
+		// TODO 🏺Can apply empty bytes for the ProofHash corresponding to LastValidators? and LastVoters as LastValidators?
+		vals := types.NewValidatorSet(state.LastVoters.Voters)
+		if err := store.saveValidatorsInfo(height-1, height-1, vals); err != nil {
 			return err
 		}
 	}
@@ -210,6 +224,9 @@ func (store dbStore) Bootstrap(state State) error {
 		return err
 	}
 
+	if err := store.db.Set(calcProofHashKey(height+1), state.LastProofHash); err != nil {
+		return err
+	}
 	return store.db.SetSync(stateKey, state.Bytes())
 }
 
@@ -418,13 +435,57 @@ func (store dbStore) SaveABCIResponses(height int64, abciResponses *tmstate.ABCI
 // Returns ErrNoValSetForHeight if the validator set can't be found for this height.
 func (store dbStore) LoadValidators(height int64) (*types.ValidatorSet, error) {
 	valInfo, err := loadValidatorsInfo(store.db, height)
-	if err != nil {
+	if err != nil || valInfo == nil {
 		return nil, ErrNoValSetForHeight{height}
 	}
 	if valInfo.ValidatorSet == nil {
 		lastStoredHeight := lastStoredHeightFor(height, valInfo.LastHeightChanged)
 		valInfo2, err := loadValidatorsInfo(store.db, lastStoredHeight)
-		if err != nil || valInfo2.ValidatorSet == nil {
+		if err != nil || valInfo2 == nil || valInfo2.ValidatorSet == nil {
+			return nil,
+				fmt.Errorf("couldn't find validators at height %d (height %d was originally requested): %w",
+					lastStoredHeight,
+					height,
+					err,
+				)
+		}
+
+		vs, err := types.ValidatorSetFromProto(valInfo2.ValidatorSet)
+		if err != nil {
+			return nil, err
+		}
+
+		vs.IncrementProposerPriority(tmmath.SafeConvertInt32(height - lastStoredHeight)) // mutate
+		vi2, err := vs.ToProto()
+		if err != nil {
+			return nil, err
+		}
+
+		valInfo2.ValidatorSet = vi2
+		valInfo = valInfo2
+	}
+
+	valSet, err := types.ValidatorSetFromProto(valInfo.ValidatorSet)
+	if err != nil {
+		return nil, err
+	}
+	return valSet, nil
+}
+
+// LoadVoters loads the VoterSet for a given height.
+// Returns ErrNoValSetForHeight if the validator set can't be found for this height.
+// Returns ErrNoProofHashForHeight if the proof hash can't be found for this height.
+// We cannot get the voters for latest height, because we save next validators for latest height+1 and
+// proof hash for latest height
+func (store dbStore) LoadVoters(height int64, voterParams *types.VoterParams) (*types.VoterSet, error) {
+	valInfo, err := loadValidatorsInfo(store.db, height)
+	if err != nil || valInfo == nil {
+		return nil, ErrNoValSetForHeight{height}
+	}
+	if valInfo.ValidatorSet == nil {
+		lastStoredHeight := lastStoredHeightFor(height, valInfo.LastHeightChanged)
+		valInfo2, err := loadValidatorsInfo(store.db, lastStoredHeight)
+		if err != nil || valInfo2 == nil || valInfo2.ValidatorSet == nil {
 			return nil,
 				fmt.Errorf("couldn't find validators at height %d (height %d was originally requested): %w",
 					lastStoredHeight,
@@ -453,7 +514,17 @@ func (store dbStore) LoadValidators(height int64) (*types.ValidatorSet, error) {
 		return nil, err
 	}
 
-	return vip, nil
+	proofHash, err := store.db.Get(calcProofHashKey(height))
+	if err != nil {
+		// DATA HAS BEEN CORRUPTED OR THE SPEC HAS CHANGED
+		tmos.Exit(fmt.Sprintf(`LoadValidators: ProofHash has been corrupted or its spec has changed:
+                %v\n`, err))
+	}
+	if len(proofHash) == 0 {
+		return nil, ErrNoProofHashForHeight{height}
+	}
+
+	return types.SelectVoter(vip, proofHash, voterParams), nil
 }
 
 func lastStoredHeightFor(height, lastHeightChanged int64) int64 {

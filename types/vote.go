@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/tendermint/tendermint/crypto/bls"
+	"github.com/tendermint/tendermint/crypto/ed25519"
+
 	"github.com/tendermint/tendermint/crypto"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/libs/protoio"
@@ -56,6 +59,27 @@ type Vote struct {
 	ValidatorAddress Address               `json:"validator_address"`
 	ValidatorIndex   int32                 `json:"validator_index"`
 	Signature        []byte                `json:"signature"`
+}
+
+func MaxVoteBytes(signSize int) int64 {
+	size := (1 + 1) + // Type
+		(1 + 9) + // Height
+		(1 + 5) + // Round
+		(1 + 76 + 1) + // BlockID
+		(1 + 17 + 1) + // Timestamp
+		(1 + 20 + 1) + // ValidatorAddress
+		(1 + 5) // ValidatorIndex
+	switch signSize { // Signature
+	case 0:
+		/* */
+	case ed25519.SignatureSize:
+		fallthrough
+	case bls.SignatureSize:
+		size += 1 + signSize + 1
+	default:
+		panic(fmt.Sprintf("unsupported signature size: %d", signSize))
+	}
+	return int64(size)
 }
 
 // CommitSig converts the Vote to a CommitSig.
@@ -195,7 +219,7 @@ func (vote *Vote) ValidateBasic() error {
 	}
 
 	if len(vote.Signature) > MaxSignatureSize {
-		return fmt.Errorf("signature is too big (max: %d)", MaxSignatureSize)
+		return fmt.Errorf("signature is too big %d (max: %d)", len(vote.Signature), MaxSignatureSize)
 	}
 
 	return nil

@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	abcicli "github.com/tendermint/tendermint/abci/client"
+	"github.com/tendermint/tendermint/abci/example/kvstore"
 	"github.com/tendermint/tendermint/abci/types"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 )
@@ -14,9 +15,9 @@ func InitChain(client abcicli.Client) error {
 	total := 10
 	vals := make([]types.ValidatorUpdate, total)
 	for i := 0; i < total; i++ {
-		pubkey := tmrand.Bytes(33)
+		pubkey := kvstore.GenDefaultPrivKey().PubKey()
 		power := tmrand.Int()
-		vals[i] = types.UpdateValidator(pubkey, int64(power), "")
+		vals[i] = types.NewValidatorUpdate(pubkey, int64(power))
 	}
 	_, err := client.InitChainSync(types.RequestInitChain{
 		Validators: vals,

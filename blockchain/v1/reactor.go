@@ -71,7 +71,7 @@ type BlockchainReactor struct {
 
 // NewBlockchainReactor returns new reactor instance.
 func NewBlockchainReactor(state sm.State, blockExec *sm.BlockExecutor, store *store.BlockStore,
-	fastSync bool) *BlockchainReactor {
+	fastSync bool, async bool, recvBufSize int) *BlockchainReactor {
 
 	if state.LastBlockHeight != store.Height() {
 		panic(fmt.Sprintf("state (%v) and store (%v) height mismatch", state.LastBlockHeight,
@@ -99,7 +99,7 @@ func NewBlockchainReactor(state sm.State, blockExec *sm.BlockExecutor, store *st
 	}
 	fsm := NewFSM(startHeight, bcR)
 	bcR.fsm = fsm
-	bcR.BaseReactor = *p2p.NewBaseReactor("BlockchainReactor", bcR)
+	bcR.BaseReactor = *p2p.NewBaseReactor("BlockchainReactor", bcR, async, recvBufSize)
 	// bcR.swReporter = behaviour.NewSwitchReporter(bcR.BaseReactor.Switch)
 
 	return bcR
@@ -140,6 +140,9 @@ func (bcR *BlockchainReactor) SetLogger(l log.Logger) {
 func (bcR *BlockchainReactor) OnStart() error {
 	bcR.swReporter = behaviour.NewSwitchReporter(bcR.BaseReactor.Switch)
 	if bcR.fastSync {
+		// call BaseReactor's OnStart()
+		bcR.BaseReactor.OnStart()
+
 		go bcR.poolRoutine()
 	}
 	return nil
@@ -472,7 +475,7 @@ func (bcR *BlockchainReactor) processBlock() error {
 	// NOTE: we can probably make this more efficient, but note that calling
 	// first.Hash() doesn't verify the tx contents, so MakePartSet() is
 	// currently necessary.
-	err = bcR.state.Validators.VerifyCommitLight(chainID, firstID, first.Height, second.LastCommit)
+	err = bcR.state.Voters.VerifyCommitLight(chainID, firstID, first.Height, second.LastCommit)
 	if err != nil {
 		bcR.Logger.Error("error during commit verification", "err", err,
 			"first", first.Height, "second", second.Height)

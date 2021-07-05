@@ -148,7 +148,7 @@ func TestNodeSetPrivValTCP(t *testing.T) {
 	signerServer := privval.NewSignerServer(
 		dialerEndpoint,
 		config.ChainID(),
-		types.NewMockPV(),
+		types.NewMockPV(types.PrivKeyEd25519),
 	)
 
 	go func() {
@@ -194,7 +194,7 @@ func TestNodeSetPrivValIPC(t *testing.T) {
 	pvsc := privval.NewSignerServer(
 		dialerEndpoint,
 		config.ChainID(),
-		types.NewMockPV(),
+		types.NewMockPV(types.PrivKeyEd25519),
 	)
 
 	go func() {
@@ -291,10 +291,14 @@ func TestCreateProposalBlock(t *testing.T) {
 	)
 
 	commit := types.NewCommit(height-1, 0, types.BlockID{}, nil)
+	message := state.MakeHashMessage(0)
+	proof, _ := privVals[0].GenerateVRFProof(message)
 	block, _ := blockExec.CreateProposalBlock(
 		height,
 		state, commit,
 		proposerAddr,
+		0,
+		proof,
 	)
 
 	// check that the part set does not exceed the maximum block size
@@ -309,7 +313,7 @@ func TestCreateProposalBlock(t *testing.T) {
 	}
 	assert.EqualValues(t, partSetFromHeader.ByteSize(), partSet.ByteSize())
 
-	err = blockExec.ValidateBlock(state, block)
+	err = blockExec.ValidateBlock(state, 0, block)
 	assert.NoError(t, err)
 }
 
@@ -325,7 +329,7 @@ func TestMaxProposalBlockSize(t *testing.T) {
 	logger := log.TestingLogger()
 
 	var height int64 = 1
-	state, stateDB, _ := state(1, height)
+	state, stateDB, privVals := state(1, height)
 	stateStore := sm.NewStore(stateDB)
 	var maxBytes int64 = 16384
 	var partSize uint32 = 256
@@ -359,10 +363,14 @@ func TestMaxProposalBlockSize(t *testing.T) {
 	)
 
 	commit := types.NewCommit(height-1, 0, types.BlockID{}, nil)
+	message := state.MakeHashMessage(0)
+	proof, _ := privVals[0].GenerateVRFProof(message)
 	block, _ := blockExec.CreateProposalBlock(
 		height,
 		state, commit,
 		proposerAddr,
+		0,
+		proof,
 	)
 
 	pb, err := block.ToProto()
@@ -384,8 +392,10 @@ func TestNodeNewNodeCustomReactors(t *testing.T) {
 	nodeKey, err := p2p.LoadOrGenNodeKey(config.NodeKeyFile())
 	require.NoError(t, err)
 
+	pvKey, _ := privval.LoadOrGenFilePV(config.PrivValidatorKeyFile(), config.PrivValidatorStateFile(),
+		config.PrivValidatorKeyType())
 	n, err := NewNode(config,
-		privval.LoadOrGenFilePV(config.PrivValidatorKeyFile(), config.PrivValidatorStateFile()),
+		pvKey,
 		nodeKey,
 		proxy.DefaultClientCreator(config.ProxyApp, config.ABCI, config.DBDir()),
 		DefaultGenesisDocProviderFunc(config),
@@ -411,7 +421,9 @@ func state(nVals int, height int64) (sm.State, dbm.DB, []types.PrivValidator) {
 	privVals := make([]types.PrivValidator, nVals)
 	vals := make([]types.GenesisValidator, nVals)
 	for i := 0; i < nVals; i++ {
-		privVal := types.NewMockPV()
+		secret := []byte(fmt.Sprintf("test%d", i))
+		pk := ed25519.GenPrivKeyFromSecret(secret)
+		privVal := types.NewMockPVWithParams(pk, false, false)
 		privVals[i] = privVal
 		vals[i] = types.GenesisValidator{
 			Address: privVal.PrivKey.PubKey().Address(),
@@ -435,7 +447,7 @@ func state(nVals int, height int64) (sm.State, dbm.DB, []types.PrivValidator) {
 
 	for i := 1; i < int(height); i++ {
 		s.LastBlockHeight++
-		s.LastValidators = s.Validators.Copy()
+		s.LastVoters = s.Voters.Copy()
 		if err := stateStore.Save(s); err != nil {
 			panic(err)
 		}

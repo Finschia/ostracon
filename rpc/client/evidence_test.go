@@ -43,9 +43,9 @@ func newEvidence(t *testing.T, val *privval.FilePV,
 	require.NoError(t, err)
 
 	validator := types.NewValidator(val.Key.PubKey, 10)
-	valSet := types.NewValidatorSet([]*types.Validator{validator})
+	voterSet := types.ToVoterAll([]*types.Validator{validator})
 
-	return types.NewDuplicateVoteEvidence(vote, vote2, defaultTestTime, valSet)
+	return types.NewDuplicateVoteEvidence(vote, vote2, defaultTestTime, voterSet)
 }
 
 func makeEvidences(
@@ -116,9 +116,10 @@ func TestBroadcastEvidence_DuplicateVoteEvidence(t *testing.T) {
 	var (
 		config  = rpctest.GetConfig()
 		chainID = config.ChainID()
-		pv      = privval.LoadOrGenFilePV(config.PrivValidatorKeyFile(), config.PrivValidatorStateFile())
+		pv, err = privval.LoadOrGenFilePV(config.PrivValidatorKeyFile(), config.PrivValidatorStateFile(), privval.PrivKeyTypeEd25519)
 	)
 
+	require.NoError(t, err)
 	for i, c := range GetClients() {
 		correct, fakes := makeEvidences(t, pv, chainID)
 		t.Logf("client %d", i)
@@ -143,7 +144,7 @@ func TestBroadcastEvidence_DuplicateVoteEvidence(t *testing.T) {
 		err = abci.ReadMessage(bytes.NewReader(qres.Value), &v)
 		require.NoError(t, err, "Error reading query result, value %v", qres.Value)
 
-		pk, err := cryptoenc.PubKeyFromProto(v.PubKey)
+		pk, err := cryptoenc.PubKeyFromProto(&v.PubKey)
 		require.NoError(t, err)
 
 		require.EqualValues(t, rawpub, pk, "Stored PubKey not equal with expected, value %v", string(qres.Value))

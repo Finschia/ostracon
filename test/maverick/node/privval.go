@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/tendermint/tendermint/crypto/vrf"
+
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
@@ -262,6 +264,15 @@ func (pv *FilePV) SignProposal(chainID string, proposal *tmproto.Proposal) error
 		return fmt.Errorf("error signing proposal: %v", err)
 	}
 	return nil
+}
+
+func (pv *FilePV) GenerateVRFProof(message []byte) (crypto.Proof, error) {
+	privKey, ok := pv.Key.PrivKey.(ed25519.PrivKey)
+	if !ok {
+		return nil, fmt.Errorf("VRF proof unsupported")
+	}
+	proof, err := vrf.Prove(privKey, message)
+	return crypto.Proof(proof), err
 }
 
 // Save persists the FilePV to disk.

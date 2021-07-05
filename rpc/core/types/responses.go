@@ -76,9 +76,9 @@ type SyncInfo struct {
 
 // Info about the node's validator
 type ValidatorInfo struct {
-	Address     bytes.HexBytes `json:"address"`
-	PubKey      crypto.PubKey  `json:"pub_key"`
-	VotingPower int64          `json:"voting_power"`
+	Address      bytes.HexBytes `json:"address"`
+	PubKey       crypto.PubKey  `json:"pub_key"`
+	StakingPower int64          `json:"staking_power"`
 }
 
 // Node Status
@@ -122,13 +122,24 @@ type Peer struct {
 	RemoteIP         string               `json:"remote_ip"`
 }
 
-// Validators for a height.
+// ResultValidators for a height
 type ResultValidators struct {
-	BlockHeight int64              `json:"block_height"`
-	Validators  []*types.Validator `json:"validators"`
+	BlockHeight  int64              `json:"block_height"`
+	Validators   []*types.Validator `json:"validators"`
+	VoterIndices []int32            `json:"voter_indices"`
 	// Count of actual validators in this result
 	Count int `json:"count"`
 	// Total number of validators
+	Total int `json:"total"`
+}
+
+// ResultVoters for a height.
+type ResultVoters struct {
+	BlockHeight int64              `json:"block_height"`
+	Voters      []*types.Validator `json:"voters"`
+	// Count of actual voters in this result
+	Count int `json:"count"`
+	// Total number of voters
 	Total int `json:"total"`
 }
 

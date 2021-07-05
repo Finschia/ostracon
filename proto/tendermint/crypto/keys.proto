@@ -5,6 +5,15 @@ option go_package = "github.com/tendermint/tendermint/proto/tendermint/crypto";
 
 import "gogoproto/gogo.proto";
 
+// CompositePublicKey allows to use different public keys for different features
+message CompositePublicKey {
+  option (gogoproto.compare) = true;
+  option (gogoproto.equal)   = true;
+
+  PublicKey sign_key = 1;
+  PublicKey vrf_key  = 2;
+}
+
 // PublicKey defines the keys available for use with Tendermint Validators
 message PublicKey {
   option (gogoproto.compare) = true;
@@ -13,5 +22,9 @@ message PublicKey {
   oneof sum {
     bytes ed25519   = 1;
     bytes secp256k1 = 2;
+
+    // *** Ostracon Extended Fields ***
+    CompositePublicKey composite = 1000;
+    bytes              bls12     = 1001;
   }
 }

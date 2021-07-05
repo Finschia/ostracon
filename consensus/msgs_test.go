@@ -57,13 +57,13 @@ func TestMsgToProto(t *testing.T) {
 	}
 	pbProposal := proposal.ToProto()
 
-	pv := types.NewMockPV()
+	pv := types.NewMockPV(types.PrivKeyComposite) // TODO 🏺 need to test by all key types
 	pk, err := pv.GetPubKey()
 	require.NoError(t, err)
 	val := types.NewValidator(pk, 100)
 
 	vote, err := types.MakeVote(
-		1, types.BlockID{}, &types.ValidatorSet{Proposer: val, Validators: []*types.Validator{val}},
+		1, types.BlockID{}, &types.ValidatorSet{Validators: []*types.Validator{val}},
 		pv, "chainID", time.Now())
 	require.NoError(t, err)
 	pbVote := vote.ToProto()

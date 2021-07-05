@@ -54,13 +54,13 @@ type ReactorOption func(*Reactor)
 
 // NewReactor returns a new Reactor with the given
 // consensusState.
-func NewReactor(consensusState *State, waitSync bool, options ...ReactorOption) *Reactor {
+func NewReactor(consensusState *State, waitSync bool, async bool, recvBufSize int, options ...ReactorOption) *Reactor {
 	conR := &Reactor{
 		conS:     consensusState,
 		waitSync: waitSync,
 		Metrics:  NopMetrics(),
 	}
-	conR.BaseReactor = *p2p.NewBaseReactor("Consensus", conR)
+	conR.BaseReactor = *p2p.NewBaseReactor("Consensus", conR, async, recvBufSize)
 
 	for _, option := range options {
 		option(conR)
@@ -73,6 +73,9 @@ func NewReactor(consensusState *State, waitSync bool, options ...ReactorOption) 
 // broadcasted to other peers and starting state if we're not in fast sync.
 func (conR *Reactor) OnStart() error {
 	conR.Logger.Info("Reactor ", "waitSync", conR.WaitSync())
+
+	// call BaseReactor's OnStart()
+	conR.BaseReactor.OnStart()
 
 	// start routine that computes peer statistics for evaluating peer quality
 	go conR.peerStatsRoutine()
@@ -328,9 +331,9 @@ func (conR *Reactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 		case *VoteMessage:
 			cs := conR.conS
 			cs.mtx.RLock()
-			height, valSize, lastCommitSize := cs.Height, cs.Validators.Size(), cs.LastCommit.Size()
+			height, voterSize, lastCommitSize := cs.Height, cs.Voters.Size(), cs.LastCommit.Size()
 			cs.mtx.RUnlock()
-			ps.EnsureVoteBitArrays(height, valSize)
+			ps.EnsureVoteBitArrays(height, voterSize)
 			ps.EnsureVoteBitArrays(height-1, lastCommitSize)
 			ps.SetHasVote(msg.Vote)
 
@@ -675,9 +678,11 @@ OUTER_LOOP:
 		// If peer is lagging by more than 1, send Commit.
 		blockStoreBase := conR.conS.blockStore.Base()
 		if blockStoreBase > 0 && prs.Height != 0 && rs.Height >= prs.Height+2 && prs.Height >= blockStoreBase {
-			// Load the block commit for prs.Height,
+			// Load the seen commit for prs.Height,
 			// which contains precommit signatures for prs.Height.
-			if commit := conR.conS.blockStore.LoadBlockCommit(prs.Height); commit != nil {
+			// Originally the block commit was used, but with the addition of the BLS signature-aggregation,
+			// we use seen commit instead of the block commit because block commit has no individual signature.
+			if commit := conR.conS.blockStore.LoadSeenCommit(prs.Height); commit != nil {
 				if ps.PickSendVote(commit) {
 					logger.Debug("Picked Catchup commit to send", "height", prs.Height)
 					continue OUTER_LOOP
@@ -1140,7 +1145,7 @@ func (ps *PeerState) getVoteBitArray(height int64, round int32, votesType tmprot
 }
 
 // 'round': A round for which we have a +2/3 commit.
-func (ps *PeerState) ensureCatchupCommitRound(height int64, round int32, numValidators int) {
+func (ps *PeerState) ensureCatchupCommitRound(height int64, round int32, numVoters int) {
 	if ps.PRS.Height != height {
 		return
 	}
@@ -1164,37 +1169,37 @@ func (ps *PeerState) ensureCatchupCommitRound(height int64, round int32, numVali
 	if round == ps.PRS.Round {
 		ps.PRS.CatchupCommit = ps.PRS.Precommits
 	} else {
-		ps.PRS.CatchupCommit = bits.NewBitArray(numValidators)
+		ps.PRS.CatchupCommit = bits.NewBitArray(numVoters)
 	}
 }
 
 // EnsureVoteBitArrays ensures the bit-arrays have been allocated for tracking
 // what votes this peer has received.
-// NOTE: It's important to make sure that numValidators actually matches
-// what the node sees as the number of validators for height.
-func (ps *PeerState) EnsureVoteBitArrays(height int64, numValidators int) {
+// NOTE: It's important to make sure that numVoters actually matches
+// what the node sees as the number of voters for height.
+func (ps *PeerState) EnsureVoteBitArrays(height int64, numVoters int) {
 	ps.mtx.Lock()
 	defer ps.mtx.Unlock()
-	ps.ensureVoteBitArrays(height, numValidators)
+	ps.ensureVoteBitArrays(height, numVoters)
 }
 
-func (ps *PeerState) ensureVoteBitArrays(height int64, numValidators int) {
+func (ps *PeerState) ensureVoteBitArrays(height int64, numVoters int) {
 	if ps.PRS.Height == height {
 		if ps.PRS.Prevotes == nil {
-			ps.PRS.Prevotes = bits.NewBitArray(numValidators)
+			ps.PRS.Prevotes = bits.NewBitArray(numVoters)
 		}
 		if ps.PRS.Precommits == nil {
-			ps.PRS.Precommits = bits.NewBitArray(numValidators)
+			ps.PRS.Precommits = bits.NewBitArray(numVoters)
 		}
 		if ps.PRS.CatchupCommit == nil {
-			ps.PRS.CatchupCommit = bits.NewBitArray(numValidators)
+			ps.PRS.CatchupCommit = bits.NewBitArray(numVoters)
 		}
 		if ps.PRS.ProposalPOL == nil {
-			ps.PRS.ProposalPOL = bits.NewBitArray(numValidators)
+			ps.PRS.ProposalPOL = bits.NewBitArray(numVoters)
 		}
 	} else if ps.PRS.Height == height+1 {
 		if ps.PRS.LastCommit == nil {
-			ps.PRS.LastCommit = bits.NewBitArray(numValidators)
+			ps.PRS.LastCommit = bits.NewBitArray(numVoters)
 		}
 	}
 }

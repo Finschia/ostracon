@@ -1,14 +1,11 @@
 name: Lint
 on:
   push:
-    branches:
-      - master
     paths:
       - "**.md"
       - "**.yml"
       - "**.yaml"
   pull_request:
-    branches: [master]
     paths:
       - "**.md"
 

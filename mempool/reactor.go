@@ -101,13 +101,13 @@ func newMempoolIDs() *mempoolIDs {
 }
 
 // NewReactor returns a new Reactor with the given config and mempool.
-func NewReactor(config *cfg.MempoolConfig, mempool *CListMempool) *Reactor {
+func NewReactor(config *cfg.MempoolConfig, async bool, recvBufSize int, mempool *CListMempool) *Reactor {
 	memR := &Reactor{
 		config:  config,
 		mempool: mempool,
 		ids:     newMempoolIDs(),
 	}
-	memR.BaseReactor = *p2p.NewBaseReactor("Mempool", memR)
+	memR.BaseReactor = *p2p.NewBaseReactor("Mempool", memR, async, recvBufSize)
 	return memR
 }
 
@@ -125,6 +125,9 @@ func (memR *Reactor) SetLogger(l log.Logger) {
 
 // OnStart implements p2p.BaseReactor.
 func (memR *Reactor) OnStart() error {
+	// call BaseReactor's OnStart()
+	memR.BaseReactor.OnStart()
+
 	if !memR.config.Broadcast {
 		memR.Logger.Info("Tx broadcasting is disabled")
 	}

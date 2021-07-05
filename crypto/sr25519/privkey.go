@@ -42,6 +42,11 @@ func (privKey PrivKey) Sign(msg []byte) ([]byte, error) {
 	return sigBytes[:], nil
 }
 
+// VRFProve is not supported in Sr25519.
+func (privKey PrivKey) VRFProve(seed []byte) (crypto.Proof, error) {
+	return nil, fmt.Errorf("VRF prove is not supported by the sr25519")
+}
+
 // PubKey gets the corresponding public key from the private key.
 func (privKey PrivKey) PubKey() crypto.PubKey {
 	var p [PrivKeySize]byte

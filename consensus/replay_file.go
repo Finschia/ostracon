@@ -257,8 +257,8 @@ func (pb *playback) replayConsoleLoop() int {
 				switch tokens[1] {
 				case "short":
 					fmt.Printf("%v/%v/%v\n", rs.Height, rs.Round, rs.Step)
-				case "validators":
-					fmt.Println(rs.Validators)
+				case "voters":
+					fmt.Println(rs.Voters)
 				case "proposal":
 					fmt.Println(rs.Proposal)
 				case "proposal_block":
@@ -330,8 +330,7 @@ func newConsensusStateForReplay(config cfg.BaseConfig, csConfig *cfg.ConsensusCo
 	mempool, evpool := emptyMempool{}, sm.EmptyEvidencePool{}
 	blockExec := sm.NewBlockExecutor(stateStore, log.TestingLogger(), proxyApp.Consensus(), mempool, evpool)
 
-	consensusState := NewState(csConfig, state.Copy(), blockExec,
-		blockStore, mempool, evpool)
+	consensusState := NewState(csConfig, state.Copy(), blockExec, blockStore, mempool, evpool)
 
 	consensusState.SetEventBus(eventBus)
 	return consensusState

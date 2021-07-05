@@ -43,7 +43,7 @@ func TestReactorBroadcastEvidence(t *testing.T) {
 
 	// create statedb for everyone
 	stateDBs := make([]sm.Store, N)
-	val := types.NewMockPV()
+	val := types.NewMockPV(types.PrivKeyComposite) // TODO 🏺 need to test by all key types
 	// we need validators saved for heights at least as high as we have evidence for
 	height := int64(numEvidence) + 10
 	for i := 0; i < N; i++ {
@@ -73,7 +73,7 @@ func TestReactorBroadcastEvidence(t *testing.T) {
 func TestReactorSelectiveBroadcast(t *testing.T) {
 	config := cfg.TestConfig()
 
-	val := types.NewMockPV()
+	val := types.NewMockPV(types.PrivKeyComposite) // TODO 🏺 need to test by all key types
 	height1 := int64(numEvidence) + 10
 	height2 := int64(numEvidence) / 2
 
@@ -116,7 +116,7 @@ func TestReactorSelectiveBroadcast(t *testing.T) {
 func TestReactorsGossipNoCommittedEvidence(t *testing.T) {
 	config := cfg.TestConfig()
 
-	val := types.NewMockPV()
+	val := types.NewMockPV(types.PrivKeyComposite) // TODO 🏺 need to test by all key types
 	var height int64 = 10
 
 	// DB1 is ahead of DB2
@@ -188,13 +188,14 @@ func TestReactorsGossipNoCommittedEvidence(t *testing.T) {
 }
 
 func TestReactorBroadcastEvidenceMemoryLeak(t *testing.T) {
+	config := cfg.TestConfig()
 	evidenceTime := time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
 	evidenceDB := dbm.NewMemDB()
 	blockStore := &mocks.BlockStore{}
 	blockStore.On("LoadBlockMeta", mock.AnythingOfType("int64")).Return(
 		&types.BlockMeta{Header: types.Header{Time: evidenceTime}},
 	)
-	val := types.NewMockPV()
+	val := types.NewMockPV(types.PrivKeyComposite) // TODO 🏺 need to test by all key types
 	stateStore := initializeValidatorState(val, 1)
 	pool, err := evidence.NewPool(evidenceDB, stateStore, blockStore)
 	require.NoError(t, err)
@@ -215,7 +216,7 @@ func TestReactorBroadcastEvidenceMemoryLeak(t *testing.T) {
 	p.On("ID").Return("ABC")
 	p.On("String").Return("mock")
 
-	r := evidence.NewReactor(pool)
+	r := evidence.NewReactor(pool, config.P2P.RecvAsync, config.P2P.EvidenceRecvBufSize)
 	r.SetLogger(log.TestingLogger())
 	r.AddPeer(p)
 
@@ -256,11 +257,11 @@ func makeAndConnectReactorsAndPools(config *cfg.Config, stateStores []sm.Store) 
 			panic(err)
 		}
 		pools[i] = pool
-		reactors[i] = evidence.NewReactor(pool)
+		reactors[i] = evidence.NewReactor(pool, config.P2P.RecvAsync, config.P2P.EvidenceRecvBufSize)
 		reactors[i].SetLogger(logger.With("validator", i))
 	}
 
-	p2p.MakeConnectedSwitches(config.P2P, N, func(i int, s *p2p.Switch) *p2p.Switch {
+	p2p.MakeConnectedSwitches(config.P2P, N, func(i int, s *p2p.Switch, config *cfg.P2PConfig) *p2p.Switch {
 		s.AddReactor("EVIDENCE", reactors[i])
 		return s
 
@@ -371,17 +372,17 @@ func exampleVote(t byte) *types.Vote {
 func TestEvidenceVectors(t *testing.T) {
 
 	val := &types.Validator{
-		Address:     crypto.AddressHash([]byte("validator_address")),
-		VotingPower: 10,
+		Address:      crypto.AddressHash([]byte("validator_address")),
+		StakingPower: 10,
 	}
 
-	valSet := types.NewValidatorSet([]*types.Validator{val})
+	voterSet := types.WrapValidatorsToVoterSet([]*types.Validator{val})
 
 	dupl := types.NewDuplicateVoteEvidence(
 		exampleVote(1),
 		exampleVote(2),
 		defaultEvidenceTime,
-		valSet,
+		voterSet,
 	)
 
 	testCases := []struct {
@@ -389,7 +390,7 @@ func TestEvidenceVectors(t *testing.T) {
 		evidenceList []types.Evidence
 		expBytes     string
 	}{
-		{"DuplicateVoteEvidence", []types.Evidence{dupl}, "0a85020a82020a79080210031802224a0a208b01023386c371778ecb6368573e539afc3cc860ec3a2f614e54fe5652f4fc80122608c0843d122072db3d959635dff1bb567bedaa70573392c5159666a3f8caf11e413aac52207a2a0b08b1d381d20510809dca6f32146af1f4111082efb388211bc72c55bcd61e9ac3d538d5bb031279080110031802224a0a208b01023386c371778ecb6368573e539afc3cc860ec3a2f614e54fe5652f4fc80122608c0843d122072db3d959635dff1bb567bedaa70573392c5159666a3f8caf11e413aac52207a2a0b08b1d381d20510809dca6f32146af1f4111082efb388211bc72c55bcd61e9ac3d538d5bb03180a200a2a060880dbaae105"},
+		{"DuplicateVoteEvidence", []types.Evidence{dupl}, "0a83020a80020a79080210031802224a0a208b01023386c371778ecb6368573e539afc3cc860ec3a2f614e54fe5652f4fc80122608c0843d122072db3d959635dff1bb567bedaa70573392c5159666a3f8caf11e413aac52207a2a0b08b1d381d20510809dca6f32146af1f4111082efb388211bc72c55bcd61e9ac3d538d5bb031279080110031802224a0a208b01023386c371778ecb6368573e539afc3cc860ec3a2f614e54fe5652f4fc80122608c0843d122072db3d959635dff1bb567bedaa70573392c5159666a3f8caf11e413aac52207a2a0b08b1d381d20510809dca6f32146af1f4111082efb388211bc72c55bcd61e9ac3d538d5bb03200a2a060880dbaae105"},
 	}
 
 	for _, tc := range testCases {

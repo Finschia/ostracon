@@ -812,7 +812,7 @@ func (cs *State) reconstructLastCommit(state sm.State) {
 			state.LastBlockHeight))
 	}
 
-	lastPrecommits := types.CommitToVoteSet(state.ChainID, seenCommit, state.LastValidators)
+	lastPrecommits := types.CommitToVoteSet(state.ChainID, seenCommit, state.LastVoters)
 	if !lastPrecommits.HasTwoThirdsMajority() {
 		panic("Failed to reconstruct LastCommit: Does not have +2/3 maj")
 	}
@@ -858,6 +858,7 @@ func (cs *State) updateToState(state sm.State) {
 
 	// Reset fields based on state.
 	validators := state.Validators
+	voters := state.Voters
 
 	switch {
 	case state.LastBlockHeight == 0: // Very first commit should be empty.
@@ -908,9 +909,9 @@ func (cs *State) updateToState(state sm.State) {
 	cs.ValidRound = -1
 	cs.ValidBlock = nil
 	cs.ValidBlockParts = nil
-	cs.Votes = cstypes.NewHeightVoteSet(state.ChainID, height, validators)
+	cs.Votes = cstypes.NewHeightVoteSet(state.ChainID, height, voters)
 	cs.CommitRound = -1
-	cs.LastValidators = state.LastValidators
+	cs.LastVoters = state.LastVoters
 	cs.TriggeredTimeoutPrecommit = false
 
 	cs.state = state
@@ -1178,7 +1179,7 @@ func (cs *State) needProofBlock(height int64) bool {
 }
 
 func (cs *State) isProposer(address []byte) bool {
-	return bytes.Equal(cs.Validators.GetProposer().Address, address)
+	return bytes.Equal(cs.Proposer.Address, address)
 }
 
 func (cs *State) defaultDecideProposal(height int64, round int32) {
@@ -1273,7 +1274,13 @@ func (cs *State) createProposalBlock() (block *types.Block, blockParts *types.Pa
 	}
 	proposerAddr := cs.privValidatorPubKey.Address()
 
-	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerAddr)
+	message := cs.GetState().MakeHashMessage(cs.Round)
+	proof, err := cs.privValidator.GenerateVRFProof(message)
+	if err != nil {
+		cs.Logger.Error(fmt.Sprintf("enterPropose: %v", err))
+		return
+	}
+	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerAddr, cs.Round, proof)
 }
 
 // Enter: any +2/3 prevotes at next round.
@@ -1423,7 +1430,6 @@ func (cs *State) tryFinalizeCommit(height int64) {
 		return
 	}
 
-	//	go
 	cs.finalizeCommit(height)
 }
 
@@ -1451,7 +1457,7 @@ func (cs *State) finalizeCommit(height int64) {
 	if !block.HashesTo(blockID.Hash) {
 		panic("Cannot finalizeCommit, ProposalBlock does not hash to commit hash")
 	}
-	if err := cs.blockExec.ValidateBlock(cs.state, block); err != nil {
+	if err := cs.blockExec.ValidateBlock(cs.state, cs.Round, block); err != nil {
 		panic(fmt.Errorf("+2/3 committed an invalid block: %w", err))
 	}
 
@@ -1568,8 +1574,8 @@ func (cs *State) pruneBlocks(retainHeight int64) (uint64, error) {
 }
 
 func (cs *State) recordMetrics(height int64, block *types.Block) {
-	cs.metrics.Validators.Set(float64(cs.Validators.Size()))
-	cs.metrics.ValidatorsPower.Set(float64(cs.Validators.TotalVotingPower()))
+	cs.metrics.Voters.Set(float64(cs.Validators.Size()))
+	cs.metrics.VotersPower.Set(float64(cs.Validators.TotalStakingPower()))
 
 	var (
 		missingValidators      int
@@ -1583,12 +1589,12 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 		// after first block.
 		var (
 			commitSize = block.LastCommit.Size()
-			valSetLen  = len(cs.LastValidators.Validators)
+			valSetLen  = len(cs.LastVoters.Voters)
 			address    types.Address
 		)
 		if commitSize != valSetLen {
 			panic(fmt.Sprintf("commit size (%d) doesn't match valset length (%d) at height %d\n\n%v\n\n%v",
-				commitSize, valSetLen, block.Height, block.LastCommit.Signatures, cs.LastValidators.Validators))
+				commitSize, valSetLen, block.Height, block.LastCommit.Signatures, cs.LastVoters.Voters))
 		}
 
 		if cs.privValidator != nil {
@@ -1600,29 +1606,29 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 			}
 		}
 
-		for i, val := range cs.LastValidators.Validators {
+		for i, val := range cs.LastVoters.Voters {
 			commitSig := block.LastCommit.Signatures[i]
 			if commitSig.Absent() {
 				missingValidators++
-				missingValidatorsPower += val.VotingPower
+				missingValidatorsPower += val.StakingPower
 			}
 
 			if bytes.Equal(val.Address, address) {
 				label := []string{
 					"validator_address", val.Address.String(),
 				}
-				cs.metrics.ValidatorPower.With(label...).Set(float64(val.VotingPower))
+				cs.metrics.VoterPower.With(label...).Set(float64(val.StakingPower))
 				if commitSig.ForBlock() {
-					cs.metrics.ValidatorLastSignedHeight.With(label...).Set(float64(height))
+					cs.metrics.VoterLastSignedHeight.With(label...).Set(float64(height))
 				} else {
-					cs.metrics.ValidatorMissedBlocks.With(label...).Add(float64(1))
+					cs.metrics.VoterMissedBlocks.With(label...).Add(float64(1))
 				}
 			}
 
 		}
 	}
-	cs.metrics.MissingValidators.Set(float64(missingValidators))
-	cs.metrics.MissingValidatorsPower.Set(float64(missingValidatorsPower))
+	cs.metrics.MissingVoters.Set(float64(missingValidators))
+	cs.metrics.MissingVotersPower.Set(float64(missingValidatorsPower))
 
 	// NOTE: byzantine validators power and count is only for consensus evidence i.e. duplicate vote
 	var (
@@ -1633,12 +1639,12 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 		if dve, ok := ev.(*types.DuplicateVoteEvidence); ok {
 			if _, val := cs.Validators.GetByAddress(dve.VoteA.ValidatorAddress); val != nil {
 				byzantineValidatorsCount++
-				byzantineValidatorsPower += val.VotingPower
+				byzantineValidatorsPower += val.StakingPower
 			}
 		}
 	}
-	cs.metrics.ByzantineValidators.Set(float64(byzantineValidatorsCount))
-	cs.metrics.ByzantineValidatorsPower.Set(float64(byzantineValidatorsPower))
+	cs.metrics.ByzantineVoters.Set(float64(byzantineValidatorsCount))
+	cs.metrics.ByzantineVotersPower.Set(float64(byzantineValidatorsPower))
 
 	if height > 1 {
 		lastBlockMeta := cs.blockStore.LoadBlockMeta(height - 1)

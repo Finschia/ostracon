@@ -5,7 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"strings"
 	"time"
+
+	"github.com/tendermint/tendermint/crypto/bls"
+	"github.com/tendermint/tendermint/crypto/composite"
 
 	"github.com/gogo/protobuf/proto"
 
@@ -27,6 +31,11 @@ const (
 	stepPropose   int8 = 1
 	stepPrevote   int8 = 2
 	stepPrecommit int8 = 3
+)
+
+const (
+	PrivKeyTypeEd25519   string = "ed25519"
+	PrivKeyTypeComposite string = "composite"
 )
 
 // A vote is either stepPrevote or stepPrecommit.
@@ -170,8 +179,17 @@ func NewFilePV(privKey crypto.PrivKey, keyFilePath, stateFilePath string) *FileP
 
 // GenFilePV generates a new validator with randomly generated private key
 // and sets the filePaths, but does not call Save().
-func GenFilePV(keyFilePath, stateFilePath string) *FilePV {
-	return NewFilePV(ed25519.GenPrivKey(), keyFilePath, stateFilePath)
+func GenFilePV(keyFilePath, stateFilePath, privKeyType string) (filePV *FilePV, err error) {
+	var privKey crypto.PrivKey
+	switch strings.ToLower(privKeyType) {
+	case PrivKeyTypeEd25519:
+		privKey = ed25519.GenPrivKey()
+	case PrivKeyTypeComposite:
+		privKey = composite.NewPrivKeyComposite(bls.GenPrivKey(), ed25519.GenPrivKey())
+	default:
+		return nil, fmt.Errorf("undefined private key type: %s", privKeyType)
+	}
+	return NewFilePV(privKey, keyFilePath, stateFilePath), nil
 }
 
 // LoadFilePV loads a FilePV from the filePaths.  The FilePV handles double
@@ -227,15 +245,17 @@ func loadFilePV(keyFilePath, stateFilePath string, loadState bool) *FilePV {
 
 // LoadOrGenFilePV loads a FilePV from the given filePaths
 // or else generates a new one and saves it to the filePaths.
-func LoadOrGenFilePV(keyFilePath, stateFilePath string) *FilePV {
-	var pv *FilePV
+func LoadOrGenFilePV(keyFilePath, stateFilePath, privKeyType string) (pv *FilePV, err error) {
 	if tmos.FileExists(keyFilePath) {
 		pv = LoadFilePV(keyFilePath, stateFilePath)
+		err = nil
 	} else {
-		pv = GenFilePV(keyFilePath, stateFilePath)
-		pv.Save()
+		pv, err = GenFilePV(keyFilePath, stateFilePath, privKeyType)
+		if pv != nil {
+			pv.Save()
+		}
 	}
-	return pv
+	return pv, err
 }
 
 // GetAddress returns the address of the validator.
@@ -266,6 +286,11 @@ func (pv *FilePV) SignProposal(chainID string, proposal *tmproto.Proposal) error
 		return fmt.Errorf("error signing proposal: %v", err)
 	}
 	return nil
+}
+
+// GenerateVRFProof generates a proof for specified message.
+func (pv *FilePV) GenerateVRFProof(message []byte) (crypto.Proof, error) {
+	return pv.Key.PrivKey.VRFProve(message)
 }
 
 // Save persists the FilePV to disk.

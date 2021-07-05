@@ -3,25 +3,43 @@ package types
 import (
 	"testing"
 
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
+	"github.com/tendermint/tendermint/crypto/secp256k1"
+
+	"github.com/golang/protobuf/proto" // nolint: staticcheck // still used by gogoproto
+	"github.com/tendermint/go-amino"
+
+	"github.com/tendermint/tendermint/proto/tendermint/version"
+	"github.com/tendermint/tendermint/types/time"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/bls"
+	"github.com/tendermint/tendermint/crypto/composite"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
 )
 
 func TestABCIPubKey(t *testing.T) {
 	pkEd := ed25519.GenPrivKey().PubKey()
+	pkSecp := secp256k1.GenPrivKey().PubKey()
+	pkComposite := composite.NewPrivKeyComposite(bls.GenPrivKey(), ed25519.GenPrivKey()).PubKey()
 	err := testABCIPubKey(t, pkEd, ABCIPubKeyTypeEd25519)
+	assert.NoError(t, err)
+	err = testABCIPubKey(t, pkSecp, ABCIPubKeyTypeSecp256k1)
+	assert.NoError(t, err)
+	err = testABCIPubKey(t, pkComposite, ABCIPubKeyTypeBls12WithEd25519)
 	assert.NoError(t, err)
 }
 
 func testABCIPubKey(t *testing.T, pk crypto.PubKey, typeStr string) error {
 	abciPubKey, err := cryptoenc.PubKeyToProto(pk)
 	require.NoError(t, err)
-	pk2, err := cryptoenc.PubKeyFromProto(abciPubKey)
+	pk2, err := cryptoenc.PubKeyFromProto(&abciPubKey)
 	require.NoError(t, err)
 	require.Equal(t, pk, pk2)
 	return nil
@@ -60,14 +78,92 @@ func TestABCIConsensusParams(t *testing.T) {
 	assert.Equal(t, *cp, cp2)
 }
 
+func newHeader(
+	height int64, commitHash, dataHash, evidenceHash []byte,
+) *Header {
+	return &Header{
+		Height:         height,
+		LastCommitHash: commitHash,
+		DataHash:       dataHash,
+		EvidenceHash:   evidenceHash,
+	}
+}
+
+func TestABCIHeader(t *testing.T) {
+	// build a full header
+	var height int64 = 5
+	header := newHeader(height, []byte("lastCommitHash"), []byte("dataHash"), []byte("evidenceHash"))
+	protocolVersion := version.Consensus{Block: 7, App: 8}
+	timestamp := time.Now()
+	lastBlockID := BlockID{
+		Hash: []byte("hash"),
+		PartSetHeader: PartSetHeader{
+			Total: 10,
+			Hash:  []byte("hash"),
+		},
+	}
+	header.Populate(
+		protocolVersion, "chainID", timestamp, lastBlockID,
+		[]byte("votersHash"), []byte("valHash"), []byte("nextValHash"),
+		[]byte("consHash"), []byte("appHash"), []byte("lastResultsHash"),
+		[]byte("proposerAddress"), 0, []byte("lastProof"),
+	)
+
+	cdc := amino.NewCodec()
+	headerBz := cdc.MustMarshalBinaryBare(header)
+
+	pbHeader := TM2PB.Header(header)
+	pbHeaderBz, err := proto.Marshal(&pbHeader)
+	assert.NoError(t, err)
+
+	// assert some fields match
+	assert.EqualValues(t, protocolVersion.Block, pbHeader.Version.Block)
+	assert.EqualValues(t, protocolVersion.App, pbHeader.Version.App)
+	assert.EqualValues(t, "chainID", pbHeader.ChainID)
+	assert.EqualValues(t, height, pbHeader.Height)
+	assert.EqualValues(t, timestamp, pbHeader.Time)
+	assert.EqualValues(t, lastBlockID.Hash, pbHeader.LastBlockId.Hash)
+	assert.EqualValues(t, []byte("lastCommitHash"), pbHeader.LastCommitHash)
+	assert.Equal(t, []byte("proposerAddress"), pbHeader.ProposerAddress)
+
+	// assert the encodings match
+	// NOTE: they don't yet because Amino encodes
+	// int64 as zig-zag and we're using non-zigzag in the protobuf.
+	// See https://github.com/tendermint/tendermint/issues/2682
+	_, _ = headerBz, pbHeaderBz
+	// assert.EqualValues(t, headerBz, pbHeaderBz)
+
+}
+
+func TestABCIEvidence(t *testing.T) {
+	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
+		val := NewMockPV(kt)
+		blockID := makeBlockID([]byte("blockhash"), 1000, []byte("partshash"))
+		blockID2 := makeBlockID([]byte("blockhash2"), 1000, []byte("partshash"))
+		const chainID = "mychain"
+		now := time.Now()
+		ev := &DuplicateVoteEvidence{
+			VoteA:            makeVote(t, val, chainID, 0, 10, 2, tmproto.PrevoteType, blockID, now),
+			VoteB:            makeVote(t, val, chainID, 0, 10, 2, tmproto.PrevoteType, blockID2, now),
+			TotalVotingPower: int64(100),
+			ValidatorPower:   int64(10),
+			Timestamp:        now,
+		}
+		for _, abciEv := range ev.ABCI() {
+			assert.Equal(t, "DUPLICATE_VOTE", abciEv.Type.String())
+		}
+	})
+}
+
 type pubKeyEddie struct{}
 
-func (pubKeyEddie) Address() Address                            { return []byte{} }
-func (pubKeyEddie) Bytes() []byte                               { return []byte{} }
-func (pubKeyEddie) VerifySignature(msg []byte, sig []byte) bool { return false }
-func (pubKeyEddie) Equals(crypto.PubKey) bool                   { return false }
-func (pubKeyEddie) String() string                              { return "" }
-func (pubKeyEddie) Type() string                                { return "pubKeyEddie" }
+func (pubKeyEddie) Address() Address                                                { return []byte{} }
+func (pubKeyEddie) Bytes() []byte                                                   { return []byte{} }
+func (pubKeyEddie) VerifySignature(msg []byte, sig []byte) bool                     { return false }
+func (pubKeyEddie) VRFVerify(proof crypto.Proof, msg []byte) (crypto.Output, error) { return nil, nil }
+func (pubKeyEddie) Equals(crypto.PubKey) bool                                       { return false }
+func (pubKeyEddie) String() string                                                  { return "" }
+func (pubKeyEddie) Type() string                                                    { return "pubKeyEddie" }
 
 func TestABCIValidatorFromPubKeyAndPower(t *testing.T) {
 	pubkey := ed25519.GenPrivKey().PubKey()

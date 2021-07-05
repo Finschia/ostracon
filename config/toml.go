@@ -309,6 +309,16 @@ allow_duplicate_ip = {{ .P2P.AllowDuplicateIP }}
 handshake_timeout = "{{ .P2P.HandshakeTimeout }}"
 dial_timeout = "{{ .P2P.DialTimeout }}"
 
+# Sync/async of reactor's receive function
+recv_async = {{ .P2P.RecvAsync }}
+
+# Size of channel buffer of reactor
+pex_recv_buf_size = {{ .P2P.PexRecvBufSize }}
+mempool_recv_buf_size = {{ .P2P.MempoolRecvBufSize }}
+evidence_recv_buf_size = {{ .P2P.EvidenceRecvBufSize }}
+consensus_recv_buf_size = {{ .P2P.ConsensusRecvBufSize }}
+blockchain_recv_buf_size = {{ .P2P.BlockchainRecvBufSize }}
+
 #######################################################
 ###          Mempool Configuration Option          ###
 #######################################################
@@ -525,7 +535,8 @@ var testGenesisFmt = `{
 		},
 		"validator": {
 			"pub_key_types": [
-				"ed25519"
+				"ed25519",
+				"composite(bls12-381,ed25519)"
 			]
 		},
 		"version": {}
@@ -540,6 +551,11 @@ var testGenesisFmt = `{
       "name": ""
     }
   ],
+  "voter_params": {
+    "voter_election_threshold": 1,
+    "max_tolerable_byzantine_percentage": 33,
+    "election_precision": 2
+  },
   "app_hash": ""
 }`
 

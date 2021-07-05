@@ -82,7 +82,7 @@ func (sc *SignerClient) GetPubKey() (crypto.PubKey, error) {
 		return nil, &RemoteSignerError{Code: int(resp.Error.Code), Description: resp.Error.Description}
 	}
 
-	pk, err := cryptoenc.PubKeyFromProto(resp.PubKey)
+	pk, err := cryptoenc.PubKeyFromProto(&resp.PubKey)
 	if err != nil {
 		return nil, err
 	}
@@ -130,4 +130,25 @@ func (sc *SignerClient) SignProposal(chainID string, proposal *tmproto.Proposal)
 	*proposal = resp.Proposal
 
 	return nil
+}
+
+// GenerateVRFProof requests a remote signer to generate a VRF proof
+func (sc *SignerClient) GenerateVRFProof(message []byte) (crypto.Proof, error) {
+	msg := &privvalproto.VRFProofRequest{Message: message}
+	response, err := sc.endpoint.SendRequest(mustWrapMsg(msg))
+	if err != nil {
+		sc.endpoint.Logger.Error("SignerClient::GenerateVRFProof", "err", err)
+		return nil, err
+	}
+
+	switch r := response.Sum.(type) {
+	case *privvalproto.Message_VrfProofResponse:
+		if r.VrfProofResponse.Error != nil {
+			return nil, fmt.Errorf(r.VrfProofResponse.Error.Description)
+		}
+		return r.VrfProofResponse.Proof, nil
+	default:
+		sc.endpoint.Logger.Error("SignerClient::GenerateVRFProof", "err", "response != VRFProofResponse")
+		return nil, ErrUnexpectedResponse
+	}
 }

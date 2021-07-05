@@ -39,7 +39,9 @@ func makeAndCommitGoodBlock(
 	privVals map[string]types.PrivValidator,
 	evidence []types.Evidence) (sm.State, types.BlockID, *types.Commit, error) {
 	// A good block passes
-	state, blockID, err := makeAndApplyGoodBlock(state, height, lastCommit, proposerAddr, blockExec, evidence)
+	state, blockID, err := makeAndApplyGoodBlock(state,
+		privVals[state.Validators.SelectProposer(state.LastProofHash, height, 0).Address.String()],
+		height, lastCommit, proposerAddr, blockExec, evidence)
 	if err != nil {
 		return state, types.BlockID{}, nil, err
 	}
@@ -52,10 +54,12 @@ func makeAndCommitGoodBlock(
 	return state, blockID, commit, nil
 }
 
-func makeAndApplyGoodBlock(state sm.State, height int64, lastCommit *types.Commit, proposerAddr []byte,
-	blockExec *sm.BlockExecutor, evidence []types.Evidence) (sm.State, types.BlockID, error) {
-	block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, evidence, proposerAddr)
-	if err := blockExec.ValidateBlock(state, block); err != nil {
+func makeAndApplyGoodBlock(state sm.State, privVal types.PrivValidator, height int64, lastCommit *types.Commit,
+	proposerAddr []byte, blockExec *sm.BlockExecutor, evidence []types.Evidence) (sm.State, types.BlockID, error) {
+	message := state.MakeHashMessage(0)
+	proof, _ := privVal.GenerateVRFProof(message)
+	block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, evidence, proposerAddr, 0, proof)
+	if err := blockExec.ValidateBlock(state, 0, block); err != nil {
 		return state, types.BlockID{}, err
 	}
 	blockID := types.BlockID{Hash: block.Hash(),
@@ -93,6 +97,11 @@ func makeTxs(height int64) (txs []types.Tx) {
 	return txs
 }
 
+func makePrivVal() types.PrivValidator {
+	pk := ed25519.GenPrivKeyFromSecret([]byte("test private validator"))
+	return types.NewMockPVWithParams(pk, false, false)
+}
+
 func makeState(nVals, height int) (sm.State, dbm.DB, map[string]types.PrivValidator) {
 	vals := make([]types.GenesisValidator, nVals)
 	privVals := make(map[string]types.PrivValidator, nVals)
@@ -122,7 +131,7 @@ func makeState(nVals, height int) (sm.State, dbm.DB, map[string]types.PrivValida
 
 	for i := 1; i < height; i++ {
 		s.LastBlockHeight++
-		s.LastValidators = s.Validators.Copy()
+		s.LastVoters = s.Voters.Copy()
 		if err := stateStore.Save(s); err != nil {
 			panic(err)
 		}
@@ -132,12 +141,21 @@ func makeState(nVals, height int) (sm.State, dbm.DB, map[string]types.PrivValida
 }
 
 func makeBlock(state sm.State, height int64) *types.Block {
+	return makeBlockWithPrivVal(state, makePrivVal(), height)
+}
+
+func makeBlockWithPrivVal(state sm.State, privVal types.PrivValidator, height int64) *types.Block {
+	message := state.MakeHashMessage(0)
+	proof, _ := privVal.GenerateVRFProof(message)
+	pubKey, _ := privVal.GetPubKey()
 	block, _ := state.MakeBlock(
 		height,
 		makeTxs(state.LastBlockHeight),
 		new(types.Commit),
 		nil,
-		state.Validators.GetProposer().Address,
+		pubKey.Address(),
+		0,
+		proof,
 	)
 	return block
 }
@@ -187,7 +205,7 @@ func makeHeaderPartsResponsesValPowerChange(
 
 	// If the pubkey is new, remove the old and add the new.
 	_, val := state.NextValidators.GetByIndex(0)
-	if val.VotingPower != power {
+	if val.StakingPower != power {
 		abciResponses.EndBlock = &abci.ResponseEndBlock{
 			ValidatorUpdates: []abci.ValidatorUpdate{
 				types.TM2PB.NewValidatorUpdate(val.PubKey, power),

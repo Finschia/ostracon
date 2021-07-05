@@ -149,3 +149,44 @@ func TestConsensusParamsUpdate_AppVersion(t *testing.T) {
 
 	assert.EqualValues(t, 1, updated.Version.AppVersion)
 }
+
+func TestVoterParamsValidate(t *testing.T) {
+	errorCases := []VoterParams{
+		{
+			VoterElectionThreshold:          -1,
+			MaxTolerableByzantinePercentage: 1,
+		},
+		{
+			VoterElectionThreshold:          0,
+			MaxTolerableByzantinePercentage: 0,
+		},
+		{
+			VoterElectionThreshold:          0,
+			MaxTolerableByzantinePercentage: 34,
+		},
+	}
+	normalCases := []VoterParams{
+		{
+			VoterElectionThreshold:          0,
+			MaxTolerableByzantinePercentage: 1,
+		},
+		{
+			VoterElectionThreshold:          99999999,
+			MaxTolerableByzantinePercentage: 1,
+		},
+		{
+			VoterElectionThreshold:          0,
+			MaxTolerableByzantinePercentage: 33,
+		},
+		{
+			VoterElectionThreshold:          0,
+			MaxTolerableByzantinePercentage: 1,
+		},
+	}
+	for _, tc := range errorCases {
+		assert.Error(t, tc.Validate())
+	}
+	for _, tc := range normalCases {
+		assert.NoError(t, tc.Validate())
+	}
+}

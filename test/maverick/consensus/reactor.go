@@ -61,7 +61,7 @@ func NewReactor(consensusState *State, waitSync bool, options ...ReactorOption) 
 		waitSync: waitSync,
 		Metrics:  tmcon.NopMetrics(),
 	}
-	conR.BaseReactor = *p2p.NewBaseReactor("Consensus", conR)
+	conR.BaseReactor = *p2p.NewBaseReactor("Consensus", conR, true, 1000)
 
 	for _, option := range options {
 		option(conR)

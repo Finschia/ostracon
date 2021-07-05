@@ -18,8 +18,8 @@ import (
 var (
 	testTimeoutAccept = defaultTimeoutAcceptSeconds * time.Second
 
-	testTimeoutReadWrite    = 100 * time.Millisecond
-	testTimeoutReadWrite2o3 = 60 * time.Millisecond // 2/3 of the other one
+	testTimeoutReadWrite    = 1000 * time.Millisecond // increase timeout for slow test env
+	testTimeoutReadWrite2o3 = 60 * time.Millisecond   // 2/3 of the other one
 )
 
 type dialerTestCase struct {
@@ -68,7 +68,7 @@ func TestSignerRemoteRetryTCPOnly(t *testing.T) {
 	SignerDialerEndpointConnRetries(retries)(dialerEndpoint)
 
 	chainID := tmrand.Str(12)
-	mockPV := types.NewMockPV()
+	mockPV := types.NewMockPV(types.PrivKeyEd25519)
 	signerServer := NewSignerServer(dialerEndpoint, chainID, mockPV)
 
 	err = signerServer.Start()
@@ -92,7 +92,7 @@ func TestRetryConnToRemoteSigner(t *testing.T) {
 		var (
 			logger           = log.TestingLogger()
 			chainID          = tmrand.Str(12)
-			mockPV           = types.NewMockPV()
+			mockPV           = types.NewMockPV(types.PrivKeyEd25519)
 			endpointIsOpenCh = make(chan struct{})
 			thisConnTimeout  = testTimeoutReadWrite
 			listenerEndpoint = newSignerListenerEndpoint(logger, tc.addr, thisConnTimeout)

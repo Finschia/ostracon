@@ -2,7 +2,13 @@ package types
 
 import (
 	"bytes"
+	"fmt"
+	"sort"
 	"testing"
+
+	"github.com/tendermint/tendermint/crypto/bls"
+	"github.com/tendermint/tendermint/crypto/composite"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,9 +19,89 @@ import (
 	tmtime "github.com/tendermint/tendermint/types/time"
 )
 
+// NOTE: privValidators are in order
+func randVoteSet(
+	height int64,
+	round int32,
+	signedMsgType tmproto.SignedMsgType,
+	numValidators int,
+	votingPower int64,
+) (*VoteSet, *ValidatorSet, *VoterSet, []PrivValidator) {
+	valSet, voterSet, privValidators := RandVoterSet(numValidators, votingPower)
+	return NewVoteSet("test_chain_id", height, round, signedMsgType, voterSet), valSet, voterSet, privValidators
+}
+
+func randVoteSetForPrivKeys(
+	height int64,
+	round int32,
+	signedMsgType tmproto.SignedMsgType,
+	privKeys []crypto.PrivKey,
+	votingPower int64,
+) (*VoteSet, *ValidatorSet, *VoterSet, []PrivValidator) {
+	valz := make([]*Validator, len(privKeys))
+	privValidators := make([]PrivValidator, len(privKeys))
+	for i := 0; i < len(privKeys); i++ {
+		privVal := MockPV{privKeys[i], false, false}
+		pubKey, err := privVal.GetPubKey()
+		if err != nil {
+			panic(fmt.Errorf("could not retrieve pubkey %w", err))
+		}
+		val := NewValidator(pubKey, votingPower)
+		valz[i] = val
+		privValidators[i] = privVal
+	}
+	vals := NewValidatorSet(valz)
+	sort.Sort(PrivValidatorsByAddress(privValidators))
+	voterSet := SelectVoter(vals, []byte{}, DefaultVoterParams())
+	return NewVoteSet("test_chain_id", height, round, signedMsgType, voterSet), vals, voterSet, privValidators
+}
+
+// Convenience: Return new vote with different validator address/index
+func withValidator(vote *Vote, addr []byte, idx int32) *Vote {
+	vote = vote.Copy()
+	vote.ValidatorAddress = addr
+	vote.ValidatorIndex = idx
+	return vote
+}
+
+// Convenience: Return new vote with different height
+func withHeight(vote *Vote, height int64) *Vote {
+	vote = vote.Copy()
+	vote.Height = height
+	return vote
+}
+
+// Convenience: Return new vote with different round
+func withRound(vote *Vote, round int32) *Vote {
+	vote = vote.Copy()
+	vote.Round = round
+	return vote
+}
+
+// Convenience: Return new vote with different type
+func withType(vote *Vote, signedMsgType byte) *Vote {
+	vote = vote.Copy()
+	vote.Type = tmproto.SignedMsgType(signedMsgType)
+	return vote
+}
+
+// Convenience: Return new vote with different blockHash
+func withBlockHash(vote *Vote, blockHash []byte) *Vote {
+	vote = vote.Copy()
+	vote.BlockID.Hash = blockHash
+	return vote
+}
+
+// Convenience: Return new vote with different blockParts
+func withBlockPartSetHeader(vote *Vote, blockPartsHeader PartSetHeader) *Vote {
+	vote = vote.Copy()
+	vote.BlockID.PartSetHeader = blockPartsHeader
+	return vote
+}
+
 func TestVoteSet_AddVote_Good(t *testing.T) {
 	height, round := int64(1), int32(0)
-	voteSet, _, privValidators := randVoteSet(height, round, tmproto.PrevoteType, 10, 1)
+	voteSet, _, _, privValidators := randVoteSet(height, round, tmproto.PrevoteType, 10, 1)
 	val0 := privValidators[0]
 
 	val0p, err := val0.GetPubKey()
@@ -47,7 +133,7 @@ func TestVoteSet_AddVote_Good(t *testing.T) {
 
 func TestVoteSet_AddVote_Bad(t *testing.T) {
 	height, round := int64(1), int32(0)
-	voteSet, _, privValidators := randVoteSet(height, round, tmproto.PrevoteType, 10, 1)
+	voteSet, _, _, privValidators := randVoteSet(height, round, tmproto.PrevoteType, 10, 1)
 
 	voteProto := &Vote{
 		ValidatorAddress: nil,
@@ -57,6 +143,7 @@ func TestVoteSet_AddVote_Bad(t *testing.T) {
 		Timestamp:        tmtime.Now(),
 		Type:             tmproto.PrevoteType,
 		BlockID:          BlockID{nil, PartSetHeader{}},
+		Signature:        []byte{},
 	}
 
 	// val0 votes for nil.
@@ -122,7 +209,7 @@ func TestVoteSet_AddVote_Bad(t *testing.T) {
 
 func TestVoteSet_2_3Majority(t *testing.T) {
 	height, round := int64(1), int32(0)
-	voteSet, _, privValidators := randVoteSet(height, round, tmproto.PrevoteType, 10, 1)
+	voteSet, _, _, privValidators := randVoteSet(height, round, tmproto.PrevoteType, 10, 1)
 
 	voteProto := &Vote{
 		ValidatorAddress: nil, // NOTE: must fill in
@@ -172,7 +259,7 @@ func TestVoteSet_2_3Majority(t *testing.T) {
 
 func TestVoteSet_2_3MajorityRedux(t *testing.T) {
 	height, round := int64(1), int32(0)
-	voteSet, _, privValidators := randVoteSet(height, round, tmproto.PrevoteType, 100, 1)
+	voteSet, _, _, privValidators := randVoteSet(height, round, tmproto.PrevoteType, 100, 1)
 
 	blockHash := crypto.CRandBytes(32)
 	blockPartsTotal := uint32(123)
@@ -271,7 +358,7 @@ func TestVoteSet_2_3MajorityRedux(t *testing.T) {
 
 func TestVoteSet_Conflicts(t *testing.T) {
 	height, round := int64(1), int32(0)
-	voteSet, _, privValidators := randVoteSet(height, round, tmproto.PrevoteType, 4, 1)
+	voteSet, _, _, privValidators := randVoteSet(height, round, tmproto.PrevoteType, 4, 1)
 	blockHash1 := tmrand.Bytes(32)
 	blockHash2 := tmrand.Bytes(32)
 
@@ -400,7 +487,7 @@ func TestVoteSet_Conflicts(t *testing.T) {
 
 func TestVoteSet_MakeCommit(t *testing.T) {
 	height, round := int64(1), int32(0)
-	voteSet, _, privValidators := randVoteSet(height, round, tmproto.PrecommitType, 10, 1)
+	voteSet, _, _, privValidators := randVoteSet(height, round, tmproto.PrecommitType, 10, 1)
 	blockHash, blockPartSetHeader := crypto.CRandBytes(32), PartSetHeader{123, crypto.CRandBytes(32)}
 
 	voteProto := &Vote{
@@ -472,59 +559,50 @@ func TestVoteSet_MakeCommit(t *testing.T) {
 	if err := commit.ValidateBasic(); err != nil {
 		t.Errorf("error in Commit.ValidateBasic(): %v", err)
 	}
-}
 
-// NOTE: privValidators are in order
-func randVoteSet(
-	height int64,
-	round int32,
-	signedMsgType tmproto.SignedMsgType,
-	numValidators int,
-	votingPower int64,
-) (*VoteSet, *ValidatorSet, []PrivValidator) {
-	valSet, privValidators := RandValidatorSet(numValidators, votingPower)
-	return NewVoteSet("test_chain_id", height, round, signedMsgType, valSet), valSet, privValidators
-}
+	// Signature aggregation
+	t.Run("SignatureAggregation", func(t *testing.T) {
+		privKeys := [...]crypto.PrivKey{
+			bls.GenPrivKey(),
+			composite.GenPrivKey(),
+			ed25519.GenPrivKey(),
+			bls.GenPrivKey(),
+		}
+		voteSet, _, _, privValidators := randVoteSetForPrivKeys(height, round, tmproto.PrecommitType, privKeys[:], 1)
+		for i := range privKeys {
+			pubKey, err := privValidators[i].GetPubKey()
+			if err != nil {
+				t.Fatal(err)
+			}
+			addr := pubKey.Address()
+			vote := withValidator(voteProto, addr, int32(i))
+			fmt.Printf("*** %v - %v\n", vote.ValidatorAddress, addr)
+			if _, err := signAddVote(privValidators[i], vote, voteSet); err != nil {
+				t.Error(err)
+			}
+		}
 
-// Convenience: Return new vote with different validator address/index
-func withValidator(vote *Vote, addr []byte, idx int32) *Vote {
-	vote = vote.Copy()
-	vote.ValidatorAddress = addr
-	vote.ValidatorIndex = idx
-	return vote
-}
+		commit := voteSet.MakeCommit()
 
-// Convenience: Return new vote with different height
-func withHeight(vote *Vote, height int64) *Vote {
-	vote = vote.Copy()
-	vote.Height = height
-	return vote
-}
-
-// Convenience: Return new vote with different round
-func withRound(vote *Vote, round int32) *Vote {
-	vote = vote.Copy()
-	vote.Round = round
-	return vote
-}
-
-// Convenience: Return new vote with different type
-func withType(vote *Vote, signedMsgType byte) *Vote {
-	vote = vote.Copy()
-	vote.Type = tmproto.SignedMsgType(signedMsgType)
-	return vote
-}
-
-// Convenience: Return new vote with different blockHash
-func withBlockHash(vote *Vote, blockHash []byte) *Vote {
-	vote = vote.Copy()
-	vote.BlockID.Hash = blockHash
-	return vote
-}
-
-// Convenience: Return new vote with different blockParts
-func withBlockPartSetHeader(vote *Vote, blockPartsHeader PartSetHeader) *Vote {
-	vote = vote.Copy()
-	vote.BlockID.PartSetHeader = blockPartsHeader
-	return vote
+		assert.Equal(t, height, commit.Height)
+		assert.Equal(t, round, commit.Round)
+		assert.NotNil(t, commit.AggregatedSignature)
+		// The order of commit.Signatures is sorted by address.
+		for i := range commit.Signatures {
+			idx := 0
+			for {
+				if bytes.Equal(privKeys[idx].PubKey().Address(), commit.Signatures[i].ValidatorAddress) {
+					break
+				}
+				idx++
+			}
+			if _, ok := privKeys[idx].(ed25519.PrivKey); ok {
+				assert.NotNil(t, commit.Signatures[i].Signature)
+			} else if _, ok := privKeys[idx].(bls.PrivKey); ok {
+				assert.Nil(t, commit.Signatures[i].Signature)
+			} else if _, ok := privKeys[idx].(composite.PrivKey); ok {
+				assert.Nil(t, commit.Signatures[i].Signature)
+			}
+		}
+	})
 }

@@ -25,7 +25,7 @@ ENV TMHOME /tendermint
 # could execute bash commands.
 RUN apk update && \
     apk upgrade && \
-    apk --no-cache add curl jq bash && \
+    apk --no-cache add git make gcc libc-dev build-base curl jq bash && \
     addgroup ostracon && \
     adduser -S -G ostracon ostracon -h "$TMHOME"
 

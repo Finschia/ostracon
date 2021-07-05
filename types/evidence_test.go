@@ -19,22 +19,51 @@ import (
 var defaultVoteTime = time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
 
 func TestEvidenceList(t *testing.T) {
-	ev := randomDuplicateVoteEvidence(t)
-	evl := EvidenceList([]Evidence{ev})
+	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
+		ev := randomDuplicatedVoteEvidence(kt, t)
+		evl := EvidenceList([]Evidence{ev})
 
-	assert.NotNil(t, evl.Hash())
-	assert.True(t, evl.Has(ev))
-	assert.False(t, evl.Has(&DuplicateVoteEvidence{}))
+		assert.NotNil(t, evl.Hash())
+		assert.True(t, evl.Has(ev))
+		assert.False(t, evl.Has(&DuplicateVoteEvidence{}))
+	})
 }
 
-func randomDuplicateVoteEvidence(t *testing.T) *DuplicateVoteEvidence {
-	val := NewMockPV()
+func TestMaxEvidenceBytes(t *testing.T) {
+	// time is varint encoded so need to pick the max.
+	// year int, month Month, day, hour, min, sec, nsec int, loc *Location
+	timestamp := time.Date(math.MaxInt64, 0, 0, 0, 0, 0, math.MaxInt64, time.UTC)
+
+	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
+		val := NewMockPV(kt)
+		randomPartHash := tmrand.Bytes(int(tmrand.Uint32() % 1000))
+		randomHash1 := tmrand.Bytes(int(tmrand.Uint32() % 1000))
+		randomHash2 := tmrand.Bytes(int(tmrand.Uint32() % 1000))
+		blockID := makeBlockID(tmhash.Sum(randomHash1), math.MaxUint32, tmhash.Sum(randomPartHash))
+		blockID2 := makeBlockID(tmhash.Sum(randomHash2), math.MaxUint32, tmhash.Sum(randomPartHash))
+		const chainID = "mychain"
+		ev := &DuplicateVoteEvidence{
+			TotalVotingPower: math.MaxInt64,
+			ValidatorPower:   math.MaxInt64,
+			Timestamp:        timestamp,
+			VoteA:            makeVote(t, val, chainID, math.MaxInt32, math.MaxInt64, math.MaxInt32, tmproto.ProposalType, blockID, timestamp),
+			VoteB:            makeVote(t, val, chainID, math.MaxInt32, math.MaxInt64, math.MaxInt32, tmproto.ProposalType, blockID2, timestamp),
+		}
+
+		bz, err := ev.ToProto().Marshal()
+		require.NoError(t, err)
+		assert.EqualValues(t, MaxEvidenceBytes(ev), len(bz))
+	})
+}
+
+func randomDuplicatedVoteEvidence(keyType PrivKeyType, t *testing.T) *DuplicateVoteEvidence {
+	val := NewMockPV(keyType)
 	blockID := makeBlockID([]byte("blockhash"), 1000, []byte("partshash"))
 	blockID2 := makeBlockID([]byte("blockhash2"), 1000, []byte("partshash"))
 	const chainID = "mychain"
 	return &DuplicateVoteEvidence{
-		VoteA:            makeVote(t, val, chainID, 0, 10, 2, 1, blockID, defaultVoteTime),
-		VoteB:            makeVote(t, val, chainID, 0, 10, 2, 1, blockID2, defaultVoteTime.Add(1*time.Minute)),
+		VoteA:            makeVote(t, val, chainID, 0, 10, 2, tmproto.PrevoteType, blockID, defaultVoteTime),
+		VoteB:            makeVote(t, val, chainID, 0, 10, 2, tmproto.PrevoteType, blockID2, defaultVoteTime.Add(1*time.Minute)),
 		TotalVotingPower: 30,
 		ValidatorPower:   10,
 		Timestamp:        defaultVoteTime,
@@ -47,51 +76,59 @@ func TestDuplicateVoteEvidence(t *testing.T) {
 	assert.Equal(t, ev.Hash(), tmhash.Sum(ev.Bytes()))
 	assert.NotNil(t, ev.String())
 	assert.Equal(t, ev.Height(), height)
+
+	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
+		ev := randomDuplicatedVoteEvidence(kt, t)
+		assert.Equal(t, ev.Hash(), tmhash.Sum(ev.Bytes()))
+		assert.NotNil(t, ev.String())
+	})
 }
 
 func TestDuplicateVoteEvidenceValidation(t *testing.T) {
-	val := NewMockPV()
-	blockID := makeBlockID(tmhash.Sum([]byte("blockhash")), math.MaxInt32, tmhash.Sum([]byte("partshash")))
-	blockID2 := makeBlockID(tmhash.Sum([]byte("blockhash2")), math.MaxInt32, tmhash.Sum([]byte("partshash")))
-	const chainID = "mychain"
+	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
+		val := NewMockPV(kt)
+		blockID := makeBlockID(tmhash.Sum([]byte("blockhash")), math.MaxInt32, tmhash.Sum([]byte("partshash")))
+		blockID2 := makeBlockID(tmhash.Sum([]byte("blockhash2")), math.MaxInt32, tmhash.Sum([]byte("partshash")))
+		const chainID = "mychain"
 
-	testCases := []struct {
-		testName         string
-		malleateEvidence func(*DuplicateVoteEvidence)
-		expectErr        bool
-	}{
-		{"Good DuplicateVoteEvidence", func(ev *DuplicateVoteEvidence) {}, false},
-		{"Nil vote A", func(ev *DuplicateVoteEvidence) { ev.VoteA = nil }, true},
-		{"Nil vote B", func(ev *DuplicateVoteEvidence) { ev.VoteB = nil }, true},
-		{"Nil votes", func(ev *DuplicateVoteEvidence) {
-			ev.VoteA = nil
-			ev.VoteB = nil
-		}, true},
-		{"Invalid vote type", func(ev *DuplicateVoteEvidence) {
-			ev.VoteA = makeVote(t, val, chainID, math.MaxInt32, math.MaxInt64, math.MaxInt32, 0, blockID2, defaultVoteTime)
-		}, true},
-		{"Invalid vote order", func(ev *DuplicateVoteEvidence) {
-			swap := ev.VoteA.Copy()
-			ev.VoteA = ev.VoteB.Copy()
-			ev.VoteB = swap
-		}, true},
-	}
-	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.testName, func(t *testing.T) {
-			vote1 := makeVote(t, val, chainID, math.MaxInt32, math.MaxInt64, math.MaxInt32, 0x02, blockID, defaultVoteTime)
-			vote2 := makeVote(t, val, chainID, math.MaxInt32, math.MaxInt64, math.MaxInt32, 0x02, blockID2, defaultVoteTime)
-			valSet := NewValidatorSet([]*Validator{val.ExtractIntoValidator(10)})
-			ev := NewDuplicateVoteEvidence(vote1, vote2, defaultVoteTime, valSet)
-			tc.malleateEvidence(ev)
-			assert.Equal(t, tc.expectErr, ev.ValidateBasic() != nil, "Validate Basic had an unexpected result")
-		})
-	}
+		testCases := []struct {
+			testName         string
+			malleateEvidence func(*DuplicateVoteEvidence)
+			expectErr        bool
+		}{
+			{"Good DuplicateVoteEvidence", func(ev *DuplicateVoteEvidence) {}, false},
+			{"Nil vote A", func(ev *DuplicateVoteEvidence) { ev.VoteA = nil }, true},
+			{"Nil vote B", func(ev *DuplicateVoteEvidence) { ev.VoteB = nil }, true},
+			{"Nil votes", func(ev *DuplicateVoteEvidence) {
+				ev.VoteA = nil
+				ev.VoteB = nil
+			}, true},
+			{"Invalid vote type", func(ev *DuplicateVoteEvidence) {
+				ev.VoteA = makeVote(t, val, chainID, math.MaxInt32, math.MaxInt64, math.MaxInt32, tmproto.UnknownType, blockID2, defaultVoteTime)
+			}, true},
+			{"Invalid vote order", func(ev *DuplicateVoteEvidence) {
+				swap := ev.VoteA.Copy()
+				ev.VoteA = ev.VoteB.Copy()
+				ev.VoteB = swap
+			}, true},
+		}
+		for _, tc := range testCases {
+			tc := tc
+			t.Run(tc.testName, func(t *testing.T) {
+				vote1 := makeVote(t, val, chainID, math.MaxInt32, math.MaxInt64, math.MaxInt32, tmproto.PrecommitType, blockID, defaultVoteTime)
+				vote2 := makeVote(t, val, chainID, math.MaxInt32, math.MaxInt64, math.MaxInt32, tmproto.PrecommitType, blockID2, defaultVoteTime)
+				valSet := WrapValidatorsToVoterSet([]*Validator{val.ExtractIntoValidator(10)})
+				ev := NewDuplicateVoteEvidence(vote1, vote2, defaultVoteTime, valSet)
+				tc.malleateEvidence(ev)
+				assert.Equal(t, tc.expectErr, ev.ValidateBasic() != nil, "Validate Basic had an unexpected result")
+			})
+		}
+	})
 }
 
 func TestLightClientAttackEvidence(t *testing.T) {
 	height := int64(5)
-	voteSet, valSet, privVals := randVoteSet(height, 1, tmproto.PrecommitType, 10, 1)
+	voteSet, _, voterSet, privVals := randVoteSet(height, 1, tmproto.PrecommitType, 10, 1)
 	header := makeHeaderRandom()
 	header.Height = height
 	blockID := makeBlockID(tmhash.Sum([]byte("blockhash")), math.MaxInt32, tmhash.Sum([]byte("partshash")))
@@ -103,7 +140,7 @@ func TestLightClientAttackEvidence(t *testing.T) {
 				Header: header,
 				Commit: commit,
 			},
-			ValidatorSet: valSet,
+			VoterSet: voterSet,
 		},
 		CommonHeight: height - 1,
 	}
@@ -118,7 +155,7 @@ func TestLightClientAttackEvidence(t *testing.T) {
 				Header: header,
 				Commit: differentCommit,
 			},
-			ValidatorSet: valSet,
+			VoterSet: voterSet,
 		},
 		CommonHeight: height - 1,
 	}
@@ -131,7 +168,7 @@ func TestLightClientAttackEvidence(t *testing.T) {
 				Header: differentHeader,
 				Commit: differentCommit,
 			},
-			ValidatorSet: valSet,
+			VoterSet: voterSet,
 		},
 		CommonHeight: height - 1,
 	}
@@ -143,7 +180,7 @@ func TestLightClientAttackEvidence(t *testing.T) {
 				Header: header,
 				Commit: differentCommit,
 			},
-			ValidatorSet: valSet,
+			VoterSet: voterSet,
 		},
 		CommonHeight: height - 2,
 	}
@@ -154,10 +191,10 @@ func TestLightClientAttackEvidence(t *testing.T) {
 
 func TestLightClientAttackEvidenceValidation(t *testing.T) {
 	height := int64(5)
-	voteSet, valSet, privVals := randVoteSet(height, 1, tmproto.PrecommitType, 10, 1)
+	voteSet, _, voterSet, privVals := randVoteSet(height, 1, tmproto.PrecommitType, 10, 1)
 	header := makeHeaderRandom()
 	header.Height = height
-	header.ValidatorsHash = valSet.Hash()
+	header.VotersHash = voterSet.Hash()
 	blockID := makeBlockID(header.Hash(), math.MaxInt32, tmhash.Sum([]byte("partshash")))
 	commit, err := MakeCommit(blockID, height, 1, voteSet, privVals, time.Now())
 	require.NoError(t, err)
@@ -167,7 +204,7 @@ func TestLightClientAttackEvidenceValidation(t *testing.T) {
 				Header: header,
 				Commit: commit,
 			},
-			ValidatorSet: valSet,
+			VoterSet: voterSet,
 		},
 		CommonHeight: height - 1,
 	}
@@ -186,7 +223,7 @@ func TestLightClientAttackEvidenceValidation(t *testing.T) {
 		{"Nil conflicting header", func(ev *LightClientAttackEvidence) { ev.ConflictingBlock.Header = nil }, true},
 		{"Nil conflicting blocl", func(ev *LightClientAttackEvidence) { ev.ConflictingBlock = nil }, true},
 		{"Nil validator set", func(ev *LightClientAttackEvidence) {
-			ev.ConflictingBlock.ValidatorSet = &ValidatorSet{}
+			ev.ConflictingBlock.VoterSet = &VoterSet{}
 		}, true},
 	}
 	for _, tc := range testCases {
@@ -198,7 +235,7 @@ func TestLightClientAttackEvidenceValidation(t *testing.T) {
 						Header: header,
 						Commit: commit,
 					},
-					ValidatorSet: valSet,
+					VoterSet: voterSet,
 				},
 				CommonHeight: height - 1,
 			}
@@ -219,7 +256,7 @@ func TestMockEvidenceValidateBasic(t *testing.T) {
 }
 
 func makeVote(
-	t *testing.T, val PrivValidator, chainID string, valIndex int32, height int64, round int32, step int, blockID BlockID,
+	t *testing.T, val PrivValidator, chainID string, valIndex int32, height int64, round int32, step tmproto.SignedMsgType, blockID BlockID,
 	time time.Time) *Vote {
 	pubKey, err := val.GetPubKey()
 	require.NoError(t, err)
@@ -228,9 +265,10 @@ func makeVote(
 		ValidatorIndex:   valIndex,
 		Height:           height,
 		Round:            round,
-		Type:             tmproto.SignedMsgType(step),
+		Type:             step,
 		BlockID:          blockID,
 		Timestamp:        time,
+		Signature:        []byte{},
 	}
 
 	vpb := v.ToProto()
@@ -251,7 +289,7 @@ func makeHeaderRandom() *Header {
 		LastBlockID:        makeBlockIDRandom(),
 		LastCommitHash:     crypto.CRandBytes(tmhash.Size),
 		DataHash:           crypto.CRandBytes(tmhash.Size),
-		ValidatorsHash:     crypto.CRandBytes(tmhash.Size),
+		VotersHash:         crypto.CRandBytes(tmhash.Size),
 		NextValidatorsHash: crypto.CRandBytes(tmhash.Size),
 		ConsensusHash:      crypto.CRandBytes(tmhash.Size),
 		AppHash:            crypto.CRandBytes(tmhash.Size),
@@ -262,58 +300,60 @@ func makeHeaderRandom() *Header {
 }
 
 func TestEvidenceProto(t *testing.T) {
-	// -------- Votes --------
-	val := NewMockPV()
-	blockID := makeBlockID(tmhash.Sum([]byte("blockhash")), math.MaxInt32, tmhash.Sum([]byte("partshash")))
-	blockID2 := makeBlockID(tmhash.Sum([]byte("blockhash2")), math.MaxInt32, tmhash.Sum([]byte("partshash")))
-	const chainID = "mychain"
-	v := makeVote(t, val, chainID, math.MaxInt32, math.MaxInt64, 1, 0x01, blockID, defaultVoteTime)
-	v2 := makeVote(t, val, chainID, math.MaxInt32, math.MaxInt64, 2, 0x01, blockID2, defaultVoteTime)
+	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
+		// -------- Votes --------
+		val := NewMockPV(kt)
+		blockID := makeBlockID(tmhash.Sum([]byte("blockhash")), math.MaxInt32, tmhash.Sum([]byte("partshash")))
+		blockID2 := makeBlockID(tmhash.Sum([]byte("blockhash2")), math.MaxInt32, tmhash.Sum([]byte("partshash")))
+		const chainID = "mychain"
+		v := makeVote(t, val, chainID, math.MaxInt32, math.MaxInt64, 1, tmproto.PrevoteType, blockID, defaultVoteTime)
+		v2 := makeVote(t, val, chainID, math.MaxInt32, math.MaxInt64, 2, tmproto.PrevoteType, blockID2, defaultVoteTime)
 
-	// -------- SignedHeaders --------
-	const height int64 = 37
+		// -------- SignedHeaders --------
+		const height int64 = 37
 
-	var (
-		header1 = makeHeaderRandom()
-		header2 = makeHeaderRandom()
-	)
+		var (
+			header1 = makeHeaderRandom()
+			header2 = makeHeaderRandom()
+		)
 
-	header1.Height = height
-	header1.LastBlockID = blockID
-	header1.ChainID = chainID
+		header1.Height = height
+		header1.LastBlockID = blockID
+		header1.ChainID = chainID
 
-	header2.Height = height
-	header2.LastBlockID = blockID
-	header2.ChainID = chainID
+		header2.Height = height
+		header2.LastBlockID = blockID
+		header2.ChainID = chainID
 
-	tests := []struct {
-		testName     string
-		evidence     Evidence
-		toProtoErr   bool
-		fromProtoErr bool
-	}{
-		{"nil fail", nil, true, true},
-		{"DuplicateVoteEvidence empty fail", &DuplicateVoteEvidence{}, false, true},
-		{"DuplicateVoteEvidence nil voteB", &DuplicateVoteEvidence{VoteA: v, VoteB: nil}, false, true},
-		{"DuplicateVoteEvidence nil voteA", &DuplicateVoteEvidence{VoteA: nil, VoteB: v}, false, true},
-		{"DuplicateVoteEvidence success", &DuplicateVoteEvidence{VoteA: v2, VoteB: v}, false, false},
-	}
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.testName, func(t *testing.T) {
-			pb, err := EvidenceToProto(tt.evidence)
-			if tt.toProtoErr {
-				assert.Error(t, err, tt.testName)
-				return
-			}
-			assert.NoError(t, err, tt.testName)
+		tests := []struct {
+			testName     string
+			evidence     Evidence
+			toProtoErr   bool
+			fromProtoErr bool
+		}{
+			{"nil fail", nil, true, true},
+			{"DuplicateVoteEvidence empty fail", &DuplicateVoteEvidence{}, false, true},
+			{"DuplicateVoteEvidence nil voteB", &DuplicateVoteEvidence{VoteA: v, VoteB: nil}, false, true},
+			{"DuplicateVoteEvidence nil voteA", &DuplicateVoteEvidence{VoteA: nil, VoteB: v}, false, true},
+			{"DuplicateVoteEvidence success", &DuplicateVoteEvidence{VoteA: v2, VoteB: v}, false, false},
+		}
+		for _, tt := range tests {
+			tt := tt
+			t.Run(tt.testName, func(t *testing.T) {
+				pb, err := EvidenceToProto(tt.evidence)
+				if tt.toProtoErr {
+					assert.Error(t, err, tt.testName)
+					return
+				}
+				assert.NoError(t, err, tt.testName)
 
-			evi, err := EvidenceFromProto(pb)
-			if tt.fromProtoErr {
-				assert.Error(t, err, tt.testName)
-				return
-			}
-			require.Equal(t, tt.evidence, evi, tt.testName)
-		})
-	}
+				evi, err := EvidenceFromProto(pb)
+				if tt.fromProtoErr {
+					assert.Error(t, err, tt.testName)
+					return
+				}
+				require.Equal(t, tt.evidence, evi, tt.testName)
+			})
+		}
+	})
 }

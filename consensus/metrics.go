@@ -19,28 +19,33 @@ type Metrics struct {
 	// Height of the chain.
 	Height metrics.Gauge
 
-	// ValidatorLastSignedHeight of a validator.
-	ValidatorLastSignedHeight metrics.Gauge
+	// VoterLastSignedHeight of a voter.
+	VoterLastSignedHeight metrics.Gauge
 
 	// Number of rounds.
 	Rounds metrics.Gauge
 
-	// Number of validators.
+	// ValidatorOrVoter: voter
+	// Number of validators
 	Validators metrics.Gauge
 	// Total power of all validators.
 	ValidatorsPower metrics.Gauge
-	// Power of a validator.
-	ValidatorPower metrics.Gauge
-	// Amount of blocks missed by a validator.
-	ValidatorMissedBlocks metrics.Gauge
-	// Number of validators who did not sign.
-	MissingValidators metrics.Gauge
-	// Total power of the missing validators.
-	MissingValidatorsPower metrics.Gauge
-	// Number of validators who tried to double sign.
-	ByzantineValidators metrics.Gauge
-	// Total power of the byzantine validators.
-	ByzantineValidatorsPower metrics.Gauge
+	// Number of voters.
+	Voters metrics.Gauge
+	// Total power of all voters.
+	VotersPower metrics.Gauge
+	// Power of a voter.
+	VoterPower metrics.Gauge
+	// Amount of blocks missed by a voter.
+	VoterMissedBlocks metrics.Gauge
+	// Number of voters who did not sign.
+	MissingVoters metrics.Gauge
+	// Total power of the missing voters.
+	MissingVotersPower metrics.Gauge
+	// Number of voters who tried to double sign.
+	ByzantineVoters metrics.Gauge
+	// Total power of the byzantine voters.
+	ByzantineVotersPower metrics.Gauge
 
 	// Time between this and the last block.
 	BlockIntervalSeconds metrics.Histogram
@@ -60,6 +65,24 @@ type Metrics struct {
 
 	// Number of blockparts transmitted by peer.
 	BlockParts metrics.Counter
+
+	// Number of blocks that are we couldn't receive
+	MissingProposal metrics.Gauge
+
+	// Number of rounds turned over.
+	RoundFailures metrics.Histogram
+
+	// Execution time profiling of each step
+	ProposalCreating        metrics.Histogram
+	ProposalWaiting         metrics.Histogram
+	ProposalVerifying       metrics.Histogram
+	ProposalBlockReceiving  metrics.Histogram
+	PrevoteBlockVerifying   metrics.Histogram
+	PrevoteReceiving        metrics.Histogram
+	PrecommitBlockVerifying metrics.Histogram
+	PrecommitReceiving      metrics.Histogram
+	CommitBlockVerifying    metrics.Histogram
+	CommitBlockApplying     metrics.Histogram
 }
 
 // PrometheusMetrics returns Metrics build using Prometheus client library.
@@ -90,53 +113,65 @@ func PrometheusMetrics(namespace string, labelsAndValues ...string) *Metrics {
 			Name:      "validators",
 			Help:      "Number of validators.",
 		}, labels).With(labelsAndValues...),
-		ValidatorLastSignedHeight: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
-			Namespace: namespace,
-			Subsystem: MetricsSubsystem,
-			Name:      "validator_last_signed_height",
-			Help:      "Last signed height for a validator",
-		}, append(labels, "validator_address")).With(labelsAndValues...),
-		ValidatorMissedBlocks: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
-			Namespace: namespace,
-			Subsystem: MetricsSubsystem,
-			Name:      "validator_missed_blocks",
-			Help:      "Total missed blocks for a validator",
-		}, append(labels, "validator_address")).With(labelsAndValues...),
 		ValidatorsPower: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
 			Name:      "validators_power",
 			Help:      "Total power of all validators.",
 		}, labels).With(labelsAndValues...),
-		ValidatorPower: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+		Voters: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
-			Name:      "validator_power",
-			Help:      "Power of a validator",
+			Name:      "voters",
+			Help:      "Number of voters.",
+		}, labels).With(labelsAndValues...),
+		VoterLastSignedHeight: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "voter_last_signed_height",
+			Help:      "Last signed height for a voter",
 		}, append(labels, "validator_address")).With(labelsAndValues...),
-		MissingValidators: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+		VoterMissedBlocks: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
-			Name:      "missing_validators",
-			Help:      "Number of validators who did not sign.",
+			Name:      "voter_missed_blocks",
+			Help:      "Total missed blocks for a voter",
+		}, append(labels, "validator_address")).With(labelsAndValues...),
+		VotersPower: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "voters_power",
+			Help:      "Total power of all voters.",
 		}, labels).With(labelsAndValues...),
-		MissingValidatorsPower: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+		VoterPower: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
-			Name:      "missing_validators_power",
-			Help:      "Total power of the missing validators.",
+			Name:      "voter_power",
+			Help:      "Power of a voter",
+		}, append(labels, "validator_address")).With(labelsAndValues...),
+		MissingVoters: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "missing_voters",
+			Help:      "Number of voters who did not sign.",
 		}, labels).With(labelsAndValues...),
-		ByzantineValidators: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+		MissingVotersPower: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
-			Name:      "byzantine_validators",
-			Help:      "Number of validators who tried to double sign.",
+			Name:      "missing_voters_power",
+			Help:      "Total power of the missing voters.",
 		}, labels).With(labelsAndValues...),
-		ByzantineValidatorsPower: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+		ByzantineVoters: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
-			Name:      "byzantine_validators_power",
-			Help:      "Total power of the byzantine validators.",
+			Name:      "byzantine_voters",
+			Help:      "Number of voters who tried to double sign.",
+		}, labels).With(labelsAndValues...),
+		ByzantineVotersPower: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "byzantine_voters_power",
+			Help:      "Total power of the byzantine voters.",
 		}, labels).With(labelsAndValues...),
 		BlockIntervalSeconds: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
 			Namespace: namespace,
@@ -186,6 +221,89 @@ func PrometheusMetrics(namespace string, labelsAndValues ...string) *Metrics {
 			Name:      "block_parts",
 			Help:      "Number of blockparts transmitted by peer.",
 		}, append(labels, "peer_id")).With(labelsAndValues...),
+		MissingProposal: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "missing_proposal",
+			Help:      "Number of blocks we couldn't receive",
+		}, labels).With(labelsAndValues...),
+		RoundFailures: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "round_failures",
+			Help:      "Number of rounds failed on consensus",
+			Buckets:   stdprometheus.LinearBuckets(0, 1, 5),
+		}, labels).With(labelsAndValues...),
+		ProposalCreating: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "duration_proposal_creating",
+			Help:      "Duration of creating proposal and block",
+			Buckets:   stdprometheus.LinearBuckets(100, 100, 10),
+		}, labels).With(labelsAndValues...),
+		ProposalWaiting: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "duration_proposal_waiting",
+			Help:      "Duration between enterNewRound and receiving proposal",
+			Buckets:   stdprometheus.LinearBuckets(100, 100, 10),
+		}, labels).With(labelsAndValues...),
+		ProposalVerifying: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "duration_proposal_verifying",
+			Help:      "Duration of ValidBlock",
+			Buckets:   stdprometheus.LinearBuckets(50, 50, 10),
+		}, labels).With(labelsAndValues...),
+		ProposalBlockReceiving: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "duration_proposal_block_receiving",
+			Help:      "Duration of receiving all proposal block parts",
+			Buckets:   stdprometheus.LinearBuckets(100, 100, 10),
+		}, labels).With(labelsAndValues...),
+		PrevoteBlockVerifying: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "duration_prevote_block_verifying",
+			Help:      "Duration of ValidBlock in prevote",
+			Buckets:   stdprometheus.LinearBuckets(50, 50, 10),
+		}, labels).With(labelsAndValues...),
+		PrevoteReceiving: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "duration_prevote_receiving",
+			Help:      "Duration of receiving 2/3+ prevotes",
+			Buckets:   stdprometheus.LinearBuckets(100, 100, 10),
+		}, labels).With(labelsAndValues...),
+		PrecommitBlockVerifying: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "duration_precommit_block_verifying",
+			Help:      "Duration of ValidBlock in precommit",
+			Buckets:   stdprometheus.LinearBuckets(50, 50, 10),
+		}, labels).With(labelsAndValues...),
+		PrecommitReceiving: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "duration_precommit_receiving",
+			Help:      "Duration of receiving 2/3+ precommits",
+			Buckets:   stdprometheus.LinearBuckets(100, 100, 10),
+		}, labels).With(labelsAndValues...),
+		CommitBlockVerifying: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "duration_commit_block_verifying",
+			Help:      "Duration of ValidBlock in commit",
+			Buckets:   stdprometheus.LinearBuckets(50, 50, 10),
+		}, labels).With(labelsAndValues...),
+		CommitBlockApplying: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "duration_commit_block_applying",
+			Help:      "Duration of applying block",
+			Buckets:   stdprometheus.LinearBuckets(100, 100, 10),
+		}, labels).With(labelsAndValues...),
 	}
 }
 
@@ -194,18 +312,20 @@ func NopMetrics() *Metrics {
 	return &Metrics{
 		Height: discard.NewGauge(),
 
-		ValidatorLastSignedHeight: discard.NewGauge(),
+		VoterLastSignedHeight: discard.NewGauge(),
 
 		Rounds: discard.NewGauge(),
 
-		Validators:               discard.NewGauge(),
-		ValidatorsPower:          discard.NewGauge(),
-		ValidatorPower:           discard.NewGauge(),
-		ValidatorMissedBlocks:    discard.NewGauge(),
-		MissingValidators:        discard.NewGauge(),
-		MissingValidatorsPower:   discard.NewGauge(),
-		ByzantineValidators:      discard.NewGauge(),
-		ByzantineValidatorsPower: discard.NewGauge(),
+		Validators:           discard.NewGauge(),
+		ValidatorsPower:      discard.NewGauge(),
+		Voters:               discard.NewGauge(),
+		VotersPower:          discard.NewGauge(),
+		VoterPower:           discard.NewGauge(),
+		VoterMissedBlocks:    discard.NewGauge(),
+		MissingVoters:        discard.NewGauge(),
+		MissingVotersPower:   discard.NewGauge(),
+		ByzantineVoters:      discard.NewGauge(),
+		ByzantineVotersPower: discard.NewGauge(),
 
 		BlockIntervalSeconds: discard.NewHistogram(),
 
@@ -216,5 +336,19 @@ func NopMetrics() *Metrics {
 		FastSyncing:     discard.NewGauge(),
 		StateSyncing:    discard.NewGauge(),
 		BlockParts:      discard.NewCounter(),
+
+		MissingProposal: discard.NewGauge(),
+		RoundFailures:   discard.NewHistogram(),
+
+		ProposalCreating:        discard.NewHistogram(),
+		ProposalWaiting:         discard.NewHistogram(),
+		ProposalVerifying:       discard.NewHistogram(),
+		ProposalBlockReceiving:  discard.NewHistogram(),
+		PrevoteBlockVerifying:   discard.NewHistogram(),
+		PrevoteReceiving:        discard.NewHistogram(),
+		PrecommitBlockVerifying: discard.NewHistogram(),
+		PrecommitReceiving:      discard.NewHistogram(),
+		CommitBlockVerifying:    discard.NewHistogram(),
+		CommitBlockApplying:     discard.NewHistogram(),
 	}
 }

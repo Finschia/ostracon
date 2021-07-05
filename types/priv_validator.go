@@ -5,7 +5,11 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/tendermint/tendermint/libs/rand"
+
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/bls"
+	"github.com/tendermint/tendermint/crypto/composite"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
@@ -17,6 +21,8 @@ type PrivValidator interface {
 
 	SignVote(chainID string, vote *tmproto.Vote) error
 	SignProposal(chainID string, proposal *tmproto.Proposal) error
+
+	GenerateVRFProof(message []byte) (crypto.Proof, error)
 }
 
 type PrivValidatorsByAddress []PrivValidator
@@ -53,8 +59,37 @@ type MockPV struct {
 	breakVoteSigning     bool
 }
 
-func NewMockPV() MockPV {
-	return MockPV{ed25519.GenPrivKey(), false, false}
+type PrivKeyType int
+
+const (
+	PrivKeyEd25519 PrivKeyType = iota
+	PrivKeyComposite
+	PrivKeyBLS
+)
+
+func NewMockPV(keyType PrivKeyType) MockPV {
+	switch keyType {
+	case PrivKeyEd25519:
+		return MockPV{ed25519.GenPrivKey(), false, false}
+	case PrivKeyComposite:
+		return MockPV{composite.GenPrivKey(), false, false}
+	case PrivKeyBLS:
+		return MockPV{bls.GenPrivKey(), false, false}
+	default:
+		panic(fmt.Sprintf("known pv key type: %d", keyType))
+	}
+}
+
+func PrivKeyTypeByPubKey(pubKey crypto.PubKey) PrivKeyType {
+	switch pubKey.(type) {
+	case ed25519.PubKey:
+		return PrivKeyEd25519
+	case composite.PubKey:
+		return PrivKeyComposite
+	case bls.PubKey:
+		return PrivKeyBLS
+	}
+	panic(fmt.Sprintf("unknown public key type: %v", pubKey))
 }
 
 // NewMockPVWithParams allows one to create a MockPV instance, but with finer
@@ -101,13 +136,18 @@ func (pv MockPV) SignProposal(chainID string, proposal *tmproto.Proposal) error 
 	return nil
 }
 
-func (pv MockPV) ExtractIntoValidator(votingPower int64) *Validator {
+func (pv MockPV) ExtractIntoValidator(stakingPower int64) *Validator {
 	pubKey, _ := pv.GetPubKey()
 	return &Validator{
-		Address:     pubKey.Address(),
-		PubKey:      pubKey,
-		VotingPower: votingPower,
+		Address:      pubKey.Address(),
+		PubKey:       pubKey,
+		StakingPower: stakingPower,
 	}
+}
+
+// GenerateVRFProof implements PrivValidator.
+func (pv MockPV) GenerateVRFProof(message []byte) (crypto.Proof, error) {
+	return pv.PrivKey.VRFProve(message)
 }
 
 // String returns a string representation of the MockPV.
@@ -142,4 +182,17 @@ func (pv *ErroringMockPV) SignProposal(chainID string, proposal *tmproto.Proposa
 
 func NewErroringMockPV() *ErroringMockPV {
 	return &ErroringMockPV{MockPV{ed25519.GenPrivKey(), false, false}}
+}
+
+////////////////////////////////////////
+// For testing
+func RandomKeyType() PrivKeyType {
+	r := rand.Uint32() % 2
+	switch r {
+	case 0:
+		return PrivKeyEd25519
+	case 1:
+		return PrivKeyComposite
+	}
+	return PrivKeyEd25519
 }

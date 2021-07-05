@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/tendermint/tendermint/crypto/vrf"
+
 	"github.com/stretchr/testify/require"
 
 	e2e "github.com/tendermint/tendermint/test/e2e/pkg"
@@ -66,7 +68,9 @@ func TestValidator_Propose(t *testing.T) {
 		expectCount := 0
 		proposeCount := 0
 		for _, block := range blocks {
-			if bytes.Equal(valSchedule.Set.Proposer.Address, address) {
+			proofHash, _ := vrf.ProofToHash(block.Header.Proof.Bytes())
+			proposer := valSchedule.Set.SelectProposer(proofHash, block.Height, block.Round)
+			if bytes.Equal(proposer.Address, address) {
 				expectCount++
 				if bytes.Equal(block.ProposerAddress, address) {
 					proposeCount++

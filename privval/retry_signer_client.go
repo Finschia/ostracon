@@ -94,3 +94,16 @@ func (sc *RetrySignerClient) SignProposal(chainID string, proposal *tmproto.Prop
 	}
 	return fmt.Errorf("exhausted all attempts to sign proposal: %w", err)
 }
+
+func (sc *RetrySignerClient) GenerateVRFProof(message []byte) (crypto.Proof, error) {
+	var err error
+	var proof crypto.Proof
+	for i := 0; i < sc.retries || sc.retries == 0; i++ {
+		proof, err = sc.next.GenerateVRFProof(message)
+		if err == nil {
+			return proof, nil
+		}
+		time.Sleep(sc.timeout)
+	}
+	return proof, fmt.Errorf("exhausted all attempts to generate vrf proof: %w", err)
+}

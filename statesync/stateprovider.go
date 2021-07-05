@@ -59,10 +59,18 @@ func NewLightClientStateProvider(
 
 	providers := make([]lightprovider.Provider, 0, len(servers))
 	providerRemotes := make(map[lightprovider.Provider]string)
+	var voterParams *types.VoterParams = nil
 	for _, server := range servers {
 		client, err := rpcClient(server)
 		if err != nil {
 			return nil, fmt.Errorf("failed to set up RPC client: %w", err)
+		}
+		if voterParams == nil {
+			genDoc, err := client.Genesis(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("failed to retrieve genesis doc: %w", err)
+			}
+			voterParams = genDoc.Genesis.VoterParams
 		}
 		provider := lighthttp.NewWithClient(chainID, client)
 		providers = append(providers, provider)
@@ -72,7 +80,7 @@ func NewLightClientStateProvider(
 	}
 
 	lc, err := light.NewClient(ctx, chainID, trustOptions, providers[0], providers[1:],
-		lightdb.New(dbm.NewMemDB(), ""), light.Logger(logger), light.MaxRetryAttempts(5))
+		lightdb.New(dbm.NewMemDB(), ""), voterParams, light.Logger(logger), light.MaxRetryAttempts(5))
 	if err != nil {
 		return nil, err
 	}
@@ -164,8 +172,9 @@ func (s *lightClientStateProvider) State(ctx context.Context, height uint64) (sm
 	state.LastBlockID = lastLightBlock.Commit.BlockID
 	state.AppHash = currentLightBlock.AppHash
 	state.LastResultsHash = currentLightBlock.LastResultsHash
-	state.LastValidators = lastLightBlock.ValidatorSet
+	state.LastVoters = lastLightBlock.VoterSet
 	state.Validators = currentLightBlock.ValidatorSet
+	state.Voters = currentLightBlock.VoterSet
 	state.NextValidators = nextLightBlock.ValidatorSet
 	state.LastHeightValidatorsChanged = nextLightBlock.Height
 

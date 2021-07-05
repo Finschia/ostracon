@@ -8,26 +8,32 @@ import (
 	"github.com/tendermint/tendermint/types"
 )
 
-// Validators gets the validator set at the given block height.
+// Validators gets the validators set at the given block height.
 //
 // If no height is provided, it will fetch the latest validator set. Note the
-// validators are sorted by their voting power - this is the canonical order
-// for the validators in the set as used in computing their Merkle root.
+// voters are sorted by their voting power - this is the canonical order
+// for the voters in the set as used in computing their Merkle root.
 //
 // More: https://docs.tendermint.com/master/rpc/#/Info/validators
 func Validators(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *int) (*ctypes.ResultValidators, error) {
+
 	// The latest validator that we know is the NextValidator of the last block.
 	height, err := getHeight(latestUncommittedHeight(), heightPtr)
 	if err != nil {
 		return nil, err
 	}
 
-	validators, err := env.StateStore.LoadValidators(height)
+	vals, err := env.StateStore.LoadValidators(height)
 	if err != nil {
 		return nil, err
 	}
 
-	totalCount := len(validators.Validators)
+	voters, err := env.StateStore.LoadVoters(height, env.ConsensusState.GetState().VoterParams)
+	if err != nil {
+		return nil, err
+	}
+
+	totalCount := len(vals.Validators)
 	perPage := validatePerPage(perPagePtr)
 	page, err := validatePage(pagePtr, perPage, totalCount)
 	if err != nil {
@@ -36,11 +42,68 @@ func Validators(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *in
 
 	skipCount := validateSkipCount(page, perPage)
 
-	v := validators.Validators[skipCount : skipCount+tmmath.MinInt(perPage, totalCount-skipCount)]
+	v := vals.Validators[skipCount : skipCount+tmmath.MinInt(perPage, totalCount-skipCount)]
+
+	// Retrieve to the indices where selected as Voters in Validators.
+	votersIndices := make([]int32, 0, len(v))
+	for i := range v {
+		idx, voter := voters.GetByAddress(v[i].Address)
+		if idx >= 0 {
+			votersIndices = append(votersIndices, int32(i))
+			v[i] = voter // replace to preserve its VotingPower
+		}
+	}
 
 	return &ctypes.ResultValidators{
+		BlockHeight:  height,
+		Validators:   v,
+		VoterIndices: votersIndices,
+		Count:        len(v),
+		Total:        totalCount}, nil
+}
+
+// Voters gets the voters set at the given block height.
+//
+// If no height is provided, it will fetch the latest validator set. Note the
+// voters are sorted by their voting power - this is the canonical order
+// for the voters in the set as used in computing their Merkle root.
+//
+// More: https://docs.tendermint.com/master/rpc/#/Info/validators
+func Voters(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *int) (*ctypes.ResultVoters, error) {
+	return voters(ctx, heightPtr, pagePtr, perPagePtr,
+		func(height int64, voterParams *types.VoterParams) (*types.VoterSet, error) {
+			return env.StateStore.LoadVoters(height, voterParams)
+		})
+}
+
+func voters(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *int,
+	loadFunc func(height int64, voterParams *types.VoterParams) (*types.VoterSet, error)) (*ctypes.ResultVoters, error) {
+
+	// The latest validator that we know is the NextValidator of the last block.
+	height, err := getHeight(latestUncommittedHeight(), heightPtr)
+	if err != nil {
+		return nil, err
+	}
+
+	vals, err := loadFunc(height, env.ConsensusState.GetState().VoterParams)
+	if err != nil {
+		return nil, err
+	}
+
+	totalCount := len(vals.Voters)
+	perPage := validatePerPage(perPagePtr)
+	page, err := validatePage(pagePtr, perPage, totalCount)
+	if err != nil {
+		return nil, err
+	}
+
+	skipCount := validateSkipCount(page, perPage)
+
+	v := vals.Voters[skipCount : skipCount+tmmath.MinInt(perPage, totalCount-skipCount)]
+
+	return &ctypes.ResultVoters{
 		BlockHeight: height,
-		Validators:  v,
+		Voters:      v,
 		Count:       len(v),
 		Total:       totalCount}, nil
 }

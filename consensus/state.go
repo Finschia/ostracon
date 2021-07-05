@@ -2,7 +2,6 @@ package consensus
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -10,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 
 	cfg "github.com/tendermint/tendermint/config"
 	cstypes "github.com/tendermint/tendermint/consensus/types"
@@ -68,6 +68,48 @@ type txNotifier interface {
 type evidencePool interface {
 	// reports conflicting votes to the evidence pool to be processed into evidence
 	ReportConflictingVotes(voteA, voteB *types.Vote)
+}
+
+type StepDuration struct {
+	started bool
+	start   time.Time
+	end     time.Time
+}
+
+func (sd *StepDuration) GetDuration() float64 {
+	if !sd.started && sd.end.After(sd.start) {
+		return float64(sd.end.Sub(sd.start).Microseconds()) / 1000
+	}
+	return 0
+}
+
+func (sd *StepDuration) SetStart() time.Time {
+	sd.start = tmtime.Now()
+	sd.started = true
+	return sd.start
+}
+
+func (sd *StepDuration) SetEnd() time.Time {
+	if sd.started {
+		// update only once at first; it will be reset when Start is re-assigned
+		sd.end = tmtime.Now()
+		sd.started = false
+	}
+	return sd.end
+}
+
+type StepTimes struct {
+	ProposalCreatedByMyself bool
+	ProposalCreating        StepDuration
+	ProposalWaiting         StepDuration
+	ProposalVerifying       StepDuration
+	ProposalBlockReceiving  StepDuration
+	PrevoteBlockVerifying   StepDuration
+	PrevoteReceiving        StepDuration
+	PrecommitBlockVerifying StepDuration
+	PrecommitReceiving      StepDuration
+	CommitBlockVerifying    StepDuration
+	CommitBlockApplying     StepDuration
 }
 
 // State handles execution of the consensus algorithm.
@@ -139,6 +181,9 @@ type State struct {
 
 	// for reporting metrics
 	metrics *Metrics
+
+	// times of each step
+	stepTimes StepTimes
 }
 
 // StateOption sets an optional parameter on the State.
@@ -254,6 +299,7 @@ func (cs *State) GetRoundStateSimpleJSON() ([]byte, error) {
 }
 
 // GetValidators returns a copy of the current validators.
+// ValidatorOrVoter: validator
 func (cs *State) GetValidators() (int64, []*types.Validator) {
 	cs.mtx.RLock()
 	defer cs.mtx.RUnlock()
@@ -562,8 +608,7 @@ func (cs *State) reconstructLastCommit(state sm.State) {
 			state.LastBlockHeight,
 		))
 	}
-
-	lastPrecommits := types.CommitToVoteSet(state.ChainID, seenCommit, state.LastValidators)
+	lastPrecommits := types.CommitToVoteSet(state.ChainID, seenCommit, state.LastVoters)
 	if !lastPrecommits.HasTwoThirdsMajority() {
 		panic("failed to reconstruct last commit; does not have +2/3 maj")
 	}
@@ -615,6 +660,7 @@ func (cs *State) updateToState(state sm.State) {
 
 	// Reset fields based on state.
 	validators := state.Validators
+	voters := state.Voters
 
 	switch {
 	case state.LastBlockHeight == 0: // Very first commit should be empty.
@@ -659,7 +705,8 @@ func (cs *State) updateToState(state sm.State) {
 		cs.StartTime = cs.config.Commit(cs.CommitTime)
 	}
 
-	cs.Validators = validators
+	cs.Validators = state.Validators.Copy()
+	cs.Voters = state.Voters.Copy()
 	cs.Proposal = nil
 	cs.ProposalBlock = nil
 	cs.ProposalBlockParts = nil
@@ -669,10 +716,11 @@ func (cs *State) updateToState(state sm.State) {
 	cs.ValidRound = -1
 	cs.ValidBlock = nil
 	cs.ValidBlockParts = nil
-	cs.Votes = cstypes.NewHeightVoteSet(state.ChainID, height, validators)
+	cs.Votes = cstypes.NewHeightVoteSet(state.ChainID, height, voters)
 	cs.CommitRound = -1
-	cs.LastValidators = state.LastValidators
+	cs.LastVoters = state.LastVoters
 	cs.TriggeredTimeoutPrecommit = false
+	cs.Proposer = validators.SelectProposer(state.LastProofHash, cs.Height, cs.Round)
 
 	cs.state = state
 
@@ -833,7 +881,7 @@ func (cs *State) handleMsg(mi msgInfo) {
 		}
 
 	case *VoteMessage:
-		// attempt to add the vote and dupeout the validator if its a duplicate signature
+		// attempt to add the vote and dupeout the voter if its a duplicate signature
 		// if the vote gives us a 2/3-any or 2/3-one, we transition
 		added, err = cs.tryAddVote(msg.Vote, peerID)
 		if added {
@@ -968,24 +1016,20 @@ func (cs *State) enterNewRound(height int64, round int32) {
 		return
 	}
 
-	if now := tmtime.Now(); cs.StartTime.After(now) {
+	now := cs.stepTimes.ProposalWaiting.SetStart()
+	if cs.StartTime.After(now) {
 		logger.Debug("need to set a buffer and log message here for sanity", "start_time", cs.StartTime, "now", now)
 	}
 
 	logger.Debug("entering new round", "current", fmt.Sprintf("%v/%v/%v", cs.Height, cs.Round, cs.Step))
 
-	// increment validators if necessary
-	validators := cs.Validators
-	if cs.Round < round {
-		validators = validators.Copy()
-		validators.IncrementProposerPriority(tmmath.SafeSubInt32(round, cs.Round))
-	}
+	// Select the current height and round Proposer
+	cs.Proposer = cs.Validators.SelectProposer(cs.state.LastProofHash, height, round)
 
 	// Setup new round
 	// we don't fire newStep for this step,
 	// but we fire an event, so update the round step first
 	cs.updateRoundStep(round, cstypes.RoundStepNewRound)
-	cs.Validators = validators
 	if round == 0 {
 		// We've already reset these upon new height,
 		// and meanwhile we might have received a proposal
@@ -1085,22 +1129,26 @@ func (cs *State) enterPropose(height int64, round int32) {
 
 	address := cs.privValidatorPubKey.Address()
 
-	// if not a validator, we're done
-	if !cs.Validators.HasAddress(address) {
-		logger.Debug("node is not a validator", "addr", address, "vals", cs.Validators)
-		return
-	}
-
+	// I'm a proposer, but I might not be a voter
 	if cs.isProposer(address) {
 		logger.Debug("propose step; our turn to propose", "proposer", address)
 		cs.decideProposal(height, round)
+		cs.stepTimes.ProposalCreatedByMyself = true
 	} else {
-		logger.Debug("propose step; not our turn to propose", "proposer", cs.Validators.GetProposer().Address)
+		logger.Debug("propose step; not our turn to propose", "proposer", cs.Proposer.Address,
+			"privValidator", cs.privValidator)
+		cs.stepTimes.ProposalCreatedByMyself = false
+	}
+
+	if !cs.Voters.HasAddress(address) {
+		logger.Debug("This node is not elected as a voter")
+	} else {
+		logger.Debug("This node is elected as a voter")
 	}
 }
 
 func (cs *State) isProposer(address []byte) bool {
-	return bytes.Equal(cs.Validators.GetProposer().Address, address)
+	return bytes.Equal(cs.Proposer.Address, address)
 }
 
 func (cs *State) defaultDecideProposal(height int64, round int32) {
@@ -1113,10 +1161,14 @@ func (cs *State) defaultDecideProposal(height int64, round int32) {
 		block, blockParts = cs.ValidBlock, cs.ValidBlockParts
 	} else {
 		// Create a new proposal block from state/txs from the mempool.
-		block, blockParts = cs.createProposalBlock()
-		if block == nil {
+		cs.stepTimes.ProposalCreating.SetStart()
+		block, blockParts = cs.createProposalBlock(round)
+		if block == nil { // on error
+			cs.stepTimes.ProposalCreating.SetEnd()
 			return
 		}
+		cs.Logger.Info("Create Block", "Height", height, "Round", round,
+			"ProposerAddr", block.Header.ProposerAddress.String())
 	}
 
 	// Flush the WAL. Otherwise, we may not recompute the same proposal to sign,
@@ -1130,6 +1182,7 @@ func (cs *State) defaultDecideProposal(height int64, round int32) {
 	proposal := types.NewProposal(height, round, cs.ValidRound, propBlockID)
 	p := proposal.ToProto()
 	if err := cs.privValidator.SignProposal(cs.state.ChainID, p); err == nil {
+		cs.stepTimes.ProposalCreating.SetEnd()
 		proposal.Signature = p.Signature
 
 		// send proposal and block parts on internal msg queue
@@ -1143,6 +1196,7 @@ func (cs *State) defaultDecideProposal(height int64, round int32) {
 		cs.Logger.Info("signed proposal", "height", height, "round", round, "proposal", proposal)
 		cs.Logger.Debug("signed proposal block", "block", block)
 	} else if !cs.replayMode {
+		cs.stepTimes.ProposalCreating.SetEnd()
 		cs.Logger.Error("propose step; failed signing proposal", "height", height, "round", round, "err", err)
 	}
 }
@@ -1170,7 +1224,7 @@ func (cs *State) isProposalComplete() bool {
 //
 // NOTE: keep it side-effect free for clarity.
 // CONTRACT: cs.privValidator is not nil.
-func (cs *State) createProposalBlock() (block *types.Block, blockParts *types.PartSet) {
+func (cs *State) createProposalBlock(round int32) (block *types.Block, blockParts *types.PartSet) {
 	if cs.privValidator == nil {
 		panic("entered createProposalBlock with privValidator being nil")
 	}
@@ -1185,7 +1239,6 @@ func (cs *State) createProposalBlock() (block *types.Block, blockParts *types.Pa
 	case cs.LastCommit.HasTwoThirdsMajority():
 		// Make the commit from LastCommit
 		commit = cs.LastCommit.MakeCommit()
-
 	default: // This shouldn't happen.
 		cs.Logger.Error("propose step; cannot propose anything without commit for the previous block")
 		return
@@ -1200,7 +1253,15 @@ func (cs *State) createProposalBlock() (block *types.Block, blockParts *types.Pa
 
 	proposerAddr := cs.privValidatorPubKey.Address()
 
-	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerAddr)
+	message := cs.state.MakeHashMessage(round)
+
+	proof, err := cs.privValidator.GenerateVRFProof(message)
+	if err != nil {
+		cs.Logger.Error(fmt.Sprintf("enterPropose: Cannot generate vrf proof: %s", err.Error()))
+		return
+	}
+
+	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerAddr, round, proof)
 }
 
 // Enter: `timeoutPropose` after entering Propose.
@@ -1245,25 +1306,34 @@ func (cs *State) defaultDoPrevote(height int64, round int32) {
 
 	// If ProposalBlock is nil, prevote nil.
 	if cs.ProposalBlock == nil {
+		// if it already ends or not starts it will be ignored
+		cs.stepTimes.ProposalWaiting.SetEnd()
+		cs.stepTimes.ProposalBlockReceiving.SetEnd()
 		logger.Debug("prevote step: ProposalBlock is nil")
 		cs.signAddVote(tmproto.PrevoteType, nil, types.PartSetHeader{})
+		// increase missing proposal by one
+		cs.metrics.MissingProposal.Add(1)
 		return
 	}
 
+	cs.stepTimes.PrevoteBlockVerifying.SetStart()
 	// Validate proposal block
-	err := cs.blockExec.ValidateBlock(cs.state, cs.ProposalBlock)
+	err := cs.blockExec.ValidateBlock(cs.state, round, cs.ProposalBlock)
 	if err != nil {
 		// ProposalBlock is invalid, prevote nil.
 		logger.Error("prevote step: ProposalBlock is invalid", "err", err)
+		cs.stepTimes.PrevoteBlockVerifying.SetEnd()
 		cs.signAddVote(tmproto.PrevoteType, nil, types.PartSetHeader{})
 		return
 	}
+	cs.stepTimes.PrevoteBlockVerifying.SetEnd()
 
 	// Prevote cs.ProposalBlock
 	// NOTE: the proposal signature is validated when it is received,
 	// and the proposal block parts are validated as they are received (against the merkle hash in the proposal)
 	logger.Debug("prevote step: ProposalBlock is valid")
 	cs.signAddVote(tmproto.PrevoteType, cs.ProposalBlock.Hash(), cs.ProposalBlockParts.Header())
+	cs.stepTimes.PrevoteReceiving.SetStart()
 }
 
 // Enter: any +2/3 prevotes at next round.
@@ -1379,6 +1449,7 @@ func (cs *State) enterPrecommit(height int64, round int32) {
 		}
 
 		cs.signAddVote(tmproto.PrecommitType, blockID.Hash, blockID.PartSetHeader)
+		cs.stepTimes.PrecommitReceiving.SetStart()
 		return
 	}
 
@@ -1387,10 +1458,13 @@ func (cs *State) enterPrecommit(height int64, round int32) {
 		logger.Debug("precommit step; +2/3 prevoted proposal block; locking", "hash", blockID.Hash)
 
 		// Validate the block.
-		if err := cs.blockExec.ValidateBlock(cs.state, cs.ProposalBlock); err != nil {
-			panic(fmt.Sprintf("precommit step; +2/3 prevoted for an invalid block: %v", err))
+		cs.stepTimes.PrecommitBlockVerifying.SetStart()
+		if err := cs.blockExec.ValidateBlock(cs.state, round, cs.ProposalBlock); err != nil {
+			cs.Logger.Error(fmt.Sprintf("%v; block=%v", err, cs.ProposalBlock))
+			panic(fmt.Sprintf("enterPrecommit: +2/3 prevoted for an invalid block: %v", err))
 		}
 
+		cs.stepTimes.PrecommitBlockVerifying.SetEnd()
 		cs.LockedRound = round
 		cs.LockedBlock = cs.ProposalBlock
 		cs.LockedBlockParts = cs.ProposalBlockParts
@@ -1400,6 +1474,7 @@ func (cs *State) enterPrecommit(height int64, round int32) {
 		}
 
 		cs.signAddVote(tmproto.PrecommitType, blockID.Hash, blockID.PartSetHeader)
+		cs.stepTimes.PrecommitReceiving.SetStart()
 		return
 	}
 
@@ -1562,6 +1637,7 @@ func (cs *State) finalizeCommit(height int64) {
 	blockID, ok := cs.Votes.Precommits(cs.CommitRound).TwoThirdsMajority()
 	block, blockParts := cs.ProposalBlock, cs.ProposalBlockParts
 
+	cs.stepTimes.CommitBlockVerifying.SetStart()
 	if !ok {
 		panic("cannot finalize commit; commit does not have 2/3 majority")
 	}
@@ -1571,10 +1647,10 @@ func (cs *State) finalizeCommit(height int64) {
 	if !block.HashesTo(blockID.Hash) {
 		panic("cannot finalize commit; proposal block does not hash to commit hash")
 	}
-
-	if err := cs.blockExec.ValidateBlock(cs.state, block); err != nil {
-		panic(fmt.Errorf("+2/3 committed an invalid block: %w", err))
+	if err := cs.blockExec.ValidateBlock(cs.state, cs.CommitRound, block); err != nil {
+		panic(fmt.Sprintf("+2/3 committed an invalid block: %v", err))
 	}
+	cs.stepTimes.CommitBlockVerifying.SetEnd()
 
 	logger.Info(
 		"finalizing commit of block",
@@ -1628,6 +1704,7 @@ func (cs *State) finalizeCommit(height int64) {
 
 	// Execute and commit the block, update and save the state, and update the mempool.
 	// NOTE The block.AppHash wont reflect these txs until the next block.
+	cs.stepTimes.CommitBlockApplying.SetStart()
 	var (
 		err          error
 		retainHeight int64
@@ -1645,6 +1722,7 @@ func (cs *State) finalizeCommit(height int64) {
 		logger.Error("failed to apply block", "err", err)
 		return
 	}
+	cs.stepTimes.CommitBlockApplying.SetEnd()
 
 	fail.Fail() // XXX
 
@@ -1663,7 +1741,6 @@ func (cs *State) finalizeCommit(height int64) {
 
 	// NewHeightStep!
 	cs.updateToState(stateCopy)
-
 	fail.Fail() // XXX
 
 	// Private validator might have changed it's key pair => refetch pubkey.
@@ -1699,26 +1776,28 @@ func (cs *State) pruneBlocks(retainHeight int64) (uint64, error) {
 
 func (cs *State) recordMetrics(height int64, block *types.Block) {
 	cs.metrics.Validators.Set(float64(cs.Validators.Size()))
-	cs.metrics.ValidatorsPower.Set(float64(cs.Validators.TotalVotingPower()))
+	cs.metrics.ValidatorsPower.Set(float64(cs.Validators.TotalStakingPower()))
+	cs.metrics.Voters.Set(float64(cs.Voters.Size()))
+	cs.metrics.VotersPower.Set(float64(cs.Voters.TotalVotingPower()))
 
 	var (
-		missingValidators      int
-		missingValidatorsPower int64
+		missingVoters      int
+		missingVotersPower int64
 	)
-	// height=0 -> MissingValidators and MissingValidatorsPower are both 0.
+	// height=0 -> MissingVoters and MissingVotersPower are both 0.
 	// Remember that the first LastCommit is intentionally empty, so it's not
-	// fair to increment missing validators number.
+	// fair to increment missing voters number.
 	if height > cs.state.InitialHeight {
-		// Sanity check that commit size matches validator set size - only applies
+		// Sanity check that commit size matches voter set size - only applies
 		// after first block.
 		var (
 			commitSize = block.LastCommit.Size()
-			valSetLen  = len(cs.LastValidators.Validators)
+			valSetLen  = len(cs.LastVoters.Voters)
 			address    types.Address
 		)
 		if commitSize != valSetLen {
 			panic(fmt.Sprintf("commit size (%d) doesn't match valset length (%d) at height %d\n\n%v\n\n%v",
-				commitSize, valSetLen, block.Height, block.LastCommit.Signatures, cs.LastValidators.Validators))
+				commitSize, valSetLen, block.Height, block.LastCommit.Signatures, cs.LastVoters.Voters))
 		}
 
 		if cs.privValidator != nil {
@@ -1730,45 +1809,70 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 			}
 		}
 
-		for i, val := range cs.LastValidators.Validators {
+		selectedAsVoter := false
+		if cs.privValidator != nil {
+			pubkey, err := cs.privValidator.GetPubKey()
+			if err != nil {
+				// Metrics won't be updated, but it's not critical.
+				cs.Logger.Error("Error on retrieval of pubkey", "err", err)
+			} else {
+				address = pubkey.Address()
+			}
+		}
+
+		for i, val := range cs.LastVoters.Voters {
 			commitSig := block.LastCommit.Signatures[i]
 			if commitSig.Absent() {
-				missingValidators++
-				missingValidatorsPower += val.VotingPower
+				missingVoters++
+				missingVotersPower += val.VotingPower
 			}
 
 			if bytes.Equal(val.Address, address) {
 				label := []string{
 					"validator_address", val.Address.String(),
 				}
-				cs.metrics.ValidatorPower.With(label...).Set(float64(val.VotingPower))
+				cs.metrics.VoterPower.With(label...).Set(float64(val.VotingPower))
+				selectedAsVoter = true
 				if commitSig.ForBlock() {
-					cs.metrics.ValidatorLastSignedHeight.With(label...).Set(float64(height))
+					cs.metrics.VoterLastSignedHeight.With(label...).Set(float64(height))
 				} else {
-					cs.metrics.ValidatorMissedBlocks.With(label...).Add(float64(1))
+					cs.metrics.VoterMissedBlocks.With(label...).Add(float64(1))
 				}
 			}
 
 		}
+		if !selectedAsVoter {
+			address := ""
+			if cs.privValidator != nil {
+				pubKey, err := cs.privValidator.GetPubKey()
+				if err == nil && cs.Validators != nil && cs.Validators.HasAddress(pubKey.Address().Bytes()) {
+					address = pubKey.Address().String()
+				}
+			}
+			label := []string{
+				"validator_address", address,
+			}
+			cs.metrics.VoterPower.With(label...).Set(float64(0))
+		}
 	}
-	cs.metrics.MissingValidators.Set(float64(missingValidators))
-	cs.metrics.MissingValidatorsPower.Set(float64(missingValidatorsPower))
+	cs.metrics.MissingVoters.Set(float64(missingVoters))
+	cs.metrics.MissingVotersPower.Set(float64(missingVotersPower))
 
-	// NOTE: byzantine validators power and count is only for consensus evidence i.e. duplicate vote
+	// NOTE: byzantine voters power and count is only for consensus evidence i.e. duplicate vote
 	var (
-		byzantineValidatorsPower = int64(0)
-		byzantineValidatorsCount = int64(0)
+		byzantineVotersPower = int64(0)
+		byzantineVotersCount = int64(0)
 	)
 	for _, ev := range block.Evidence.Evidence {
 		if dve, ok := ev.(*types.DuplicateVoteEvidence); ok {
-			if _, val := cs.Validators.GetByAddress(dve.VoteA.ValidatorAddress); val != nil {
-				byzantineValidatorsCount++
-				byzantineValidatorsPower += val.VotingPower
+			if _, val := cs.Voters.GetByAddress(dve.VoteA.ValidatorAddress); val != nil {
+				byzantineVotersCount++
+				byzantineVotersPower += val.VotingPower
 			}
 		}
 	}
-	cs.metrics.ByzantineValidators.Set(float64(byzantineValidatorsCount))
-	cs.metrics.ByzantineValidatorsPower.Set(float64(byzantineValidatorsPower))
+	cs.metrics.ByzantineVoters.Set(float64(byzantineVotersCount))
+	cs.metrics.ByzantineVotersPower.Set(float64(byzantineVotersPower))
 
 	if height > 1 {
 		lastBlockMeta := cs.blockStore.LoadBlockMeta(height - 1)
@@ -1783,6 +1887,20 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 	cs.metrics.TotalTxs.Add(float64(len(block.Data.Txs)))
 	cs.metrics.BlockSizeBytes.Set(float64(block.Size()))
 	cs.metrics.CommittedHeight.Set(float64(block.Height))
+
+	cs.metrics.RoundFailures.Observe(float64(cs.Round))
+	if cs.stepTimes.ProposalCreatedByMyself {
+		cs.metrics.ProposalCreating.Observe(cs.stepTimes.ProposalCreating.GetDuration())
+	}
+	cs.metrics.ProposalWaiting.Observe(cs.stepTimes.ProposalWaiting.GetDuration())
+	cs.metrics.ProposalVerifying.Observe(cs.stepTimes.ProposalVerifying.GetDuration())
+	cs.metrics.ProposalBlockReceiving.Observe(cs.stepTimes.ProposalBlockReceiving.GetDuration())
+	cs.metrics.PrevoteBlockVerifying.Observe(cs.stepTimes.PrevoteBlockVerifying.GetDuration())
+	cs.metrics.PrevoteReceiving.Observe(cs.stepTimes.PrevoteReceiving.GetDuration())
+	cs.metrics.PrecommitBlockVerifying.Observe(cs.stepTimes.PrecommitBlockVerifying.GetDuration())
+	cs.metrics.PrecommitReceiving.Observe(cs.stepTimes.PrecommitReceiving.GetDuration())
+	cs.metrics.CommitBlockVerifying.Observe(cs.stepTimes.CommitBlockVerifying.GetDuration())
+	cs.metrics.CommitBlockApplying.Observe(cs.stepTimes.CommitBlockApplying.GetDuration())
 }
 
 //-----------------------------------------------------------------------------
@@ -1804,14 +1922,24 @@ func (cs *State) defaultSetProposal(proposal *types.Proposal) error {
 		(proposal.POLRound >= 0 && proposal.POLRound >= proposal.Round) {
 		return ErrInvalidProposalPOLRound
 	}
+	cs.stepTimes.ProposalWaiting.SetEnd()
+
+	cs.stepTimes.ProposalVerifying.SetStart()
+	// If consensus does not enterNewRound yet, cs.Proposer may be nil or prior proposer, so don't use cs.Proposer
+	proposer := cs.Validators.SelectProposer(cs.state.LastProofHash, proposal.Height, proposal.Round)
 
 	p := proposal.ToProto()
 	// Verify signature
-	if !cs.Validators.GetProposer().PubKey.VerifySignature(
+	if !proposer.PubKey.VerifySignature(
 		types.ProposalSignBytes(cs.state.ChainID, p), proposal.Signature,
 	) {
+		cs.stepTimes.ProposalVerifying.SetEnd()
+		cs.Logger.Error(fmt.Sprintf("proposal signature verification failed: proposer=%X, bytes=%X, signature=%X",
+			cs.Proposer.Address, types.ProposalSignBytes(cs.state.ChainID, p),
+			proposal.Signature))
 		return ErrInvalidProposalSignature
 	}
+	cs.stepTimes.ProposalVerifying.SetEnd()
 
 	proposal.Signature = p.Signature
 	cs.Proposal = proposal
@@ -1823,6 +1951,7 @@ func (cs *State) defaultSetProposal(proposal *types.Proposal) error {
 	}
 
 	cs.Logger.Info("received proposal", "proposal", proposal)
+	cs.stepTimes.ProposalBlockReceiving.SetStart()
 	return nil
 }
 
@@ -1879,6 +2008,7 @@ func (cs *State) addProposalBlockPart(msg *BlockPartMessage, peerID p2p.ID) (add
 		}
 
 		cs.ProposalBlock = block
+		cs.stepTimes.ProposalBlockReceiving.SetEnd()
 
 		// NOTE: it's possible to receive complete proposal blocks for future rounds without having the proposal
 		cs.Logger.Info("received complete proposal block", "height", cs.ProposalBlock.Height, "hash", cs.ProposalBlock.Hash())
@@ -2041,6 +2171,8 @@ func (cs *State) addVote(vote *types.Vote, peerID p2p.ID) (added bool, err error
 
 		// If +2/3 prevotes for a block or nil for *any* round:
 		if blockID, ok := prevotes.TwoThirdsMajority(); ok {
+			cs.stepTimes.PrevoteReceiving.SetEnd()
+
 			// There was a polka!
 			// If we're locked but this is a recent polka, unlock.
 			// If it matches our ProposalBlock, update the ValidBlock
@@ -2120,6 +2252,7 @@ func (cs *State) addVote(vote *types.Vote, peerID p2p.ID) (added bool, err error
 
 		blockID, ok := precommits.TwoThirdsMajority()
 		if ok {
+			cs.stepTimes.PrecommitReceiving.SetEnd()
 			// Executed as TwoThirdsMajority could be from a higher round
 			cs.enterNewRound(height, vote.Round)
 			cs.enterPrecommit(height, vote.Round)
@@ -2133,6 +2266,7 @@ func (cs *State) addVote(vote *types.Vote, peerID p2p.ID) (added bool, err error
 				cs.enterPrecommitWait(height, vote.Round)
 			}
 		} else if cs.Round <= vote.Round && precommits.HasTwoThirdsAny() {
+			cs.stepTimes.PrecommitReceiving.SetEnd()
 			cs.enterNewRound(height, vote.Round)
 			cs.enterPrecommitWait(height, vote.Round)
 		}
@@ -2211,8 +2345,8 @@ func (cs *State) signAddVote(msgType tmproto.SignedMsgType, hash []byte, header 
 		return nil
 	}
 
-	// If the node not in the validator set, do nothing.
-	if !cs.Validators.HasAddress(cs.privValidatorPubKey.Address()) {
+	// If the node not in the voter set, do nothing.
+	if !cs.Voters.HasAddress(cs.privValidatorPubKey.Address()) {
 		return nil
 	}
 

@@ -18,6 +18,7 @@ import (
 )
 
 func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
+	t.Skip("Voter selection in Ostracon only supports sequential verification mode, but Tendermint has a few test case for skipping mode.")
 	// primary performs a lunatic attack
 	var (
 		latestHeight      = int64(10)
@@ -25,10 +26,11 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 		divergenceHeight  = int64(6)
 		primaryHeaders    = make(map[int64]*types.SignedHeader, latestHeight)
 		primaryValidators = make(map[int64]*types.ValidatorSet, latestHeight)
+		primaryVoters     = make(map[int64]*types.VoterSet, latestHeight)
 	)
 
-	witnessHeaders, witnessValidators, chainKeys := genMockNodeWithKeys(chainID, latestHeight, valSize, 2, bTime)
-	witness := mockp.New(chainID, witnessHeaders, witnessValidators)
+	witnessHeaders, witnessValidators, witnessVoters, chainKeys := genMockNodeWithKeys(chainID, latestHeight, valSize, 2, bTime)
+	witness := mockp.New(chainID, witnessHeaders, witnessValidators, witnessVoters)
 	forgedKeys := chainKeys[divergenceHeight-1].ChangeKeys(3) // we change 3 out of the 5 validators (still 2/5 remain)
 	forgedVals := forgedKeys.ToValidators(2, 0)
 
@@ -36,13 +38,17 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 		if height < divergenceHeight {
 			primaryHeaders[height] = witnessHeaders[height]
 			primaryValidators[height] = witnessValidators[height]
+			primaryVoters[height] = witnessVoters[height]
 			continue
 		}
 		primaryHeaders[height] = forgedKeys.GenSignedHeader(chainID, height, bTime.Add(time.Duration(height)*time.Minute),
-			nil, forgedVals, forgedVals, hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(forgedKeys))
+			nil, forgedVals, forgedVals, hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(forgedKeys),
+			types.DefaultVoterParams())
 		primaryValidators[height] = forgedVals
+		primaryVoters[height] = types.SelectVoter(primaryValidators[height], proofHash(primaryHeaders[height]), types.DefaultVoterParams())
 	}
-	primary := mockp.New(chainID, primaryHeaders, primaryValidators)
+
+	primary := mockp.New(chainID, primaryHeaders, primaryValidators, primaryVoters)
 
 	c, err := light.NewClient(
 		ctx,
@@ -55,6 +61,7 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 		primary,
 		[]provider.Provider{witness},
 		dbs.New(dbm.NewMemDB(), chainID),
+		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 		light.MaxRetryAttempts(1),
 	)
@@ -72,6 +79,7 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 		ConflictingBlock: &types.LightBlock{
 			SignedHeader: primaryHeaders[10],
 			ValidatorSet: primaryValidators[10],
+			VoterSet:     primaryVoters[10],
 		},
 		CommonHeight: 4,
 	}
@@ -83,6 +91,7 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 		ConflictingBlock: &types.LightBlock{
 			SignedHeader: witnessHeaders[7],
 			ValidatorSet: witnessValidators[7],
+			VoterSet:     witnessVoters[7],
 		},
 		CommonHeight: 4,
 	}
@@ -90,6 +99,7 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 }
 
 func TestLightClientAttackEvidence_Equivocation(t *testing.T) {
+	t.Skip("Voter selection in Ostracon only supports sequential verification mode, but Tendermint has a few test case for skipping mode.")
 	verificationOptions := map[string]light.Option{
 		"sequential": light.SequentialVerification(),
 		"skipping":   light.SkippingVerification(light.DefaultTrustLevel),
@@ -105,15 +115,17 @@ func TestLightClientAttackEvidence_Equivocation(t *testing.T) {
 			divergenceHeight  = int64(6)
 			primaryHeaders    = make(map[int64]*types.SignedHeader, latestHeight)
 			primaryValidators = make(map[int64]*types.ValidatorSet, latestHeight)
+			primaryVoters     = make(map[int64]*types.VoterSet, latestHeight)
 		)
 		// validators don't change in this network (however we still use a map just for convenience)
-		witnessHeaders, witnessValidators, chainKeys := genMockNodeWithKeys(chainID, latestHeight+2, valSize, 2, bTime)
-		witness := mockp.New(chainID, witnessHeaders, witnessValidators)
+		witnessHeaders, witnessValidators, witnessVoters, chainKeys := genMockNodeWithKeys(chainID, latestHeight+2, valSize, 2, bTime)
+		witness := mockp.New(chainID, witnessHeaders, witnessValidators, witnessVoters)
 
 		for height := int64(1); height <= latestHeight; height++ {
 			if height < divergenceHeight {
 				primaryHeaders[height] = witnessHeaders[height]
 				primaryValidators[height] = witnessValidators[height]
+				primaryVoters[height] = witnessVoters[height]
 				continue
 			}
 			// we don't have a network partition so we will make 4/5 (greater than 2/3) malicious and vote again for
@@ -121,10 +133,12 @@ func TestLightClientAttackEvidence_Equivocation(t *testing.T) {
 			primaryHeaders[height] = chainKeys[height].GenSignedHeader(chainID, height,
 				bTime.Add(time.Duration(height)*time.Minute), []types.Tx{[]byte("abcd")},
 				witnessValidators[height], witnessValidators[height+1], hash("app_hash"),
-				hash("cons_hash"), hash("results_hash"), 0, len(chainKeys[height])-1)
+				hash("cons_hash"), hash("results_hash"), 0, len(chainKeys[height])-1,
+				types.DefaultVoterParams())
 			primaryValidators[height] = witnessValidators[height]
+			primaryVoters[height] = witnessVoters[height]
 		}
-		primary := mockp.New(chainID, primaryHeaders, primaryValidators)
+		primary := mockp.New(chainID, primaryHeaders, primaryValidators, primaryVoters)
 
 		c, err := light.NewClient(
 			ctx,
@@ -137,6 +151,7 @@ func TestLightClientAttackEvidence_Equivocation(t *testing.T) {
 			primary,
 			[]provider.Provider{witness},
 			dbs.New(dbm.NewMemDB(), chainID),
+			types.DefaultVoterParams(),
 			light.Logger(log.TestingLogger()),
 			light.MaxRetryAttempts(1),
 			verificationOption,
@@ -156,6 +171,7 @@ func TestLightClientAttackEvidence_Equivocation(t *testing.T) {
 			ConflictingBlock: &types.LightBlock{
 				SignedHeader: primaryHeaders[divergenceHeight],
 				ValidatorSet: primaryValidators[divergenceHeight],
+				VoterSet:     primaryVoters[divergenceHeight],
 			},
 			CommonHeight: divergenceHeight,
 		}
@@ -165,6 +181,7 @@ func TestLightClientAttackEvidence_Equivocation(t *testing.T) {
 			ConflictingBlock: &types.LightBlock{
 				SignedHeader: witnessHeaders[divergenceHeight],
 				ValidatorSet: witnessValidators[divergenceHeight],
+				VoterSet:     primaryVoters[divergenceHeight],
 			},
 			CommonHeight: divergenceHeight,
 		}
@@ -192,6 +209,7 @@ func TestClientDivergentTraces1(t *testing.T) {
 		primary,
 		[]provider.Provider{witness},
 		dbs.New(dbm.NewMemDB(), chainID),
+		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 		light.MaxRetryAttempts(1),
 	)
@@ -216,6 +234,7 @@ func TestClientDivergentTraces2(t *testing.T) {
 		primary,
 		[]provider.Provider{deadNode, deadNode, primary},
 		dbs.New(dbm.NewMemDB(), chainID),
+		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 		light.MaxRetryAttempts(1),
 	)
@@ -229,16 +248,17 @@ func TestClientDivergentTraces2(t *testing.T) {
 // 3. witness has the same first header, but different second header
 // => creation should succeed, but the verification should fail
 func TestClientDivergentTraces3(t *testing.T) {
-	_, primaryHeaders, primaryVals := genMockNode(chainID, 10, 5, 2, bTime)
-	primary := mockp.New(chainID, primaryHeaders, primaryVals)
+	_, primaryHeaders, primaryVals, primaryVoters := genMockNode(chainID, 10, 5, 2, bTime)
+	primary := mockp.New(chainID, primaryHeaders, primaryVals, primaryVoters)
 
 	firstBlock, err := primary.LightBlock(ctx, 1)
 	require.NoError(t, err)
 
-	_, mockHeaders, mockVals := genMockNode(chainID, 10, 5, 2, bTime)
+	_, mockHeaders, mockVals, mockVoters := genMockNode(chainID, 10, 5, 2, bTime)
 	mockHeaders[1] = primaryHeaders[1]
 	mockVals[1] = primaryVals[1]
-	witness := mockp.New(chainID, mockHeaders, mockVals)
+	mockVoters[1] = primaryVoters[1]
+	witness := mockp.New(chainID, mockHeaders, mockVals, mockVoters)
 
 	c, err := light.NewClient(
 		ctx,
@@ -251,6 +271,7 @@ func TestClientDivergentTraces3(t *testing.T) {
 		primary,
 		[]provider.Provider{witness},
 		dbs.New(dbm.NewMemDB(), chainID),
+		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 		light.MaxRetryAttempts(1),
 	)

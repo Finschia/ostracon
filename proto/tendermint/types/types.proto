@@ -8,6 +8,7 @@ import "google/protobuf/timestamp.proto";
 import "tendermint/crypto/proof.proto";
 import "tendermint/version/types.proto";
 import "tendermint/types/validator.proto";
+import "tendermint/types/voter.proto";
 
 // BlockIdFlag indicates which BlcokID the signature is for
 enum BlockIDFlag {
@@ -70,15 +71,22 @@ message Header {
   bytes data_hash        = 7;  // transactions
 
   // hashes from the app output from the prev block
-  bytes validators_hash      = 8;   // validators for the current block
-  bytes next_validators_hash = 9;   // validators for the next block
-  bytes consensus_hash       = 10;  // consensus params for current block
-  bytes app_hash             = 11;  // state after txs from the previous block
-  bytes last_results_hash    = 12;  // root hash of all results from the txs from the previous block
+  bytes validators_hash       = 8;   // validators for the current block
+  bytes next_validators_hash  = 9;   // validators for the next block
+  bytes consensus_hash        = 10;  // consensus params for current block
+  bytes app_hash              = 11;  // state after txs from the previous block
+  bytes last_results_hash     = 12;  // root hash of all results from the txs from the previous block
 
   // consensus info
   bytes evidence_hash    = 13;  // evidence included in the block
   bytes proposer_address = 14;  // original proposer of the block
+
+  // *** Ostracon Extended Fields ***
+
+  // vrf info
+  int32 round = 1000;
+  bytes proof = 1001;
+  bytes voters_hash = 1002;   // voters for the current block
 }
 
 // Data contains the set of transactions included in the block
@@ -110,6 +118,11 @@ message Commit {
   int32                         round      = 2;
   BlockID                       block_id   = 3 [(gogoproto.nullable) = false, (gogoproto.customname) = "BlockID"];
   repeated CommitSig            signatures = 4 [(gogoproto.nullable) = false];
+
+  // *** Ostracon Extended Fields ***
+
+  // Additional field that LINE Blockchain uses for aggregated signature.
+  bytes aggregated_signature = 1000;
 }
 
 // CommitSig is a part of the Vote included in a Commit.
@@ -140,6 +153,10 @@ message SignedHeader {
 message LightBlock {
   SignedHeader                  signed_header = 1;
   tendermint.types.ValidatorSet validator_set = 2;
+
+  // *** Ostracon Extended Fields ***
+
+  tendermint.types.VoterSet voter_set = 1000;
 }
 
 message BlockMeta {

@@ -47,6 +47,11 @@ func TestReactorBroadcastTxsMessage(t *testing.T) {
 	// replace Connect2Switches (full mesh) with a func, which connects first
 	// reactor to others and nothing else, this test should also pass with >2 reactors.
 	const N = 2
+
+	// In this test, a reactor receives 1000 tx message from a peer.
+	// A reactor has N peer, so up to (N-1)×1000 txs can be stacked
+	config.P2P.MempoolRecvBufSize = (N - 1) * 1000
+
 	reactors := makeAndConnectReactors(config, N)
 	defer func() {
 		for _, r := range reactors {
@@ -306,11 +311,12 @@ func makeAndConnectReactors(config *cfg.Config, n int) []*Reactor {
 		mempool, cleanup := newMempoolWithApp(cc)
 		defer cleanup()
 
-		reactors[i] = NewReactor(config.Mempool, mempool) // so we dont start the consensus states
+		// so we dont start the consensus states
+		reactors[i] = NewReactor(config.Mempool, config.P2P.RecvAsync, config.P2P.MempoolRecvBufSize, mempool)
 		reactors[i].SetLogger(logger.With("validator", i))
 	}
 
-	p2p.MakeConnectedSwitches(config.P2P, n, func(i int, s *p2p.Switch) *p2p.Switch {
+	p2p.MakeConnectedSwitches(config.P2P, n, func(i int, s *p2p.Switch, config *cfg.P2PConfig) *p2p.Switch {
 		s.AddReactor("MEMPOOL", reactors[i])
 		return s
 
@@ -346,7 +352,7 @@ func waitForTxsOnReactors(t *testing.T, txs types.Txs, reactors []*Reactor) {
 func waitForTxsOnReactor(t *testing.T, txs types.Txs, reactor *Reactor, reactorIndex int) {
 	mempool := reactor.mempool
 	for mempool.Size() < len(txs) {
-		time.Sleep(time.Millisecond * 100)
+		time.Sleep(time.Millisecond * 1000)
 	}
 
 	reapedTxs := mempool.ReapMaxTxs(len(txs))

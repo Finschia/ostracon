@@ -54,7 +54,7 @@ func startConsensusNet(t *testing.T, css []*State, n int) (
 	for i := 0; i < n; i++ {
 		/*logger, err := tmflags.ParseLogLevel("consensus:info,*:error", logger, "info")
 		if err != nil {	t.Fatal(err)}*/
-		reactors[i] = NewReactor(css[i], true) // so we dont start the consensus states
+		reactors[i] = NewReactor(css[i], true, true, 1000) // so we dont start the consensus states
 		reactors[i].SetLogger(css[i].Logger)
 
 		// eventBus is already started with the cs
@@ -73,7 +73,7 @@ func startConsensusNet(t *testing.T, css []*State, n int) (
 		}
 	}
 	// make connected switches and start all reactors
-	p2p.MakeConnectedSwitches(config.P2P, n, func(i int, s *p2p.Switch) *p2p.Switch {
+	p2p.MakeConnectedSwitches(config.P2P, n, func(i int, s *p2p.Switch, config *cfg.P2PConfig) *p2p.Switch {
 		s.AddReactor("CONSENSUS", reactors[i])
 		s.SetLogger(reactors[i].conS.Logger.With("module", "p2p"))
 		return s
@@ -131,7 +131,7 @@ func TestReactorWithEvidence(t *testing.T) {
 	// to unroll unwieldy abstractions. Here we duplicate the code from:
 	// css := randConsensusNet(N, "consensus_reactor_test", newMockTickerFunc(true), newCounter)
 
-	genDoc, privVals := randGenesisDoc(nValidators, false, 30)
+	genDoc, privVals := randGenesisDoc(nValidators, false, 30, nil)
 	css := make([]*State, nValidators)
 	logger := consensusLogger()
 	for i := 0; i < nValidators; i++ {
@@ -284,24 +284,41 @@ func TestReactorRecordsVotesAndBlockParts(t *testing.T) {
 	reactors, blocksSubs, eventBuses := startConsensusNet(t, css, N)
 	defer stopConsensusNet(log.TestingLogger(), reactors, eventBuses)
 
+	// the proposer idx is always 0, because the LastProofHash is []byte{2}
+	proposerIdx := int32(0)
+
 	// wait till everyone makes the first new block
 	timeoutWaitGroup(t, N, func(j int) {
 		<-blocksSubs[j].Out()
 	}, css)
 
+	// look up proposer index in the validator not proposer
+	// 0:[1,2,3], 1:[0,2,3], 2:[0,1,3], 3:[0,1,2]
+	var otherIdx int
+	var proposerIdxInOtherPeer int32
+	if proposerIdx == 0 {
+		otherIdx = 1
+		proposerIdxInOtherPeer = 0
+	} else {
+		otherIdx = 0
+		proposerIdxInOtherPeer = proposerIdx - 1
+	}
+
 	// Get peer
-	peer := reactors[1].Switch.Peers().List()[0]
+	peer := reactors[otherIdx].Switch.Peers().List()[proposerIdxInOtherPeer]
+
 	// Get peer state
 	ps := peer.Get(types.PeerStateKey).(*PeerState)
 
 	assert.Equal(t, true, ps.VotesSent() > 0, "number of votes sent should have increased")
-	assert.Equal(t, true, ps.BlockPartsSent() > 0, "number of votes sent should have increased")
+	assert.Equal(t, true, ps.BlockPartsSent() > 0,
+		fmt.Sprintf("number of votes sent should have increased: %d", ps.BlockPartsSent()))
 }
 
 //-------------------------------------------------------------
 // ensure we can make blocks despite cycling a validator set
 
-func TestReactorVotingPowerChange(t *testing.T) {
+func TestReactorStakingPowerChange(t *testing.T) {
 	nVals := 4
 	logger := log.TestingLogger()
 	css, cleanup := randConsensusNet(
@@ -336,48 +353,48 @@ func TestReactorVotingPowerChange(t *testing.T) {
 	val1PubKeyABCI, err := cryptoenc.PubKeyToProto(val1PubKey)
 	require.NoError(t, err)
 	updateValidatorTx := kvstore.MakeValSetChangeTx(val1PubKeyABCI, 25)
-	previousTotalVotingPower := css[0].GetRoundState().LastValidators.TotalVotingPower()
+	previousTotalVotingPower := css[0].GetRoundState().LastVoters.TotalVotingPower()
 
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlockWithTx(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 
-	if css[0].GetRoundState().LastValidators.TotalVotingPower() == previousTotalVotingPower {
+	if css[0].GetRoundState().LastVoters.TotalVotingPower() == previousTotalVotingPower {
 		t.Fatalf(
-			"expected voting power to change (before: %d, after: %d)",
+			"expected staking power to change (before: %d, after: %d)",
 			previousTotalVotingPower,
-			css[0].GetRoundState().LastValidators.TotalVotingPower())
+			css[0].GetRoundState().LastVoters.TotalVotingPower())
 	}
 
 	updateValidatorTx = kvstore.MakeValSetChangeTx(val1PubKeyABCI, 2)
-	previousTotalVotingPower = css[0].GetRoundState().LastValidators.TotalVotingPower()
+	previousTotalVotingPower = css[0].GetRoundState().LastVoters.TotalVotingPower()
 
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlockWithTx(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 
-	if css[0].GetRoundState().LastValidators.TotalVotingPower() == previousTotalVotingPower {
+	if css[0].GetRoundState().LastVoters.TotalVotingPower() == previousTotalVotingPower {
 		t.Fatalf(
 			"expected voting power to change (before: %d, after: %d)",
 			previousTotalVotingPower,
-			css[0].GetRoundState().LastValidators.TotalVotingPower())
+			css[0].GetRoundState().LastVoters.TotalVotingPower())
 	}
 
 	updateValidatorTx = kvstore.MakeValSetChangeTx(val1PubKeyABCI, 26)
-	previousTotalVotingPower = css[0].GetRoundState().LastValidators.TotalVotingPower()
+	previousTotalVotingPower = css[0].GetRoundState().LastVoters.TotalVotingPower()
 
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlockWithTx(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 
-	if css[0].GetRoundState().LastValidators.TotalVotingPower() == previousTotalVotingPower {
+	if css[0].GetRoundState().LastVoters.TotalVotingPower() == previousTotalVotingPower {
 		t.Fatalf(
 			"expected voting power to change (before: %d, after: %d)",
 			previousTotalVotingPower,
-			css[0].GetRoundState().LastValidators.TotalVotingPower())
+			css[0].GetRoundState().LastVoters.TotalVotingPower())
 	}
 }
 
@@ -447,18 +464,18 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 	updatePubKey1ABCI, err := cryptoenc.PubKeyToProto(updateValidatorPubKey1)
 	require.NoError(t, err)
 	updateValidatorTx1 := kvstore.MakeValSetChangeTx(updatePubKey1ABCI, 25)
-	previousTotalVotingPower := css[nVals].GetRoundState().LastValidators.TotalVotingPower()
+	previousTotalVotingPower := css[nVals].GetRoundState().LastVoters.TotalVotingPower()
 
 	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css, updateValidatorTx1)
 	waitForAndValidateBlockWithTx(t, nPeers, activeVals, blocksSubs, css, updateValidatorTx1)
 	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css)
 	waitForBlockWithUpdatedValsAndValidateIt(t, nPeers, activeVals, blocksSubs, css)
 
-	if css[nVals].GetRoundState().LastValidators.TotalVotingPower() == previousTotalVotingPower {
+	if css[nVals].GetRoundState().LastVoters.TotalVotingPower() == previousTotalVotingPower {
 		t.Errorf(
-			"expected voting power to change (before: %d, after: %d)",
+			"expected staking power to change (before: %d, after: %d)",
 			previousTotalVotingPower,
-			css[nVals].GetRoundState().LastValidators.TotalVotingPower())
+			css[nVals].GetRoundState().LastVoters.TotalVotingPower())
 	}
 
 	//---------------------------------------------------------------------------

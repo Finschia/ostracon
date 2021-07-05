@@ -13,22 +13,28 @@ import (
 )
 
 // Volatile state for each Validator
-// NOTE: The ProposerPriority is not included in Validator.Hash();
+// NOTE: The ProposerPriority, VotingPower is not included in Validator.Hash();
 // make sure to update that method if changes are made here
+// StakingPower is the potential voting power proportional to the amount of stake,
+// and VotingPower is the actual voting power granted by the election process.
+// StakingPower is durable and can be changed by staking txs.
+// VotingPower is volatile and can be changed at every height.
 type Validator struct {
-	Address     Address       `json:"address"`
-	PubKey      crypto.PubKey `json:"pub_key"`
-	VotingPower int64         `json:"voting_power"`
+	Address      Address       `json:"address"`
+	PubKey       crypto.PubKey `json:"pub_key"`
+	StakingPower int64         `json:"staking_power"`
 
+	VotingPower      int64 `json:"voting_power"`
 	ProposerPriority int64 `json:"proposer_priority"`
 }
 
 // NewValidator returns a new validator with the given pubkey and voting power.
-func NewValidator(pubKey crypto.PubKey, votingPower int64) *Validator {
+func NewValidator(pubKey crypto.PubKey, stakingPower int64) *Validator {
 	return &Validator{
 		Address:          pubKey.Address(),
 		PubKey:           pubKey,
-		VotingPower:      votingPower,
+		StakingPower:     stakingPower,
+		VotingPower:      0,
 		ProposerPriority: 0,
 	}
 }
@@ -42,7 +48,7 @@ func (v *Validator) ValidateBasic() error {
 		return errors.New("validator does not have a public key")
 	}
 
-	if v.VotingPower < 0 {
+	if v.StakingPower < 0 {
 		return errors.New("validator has negative voting power")
 	}
 
@@ -96,7 +102,7 @@ func (v *Validator) String() string {
 	return fmt.Sprintf("Validator{%v %v VP:%v A:%v}",
 		v.Address,
 		v.PubKey,
-		v.VotingPower,
+		v.StakingPower,
 		v.ProposerPriority)
 }
 
@@ -104,7 +110,7 @@ func (v *Validator) String() string {
 func ValidatorListString(vals []*Validator) string {
 	chunks := make([]string, len(vals))
 	for i, val := range vals {
-		chunks[i] = fmt.Sprintf("%s:%d", val.Address, val.VotingPower)
+		chunks[i] = fmt.Sprintf("%s:%d", val.Address, val.StakingPower)
 	}
 
 	return strings.Join(chunks, ",")
@@ -121,8 +127,8 @@ func (v *Validator) Bytes() []byte {
 	}
 
 	pbv := tmproto.SimpleValidator{
-		PubKey:      &pk,
-		VotingPower: v.VotingPower,
+		PubKey:       &pk,
+		StakingPower: v.StakingPower,
 	}
 
 	bz, err := pbv.Marshal()
@@ -146,6 +152,7 @@ func (v *Validator) ToProto() (*tmproto.Validator, error) {
 	vp := tmproto.Validator{
 		Address:          v.Address,
 		PubKey:           pk,
+		StakingPower:     v.StakingPower,
 		VotingPower:      v.VotingPower,
 		ProposerPriority: v.ProposerPriority,
 	}
@@ -160,13 +167,14 @@ func ValidatorFromProto(vp *tmproto.Validator) (*Validator, error) {
 		return nil, errors.New("nil validator")
 	}
 
-	pk, err := ce.PubKeyFromProto(vp.PubKey)
+	pk, err := ce.PubKeyFromProto(&vp.PubKey)
 	if err != nil {
 		return nil, err
 	}
 	v := new(Validator)
 	v.Address = vp.GetAddress()
 	v.PubKey = pk
+	v.StakingPower = vp.GetStakingPower()
 	v.VotingPower = vp.GetVotingPower()
 	v.ProposerPriority = vp.GetProposerPriority()
 
@@ -179,15 +187,19 @@ func ValidatorFromProto(vp *tmproto.Validator) (*Validator, error) {
 // RandValidator returns a randomized validator, useful for testing.
 // UNSTABLE
 func RandValidator(randPower bool, minPower int64) (*Validator, PrivValidator) {
-	privVal := NewMockPV()
-	votePower := minPower
+	return RandValidatorForPrivKey(RandomKeyType(), randPower, minPower)
+}
+
+func RandValidatorForPrivKey(keyType PrivKeyType, randPower bool, minPower int64) (*Validator, PrivValidator) {
+	privVal := NewMockPV(keyType)
+	stakingPower := minPower
 	if randPower {
-		votePower += int64(tmrand.Uint32())
+		stakingPower += int64(tmrand.Uint32())
 	}
 	pubKey, err := privVal.GetPubKey()
 	if err != nil {
 		panic(fmt.Errorf("could not retrieve pubkey %w", err))
 	}
-	val := NewValidator(pubKey, votePower)
+	val := NewValidator(pubKey, stakingPower)
 	return val, privVal
 }
