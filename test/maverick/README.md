@@ -1,14 +1,12 @@
 # Maverick
 
-![](https://assets.rollingstone.com/assets/2015/article/tom-cruise-to-fight-drones-in-top-gun-sequel-20150629/201166/large_rect/1435581755/1401x788-Top-Gun-3.jpg)
-
 A byzantine node used to test Tendermint consensus against a plethora of different faulty misbehaviors. Designed to easily create new faulty misbehaviors to examine how a Tendermint network reacts to the misbehavior. Can also be used for fuzzy testing with different network arrangements.
 
 ## Misbehaviors
 
 A misbehavior allows control at the following stages as highlighted by the struct below
 
-```go
+```
 type Misbehavior struct {
 	String string
 
@@ -28,7 +26,7 @@ type Misbehavior struct {
 
 At each of these events, the node can exhibit a different misbehavior. To create a new misbehavior define a function that builds off the existing default misbehavior and then overrides one or more of these functions. Then append it to the misbehaviors list so the node recognizes it like so:
 
-```go
+```
 var MisbehaviorList = map[string]Misbehavior{
 	"double-prevote": DoublePrevoteMisbehavior(),
 }

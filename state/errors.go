@@ -77,7 +77,7 @@ func (e ErrAppBlockHeightTooLow) Error() string {
 
 func (e ErrLastStateMismatch) Error() string {
 	return fmt.Sprintf(
-		"latest tendermint block (%d) LastAppHash (%X) does not match app's AppHash (%X)",
+		"latest ostracon block (%d) LastAppHash (%X) does not match app's AppHash (%X)",
 		e.Height,
 		e.Core,
 		e.App,
