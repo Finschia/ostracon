@@ -14,30 +14,30 @@
 
 ### BREAKING CHANGES
 - State
-  - [state] [\#92](https://github.com/line/tendermint/pull/92) Add `VoterParams` to Genesis state
-  - [state] [\#100](https://github.com/line/tendermint/pull/100) Remove `NextVoters` from state
+  - [state] [\#92](https://github.com/line/ostracon/pull/92) Add `VoterParams` to Genesis state
+  - [state] [\#100](https://github.com/line/ostracon/pull/100) Remove `NextVoters` from state
 - Go API
-  - [types] [\#83](https://github.com/line/tendermint/pull/83) Add `StakingPower` to `Validator`
-  - [consensus] [\#83](https://github.com/line/tendermint/pull/83) Change calculation of `VotingPower`
+  - [types] [\#83](https://github.com/line/ostracon/pull/83) Add `StakingPower` to `Validator`
+  - [consensus] [\#83](https://github.com/line/ostracon/pull/83) Change calculation of `VotingPower`
 - Blockchain Protocol
-  - [state] [\#7](https://github.com/line/tendermint/issues/7) Add round, proof in block
+  - [state] [\#7](https://github.com/line/ostracon/issues/7) Add round, proof in block
 - P2P Protocol
-  - [abci] [\#100](https://github.com/line/tendermint/pull/100) Add `voters_hash` field, which is needed for verification of a block header
-  - [abci] [\#102](https://github.com/line/tendermint/pull/102) Add voting power in `VoterInfo` of abci
+  - [abci] [\#100](https://github.com/line/ostracon/pull/100) Add `voters_hash` field, which is needed for verification of a block header
+  - [abci] [\#102](https://github.com/line/ostracon/pull/102) Add voting power in `VoterInfo` of abci
 
 ### FEATURES
-- [types] [\#40](https://github.com/line/tendermint/issues/40) Add vrf interface and add a function generating vrf proof to PrivValidator
-- [lib/rand] [\#43](https://github.com/line/tendermint/issues/43) Implementation of selection algorithms using categorical distributions
-- [state] [\#44](https://github.com/line/tendermint/issues/44) Add genesis seed for electing proposer of first block
-- [types] [\#48](https://github.com/line/tendermint/issues/48) Replace Tendermint's PoS to VRF-based Random Sampling
-- [rpc] [\#78](https://github.com/line/tendermint/pull/78) Add `Voters` rpc
-- [consensus] [\#83](https://github.com/line/tendermint/pull/83) Selection voters using random sampling without replacement
-- [consensus] [\#92](https://github.com/line/tendermint/pull/92) Apply calculation of voter count
-- [BLS] [\#81](https://github.com/line/tendermint/issues/81) Modify to generate at the same time as Ed25519 key generation
-- [lite] [\#100](https://github.com/line/tendermint/pull/100) Lite calls `Genesis()` rpc when it starts up
+- [types] [\#40](https://github.com/line/ostracon/issues/40) Add vrf interface and add a function generating vrf proof to PrivValidator
+- [lib/rand] [\#43](https://github.com/line/ostracon/issues/43) Implementation of selection algorithms using categorical distributions
+- [state] [\#44](https://github.com/line/ostracon/issues/44) Add genesis seed for electing proposer of first block
+- [types] [\#48](https://github.com/line/ostracon/issues/48) Replace tendermint's PoS to VRF-based Random Sampling
+- [rpc] [\#78](https://github.com/line/ostracon/pull/78) Add `Voters` rpc
+- [consensus] [\#83](https://github.com/line/ostracon/pull/83) Selection voters using random sampling without replacement
+- [consensus] [\#92](https://github.com/line/ostracon/pull/92) Apply calculation of voter count
+- [BLS] [\#81](https://github.com/line/ostracon/issues/81) Modify to generate at the same time as Ed25519 key generation
+- [lite] [\#100](https://github.com/line/ostracon/pull/100) Lite calls `Genesis()` rpc when it starts up
 
 ### BUG FIXES
-- [circleCI] [\#76](https://github.com/line/tendermint/pull/76) Fix contract test job of circleCI
+- [circleCI] [\#76](https://github.com/line/ostracon/pull/76) Fix contract test job of circleCI
 
 ## v0.0.0
 

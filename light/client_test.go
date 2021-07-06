@@ -6,21 +6,21 @@ import (
 	"testing"
 	"time"
 
-	tmrand "github.com/tendermint/tendermint/libs/rand"
+	tmrand "github.com/line/ostracon/libs/rand"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/tendermint/tendermint/crypto/vrf"
-	tmbytes "github.com/tendermint/tendermint/libs/bytes"
-	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/light"
-	"github.com/tendermint/tendermint/light/provider"
-	mockp "github.com/tendermint/tendermint/light/provider/mock"
-	dbs "github.com/tendermint/tendermint/light/store/db"
-	"github.com/tendermint/tendermint/types"
+	"github.com/line/ostracon/crypto/ed25519"
+	"github.com/line/ostracon/crypto/vrf"
+	tmbytes "github.com/line/ostracon/libs/bytes"
+	"github.com/line/ostracon/libs/log"
+	"github.com/line/ostracon/light"
+	"github.com/line/ostracon/light/provider"
+	mockp "github.com/line/ostracon/light/provider/mock"
+	dbs "github.com/line/ostracon/light/store/db"
+	"github.com/line/ostracon/types"
 )
 
 const (

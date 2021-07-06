@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/tendermint/tendermint/crypto/vrf"
-	tmmath "github.com/tendermint/tendermint/libs/math"
-	"github.com/tendermint/tendermint/types"
+	"github.com/line/ostracon/crypto/vrf"
+	tmmath "github.com/line/ostracon/libs/math"
+	"github.com/line/ostracon/types"
 )
 
 var (

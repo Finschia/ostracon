@@ -4,16 +4,18 @@
 *.bak
 .DS_Store
 build/*
-rpc/test/.tendermint
-.tendermint
+rpc/test/.ostracon
+.ostracon
 remote_dump
 .revision
 vendor
 .vagrant
+vagrant
 test/e2e/build
 test/maverick/maverick
 test/e2e/networks/*/
 test/p2p/data/
+test/app/grpc_client
 test/logs
 coverage.txt
 docs/_build
@@ -35,7 +37,7 @@ scripts/cutWALUntil/cutWALUntil
 libs/pubsub/query/fuzz_test/output
 shunit2
 
-.tendermint-lite
+.ostracon-lite
 addrbook.json
 
 */vendor
@@ -46,12 +48,6 @@ terraform.tfstate
 terraform.tfstate.backup
 terraform.tfstate.d
 profile\.out
-test/e2e/build
-test/e2e/networks/*/
-test/logs
-test/maverick/maverick
-test/p2p/data/
-vendor
 test/fuzz/**/corpus
 test/fuzz/**/crashers
 test/fuzz/**/suppressions

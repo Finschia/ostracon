@@ -11,16 +11,16 @@ import (
 
 	db "github.com/tendermint/tm-db"
 
-	"github.com/tendermint/tendermint/abci/example/kvstore"
-	cfg "github.com/tendermint/tendermint/config"
-	tmcon "github.com/tendermint/tendermint/consensus"
-	"github.com/tendermint/tendermint/libs/log"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
-	"github.com/tendermint/tendermint/privval"
-	"github.com/tendermint/tendermint/proxy"
-	sm "github.com/tendermint/tendermint/state"
-	"github.com/tendermint/tendermint/store"
-	"github.com/tendermint/tendermint/types"
+	"github.com/line/ostracon/abci/example/kvstore"
+	cfg "github.com/line/ostracon/config"
+	tmcon "github.com/line/ostracon/consensus"
+	"github.com/line/ostracon/libs/log"
+	tmrand "github.com/line/ostracon/libs/rand"
+	"github.com/line/ostracon/privval"
+	"github.com/line/ostracon/proxy"
+	sm "github.com/line/ostracon/state"
+	"github.com/line/ostracon/store"
+	"github.com/line/ostracon/types"
 )
 
 // WALGenerateNBlocks generates a consensus WAL. It does this by spinning up a
@@ -122,7 +122,7 @@ func WALGenerateNBlocks(t *testing.T, wr io.Writer, numBlocks int) (err error) {
 		if err := consensusState.Stop(); err != nil {
 			t.Error(err)
 		}
-		return fmt.Errorf("waited too long for tendermint to produce %d blocks (grep logs for `wal_generator`)", numBlocks)
+		return fmt.Errorf("waited too long for ostracon to produce %d blocks (grep logs for `wal_generator`)", numBlocks)
 	}
 }
 

@@ -10,7 +10,7 @@ import (
 	"testing"
 	"unsafe"
 
-	"github.com/tendermint/tendermint/crypto/ed25519"
+	"github.com/line/ostracon/crypto/ed25519"
 )
 
 var (
@@ -278,13 +278,13 @@ func TestKeyPairCompatibility(t *testing.T) {
 		t.Errorf("incompatible private key: %s != %s",
 			enc(tmPrivKeyBytes), enc(lsPrivKey[:]))
 	}
-	t.Logf("tendermint: private key: %s (%d bytes)\n", enc(tmPrivKeyBytes[:]), len(tmPrivKey))
+	t.Logf("ostracon: private key: %s (%d bytes)\n", enc(tmPrivKeyBytes[:]), len(tmPrivKey))
 	t.Logf("libsodium : private key: %s (%d bytes)\n", enc(lsPrivKey[:]), len(lsPrivKey))
 
 	if !bytes.Equal(tmPubKeyBytes, lsPubKey[:]) {
 		t.Errorf("incompatible public key: %s != %s", enc(tmPubKeyBytes), enc(lsPubKey[:]))
 	}
-	t.Logf("tendermint: public key: %s (%d bytes)\n", enc(tmPubKeyBytes), len(tmPubKey))
+	t.Logf("ostracon: public key: %s (%d bytes)\n", enc(tmPubKeyBytes), len(tmPubKey))
 	t.Logf("libsodium : public key: %s (%d bytes)\n", enc(lsPubKey[:]), len(lsPubKey))
 
 	pubKeyBytesPtr := (*[PUBLICKEYBYTES]byte)(unsafe.Pointer(&tmPubKey))

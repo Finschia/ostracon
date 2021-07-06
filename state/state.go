@@ -7,14 +7,14 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/tendermint/tendermint/crypto"
+	"github.com/line/ostracon/crypto"
 
-	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
-	"github.com/tendermint/tendermint/types"
-	tmtime "github.com/tendermint/tendermint/types/time"
-	"github.com/tendermint/tendermint/version"
+	tmstate "github.com/line/ostracon/proto/ostracon/state"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	tmversion "github.com/line/ostracon/proto/ostracon/version"
+	"github.com/line/ostracon/types"
+	tmtime "github.com/line/ostracon/types/time"
+	"github.com/line/ostracon/version"
 )
 
 var (

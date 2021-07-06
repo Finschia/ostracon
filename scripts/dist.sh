@@ -6,7 +6,7 @@ set -e
 
 # Get the version from the environment, or try to figure it out.
 if [ -z $VERSION ]; then
-	VERSION=$(awk -F\" 'TMCoreSemVer =/ { print $2; exit }' < version/version.go)
+	VERSION=$(awk -F\" '/Version =/ { print $2; exit }' < version/version.go)
 fi
 if [ -z "$VERSION" ]; then
     echo "Please specify a version."
@@ -20,8 +20,8 @@ rm -rf build/pkg
 mkdir -p build/pkg
 
 # Get the git commit
-VERSION := "$(shell git describe --always)"
-GIT_IMPORT="github.com/tendermint/tendermint/version"
+VERSION := "$(git describe --always)"
+GIT_IMPORT="github.com/line/ostracon/version"
 
 # Determine the arch/os combos we're building for
 XC_ARCH=${XC_ARCH:-"386 amd64 arm"}
@@ -41,7 +41,7 @@ for arch in "${arch_list[@]}"; do
 	for os in "${os_list[@]}"; do
 		if [[ "$XC_EXCLUDE" !=  *" $os/$arch "* ]]; then
 			echo "--> $os/$arch"
-			GOOS=${os} GOARCH=${arch} go build -ldflags "-s -w -X ${GIT_IMPORT}.TMCoreSemVer=${VERSION}" -tags="${BUILD_TAGS}" -o "build/pkg/${os}_${arch}/tendermint" ./cmd/tendermint
+			GOOS=${os} GOARCH=${arch} go build -ldflags "-s -w -X ${GIT_IMPORT}.Version=${VERSION}" -tags="${BUILD_TAGS}" -o "build/pkg/${os}_${arch}/ostracon" ./cmd/ostracon
 		fi
 	done
 done
@@ -57,17 +57,17 @@ for PLATFORM in $(find ./build/pkg -mindepth 1 -maxdepth 1 -type d); do
 	popd >/dev/null 2>&1
 done
 
-# Add "tendermint" and $VERSION prefix to package name.
+# Add "ostracon" and $VERSION prefix to package name.
 rm -rf ./build/dist
 mkdir -p ./build/dist
 for FILENAME in $(find ./build/pkg -mindepth 1 -maxdepth 1 -type f); do
   FILENAME=$(basename "$FILENAME")
-	cp "./build/pkg/${FILENAME}" "./build/dist/tendermint_${VERSION}_${FILENAME}"
+	cp "./build/pkg/${FILENAME}" "./build/dist/ostracon_${VERSION}_${FILENAME}"
 done
 
 # Make the checksums.
 pushd ./build/dist
-shasum -a256 ./* > "./tendermint_${VERSION}_SHA256SUMS"
+shasum -a256 ./* > "./ostracon_${VERSION}_SHA256SUMS"
 popd
 
 # Done

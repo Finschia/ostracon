@@ -20,14 +20,14 @@ Random (but deterministic) combinations of testnets can be generated with `gener
 ```sh
 ./build/generator -d networks/generated/
 
-# Split networks into 8 groups (by filename)
-./build/generator -g 8 -d networks/generated/
+# Split networks into 4 groups (by filename)
+./build/generator -g 4 -d networks/generated/
 ```
 
 Multiple testnets can be run with the `run-multiple.sh` script:
 
 ```sh
-./run-multiple.sh networks/generated/gen-group3-*.toml
+./run-multiple.sh networks/generated/gen-group0[0123]-*.toml
 ```
 
 ## Test Stages
@@ -71,7 +71,7 @@ Optionally, `E2E_NODE` specifies the name of a single testnet node to test.
 
 These environment variables can also be specified in `tests/e2e_test.go` to run tests from an editor or IDE:
 
-```go
+```
 func init() {
 	// This can be used to manually specify a testnet manifest and/or node to
 	// run tests against. The testnet must have been started by the runner first.

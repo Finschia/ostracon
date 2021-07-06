@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/tendermint/tendermint/light/provider"
-	"github.com/tendermint/tendermint/types"
+	"github.com/line/ostracon/light/provider"
+	"github.com/line/ostracon/types"
 )
 
 type Mock struct {

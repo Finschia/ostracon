@@ -19,12 +19,12 @@ import (
 
 	"github.com/BurntSushi/toml"
 
-	"github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/tendermint/tendermint/p2p"
-	"github.com/tendermint/tendermint/privval"
-	e2e "github.com/tendermint/tendermint/test/e2e/pkg"
-	"github.com/tendermint/tendermint/types"
+	"github.com/line/ostracon/config"
+	"github.com/line/ostracon/crypto/ed25519"
+	"github.com/line/ostracon/p2p"
+	"github.com/line/ostracon/privval"
+	e2e "github.com/line/ostracon/test/e2e/pkg"
+	"github.com/line/ostracon/types"
 )
 
 const (
@@ -154,7 +154,7 @@ services:
     labels:
       e2e: true
     container_name: {{ .Name }}
-    image: tendermint/e2e-node
+    image: ostracon/e2e-node
 {{- if eq .ABCIProtocol "builtin" }}
     entrypoint: /usr/bin/entrypoint-builtin
 {{- else if .Misbehaviors }}
@@ -167,7 +167,7 @@ services:
     - {{ if .ProxyPort }}{{ .ProxyPort }}:{{ end }}26657
     - 6060
     volumes:
-    - ./{{ .Name }}:/tendermint
+    - ./{{ .Name }}:/ostracon
     networks:
       {{ $.Name }}:
         ipv{{ if $.IPv6 }}6{{ else }}4{{ end}}_address: {{ .IP }}

@@ -4,11 +4,11 @@ import (
 	"crypto/ed25519"
 	"testing"
 
-	"github.com/tendermint/tendermint/crypto/bls"
+	"github.com/line/ostracon/crypto/bls"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/tendermint/tendermint/libs/log"
+	"github.com/line/ostracon/libs/log"
 )
 
 func startConsensusAndMakeBlocks(t *testing.T, nPeers, nVals, nValsWithComposite int) []*State {

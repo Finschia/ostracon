@@ -18,37 +18,37 @@ import (
 
 	dbm "github.com/tendermint/tm-db"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-	bcv0 "github.com/tendermint/tendermint/blockchain/v0"
-	bcv1 "github.com/tendermint/tendermint/blockchain/v1"
-	bcv2 "github.com/tendermint/tendermint/blockchain/v2"
-	cfg "github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/consensus"
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/evidence"
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	"github.com/tendermint/tendermint/libs/log"
-	tmpubsub "github.com/tendermint/tendermint/libs/pubsub"
-	"github.com/tendermint/tendermint/libs/service"
-	"github.com/tendermint/tendermint/light"
-	mempl "github.com/tendermint/tendermint/mempool"
-	"github.com/tendermint/tendermint/p2p"
-	"github.com/tendermint/tendermint/p2p/pex"
-	"github.com/tendermint/tendermint/privval"
-	"github.com/tendermint/tendermint/proxy"
-	rpccore "github.com/tendermint/tendermint/rpc/core"
-	grpccore "github.com/tendermint/tendermint/rpc/grpc"
-	rpcserver "github.com/tendermint/tendermint/rpc/jsonrpc/server"
-	sm "github.com/tendermint/tendermint/state"
-	"github.com/tendermint/tendermint/state/txindex"
-	"github.com/tendermint/tendermint/state/txindex/kv"
-	"github.com/tendermint/tendermint/state/txindex/null"
-	"github.com/tendermint/tendermint/statesync"
-	"github.com/tendermint/tendermint/store"
-	cs "github.com/tendermint/tendermint/test/maverick/consensus"
-	"github.com/tendermint/tendermint/types"
-	tmtime "github.com/tendermint/tendermint/types/time"
-	"github.com/tendermint/tendermint/version"
+	abci "github.com/line/ostracon/abci/types"
+	bcv0 "github.com/line/ostracon/blockchain/v0"
+	bcv1 "github.com/line/ostracon/blockchain/v1"
+	bcv2 "github.com/line/ostracon/blockchain/v2"
+	cfg "github.com/line/ostracon/config"
+	"github.com/line/ostracon/consensus"
+	"github.com/line/ostracon/crypto"
+	"github.com/line/ostracon/evidence"
+	tmjson "github.com/line/ostracon/libs/json"
+	"github.com/line/ostracon/libs/log"
+	tmpubsub "github.com/line/ostracon/libs/pubsub"
+	"github.com/line/ostracon/libs/service"
+	"github.com/line/ostracon/light"
+	mempl "github.com/line/ostracon/mempool"
+	"github.com/line/ostracon/p2p"
+	"github.com/line/ostracon/p2p/pex"
+	"github.com/line/ostracon/privval"
+	"github.com/line/ostracon/proxy"
+	rpccore "github.com/line/ostracon/rpc/core"
+	grpccore "github.com/line/ostracon/rpc/grpc"
+	rpcserver "github.com/line/ostracon/rpc/jsonrpc/server"
+	sm "github.com/line/ostracon/state"
+	"github.com/line/ostracon/state/txindex"
+	"github.com/line/ostracon/state/txindex/kv"
+	"github.com/line/ostracon/state/txindex/null"
+	"github.com/line/ostracon/statesync"
+	"github.com/line/ostracon/store"
+	cs "github.com/line/ostracon/test/maverick/consensus"
+	"github.com/line/ostracon/types"
+	tmtime "github.com/line/ostracon/types/time"
+	"github.com/line/ostracon/version"
 )
 
 //------------------------------------------------------------------------------
@@ -731,7 +731,7 @@ func NewNode(config *cfg.Config,
 	}
 
 	// Create the handshaker, which calls RequestInfo, sets the AppVersion on the state,
-	// and replays any blocks as necessary to sync tendermint with the app.
+	// and replays any blocks as necessary to sync ostracon with the app.
 	consensusLogger := logger.With("module", "consensus")
 	if !stateSync {
 		if err := doHandshake(stateStore, state, blockStore, genDoc, eventBus, proxyApp, consensusLogger); err != nil {

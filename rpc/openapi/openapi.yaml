@@ -256,13 +256,13 @@ paths:
               tm.event = 'Tx' AND tx.height = 5   # all txs of the fifth block
               tx.height = 5                       # all txs of the fifth block
 
-        Tendermint provides a few predefined keys: tm.event, tx.hash and tx.height.
+        Ostracon provides a few predefined keys: tm.event, tx.hash and tx.height.
         Note for transactions, you can define additional keys by providing events with
         DeliverTx response.
 
         import (
-            abci "github.com/tendermint/tendermint/abci/types"
-            "github.com/tendermint/tendermint/libs/pubsub/query"
+            abci "github.com/line/ostracon/abci/types"
+            "github.com/line/ostracon/libs/pubsub/query"
         )
 
         abci.ResponseDeliverTx{
@@ -329,14 +329,14 @@ paths:
         query.MustParse("tm.event = 'Tx' AND rewards.withdraw.source = 'W'")
 
         See list of all possible events here
-        https://godoc.org/github.com/tendermint/tendermint/types#pkg-constants
+        https://godoc.org/github.com/line/ostracon/types#pkg-constants
 
         For complete query syntax, check out
-        https://godoc.org/github.com/tendermint/tendermint/libs/pubsub/query.
+        https://godoc.org/github.com/line/ostracon/libs/pubsub/query.
 
         ```go
         import rpchttp "github.com/tendermint/rpc/client/http"
-        import "github.com/tendermint/tendermint/types"
+        import "github.com/line/ostracon/types"
 
         client := rpchttp.New("tcp:0.0.0.0:26657", "/websocket")
         err := client.Start()
@@ -359,7 +359,7 @@ paths:
         }()
         ```
 
-        NOTE: if you're not reading events fast enough, Tendermint might
+        NOTE: if you're not reading events fast enough, Ostracon might
         terminate the subscription.
       parameters:
         - in: query
@@ -482,7 +482,7 @@ paths:
       tags:
         - Info
       description: |
-        Get Tendermint status including node info, pubkey, latest block hash, app hash, block height and time.
+        Get Ostracon status including node info, pubkey, latest block hash, app hash, block height and time.
       responses:
         "200":
           description: Status of the node
@@ -837,7 +837,7 @@ paths:
           description: |
             Complete consensus state.
 
-            See https://pkg.go.dev/github.com/tendermint/tendermint/types?tab=doc#Vote.String for Vote string description.
+            See https://pkg.go.dev/github.com/line/ostracon/types?tab=doc#Vote.String for Vote string description.
           content:
             application/json:
               schema:

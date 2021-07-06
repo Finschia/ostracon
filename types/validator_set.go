@@ -9,9 +9,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/tendermint/tendermint/crypto/merkle"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	"github.com/line/ostracon/crypto/merkle"
+	tmrand "github.com/line/ostracon/libs/rand"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 const (

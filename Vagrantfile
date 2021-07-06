@@ -14,7 +14,7 @@ Vagrant.configure("2") do |config|
 
     # install base requirements
     apt-get install -y --no-install-recommends wget curl jq zip \
-        make shellcheck bsdmainutils psmisc
+            make build-essential shellcheck bsdmainutils psmisc
     apt-get install -y language-pack-en
 
     # install docker
@@ -42,6 +42,10 @@ Vagrant.configure("2") do |config|
     curl -sL https://deb.nodesource.com/setup_11.x | bash -
     apt-get install -y nodejs
 
+    # install etc
+    #apt install \
+    #    git make gcc libc-dev build-base curl jq file gmp-dev clang
+
     # cleanup
     apt-get autoremove -y
 
@@ -50,7 +54,7 @@ Vagrant.configure("2") do |config|
     echo 'export GOPATH=/home/vagrant/go' >> /home/vagrant/.bash_profile
     echo 'export PATH=$PATH:$GOROOT/bin:$GOPATH/bin' >> /home/vagrant/.bash_profile
     echo 'export LC_ALL=en_US.UTF-8' >> /home/vagrant/.bash_profile
-    echo 'cd go/src/github.com/line/ostracon' >> /home/vagrant/.bash_profile
+    echo 'cd $GOPATH/src/github.com/line/ostracon' >> /home/vagrant/.bash_profile
 
     mkdir -p /home/vagrant/go/bin
     mkdir -p /home/vagrant/go/src/github.com/line

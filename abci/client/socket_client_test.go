@@ -8,11 +8,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	abcicli "github.com/tendermint/tendermint/abci/client"
-	"github.com/tendermint/tendermint/abci/server"
-	"github.com/tendermint/tendermint/abci/types"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
-	"github.com/tendermint/tendermint/libs/service"
+	abcicli "github.com/line/ostracon/abci/client"
+	"github.com/line/ostracon/abci/server"
+	"github.com/line/ostracon/abci/types"
+	tmrand "github.com/line/ostracon/libs/rand"
+	"github.com/line/ostracon/libs/service"
 )
 
 func TestProperSyncCalls(t *testing.T) {

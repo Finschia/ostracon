@@ -1,9 +1,9 @@
 .PHONY: build install docker-image
 
-TENDERMINT_VERSION?=latest
-BUILD_TAGS?='tendermint'
+OSTRACON_VERSION?=latest
+BUILD_TAGS?='ostracon'
 VERSION := $(shell git describe --always)
-BUILD_FLAGS = -ldflags "-X github.com/tendermint/tendermint/version.TMCoreSemVer=$(VERSION)
+BUILD_FLAGS = -ldflags "-X github.com/line/ostracon/version.Version=$(VERSION)
 
 .DEFAULT_GOAL := build
 
@@ -16,6 +16,6 @@ install:
 docker-image:
 	GOOS=linux GOARCH=amd64 go build $(BUILD_FLAGS) -tags $(BUILD_TAGS) -o tm-signer-harness main.go
 	docker build \
-		--build-arg TENDERMINT_VERSION=$(TENDERMINT_VERSION) \
-		-t tendermint/tm-signer-harness:$(TENDERMINT_VERSION) .
+		--build-arg OSTRACON_VERSION=$(OSTRACON_VERSION) \
+		-t ostracon/tm-signer-harness:$(OSTRACON_VERSION) .
 	rm -rf tm-signer-harness

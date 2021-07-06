@@ -3,7 +3,7 @@ set -e
 
 # Get the tag from the version, or try to figure it out.
 if [ -z "$TAG" ]; then
-	TAG=$(awk -F\" '/TMCoreSemVer =/ { print $2; exit }' < ../version/version.go)
+	TAG=$(awk -F\" '/Version =/ { print $2; exit }' < ../version/version.go)
 fi
 if [ -z "$TAG" ]; then
 		echo "Please specify a tag."
@@ -16,5 +16,5 @@ read -p "==> Build 3 docker images with the following tags (latest, $TAG, $TAG_N
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]
 then
-		docker build -t "tendermint/tendermint" -t "tendermint/tendermint:$TAG" -t "tendermint/tendermint:$TAG_NO_PATCH" .
+		docker build -t "ostracon/ostracon" -t "ostracon/ostracon:$TAG" -t "ostracon/ostracon:$TAG_NO_PATCH" .
 fi

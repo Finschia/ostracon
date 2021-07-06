@@ -8,10 +8,10 @@ import (
 
 	"golang.org/x/net/netutil"
 
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/libs/protoio"
-	"github.com/tendermint/tendermint/p2p/conn"
-	tmp2p "github.com/tendermint/tendermint/proto/tendermint/p2p"
+	"github.com/line/ostracon/crypto"
+	"github.com/line/ostracon/libs/protoio"
+	"github.com/line/ostracon/p2p/conn"
+	tmp2p "github.com/line/ostracon/proto/ostracon/p2p"
 )
 
 const (

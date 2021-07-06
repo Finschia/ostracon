@@ -5,14 +5,14 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/tendermint/tendermint/behaviour"
-	bc "github.com/tendermint/tendermint/blockchain"
-	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/p2p"
-	bcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
-	sm "github.com/tendermint/tendermint/state"
-	"github.com/tendermint/tendermint/store"
-	"github.com/tendermint/tendermint/types"
+	"github.com/line/ostracon/behaviour"
+	bc "github.com/line/ostracon/blockchain"
+	"github.com/line/ostracon/libs/log"
+	"github.com/line/ostracon/p2p"
+	bcproto "github.com/line/ostracon/proto/ostracon/blockchain"
+	sm "github.com/line/ostracon/state"
+	"github.com/line/ostracon/store"
+	"github.com/line/ostracon/types"
 )
 
 const (

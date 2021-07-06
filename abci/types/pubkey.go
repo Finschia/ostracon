@@ -1,8 +1,8 @@
 package types
 
 import (
-	"github.com/tendermint/tendermint/crypto"
-	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
+	"github.com/line/ostracon/crypto"
+	cryptoenc "github.com/line/ostracon/crypto/encoding"
 )
 
 func NewValidatorUpdate(pk crypto.PubKey, power int64) ValidatorUpdate {

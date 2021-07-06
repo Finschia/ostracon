@@ -8,18 +8,18 @@ import (
 	"strings"
 	"time"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
+	abci "github.com/line/ostracon/abci/types"
+	"github.com/line/ostracon/libs/log"
 
-	cfg "github.com/tendermint/tendermint/config"
-	tmnet "github.com/tendermint/tendermint/libs/net"
-	nm "github.com/tendermint/tendermint/node"
-	"github.com/tendermint/tendermint/p2p"
-	"github.com/tendermint/tendermint/privval"
-	"github.com/tendermint/tendermint/proxy"
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
-	core_grpc "github.com/tendermint/tendermint/rpc/grpc"
-	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
+	cfg "github.com/line/ostracon/config"
+	tmnet "github.com/line/ostracon/libs/net"
+	nm "github.com/line/ostracon/node"
+	"github.com/line/ostracon/p2p"
+	"github.com/line/ostracon/privval"
+	"github.com/line/ostracon/proxy"
+	ctypes "github.com/line/ostracon/rpc/core/types"
+	core_grpc "github.com/line/ostracon/rpc/grpc"
+	rpcclient "github.com/line/ostracon/rpc/jsonrpc/client"
 )
 
 // Options helps with specifying some parameters for our RPC testing for greater
@@ -115,7 +115,7 @@ func GetGRPCClient() core_grpc.BroadcastAPIClient {
 	return core_grpc.StartGRPCClient(grpcAddr)
 }
 
-// StartTendermint starts a test tendermint server in a go routine and returns when it is initialized
+// StartTendermint starts a test ostracon server in a go routine and returns when it is initialized
 func StartTendermint(app abci.Application, opts ...func(*Options)) *nm.Node {
 	nodeOpts := defaultOptions
 	for _, opt := range opts {
@@ -138,7 +138,7 @@ func StartTendermint(app abci.Application, opts ...func(*Options)) *nm.Node {
 	return node
 }
 
-// StopTendermint stops a test tendermint server, waits until it's stopped and
+// StopTendermint stops a test ostracon server, waits until it's stopped and
 // cleans up test/config files.
 func StopTendermint(node *nm.Node) {
 	if err := node.Stop(); err != nil {
@@ -148,7 +148,7 @@ func StopTendermint(node *nm.Node) {
 	os.RemoveAll(node.Config().RootDir)
 }
 
-// NewTendermint creates a new tendermint server and sleeps forever
+// NewTendermint creates a new ostracon server and sleeps forever
 func NewTendermint(app abci.Application, opts *Options) *nm.Node {
 	// Create & start node
 	config := GetConfig(opts.recreateConfig)

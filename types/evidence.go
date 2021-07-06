@@ -9,12 +9,12 @@ import (
 	"strings"
 	"time"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto/merkle"
-	"github.com/tendermint/tendermint/crypto/tmhash"
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	abci "github.com/line/ostracon/abci/types"
+	"github.com/line/ostracon/crypto/merkle"
+	"github.com/line/ostracon/crypto/tmhash"
+	tmjson "github.com/line/ostracon/libs/json"
+	tmrand "github.com/line/ostracon/libs/rand"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 func MaxEvidenceBytes(ev Evidence) int64 {

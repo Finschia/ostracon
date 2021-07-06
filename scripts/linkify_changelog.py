@@ -3,7 +3,7 @@ import re
 
 # This script goes through the provided file, and replaces any " \#<number>",
 # with the valid mark down formatted link to it. e.g.
-# " [\#number](https://github.com/tendermint/tendermint/issues/<number>)
+# " [\#number](https://github.com/line/ostracon/issues/<number>)
 # Note that if the number is for a PR, github will auto-redirect you when you click the link.
 # It is safe to run the script multiple times in succession.
 #

@@ -1,14 +1,14 @@
 package types
 
 import (
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/bls"
-	"github.com/tendermint/tendermint/crypto/composite"
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
-	"github.com/tendermint/tendermint/crypto/secp256k1"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	abci "github.com/line/ostracon/abci/types"
+	"github.com/line/ostracon/crypto"
+	"github.com/line/ostracon/crypto/bls"
+	"github.com/line/ostracon/crypto/composite"
+	"github.com/line/ostracon/crypto/ed25519"
+	cryptoenc "github.com/line/ostracon/crypto/encoding"
+	"github.com/line/ostracon/crypto/secp256k1"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 //-------------------------------------------------------

@@ -14,8 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/bls"
+	"github.com/line/ostracon/crypto"
+	"github.com/line/ostracon/crypto/bls"
 )
 
 func TestBasicSignatureFunctions(t *testing.T) {

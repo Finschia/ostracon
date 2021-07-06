@@ -1,3 +1,4 @@
+
 package consensus
 
 import (
@@ -18,21 +19,21 @@ import (
 	"github.com/stretchr/testify/require"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/tendermint/tendermint/abci/example/kvstore"
-	abci "github.com/tendermint/tendermint/abci/types"
-	cfg "github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/crypto"
-	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
-	"github.com/tendermint/tendermint/libs/log"
-	tmpubsub "github.com/tendermint/tendermint/libs/pubsub"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
-	mempl "github.com/tendermint/tendermint/mempool"
-	"github.com/tendermint/tendermint/privval"
-	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	"github.com/tendermint/tendermint/proxy"
-	sm "github.com/tendermint/tendermint/state"
-	"github.com/tendermint/tendermint/types"
+	"github.com/line/ostracon/abci/example/kvstore"
+	abci "github.com/line/ostracon/abci/types"
+	cfg "github.com/line/ostracon/config"
+	"github.com/line/ostracon/crypto"
+	cryptoenc "github.com/line/ostracon/crypto/encoding"
+	"github.com/line/ostracon/libs/log"
+	tmpubsub "github.com/line/ostracon/libs/pubsub"
+	tmrand "github.com/line/ostracon/libs/rand"
+	mempl "github.com/line/ostracon/mempool"
+	"github.com/line/ostracon/privval"
+	tmstate "github.com/line/ostracon/proto/ostracon/state"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	"github.com/line/ostracon/proxy"
+	sm "github.com/line/ostracon/state"
+	"github.com/line/ostracon/types"
 )
 
 func TestMain(m *testing.M) {
@@ -100,7 +101,7 @@ func startNewStateAndWaitForBlock(t *testing.T, consensusReplayConfig *cfg.Confi
 	case <-newBlockSub.Out():
 	case <-newBlockSub.Cancelled():
 		t.Fatal("newBlockSub was cancelled")
-	case <-time.After(120 * time.Second):
+	case <-time.After(10 * time.Second): // XXX 120 second is too much time, so we changed to 10 second
 		t.Fatal("Timed out waiting for new block (see trace above)")
 	}
 }
@@ -726,7 +727,7 @@ func testHandshakeReplay(t *testing.T, config *cfg.Config, nBlocks int, mode uin
 	store.commits = commits
 
 	state := genesisState.Copy()
-	// run the chain through state.ApplyBlock to build up the tendermint state
+	// run the chain through state.ApplyBlock to build up the ostracon state
 	state = buildTMStateFromChain(config, stateStore, state, chain, nBlocks, mode)
 	latestAppHash := state.AppHash
 
@@ -737,7 +738,7 @@ func testHandshakeReplay(t *testing.T, config *cfg.Config, nBlocks int, mode uin
 	clientCreator2 := proxy.NewLocalClientCreator(kvstoreApp)
 	if nBlocks > 0 {
 		// run nBlocks against a new client to build up the app state.
-		// use a throwaway tendermint state
+		// use a throwaway ostracon state
 		proxyApp := proxy.NewAppConns(clientCreator2)
 		stateDB1 := dbm.NewMemDB()
 		stateStore := sm.NewStore(stateDB1)
@@ -863,7 +864,7 @@ func buildTMStateFromChain(
 	chain []*types.Block,
 	nBlocks int,
 	mode uint) sm.State {
-	// run the whole chain against this client to build up the tendermint state
+	// run the whole chain against this client to build up the ostracon state
 	clientCreator := proxy.NewLocalClientCreator(
 		kvstore.NewPersistentKVStoreApplication(
 			filepath.Join(config.DBDir(), fmt.Sprintf("replay_test_%d_%d_t", nBlocks, mode))))
@@ -908,7 +909,7 @@ func buildTMStateFromChain(
 }
 
 func TestHandshakePanicsIfAppReturnsWrongAppHash(t *testing.T) {
-	// 1. Initialize tendermint and commit 3 blocks with the following app hashes:
+	// 1. Initialize ostracon and commit 3 blocks with the following app hashes:
 	//		- 0x01
 	//		- 0x02
 	//		- 0x03

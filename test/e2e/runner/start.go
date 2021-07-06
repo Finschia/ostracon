@@ -5,7 +5,7 @@ import (
 	"sort"
 	"time"
 
-	e2e "github.com/tendermint/tendermint/test/e2e/pkg"
+	e2e "github.com/line/ostracon/test/e2e/pkg"
 )
 
 func Start(testnet *e2e.Testnet) error {

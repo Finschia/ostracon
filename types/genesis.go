@@ -8,12 +8,12 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/tendermint/tendermint/crypto"
-	tmbytes "github.com/tendermint/tendermint/libs/bytes"
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	tmos "github.com/tendermint/tendermint/libs/os"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	tmtime "github.com/tendermint/tendermint/types/time"
+	"github.com/line/ostracon/crypto"
+	tmbytes "github.com/line/ostracon/libs/bytes"
+	tmjson "github.com/line/ostracon/libs/json"
+	tmos "github.com/line/ostracon/libs/os"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	tmtime "github.com/line/ostracon/types/time"
 )
 
 const (
@@ -47,7 +47,7 @@ func (vp *VoterParams) DefaultVoterParams() *VoterParams {
 	}
 }
 
-// GenesisDoc defines the initial conditions for a tendermint blockchain, in particular its validator set.
+// GenesisDoc defines the initial conditions for an ostracon blockchain, in particular its validator set.
 type GenesisDoc struct {
 	GenesisTime     time.Time                `json:"genesis_time"`
 	ChainID         string                   `json:"chain_id"`
