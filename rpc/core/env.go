@@ -4,16 +4,16 @@ import (
 	"fmt"
 	"time"
 
-	cfg "github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/consensus"
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/libs/log"
-	mempl "github.com/tendermint/tendermint/mempool"
-	"github.com/tendermint/tendermint/p2p"
-	"github.com/tendermint/tendermint/proxy"
-	sm "github.com/tendermint/tendermint/state"
-	"github.com/tendermint/tendermint/state/txindex"
-	"github.com/tendermint/tendermint/types"
+	cfg "github.com/line/ostracon/config"
+	"github.com/line/ostracon/consensus"
+	"github.com/line/ostracon/crypto"
+	"github.com/line/ostracon/libs/log"
+	mempl "github.com/line/ostracon/mempool"
+	"github.com/line/ostracon/p2p"
+	"github.com/line/ostracon/proxy"
+	sm "github.com/line/ostracon/state"
+	"github.com/line/ostracon/state/txindex"
+	"github.com/line/ostracon/types"
 )
 
 const (

@@ -12,22 +12,22 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	config2 "github.com/tendermint/tendermint/config"
+	config2 "github.com/line/ostracon/config"
 
 	dbm "github.com/tendermint/tm-db"
 
-	abcicli "github.com/tendermint/tendermint/abci/client"
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/evidence"
-	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/libs/service"
-	tmsync "github.com/tendermint/tendermint/libs/sync"
-	mempl "github.com/tendermint/tendermint/mempool"
-	"github.com/tendermint/tendermint/p2p"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	sm "github.com/tendermint/tendermint/state"
-	"github.com/tendermint/tendermint/store"
-	"github.com/tendermint/tendermint/types"
+	abcicli "github.com/line/ostracon/abci/client"
+	abci "github.com/line/ostracon/abci/types"
+	"github.com/line/ostracon/evidence"
+	"github.com/line/ostracon/libs/log"
+	"github.com/line/ostracon/libs/service"
+	tmsync "github.com/line/ostracon/libs/sync"
+	mempl "github.com/line/ostracon/mempool"
+	"github.com/line/ostracon/p2p"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	sm "github.com/line/ostracon/state"
+	"github.com/line/ostracon/store"
+	"github.com/line/ostracon/types"
 )
 
 //----------------------------------------------

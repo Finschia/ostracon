@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"time"
 
-	tmsync "github.com/tendermint/tendermint/libs/sync"
-	"github.com/tendermint/tendermint/p2p"
+	tmsync "github.com/line/ostracon/libs/sync"
+	"github.com/line/ostracon/p2p"
 )
 
 // errDone is returned by chunkQueue.Next() when all chunks have been returned.

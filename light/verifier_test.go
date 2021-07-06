@@ -5,13 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tendermint/tendermint/crypto/tmhash"
+	"github.com/line/ostracon/crypto/tmhash"
 
 	"github.com/stretchr/testify/assert"
 
-	tmmath "github.com/tendermint/tendermint/libs/math"
-	"github.com/tendermint/tendermint/light"
-	"github.com/tendermint/tendermint/types"
+	tmmath "github.com/line/ostracon/libs/math"
+	"github.com/line/ostracon/light"
+	"github.com/line/ostracon/types"
 )
 
 const (

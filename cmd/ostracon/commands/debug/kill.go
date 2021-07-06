@@ -14,21 +14,21 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	cfg "github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/libs/cli"
-	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
+	cfg "github.com/line/ostracon/config"
+	"github.com/line/ostracon/libs/cli"
+	rpchttp "github.com/line/ostracon/rpc/client/http"
 )
 
 var killCmd = &cobra.Command{
 	Use:   "kill [pid] [compressed-output-file]",
-	Short: "Kill a Tendermint process while aggregating and packaging debugging data",
-	Long: `Kill a Tendermint process while also aggregating Tendermint process data
+	Short: "Kill a Ostracon process while aggregating and packaging debugging data",
+	Long: `Kill a Ostracon process while also aggregating Ostracon process data
 such as the latest node state, including consensus and networking state,
 go-routine state, and the node's WAL and config information. This aggregated data
 is packaged into a compressed archive.
 
 Example:
-$ tendermint debug 34255 /path/to/tm-debug.zip`,
+$ ostracon debug 34255 /path/to/tm-debug.zip`,
 	Args: cobra.ExactArgs(2),
 	RunE: killCmdHandler,
 }
@@ -56,7 +56,7 @@ func killCmdHandler(cmd *cobra.Command, args []string) error {
 
 	// Create a temporary directory which will contain all the state dumps and
 	// relevant files and directories that will be compressed into a file.
-	tmpDir, err := ioutil.TempDir(os.TempDir(), "tendermint_debug_tmp")
+	tmpDir, err := ioutil.TempDir(os.TempDir(), "ostracon_debug_tmp")
 	if err != nil {
 		return fmt.Errorf("failed to create temporary directory: %w", err)
 	}
@@ -87,7 +87,7 @@ func killCmdHandler(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Info("killing Tendermint process")
+	logger.Info("killing Ostracon process")
 	if err := killProc(pid, tmpDir); err != nil {
 		return err
 	}
@@ -96,13 +96,13 @@ func killCmdHandler(cmd *cobra.Command, args []string) error {
 	return zipDir(tmpDir, outFile)
 }
 
-// killProc attempts to kill the Tendermint process with a given PID with an
+// killProc attempts to kill the Ostracon process with a given PID with an
 // ABORT signal which should result in a goroutine stacktrace. The PID's STDERR
 // is tailed and piped to a file under the directory dir. An error is returned
 // if the output file cannot be created or the tail command cannot be started.
 // An error is not returned if any subsequent syscall fails.
 func killProc(pid uint64, dir string) error {
-	// pipe STDERR output from tailing the Tendermint process to a file
+	// pipe STDERR output from tailing the Ostracon process to a file
 	//
 	// NOTE: This will only work on UNIX systems.
 	cmd := exec.Command("tail", "-f", fmt.Sprintf("/proc/%d/fd/2", pid)) // nolint: gosec
@@ -120,25 +120,25 @@ func killProc(pid uint64, dir string) error {
 		return err
 	}
 
-	// kill the underlying Tendermint process and subsequent tailing process
+	// kill the underlying Ostracon process and subsequent tailing process
 	go func() {
-		// Killing the Tendermint process with the '-ABRT|-6' signal will result in
+		// Killing the Ostracon process with the '-ABRT|-6' signal will result in
 		// a goroutine stacktrace.
 		p, err := os.FindProcess(int(pid))
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "failed to find PID to kill Tendermint process: %s", err)
+			fmt.Fprintf(os.Stderr, "failed to find PID to kill Ostracon process: %s", err)
 		} else if err = p.Signal(syscall.SIGABRT); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to kill Tendermint process: %s", err)
+			fmt.Fprintf(os.Stderr, "failed to kill Ostracon process: %s", err)
 		}
 
-		// allow some time to allow the Tendermint process to be killed
+		// allow some time to allow the Ostracon process to be killed
 		//
 		// TODO: We should 'wait' for a kill to succeed (e.g. poll for PID until it
 		// cannot be found). Regardless, this should be ample time.
 		time.Sleep(5 * time.Second)
 
 		if err := cmd.Process.Kill(); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to kill Tendermint process output redirection: %s", err)
+			fmt.Fprintf(os.Stderr, "failed to kill Ostracon process output redirection: %s", err)
 		}
 	}()
 

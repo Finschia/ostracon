@@ -9,9 +9,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	cfg "github.com/tendermint/tendermint/config"
-	tmos "github.com/tendermint/tendermint/libs/os"
-	nm "github.com/tendermint/tendermint/node"
+	cfg "github.com/line/ostracon/config"
+	tmos "github.com/line/ostracon/libs/os"
+	nm "github.com/line/ostracon/node"
 )
 
 var (
@@ -19,7 +19,7 @@ var (
 )
 
 // AddNodeFlags exposes some common configuration options on the command-line
-// These are exposed for convenience of commands embedding a tendermint node
+// These are exposed for convenience of commands embedding a ostracon node
 func AddNodeFlags(cmd *cobra.Command) {
 	// bind flags
 	cmd.Flags().String("moniker", config.Moniker, "node name")
@@ -101,7 +101,7 @@ func NewRunNodeCmd(nodeProvider nm.Provider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "start",
 		Aliases: []string{"node", "run"},
-		Short:   "Run the tendermint node",
+		Short:   "Run the ostracon node",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := checkGenesisHash(config); err != nil {
 				return err

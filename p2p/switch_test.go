@@ -18,11 +18,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/tendermint/tendermint/libs/log"
-	tmsync "github.com/tendermint/tendermint/libs/sync"
-	"github.com/tendermint/tendermint/p2p/conn"
+	"github.com/line/ostracon/config"
+	"github.com/line/ostracon/crypto/ed25519"
+	"github.com/line/ostracon/libs/log"
+	tmsync "github.com/line/ostracon/libs/sync"
+	"github.com/line/ostracon/p2p/conn"
 )
 
 var (

@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/tendermint/tendermint/crypto/vrf"
+	"github.com/line/ostracon/crypto/vrf"
 
 	"github.com/stretchr/testify/require"
 
-	e2e "github.com/tendermint/tendermint/test/e2e/pkg"
-	"github.com/tendermint/tendermint/types"
+	e2e "github.com/line/ostracon/test/e2e/pkg"
+	"github.com/line/ostracon/types"
 )
 
 // Tests that validator sets are available and correct according to

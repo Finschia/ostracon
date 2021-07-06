@@ -7,12 +7,12 @@ import (
 
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/light"
-	"github.com/tendermint/tendermint/light/provider"
-	mockp "github.com/tendermint/tendermint/light/provider/mock"
-	dbs "github.com/tendermint/tendermint/light/store/db"
-	"github.com/tendermint/tendermint/types"
+	"github.com/line/ostracon/libs/log"
+	"github.com/line/ostracon/light"
+	"github.com/line/ostracon/light/provider"
+	mockp "github.com/line/ostracon/light/provider/mock"
+	dbs "github.com/line/ostracon/light/store/db"
+	"github.com/line/ostracon/types"
 )
 
 // NOTE: block is produced every minute. Make sure the verification time

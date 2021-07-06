@@ -10,18 +10,18 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/tendermint/tendermint/abci/server"
-	"github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	tmflags "github.com/tendermint/tendermint/libs/cli/flags"
-	"github.com/tendermint/tendermint/libs/log"
-	tmnet "github.com/tendermint/tendermint/libs/net"
-	"github.com/tendermint/tendermint/node"
-	"github.com/tendermint/tendermint/p2p"
-	"github.com/tendermint/tendermint/privval"
-	"github.com/tendermint/tendermint/proxy"
-	mcs "github.com/tendermint/tendermint/test/maverick/consensus"
-	maverick "github.com/tendermint/tendermint/test/maverick/node"
+	"github.com/line/ostracon/abci/server"
+	"github.com/line/ostracon/config"
+	"github.com/line/ostracon/crypto/ed25519"
+	tmflags "github.com/line/ostracon/libs/cli/flags"
+	"github.com/line/ostracon/libs/log"
+	tmnet "github.com/line/ostracon/libs/net"
+	"github.com/line/ostracon/node"
+	"github.com/line/ostracon/p2p"
+	"github.com/line/ostracon/privval"
+	"github.com/line/ostracon/proxy"
+	mcs "github.com/line/ostracon/test/maverick/consensus"
+	maverick "github.com/line/ostracon/test/maverick/node"
 )
 
 var logger = log.NewTMLogger(log.NewSyncWriter(os.Stdout))
@@ -102,7 +102,7 @@ func startApp(cfg *Config) error {
 }
 
 // startNode starts a Tendermint node running the application directly. It assumes the Tendermint
-// configuration is in $TMHOME/config/tendermint.toml.
+// configuration is in $TMHOME/config/ostracon.toml.
 //
 // FIXME There is no way to simply load the configuration from a file, so we need to pull in Viper.
 func startNode(cfg *Config) error {
@@ -136,7 +136,7 @@ func startNode(cfg *Config) error {
 }
 
 // startMaverick starts a Maverick node that runs the application directly. It assumes the Tendermint
-// configuration is in $TMHOME/config/tendermint.toml.
+// configuration is in $TMHOME/config/ostracon.toml.
 func startMaverick(cfg *Config) error {
 	app, err := NewApplication(cfg)
 	if err != nil {

@@ -5,12 +5,12 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/tendermint/tendermint/libs/log"
-	tmos "github.com/tendermint/tendermint/libs/os"
-	"github.com/tendermint/tendermint/privval"
+	"github.com/line/ostracon/libs/log"
+	tmos "github.com/line/ostracon/libs/os"
+	"github.com/line/ostracon/privval"
 )
 
-// ResetAllCmd removes the database of this Tendermint core
+// ResetAllCmd removes the database of this Ostracon core
 // instance.
 var ResetAllCmd = &cobra.Command{
 	Use:     "unsafe-reset-all",

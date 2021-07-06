@@ -12,15 +12,15 @@ import (
 	"github.com/pkg/errors"
 	db "github.com/tendermint/tm-db"
 
-	"github.com/tendermint/tendermint/abci/example/kvstore"
-	cfg "github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/libs/log"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
-	"github.com/tendermint/tendermint/privval"
-	"github.com/tendermint/tendermint/proxy"
-	sm "github.com/tendermint/tendermint/state"
-	"github.com/tendermint/tendermint/store"
-	"github.com/tendermint/tendermint/types"
+	"github.com/line/ostracon/abci/example/kvstore"
+	cfg "github.com/line/ostracon/config"
+	"github.com/line/ostracon/libs/log"
+	tmrand "github.com/line/ostracon/libs/rand"
+	"github.com/line/ostracon/privval"
+	"github.com/line/ostracon/proxy"
+	sm "github.com/line/ostracon/state"
+	"github.com/line/ostracon/store"
+	"github.com/line/ostracon/types"
 )
 
 // WALGenerateNBlocks generates a consensus WAL. It does this by spinning up a

@@ -16,27 +16,27 @@ import (
 
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/tendermint/tendermint/crypto/merkle"
-	"github.com/tendermint/tendermint/libs/log"
-	tmmath "github.com/tendermint/tendermint/libs/math"
-	tmos "github.com/tendermint/tendermint/libs/os"
-	"github.com/tendermint/tendermint/light"
-	lproxy "github.com/tendermint/tendermint/light/proxy"
-	lrpc "github.com/tendermint/tendermint/light/rpc"
-	dbs "github.com/tendermint/tendermint/light/store/db"
-	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
-	rpcserver "github.com/tendermint/tendermint/rpc/jsonrpc/server"
+	"github.com/line/ostracon/crypto/merkle"
+	"github.com/line/ostracon/libs/log"
+	tmmath "github.com/line/ostracon/libs/math"
+	tmos "github.com/line/ostracon/libs/os"
+	"github.com/line/ostracon/light"
+	lproxy "github.com/line/ostracon/light/proxy"
+	lrpc "github.com/line/ostracon/light/rpc"
+	dbs "github.com/line/ostracon/light/store/db"
+	rpchttp "github.com/line/ostracon/rpc/client/http"
+	rpcserver "github.com/line/ostracon/rpc/jsonrpc/server"
 )
 
 // LightCmd represents the base command when called without any subcommands
 var LightCmd = &cobra.Command{
 	Use:   "light [chainID]",
-	Short: "Run a light client proxy server, verifying Tendermint rpc",
-	Long: `Run a light client proxy server, verifying Tendermint rpc.
+	Short: "Run a light client proxy server, verifying Ostracon rpc",
+	Long: `Run a light client proxy server, verifying Ostracon rpc.
 
 All calls that can be tracked back to a block header by a proof
 will be verified before passing them back to the caller. Other than
-that, it will present the same interface as a full Tendermint node.
+that, it will present the same interface as a full Ostracon node.
 
 Furthermore to the chainID, a fresh instance of a light client will
 need a primary RPC address, a trusted hash and height and witness RPC addresses
@@ -80,10 +80,10 @@ func init() {
 	LightCmd.Flags().StringVar(&listenAddr, "laddr", "tcp://localhost:8888",
 		"serve the proxy on the given address")
 	LightCmd.Flags().StringVarP(&primaryAddr, "primary", "p", "",
-		"connect to a Tendermint node at this address")
+		"connect to a Ostracon node at this address")
 	LightCmd.Flags().StringVarP(&witnessAddrsJoined, "witnesses", "w", "",
-		"tendermint nodes to cross-check the primary node, comma-separated")
-	LightCmd.Flags().StringVar(&home, "home-dir", os.ExpandEnv(filepath.Join("$HOME", ".tendermint-light")),
+		"ostracon nodes to cross-check the primary node, comma-separated")
+	LightCmd.Flags().StringVar(&home, "home-dir", os.ExpandEnv(filepath.Join("$HOME", ".ostracon-light")),
 		"specify the home directory")
 	LightCmd.Flags().IntVar(
 		&maxOpenConnections,
@@ -135,7 +135,7 @@ func runProxy(cmd *cobra.Command, args []string) error {
 		}
 		if primaryAddr == "" {
 			return errors.New("no primary address was provided nor found. Please provide a primary (using -p)." +
-				" Run the command: tendermint light --help for more information")
+				" Run the command: ostracon light --help for more information")
 		}
 	} else {
 		err := saveProviders(db, primaryAddr, witnessAddrsJoined)
@@ -227,7 +227,7 @@ func runProxy(cmd *cobra.Command, args []string) error {
 	cfg.MaxOpenConnections = maxOpenConnections
 	// If necessary adjust global WriteTimeout to ensure it's greater than
 	// TimeoutBroadcastTxCommit.
-	// See https://github.com/tendermint/tendermint/issues/3435
+	// See https://github.com/line/ostracon/issues/3435
 	if cfg.WriteTimeout <= config.RPC.TimeoutBroadcastTxCommit {
 		cfg.WriteTimeout = config.RPC.TimeoutBroadcastTxCommit + 1*time.Second
 	}

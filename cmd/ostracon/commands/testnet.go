@@ -10,13 +10,13 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	cfg "github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/libs/bytes"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
-	"github.com/tendermint/tendermint/p2p"
-	"github.com/tendermint/tendermint/privval"
-	"github.com/tendermint/tendermint/types"
-	tmtime "github.com/tendermint/tendermint/types/time"
+	cfg "github.com/line/ostracon/config"
+	"github.com/line/ostracon/libs/bytes"
+	tmrand "github.com/line/ostracon/libs/rand"
+	"github.com/line/ostracon/p2p"
+	"github.com/line/ostracon/privval"
+	"github.com/line/ostracon/types"
+	tmtime "github.com/line/ostracon/types/time"
 )
 
 var (
@@ -79,10 +79,10 @@ func init() {
 		"specify validator's private key type (ed25519 | composite)")
 }
 
-// TestnetFilesCmd allows initialisation of files for a Tendermint testnet.
+// TestnetFilesCmd allows initialisation of files for a Ostracon testnet.
 var TestnetFilesCmd = &cobra.Command{
 	Use:   "testnet",
-	Short: "Initialize files for a Tendermint testnet",
+	Short: "Initialize files for a Ostracon testnet",
 	Long: `testnet will create "v" + "n" number of directories and populate each with
 necessary files (private validator, genesis, config, etc.).
 
@@ -92,7 +92,7 @@ Optionally, it will fill in persistent_peers list in config file using either ho
 
 Example:
 
-	tendermint testnet --v 4 --o ./output --populate-persistent-peers --starting-ip-address 192.168.10.2
+	ostracon testnet --v 4 --o ./output --populate-persistent-peers --starting-ip-address 192.168.10.2
 	`,
 	RunE: testnetFiles,
 }

@@ -6,17 +6,17 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/tendermint/tendermint/crypto/bls"
-	"github.com/tendermint/tendermint/crypto/composite"
-	"github.com/tendermint/tendermint/crypto/ed25519"
+	"github.com/line/ostracon/crypto/bls"
+	"github.com/line/ostracon/crypto/composite"
+	"github.com/line/ostracon/crypto/ed25519"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tendermint/tendermint/crypto"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	tmtime "github.com/tendermint/tendermint/types/time"
+	"github.com/line/ostracon/crypto"
+	tmrand "github.com/line/ostracon/libs/rand"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	tmtime "github.com/line/ostracon/types/time"
 )
 
 // NOTE: privValidators are in order

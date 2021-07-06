@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	e2e "github.com/tendermint/tendermint/test/e2e/pkg"
+	e2e "github.com/line/ostracon/test/e2e/pkg"
 )
 
 // Cleanup removes the Docker Compose containers and testnet directory.
@@ -69,7 +69,7 @@ func cleanupDir(dir string) error {
 		return err
 	}
 	err = execDocker("run", "--rm", "--entrypoint", "", "-v", fmt.Sprintf("%v:/network", absDir),
-		"tendermint/e2e-node", "sh", "-c", "rm -rf /network/*/")
+		"ostracon/e2e-node", "sh", "-c", "rm -rf /network/*/")
 	if err != nil {
 		return err
 	}

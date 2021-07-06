@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	cfg "github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/libs/cli"
-	tmos "github.com/tendermint/tendermint/libs/os"
+	cfg "github.com/line/ostracon/config"
+	"github.com/line/ostracon/libs/cli"
+	tmos "github.com/line/ostracon/libs/os"
 )
 
 var (

@@ -1,10 +1,10 @@
 package kvstore
 
 import (
-	"github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/composite"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
+	"github.com/line/ostracon/abci/types"
+	"github.com/line/ostracon/crypto"
+	"github.com/line/ostracon/crypto/composite"
+	tmrand "github.com/line/ostracon/libs/rand"
 )
 
 // Generates a default private key for use in an example or test.

@@ -8,9 +8,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	tmtime "github.com/tendermint/tendermint/types/time"
+	"github.com/line/ostracon/crypto/ed25519"
+	tmjson "github.com/line/ostracon/libs/json"
+	tmtime "github.com/line/ostracon/types/time"
 )
 
 func TestGenesisBad(t *testing.T) {

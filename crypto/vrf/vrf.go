@@ -7,7 +7,7 @@ import (
 // defaultVrf is assigned to vrfEd25519r2ishiguro by init() of vrf_r2ishguro.go
 // If you want to use libsodium for vrf implementation, then you should put build option like this
 // `make build LIBSODIUM=1`
-// Please refer https://github.com/line/tendermint/pull/41 for more detail
+// Please refer https://github.com/line/ostracon/pull/41 for more detail
 var defaultVrf vrfEd25519
 
 type Proof []byte

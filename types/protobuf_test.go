@@ -3,25 +3,25 @@ package types
 import (
 	"testing"
 
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 
-	"github.com/tendermint/tendermint/crypto/secp256k1"
+	"github.com/line/ostracon/crypto/secp256k1"
 
 	"github.com/golang/protobuf/proto" // nolint: staticcheck // still used by gogoproto
 	"github.com/tendermint/go-amino"
 
-	"github.com/tendermint/tendermint/proto/tendermint/version"
-	"github.com/tendermint/tendermint/types/time"
+	"github.com/line/ostracon/proto/ostracon/version"
+	"github.com/line/ostracon/types/time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/bls"
-	"github.com/tendermint/tendermint/crypto/composite"
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
+	abci "github.com/line/ostracon/abci/types"
+	"github.com/line/ostracon/crypto"
+	"github.com/line/ostracon/crypto/bls"
+	"github.com/line/ostracon/crypto/composite"
+	"github.com/line/ostracon/crypto/ed25519"
+	cryptoenc "github.com/line/ostracon/crypto/encoding"
 )
 
 func TestABCIPubKey(t *testing.T) {
@@ -129,7 +129,7 @@ func TestABCIHeader(t *testing.T) {
 	// assert the encodings match
 	// NOTE: they don't yet because Amino encodes
 	// int64 as zig-zag and we're using non-zigzag in the protobuf.
-	// See https://github.com/tendermint/tendermint/issues/2682
+	// See https://github.com/line/ostracon/issues/2682
 	_, _ = headerBz, pbHeaderBz
 	// assert.EqualValues(t, headerBz, pbHeaderBz)
 

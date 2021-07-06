@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"unsafe"
 
-	libsodium "github.com/tendermint/tendermint/crypto/vrf/internal/vrf"
+	libsodium "github.com/line/ostracon/crypto/vrf/internal/vrf"
 )
 
 type vrfImplLibsodium struct {

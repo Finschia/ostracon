@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
+	"github.com/line/ostracon/crypto/ed25519"
+	tmrand "github.com/line/ostracon/libs/rand"
 )
 
 func TestLoadOrGenNodeKey(t *testing.T) {

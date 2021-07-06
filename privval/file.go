@@ -8,21 +8,21 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tendermint/tendermint/crypto/bls"
-	"github.com/tendermint/tendermint/crypto/composite"
+	"github.com/line/ostracon/crypto/bls"
+	"github.com/line/ostracon/crypto/composite"
 
 	"github.com/gogo/protobuf/proto"
 
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	tmbytes "github.com/tendermint/tendermint/libs/bytes"
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	tmos "github.com/tendermint/tendermint/libs/os"
-	"github.com/tendermint/tendermint/libs/protoio"
-	"github.com/tendermint/tendermint/libs/tempfile"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	"github.com/tendermint/tendermint/types"
-	tmtime "github.com/tendermint/tendermint/types/time"
+	"github.com/line/ostracon/crypto"
+	"github.com/line/ostracon/crypto/ed25519"
+	tmbytes "github.com/line/ostracon/libs/bytes"
+	tmjson "github.com/line/ostracon/libs/json"
+	tmos "github.com/line/ostracon/libs/os"
+	"github.com/line/ostracon/libs/protoio"
+	"github.com/line/ostracon/libs/tempfile"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	"github.com/line/ostracon/types"
+	tmtime "github.com/line/ostracon/types/time"
 )
 
 // TODO: type ?

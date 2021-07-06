@@ -3,8 +3,8 @@ package behaviour
 import (
 	"errors"
 
-	tmsync "github.com/tendermint/tendermint/libs/sync"
-	"github.com/tendermint/tendermint/p2p"
+	tmsync "github.com/line/ostracon/libs/sync"
+	"github.com/line/ostracon/p2p"
 )
 
 // Reporter provides an interface for reactors to report the behaviour

@@ -8,19 +8,19 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	cmd "github.com/tendermint/tendermint/cmd/ostracon/commands"
-	"github.com/tendermint/tendermint/cmd/ostracon/commands/debug"
-	cfg "github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/libs/cli"
-	tmflags "github.com/tendermint/tendermint/libs/cli/flags"
-	"github.com/tendermint/tendermint/libs/log"
-	tmos "github.com/tendermint/tendermint/libs/os"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
-	"github.com/tendermint/tendermint/p2p"
-	cs "github.com/tendermint/tendermint/test/maverick/consensus"
-	nd "github.com/tendermint/tendermint/test/maverick/node"
-	"github.com/tendermint/tendermint/types"
-	tmtime "github.com/tendermint/tendermint/types/time"
+	cmd "github.com/line/ostracon/cmd/ostracon/commands"
+	"github.com/line/ostracon/cmd/ostracon/commands/debug"
+	cfg "github.com/line/ostracon/config"
+	"github.com/line/ostracon/libs/cli"
+	tmflags "github.com/line/ostracon/libs/cli/flags"
+	"github.com/line/ostracon/libs/log"
+	tmos "github.com/line/ostracon/libs/os"
+	tmrand "github.com/line/ostracon/libs/rand"
+	"github.com/line/ostracon/p2p"
+	cs "github.com/line/ostracon/test/maverick/consensus"
+	nd "github.com/line/ostracon/test/maverick/node"
+	"github.com/line/ostracon/types"
+	tmtime "github.com/line/ostracon/types/time"
 )
 
 var (
@@ -125,7 +125,7 @@ func main() {
 			"e.g. --misbehaviors double-prevote,3\n"+
 			"You can also have multiple misbehaviors: e.g. double-prevote,3,no-vote,5")
 
-	cmd := cli.PrepareBaseCmd(rootCmd, "TM", os.ExpandEnv(filepath.Join("$HOME", cfg.DefaultTendermintDir)))
+	cmd := cli.PrepareBaseCmd(rootCmd, "TM", os.ExpandEnv(filepath.Join("$HOME", cfg.DefaultOstraconDir)))
 	if err := cmd.Execute(); err != nil {
 		panic(err)
 	}

@@ -4,11 +4,11 @@ import (
 	"os"
 	"path/filepath"
 
-	cmd "github.com/tendermint/tendermint/cmd/ostracon/commands"
-	"github.com/tendermint/tendermint/cmd/ostracon/commands/debug"
-	cfg "github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/libs/cli"
-	nm "github.com/tendermint/tendermint/node"
+	cmd "github.com/line/ostracon/cmd/ostracon/commands"
+	"github.com/line/ostracon/cmd/ostracon/commands/debug"
+	cfg "github.com/line/ostracon/config"
+	"github.com/line/ostracon/libs/cli"
+	nm "github.com/line/ostracon/node"
 )
 
 func main() {
@@ -44,7 +44,7 @@ func main() {
 	rootCmd.AddCommand(cmd.NewInitCmd())
 	rootCmd.AddCommand(cmd.NewRunNodeCmd(nodeFunc))
 
-	cmd := cli.PrepareBaseCmd(rootCmd, "TM", os.ExpandEnv(filepath.Join("$HOME", cfg.DefaultTendermintDir)))
+	cmd := cli.PrepareBaseCmd(rootCmd, "TM", os.ExpandEnv(filepath.Join("$HOME", cfg.DefaultOstraconDir)))
 	if err := cmd.Execute(); err != nil {
 		panic(err)
 	}

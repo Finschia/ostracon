@@ -18,21 +18,21 @@ import (
 	"github.com/stretchr/testify/require"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/tendermint/tendermint/abci/example/kvstore"
-	abci "github.com/tendermint/tendermint/abci/types"
-	cfg "github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/crypto"
-	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
-	"github.com/tendermint/tendermint/libs/log"
-	tmpubsub "github.com/tendermint/tendermint/libs/pubsub"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
-	mempl "github.com/tendermint/tendermint/mempool"
-	"github.com/tendermint/tendermint/privval"
-	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	"github.com/tendermint/tendermint/proxy"
-	sm "github.com/tendermint/tendermint/state"
-	"github.com/tendermint/tendermint/types"
+	"github.com/line/ostracon/abci/example/kvstore"
+	abci "github.com/line/ostracon/abci/types"
+	cfg "github.com/line/ostracon/config"
+	"github.com/line/ostracon/crypto"
+	cryptoenc "github.com/line/ostracon/crypto/encoding"
+	"github.com/line/ostracon/libs/log"
+	tmpubsub "github.com/line/ostracon/libs/pubsub"
+	tmrand "github.com/line/ostracon/libs/rand"
+	mempl "github.com/line/ostracon/mempool"
+	"github.com/line/ostracon/privval"
+	tmstate "github.com/line/ostracon/proto/ostracon/state"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	"github.com/line/ostracon/proxy"
+	sm "github.com/line/ostracon/state"
+	"github.com/line/ostracon/types"
 )
 
 func TestMain(m *testing.M) {
@@ -126,7 +126,7 @@ func TestWALCrash(t *testing.T) {
 	// The reason for the fail is a timeout with an "Timed out waiting for new block" or "WAL did not panic for
 	// XX seconds" message, but the behavior that causes it is not reproducible. This issue also occurs in Tendermint,
 	// but seems to be somewhat more pronounced with some changes in Ostracon.
-	// See also: https://github.com/tendermint/tendermint/issues/1040
+	// See also: https://github.com/line/ostracon/issues/1040
 	testCases := []struct {
 		name         string
 		initFn       func(dbm.DB, *State, context.Context)

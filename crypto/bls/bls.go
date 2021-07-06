@@ -6,12 +6,12 @@ import (
 	"crypto/subtle"
 	"fmt"
 
-	tmjson "github.com/tendermint/tendermint/libs/json"
+	tmjson "github.com/line/ostracon/libs/json"
 
 	"github.com/herumi/bls-eth-go-binary/bls"
 
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/tmhash"
+	"github.com/line/ostracon/crypto"
+	"github.com/line/ostracon/crypto/tmhash"
 )
 
 var _ crypto.PrivKey = PrivKey{}

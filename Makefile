@@ -110,9 +110,9 @@ proto-all: proto-gen proto-lint proto-check-breaking
 .PHONY: proto-all
 
 proto-gen:
-	@docker pull -q ostracondev/docker-build-proto
+	@docker pull -q tendermintdev/docker-build-proto
 	@echo "Generating Protobuf files"
-	@docker run --rm -v $(shell pwd):/workspace --workdir /workspace ostracondev/docker-build-proto sh ./scripts/protocgen.sh
+	@docker run --rm -v $(shell pwd):/workspace --workdir /workspace tendermintdev/docker-build-proto sh ./scripts/protocgen.sh
 .PHONY: proto-gen
 
 proto-lint:
@@ -121,7 +121,7 @@ proto-lint:
 
 proto-format:
 	@echo "Formatting Protobuf files"
-	docker run --rm -v $(shell pwd):/workspace --workdir /workspace ostracondev/docker-build-proto find ./ -not -path "./third_party/*" -name *.proto -exec clang-format -i {} \;
+	docker run --rm -v $(shell pwd):/workspace --workdir /workspace tendermintdev/docker-build-proto find ./ -not -path "./third_party/*" -name *.proto -exec clang-format -i {} \;
 .PHONY: proto-format
 
 proto-check-breaking:

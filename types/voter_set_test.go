@@ -14,14 +14,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/tendermint/tendermint/crypto/merkle"
-	tmmath "github.com/tendermint/tendermint/libs/math"
-	"github.com/tendermint/tendermint/libs/rand"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	tmtime "github.com/tendermint/tendermint/types/time"
+	"github.com/line/ostracon/crypto"
+	"github.com/line/ostracon/crypto/ed25519"
+	"github.com/line/ostracon/crypto/merkle"
+	tmmath "github.com/line/ostracon/libs/math"
+	"github.com/line/ostracon/libs/rand"
+	tmrand "github.com/line/ostracon/libs/rand"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	tmtime "github.com/line/ostracon/types/time"
 )
 
 //-------------------------------------------------------------------
@@ -290,7 +290,7 @@ func TestSelectVoter(t *testing.T) {
 	zeroVals := countZeroStakingPower(valSet.Validators)
 	genDoc := &GenesisDoc{
 		GenesisTime: tmtime.Now(),
-		ChainID:     "tendermint-test",
+		ChainID:     "ostracon-test",
 		VoterParams: &VoterParams{10, 20},
 		Validators:  toGenesisValidators(valSet.Validators),
 	}
@@ -407,7 +407,7 @@ func findLargestStakingPowerGap(t *testing.T, loopCount int, minMaxRate int, max
 	valSet, privMap := randValidatorSetWithMinMax(PrivKeyEd25519, 30, 100, 100*int64(minMaxRate))
 	genDoc := &GenesisDoc{
 		GenesisTime: tmtime.Now(),
-		ChainID:     "tendermint-test",
+		ChainID:     "ostracon-test",
 		VoterParams: DefaultVoterParams(),
 		Validators:  toGenesisValidators(valSet.Validators),
 	}

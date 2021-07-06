@@ -9,17 +9,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tendermint/tendermint/types"
+	"github.com/line/ostracon/types"
 
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/tendermint/tendermint/abci/example/kvstore"
-	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/light"
-	"github.com/tendermint/tendermint/light/provider"
-	httpp "github.com/tendermint/tendermint/light/provider/http"
-	dbs "github.com/tendermint/tendermint/light/store/db"
-	rpctest "github.com/tendermint/tendermint/rpc/test"
+	"github.com/line/ostracon/abci/example/kvstore"
+	"github.com/line/ostracon/libs/log"
+	"github.com/line/ostracon/light"
+	"github.com/line/ostracon/light/provider"
+	httpp "github.com/line/ostracon/light/provider/http"
+	dbs "github.com/line/ostracon/light/store/db"
+	rpctest "github.com/line/ostracon/rpc/test"
 )
 
 // Automatically getting new headers and verifying them.

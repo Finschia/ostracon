@@ -7,21 +7,21 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tendermint/tendermint/abci/example/kvstore"
+	"github.com/line/ostracon/abci/example/kvstore"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tendermint/tendermint/abci/example/counter"
-	cstypes "github.com/tendermint/tendermint/consensus/types"
-	"github.com/tendermint/tendermint/crypto/tmhash"
-	"github.com/tendermint/tendermint/libs/log"
-	tmpubsub "github.com/tendermint/tendermint/libs/pubsub"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
-	mempl "github.com/tendermint/tendermint/mempool"
-	p2pmock "github.com/tendermint/tendermint/p2p/mock"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	"github.com/tendermint/tendermint/types"
+	"github.com/line/ostracon/abci/example/counter"
+	cstypes "github.com/line/ostracon/consensus/types"
+	"github.com/line/ostracon/crypto/tmhash"
+	"github.com/line/ostracon/libs/log"
+	tmpubsub "github.com/line/ostracon/libs/pubsub"
+	tmrand "github.com/line/ostracon/libs/rand"
+	mempl "github.com/line/ostracon/mempool"
+	p2pmock "github.com/line/ostracon/p2p/mock"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	"github.com/line/ostracon/types"
 )
 
 /*

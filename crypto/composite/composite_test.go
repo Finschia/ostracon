@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"testing"
 
-	tmjson "github.com/tendermint/tendermint/libs/json"
+	tmjson "github.com/line/ostracon/libs/json"
 
-	"github.com/tendermint/tendermint/crypto/bls"
-	"github.com/tendermint/tendermint/crypto/composite"
-	"github.com/tendermint/tendermint/crypto/ed25519"
+	"github.com/line/ostracon/crypto/bls"
+	"github.com/line/ostracon/crypto/composite"
+	"github.com/line/ostracon/crypto/ed25519"
 )
 
 func TestPrivKeyComposite_Bytes(t *testing.T) {
@@ -207,7 +207,7 @@ func TestEnvironmentalCompatibility(t *testing.T) {
 		}
 	})
 
-	// https://github.com/line/tendermint/issues/121
+	// https://github.com/line/ostracon/issues/121
 	t.Run("A reproduction test of issue #121", func(t *testing.T) {
 
 		// restore BLS private key from base64 string in priv_validator_key.json

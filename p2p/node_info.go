@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/tendermint/tendermint/libs/bytes"
-	tmstrings "github.com/tendermint/tendermint/libs/strings"
-	tmp2p "github.com/tendermint/tendermint/proto/tendermint/p2p"
-	"github.com/tendermint/tendermint/version"
+	"github.com/line/ostracon/libs/bytes"
+	tmstrings "github.com/line/ostracon/libs/strings"
+	tmp2p "github.com/line/ostracon/proto/ostracon/p2p"
+	"github.com/line/ostracon/version"
 )
 
 const (

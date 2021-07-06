@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/tendermint/tendermint/libs/bits"
-	"github.com/tendermint/tendermint/types"
+	"github.com/line/ostracon/libs/bits"
+	"github.com/line/ostracon/types"
 )
 
 //-----------------------------------------------------------------------------

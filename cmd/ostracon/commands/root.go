@@ -8,10 +8,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	cfg "github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/libs/cli"
-	tmflags "github.com/tendermint/tendermint/libs/cli/flags"
-	"github.com/tendermint/tendermint/libs/log"
+	cfg "github.com/line/ostracon/config"
+	"github.com/line/ostracon/libs/cli"
+	tmflags "github.com/line/ostracon/libs/cli/flags"
+	"github.com/line/ostracon/libs/log"
 )
 
 var (
@@ -28,7 +28,7 @@ func registerFlagsRootCmd(cmd *cobra.Command) {
 }
 
 // ParseConfig retrieves the default environment configuration,
-// sets up the Tendermint root and ensures that the root exists
+// sets up the Ostracon root and ensures that the root exists
 func ParseConfig() (*cfg.Config, error) {
 	conf := cfg.DefaultConfig()
 	err := viper.Unmarshal(conf)
@@ -43,9 +43,9 @@ func ParseConfig() (*cfg.Config, error) {
 	return conf, nil
 }
 
-// RootCmd is the root command for Tendermint core.
+// RootCmd is the root command for Ostracon core.
 var RootCmd = &cobra.Command{
-	Use:   "tendermint",
+	Use:   "ostracon",
 	Short: "BFT state machine replication for applications in any programming languages",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) (err error) {
 		if cmd.Name() == VersionCmd.Name() {

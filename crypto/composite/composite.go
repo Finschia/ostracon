@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"fmt"
 
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	"github.com/tendermint/tendermint/libs/math"
+	tmjson "github.com/line/ostracon/libs/json"
+	"github.com/line/ostracon/libs/math"
 
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/bls"
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/tendermint/tendermint/crypto/tmhash"
+	"github.com/line/ostracon/crypto"
+	"github.com/line/ostracon/crypto/bls"
+	"github.com/line/ostracon/crypto/ed25519"
+	"github.com/line/ostracon/crypto/tmhash"
 )
 
 // composite.PubKey and composite.PrivKey are intended to allow public key algorithms to be selected for each function.
