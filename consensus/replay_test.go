@@ -1,3 +1,4 @@
+
 package consensus
 
 import (
@@ -126,7 +127,7 @@ func TestWALCrash(t *testing.T) {
 	// The reason for the fail is a timeout with an "Timed out waiting for new block" or "WAL did not panic for
 	// XX seconds" message, but the behavior that causes it is not reproducible. This issue also occurs in Tendermint,
 	// but seems to be somewhat more pronounced with some changes in Ostracon.
-	// See also: https://github.com/line/ostracon/issues/1040
+	// See also: https://github.com/tendermint/tendermint/issues/1040
 	testCases := []struct {
 		name         string
 		initFn       func(dbm.DB, *State, context.Context)

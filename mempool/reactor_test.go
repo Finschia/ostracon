@@ -70,7 +70,7 @@ func TestReactorBroadcastTxsMessage(t *testing.T) {
 	waitForTxsOnReactors(t, txs, reactors)
 }
 
-// regression test for https://github.com/line/ostracon/issues/5408
+// regression test for https://github.com/tendermint/tendermint/issues/5408
 func TestReactorConcurrency(t *testing.T) {
 	config := cfg.TestConfig()
 	const N = 2

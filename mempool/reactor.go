@@ -242,7 +242,7 @@ func (memR *Reactor) broadcastTxRoutine(peer p2p.Peer) {
 		}
 
 		// NOTE: Transaction batching was disabled due to
-		// https://github.com/line/ostracon/issues/5796
+		// https://github.com/tendermint/tendermint/issues/5796
 
 		if _, ok := memTx.senders.Load(peerID); !ok {
 			msg := protomem.Message{

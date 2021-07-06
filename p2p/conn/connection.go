@@ -614,7 +614,7 @@ FOR_LOOP:
 		switch pkt := packet.Sum.(type) {
 		case *tmp2p.Packet_PacketPing:
 			// TODO: prevent abuse, as they cause flush()'s.
-			// https://github.com/line/ostracon/issues/1190
+			// https://github.com/tendermint/tendermint/issues/1190
 			c.Logger.Debug("Receive Ping")
 			select {
 			case c.pong <- struct{}{}:

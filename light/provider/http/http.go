@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	// This is very brittle, see: https://github.com/line/ostracon/issues/4740
+	// This is very brittle, see: https://github.com/tendermint/tendermit/issues/4740
 	regexpMissingHeight = regexp.MustCompile(`height \d+ (must be less than or equal to|is not available)`)
 
 	maxRetryAttempts      = 10

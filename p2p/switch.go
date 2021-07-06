@@ -367,7 +367,7 @@ func (sw *Switch) stopAndRemovePeer(peer Peer, reason interface{}) {
 	// Removing a peer should go last to avoid a situation where a peer
 	// reconnect to our node and the switch calls InitPeer before
 	// RemovePeer is finished.
-	// https://github.com/line/ostracon/issues/3338
+	// https://github.com/tendermint/tendermint/issues/3338
 	if sw.peers.Remove(peer) {
 		sw.metrics.Peers.Add(float64(-1))
 	}
