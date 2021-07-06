@@ -79,10 +79,10 @@ func init() {
 		"specify validator's private key type (ed25519 | composite)")
 }
 
-// TestnetFilesCmd allows initialisation of files for a Ostracon testnet.
+// TestnetFilesCmd allows initialisation of files for an Ostracon testnet.
 var TestnetFilesCmd = &cobra.Command{
 	Use:   "testnet",
-	Short: "Initialize files for a Ostracon testnet",
+	Short: "Initialize files for an Ostracon testnet",
 	Long: `testnet will create "v" + "n" number of directories and populate each with
 necessary files (private validator, genesis, config, etc.).
 

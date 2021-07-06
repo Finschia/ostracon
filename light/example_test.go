@@ -160,7 +160,7 @@ func ExampleClient_VerifyLightBlockAtHeight() {
 }
 
 func TestMain(m *testing.M) {
-	// start a ostracon node (and kvstore) in the background to test against
+	// start an ostracon node (and kvstore) in the background to test against
 	app := kvstore.NewApplication()
 	node := rpctest.StartTendermint(app, rpctest.SuppressStdout)
 

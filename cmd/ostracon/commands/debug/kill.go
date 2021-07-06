@@ -21,8 +21,8 @@ import (
 
 var killCmd = &cobra.Command{
 	Use:   "kill [pid] [compressed-output-file]",
-	Short: "Kill a Ostracon process while aggregating and packaging debugging data",
-	Long: `Kill a Ostracon process while also aggregating Ostracon process data
+	Short: "Kill an Ostracon process while aggregating and packaging debugging data",
+	Long: `Kill an Ostracon process while also aggregating Ostracon process data
 such as the latest node state, including consensus and networking state,
 go-routine state, and the node's WAL and config information. This aggregated data
 is packaged into a compressed archive.

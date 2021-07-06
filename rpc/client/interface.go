@@ -2,7 +2,7 @@ package client
 
 /*
 The client package provides a general purpose interface (Client) for connecting
-to a ostracon node, as well as higher-level functionality.
+to an ostracon node, as well as higher-level functionality.
 
 The main implementation for production code is client.HTTP, which
 connects via http to the jsonrpc interface of the ostracon node.

@@ -18,8 +18,8 @@ import (
 
 var dumpCmd = &cobra.Command{
 	Use:   "dump [output-directory]",
-	Short: "Continuously poll a Ostracon process and dump debugging data into a single location",
-	Long: `Continuously poll a Ostracon process and dump debugging data into a single
+	Short: "Continuously poll an Ostracon process and dump debugging data into a single location",
+	Long: `Continuously poll an Ostracon process and dump debugging data into a single
 location at a specified frequency. At each frequency interval, an archived and compressed
 file will contain node debugging information including the goroutine and heap profiles
 if enabled.`,

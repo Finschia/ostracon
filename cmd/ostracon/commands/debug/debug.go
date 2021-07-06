@@ -24,7 +24,7 @@ var (
 // debugging running Ostracon processes.
 var DebugCmd = &cobra.Command{
 	Use:   "debug",
-	Short: "A utility to kill or watch a Ostracon process while aggregating debugging data",
+	Short: "A utility to kill or watch an Ostracon process while aggregating debugging data",
 }
 
 func init() {

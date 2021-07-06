@@ -38,7 +38,7 @@ func zipDir(src, dest string) error {
 			return err
 		}
 
-		// Each execution of this utility on a Ostracon process will result in a
+		// Each execution of this utility on an Ostracon process will result in a
 		// unique file.
 		header.Name = filepath.Join(baseDir, strings.TrimPrefix(path, src))
 

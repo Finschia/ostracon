@@ -80,7 +80,7 @@ func init() {
 	LightCmd.Flags().StringVar(&listenAddr, "laddr", "tcp://localhost:8888",
 		"serve the proxy on the given address")
 	LightCmd.Flags().StringVarP(&primaryAddr, "primary", "p", "",
-		"connect to a Ostracon node at this address")
+		"connect to an Ostracon node at this address")
 	LightCmd.Flags().StringVarP(&witnessAddrsJoined, "witnesses", "w", "",
 		"ostracon nodes to cross-check the primary node, comma-separated")
 	LightCmd.Flags().StringVar(&home, "home-dir", os.ExpandEnv(filepath.Join("$HOME", ".ostracon-light")),

@@ -13,7 +13,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	// start a ostracon node in the background to test against
+	// start an ostracon node in the background to test against
 	app := kvstore.NewApplication()
 	node := rpctest.StartTendermint(app)
 

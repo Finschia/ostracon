@@ -13,7 +13,7 @@ import (
 )
 
 func ExampleHTTP_simple() {
-	// Start a ostracon node (and kvstore) in the background to test against
+	// Start an ostracon node (and kvstore) in the background to test against
 	app := kvstore.NewApplication()
 	node := rpctest.StartTendermint(app, rpctest.SuppressStdout, rpctest.RecreateConfig)
 	defer rpctest.StopTendermint(node)
@@ -66,7 +66,7 @@ func ExampleHTTP_simple() {
 }
 
 func ExampleHTTP_batching() {
-	// Start a ostracon node (and kvstore) in the background to test against
+	// Start an ostracon node (and kvstore) in the background to test against
 	app := kvstore.NewApplication()
 	node := rpctest.StartTendermint(app, rpctest.SuppressStdout, rpctest.RecreateConfig)
 

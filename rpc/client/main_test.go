@@ -13,7 +13,7 @@ import (
 var node *nm.Node
 
 func TestMain(m *testing.M) {
-	// start a ostracon node (and kvstore) in the background to test against
+	// start an ostracon node (and kvstore) in the background to test against
 	dir, err := ioutil.TempDir("/tmp", "rpc-client-test")
 	if err != nil {
 		panic(err)
