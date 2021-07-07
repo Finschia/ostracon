@@ -14,7 +14,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	dbm "github.com/tendermint/tm-db"
+	dbm "github.com/line/tm-db/v2"
 
 	"github.com/line/ostracon/crypto/merkle"
 	"github.com/line/ostracon/libs/log"

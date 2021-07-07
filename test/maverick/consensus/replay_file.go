@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	dbm "github.com/tendermint/tm-db"
+	dbm "github.com/line/tm-db/v2"
 
 	cfg "github.com/line/ostracon/config"
 	tmcon "github.com/line/ostracon/consensus"

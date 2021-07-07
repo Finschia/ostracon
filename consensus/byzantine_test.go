@@ -14,7 +14,7 @@ import (
 
 	config2 "github.com/line/ostracon/config"
 
-	dbm "github.com/tendermint/tm-db"
+	dbm "github.com/line/tm-db/v2"
 
 	abcicli "github.com/line/ostracon/abci/client"
 	abci "github.com/line/ostracon/abci/types"
