@@ -4,10 +4,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/line/tm-db/v2/memdb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	dbm "github.com/line/tm-db/v2"
 
 	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/light"
@@ -60,7 +59,7 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 		},
 		primary,
 		[]provider.Provider{witness},
-		dbs.New(dbm.NewMemDB(), chainID),
+		dbs.New(memdb.NewDB(), chainID),
 		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 		light.MaxRetryAttempts(1),
@@ -150,7 +149,7 @@ func TestLightClientAttackEvidence_Equivocation(t *testing.T) {
 			},
 			primary,
 			[]provider.Provider{witness},
-			dbs.New(dbm.NewMemDB(), chainID),
+			dbs.New(memdb.NewDB(), chainID),
 			types.DefaultVoterParams(),
 			light.Logger(log.TestingLogger()),
 			light.MaxRetryAttempts(1),
@@ -208,7 +207,7 @@ func TestClientDivergentTraces1(t *testing.T) {
 		},
 		primary,
 		[]provider.Provider{witness},
-		dbs.New(dbm.NewMemDB(), chainID),
+		dbs.New(memdb.NewDB(), chainID),
 		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 		light.MaxRetryAttempts(1),
@@ -233,7 +232,7 @@ func TestClientDivergentTraces2(t *testing.T) {
 		},
 		primary,
 		[]provider.Provider{deadNode, deadNode, primary},
-		dbs.New(dbm.NewMemDB(), chainID),
+		dbs.New(memdb.NewDB(), chainID),
 		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 		light.MaxRetryAttempts(1),
@@ -270,7 +269,7 @@ func TestClientDivergentTraces3(t *testing.T) {
 		},
 		primary,
 		[]provider.Provider{witness},
-		dbs.New(dbm.NewMemDB(), chainID),
+		dbs.New(memdb.NewDB(), chainID),
 		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 		light.MaxRetryAttempts(1),

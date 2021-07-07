@@ -7,12 +7,7 @@ import (
 	"testing"
 
 	ics23 "github.com/confio/ics23/go"
-	"github.com/cosmos/iavl"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
-	dbm "github.com/line/tm-db/v2"
-
+	"github.com/line/iavl/v2"
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto/merkle"
 	"github.com/line/ostracon/libs/bytes"
@@ -21,11 +16,15 @@ import (
 	rpcmock "github.com/line/ostracon/rpc/client/mocks"
 	ctypes "github.com/line/ostracon/rpc/core/types"
 	"github.com/line/ostracon/types"
+	"github.com/line/tm-db/v2/memdb"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 // TestABCIQuery tests ABCIQuery requests and verifies proofs. HAPPY PATH 😀
 func TestABCIQuery(t *testing.T) {
-	tree, err := iavl.NewMutableTree(dbm.NewMemDB(), 100)
+	tree, err := iavl.NewMutableTree(memdb.NewDB(), 100)
 	require.NoError(t, err)
 
 	var (

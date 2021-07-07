@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/go-kit/kit/log/term"
+	"github.com/line/tm-db/v2/memdb"
 	"github.com/stretchr/testify/require"
 
 	dbm "github.com/line/tm-db/v2"
@@ -385,7 +386,7 @@ func newStateWithConfig(
 	pv types.PrivValidator,
 	app abci.Application,
 ) *State {
-	blockDB := dbm.NewMemDB()
+	blockDB := memdb.NewDB()
 	return newStateWithConfigAndBlockStore(thisConfig, state, pv, app, blockDB)
 }
 
@@ -771,7 +772,7 @@ func randConsensusNet(nValidators int, testName string, tickerFunc func() Timeou
 	logger := consensusLogger()
 	configRootDirs := make([]string, 0, nValidators)
 	for i := 0; i < nValidators; i++ {
-		stateDB := dbm.NewMemDB() // each state needs its own db
+		stateDB := memdb.NewDB() // each state needs its own db
 		stateStore := sm.NewStore(stateDB)
 		state, err := stateStore.LoadFromDBOrGenesisDoc(genDoc)
 		if err != nil {
@@ -849,7 +850,7 @@ func createPeersAndValidators(nValidators, nPeers int, testName string,
 	var peer0Config *cfg.Config
 	configRootDirs := make([]string, 0, nPeers)
 	for i := 0; i < nPeers; i++ {
-		stateDB := dbm.NewMemDB() // each state needs its own db
+		stateDB := memdb.NewDB() // each state needs its own db
 		stateStore := sm.NewStore(stateDB)
 		state, _ := stateStore.LoadFromDBOrGenesisDoc(genDoc)
 		thisConfig := ResetConfig(fmt.Sprintf("%s_%d", testName, i))

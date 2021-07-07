@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/line/tm-db/v2/goleveldb"
 	"github.com/spf13/cobra"
 
 	dbm "github.com/line/tm-db/v2"
@@ -122,7 +123,7 @@ func runProxy(cmd *cobra.Command, args []string) error {
 		witnessesAddrs = strings.Split(witnessAddrsJoined, ",")
 	}
 
-	db, err := dbm.NewGoLevelDB("light-client-db", home)
+	db, err := goleveldb.NewDB("light-client-db", home)
 	if err != nil {
 		return fmt.Errorf("can't create a db: %w", err)
 	}

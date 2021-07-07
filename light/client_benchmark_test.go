@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	dbm "github.com/line/tm-db/v2"
+	"github.com/line/tm-db/v2/memdb"
 
 	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/light"
@@ -38,7 +38,7 @@ func BenchmarkSequence(b *testing.B) {
 		},
 		benchmarkFullNode,
 		[]provider.Provider{benchmarkFullNode},
-		dbs.New(dbm.NewMemDB(), chainID),
+		dbs.New(memdb.NewDB(), chainID),
 		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 		light.SequentialVerification(),
@@ -67,7 +67,7 @@ func BenchmarkBisection(b *testing.B) {
 		},
 		benchmarkFullNode,
 		[]provider.Provider{benchmarkFullNode},
-		dbs.New(dbm.NewMemDB(), chainID),
+		dbs.New(memdb.NewDB(), chainID),
 		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 	)
@@ -96,7 +96,7 @@ func BenchmarkBackwards(b *testing.B) {
 		},
 		benchmarkFullNode,
 		[]provider.Provider{benchmarkFullNode},
-		dbs.New(dbm.NewMemDB(), chainID),
+		dbs.New(memdb.NewDB(), chainID),
 		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 	)
