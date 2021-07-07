@@ -107,7 +107,7 @@ func TestReactorConcurrency(t *testing.T) {
 			for i := range txs {
 				deliverTxResponses[i] = &abci.ResponseDeliverTx{Code: 0}
 			}
-			err := reactors[0].mempool.Update(1, txs, deliverTxResponses, nil, nil)
+			err := reactors[0].mempool.Update(newTestBlock(1, txs), deliverTxResponses, nil, nil)
 			assert.NoError(t, err)
 		}()
 
@@ -119,7 +119,8 @@ func TestReactorConcurrency(t *testing.T) {
 
 			reactors[1].mempool.Lock()
 			defer reactors[1].mempool.Unlock()
-			err := reactors[1].mempool.Update(1, []types.Tx{}, make([]*abci.ResponseDeliverTx, 0), nil, nil)
+			err := reactors[1].mempool.Update(newTestBlock(1, []types.Tx{}),
+				make([]*abci.ResponseDeliverTx, 0), nil, nil)
 			assert.NoError(t, err)
 		}()
 

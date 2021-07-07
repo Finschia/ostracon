@@ -261,8 +261,7 @@ func (blockExec *BlockExecutor) Commit(
 	// Update mempool.
 	updateMempoolStartTime := time.Now().UnixNano()
 	err = blockExec.mempool.Update(
-		block.Height,
-		block.Txs,
+		block,
 		deliverTxResponses,
 		TxPreCheck(state),
 		TxPostCheck(state),

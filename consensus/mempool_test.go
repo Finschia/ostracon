@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -152,6 +153,14 @@ func TestMempoolRmBadTx(t *testing.T) {
 	resCommit := app.Commit()
 	assert.True(t, len(resCommit.Data) > 0)
 
+	resBeginRecheckTx := app.BeginRecheckTx(abci.RequestBeginRecheckTx{})
+	assert.Equal(t, code.CodeTypeOK, resBeginRecheckTx.Code)
+
+	// There is no tx to recheck
+
+	resEndRecheckTx := app.EndRecheckTx(abci.RequestEndRecheckTx{})
+	assert.Equal(t, code.CodeTypeOK, resEndRecheckTx.Code)
+
 	emptyMempoolCh := make(chan struct{})
 	checkTxRespCh := make(chan struct{})
 	go func() {
@@ -206,8 +215,9 @@ func TestMempoolRmBadTx(t *testing.T) {
 type CounterApplication struct {
 	abci.BaseApplication
 
-	txCount        int
-	mempoolTxCount int
+	txCount           int
+	mempoolTxCount    int
+	mempoolTxCountMtx sync.Mutex
 }
 
 func NewCounterApplication() *CounterApplication {
@@ -231,6 +241,8 @@ func (app *CounterApplication) DeliverTx(req abci.RequestDeliverTx) abci.Respons
 
 func (app *CounterApplication) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 	txValue := txAsUint64(req.Tx)
+	app.mempoolTxCountMtx.Lock()
+	defer app.mempoolTxCountMtx.Unlock()
 	if txValue != uint64(app.mempoolTxCount) {
 		return abci.ResponseCheckTx{
 			Code: code.CodeTypeBadNonce,
@@ -240,6 +252,11 @@ func (app *CounterApplication) CheckTx(req abci.RequestCheckTx) abci.ResponseChe
 	return abci.ResponseCheckTx{Code: code.CodeTypeOK}
 }
 
+func (app *CounterApplication) BeginRecheckTx(abci.RequestBeginRecheckTx) abci.ResponseBeginRecheckTx {
+	app.mempoolTxCount = app.txCount
+	return abci.ResponseBeginRecheckTx{Code: code.CodeTypeOK}
+}
+
 func txAsUint64(tx []byte) uint64 {
 	tx8 := make([]byte, 8)
 	copy(tx8[len(tx8)-len(tx):], tx)
@@ -247,7 +264,6 @@ func txAsUint64(tx []byte) uint64 {
 }
 
 func (app *CounterApplication) Commit() abci.ResponseCommit {
-	app.mempoolTxCount = app.txCount
 	if app.txCount == 0 {
 		return abci.ResponseCommit{}
 	}

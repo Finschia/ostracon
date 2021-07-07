@@ -263,6 +263,14 @@ func (cli *socketClient) EndBlockAsync(req types.RequestEndBlock) *ReqRes {
 	return cli.queueRequest(types.ToRequestEndBlock(req))
 }
 
+func (cli *socketClient) BeginRecheckTxAsync(req types.RequestBeginRecheckTx) *ReqRes {
+	return cli.queueRequest(types.ToRequestBeginRecheckTx(req))
+}
+
+func (cli *socketClient) EndRecheckTxAsync(req types.RequestEndRecheckTx) *ReqRes {
+	return cli.queueRequest(types.ToRequestEndRecheckTx(req))
+}
+
 func (cli *socketClient) ListSnapshotsAsync(req types.RequestListSnapshots) *ReqRes {
 	return cli.queueRequest(types.ToRequestListSnapshots(req))
 }
@@ -378,6 +386,24 @@ func (cli *socketClient) EndBlockSync(req types.RequestEndBlock) (*types.Respons
 	}
 
 	return reqres.Response.GetEndBlock(), cli.Error()
+}
+
+func (cli *socketClient) BeginRecheckTxSync(req types.RequestBeginRecheckTx) (*types.ResponseBeginRecheckTx, error) {
+	reqres := cli.queueRequest(types.ToRequestBeginRecheckTx(req))
+	if err := cli.FlushSync(); err != nil {
+		return nil, err
+	}
+
+	return reqres.Response.GetBeginRecheckTx(), cli.Error()
+}
+
+func (cli *socketClient) EndRecheckTxSync(req types.RequestEndRecheckTx) (*types.ResponseEndRecheckTx, error) {
+	reqres := cli.queueRequest(types.ToRequestEndRecheckTx(req))
+	if err := cli.FlushSync(); err != nil {
+		return nil, err
+	}
+
+	return reqres.Response.GetEndRecheckTx(), cli.Error()
 }
 
 func (cli *socketClient) ListSnapshotsSync(req types.RequestListSnapshots) (*types.ResponseListSnapshots, error) {

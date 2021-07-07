@@ -10,8 +10,7 @@ import (
 	"time"
 
 	"github.com/line/ostracon/types"
-
-	dbm "github.com/line/tm-db/v2"
+	"github.com/line/tm-db/v2/goleveldb"
 
 	"github.com/line/ostracon/abci/example/kvstore"
 	"github.com/line/ostracon/libs/log"
@@ -48,7 +47,7 @@ func ExampleClient_Update() {
 		stdlog.Fatal(err)
 	}
 
-	db, err := dbm.NewGoLevelDB("light-client-db", dbDir)
+	db, err := goleveldb.NewDB("light-client-db", dbDir)
 	if err != nil {
 		stdlog.Fatal(err)
 	}
@@ -117,7 +116,7 @@ func ExampleClient_VerifyLightBlockAtHeight() {
 		stdlog.Fatal(err)
 	}
 
-	db, err := dbm.NewGoLevelDB("light-client-db", dbDir)
+	db, err := goleveldb.NewDB("light-client-db", dbDir)
 	if err != nil {
 		stdlog.Fatal(err)
 	}

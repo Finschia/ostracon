@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/line/tm-db/v2/metadb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -30,8 +31,8 @@ import (
 // setupTestCase does setup common to all test cases.
 func setupTestCase(t *testing.T) (func(t *testing.T), dbm.DB, sm.State) {
 	config := cfg.ResetTestRoot("state_")
-	dbType := dbm.BackendType(config.DBBackend)
-	stateDB, err := dbm.NewDB("state", dbType, config.DBDir())
+	dbType := metadb.BackendType(config.DBBackend)
+	stateDB, err := metadb.NewDB("state", dbType, config.DBDir())
 	stateStore := sm.NewStore(stateDB)
 	require.NoError(t, err)
 	state, err := stateStore.LoadFromDBOrGenesisFile(config.GenesisFile())

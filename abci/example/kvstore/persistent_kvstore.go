@@ -83,6 +83,14 @@ func (app *PersistentKVStoreApplication) CheckTx(req types.RequestCheckTx) types
 	return app.app.CheckTx(req)
 }
 
+func (app *PersistentKVStoreApplication) BeginRecheckTx(req types.RequestBeginRecheckTx) types.ResponseBeginRecheckTx {
+	return app.app.BeginRecheckTx(req)
+}
+
+func (app *PersistentKVStoreApplication) EndRecheckTx(req types.RequestEndRecheckTx) types.ResponseEndRecheckTx {
+	return app.app.EndRecheckTx(req)
+}
+
 // Commit will panic if InitChain was not called
 func (app *PersistentKVStoreApplication) Commit() types.ResponseCommit {
 	return app.app.Commit()
