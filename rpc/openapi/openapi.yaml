@@ -1200,7 +1200,7 @@ components:
       properties:
         type:
           type: string
-          example: "tendermint/PubKeyEd25519"
+          example: "ostracon/PubKeyEd25519"
         value:
           type: string
           example: "A6DoBUypNtUAyEHWtQ9bFjfNg8Bo9CrnkUGl6k6OHN4="
@@ -1644,7 +1644,7 @@ components:
                     properties:
                       type:
                         type: string
-                        example: "tendermint/PubKeyEd25519"
+                        example: "ostracon/PubKeyEd25519"
                       value:
                         type: string
                         example: "9tK9IT+FPdf2qm+5c2qaxi10sWP+3erWTKgftn2PaQM="
@@ -1803,7 +1803,7 @@ components:
                         properties:
                           type:
                             type: string
-                            example: "tendermint/PubKeyEd25519"
+                            example: "ostracon/PubKeyEd25519"
                           value:
                             type: string
                             example: "cOQZvh/h9ZioSeUMZB/1Vy1Xo5x2sjrVjlE/qHnYifM="
@@ -1974,7 +1974,7 @@ components:
                     - "value"
                   properties:
                     type:
-                      example: "tendermint/PubKeyEd25519"
+                      example: "ostracon/PubKeyEd25519"
                     value:
                       type: "string"
                       example: "VNMNfw7mrQBSpEvCtA9ykOe6BoR00RM9b/a9v3vXZhY="
@@ -2722,7 +2722,7 @@ components:
           properties:
             type:
               type: string
-              example: "tendermint/PubKeyEd25519"
+              example: "ostracon/PubKeyEd25519"
             value:
               type: string
               example: "9tK9IT+FPdf2qm+5c2qaxi10sWP+3erWTKgftn2PaQM="
