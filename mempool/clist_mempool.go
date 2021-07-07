@@ -616,7 +616,7 @@ func (mem *CListMempool) Update(
 		if mem.config.Recheck {
 			mem.logger.Info("recheck txs", "numtxs", mem.Size(), "height", block.Height)
 			res, err := mem.proxyAppConn.BeginRecheckTxSync(abci.RequestBeginRecheckTx{
-				Header: types.TM2PB.Header(&block.Header),
+				Header: types.OC2PB.Header(&block.Header),
 			})
 			if res.Code == abci.CodeTypeOK && err == nil {
 				mem.recheckTxs()
