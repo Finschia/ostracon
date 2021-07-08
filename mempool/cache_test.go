@@ -59,7 +59,7 @@ func TestCacheAfterUpdate(t *testing.T) {
 	for tcIndex, tc := range tests {
 		for i := 0; i < tc.numTxsToCreate; i++ {
 			tx := types.Tx{byte(i)}
-			err := mempool.CheckTx(tx, nil, TxInfo{})
+			_, err := mempool.CheckTxSync(tx, TxInfo{})
 			require.NoError(t, err)
 		}
 
@@ -74,7 +74,7 @@ func TestCacheAfterUpdate(t *testing.T) {
 
 		for _, v := range tc.reAddIndices {
 			tx := types.Tx{byte(v)}
-			_ = mempool.CheckTx(tx, nil, TxInfo{})
+			_, _ = mempool.CheckTxSync(tx, TxInfo{})
 		}
 
 		cache := mempool.cache.(*mapTxCache)

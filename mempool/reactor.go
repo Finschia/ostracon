@@ -183,7 +183,7 @@ func (memR *Reactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 		txInfo.SenderP2PID = src.ID()
 	}
 	for _, tx := range msg.Txs {
-		err = memR.mempool.CheckTx(tx, nil, txInfo)
+		err = memR.mempool.CheckTxAsync(tx, txInfo, nil)
 		if err != nil {
 			memR.Logger.Info("Could not check tx", "tx", txID(tx), "err", err)
 		}

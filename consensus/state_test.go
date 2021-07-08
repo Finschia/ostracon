@@ -2347,7 +2347,7 @@ func addValidator(cs *State, vssMap map[string]*validatorStub, height int64) {
 		panic("failed to convert newVal to protobuf")
 	}
 	newValidatorTx := kvstore.MakeValSetChangeTx(val.PubKey, 10)
-	_ = assertMempool(cs.txNotifier).CheckTx(newValidatorTx, nil, mempl.TxInfo{})
+	_, _ = assertMempool(cs.txNotifier).CheckTxSync(newValidatorTx, mempl.TxInfo{})
 	vssMap[newVal.PubKey.Address().String()] = newValidatorStub(privVal, int32(len(vssMap)+1))
 	vssMap[newVal.PubKey.Address().String()].Height = height
 }

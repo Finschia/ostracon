@@ -93,12 +93,24 @@ func (app *localClient) DeliverTxAsync(params types.RequestDeliverTx) *ReqRes {
 	)
 }
 
-func (app *localClient) CheckTxAsync(req types.RequestCheckTx) *ReqRes {
-	res := app.Application.CheckTx(req)
-	return app.callback(
-		types.ToRequestCheckTx(req),
-		types.ToResponseCheckTx(res),
-	)
+func (app *localClient) CheckTxAsync(params types.RequestCheckTx) *ReqRes {
+	req := types.ToRequestCheckTx(params)
+	reqRes := NewReqRes(req)
+
+	app.Application.CheckTxAsync(params, func(r types.ResponseCheckTx) {
+		res := types.ToResponseCheckTx(r)
+		app.Callback(req, res)
+		reqRes.Response = res
+		reqRes.Done()
+		reqRes.SetDone()
+
+		// Notify reqRes listener if set
+		if cb := reqRes.GetCallback(); cb != nil {
+			cb(res)
+		}
+	})
+
+	return reqRes
 }
 
 func (app *localClient) BeginRecheckTxAsync(req types.RequestBeginRecheckTx) *ReqRes {
@@ -251,7 +263,7 @@ func (app *localClient) DeliverTxSync(req types.RequestDeliverTx) (*types.Respon
 }
 
 func (app *localClient) CheckTxSync(req types.RequestCheckTx) (*types.ResponseCheckTx, error) {
-	res := app.Application.CheckTx(req)
+	res := app.Application.CheckTxSync(req)
 	return &res, nil
 }
 
@@ -355,6 +367,7 @@ func (app *localClient) callback(req *types.Request, res *types.Response) *ReqRe
 func newLocalReqRes(req *types.Request, res *types.Response) *ReqRes {
 	reqRes := NewReqRes(req)
 	reqRes.Response = res
+	reqRes.Done()
 	reqRes.SetDone()
 	return reqRes
 }
