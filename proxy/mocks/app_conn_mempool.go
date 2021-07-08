@@ -14,22 +14,6 @@ type AppConnMempool struct {
 	mock.Mock
 }
 
-// BeginRecheckTxAsync provides a mock function with given fields: _a0
-func (_m *AppConnMempool) BeginRecheckTxAsync(_a0 types.RequestBeginRecheckTx) *abcicli.ReqRes {
-	ret := _m.Called(_a0)
-
-	var r0 *abcicli.ReqRes
-	if rf, ok := ret.Get(0).(func(types.RequestBeginRecheckTx) *abcicli.ReqRes); ok {
-		r0 = rf(_a0)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*abcicli.ReqRes)
-		}
-	}
-
-	return r0
-}
-
 // BeginRecheckTxSync provides a mock function with given fields: _a0
 func (_m *AppConnMempool) BeginRecheckTxSync(_a0 types.RequestBeginRecheckTx) (*types.ResponseBeginRecheckTx, error) {
 	ret := _m.Called(_a0)
@@ -53,13 +37,13 @@ func (_m *AppConnMempool) BeginRecheckTxSync(_a0 types.RequestBeginRecheckTx) (*
 	return r0, r1
 }
 
-// CheckTxAsync provides a mock function with given fields: _a0
-func (_m *AppConnMempool) CheckTxAsync(_a0 types.RequestCheckTx) *abcicli.ReqRes {
-	ret := _m.Called(_a0)
+// CheckTxAsync provides a mock function with given fields: _a0, _a1
+func (_m *AppConnMempool) CheckTxAsync(_a0 types.RequestCheckTx, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
+	ret := _m.Called(_a0, _a1)
 
 	var r0 *abcicli.ReqRes
-	if rf, ok := ret.Get(0).(func(types.RequestCheckTx) *abcicli.ReqRes); ok {
-		r0 = rf(_a0)
+	if rf, ok := ret.Get(0).(func(types.RequestCheckTx, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
+		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*abcicli.ReqRes)
@@ -90,22 +74,6 @@ func (_m *AppConnMempool) CheckTxSync(_a0 types.RequestCheckTx) (*types.Response
 	}
 
 	return r0, r1
-}
-
-// EndRecheckTxAsync provides a mock function with given fields: _a0
-func (_m *AppConnMempool) EndRecheckTxAsync(_a0 types.RequestEndRecheckTx) *abcicli.ReqRes {
-	ret := _m.Called(_a0)
-
-	var r0 *abcicli.ReqRes
-	if rf, ok := ret.Get(0).(func(types.RequestEndRecheckTx) *abcicli.ReqRes); ok {
-		r0 = rf(_a0)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*abcicli.ReqRes)
-		}
-	}
-
-	return r0
 }
 
 // EndRecheckTxSync provides a mock function with given fields: _a0
@@ -145,13 +113,13 @@ func (_m *AppConnMempool) Error() error {
 	return r0
 }
 
-// FlushAsync provides a mock function with given fields:
-func (_m *AppConnMempool) FlushAsync() *abcicli.ReqRes {
-	ret := _m.Called()
+// FlushAsync provides a mock function with given fields: _a0
+func (_m *AppConnMempool) FlushAsync(_a0 abcicli.ResponseCallback) *abcicli.ReqRes {
+	ret := _m.Called(_a0)
 
 	var r0 *abcicli.ReqRes
-	if rf, ok := ret.Get(0).(func() *abcicli.ReqRes); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(abcicli.ResponseCallback) *abcicli.ReqRes); ok {
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*abcicli.ReqRes)
@@ -162,17 +130,26 @@ func (_m *AppConnMempool) FlushAsync() *abcicli.ReqRes {
 }
 
 // FlushSync provides a mock function with given fields:
-func (_m *AppConnMempool) FlushSync() error {
+func (_m *AppConnMempool) FlushSync() (*types.ResponseFlush, error) {
 	ret := _m.Called()
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func() error); ok {
+	var r0 *types.ResponseFlush
+	if rf, ok := ret.Get(0).(func() *types.ResponseFlush); ok {
 		r0 = rf()
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*types.ResponseFlush)
+		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // SetGlobalCallback provides a mock function with given fields: _a0

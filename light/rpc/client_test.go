@@ -7,9 +7,6 @@ import (
 	"testing"
 
 	ics23 "github.com/confio/ics23/go"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto/merkle"
@@ -19,7 +16,6 @@ import (
 	rpcmock "github.com/line/ostracon/rpc/client/mocks"
 	ctypes "github.com/line/ostracon/rpc/core/types"
 	"github.com/line/ostracon/types"
-	"github.com/line/tm-db/v2/memdb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"

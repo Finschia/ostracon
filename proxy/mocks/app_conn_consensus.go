@@ -60,13 +60,13 @@ func (_m *AppConnConsensus) CommitSync() (*types.ResponseCommit, error) {
 	return r0, r1
 }
 
-// DeliverTxAsync provides a mock function with given fields: _a0
-func (_m *AppConnConsensus) DeliverTxAsync(_a0 types.RequestDeliverTx) *abcicli.ReqRes {
-	ret := _m.Called(_a0)
+// DeliverTxAsync provides a mock function with given fields: _a0, _a1
+func (_m *AppConnConsensus) DeliverTxAsync(_a0 types.RequestDeliverTx, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
+	ret := _m.Called(_a0, _a1)
 
 	var r0 *abcicli.ReqRes
-	if rf, ok := ret.Get(0).(func(types.RequestDeliverTx) *abcicli.ReqRes); ok {
-		r0 = rf(_a0)
+	if rf, ok := ret.Get(0).(func(types.RequestDeliverTx, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
+		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*abcicli.ReqRes)
