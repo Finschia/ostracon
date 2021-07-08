@@ -35,11 +35,11 @@ func TestNewProvider(t *testing.T) {
 func TestMain(m *testing.M) {
 	app := kvstore.NewApplication()
 	app.RetainBlocks = 9
-	node := rpctest.StartTendermint(app)
+	node := rpctest.StartOstracon(app)
 
 	code := m.Run()
 
-	rpctest.StopTendermint(node)
+	rpctest.StopOstracon(node)
 	os.Exit(code)
 }
 

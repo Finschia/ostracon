@@ -24,10 +24,10 @@ var (
 
 // clearConfig clears env vars, the given root dir, and resets viper.
 func clearConfig(dir string) {
-	if err := os.Unsetenv("TMHOME"); err != nil {
+	if err := os.Unsetenv("OCHOME"); err != nil {
 		panic(err)
 	}
-	if err := os.Unsetenv("TM_HOME"); err != nil {
+	if err := os.Unsetenv("OC_HOME"); err != nil {
 		panic(err)
 	}
 
@@ -55,7 +55,7 @@ func testSetup(rootDir string, args []string, env map[string]string) error {
 	clearConfig(defaultRoot)
 
 	rootCmd := testRootCmd()
-	cmd := cli.PrepareBaseCmd(rootCmd, "TM", defaultRoot)
+	cmd := cli.PrepareBaseCmd(rootCmd, "OC", defaultRoot)
 
 	// run with the args and env
 	args = append([]string{rootCmd.Use}, args...)
@@ -71,7 +71,7 @@ func TestRootHome(t *testing.T) {
 	}{
 		{nil, nil, defaultRoot},
 		{[]string{"--home", newRoot}, nil, newRoot},
-		{nil, map[string]string{"TMHOME": newRoot}, newRoot},
+		{nil, map[string]string{"OCHOME": newRoot}, newRoot},
 	}
 
 	for i, tc := range cases {
@@ -100,9 +100,9 @@ func TestRootFlagsEnv(t *testing.T) {
 	}{
 		{[]string{"--log", "debug"}, nil, defaultLogLvl},                 // wrong flag
 		{[]string{"--log_level", "debug"}, nil, "debug"},                 // right flag
-		{nil, map[string]string{"TM_LOW": "debug"}, defaultLogLvl},       // wrong env flag
+		{nil, map[string]string{"OC_LOW": "debug"}, defaultLogLvl},       // wrong env flag
 		{nil, map[string]string{"MT_LOG_LEVEL": "debug"}, defaultLogLvl}, // wrong env prefix
-		{nil, map[string]string{"TM_LOG_LEVEL": "debug"}, "debug"},       // right env
+		{nil, map[string]string{"OC_LOG_LEVEL": "debug"}, "debug"},       // right env
 	}
 
 	for i, tc := range cases {
@@ -131,7 +131,7 @@ func TestRootConfig(t *testing.T) {
 	}{
 		{nil, nil, nonDefaultLogLvl},                                     // should load config
 		{[]string{"--log_level=abc:info"}, nil, "abc:info"},              // flag over rides
-		{nil, map[string]string{"TM_LOG_LEVEL": "abc:info"}, "abc:info"}, // env over rides
+		{nil, map[string]string{"OC_LOG_LEVEL": "abc:info"}, "abc:info"}, // env over rides
 	}
 
 	for i, tc := range cases {
@@ -149,7 +149,7 @@ func TestRootConfig(t *testing.T) {
 		require.Nil(t, err)
 
 		rootCmd := testRootCmd()
-		cmd := cli.PrepareBaseCmd(rootCmd, "TM", defaultRoot)
+		cmd := cli.PrepareBaseCmd(rootCmd, "OC", defaultRoot)
 
 		// run with the args and env
 		tc.args = append([]string{rootCmd.Use}, tc.args...)

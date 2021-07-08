@@ -15,12 +15,12 @@ import (
 func TestMain(m *testing.M) {
 	// start an ostracon node in the background to test against
 	app := kvstore.NewApplication()
-	node := rpctest.StartTendermint(app)
+	node := rpctest.StartOstracon(app)
 
 	code := m.Run()
 
 	// and shut down proper at the end
-	rpctest.StopTendermint(node)
+	rpctest.StopOstracon(node)
 	os.Exit(code)
 }
 

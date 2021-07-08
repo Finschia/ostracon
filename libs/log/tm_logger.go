@@ -21,10 +21,10 @@ type tmLogger struct {
 // Interface assertions
 var _ Logger = (*tmLogger)(nil)
 
-// NewTMLogger returns a logger that encodes msg and keyvals to the Writer
+// NewOCLogger returns a logger that encodes msg and keyvals to the Writer
 // using go-kit's log as an underlying logger and our custom formatter. Note
 // that underlying logger could be swapped with something else.
-func NewTMLogger(w io.Writer) Logger {
+func NewOCLogger(w io.Writer) Logger {
 	// Color by level value
 	colorFn := func(keyvals ...interface{}) term.FgBgColor {
 		if keyvals[0] != kitlevel.Key() {
@@ -43,9 +43,9 @@ func NewTMLogger(w io.Writer) Logger {
 	return &tmLogger{term.NewLogger(w, NewTMFmtLogger, colorFn)}
 }
 
-// NewTMLoggerWithColorFn allows you to provide your own color function. See
-// NewTMLogger for documentation.
-func NewTMLoggerWithColorFn(w io.Writer, colorFn func(keyvals ...interface{}) term.FgBgColor) Logger {
+// NewOCLoggerWithColorFn allows you to provide your own color function. See
+// NewOCLogger for documentation.
+func NewOCLoggerWithColorFn(w io.Writer, colorFn func(keyvals ...interface{}) term.FgBgColor) Logger {
 	return &tmLogger{term.NewLogger(w, NewTMFmtLogger, colorFn)}
 }
 

@@ -126,7 +126,7 @@ func sendTxs(ctx context.Context, cs *State) {
 func TestWALCrash(t *testing.T) {
 	// TODO The execution result of this test case often fail for indeterminate reasons.
 	// The reason for the fail is a timeout with an "Timed out waiting for new block" or "WAL did not panic for
-	// XX seconds" message, but the behavior that causes it is not reproducible. This issue also occurs in Tendermint,
+	// XX seconds" message, but the behavior that causes it is not reproducible. This issue also occurs in Ostracon,
 	// but seems to be somewhat more pronounced with some changes in Ostracon.
 	// See also: https://github.com/tendermint/tendermint/issues/1040
 	testCases := []struct {
@@ -729,7 +729,7 @@ func testHandshakeReplay(t *testing.T, config *cfg.Config, nBlocks int, mode uin
 
 	state := genesisState.Copy()
 	// run the chain through state.ApplyBlock to build up the ostracon state
-	state = buildTMStateFromChain(config, stateStore, state, chain, nBlocks, mode)
+	state = buildOCStateFromChain(config, stateStore, state, chain, nBlocks, mode)
 	latestAppHash := state.AppHash
 
 	// make a new client creator
@@ -858,7 +858,7 @@ func buildAppStateFromChain(proxyApp proxy.AppConns, stateStore sm.Store,
 
 }
 
-func buildTMStateFromChain(
+func buildOCStateFromChain(
 	config *cfg.Config,
 	stateStore sm.Store,
 	state sm.State,
@@ -928,7 +928,7 @@ func TestHandshakePanicsIfAppReturnsWrongAppHash(t *testing.T) {
 	blocks := makeBlocks(3, &state, privVal)
 	store.chain = blocks
 
-	// 2. Tendermint must panic if app returns wrong hash for the first block
+	// 2. Ostracon must panic if app returns wrong hash for the first block
 	//		- RANDOM HASH
 	//		- 0x02
 	//		- 0x03
@@ -952,7 +952,7 @@ func TestHandshakePanicsIfAppReturnsWrongAppHash(t *testing.T) {
 		})
 	}
 
-	// 3. Tendermint must panic if app returns wrong hash for the last block
+	// 3. Ostracon must panic if app returns wrong hash for the last block
 	//		- 0x01
 	//		- 0x02
 	//		- RANDOM HASH

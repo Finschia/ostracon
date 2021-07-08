@@ -46,9 +46,9 @@ type EndHeightMessage struct {
 type WALMessage interface{}
 
 func init() {
-	tmjson.RegisterType(msgInfo{}, "tendermint/wal/MsgInfo")
-	tmjson.RegisterType(timeoutInfo{}, "tendermint/wal/TimeoutInfo")
-	tmjson.RegisterType(EndHeightMessage{}, "tendermint/wal/EndHeightMessage")
+	tmjson.RegisterType(msgInfo{}, "ostracon/wal/MsgInfo")
+	tmjson.RegisterType(timeoutInfo{}, "ostracon/wal/TimeoutInfo")
+	tmjson.RegisterType(EndHeightMessage{}, "ostracon/wal/EndHeightMessage")
 }
 
 //--------------------------------------------------------

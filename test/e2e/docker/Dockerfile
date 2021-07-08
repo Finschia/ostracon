@@ -25,7 +25,7 @@ RUN cd test/e2e && make app && cp build/app /usr/bin/app
 # e.g. leveldb and rocksdb which are already installed in the build image.
 WORKDIR /ostracon
 VOLUME /ostracon
-ENV TMHOME=/ostracon
+ENV OCHOME=/ostracon
 
 EXPOSE 26656 26657 26660 6060
 ENTRYPOINT ["/usr/bin/entrypoint"]

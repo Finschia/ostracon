@@ -9,10 +9,10 @@ set -ex
 # TODO: install everything
 
 export PATH="$GOBIN:$PATH"
-export TMHOME=$HOME/.ostracon_app
+export OCHOME=$HOME/.ostracon_app
 
 function kvstore_over_socket(){
-    rm -rf $TMHOME
+    rm -rf $OCHOME
     ostracon init
     echo "Starting kvstore_over_socket"
     abci-cli kvstore > /dev/null &
@@ -29,7 +29,7 @@ function kvstore_over_socket(){
 
 # start ostracon first
 function kvstore_over_socket_reorder(){
-    rm -rf $TMHOME
+    rm -rf $OCHOME
     ostracon init
     echo "Starting kvstore_over_socket_reorder (ie. start ostracon first)"
     ostracon node > ostracon.log &
@@ -47,7 +47,7 @@ function kvstore_over_socket_reorder(){
 
 
 function counter_over_socket() {
-    rm -rf $TMHOME
+    rm -rf $OCHOME
     ostracon init
     echo "Starting counter_over_socket"
     abci-cli counter --serial > /dev/null &
@@ -63,7 +63,7 @@ function counter_over_socket() {
 }
 
 function counter_over_grpc() {
-    rm -rf $TMHOME
+    rm -rf $OCHOME
     ostracon init
     echo "Starting counter_over_grpc"
     abci-cli counter --serial --abci grpc > /dev/null &
@@ -79,7 +79,7 @@ function counter_over_grpc() {
 }
 
 function counter_over_grpc_grpc() {
-    rm -rf $TMHOME
+    rm -rf $OCHOME
     ostracon init
     echo "Starting counter_over_grpc_grpc (ie. with grpc broadcast_tx)"
     abci-cli counter --serial --abci grpc > /dev/null &

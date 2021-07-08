@@ -15,8 +15,8 @@ import (
 func ExampleHTTP_simple() {
 	// Start an ostracon node (and kvstore) in the background to test against
 	app := kvstore.NewApplication()
-	node := rpctest.StartTendermint(app, rpctest.SuppressStdout, rpctest.RecreateConfig)
-	defer rpctest.StopTendermint(node)
+	node := rpctest.StartOstracon(app, rpctest.SuppressStdout, rpctest.RecreateConfig)
+	defer rpctest.StopOstracon(node)
 
 	// Create our RPC client
 	rpcAddr := rpctest.GetConfig().RPC.ListenAddress
@@ -68,7 +68,7 @@ func ExampleHTTP_simple() {
 func ExampleHTTP_batching() {
 	// Start an ostracon node (and kvstore) in the background to test against
 	app := kvstore.NewApplication()
-	node := rpctest.StartTendermint(app, rpctest.SuppressStdout, rpctest.RecreateConfig)
+	node := rpctest.StartOstracon(app, rpctest.SuppressStdout, rpctest.RecreateConfig)
 
 	// Create our RPC client
 	rpcAddr := rpctest.GetConfig().RPC.ListenAddress
@@ -77,7 +77,7 @@ func ExampleHTTP_batching() {
 		log.Fatal(err)
 	}
 
-	defer rpctest.StopTendermint(node)
+	defer rpctest.StopOstracon(node)
 
 	// Create our two transactions
 	k1 := []byte("firstName")

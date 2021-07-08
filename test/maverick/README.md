@@ -1,6 +1,6 @@
 # Maverick
 
-A byzantine node used to test Tendermint consensus against a plethora of different faulty misbehaviors. Designed to easily create new faulty misbehaviors to examine how a Tendermint network reacts to the misbehavior. Can also be used for fuzzy testing with different network arrangements.
+A byzantine node used to test Ostracon consensus against a plethora of different faulty misbehaviors. Designed to easily create new faulty misbehaviors to examine how a Ostracon network reacts to the misbehavior. Can also be used for fuzzy testing with different network arrangements.
 
 ## Misbehaviors
 
@@ -34,7 +34,7 @@ var MisbehaviorList = map[string]Misbehavior{
 
 ## Setup
 
-The maverick node takes most of the functionality from the existing Tendermint CLI. To install this, in the directory of this readme, run:
+The maverick node takes most of the functionality from the existing Ostracon CLI. To install this, in the directory of this readme, run:
 
 ```bash
 go build

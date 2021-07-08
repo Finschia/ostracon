@@ -10,7 +10,7 @@ import (
 	"github.com/line/ostracon/types"
 )
 
-// Status returns Tendermint status including node info, pubkey, latest block
+// Status returns Ostracon status including node info, pubkey, latest block
 // hash, app hash, block height and time.
 // More: https://docs.tendermint.com/master/rpc/#/Info/status
 func Status(ctx *rpctypes.Context) (*ctypes.ResultStatus, error) {

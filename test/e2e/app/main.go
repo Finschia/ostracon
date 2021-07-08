@@ -24,7 +24,7 @@ import (
 	maverick "github.com/line/ostracon/test/maverick/node"
 )
 
-var logger = log.NewTMLogger(log.NewSyncWriter(os.Stdout))
+var logger = log.NewOCLogger(log.NewSyncWriter(os.Stdout))
 
 // main is the binary entrypoint.
 func main() {
@@ -83,7 +83,7 @@ func run(configFile string) error {
 	}
 }
 
-// startApp starts the application server, listening for connections from Tendermint.
+// startApp starts the application server, listening for connections from Ostracon.
 func startApp(cfg *Config) error {
 	app, err := NewApplication(cfg)
 	if err != nil {
@@ -101,8 +101,8 @@ func startApp(cfg *Config) error {
 	return nil
 }
 
-// startNode starts a Tendermint node running the application directly. It assumes the Tendermint
-// configuration is in $TMHOME/config/ostracon.toml.
+// startNode starts a Ostracon node running the application directly. It assumes the Ostracon
+// configuration is in $OCHOME/config/ostracon.toml.
 //
 // FIXME There is no way to simply load the configuration from a file, so we need to pull in Viper.
 func startNode(cfg *Config) error {
@@ -135,8 +135,8 @@ func startNode(cfg *Config) error {
 	return n.Start()
 }
 
-// startMaverick starts a Maverick node that runs the application directly. It assumes the Tendermint
-// configuration is in $TMHOME/config/ostracon.toml.
+// startMaverick starts a Maverick node that runs the application directly. It assumes the Ostracon
+// configuration is in $OCHOME/config/ostracon.toml.
 func startMaverick(cfg *Config) error {
 	app, err := NewApplication(cfg)
 	if err != nil {
@@ -200,9 +200,9 @@ func startSigner(cfg *Config) error {
 func setupNode() (*config.Config, log.Logger, *p2p.NodeKey, error) {
 	var tmcfg *config.Config
 
-	home := os.Getenv("TMHOME")
+	home := os.Getenv("OCHOME")
 	if home == "" {
-		return nil, nil, nil, errors.New("TMHOME not set")
+		return nil, nil, nil, errors.New("OCHOME not set")
 	}
 
 	viper.AddConfigPath(filepath.Join(home, "config"))
@@ -225,7 +225,7 @@ func setupNode() (*config.Config, log.Logger, *p2p.NodeKey, error) {
 	}
 
 	if tmcfg.LogFormat == config.LogFormatJSON {
-		logger = log.NewTMJSONLogger(log.NewSyncWriter(os.Stdout))
+		logger = log.NewOCJSONLogger(log.NewSyncWriter(os.Stdout))
 	}
 
 	nodeLogger, err := tmflags.ParseLogLevel(tmcfg.LogLevel, logger, config.DefaultLogLevel)

@@ -111,7 +111,7 @@ spec:
             configMapKeyRef:
               name: tm-config
               key: validators
-        - name: TMHOME
+        - name: OCHOME
           value: /ostracon
         command:
         - bash

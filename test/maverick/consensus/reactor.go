@@ -1398,15 +1398,15 @@ func (ps *PeerState) StringIndented(indent string) string {
 //-----------------------------------------------------------------------------
 
 // func init() {
-// 	tmjson.RegisterType(&NewRoundStepMessage{}, "tendermint/NewRoundStepMessage")
-// 	tmjson.RegisterType(&NewValidBlockMessage{}, "tendermint/NewValidBlockMessage")
-// 	tmjson.RegisterType(&ProposalMessage{}, "tendermint/Proposal")
-// 	tmjson.RegisterType(&ProposalPOLMessage{}, "tendermint/ProposalPOL")
-// 	tmjson.RegisterType(&BlockPartMessage{}, "tendermint/BlockPart")
-// 	tmjson.RegisterType(&VoteMessage{}, "tendermint/Vote")
-// 	tmjson.RegisterType(&HasVoteMessage{}, "tendermint/HasVote")
-// 	tmjson.RegisterType(&VoteSetMaj23Message{}, "tendermint/VoteSetMaj23")
-// 	tmjson.RegisterType(&VoteSetBitsMessage{}, "tendermint/VoteSetBits")
+// 	tmjson.RegisterType(&NewRoundStepMessage{}, "ostracon/NewRoundStepMessage")
+// 	tmjson.RegisterType(&NewValidBlockMessage{}, "ostracon/NewValidBlockMessage")
+// 	tmjson.RegisterType(&ProposalMessage{}, "ostracon/Proposal")
+// 	tmjson.RegisterType(&ProposalPOLMessage{}, "ostracon/ProposalPOL")
+// 	tmjson.RegisterType(&BlockPartMessage{}, "ostracon/BlockPart")
+// 	tmjson.RegisterType(&VoteMessage{}, "ostracon/Vote")
+// 	tmjson.RegisterType(&HasVoteMessage{}, "ostracon/HasVote")
+// 	tmjson.RegisterType(&VoteSetMaj23Message{}, "ostracon/VoteSetMaj23")
+// 	tmjson.RegisterType(&VoteSetBitsMessage{}, "ostracon/VoteSetBits")
 // }
 
 func decodeMsg(bz []byte) (msg tmcon.Message, err error) {

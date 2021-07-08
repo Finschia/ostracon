@@ -40,22 +40,22 @@ const (
 
 // ENCODING / DECODING
 
-// TMEventData implements events.EventData.
-type TMEventData interface {
+// OCEventData implements events.EventData.
+type OCEventData interface {
 	// empty interface
 }
 
 func init() {
-	tmjson.RegisterType(EventDataNewBlock{}, "tendermint/event/NewBlock")
-	tmjson.RegisterType(EventDataNewBlockHeader{}, "tendermint/event/NewBlockHeader")
-	tmjson.RegisterType(EventDataNewEvidence{}, "tendermint/event/NewEvidence")
-	tmjson.RegisterType(EventDataTx{}, "tendermint/event/Tx")
-	tmjson.RegisterType(EventDataRoundState{}, "tendermint/event/RoundState")
-	tmjson.RegisterType(EventDataNewRound{}, "tendermint/event/NewRound")
-	tmjson.RegisterType(EventDataCompleteProposal{}, "tendermint/event/CompleteProposal")
-	tmjson.RegisterType(EventDataVote{}, "tendermint/event/Vote")
-	tmjson.RegisterType(EventDataValidatorSetUpdates{}, "tendermint/event/ValidatorSetUpdates")
-	tmjson.RegisterType(EventDataString(""), "tendermint/event/ProposalString")
+	tmjson.RegisterType(EventDataNewBlock{}, "ostracon/event/NewBlock")
+	tmjson.RegisterType(EventDataNewBlockHeader{}, "ostracon/event/NewBlockHeader")
+	tmjson.RegisterType(EventDataNewEvidence{}, "ostracon/event/NewEvidence")
+	tmjson.RegisterType(EventDataTx{}, "ostracon/event/Tx")
+	tmjson.RegisterType(EventDataRoundState{}, "ostracon/event/RoundState")
+	tmjson.RegisterType(EventDataNewRound{}, "ostracon/event/NewRound")
+	tmjson.RegisterType(EventDataCompleteProposal{}, "ostracon/event/CompleteProposal")
+	tmjson.RegisterType(EventDataVote{}, "ostracon/event/Vote")
+	tmjson.RegisterType(EventDataValidatorSetUpdates{}, "ostracon/event/ValidatorSetUpdates")
+	tmjson.RegisterType(EventDataString(""), "ostracon/event/ProposalString")
 }
 
 // Most event messages are basic types (a block, a transaction)

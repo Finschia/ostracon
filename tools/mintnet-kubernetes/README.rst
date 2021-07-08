@@ -207,7 +207,7 @@ First pod details:
 
     kubectl describe pod tm-0
 
-Tendermint app logs from the first pod:
+Ostracon app logs from the first pod:
 
 ::
 
@@ -219,7 +219,7 @@ App logs from the first pod:
 
     kubectl logs tm-0 -c app -f
 
-Status of the second pod's Tendermint app:
+Status of the second pod's Ostracon app:
 
 ::
 
@@ -287,4 +287,4 @@ Init containers (``tm-gen-validator``) are run before all other
 containers, creating public-private key pair for each pod. Every ``tm``
 container then asks other pods for their public keys, which are served
 with nginx (``pub-key`` container). When ``tm`` container have all the
-keys, it forms a genesis file and starts the Tendermint process.
+keys, it forms a genesis file and starts the Ostracon process.

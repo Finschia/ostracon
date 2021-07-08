@@ -5,11 +5,11 @@ The concept of light clients was introduced in the Bitcoin white paper. It
 describes a watcher of distributed consensus process that only validates the
 consensus algorithm and not the state machine transactions within.
 
-Tendermint light clients allow bandwidth & compute-constrained devices, such as
+Ostracon light clients allow bandwidth & compute-constrained devices, such as
 smartphones, low-power embedded chips, or other blockchains to efficiently
-verify the consensus of a Tendermint blockchain. This forms the basis of safe
+verify the consensus of a Ostracon blockchain. This forms the basis of safe
 and efficient state synchronization for new network nodes and inter-blockchain
-communication (where a light client of one Tendermint instance runs in another
+communication (where a light client of one Ostracon instance runs in another
 chain's state machine).
 
 In a network that is expected to reliably punish validators for misbehavior by
@@ -28,7 +28,7 @@ fork the network at some point in its prior history. See Vitalik's post at
 [Proof of Stake: How I Learned to Love Weak
 Subjectivity](https://blog.ethereum.org/2014/11/25/proof-stake-learned-love-weak-subjectivity/).
 
-NOTE: Tendermint provides a somewhat different (stronger) light client model
+NOTE: Ostracon provides a somewhat different (stronger) light client model
 than Bitcoin under eclipse, since the eclipsing node(s) can only fool the light
 client if they have two-thirds of the private keys from the last root-of-trust.
 
@@ -111,7 +111,7 @@ refer to docs/imgs/light_client_bisection_alg.png
 
 ## 3. Secure RPC proxy
 
-Tendermint RPC exposes a lot of info, but a malicious node could return any
+Ostracon RPC exposes a lot of info, but a malicious node could return any
 data it wants to queries, or even to block headers, even making up fake
 signatures from non-existent validators to justify it. Secure RPC proxy serves
 as a wrapper, which verifies all the headers, using a light client connected to

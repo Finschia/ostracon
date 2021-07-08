@@ -16,7 +16,7 @@ const (
 	connSnapshot  = "snapshot"
 )
 
-// AppConns is the Tendermint's interface to the application that consists of
+// AppConns is the Ostracon's interface to the application that consists of
 // multiple connections.
 type AppConns interface {
 	service.Service
@@ -114,8 +114,8 @@ func (app *multiAppConn) OnStart() error {
 	app.consensusConnClient = c
 	app.consensusConn = NewAppConnConsensus(c)
 
-	// Kill Tendermint if the ABCI application crashes.
-	go app.killTMOnClientError()
+	// Kill Ostracon if the ABCI application crashes.
+	go app.killOCOnClientError()
 
 	return nil
 }
@@ -124,10 +124,10 @@ func (app *multiAppConn) OnStop() {
 	app.stopAllClients()
 }
 
-func (app *multiAppConn) killTMOnClientError() {
+func (app *multiAppConn) killOCOnClientError() {
 	killFn := func(conn string, err error, logger tmlog.Logger) {
 		logger.Error(
-			fmt.Sprintf("%s connection terminated. Did the application crash? Please restart tendermint", conn),
+			fmt.Sprintf("%s connection terminated. Did the application crash? Please restart ostracon", conn),
 			"err", err)
 		killErr := tmos.Kill()
 		if killErr != nil {

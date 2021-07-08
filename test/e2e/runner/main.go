@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	logger = log.NewTMLogger(log.NewSyncWriter(os.Stdout))
+	logger = log.NewOCLogger(log.NewSyncWriter(os.Stdout))
 )
 
 func main() {

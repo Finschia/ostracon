@@ -20,7 +20,7 @@ func (e ErrTxTooLarge) Error() string {
 	return fmt.Sprintf("Tx too large. Max size is %d, but got %d", e.max, e.actual)
 }
 
-// ErrMempoolIsFull means Tendermint & an application can't handle that much load
+// ErrMempoolIsFull means Ostracon & an application can't handle that much load
 type ErrMempoolIsFull struct {
 	numTxs int
 	maxTxs int

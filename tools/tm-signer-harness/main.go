@@ -18,19 +18,19 @@ import (
 const (
 	defaultAcceptRetries    = 100
 	defaultBindAddr         = "tcp://127.0.0.1:0"
-	defaultTMHome           = "~/.ostracon"
+	defaultOCHome           = "~/.ostracon"
 	defaultAcceptDeadline   = 1
 	defaultConnDeadline     = 3
 	defaultExtractKeyOutput = "./signing.key"
 )
 
-var logger = log.NewTMLogger(log.NewSyncWriter(os.Stdout))
+var logger = log.NewOCLogger(log.NewSyncWriter(os.Stdout))
 
 // Command line flags
 var (
 	flagAcceptRetries int
 	flagBindAddr      string
-	flagTMHome        string
+	flagOCHome        string
 	flagKeyOutputPath string
 )
 
@@ -45,13 +45,13 @@ var (
 func init() {
 	rootCmd = flag.NewFlagSet("root", flag.ExitOnError)
 	rootCmd.Usage = func() {
-		fmt.Println(`Remote signer test harness for Tendermint.
+		fmt.Println(`Remote signer test harness for Ostracon.
 
 Usage:
   tm-signer-harness <command> [flags]
 
 Available Commands:
-  extract_key        Extracts a signing key from a local Tendermint instance
+  extract_key        Extracts a signing key from a local Ostracon instance
   help               Help on the available commands
   run                Runs the test harness
   version            Display version information and exit
@@ -66,9 +66,9 @@ Use "tm-signer-harness help <command>" for more information about that command.`
 		defaultAcceptRetries,
 		"The number of attempts to listen for incoming connections")
 	runCmd.StringVar(&flagBindAddr, "addr", defaultBindAddr, "Bind to this address for the testing")
-	runCmd.StringVar(&flagTMHome, "tmhome", defaultTMHome, "Path to the Tendermint home directory")
+	runCmd.StringVar(&flagOCHome, "ochome", defaultOCHome, "Path to the Ostracon home directory")
 	runCmd.Usage = func() {
-		fmt.Println(`Runs the remote signer test harness for Tendermint.
+		fmt.Println(`Runs the remote signer test harness for Ostracon.
 
 Usage:
   tm-signer-harness run [flags]
@@ -83,9 +83,9 @@ Flags:`)
 		"output",
 		defaultExtractKeyOutput,
 		"Path to which signing key should be written")
-	extractKeyCmd.StringVar(&flagTMHome, "tmhome", defaultTMHome, "Path to the Tendermint home directory")
+	extractKeyCmd.StringVar(&flagOCHome, "ochome", defaultOCHome, "Path to the Ostracon home directory")
 	extractKeyCmd.Usage = func() {
-		fmt.Println(`Extracts a signing key from a local Tendermint instance for use in the remote
+		fmt.Println(`Extracts a signing key from a local Ostracon instance for use in the remote
 signer under test.
 
 Usage:
@@ -99,7 +99,7 @@ Flags:`)
 	versionCmd = flag.NewFlagSet("version", flag.ExitOnError)
 	versionCmd.Usage = func() {
 		fmt.Println(`
-Prints the Tendermint version for which this remote signer harness was built.
+Prints the Ostracon version for which this remote signer harness was built.
 
 Usage:
   tm-signer-harness version`)
@@ -107,13 +107,13 @@ Usage:
 	}
 }
 
-func runTestHarness(acceptRetries int, bindAddr, tmhome string) {
-	tmhome = internal.ExpandPath(tmhome)
+func runTestHarness(acceptRetries int, bindAddr, ochome string) {
+	ochome = internal.ExpandPath(ochome)
 	cfg := internal.TestHarnessConfig{
 		BindAddr:         bindAddr,
-		KeyFile:          filepath.Join(tmhome, "config", "priv_validator_key.json"),
-		StateFile:        filepath.Join(tmhome, "data", "priv_validator_state.json"),
-		GenesisFile:      filepath.Join(tmhome, "config", "genesis.json"),
+		KeyFile:          filepath.Join(ochome, "config", "priv_validator_key.json"),
+		StateFile:        filepath.Join(ochome, "data", "priv_validator_state.json"),
+		GenesisFile:      filepath.Join(ochome, "config", "genesis.json"),
 		AcceptDeadline:   time.Duration(defaultAcceptDeadline) * time.Second,
 		AcceptRetries:    acceptRetries,
 		ConnDeadline:     time.Duration(defaultConnDeadline) * time.Second,
@@ -131,9 +131,9 @@ func runTestHarness(acceptRetries int, bindAddr, tmhome string) {
 	harness.Run()
 }
 
-func extractKey(tmhome, outputPath string) {
-	keyFile := filepath.Join(internal.ExpandPath(tmhome), "config", "priv_validator_key.json")
-	stateFile := filepath.Join(internal.ExpandPath(tmhome), "data", "priv_validator_state.json")
+func extractKey(ochome, outputPath string) {
+	keyFile := filepath.Join(internal.ExpandPath(ochome), "config", "priv_validator_key.json")
+	stateFile := filepath.Join(internal.ExpandPath(ochome), "data", "priv_validator_state.json")
 	fpv := privval.LoadFilePV(keyFile, stateFile)
 	pkb := []byte(fpv.Key.PrivKey.(ed25519.PrivKey))
 	if err := ioutil.WriteFile(internal.ExpandPath(outputPath), pkb[:32], 0600); err != nil {
@@ -173,15 +173,15 @@ func main() {
 			fmt.Printf("Error parsing flags: %v\n", err)
 			os.Exit(1)
 		}
-		runTestHarness(flagAcceptRetries, flagBindAddr, flagTMHome)
+		runTestHarness(flagAcceptRetries, flagBindAddr, flagOCHome)
 	case "extract_key":
 		if err := extractKeyCmd.Parse(os.Args[2:]); err != nil {
 			fmt.Printf("Error parsing flags: %v\n", err)
 			os.Exit(1)
 		}
-		extractKey(flagTMHome, flagKeyOutputPath)
+		extractKey(flagOCHome, flagKeyOutputPath)
 	case "version":
-		fmt.Println(version.TMCoreSemVer)
+		fmt.Println(version.OCCoreSemVer)
 	default:
 		fmt.Printf("Unrecognized command: %s\n", flag.Arg(0))
 		os.Exit(1)

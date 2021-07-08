@@ -32,7 +32,7 @@ var ABCIPubKeyTypesToNames = map[string]string{
 
 //-------------------------------------------------------
 
-// OC2PB is used for converting Tendermint ABCI to protobuf ABCI.
+// OC2PB is used for converting Ostracon ABCI to protobuf ABCI.
 // UNSTABLE
 var OC2PB = oc2pb{}
 
@@ -128,9 +128,9 @@ func (oc2pb) NewValidatorUpdate(pubkey crypto.PubKey, power int64) abci.Validato
 
 //----------------------------------------------------------------------------
 
-// PB2TM is used for converting protobuf ABCI to Tendermint ABCI.
+// PB2OC is used for converting protobuf ABCI to Ostracon ABCI.
 // UNSTABLE
-var PB2TM = pb2tm{}
+var PB2OC = pb2tm{}
 
 type pb2tm struct{}
 

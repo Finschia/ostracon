@@ -17,7 +17,7 @@ import (
 )
 
 func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
-	t.Skip("Voter selection in Ostracon only supports sequential verification mode, but Tendermint has a few test case for skipping mode.")
+	t.Skip("Voter selection in Ostracon only supports sequential verification mode, but Ostracon has a few test case for skipping mode.")
 	// primary performs a lunatic attack
 	var (
 		latestHeight      = int64(10)
@@ -98,7 +98,7 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 }
 
 func TestLightClientAttackEvidence_Equivocation(t *testing.T) {
-	t.Skip("Voter selection in Ostracon only supports sequential verification mode, but Tendermint has a few test case for skipping mode.")
+	t.Skip("Voter selection in Ostracon only supports sequential verification mode, but Ostracon has a few test case for skipping mode.")
 	verificationOptions := map[string]light.Option{
 		"sequential": light.SequentialVerification(),
 		"skipping":   light.SkippingVerification(light.DefaultTrustLevel),

@@ -77,7 +77,7 @@ func (m *CompositePublicKey) GetVrfKey() *PublicKey {
 	return nil
 }
 
-// PublicKey defines the keys available for use with Tendermint Validators
+// PublicKey defines the keys available for use with Ostracon Validators
 type PublicKey struct {
 	// Types that are valid to be assigned to Sum:
 	//	*PublicKey_Ed25519

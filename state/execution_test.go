@@ -391,7 +391,7 @@ func TestUpdateValidators(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			updates, err := types.PB2TM.ValidatorUpdates(tc.abciUpdates)
+			updates, err := types.PB2OC.ValidatorUpdates(tc.abciUpdates)
 			assert.NoError(t, err)
 			err = tc.currentSet.UpdateWithChangeSet(updates)
 			if tc.shouldErr {

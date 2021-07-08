@@ -14,7 +14,7 @@ message CompositePublicKey {
   PublicKey vrf_key  = 2;
 }
 
-// PublicKey defines the keys available for use with Tendermint Validators
+// PublicKey defines the keys available for use with Ostracon Validators
 message PublicKey {
   option (gogoproto.compare) = true;
   option (gogoproto.equal)   = true;

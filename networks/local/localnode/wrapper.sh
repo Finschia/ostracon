@@ -26,10 +26,10 @@ fi
 ##
 ## Run binary with all parameters
 ##
-export TMHOME="/ostracon/node${ID}"
+export OCHOME="/ostracon/node${ID}"
 
-if [ -d "`dirname ${TMHOME}/${LOG}`" ]; then
-  "$BINARY" "$@" | tee "${TMHOME}/${LOG}"
+if [ -d "`dirname ${OCHOME}/${LOG}`" ]; then
+  "$BINARY" "$@" | tee "${OCHOME}/${LOG}"
 else
   "$BINARY" "$@"
 fi

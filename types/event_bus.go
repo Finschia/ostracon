@@ -99,7 +99,7 @@ func (b *EventBus) UnsubscribeAll(ctx context.Context, subscriber string) error 
 	return b.pubsub.UnsubscribeAll(ctx, subscriber)
 }
 
-func (b *EventBus) Publish(eventType string, eventData TMEventData) error {
+func (b *EventBus) Publish(eventType string, eventData OCEventData) error {
 	// no explicit deadline for publishing events
 	ctx := context.Background()
 	return b.pubsub.PublishWithEvents(ctx, eventData, map[string][]string{EventTypeKey: {eventType}})

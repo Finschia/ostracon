@@ -41,7 +41,7 @@ func NewApplication(cfg *Config) (*Application, error) {
 		return nil, err
 	}
 	return &Application{
-		logger:    log.NewTMLogger(log.NewSyncWriter(os.Stdout)),
+		logger:    log.NewOCLogger(log.NewSyncWriter(os.Stdout)),
 		state:     state,
 		snapshots: snapshots,
 		cfg:       cfg,

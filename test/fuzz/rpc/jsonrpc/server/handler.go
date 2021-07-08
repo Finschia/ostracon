@@ -20,7 +20,7 @@ var mux *http.ServeMux
 func init() {
 	mux := http.NewServeMux()
 	buf := new(bytes.Buffer)
-	lgr := log.NewTMLogger(buf)
+	lgr := log.NewOCLogger(buf)
 	rs.RegisterRPCFuncs(mux, rpcFuncMap, lgr)
 }
 
