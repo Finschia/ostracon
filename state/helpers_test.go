@@ -65,7 +65,7 @@ func makeAndApplyGoodBlock(state sm.State, privVal types.PrivValidator, height i
 	}
 	blockID := types.BlockID{Hash: block.Hash(),
 		PartSetHeader: types.PartSetHeader{Total: 3, Hash: tmrand.Bytes(32)}}
-	state, _, err := blockExec.ApplyBlock(state, blockID, block)
+	state, _, err := blockExec.ApplyBlock(state, blockID, block, nil)
 	if err != nil {
 		return state, types.BlockID{}, err
 	}

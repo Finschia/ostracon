@@ -1516,7 +1516,7 @@ func (cs *State) finalizeCommit(height int64) {
 	stateCopy, retainHeight, err = cs.blockExec.ApplyBlock(
 		stateCopy,
 		types.BlockID{Hash: block.Hash(), PartSetHeader: blockParts.Header()},
-		block)
+		block, nil)
 	if err != nil {
 		cs.Logger.Error("Error on ApplyBlock", "err", err)
 		return
