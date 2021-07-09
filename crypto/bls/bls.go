@@ -128,7 +128,7 @@ func (privKey PrivKey) Bytes() []byte {
 // Sign produces a signature on the provided message.
 func (privKey PrivKey) Sign(msg []byte) ([]byte, error) {
 	if msg == nil {
-		panic(fmt.Sprintf("Nil specified as the message"))
+		panic("Nil specified as the message")
 	}
 	blsKey := bls.SecretKey{}
 	err := blsKey.Deserialize(privKey[:])
@@ -220,7 +220,6 @@ func (pubKey PubKey) String() string {
 	return fmt.Sprintf("PubKey{%X}", pubKey[:])
 }
 
-// nolint: golint
 func (pubKey PubKey) Equals(other crypto.PubKey) bool {
 	if otherEd, ok := other.(PubKey); ok {
 		return bytes.Equal(pubKey[:], otherEd[:])

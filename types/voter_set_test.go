@@ -19,7 +19,6 @@ import (
 	"github.com/line/ostracon/crypto/merkle"
 	tmmath "github.com/line/ostracon/libs/math"
 	"github.com/line/ostracon/libs/rand"
-	tmrand "github.com/line/ostracon/libs/rand"
 	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	tmtime "github.com/line/ostracon/types/time"
 )
@@ -523,14 +522,14 @@ func testVotingPower(t *testing.T, valSet *ValidatorSet) {
 		// total voting power can not be less than total staking power - precisionForSelection(1000)
 
 		//TODO: make test code for new voting power
-		//assert.True(t, valSet.TotalStakingPower()-voterSetSampling.TotalVotingPower() <= 1000)
+		// assert.True(t, valSet.TotalStakingPower()-voterSetSampling.TotalVotingPower() <= 1000)
 	}
 }
 
 func TestVotingPower(t *testing.T) {
 	vals := make([]*Validator, 100)
 	for i := 0; i < len(vals); i++ {
-		vals[i] = newValidator(tmrand.Bytes(32), 100)
+		vals[i] = newValidator(rand.Bytes(32), 100)
 	}
 	testVotingPower(t, NewValidatorSet(vals))
 	vals2 := make([]*Validator, 100)
@@ -766,7 +765,7 @@ func TestElectVotersNonDupIncludingZeroStakingPower(t *testing.T) {
 	winners1 := electVotersNonDup(candidates1.Validators, 0, 20, 0)
 	assert.True(t, isByzantineTolerable(winners1, 20))
 
-	//half of candidates has 0 priority
+	// half of candidates has 0 priority
 	candidates2 := newValidatorSet(100, func(i int) int64 {
 		if i < 50 {
 			return 0
@@ -1021,7 +1020,7 @@ func TestElectVoter(t *testing.T) {
 
 	candidates := validators.Validators
 
-	//if fail to voting, panic
+	// if fail to voting, panic
 	for i := range validators.Validators {
 		idx, winner := electVoter(&seed, candidates, i, total)
 		total -= winner.StakingPower
@@ -1118,7 +1117,7 @@ func TestElectVotersNonDupDistribution(t *testing.T) {
 	})
 	scores := make(map[string]int)
 	for i := 0; i < 100000; i++ {
-		//hash is distributed well
+		// hash is distributed well
 		hash := merkle.HashFromByteSlices([][]byte{
 			[]byte(strconv.Itoa(i)),
 		})
@@ -1143,7 +1142,7 @@ func TestElectVoterPanic(t *testing.T) {
 
 	candidates := validators.Validators
 
-	//vote when there is no candidates
+	// vote when there is no candidates
 	expectedResult := "Cannot find random sample."
 	defer func() {
 		pnc := recover()
@@ -1185,7 +1184,7 @@ func TestSortVoters(t *testing.T) {
 		// random voters descending
 		voters := newVotersWithRandomVotingPowerDescending(n, 100000, 100, 10)
 
-		//shuffle the voters
+		// shuffle the voters
 		shuffled := make([]*voter, len(voters))
 		copy(shuffled, voters)
 		for i := range shuffled {
@@ -1231,7 +1230,7 @@ func TestSortVotersWithSameValue(t *testing.T) {
 			n += 2
 		}
 
-		//shuffle the voters
+		// shuffle the voters
 		shuffled := make([]*voter, len(voters))
 		copy(shuffled, voters)
 		for i := range shuffled {

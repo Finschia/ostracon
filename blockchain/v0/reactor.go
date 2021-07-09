@@ -104,9 +104,12 @@ func (bcR *BlockchainReactor) SetLogger(l log.Logger) {
 func (bcR *BlockchainReactor) OnStart() error {
 	if bcR.fastSync {
 		// call BaseReactor's OnStart()
-		bcR.BaseReactor.OnStart()
+		err := bcR.BaseReactor.OnStart()
+		if err != nil {
+			return err
+		}
 
-		err := bcR.pool.Start()
+		err = bcR.pool.Start()
 		if err != nil {
 			return err
 		}

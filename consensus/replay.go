@@ -470,7 +470,14 @@ func (h *Handshaker) replayBlocks(
 			assertAppHashEqualsOneFromBlock(appHash, block)
 		}
 
-		appHash, err = sm.ExecCommitBlock(proxyApp.Consensus(), block, h.logger, h.stateStore, h.genDoc.InitialHeight, state.VoterParams)
+		appHash, err = sm.ExecCommitBlock(
+			proxyApp.Consensus(),
+			block,
+			h.logger,
+			h.stateStore,
+			h.genDoc.InitialHeight,
+			state.VoterParams,
+		)
 		if err != nil {
 			return nil, err
 		}

@@ -124,8 +124,15 @@ func (evpool *Pool) verify(evidence types.Evidence) error {
 //     - the common header from the full node has at least 1/3 voting power which is also present in
 //       the conflicting header's commit
 //     - the nodes trusted header at the same height as the conflicting header has a different hash
-func VerifyLightClientAttack(e *types.LightClientAttackEvidence, commonHeader, trustedHeader *types.SignedHeader,
-	commonVals *types.ValidatorSet, commonVoters *types.VoterSet, now time.Time, trustPeriod time.Duration, voterParams *types.VoterParams) error {
+func VerifyLightClientAttack(
+	e *types.LightClientAttackEvidence,
+	commonHeader, trustedHeader *types.SignedHeader,
+	commonVals *types.ValidatorSet,
+	commonVoters *types.VoterSet,
+	now time.Time,
+	trustPeriod time.Duration,
+	voterParams *types.VoterParams,
+) error {
 	// In the case of lunatic attack we need to perform a single verification jump between the
 	// common header and the conflicting one
 	if commonHeader.Height != trustedHeader.Height {
@@ -141,8 +148,12 @@ func VerifyLightClientAttack(e *types.LightClientAttackEvidence, commonHeader, t
 				" block to be correctly derived yet it wasn't")
 		}
 		// ensure that 2/3 of the voter set did vote for this block
-		if err := e.ConflictingBlock.VoterSet.VerifyCommitLight(trustedHeader.ChainID, e.ConflictingBlock.Commit.BlockID,
-			e.ConflictingBlock.Height, e.ConflictingBlock.Commit); err != nil {
+		if err := e.ConflictingBlock.VoterSet.VerifyCommitLight(
+			trustedHeader.ChainID,
+			e.ConflictingBlock.Commit.BlockID,
+			e.ConflictingBlock.Height,
+			e.ConflictingBlock.Commit,
+		); err != nil {
 			return fmt.Errorf("invalid commit from conflicting block: %w", err)
 		}
 	}

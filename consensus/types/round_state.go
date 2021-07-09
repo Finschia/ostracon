@@ -125,7 +125,7 @@ func (rs *RoundState) RoundStateSimple() RoundStateSimple {
 		Votes:             votesJSON,
 		Proposer: types.ValidatorInfo{
 			Address: addr,
-			Index:   int32(idx),
+			Index:   idx,
 		},
 	}
 }

@@ -178,13 +178,15 @@ func TestPubKeyComposite_VRFVerify(t *testing.T) {
 
 func TestEnvironmentalCompatibility(t *testing.T) {
 	t.Run("The same signature is generated from the same key binary for any runtime env", func(t *testing.T) {
-		privKeyJson := fmt.Sprintf(
-			"{\"type\":\"%s\",\"value\":{\"sign\":{\"type\":\"%s\",\"value\":\"%s\"},\"vrf\":{\"type\":\"%s\",\"value\":\"%s\"}}}",
+		privKeyJSON := fmt.Sprintf(
+			"{\"type\":\"%s\",\"value\":{"+
+				"\"sign\":{\"type\":\"%s\",\"value\":\"%s\"},"+
+				"\"vrf\":{\"type\":\"%s\",\"value\":\"%s\"}}}",
 			composite.PrivKeyName,
 			bls.PrivKeyName, "FXBs3F3g3FGyDY8P8ipK8t6jwFgJR/jvUnYwiKLWnYQ=",
 			ed25519.PrivKeyName, "IzLJPy6KFiEGbV7SvJAIUBzYbjOpgtdKU+RFsGWYknuTZdNPe6iQzthTvKj4ZU1rkLqXg6ofcej1/89NXexfww==")
 		compositePrivKey := composite.PrivKey{}
-		err := tmjson.Unmarshal([]byte(privKeyJson), &compositePrivKey)
+		err := tmjson.Unmarshal([]byte(privKeyJSON), &compositePrivKey)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -7,13 +7,11 @@ import (
 	coniksimpl "github.com/coniks-sys/coniks-go/crypto/vrf"
 )
 
-//nolint
 type vrfEd25519Coniks struct {
 	generatedHash  []byte
 	generatedProof []byte
 }
 
-//nolint
 func newVrfEd25519Coniks() *vrfEd25519Coniks {
 	return &vrfEd25519Coniks{nil, nil}
 }
@@ -28,7 +26,7 @@ func (base *vrfEd25519Coniks) Prove(privateKey []byte, message []byte) (Proof, e
 		return nil, errors.New("private key size is invalid")
 	}
 	coniksPrivKey := coniksimpl.PrivateKey(make([]byte, coniksimpl.PrivateKeySize))
-	copy(coniksPrivKey, privateKey[:])
+	copy(coniksPrivKey, privateKey)
 	hash, proof := coniksPrivKey.Prove(message)
 	base.generatedHash = hash
 	base.generatedProof = proof
@@ -46,7 +44,7 @@ func (base *vrfEd25519Coniks) Verify(publicKey []byte, proof Proof, message []by
 		return false, errors.New("public key size is invalid")
 	}
 	coniksPubKey := coniksimpl.PublicKey(make([]byte, coniksimpl.PublicKeySize))
-	copy(coniksPubKey, publicKey[:])
+	copy(coniksPubKey, publicKey)
 	return coniksPubKey.Verify(message, base.generatedHash, proof), nil
 }
 

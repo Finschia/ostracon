@@ -180,7 +180,15 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 	for i, tc := range testCases {
 		tc := tc
 		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
-			err := light.VerifyAdjacent(header, tc.newHeader, tc.newVals, tc.trustingPeriod, tc.now, maxClockDrift, types.DefaultVoterParams())
+			err := light.VerifyAdjacent(
+				header,
+				tc.newHeader,
+				tc.newVals,
+				tc.trustingPeriod,
+				tc.now,
+				maxClockDrift,
+				types.DefaultVoterParams(),
+			)
 			switch {
 			case tc.expErr != nil && assert.Error(t, err):
 				assert.Equal(t, tc.expErr, err)
