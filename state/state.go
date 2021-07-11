@@ -388,7 +388,7 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 		Validators:                  validatorSet,
 		Voters:                      types.SelectVoter(validatorSet, genDoc.Hash(), genDoc.VoterParams),
 		LastVoters:                  &types.VoterSet{Voters: []*types.Validator{}}, // Don't exist if LastBlockHeight==0
-		LastHeightValidatorsChanged: 1,
+		LastHeightValidatorsChanged: genDoc.InitialHeight,
 
 		ConsensusParams:                  *genDoc.ConsensusParams,
 		LastHeightConsensusParamsChanged: genDoc.InitialHeight,
