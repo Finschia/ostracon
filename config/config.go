@@ -555,6 +555,7 @@ type P2PConfig struct { //nolint: maligned
 	MempoolRecvBufSize    int `mapstructure:"mempool_recv_buf_size"`
 	ConsensusRecvBufSize  int `mapstructure:"consensus_recv_buf_size"`
 	BlockchainRecvBufSize int `mapstructure:"blockchain_recv_buf_size"`
+	StatesyncRecvBufSize  int `mapstructure:"statesync_recv_buf_size"`
 
 	// Testing params.
 	// Force dial to fail
@@ -590,6 +591,7 @@ func DefaultP2PConfig() *P2PConfig {
 		MempoolRecvBufSize:           1000,
 		ConsensusRecvBufSize:         1000,
 		BlockchainRecvBufSize:        1000,
+		StatesyncRecvBufSize:         1000,
 		TestDialFail:                 false,
 		TestFuzz:                     false,
 		TestFuzzConfig:               DefaultFuzzConnConfig(),

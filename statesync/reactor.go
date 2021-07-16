@@ -68,6 +68,11 @@ func (r *Reactor) GetChannels() []*p2p.ChannelDescriptor {
 
 // OnStart implements p2p.Reactor.
 func (r *Reactor) OnStart() error {
+	// call BaseReactor's OnStart()
+	err := r.BaseReactor.OnStart()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
