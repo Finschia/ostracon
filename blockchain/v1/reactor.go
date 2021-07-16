@@ -139,13 +139,14 @@ func (bcR *BlockchainReactor) SetLogger(l log.Logger) {
 // OnStart implements service.Service.
 func (bcR *BlockchainReactor) OnStart() error {
 	bcR.swReporter = behaviour.NewSwitchReporter(bcR.BaseReactor.Switch)
-	if bcR.fastSync {
-		// call BaseReactor's OnStart()
-		err := bcR.BaseReactor.OnStart()
-		if err != nil {
-			return err
-		}
 
+	// call BaseReactor's OnStart()
+	err := bcR.BaseReactor.OnStart()
+	if err != nil {
+		return err
+	}
+
+	if bcR.fastSync {
 		go bcR.poolRoutine()
 	}
 	return nil
