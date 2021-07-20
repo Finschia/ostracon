@@ -41,6 +41,7 @@ type lightClientStateProvider struct {
 	version       tmstate.Version
 	initialHeight int64
 	providers     map[lightprovider.Provider]string
+	voterParams   *types.VoterParams
 }
 
 // NewLightClientStateProvider creates a new StateProvider using a light client and RPC clients.
@@ -89,6 +90,7 @@ func NewLightClientStateProvider(
 		version:       version,
 		initialHeight: initialHeight,
 		providers:     providerRemotes,
+		voterParams:   voterParams,
 	}, nil
 }
 
@@ -195,6 +197,9 @@ func (s *lightClientStateProvider) State(ctx context.Context, height uint64) (sm
 	}
 	state.ConsensusParams = result.ConsensusParams
 	state.LastHeightConsensusParamsChanged = currentLightBlock.Height
+
+	// VoterParams
+	state.VoterParams = s.voterParams
 
 	return state, nil
 }
