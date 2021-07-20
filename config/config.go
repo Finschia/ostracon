@@ -589,7 +589,7 @@ func DefaultP2PConfig() *P2PConfig {
 		PexRecvBufSize:               1000,
 		EvidenceRecvBufSize:          1000,
 		MempoolRecvBufSize:           1000,
-		ConsensusRecvBufSize:         1000,
+		ConsensusRecvBufSize:         4000,
 		BlockchainRecvBufSize:        1000,
 		StatesyncRecvBufSize:         1000,
 		TestDialFail:                 false,
