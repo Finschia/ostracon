@@ -233,11 +233,11 @@ func (store dbStore) Bootstrap(state State) error {
 		return err
 	}
 
-	if err := store.saveVoterParams(height+1, state.VoterParams); err != nil {
+	if err := store.saveVoterParams(height, state.VoterParams); err != nil {
 		return err
 	}
 
-	if err := store.saveProofHash(height+1, state.LastProofHash); err != nil {
+	if err := store.saveProofHash(height, state.LastProofHash); err != nil {
 		return err
 	}
 	return store.db.SetSync(stateKey, state.Bytes())
