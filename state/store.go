@@ -212,14 +212,6 @@ func (store dbStore) Bootstrap(state State) error {
 		height = state.InitialHeight
 	}
 
-	if height > 1 && !state.LastVoters.IsNilOrEmpty() {
-		// TODO 🏺Can apply empty bytes for the ProofHash corresponding to LastValidators? and LastVoters as LastValidators?
-		vals := types.NewValidatorSet(state.LastVoters.Voters)
-		if err := store.saveValidatorsInfo(height-1, height-1, vals); err != nil {
-			return err
-		}
-	}
-
 	if err := store.saveValidatorsInfo(height, height, state.Validators); err != nil {
 		return err
 	}

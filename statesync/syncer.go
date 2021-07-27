@@ -123,9 +123,9 @@ func (s *syncer) RemovePeer(peer p2p.Peer) {
 }
 
 // SyncAny tries to sync any of the snapshots in the snapshot pool, waiting to discover further
-// snapshots if none were found and discoveryTime > 0. It returns the latest state and block commit
+// snapshots if none were found and discoveryTime > 0. It returns the latest state, previous state and block commit
 // which the caller must use to bootstrap the node.
-func (s *syncer) SyncAny(discoveryTime time.Duration) (sm.State, *types.Commit, error) {
+func (s *syncer) SyncAny(discoveryTime time.Duration) (sm.State, sm.State, *types.Commit, error) {
 	if discoveryTime > 0 {
 		s.logger.Info(fmt.Sprintf("Discovering snapshots for %v", discoveryTime))
 		time.Sleep(discoveryTime)
@@ -146,7 +146,7 @@ func (s *syncer) SyncAny(discoveryTime time.Duration) (sm.State, *types.Commit, 
 		}
 		if snapshot == nil {
 			if discoveryTime == 0 {
-				return sm.State{}, nil, errNoSnapshots
+				return sm.State{}, sm.State{}, nil, errNoSnapshots
 			}
 			s.logger.Info(fmt.Sprintf("Discovering snapshots for %v", discoveryTime))
 			time.Sleep(discoveryTime)
@@ -155,18 +155,18 @@ func (s *syncer) SyncAny(discoveryTime time.Duration) (sm.State, *types.Commit, 
 		if chunks == nil {
 			chunks, err = newChunkQueue(snapshot, s.tempDir)
 			if err != nil {
-				return sm.State{}, nil, fmt.Errorf("failed to create chunk queue: %w", err)
+				return sm.State{}, sm.State{}, nil, fmt.Errorf("failed to create chunk queue: %w", err)
 			}
 			defer chunks.Close() // in case we forget to close it elsewhere
 		}
 
-		newState, commit, err := s.Sync(snapshot, chunks)
+		newState, previousState, commit, err := s.Sync(snapshot, chunks)
 		switch {
 		case err == nil:
-			return newState, commit, nil
+			return newState, previousState, commit, nil
 
 		case errors.Is(err, errAbort):
-			return sm.State{}, nil, err
+			return sm.State{}, sm.State{}, nil, err
 
 		case errors.Is(err, errRetrySnapshot):
 			chunks.RetryAll()
@@ -197,7 +197,7 @@ func (s *syncer) SyncAny(discoveryTime time.Duration) (sm.State, *types.Commit, 
 			}
 
 		default:
-			return sm.State{}, nil, fmt.Errorf("snapshot restoration failed: %w", err)
+			return sm.State{}, sm.State{}, nil, fmt.Errorf("snapshot restoration failed: %w", err)
 		}
 
 		// Discard snapshot and chunks for next iteration
@@ -210,13 +210,13 @@ func (s *syncer) SyncAny(discoveryTime time.Duration) (sm.State, *types.Commit, 
 	}
 }
 
-// Sync executes a sync for a specific snapshot, returning the latest state and block commit which
+// Sync executes a sync for a specific snapshot, returning the latest state, previous state and block commit which
 // the caller must use to bootstrap the node.
-func (s *syncer) Sync(snapshot *snapshot, chunks *chunkQueue) (sm.State, *types.Commit, error) {
+func (s *syncer) Sync(snapshot *snapshot, chunks *chunkQueue) (sm.State, sm.State, *types.Commit, error) {
 	s.mtx.Lock()
 	if s.chunks != nil {
 		s.mtx.Unlock()
-		return sm.State{}, nil, errors.New("a state sync is already in progress")
+		return sm.State{}, sm.State{}, nil, errors.New("a state sync is already in progress")
 	}
 	s.chunks = chunks
 	s.mtx.Unlock()
@@ -229,7 +229,7 @@ func (s *syncer) Sync(snapshot *snapshot, chunks *chunkQueue) (sm.State, *types.
 	// Offer snapshot to ABCI app.
 	err := s.offerSnapshot(snapshot)
 	if err != nil {
-		return sm.State{}, nil, err
+		return sm.State{}, sm.State{}, nil, err
 	}
 
 	// Spawn chunk fetchers. They will terminate when the chunk queue is closed or context cancelled.
@@ -245,31 +245,41 @@ func (s *syncer) Sync(snapshot *snapshot, chunks *chunkQueue) (sm.State, *types.
 	// Optimistically build new state, so we don't discover any light client failures at the end.
 	state, err := s.stateProvider.State(pctx, snapshot.Height)
 	if err != nil {
-		return sm.State{}, nil, fmt.Errorf("failed to build new state: %w", err)
+		return sm.State{}, sm.State{}, nil, fmt.Errorf("failed to build new state: %w", err)
+	}
+	var previousState sm.State
+	if snapshot.Height-1 < 1 {
+		previousState = sm.State{}
+	} else {
+		previousState, err = s.stateProvider.State(pctx, snapshot.Height-1)
+		if err != nil {
+			return sm.State{}, sm.State{}, nil, fmt.Errorf("failed to build new prvious state: %w", err)
+		}
 	}
 	commit, err := s.stateProvider.Commit(pctx, snapshot.Height)
 	if err != nil {
-		return sm.State{}, nil, fmt.Errorf("failed to fetch commit: %w", err)
+		return sm.State{}, sm.State{}, nil, fmt.Errorf("failed to fetch commit: %w", err)
 	}
 
 	// Restore snapshot
 	err = s.applyChunks(chunks)
 	if err != nil {
-		return sm.State{}, nil, err
+		return sm.State{}, sm.State{}, nil, err
 	}
 
 	// Verify app and update app version
 	appVersion, err := s.verifyApp(snapshot)
 	if err != nil {
-		return sm.State{}, nil, err
+		return sm.State{}, sm.State{}, nil, err
 	}
 	state.Version.Consensus.App = appVersion
+	previousState.Version.Consensus.App = appVersion
 
 	// Done! 🎉
 	s.logger.Info("Snapshot restored", "height", snapshot.Height, "format", snapshot.Format,
 		"hash", snapshot.Hash)
 
-	return state, commit, nil
+	return state, previousState, commit, nil
 }
 
 // offerSnapshot offers a snapshot to the app. It returns various errors depending on the app's

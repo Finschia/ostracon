@@ -593,10 +593,17 @@ func startStateSync(ssR *statesync.Reactor, bcR fastSyncReactor, conR *cs.Reacto
 	}
 
 	go func() {
-		state, commit, err := ssR.Sync(stateProvider, config.DiscoveryTime)
+		state, previousState, commit, err := ssR.Sync(stateProvider, config.DiscoveryTime)
 		if err != nil {
 			ssR.Logger.Error("State sync failed", "err", err)
 			return
+		}
+		if previousState.LastBlockHeight > 0 {
+			err = stateStore.Bootstrap(previousState)
+			if err != nil {
+				ssR.Logger.Error("Failed to bootstrap node with previous state", "err", err)
+				return
+			}
 		}
 		err = stateStore.Bootstrap(state)
 		if err != nil {
