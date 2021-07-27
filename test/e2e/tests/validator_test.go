@@ -47,8 +47,26 @@ func TestValidator_Sets(t *testing.T) {
 					break
 				}
 			}
-			require.Equal(t, valSchedule.Set.Validators, validators,
-				"incorrect validator set at height %v", h)
+
+			for i := 0; i < len(validators); i++ {
+				expected := valSchedule.Set.Validators[i]
+				actual := validators[i]
+				require.Equal(t, expected.Address, actual.Address,
+					"incorrect Address of validator set at height %v", h)
+				require.Equal(t, expected.PubKey, actual.PubKey,
+					"incorrect PubKey of validator set at height %v", h)
+				require.Equal(t, expected.StakingPower, actual.StakingPower,
+					"incorrect StakingPower of validator set at height %v", h)
+				// VotingPower is set StakingPower
+				require.Equal(t, expected.StakingPower, actual.VotingPower,
+					"incorrect VotingPower of validator set at height %v", h)
+				if expected.ProposerPriority == 0 {
+					// ProposerPriority is not changed
+					// the other value can ignore since we don't use it
+					require.Equal(t, expected.ProposerPriority, actual.ProposerPriority,
+						"incorrect ProposerPriority of validator set at height %v", h)
+				}
+			}
 			valSchedule.Increment(1)
 		}
 	})
@@ -57,6 +75,7 @@ func TestValidator_Sets(t *testing.T) {
 // Tests that a validator proposes blocks when it's supposed to. It tolerates some
 // missed blocks, e.g. due to testnet perturbations.
 func TestValidator_Propose(t *testing.T) {
+	t.Skip("NON-deterministic test: SelectProposer is not well since valSchedule.Set is changed")
 	blocks := fetchBlockChain(t)
 	testNode(t, func(t *testing.T, node e2e.Node) {
 		if node.Mode != e2e.ModeValidator {
@@ -82,6 +101,8 @@ func TestValidator_Propose(t *testing.T) {
 		require.False(t, proposeCount == 0 && expectCount > 0,
 			"node did not propose any blocks (expected %v)", expectCount)
 		if expectCount > 5 {
+			// We changed round-robin selection of proposer
+			// High probability of not being a proposer within 5 blocks
 			require.GreaterOrEqual(t, proposeCount, 3, "validator didn't propose even 3 blocks")
 		}
 	})
