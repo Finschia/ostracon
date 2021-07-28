@@ -407,11 +407,30 @@ func createBlockchainReactor(config *cfg.Config,
 
 	switch config.FastSync.Version {
 	case "v0":
-		bcReactor = bcv0.NewBlockchainReactor(state.Copy(), blockExec, blockStore, fastSync, config.P2P.RecvAsync, config.P2P.BlockchainRecvBufSize)
+		bcReactor = bcv0.NewBlockchainReactor(
+			state.Copy(),
+			blockExec,
+			blockStore,
+			fastSync,
+			config.P2P.RecvAsync,
+			config.P2P.BlockchainRecvBufSize,
+		)
 	case "v1":
-		bcReactor = bcv1.NewBlockchainReactor(state.Copy(), blockExec, blockStore, fastSync, config.P2P.RecvAsync, config.P2P.BlockchainRecvBufSize)
+		bcReactor = bcv1.NewBlockchainReactor(
+			state.Copy(),
+			blockExec,
+			blockStore,
+			fastSync,
+			config.P2P.RecvAsync,
+			config.P2P.BlockchainRecvBufSize,
+		)
 	case "v2":
-		bcReactor = bcv2.NewBlockchainReactor(state.Copy(), blockExec, blockStore, fastSync)
+		bcReactor = bcv2.NewBlockchainReactor(
+			state.Copy(),
+			blockExec,
+			blockStore,
+			fastSync,
+		)
 	default:
 		return nil, fmt.Errorf("unknown fastsync version %s", config.FastSync.Version)
 	}
@@ -629,7 +648,7 @@ func startStateSync(ssR *statesync.Reactor, bcR fastSyncReactor, conR *cs.Reacto
 	}
 
 	go func() {
-		state, commit, err := ssR.Sync(stateProvider, config.DiscoveryTime)
+		state, _, commit, err := ssR.Sync(stateProvider, config.DiscoveryTime)
 		if err != nil {
 			ssR.Logger.Error("State sync failed", "err", err)
 			return

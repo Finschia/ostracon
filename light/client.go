@@ -58,12 +58,13 @@ func SequentialVerification() Option {
 // which must sign the new header in order for us to trust it. NOTE this only
 // applies to non-adjacent headers. For adjacent headers, sequential
 // verification is used.
+// Deprecated:
 func SkippingVerification(trustLevel tmmath.Fraction) Option {
 	panic("lite client cannot use skipping verification under selection of voters")
-	return func(c *Client) {
-		c.verificationMode = skipping
-		c.trustLevel = trustLevel
-	}
+	//	return func(c *Client) {
+	//		c.verificationMode = skipping
+	//		c.trustLevel = trustLeveldetector_test
+	// 	}
 }
 
 // PruningSize option sets the maximum amount of light blocks that the light
@@ -169,7 +170,15 @@ func NewClient(
 		return nil, fmt.Errorf("invalid TrustOptions: %w", err)
 	}
 
-	c, err := NewClientFromTrustedStore(chainID, trustOptions.Period, primary, witnesses, trustedStore, voterParams, options...)
+	c, err := NewClientFromTrustedStore(
+		chainID,
+		trustOptions.Period,
+		primary,
+		witnesses,
+		trustedStore,
+		voterParams,
+		options...,
+	)
 	if err != nil {
 		return nil, err
 	}

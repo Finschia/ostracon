@@ -107,7 +107,12 @@ func TestByzantinePrevoteEquivocation(t *testing.T) {
 	blocksSubs := make([]types.Subscription, 0)
 	eventBuses := make([]*types.EventBus, nValidators)
 	for i := 0; i < nValidators; i++ {
-		reactors[i] = NewReactor(css[i], true, config.P2P.RecvAsync, config.P2P.ConsensusRecvBufSize) // so we dont start the consensus states
+		reactors[i] = NewReactor(
+			css[i],
+			true,
+			config.P2P.RecvAsync,
+			config.P2P.ConsensusRecvBufSize,
+		) // so we dont start the consensus states
 		reactors[i].SetLogger(css[i].Logger)
 
 		// eventBus is already started with the cs

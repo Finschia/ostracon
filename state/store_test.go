@@ -46,6 +46,19 @@ func TestStoreLoadValidators(t *testing.T) {
 	assert.NotZero(t, loadedVals.Size())
 }
 
+func TestStoreLoadVoters(t *testing.T) {
+	stateDB := dbm.NewMemDB()
+	stateStore := sm.NewStore(stateDB)
+	val, _ := types.RandValidator(true, 10)
+	vals := types.NewValidatorSet([]*types.Validator{val})
+
+	err := stateStore.Save(createState(1, 1, 1, vals))
+	require.NoError(t, err)
+	loadedVoters, err := stateStore.LoadVoters(1, nil)
+	require.NoError(t, err)
+	assert.NotZero(t, loadedVoters.Size())
+}
+
 func BenchmarkLoadValidators(b *testing.B) {
 	const valSetSize = 100
 
@@ -83,6 +96,30 @@ func BenchmarkLoadValidators(b *testing.B) {
 			}
 		})
 	}
+}
+
+func createState(height, valsChanged, paramsChanged int64, validatorSet *types.ValidatorSet) sm.State {
+	if height < 1 {
+		panic(height)
+	}
+	state := sm.State{
+		InitialHeight:   1,
+		VoterParams:     types.DefaultVoterParams(),
+		LastBlockHeight: height - 1,
+		Validators:      validatorSet,
+		NextValidators:  validatorSet,
+		Voters:          types.ToVoterAll(validatorSet.Validators),
+		ConsensusParams: tmproto.ConsensusParams{
+			Block: tmproto.BlockParams{MaxBytes: 10e6},
+		},
+		LastHeightValidatorsChanged:      valsChanged,
+		LastHeightConsensusParamsChanged: paramsChanged,
+		LastProofHash:                    []byte{0},
+	}
+	if state.LastBlockHeight >= 1 {
+		state.LastVoters = state.Voters
+	}
+	return state
 }
 
 func TestPruneStates(t *testing.T) {
@@ -129,23 +166,7 @@ func TestPruneStates(t *testing.T) {
 					paramsChanged = h
 				}
 
-				state := sm.State{
-					InitialHeight:   1,
-					LastBlockHeight: h - 1,
-					Validators:      validatorSet,
-					NextValidators:  validatorSet,
-					Voters:          types.ToVoterAll(validatorSet.Validators),
-					ConsensusParams: tmproto.ConsensusParams{
-						Block: tmproto.BlockParams{MaxBytes: 10e6},
-					},
-					LastHeightValidatorsChanged:      valsChanged,
-					LastHeightConsensusParamsChanged: paramsChanged,
-					LastProofHash:                    []byte{},
-				}
-
-				if state.LastBlockHeight >= 1 {
-					state.LastVoters = state.Voters
-				}
+				state := createState(h, valsChanged, paramsChanged, validatorSet)
 
 				err := stateStore.Save(state)
 				require.NoError(t, err)

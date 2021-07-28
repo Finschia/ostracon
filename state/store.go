@@ -29,6 +29,10 @@ func calcValidatorsKey(height int64) []byte {
 	return []byte(fmt.Sprintf("validatorsKey:%v", height))
 }
 
+func calcVoterParamsKey(height int64) []byte {
+	return []byte(fmt.Sprintf("voterParamsKey:%v", height))
+}
+
 func calcProofHashKey(height int64) []byte {
 	return []byte(fmt.Sprintf("proofHashKey:%v", height))
 }
@@ -184,8 +188,13 @@ func (store dbStore) save(state State, key []byte) error {
 		return err
 	}
 
+	// Save current voter param
+	if err := store.saveVoterParams(nextHeight, state.VoterParams); err != nil {
+		return err
+	}
+
 	// Save current proof hash
-	if err := store.db.Set(calcProofHashKey(nextHeight), state.LastProofHash); err != nil {
+	if err := store.saveProofHash(nextHeight, state.LastProofHash); err != nil {
 		return err
 	}
 
@@ -203,14 +212,6 @@ func (store dbStore) Bootstrap(state State) error {
 		height = state.InitialHeight
 	}
 
-	if height > 1 && !state.LastVoters.IsNilOrEmpty() {
-		// TODO 🏺Can apply empty bytes for the ProofHash corresponding to LastValidators? and LastVoters as LastValidators?
-		vals := types.NewValidatorSet(state.LastVoters.Voters)
-		if err := store.saveValidatorsInfo(height-1, height-1, vals); err != nil {
-			return err
-		}
-	}
-
 	if err := store.saveValidatorsInfo(height, height, state.Validators); err != nil {
 		return err
 	}
@@ -224,7 +225,11 @@ func (store dbStore) Bootstrap(state State) error {
 		return err
 	}
 
-	if err := store.db.Set(calcProofHashKey(height+1), state.LastProofHash); err != nil {
+	if err := store.saveVoterParams(height, state.VoterParams); err != nil {
+		return err
+	}
+
+	if err := store.saveProofHash(height, state.LastProofHash); err != nil {
 		return err
 	}
 	return store.db.SetSync(stateKey, state.Bytes())
@@ -434,6 +439,9 @@ func (store dbStore) SaveABCIResponses(height int64, abciResponses *tmstate.ABCI
 // LoadValidators loads the ValidatorSet for a given height.
 // Returns ErrNoValSetForHeight if the validator set can't be found for this height.
 func (store dbStore) LoadValidators(height int64) (*types.ValidatorSet, error) {
+	if height == 0 {
+		return nil, ErrNoValSetForHeight{height}
+	}
 	valInfo, err := loadValidatorsInfo(store.db, height)
 	if err != nil || valInfo == nil {
 		return nil, ErrNoValSetForHeight{height}
@@ -478,6 +486,9 @@ func (store dbStore) LoadValidators(height int64) (*types.ValidatorSet, error) {
 // We cannot get the voters for latest height, because we save next validators for latest height+1 and
 // proof hash for latest height
 func (store dbStore) LoadVoters(height int64, voterParams *types.VoterParams) (*types.VoterSet, error) {
+	if height == 0 {
+		return nil, ErrNoValSetForHeight{height}
+	}
 	valInfo, err := loadValidatorsInfo(store.db, height)
 	if err != nil || valInfo == nil {
 		return nil, ErrNoValSetForHeight{height}
@@ -514,13 +525,15 @@ func (store dbStore) LoadVoters(height int64, voterParams *types.VoterParams) (*
 		return nil, err
 	}
 
-	proofHash, err := store.db.Get(calcProofHashKey(height))
-	if err != nil {
-		// DATA HAS BEEN CORRUPTED OR THE SPEC HAS CHANGED
-		tmos.Exit(fmt.Sprintf(`LoadValidators: ProofHash has been corrupted or its spec has changed:
-                %v\n`, err))
+	if voterParams == nil {
+		voterParams, err = loadVoterParams(store.db, height)
+		if err != nil {
+			return nil, ErrNoVoterParamsForHeight{height}
+		}
 	}
-	if len(proofHash) == 0 {
+
+	proofHash, err := loadProofHash(store.db, height)
+	if err != nil {
 		return nil, ErrNoProofHashForHeight{height}
 	}
 
@@ -540,14 +553,14 @@ func loadValidatorsInfo(db dbm.DB, height int64) (*tmstate.ValidatorsInfo, error
 	}
 
 	if len(buf) == 0 {
-		return nil, errors.New("value retrieved from db is empty")
+		return nil, errors.New("loadValidatorsInfo: value retrieved from db is empty")
 	}
 
 	v := new(tmstate.ValidatorsInfo)
 	err = v.Unmarshal(buf)
 	if err != nil {
 		// DATA HAS BEEN CORRUPTED OR THE SPEC HAS CHANGED
-		tmos.Exit(fmt.Sprintf(`LoadValidators: Data has been corrupted or its spec has changed:
+		tmos.Exit(fmt.Sprintf(`loadValidatorsInfo: Data has been corrupted or its spec has changed:
                 %v\n`, err))
 	}
 	// TODO: ensure that buf is completely read.
@@ -587,6 +600,59 @@ func (store dbStore) saveValidatorsInfo(height, lastHeightChanged int64, valSet 
 		return err
 	}
 
+	return nil
+}
+
+func loadVoterParams(db dbm.DB, height int64) (*types.VoterParams, error) {
+	buf, err := db.Get(calcVoterParamsKey(height))
+	if err != nil {
+		return nil, err
+	}
+
+	if len(buf) == 0 {
+		return nil, errors.New("loadVoterParams: value retrieved from db is empty")
+	}
+
+	v := new(tmproto.VoterParams)
+	err = v.Unmarshal(buf)
+	if err != nil {
+		// DATA HAS BEEN CORRUPTED OR THE SPEC HAS CHANGED
+		tmos.Exit(fmt.Sprintf(`loadVoterParams: Data has been corrupted or its spec has changed:
+                %v\n`, err))
+	}
+
+	return types.VoterParamsFromProto(v), nil
+}
+
+func (store dbStore) saveVoterParams(height int64, voterParams *types.VoterParams) error {
+	bz, err := voterParams.ToProto().Marshal()
+	if err != nil {
+		return err
+	}
+	if err := store.db.Set(calcVoterParamsKey(height), bz); err != nil {
+		return err
+	}
+	return nil
+}
+
+func loadProofHash(db dbm.DB, height int64) ([]byte, error) {
+	buf, err := db.Get(calcProofHashKey(height))
+	if err != nil {
+		// DATA HAS BEEN CORRUPTED OR THE SPEC HAS CHANGED
+		tmos.Exit(fmt.Sprintf(`LoadValidators: ProofHash has been corrupted or its spec has changed:
+                %v\n`, err))
+	}
+	if len(buf) == 0 {
+		return nil, ErrNoProofHashForHeight{height}
+	}
+
+	return buf, nil
+}
+
+func (store dbStore) saveProofHash(height int64, proofHash []byte) error {
+	if err := store.db.Set(calcProofHashKey(height), proofHash); err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -54,8 +54,15 @@ func TestEvidencePoolBasic(t *testing.T) {
 	blockStore.On("LoadBlockMeta", mock.AnythingOfType("int64")).Return(
 		&types.BlockMeta{Header: types.Header{Time: defaultEvidenceTime}},
 	)
-	stateStore.On("LoadValidators", mock.AnythingOfType("int64")).Return(valSet, nil)
-	stateStore.On("LoadVoters", mock.AnythingOfType("int64"), mock.AnythingOfType("*types.VoterParams")).Return(voterSet, nil)
+	stateStore.On(
+		"LoadValidators",
+		mock.AnythingOfType("int64"),
+	).Return(valSet, nil)
+	stateStore.On(
+		"LoadVoters",
+		mock.AnythingOfType("int64"),
+		mock.AnythingOfType("*types.VoterParams"),
+	).Return(voterSet, nil)
 	stateStore.On("Load").Return(createState(height+1, valSet), nil)
 
 	pool, err := evidence.NewPool(evidenceDB, stateStore, blockStore)

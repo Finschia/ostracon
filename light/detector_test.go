@@ -18,7 +18,8 @@ import (
 )
 
 func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
-	t.Skip("Voter selection in Ostracon only supports sequential verification mode, but Tendermint has a few test case for skipping mode.")
+	t.Skip("Voter selection in Ostracon only supports sequential verification mode, " +
+		"but Tendermint has a few test case for skipping mode.")
 	// primary performs a lunatic attack
 	var (
 		latestHeight      = int64(10)
@@ -29,7 +30,8 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 		primaryVoters     = make(map[int64]*types.VoterSet, latestHeight)
 	)
 
-	witnessHeaders, witnessValidators, witnessVoters, chainKeys := genMockNodeWithKeys(chainID, latestHeight, valSize, 2, bTime)
+	witnessHeaders, witnessValidators, witnessVoters, chainKeys :=
+		genMockNodeWithKeys(chainID, latestHeight, valSize, 2, bTime)
 	witness := mockp.New(chainID, witnessHeaders, witnessValidators, witnessVoters)
 	forgedKeys := chainKeys[divergenceHeight-1].ChangeKeys(3) // we change 3 out of the 5 validators (still 2/5 remain)
 	forgedVals := forgedKeys.ToValidators(2, 0)
@@ -45,7 +47,11 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 			nil, forgedVals, forgedVals, hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(forgedKeys),
 			types.DefaultVoterParams())
 		primaryValidators[height] = forgedVals
-		primaryVoters[height] = types.SelectVoter(primaryValidators[height], proofHash(primaryHeaders[height]), types.DefaultVoterParams())
+		primaryVoters[height] = types.SelectVoter(
+			primaryValidators[height],
+			proofHash(primaryHeaders[height]),
+			types.DefaultVoterParams(),
+		)
 	}
 
 	primary := mockp.New(chainID, primaryHeaders, primaryValidators, primaryVoters)
@@ -99,7 +105,8 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 }
 
 func TestLightClientAttackEvidence_Equivocation(t *testing.T) {
-	t.Skip("Voter selection in Ostracon only supports sequential verification mode, but Tendermint has a few test case for skipping mode.")
+	t.Skip("Voter selection in Ostracon only supports sequential verification mode, " +
+		"but Tendermint has a few test case for skipping mode.")
 	verificationOptions := map[string]light.Option{
 		"sequential": light.SequentialVerification(),
 		"skipping":   light.SkippingVerification(light.DefaultTrustLevel),
@@ -118,7 +125,8 @@ func TestLightClientAttackEvidence_Equivocation(t *testing.T) {
 			primaryVoters     = make(map[int64]*types.VoterSet, latestHeight)
 		)
 		// validators don't change in this network (however we still use a map just for convenience)
-		witnessHeaders, witnessValidators, witnessVoters, chainKeys := genMockNodeWithKeys(chainID, latestHeight+2, valSize, 2, bTime)
+		witnessHeaders, witnessValidators, witnessVoters, chainKeys :=
+			genMockNodeWithKeys(chainID, latestHeight+2, valSize, 2, bTime)
 		witness := mockp.New(chainID, witnessHeaders, witnessValidators, witnessVoters)
 
 		for height := int64(1); height <= latestHeight; height++ {

@@ -46,8 +46,28 @@ func TestMaxEvidenceBytes(t *testing.T) {
 			TotalVotingPower: math.MaxInt64,
 			ValidatorPower:   math.MaxInt64,
 			Timestamp:        timestamp,
-			VoteA:            makeVote(t, val, chainID, math.MaxInt32, math.MaxInt64, math.MaxInt32, tmproto.ProposalType, blockID, timestamp),
-			VoteB:            makeVote(t, val, chainID, math.MaxInt32, math.MaxInt64, math.MaxInt32, tmproto.ProposalType, blockID2, timestamp),
+			VoteA: makeVote(
+				t,
+				val,
+				chainID,
+				math.MaxInt32,
+				math.MaxInt64,
+				math.MaxInt32,
+				tmproto.ProposalType,
+				blockID,
+				timestamp,
+			),
+			VoteB: makeVote(
+				t,
+				val,
+				chainID,
+				math.MaxInt32,
+				math.MaxInt64,
+				math.MaxInt32,
+				tmproto.ProposalType,
+				blockID2,
+				timestamp,
+			),
 		}
 
 		bz, err := ev.ToProto().Marshal()
@@ -62,8 +82,28 @@ func randomDuplicatedVoteEvidence(keyType PrivKeyType, t *testing.T) *DuplicateV
 	blockID2 := makeBlockID([]byte("blockhash2"), 1000, []byte("partshash"))
 	const chainID = "mychain"
 	return &DuplicateVoteEvidence{
-		VoteA:            makeVote(t, val, chainID, 0, 10, 2, tmproto.PrevoteType, blockID, defaultVoteTime),
-		VoteB:            makeVote(t, val, chainID, 0, 10, 2, tmproto.PrevoteType, blockID2, defaultVoteTime.Add(1*time.Minute)),
+		VoteA: makeVote(
+			t,
+			val,
+			chainID,
+			0,
+			10,
+			2,
+			tmproto.PrevoteType,
+			blockID,
+			defaultVoteTime,
+		),
+		VoteB: makeVote(
+			t,
+			val,
+			chainID,
+			0,
+			10,
+			2,
+			tmproto.PrevoteType,
+			blockID2,
+			defaultVoteTime.Add(1*time.Minute),
+		),
 		TotalVotingPower: 30,
 		ValidatorPower:   10,
 		Timestamp:        defaultVoteTime,
@@ -104,7 +144,17 @@ func TestDuplicateVoteEvidenceValidation(t *testing.T) {
 				ev.VoteB = nil
 			}, true},
 			{"Invalid vote type", func(ev *DuplicateVoteEvidence) {
-				ev.VoteA = makeVote(t, val, chainID, math.MaxInt32, math.MaxInt64, math.MaxInt32, tmproto.UnknownType, blockID2, defaultVoteTime)
+				ev.VoteA = makeVote(
+					t,
+					val,
+					chainID,
+					math.MaxInt32,
+					math.MaxInt64,
+					math.MaxInt32,
+					tmproto.UnknownType,
+					blockID2,
+					defaultVoteTime,
+				)
 			}, true},
 			{"Invalid vote order", func(ev *DuplicateVoteEvidence) {
 				swap := ev.VoteA.Copy()
@@ -115,8 +165,28 @@ func TestDuplicateVoteEvidenceValidation(t *testing.T) {
 		for _, tc := range testCases {
 			tc := tc
 			t.Run(tc.testName, func(t *testing.T) {
-				vote1 := makeVote(t, val, chainID, math.MaxInt32, math.MaxInt64, math.MaxInt32, tmproto.PrecommitType, blockID, defaultVoteTime)
-				vote2 := makeVote(t, val, chainID, math.MaxInt32, math.MaxInt64, math.MaxInt32, tmproto.PrecommitType, blockID2, defaultVoteTime)
+				vote1 := makeVote(
+					t,
+					val,
+					chainID,
+					math.MaxInt32,
+					math.MaxInt64,
+					math.MaxInt32,
+					tmproto.PrecommitType,
+					blockID,
+					defaultVoteTime,
+				)
+				vote2 := makeVote(
+					t,
+					val,
+					chainID,
+					math.MaxInt32,
+					math.MaxInt64,
+					math.MaxInt32,
+					tmproto.PrecommitType,
+					blockID2,
+					defaultVoteTime,
+				)
 				valSet := WrapValidatorsToVoterSet([]*Validator{val.ExtractIntoValidator(10)})
 				ev := NewDuplicateVoteEvidence(vote1, vote2, defaultVoteTime, valSet)
 				tc.malleateEvidence(ev)
@@ -256,8 +326,16 @@ func TestMockEvidenceValidateBasic(t *testing.T) {
 }
 
 func makeVote(
-	t *testing.T, val PrivValidator, chainID string, valIndex int32, height int64, round int32, step tmproto.SignedMsgType, blockID BlockID,
-	time time.Time) *Vote {
+	t *testing.T,
+	val PrivValidator,
+	chainID string,
+	valIndex int32,
+	height int64,
+	round int32,
+	step tmproto.SignedMsgType,
+	blockID BlockID,
+	time time.Time,
+) *Vote {
 	pubKey, err := val.GetPubKey()
 	require.NoError(t, err)
 	v := &Vote{

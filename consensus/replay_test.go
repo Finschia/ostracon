@@ -1,4 +1,3 @@
-
 package consensus
 
 import (
@@ -523,7 +522,6 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	newVssIdx := valIndexFn(nVals)
 	newVss[newVssIdx].VotingPower = 25
 	sort.Sort(ValidatorStubsByPower(newVss))
-	selfIndex = valIndexFn(0)
 
 	// height 6
 	height++

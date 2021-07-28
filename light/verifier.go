@@ -51,13 +51,13 @@ func VerifyNonAdjacent(
 
 	proofHash, err := vrf.ProofToHash(trustedHeader.Proof.Bytes())
 	if err != nil {
-		return errors.New(fmt.Sprintf("invalid proof: %s", err.Error()))
+		return fmt.Errorf("invalid proof: %s", err.Error())
 	}
 	trustedVoters := types.SelectVoter(trustedVals, proofHash, voterParams)
 
 	proofHash, err = vrf.ProofToHash(untrustedHeader.Proof.Bytes())
 	if err != nil {
-		return errors.New(fmt.Sprintf("invalid proof: %s", err.Error()))
+		return fmt.Errorf("invalid proof: %s", err.Error())
 	}
 	untrustedVoters := types.SelectVoter(untrustedVals, proofHash, voterParams)
 
@@ -123,7 +123,7 @@ func VerifyAdjacent(
 
 	proofHash, err := vrf.ProofToHash(untrustedHeader.Proof.Bytes())
 	if err != nil {
-		return errors.New(fmt.Sprintf("invalid proof: %s", err.Error()))
+		return fmt.Errorf("invalid proof: %s", err.Error())
 	}
 	untrustedVoters := types.SelectVoter(untrustedVals, proofHash, voterParams)
 	if err := verifyNewHeaderAndVoters(

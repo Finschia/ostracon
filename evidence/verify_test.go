@@ -81,19 +81,43 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 	}
 
 	// good pass -> no error
-	err = evidence.VerifyLightClientAttack(ev, commonSignedHeader, trustedSignedHeader, commonVals, commonVoters,
-		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour, types.DefaultVoterParams())
+	err = evidence.VerifyLightClientAttack(
+		ev,
+		commonSignedHeader,
+		trustedSignedHeader,
+		commonVals,
+		commonVoters,
+		defaultEvidenceTime.Add(2*time.Hour),
+		3*time.Hour,
+		types.DefaultVoterParams(),
+	)
 	assert.NoError(t, err)
 
 	// trusted and conflicting hashes are the same -> an error should be returned
-	err = evidence.VerifyLightClientAttack(ev, commonSignedHeader, ev.ConflictingBlock.SignedHeader, commonVals, commonVoters,
-		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour, types.DefaultVoterParams())
+	err = evidence.VerifyLightClientAttack(
+		ev,
+		commonSignedHeader,
+		ev.ConflictingBlock.SignedHeader,
+		commonVals,
+		commonVoters,
+		defaultEvidenceTime.Add(2*time.Hour),
+		3*time.Hour,
+		types.DefaultVoterParams(),
+	)
 	assert.Error(t, err)
 
 	// evidence with different total validator power should fail
 	ev.TotalVotingPower = 1
-	err = evidence.VerifyLightClientAttack(ev, commonSignedHeader, trustedSignedHeader, commonVals, commonVoters,
-		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour, types.DefaultVoterParams())
+	err = evidence.VerifyLightClientAttack(
+		ev,
+		commonSignedHeader,
+		trustedSignedHeader,
+		commonVals,
+		commonVoters,
+		defaultEvidenceTime.Add(2*time.Hour),
+		3*time.Hour,
+		types.DefaultVoterParams(),
+	)
 	assert.Error(t, err)
 	ev.TotalVotingPower = 20
 
@@ -182,13 +206,29 @@ func TestVerifyLightClientAttack_Equivocation(t *testing.T) {
 	}
 
 	// good pass -> no error
-	err = evidence.VerifyLightClientAttack(ev, trustedSignedHeader, trustedSignedHeader, conflictingVals, conflictingVoters,
-		defaultEvidenceTime.Add(1*time.Minute), 2*time.Hour, types.DefaultVoterParams())
+	err = evidence.VerifyLightClientAttack(
+		ev,
+		trustedSignedHeader,
+		trustedSignedHeader,
+		conflictingVals,
+		conflictingVoters,
+		defaultEvidenceTime.Add(1*time.Minute),
+		2*time.Hour,
+		types.DefaultVoterParams(),
+	)
 	assert.NoError(t, err)
 
 	// trusted and conflicting hashes are the same -> an error should be returned
-	err = evidence.VerifyLightClientAttack(ev, trustedSignedHeader, ev.ConflictingBlock.SignedHeader, conflictingVals, conflictingVoters,
-		defaultEvidenceTime.Add(1*time.Minute), 2*time.Hour, types.DefaultVoterParams())
+	err = evidence.VerifyLightClientAttack(
+		ev,
+		trustedSignedHeader,
+		ev.ConflictingBlock.SignedHeader,
+		conflictingVals,
+		conflictingVoters,
+		defaultEvidenceTime.Add(1*time.Minute),
+		2*time.Hour,
+		types.DefaultVoterParams(),
+	)
 	assert.Error(t, err)
 
 	// conflicting header has different next validators hash which should have been correctly derived from
@@ -268,13 +308,29 @@ func TestVerifyLightClientAttack_Amnesia(t *testing.T) {
 	}
 
 	// good pass -> no error
-	err = evidence.VerifyLightClientAttack(ev, trustedSignedHeader, trustedSignedHeader, conflictingVals, conflictingVoters,
-		defaultEvidenceTime.Add(1*time.Minute), 2*time.Hour, types.DefaultVoterParams())
+	err = evidence.VerifyLightClientAttack(
+		ev,
+		trustedSignedHeader,
+		trustedSignedHeader,
+		conflictingVals,
+		conflictingVoters,
+		defaultEvidenceTime.Add(1*time.Minute),
+		2*time.Hour,
+		types.DefaultVoterParams(),
+	)
 	assert.NoError(t, err)
 
 	// trusted and conflicting hashes are the same -> an error should be returned
-	err = evidence.VerifyLightClientAttack(ev, trustedSignedHeader, ev.ConflictingBlock.SignedHeader, conflictingVals, conflictingVoters,
-		defaultEvidenceTime.Add(1*time.Minute), 2*time.Hour, types.DefaultVoterParams())
+	err = evidence.VerifyLightClientAttack(
+		ev,
+		trustedSignedHeader,
+		ev.ConflictingBlock.SignedHeader,
+		conflictingVals,
+		conflictingVoters,
+		defaultEvidenceTime.Add(1*time.Minute),
+		2*time.Hour,
+		types.DefaultVoterParams(),
+	)
 	assert.Error(t, err)
 
 	state := sm.State{

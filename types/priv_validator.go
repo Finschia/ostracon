@@ -184,8 +184,9 @@ func NewErroringMockPV() *ErroringMockPV {
 	return &ErroringMockPV{MockPV{ed25519.GenPrivKey(), false, false}}
 }
 
-////////////////////////////////////////
-// For testing
+// ========================================
+
+// RandomKeyType for testing
 func RandomKeyType() PrivKeyType {
 	r := rand.Uint32() % 2
 	switch r {

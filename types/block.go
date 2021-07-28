@@ -678,9 +678,9 @@ func MaxCommitBytes(sigSizes []int, aggrSigSize int) int64 {
 		var protoEncodingOverhead int64 = 1
 		switch sigSize {
 		case 0:
-			protoEncodingOverhead += 1
+			protoEncodingOverhead++
 		case ed25519.SignatureSize:
-			protoEncodingOverhead += 1
+			protoEncodingOverhead++
 		case bls.SignatureSize:
 			protoEncodingOverhead += 2
 		default:
@@ -1144,13 +1144,11 @@ func (commit *Commit) VerifySignatures(chainID string, vals []*Validator) error 
 				blsPubKeys = append(blsPubKeys, *blsPubKey)
 				messages = append(messages, voteSignBytes)
 			}
-		} else {
+		} else if commitSig.Signature == nil {
 			// 🏺 In the case of using signature aggregation, if one or more public keys are missing, signature
 			// verifications of other valid public keys will also fail.
-			if commitSig.Signature == nil {
-				return fmt.Errorf("the public key to verify the signature of commit was missing: %X",
-					commitSig.ValidatorAddress)
-			}
+			return fmt.Errorf("the public key to verify the signature of commit was missing: %X",
+				commitSig.ValidatorAddress)
 		}
 	}
 

@@ -179,7 +179,7 @@ func (voters *VoterSet) VerifyCommit(chainID string, blockID BlockID, height int
 
 		// Validate signature.
 		voteSignBytes := commit.VoteSignBytes(chainID, int32(idx))
-		err, verifiedVotingPower, unverifiedVotingPower := verifySignatureOrCollectBlsPubKeysAndGetVotingPower(
+		verifiedVotingPower, unverifiedVotingPower, err := verifySignatureOrCollectBlsPubKeysAndGetVotingPower(
 			idx, commitSig, voter, voteSignBytes, &blsPubKeys, &messages)
 		if err != nil {
 			return err
@@ -248,7 +248,7 @@ func (voters *VoterSet) VerifyCommitLight(chainID string, blockID BlockID,
 
 		// Validate signature.
 		voteSignBytes := commit.VoteSignBytes(chainID, int32(idx))
-		err, verifiedVootingPower, unverifiedVotingPower := verifySignatureOrCollectBlsPubKeysAndGetVotingPower(
+		verifiedVootingPower, unverifiedVotingPower, err := verifySignatureOrCollectBlsPubKeysAndGetVotingPower(
 			idx, commitSig, voter, voteSignBytes, &blsPubKeys, &messages)
 		if err != nil {
 			return err
@@ -324,7 +324,7 @@ func (voters *VoterSet) VerifyCommitLightTrusting(chainID string, commit *Commit
 
 			// Verify Signature
 			voteSignBytes := commit.VoteSignBytes(chainID, int32(idx))
-			err, verifiedVotingPower, unverifiedVotingPower := verifySignatureOrCollectBlsPubKeysAndGetVotingPower(
+			verifiedVotingPower, unverifiedVotingPower, err := verifySignatureOrCollectBlsPubKeysAndGetVotingPower(
 				idx, commitSig, voter, voteSignBytes, &blsPubKeys, &messages)
 			if err != nil {
 				return err
@@ -353,24 +353,31 @@ func (voters *VoterSet) VerifyCommitLightTrusting(chainID string, commit *Commit
 
 func verifySignatureOrCollectBlsPubKeysAndGetVotingPower(
 	idx int, commitSig CommitSig, val *Validator, voteSignBytes []byte,
-	blsPubKeys *[]bls.PubKey, messages *[][]byte) (error, int64, int64) {
+	blsPubKeys *[]bls.PubKey, messages *[][]byte) (int64, int64, error) {
 	verifiedVotingPower := int64(0)
 	unverifiedVotingPower := int64(0)
 	if commitSig.Signature != nil {
 		if !val.PubKey.VerifySignature(voteSignBytes, commitSig.Signature) {
-			return fmt.Errorf("wrong signature (#%d): %X", idx, commitSig.Signature), verifiedVotingPower, unverifiedVotingPower
+			return verifiedVotingPower, unverifiedVotingPower, fmt.Errorf(
+				"wrong signature (#%d): %X",
+				idx,
+				commitSig.Signature,
+			)
 		}
 		verifiedVotingPower = val.VotingPower
 	} else {
 		blsPubKey := GetSignatureKey(val.PubKey)
 		if blsPubKey == nil {
-			return fmt.Errorf("signature %d has been omitted, even though it is not a BLS key", idx), verifiedVotingPower, unverifiedVotingPower
+			return verifiedVotingPower, unverifiedVotingPower, fmt.Errorf(
+				"signature %d has been omitted, even though it is not a BLS key",
+				idx,
+			)
 		}
 		*blsPubKeys = append(*blsPubKeys, *blsPubKey)
 		*messages = append(*messages, voteSignBytes)
 		unverifiedVotingPower = val.VotingPower
 	}
-	return nil, verifiedVotingPower, unverifiedVotingPower
+	return verifiedVotingPower, unverifiedVotingPower, nil
 }
 
 // ToProto converts VoterSet to protobuf
@@ -515,9 +522,15 @@ func MakeRoundHash(proofHash []byte, height int64, round int32) []byte {
 	binary.LittleEndian.PutUint64(b, uint64(height))
 	binary.LittleEndian.PutUint64(b[8:], uint64(round))
 	hash := tmhash.New()
-	hash.Write(proofHash)
-	hash.Write(b[:8])
-	hash.Write(b[8:16])
+	if _, err := hash.Write(proofHash); err != nil {
+		panic(err)
+	}
+	if _, err := hash.Write(b[:8]); err != nil {
+		panic(err)
+	}
+	if _, err := hash.Write(b[8:16]); err != nil {
+		panic(err)
+	}
 	return hash.Sum(nil)
 }
 

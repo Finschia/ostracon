@@ -457,7 +457,11 @@ func (c *Client) TxSearch(ctx context.Context, query string, prove bool, page, p
 //
 // WARNING: only full validator sets are verified (when length of validators is
 // less than +perPage+. +perPage+ default is 30, max is 100).
-func (c *Client) Validators(ctx context.Context, height *int64, pagePtr, perPagePtr *int) (*ctypes.ResultValidators, error) {
+func (c *Client) Validators(
+	ctx context.Context,
+	height *int64,
+	pagePtr, perPagePtr *int,
+) (*ctypes.ResultValidators, error) {
 	// Update the light client if we're behind and retrieve the light block at the requested height
 	// or at the latest height if no height is provided.
 	l, err := c.updateLightClientIfNeededTo(ctx, height)

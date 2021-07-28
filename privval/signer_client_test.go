@@ -451,7 +451,10 @@ func brokenHandler(privVal types.PrivValidator, request privvalproto.Message,
 func TestSignerUnexpectedResponse(t *testing.T) {
 	for _, tc := range getSignerTestCases(t, types.NewMockPV(types.PrivKeyEd25519), false) {
 		tc.signerServer.SetRequestHandler(brokenHandler)
-		tc.signerServer.Start()
+		err := tc.signerServer.Start()
+		if err != nil {
+			panic(err)
+		}
 
 		tc := tc
 		t.Cleanup(func() {

@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/line/ostracon/crypto/vrf"
+
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/line/ostracon/libs/log"
@@ -41,6 +43,7 @@ type lightClientStateProvider struct {
 	version       tmstate.Version
 	initialHeight int64
 	providers     map[lightprovider.Provider]string
+	voterParams   *types.VoterParams
 }
 
 // NewLightClientStateProvider creates a new StateProvider using a light client and RPC clients.
@@ -89,6 +92,7 @@ func NewLightClientStateProvider(
 		version:       version,
 		initialHeight: initialHeight,
 		providers:     providerRemotes,
+		voterParams:   voterParams,
 	}, nil
 }
 
@@ -167,6 +171,12 @@ func (s *lightClientStateProvider) State(ctx context.Context, height uint64) (sm
 		return sm.State{}, err
 	}
 
+	// VRF proof
+	proofHash, err := vrf.ProofToHash(lastLightBlock.Proof.Bytes())
+	if err != nil {
+		return sm.State{}, err
+	}
+
 	state.LastBlockHeight = lastLightBlock.Height
 	state.LastBlockTime = lastLightBlock.Time
 	state.LastBlockID = lastLightBlock.Commit.BlockID
@@ -177,6 +187,7 @@ func (s *lightClientStateProvider) State(ctx context.Context, height uint64) (sm
 	state.Voters = currentLightBlock.VoterSet
 	state.NextValidators = nextLightBlock.ValidatorSet
 	state.LastHeightValidatorsChanged = nextLightBlock.Height
+	state.LastProofHash = proofHash
 
 	// We'll also need to fetch consensus params via RPC, using light client verification.
 	primaryURL, ok := s.providers[s.lc.Primary()]
@@ -195,6 +206,9 @@ func (s *lightClientStateProvider) State(ctx context.Context, height uint64) (sm
 	}
 	state.ConsensusParams = result.ConsensusParams
 	state.LastHeightConsensusParamsChanged = currentLightBlock.Height
+
+	// VoterParams
+	state.VoterParams = s.voterParams
 
 	return state, nil
 }
