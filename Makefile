@@ -3,12 +3,14 @@ SRCPATH=$(shell pwd)
 OUTPUT?=build/ostracon
 
 INCLUDE = -I=${GOPATH}/src/github.com/line/ostracon -I=${GOPATH}/src -I=${GOPATH}/src/github.com/gogo/protobuf/protobuf
-BUILD_TAGS?=ostracon
+BUILD_TAGS ?= ostracon
 VERSION := $(shell git describe --always)
-LIBSODIUM_TARGET=
 ifeq ($(LIBSODIUM), 1)
-  LIBSODIUM_TARGET=libsodium
   BUILD_TAGS += libsodium
+  LIBSODIUM_TARGET = libsodium
+else
+  BUILD_TAGS += r2ishiguro
+  LIBSODIUM_TARGET =
 endif
 LD_FLAGS = -X github.com/line/ostracon/version.Version=$(VERSION)
 BUILD_FLAGS = -mod=readonly -ldflags "$(LD_FLAGS)"
@@ -150,16 +152,17 @@ LIBSODIUM_ROOT = $(VRF_ROOT)/libsodium
 LIBSODIUM_OS = $(VRF_ROOT)/sodium/$(TARGET_OS)_$(TARGET_ARCH)
 
 libsodium:
-	rm -rf $(LIBSODIUM_ROOT)
-	mkdir $(LIBSODIUM_ROOT)
-	git submodule update --init --recursive
 	@if [ ! -f $(LIBSODIUM_OS)/lib/libsodium.a ]; then \
+		rm -rf $(LIBSODIUM_ROOT) && \
+		mkdir $(LIBSODIUM_ROOT) && \
+		git submodule update --init --recursive && \
 		cd $(LIBSODIUM_ROOT) && \
 		./autogen.sh && \
 		./configure --disable-shared --prefix="$(LIBSODIUM_OS)" &&	\
 		$(MAKE) && \
 		$(MAKE) install; \
 	fi
+.PHONY: libsodium
 
 ########################################
 ### Distribution

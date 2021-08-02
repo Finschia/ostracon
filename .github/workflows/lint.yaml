@@ -12,6 +12,8 @@ jobs:
     timeout-minutes: 4
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - uses: technote-space/get-diff-action@v4
         with:
           PATTERNS: |

@@ -2,7 +2,7 @@
 FROM golang:1.15-alpine as builder
 RUN apk update && \
     apk upgrade && \
-    apk add --no-cache git make gcc libc-dev build-base curl jq bash file gmp-dev clang
+    apk add --no-cache git make gcc libc-dev build-base curl jq bash file gmp-dev clang libtool autoconf automake
 COPY / /ostracon
 WORKDIR /ostracon
 RUN make build-linux
@@ -25,7 +25,7 @@ ENV OCHOME /ostracon
 # could execute bash commands.
 RUN apk update && \
     apk upgrade && \
-    apk add --no-cache git make gcc libc-dev build-base curl jq bash file gmp-dev clang && \
+    apk add --no-cache git make gcc libc-dev build-base curl jq bash file gmp-dev clang libtool autoconf automake && \
     addgroup ostracon && \
     adduser -S -G ostracon ostracon -h "$OCHOME"
 
