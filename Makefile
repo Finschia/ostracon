@@ -3,21 +3,15 @@ SRCPATH=$(shell pwd)
 OUTPUT?=build/ostracon
 
 INCLUDE = -I=${GOPATH}/src/github.com/line/ostracon -I=${GOPATH}/src -I=${GOPATH}/src/github.com/gogo/protobuf/protobuf
-BUILD_TAGS?='ostracon'
+BUILD_TAGS ?= ostracon
 VERSION := $(shell git describe --always)
-CGO_OPTPTION=0
-LIBSODIUM_TARGET=
-PREPARE_LIBSODIUM_TARGET=
+LIBSODIUM=1
 ifeq ($(LIBSODIUM), 1)
-  BUILD_TAGS='libsodium ostracon'
-  LIBSODIUM_TARGET=libsodium
-ifneq ($(OS), Windows_NT)
-ifeq ($(shell uname -s), Linux)
-  PREPARE_LIBSODIUM_TARGET=prepare-libsodium-linux
+  BUILD_TAGS += libsodium
+  LIBSODIUM_TARGET = libsodium
+else
+  LIBSODIUM_TARGET =
 endif
-endif
-endif
-LIBSODIM_BUILD_TAGS='libsodium ostracon'
 LD_FLAGS = -X github.com/line/ostracon/version.Version=$(VERSION)
 BUILD_FLAGS = -mod=readonly -ldflags "$(LD_FLAGS)"
 HTTPS_GIT := https://github.com/line/ostracon.git
@@ -151,15 +145,28 @@ install_abci:
 ########################################
 ### libsodium
 
+ifeq ($(shell uname -s), Darwin)
+prepare-libsodium-linux:
+	brew install libtool autoconf automake
+else
+ifeq ($(shall uname -s), Linux)
 prepare-libsodium-linux:
 	apt-get update && apt-get -y install libtool libboost-all-dev autoconf build-essential
+else
+prepare-libsodium-linux:
+	@echo "$(error This platform isn't supported. Please build libsodium manually.)"
+endif
+endif
 
 libsodium:
-	cd $(SRCPATH)/crypto/vrf/internal/vrf/libsodium && \
-    		./autogen.sh && \
-    		./configure --disable-shared --prefix="$(SRCPATH)/crypto/vrf/internal/vrf/" &&	\
-    		$(MAKE) && \
-    		$(MAKE) install
+	@if [ ! -f $(SRCPATH)/crypto/vrf/internal/vrf/lib/libsodium.a ]; then \
+		cd $(SRCPATH)/crypto/vrf/internal/vrf/libsodium && \
+    	./autogen.sh && \
+    	./configure --disable-shared --prefix="$(SRCPATH)/crypto/vrf/internal/vrf/" &&	\
+    	$(MAKE) && \
+    	$(MAKE) install; \
+	fi
+.PHONY: libsodium
 
 ########################################
 ### Distribution
@@ -287,8 +294,9 @@ DOCKER_CMD = docker run --rm \
                         -v `pwd`:$(DOCKER_HOME) \
                         -w $(DOCKER_HOME)
 DOCKER_IMG = golang:1.15-alpine
-BUILD_CMD = apk add --update --no-cache git make gcc libc-dev build-base curl jq file gmp-dev clang \
+BUILD_CMD = apk add --update --no-cache git make gcc libc-dev build-base curl jq file gmp-dev clang libtool autoconf automake \
 	&& cd $(DOCKER_HOME) \
+	&& make libsodium \
 	&& make build-linux
 
 # Login docker-container for confirmation building linux binary

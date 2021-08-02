@@ -59,7 +59,7 @@ vagrant_test:
 .PHONY: vagrant_test
 
 ### go tests
-test:
+test: build
 	@echo "--> Running go test"
 	@go test -p 1 $(PACKAGES) -tags deadlock
 .PHONY: test

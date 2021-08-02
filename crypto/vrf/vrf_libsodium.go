@@ -23,7 +23,7 @@ func init() {
 }
 
 func (base vrfImplLibsodium) Prove(privateKey []byte, message []byte) (Proof, error) {
-	privKey := (*[libsodium.SECRETKEYBYTES]byte)(unsafe.Pointer(&(*privateKey)))
+	privKey := (*[libsodium.SECRETKEYBYTES]byte)(unsafe.Pointer(&privateKey))
 	pf, err := libsodium.Prove(privKey, message)
 	if err != nil {
 		return nil, err
