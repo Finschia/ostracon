@@ -19,14 +19,28 @@ Tendermint-BFT に基づく Ostracon のブロック生成メカニズムは以�
 正式に*承認*されます。反対に、定足数の賛成票が集まらなければ提案されたブロックは拒否され新しいラウンドで選挙または投票からやり直しとなります
 (Tendermint-BFT には拒否の理由によってショートカットする経路がいくつかあります)。
 
-![VRF-based Block Generation Round](vrf-based_round.png)
+![VRF-based Block Generation Round](vrf_based_round.png)
 
 ## VRF-based Consensus Group Election
 
 VRF は暗号論的疑似乱数として使用できるハッシュ値 $t$ を生成するアルゴリズムです。VRF が一般的なハッシュ関数や疑似乱数生成器と異なる点は、
-公開鍵を使用して 「本当にその乱数がメッセージ $m$ に基づいて生成されたものか」を第三者が検証できる点です。乱数の生成者はメッセージ $m$ と
-秘密鍵 $S_k$ を使って証明 $\pi$ (VRF Proof; ハッシュ値 $t$ の元となる値) を生成します。他方、検証者は入手した証明 $\pi$ が偽造された
-ものでないことを $S_k$ に対応する公開鍵 $P_k$ とメッセージ $m$ を使って同じハッシュ値 $t$ が生成されるかを検証します。
+公開鍵を使用して 「本当にその乱数がメッセージ $m$ に基づいて生成されたものか」を第三者が検証できる点です。
+
+乱数の生成者 $k$ は自身の秘密鍵 $S_k$ を使ってメッセージ $m$ から証明 (VRF Proof) $\pi$ を生成します:式(1)。ここでハッシュ値 $t$
+は証明 $pi$ から生成することができます:式(2)。一方、検証者は入手した証明 $\pi$ が本当にその生成者によってメッセージ $m$ に対して
+生成されたことを検証するために、$S_k$ に対応する公開鍵 $P_k$ と $m$、$pi$ を使って同一のハッシュ値 $t$ が生成されるかを確認します:式(3)。
+
+![VRF Expression](math_expression.png)
+
+```math
+\begin{eqnarray}
+\pi & = & {\rm vrf\_prove}(S_k, m) \\
+t & = & {\rm vrf\_proof\_to\_hash}(\pi)
+\end{eqnarray}
+\begin{equation}
+{\rm vrf\_proof\_to\_hash}(\pi) \overset{\text{?}}{=} {\rm vrf\_verify}(P_k, m, \pi)
+\end{equation}
+```
 
 Ostracon では、あるブロックを作成した Proposer による*無作為で検証可能な乱数*によって次の Proposer と Voter を決定します。そして
 ブロックにはそのための VRF Proof フィールド $\pi$ が追加されています。
@@ -46,8 +60,8 @@ $r$ に基づいて算出した新しい VRF Proof $\pi'$ をブロックに設�
 ```math
 \begin{eqnarray*}
 m_h & = & {\rm SHA256}(h \,\|\, r \,\|\, t_{h-1}) \\
-\pi_h & = & {\rm prove}(S_i, m_h) \\
-t_h & = & {\rm prove\_to\_hash}(\pi_h)
+\pi_h & = & {\rm vrf\_prove}(S_i, m_h) \\
+t_h & = & {\rm vrf\_proof\_to\_hash}(\pi_h)
 \end{eqnarray*}
 ```
 
@@ -71,7 +85,7 @@ prevote, precommit, commit を経て複製され、定足数以上の有効票�
 ![VRF Verify](math_verify.png)
 
 ```math
-{\rm verify}(P_i, m_h, \pi_h) \overset{\text{?}}{=} {\rm proof\_to\_hash}(\pi_h)
+{\rm vrf\_verify}(P_i, m_h, \pi_h) \overset{\text{?}}{=} {\rm vrf\_proof\_to\_hash}(\pi_h)
 ```
 
 この一連のラウンドを繰り返すことによって無作為なランダムサンプリングをすべてのブロック生成に渡って連鎖させることができます。
