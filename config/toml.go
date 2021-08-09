@@ -341,6 +341,7 @@ mempool_recv_buf_size = {{ .P2P.MempoolRecvBufSize }}
 evidence_recv_buf_size = {{ .P2P.EvidenceRecvBufSize }}
 consensus_recv_buf_size = {{ .P2P.ConsensusRecvBufSize }}
 blockchain_recv_buf_size = {{ .P2P.BlockchainRecvBufSize }}
+statesync_recv_buf_size = {{ .P2P.StatesyncRecvBufSize }}
 
 #######################################################
 ###          Mempool Configuration Option          ###

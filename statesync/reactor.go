@@ -68,6 +68,11 @@ func (r *Reactor) GetChannels() []*p2p.ChannelDescriptor {
 
 // OnStart implements p2p.Reactor.
 func (r *Reactor) OnStart() error {
+	// call BaseReactor's OnStart()
+	err := r.BaseReactor.OnStart()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -244,13 +249,14 @@ func (r *Reactor) recentSnapshots(n uint32) ([]*snapshot, error) {
 	return snapshots, nil
 }
 
-// Sync runs a state sync, returning the new state and last commit at the snapshot height.
+// Sync runs a state sync, returning the new state, previous state and last commit at the snapshot height.
 // The caller must store the state and commit in the state database and block store.
-func (r *Reactor) Sync(stateProvider StateProvider, discoveryTime time.Duration) (sm.State, *types.Commit, error) {
+func (r *Reactor) Sync(
+	stateProvider StateProvider, discoveryTime time.Duration) (sm.State, sm.State, *types.Commit, error) {
 	r.mtx.Lock()
 	if r.syncer != nil {
 		r.mtx.Unlock()
-		return sm.State{}, nil, errors.New("a state sync is already in progress")
+		return sm.State{}, sm.State{}, nil, errors.New("a state sync is already in progress")
 	}
 	r.syncer = newSyncer(r.Logger, r.conn, r.connQuery, stateProvider, r.tempDir)
 	r.mtx.Unlock()
@@ -259,9 +265,9 @@ func (r *Reactor) Sync(stateProvider StateProvider, discoveryTime time.Duration)
 	r.Logger.Debug("Requesting snapshots from known peers")
 	r.Switch.Broadcast(SnapshotChannel, mustEncodeMsg(&ssproto.SnapshotsRequest{}))
 
-	state, commit, err := r.syncer.SyncAny(discoveryTime)
+	state, previousState, commit, err := r.syncer.SyncAny(discoveryTime)
 	r.mtx.Lock()
 	r.syncer = nil
 	r.mtx.Unlock()
-	return state, commit, err
+	return state, previousState, commit, err
 }

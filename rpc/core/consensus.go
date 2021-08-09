@@ -28,7 +28,7 @@ func Validators(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *in
 		return nil, err
 	}
 
-	voters, err := env.StateStore.LoadVoters(height, env.ConsensusState.GetState().VoterParams)
+	voters, err := env.StateStore.LoadVoters(height, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -70,14 +70,6 @@ func Validators(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *in
 //
 // More: https://docs.tendermint.com/master/rpc/#/Info/validators
 func Voters(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *int) (*ctypes.ResultVoters, error) {
-	return voters(ctx, heightPtr, pagePtr, perPagePtr,
-		func(height int64, voterParams *types.VoterParams) (*types.VoterSet, error) {
-			return env.StateStore.LoadVoters(height, voterParams)
-		})
-}
-
-func voters(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *int,
-	loadFunc func(height int64, voterParams *types.VoterParams) (*types.VoterSet, error)) (*ctypes.ResultVoters, error) {
 
 	// The latest validator that we know is the NextValidator of the last block.
 	height, err := getHeight(latestUncommittedHeight(), heightPtr)
@@ -85,12 +77,12 @@ func voters(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *int,
 		return nil, err
 	}
 
-	vals, err := loadFunc(height, env.ConsensusState.GetState().VoterParams)
+	voters, err := env.StateStore.LoadVoters(height, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	totalCount := len(vals.Voters)
+	totalCount := len(voters.Voters)
 	perPage := validatePerPage(perPagePtr)
 	page, err := validatePage(pagePtr, perPage, totalCount)
 	if err != nil {
@@ -99,7 +91,7 @@ func voters(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *int,
 
 	skipCount := validateSkipCount(page, perPage)
 
-	v := vals.Voters[skipCount : skipCount+tmmath.MinInt(perPage, totalCount-skipCount)]
+	v := voters.Voters[skipCount : skipCount+tmmath.MinInt(perPage, totalCount-skipCount)]
 
 	return &ctypes.ResultVoters{
 		BlockHeight: height,

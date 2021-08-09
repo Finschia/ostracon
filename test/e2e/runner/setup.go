@@ -21,6 +21,7 @@ import (
 
 	"github.com/line/ostracon/config"
 	"github.com/line/ostracon/crypto/ed25519"
+	cryptoenc "github.com/line/ostracon/crypto/encoding"
 	"github.com/line/ostracon/p2p"
 	"github.com/line/ostracon/privval"
 	e2e "github.com/line/ostracon/test/e2e/pkg"
@@ -362,7 +363,16 @@ func MakeAppConfig(node *e2e.Node) ([]byte, error) {
 		for height, validators := range node.Testnet.ValidatorUpdates {
 			updateVals := map[string]int64{}
 			for node, power := range validators {
-				updateVals[base64.StdEncoding.EncodeToString(node.PrivvalKey.PubKey().Bytes())] = power
+				pubKey := node.PrivvalKey.PubKey()
+				pc, err := cryptoenc.PubKeyToProto(pubKey)
+				if err != nil {
+					return nil, fmt.Errorf("invalid pubkey %q: %w", pubKey.Address(), err)
+				}
+				pcBytes, err := pc.Marshal()
+				if err != nil {
+					return nil, fmt.Errorf("invalid protobuf pubkey %q: %w", pubKey.Address(), err)
+				}
+				updateVals[base64.StdEncoding.EncodeToString(pcBytes)] = power
 			}
 			validatorUpdates[fmt.Sprintf("%v", height)] = updateVals
 		}

@@ -565,7 +565,7 @@ func (mem *CListMempool) TxsAvailable() <-chan struct{} {
 
 func (mem *CListMempool) notifyTxsAvailable() {
 	if mem.Size() == 0 {
-		panic("notified txs available but mempool is empty!")
+		mem.logger.Info("notified txs available but mempool is empty!")
 	}
 	if mem.txsAvailable != nil && !mem.notifiedTxsAvailable {
 		// channel cap is 1, so this will send once

@@ -215,8 +215,6 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 	prevParts := types.PartSetHeader{}
 	prevBlockID := types.BlockID{Hash: prevHash, PartSetHeader: prevParts}
 
-	//height1, idx1, val1 := int64(8), 0, state.Validators.Validators[0].Address
-	//height2, idx2, val2 := int64(3), 1, state.Validators.Validators[1].Address
 	ev1 := types.DuplicateVoteEvidence{
 		VoteA:            &types.Vote{},
 		VoteB:            &types.Vote{},

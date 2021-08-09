@@ -228,7 +228,12 @@ func (voteSet *VoteSet) addVote(vote *Vote, execVoteVerify func(chainID string,
 
 	// Check signature.
 	if err := execVoteVerify(voteSet.chainID, voter.PubKey); err != nil {
-		return false, fmt.Errorf("failed to verify vote with ChainID %s and PubKey %s: %w", voteSet.chainID, voter.PubKey, err)
+		return false, fmt.Errorf(
+			"failed to verify vote with ChainID %s and PubKey %s: %w",
+			voteSet.chainID,
+			voter.PubKey,
+			err,
+		)
 	}
 
 	// Add vote and get conflicting vote if any.

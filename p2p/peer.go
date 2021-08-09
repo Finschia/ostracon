@@ -408,6 +408,7 @@ func createMConnection(
 				// if the channel is full, we abandon this message
 				// Should check `config.Config.XxxBufSize`
 				p.Logger.Error("Lost the message since BaseReactor.recvMsgBuf is full",
+					"reactor", reactor,
 					"msgBytes.len", len(msgBytes), "msgBytes", fmt.Sprintf("%X", msgBytes))
 				p.metrics.NumAbandonedPeerMsgs.With(labels...).Add(1)
 			}

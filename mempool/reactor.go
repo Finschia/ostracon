@@ -126,7 +126,10 @@ func (memR *Reactor) SetLogger(l log.Logger) {
 // OnStart implements p2p.BaseReactor.
 func (memR *Reactor) OnStart() error {
 	// call BaseReactor's OnStart()
-	memR.BaseReactor.OnStart()
+	err := memR.BaseReactor.OnStart()
+	if err != nil {
+		return err
+	}
 
 	if !memR.config.Broadcast {
 		memR.Logger.Info("Tx broadcasting is disabled")

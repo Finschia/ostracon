@@ -31,9 +31,11 @@ func TestGenFilePV(t *testing.T) {
 	require.Nil(t, err)
 
 	privValEd25519, err := GenFilePV(tempKeyFile.Name(), tempStateFile.Name(), PrivKeyTypeEd25519)
+	require.Nil(t, err)
 	require.EqualValues(t, reflect.TypeOf(ed25519.PubKey{}), reflect.TypeOf(privValEd25519.Key.PubKey))
 
 	privValComposite, err := GenFilePV(tempKeyFile.Name(), tempStateFile.Name(), PrivKeyTypeComposite)
+	require.Nil(t, err)
 	require.EqualValues(t, reflect.TypeOf(composite.PubKey{}), reflect.TypeOf(privValComposite.Key.PubKey))
 
 	privValUndefinedPrivKeyType, err := GenFilePV(tempKeyFile.Name(), tempStateFile.Name(), "")

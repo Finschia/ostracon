@@ -19,7 +19,6 @@ import (
 	cfg "github.com/line/ostracon/config"
 	"github.com/line/ostracon/crypto/ed25519"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
-	"github.com/line/ostracon/libs/rand"
 	tmrand "github.com/line/ostracon/libs/rand"
 	tmstate "github.com/line/ostracon/proto/ostracon/state"
 	tmproto "github.com/line/ostracon/proto/ostracon/types"
@@ -233,12 +232,13 @@ func TestValidatorSimpleSaveLoad(t *testing.T) {
 
 	// Can't load last voter set because of proof hash is not defined for last height
 	v, err = statestore.LoadVoters(2, state.VoterParams)
+	assert.Nil(v)
 	assert.Error(err, sm.ErrNoProofHashForHeight{Height: 2}.Error())
 
 	// Increment height, save; should be able to load for next & next next height.
 	state.LastBlockHeight++
 	nextHeight := state.LastBlockHeight + 1
-	state.LastVoters = types.ToVoterAll(state.Validators.Validators) // The LastVoter cannot be nil or empty if LastBlockHash!=0
+	state.LastVoters = types.ToVoterAll(state.Validators.Validators) // Cannot be nil or empty if LastBlockHash != 0
 	err = statestore.Save(state)
 	require.NoError(t, err)
 	vp0, err := statestore.LoadVoters(nextHeight+0, state.VoterParams)
@@ -1243,7 +1243,7 @@ func TestMedianTime(t *testing.T) {
 		for j, power := range tc.votingPowers {
 			// reset voting power with a value that is not staking power
 			voters.Voters[j].VotingPower = power
-			commits[j] = types.NewCommitSigForBlock(rand.Bytes(10), voters.Voters[j].Address, tc.times[j])
+			commits[j] = types.NewCommitSigForBlock(tmrand.Bytes(10), voters.Voters[j].Address, tc.times[j])
 		}
 		commit := types.NewCommit(10, 0, types.BlockID{Hash: []byte("0xDEADBEEF")}, commits)
 		assert.True(t, sm.MedianTime(commit, voters) == tc.expectedMid, "case %d", i)

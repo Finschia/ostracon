@@ -935,6 +935,7 @@ func TestCommitToVoteSet(t *testing.T) {
 			vote2bz, err := vote2.ToProto().Marshal()
 			require.NoError(t, err)
 			vote3bz, err := vote3.ToProto().Marshal()
+			require.NoError(t, err)
 			assert.Equal(t, vote2bz, vote3bz)
 			assert.NotNil(t, commit.AggregatedSignature)
 			assert.Nil(t, vote2.Signature)

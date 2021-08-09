@@ -22,7 +22,12 @@ var _ provider.Provider = (*Mock)(nil)
 
 // New creates a mock provider with the given set of headers and validator
 // sets.
-func New(chainID string, headers map[int64]*types.SignedHeader, vals map[int64]*types.ValidatorSet, voters map[int64]*types.VoterSet) *Mock {
+func New(
+	chainID string,
+	headers map[int64]*types.SignedHeader,
+	vals map[int64]*types.ValidatorSet,
+	voters map[int64]*types.VoterSet,
+) *Mock {
 	return &Mock{
 		chainID:          chainID,
 		headers:          headers,

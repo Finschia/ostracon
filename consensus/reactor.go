@@ -75,7 +75,10 @@ func (conR *Reactor) OnStart() error {
 	conR.Logger.Info("Reactor ", "waitSync", conR.WaitSync())
 
 	// call BaseReactor's OnStart()
-	conR.BaseReactor.OnStart()
+	err := conR.BaseReactor.OnStart()
+	if err != nil {
+		return err
+	}
 
 	// start routine that computes peer statistics for evaluating peer quality
 	go conR.peerStatsRoutine()

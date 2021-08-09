@@ -202,16 +202,16 @@ func (app *Application) validatorUpdates(height uint64) (abci.ValidatorUpdates, 
 
 		keyBytes, err := base64.StdEncoding.DecodeString(keyString)
 		if err != nil {
-			return nil, fmt.Errorf("invalid base64 pubkey value %q: %w", keyString, err)
+			return nil, fmt.Errorf("invalid base64.enc pubkey %q: %w", keyString, err)
 		}
 		pubKeyProto := crypto.PublicKey{}
 		err = pubKeyProto.Unmarshal(keyBytes)
 		if err != nil {
-			return nil, fmt.Errorf("invalid pubkey binary %q: %w", keyString, err)
+			return nil, fmt.Errorf("invalid marshalled pubkey %q: %w", keyString, err)
 		}
 		pubKey, err := cryptoenc.PubKeyFromProto(&pubKeyProto)
 		if err != nil {
-			return nil, fmt.Errorf("invalid pubkey protobuf %q: %w", keyString, err)
+			return nil, fmt.Errorf("invalid crypto pubkey %q: %w", keyString, err)
 		}
 		valUpdates = append(valUpdates, abci.NewValidatorUpdate(pubKey, int64(power)))
 	}
