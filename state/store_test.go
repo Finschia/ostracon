@@ -47,7 +47,7 @@ func TestStoreLoadValidators(t *testing.T) {
 }
 
 func TestStoreLoadVoters(t *testing.T) {
-	stateDB := dbm.NewMemDB()
+	stateDB := memdb.NewDB()
 	stateStore := sm.NewStore(stateDB)
 	val, _ := types.RandValidator(true, 10)
 	vals := types.NewValidatorSet([]*types.Validator{val})
