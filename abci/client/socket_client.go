@@ -53,9 +53,9 @@ func NewSocketClient(addr string, mustConnect bool) Client {
 		flushTimer:  timer.NewThrottleTimer("socketClient", flushThrottleMS),
 		mustConnect: mustConnect,
 
-		addr:    addr,
-		reqSent: list.New(),
-		globalCb:   nil,
+		addr:     addr,
+		reqSent:  list.New(),
+		globalCb: nil,
 	}
 	cli.BaseService = *service.NewBaseService(nil, "socketClient", cli)
 	return cli
@@ -106,16 +106,16 @@ func (cli *socketClient) Error() error {
 	return cli.err
 }
 
-func (app *socketClient) SetGlobalCallback(globalCb GlobalCallback) {
-	app.globalCbMtx.Lock()
-	app.globalCb = globalCb
-	app.globalCbMtx.Unlock()
+func (cli *socketClient) SetGlobalCallback(globalCb GlobalCallback) {
+	cli.globalCbMtx.Lock()
+	cli.globalCb = globalCb
+	cli.globalCbMtx.Unlock()
 }
 
-func (app *socketClient) GetGlobalCallback() (cb GlobalCallback) {
-	app.globalCbMtx.Lock()
-	cb = app.globalCb
-	app.globalCbMtx.Unlock()
+func (cli *socketClient) GetGlobalCallback() (cb GlobalCallback) {
+	cli.globalCbMtx.Lock()
+	cb = cli.globalCb
+	cli.globalCbMtx.Unlock()
 	return cb
 }
 
@@ -205,7 +205,7 @@ func (cli *socketClient) didRecvResponse(res *types.Response) error {
 	}
 
 	reqres.Response = res
-	reqres.wg.Done()            // release waiters
+	reqres.wg.Done()         // release waiters
 	cli.reqSent.Remove(next) // pop first item from linked list
 
 	// Notify client listener if set (global callback).

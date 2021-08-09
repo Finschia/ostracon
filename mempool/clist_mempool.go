@@ -729,7 +729,7 @@ func (mem *CListMempool) recheckTxs() {
 		})
 	}
 
-	mem.proxyAppConn.FlushAsync(func(res *abci.Response) { })
+	mem.proxyAppConn.FlushAsync(func(res *abci.Response) {})
 	wg.Wait()
 }
 

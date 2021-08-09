@@ -14,10 +14,10 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	dbm "github.com/line/tm-db/v2"
 	"github.com/line/tm-db/v2/memdb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	dbm "github.com/line/tm-db/v2"
 
 	"github.com/line/ostracon/abci/example/kvstore"
 	abci "github.com/line/ostracon/abci/types"
