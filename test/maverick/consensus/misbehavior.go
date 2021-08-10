@@ -378,9 +378,11 @@ func defaultReceiveProposal(cs *State, proposal *types.Proposal) error {
 		return ErrInvalidProposalPOLRound
 	}
 
+	proposer := cs.Validators.SelectProposer(cs.state.LastProofHash, proposal.Height, proposal.Round)
+
 	p := proposal.ToProto()
 	// Verify signature
-	if !cs.Proposer.PubKey.VerifySignature(
+	if !proposer.PubKey.VerifySignature(
 		types.ProposalSignBytes(cs.state.ChainID, p), proposal.Signature) {
 		return ErrInvalidProposalSignature
 	}

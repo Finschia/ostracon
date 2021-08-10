@@ -158,8 +158,9 @@ func startMaverick(cfg *Config) error {
 		misbehaviors[height] = mcs.MisbehaviorList[misbehaviorString]
 	}
 
+	privKey, _ := maverick.LoadOrGenFilePV(tmcfg.PrivValidatorKeyFile(), tmcfg.PrivValidatorStateFile(), tmcfg.PrivKeyType)
 	n, err := maverick.NewNode(tmcfg,
-		maverick.LoadOrGenFilePV(tmcfg.PrivValidatorKeyFile(), tmcfg.PrivValidatorStateFile()),
+		privKey,
 		nodeKey,
 		proxy.NewLocalClientCreator(app),
 		maverick.DefaultGenesisDocProviderFunc(tmcfg),
