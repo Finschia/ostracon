@@ -1,10 +1,17 @@
 # We need to build in a Linux environment to support C libraries, e.g. RocksDB.
 # We use Debian instead of Alpine, so that we can use binary database packages
-# instead of spending time compiling them.
+# instead of spending time compiling them. 
+# -> There is currently no librocksdb-dev v6.17.x that is necessary by line/gorocksdb.
+# So we download rocksdb and build it.
+
 FROM golang:1.15
 
 RUN apt-get -qq update -y && apt-get -qq upgrade -y >/dev/null
-RUN apt-get -qq install -y libleveldb-dev librocksdb-dev >/dev/null
+RUN apt-get -qq install -y libleveldb-dev make libc-dev >/dev/null
+WORKDIR /
+RUN wget -O rocksdb-v6.20.3.tar.gz https://github.com/facebook/rocksdb/archive/v6.20.3.tar.gz
+RUN tar -zxvf rocksdb-v6.20.3.tar.gz
+RUN cd rocksdb-6.20.3 && make -j2 shared_lib && make install-shared
 
 # Set up build directory /src/ostracon
 ENV OSTRACON_BUILD_OPTIONS badgerdb,boltdb,cleveldb,rocksdb

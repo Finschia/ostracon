@@ -1,6 +1,4 @@
 name: Test Coverage
-env:
-  GOPRIVATE: "github.com/line/*"
 on:
   pull_request:
   push:
