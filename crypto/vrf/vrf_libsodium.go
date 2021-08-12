@@ -6,34 +6,34 @@ package vrf
 
 import (
 	"bytes"
-	"unsafe"
-
 	libsodium "github.com/line/ostracon/crypto/vrf/internal/vrf"
 )
 
-type vrfImplLibsodium struct {
-}
-
-func newVrfEd25519ImplLibsodium() vrfEd25519 {
-	return vrfImplLibsodium{}
+type vrfEd25519libsodium struct {
 }
 
 func init() {
-	defaultVrf = newVrfEd25519ImplLibsodium()
+	defaultVrf = newVrfEd25519libsodium()
 }
 
-func (base vrfImplLibsodium) Prove(privateKey []byte, message []byte) (Proof, error) {
-	privKey := (*[libsodium.SECRETKEYBYTES]byte)(unsafe.Pointer(&(*privateKey)))
-	pf, err := libsodium.Prove(privKey, message)
+func newVrfEd25519libsodium() vrfEd25519 {
+	return vrfEd25519libsodium{}
+}
+
+func (base vrfEd25519libsodium) Prove(privateKey []byte, message []byte) (Proof, error) {
+	var privKey [libsodium.SECRETKEYBYTES]byte
+	copy(privKey[:], privateKey)
+	pf, err := libsodium.Prove(&privKey, message)
 	if err != nil {
 		return nil, err
 	}
 	return newProof(pf), nil
 }
 
-func (base vrfImplLibsodium) Verify(publicKey []byte, proof Proof, message []byte) (bool, error) {
-	pubKey := (*[libsodium.PUBLICKEYBYTES]byte)(unsafe.Pointer(&publicKey))
-	op, err := libsodium.Verify(pubKey, toArray(proof), message)
+func (base vrfEd25519libsodium) Verify(publicKey []byte, proof Proof, message []byte) (bool, error) {
+	var pubKey [libsodium.PUBLICKEYBYTES]byte
+	copy(pubKey[:], publicKey)
+	op, err := libsodium.Verify(&pubKey, toArray(proof), message)
 	if err != nil {
 		return false, err
 	}
@@ -44,7 +44,7 @@ func (base vrfImplLibsodium) Verify(publicKey []byte, proof Proof, message []byt
 	return bytes.Compare(op[:], hash) == 0, nil
 }
 
-func (base vrfImplLibsodium) ProofToHash(proof Proof) (Output, error) {
+func (base vrfEd25519libsodium) ProofToHash(proof Proof) (Output, error) {
 	op, err := libsodium.ProofToHash(toArray(proof))
 	if err != nil {
 		return nil, err

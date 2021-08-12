@@ -52,5 +52,5 @@ test/fuzz/**/corpus
 test/fuzz/**/crashers
 test/fuzz/**/suppressions
 test/fuzz/**/*.zip
-crypto/vrf/internal/vrf/lib
-crypto/vrf/internal/vrf/include
+node/data
+crypto/vrf/internal/vrf/sodium

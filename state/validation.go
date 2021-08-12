@@ -176,8 +176,8 @@ func validateBlock(state State, round int32, block *types.Block) error {
 	_, err := val.PubKey.VRFVerify(proof, message)
 	if err != nil {
 		return types.NewErrInvalidProof(fmt.Sprintf(
-			"verification failed: %s; proof: %v, prevProofHash: %v, height=%d, round=%d, addr: %v",
-			err.Error(), block.Proof, state.LastProofHash, state.LastBlockHeight, block.Round, block.ProposerAddress))
+			"verification failed: %s; proof: %v, height=%d, round=%d, addr: %v",
+			err.Error(), block.Proof, block.Height, block.Round, block.ProposerAddress))
 	}
 
 	return nil

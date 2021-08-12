@@ -7,12 +7,12 @@ docker:
 # order to build a binary with an Ostracon node in it (for built-in
 # ABCI testing).
 app:
-	go build -o build/app -tags badgerdb,boltdb,cleveldb,rocksdb ./app
+	go build -o build/app -tags libsodium,badgerdb,boltdb,cleveldb,rocksdb ./app
 
 # To be used primarily by the e2e docker instance. If you want to produce this binary
 # elsewhere, then run go build in the maverick directory.
 maverick:
-	go build -o build/maverick -tags badgerdb,boltdb,cleveldb,rocksdb ../maverick
+	go build -o build/maverick -tags libsodium,badgerdb,boltdb,cleveldb,rocksdb ../maverick
 
 generator:
 	go build -o build/generator ./generator

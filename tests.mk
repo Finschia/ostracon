@@ -74,6 +74,11 @@ test_deadlock:
 	@go test -p 1 -v  $(PACKAGES) -tags deadlock
 .PHONY: test_race
 
+test_tags:
+	@echo "--> Running go test"
+	@go test -p 1 $(PACKAGES) -tags "$(BUILD_TAGS)"
+.PHONY: test
+
 ###
 #
 # WARNING: NOT Support Open API 3. See the CONTRIBUTING.md#RPC Testing
