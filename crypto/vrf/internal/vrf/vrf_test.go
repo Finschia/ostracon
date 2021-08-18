@@ -4,13 +4,9 @@ package vrf
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"encoding/hex"
 	"math/rand"
 	"testing"
-	"unsafe"
-
-	"github.com/line/ostracon/crypto/ed25519"
 )
 
 var (
@@ -95,55 +91,17 @@ func TestKeyPairFromSeed(t *testing.T) {
 		t.Errorf("probe failed: %s", err1)
 	}
 	t.Logf("proof: %s (%d bytes)\n", enc(proof[:]), len(proof))
+	if uint32(len(proof)) != PROOFBYTES {
+		t.Errorf("proof size: %d != %d", len(proof), PROOFBYTES)
+	}
+
 	var output, err2 = ProofToHash(proof)
 	if err2 != nil {
 		t.Errorf("failed to hash proof: %s", err2)
 	}
 	t.Logf("output: %s (%d bytes)\n", enc(output[:]), len(output))
-}
-
-func TestHashIsDeterministicForKeyPairAndMessage(t *testing.T) {
-	sk := ed25519.GenPrivKey()
-	pk, _ := sk.PubKey().(ed25519.PubKeyEd25519)
-	message := []byte("hello, world")
-	var hashes = []*Output{}
-	var proofs = []*Proof{}
-	for i := 0; i < 100; i++ {
-		var proof, err1 = prove(&sk, message[:])
-		if err1 != nil {
-			t.Errorf("probe failed: %s", err1)
-		} else {
-			hash, err2 := proof.ToHash()
-			if err2 != nil {
-				t.Errorf("failed to hash proof: %s", err2)
-			} else {
-				output, err3 := verify(&pk, proof, message)
-				if err3 != nil {
-					t.Errorf("fail to verify proof: %s", err3)
-				} else if !bytes.Equal(hash[:], output[:]) {
-					t.Errorf("hash not match")
-				} else {
-					hashes = append(hashes, hash)
-					proofs = append(proofs, proof)
-				}
-			}
-		}
-	}
-
-	t.Logf("proofs for \"%s\": %s × %d", string(message), hex.EncodeToString(proofs[0][:]), len(hashes))
-	t.Logf("hashes for \"%s\": %s × %d", string(message), hex.EncodeToString(hashes[0][:]), len(hashes))
-
-	hash := hashes[0]
-	proof := proofs[0]
-	for i := 1; i < len(hashes); i++ {
-		if !bytes.Equal(hash[:], hashes[i][:]) {
-			t.Errorf("contains different hash: %s != %s",
-				hex.EncodeToString(hash[:]), hex.EncodeToString(hashes[i][:]))
-		}
-		if !bytes.Equal(proof[:], proofs[i][:]) {
-			t.Errorf("contains different proof: %s != %s",
-				hex.EncodeToString(proof[:]), hex.EncodeToString(proofs[i][:]))
-		}
+	if uint32(len(output)) != OUTPUTBYTES {
+		t.Errorf("output size: %d != %d", len(output), OUTPUTBYTES)
 	}
 }
 
@@ -177,20 +135,29 @@ func TestIsValidKey(t *testing.T) {
 	}
 }
 
-func TestProveAndVerify(t *testing.T) {
+func TestInternalProveAndVerify(t *testing.T) {
 	message := []byte("hello, world")
 
 	var zero [SEEDBYTES]byte
 	var pk, sk = KeyPairFromSeed(&zero)
+
+	t.Logf("private key: [%s]", enc(sk[:]))
+	t.Logf("public  key: [%s]", enc(pk[:]))
+
 	var proof, err1 = Prove(sk, message)
 	if err1 != nil {
 		t.Errorf("probe failed: %s", err1)
 	}
+
+	t.Logf("proof: %s", enc(proof[:]))
+
 	var output, err2 = ProofToHash(proof)
 	if err2 != nil {
 		t.Errorf("failed to hash proof: %s", err2)
 	}
-	t.Logf("SEED[%s] -> OUTPUT[%s]\n", enc(zero[:]), enc(output[:]))
+
+	t.Logf("output:[%s] from message:[%s]", enc(output[:]), enc(message))
+
 	var expected, err3 = Verify(pk, proof, message)
 	if err3 != nil {
 		t.Errorf("validation failed: %s", err3)
@@ -259,89 +226,5 @@ func TestSkToSeed(t *testing.T) {
 
 	if bytes.Compare(zero[:], actual[:]) != 0 {
 		t.Errorf("seed didn't match: %s != %s", enc(zero[:]), enc(actual[:]))
-	}
-}
-
-func TestKeyPairCompatibility(t *testing.T) {
-	var secret [SEEDBYTES]byte
-	tmPrivKey := ed25519.GenPrivKeyFromSecret(secret[:])
-	tmPubKey, _ := tmPrivKey.PubKey().(ed25519.PubKeyEd25519)
-	tmPrivKeyBytes := tmPrivKey[:]
-	tmPubKeyBytes := tmPubKey[:]
-
-	var seed [SEEDBYTES]byte
-	hashedSecret := sha256.Sum256(secret[:])
-	copy(seed[:], hashedSecret[:])
-	lsPubKey, lsPrivKey := KeyPairFromSeed(&seed)
-
-	if !bytes.Equal(tmPrivKeyBytes, lsPrivKey[:]) {
-		t.Errorf("incompatible private key: %s != %s",
-			enc(tmPrivKeyBytes), enc(lsPrivKey[:]))
-	}
-	t.Logf("ostracon: private key: %s (%d bytes)\n", enc(tmPrivKeyBytes[:]), len(tmPrivKey))
-	t.Logf("libsodium : private key: %s (%d bytes)\n", enc(lsPrivKey[:]), len(lsPrivKey))
-
-	if !bytes.Equal(tmPubKeyBytes, lsPubKey[:]) {
-		t.Errorf("incompatible public key: %s != %s", enc(tmPubKeyBytes), enc(lsPubKey[:]))
-	}
-	t.Logf("ostracon: public key: %s (%d bytes)\n", enc(tmPubKeyBytes), len(tmPubKey))
-	t.Logf("libsodium : public key: %s (%d bytes)\n", enc(lsPubKey[:]), len(lsPubKey))
-
-	pubKeyBytesPtr := (*[PUBLICKEYBYTES]byte)(unsafe.Pointer(&tmPubKey))
-	if !IsValidKey(pubKeyBytesPtr) {
-		t.Errorf("ed25519 key is not a valid public key")
-	}
-
-	// random Tendermint's key-pairs
-	msg := []byte("hello, world")
-	for i := 0; i < 100; i++ {
-		privKey := ed25519.GenPrivKey()
-		proof, err := prove(&privKey, msg)
-		if err != nil {
-			t.Errorf("Prove() failed: %s", err)
-		} else {
-			pubKey, _ := privKey.PubKey().(ed25519.PubKeyEd25519)
-			output, err := verify(&pubKey, proof, msg)
-			if err != nil {
-				t.Errorf("Verify() failed: %s", err)
-			} else {
-				hash, err := proof.ToHash()
-				if err != nil {
-					t.Errorf("Proof.ToHash() failed: %s", err)
-				} else if !bytes.Equal(hash[:], output[:]) {
-					t.Errorf("proof hash and verify hash didn't match: %s != %s",
-						hex.EncodeToString(hash[:]), hex.EncodeToString(output[:]))
-				}
-			}
-		}
-	}
-}
-
-func TestProve(t *testing.T) {
-	secret := [SEEDBYTES]byte{}
-	privateKey := ed25519.GenPrivKeyFromSecret(secret[:])
-	publicKey, _ := privateKey.PubKey().(ed25519.PubKeyEd25519)
-	t.Logf("seed: %s", enc(secret[:]))
-	t.Logf("private key: [%s]", enc(privateKey[:]))
-	t.Logf("public  key: [%s]", enc(publicKey[:]))
-
-	message := []byte("hello, world")
-	proof, err1 := prove(&privateKey, message)
-	if err1 != nil {
-		t.Fatalf("failed to prove: %s", err1)
-	}
-	t.Logf("proof: %s", enc(proof[:]))
-
-	hash1, err2 := proof.ToHash()
-	if err2 != nil {
-		t.Fatalf("failed to hash: %s", err2)
-	}
-	t.Logf("hash for \"%s\": %s", message, hash1.ToInt())
-
-	hash2, err3 := verify(&publicKey, proof, message)
-	if err3 != nil {
-		t.Errorf("failed to verify: %s", err3)
-	} else if !bytes.Equal(hash1[:], hash2[:]) {
-		t.Errorf("incompatible output: %s != %s", enc(hash1[:]), enc(hash2[:]))
 	}
 }

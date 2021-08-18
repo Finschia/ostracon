@@ -5,8 +5,16 @@ package vrf
 
 /*
 #cgo CFLAGS: -Wall -std=c99
-#cgo CFLAGS: -I./include/
-#cgo LDFLAGS: -L./lib -lsodium
+#cgo darwin,amd64 CFLAGS: -I./sodium/darwin_amd64/include/
+#cgo darwin,amd64 LDFLAGS: -L./sodium/darwin_amd64/lib -lsodium
+#cgo linux,amd64 CFLAGS: -I./sodium/linux_amd64/include
+#cgo linux,amd64 LDFLAGS: -L./sodium/linux_amd64/lib -lsodium
+#cgo linux,arm64 CFLAGS: -I./sodium/linux_arm64/include
+#cgo linux,arm64 LDFLAGS: -L./sodium/linux_arm64/lib -lsodium
+#cgo linux,arm CFLAGS: -I./sodium/linux_arm/include
+#cgo linux,arm LDFLAGS: -L./sodium/linux_arm/lib -lsodium
+#cgo windows,amd64 CFLAGS: -I./sodium/windows_amd64/include
+#cgo windows,amd64 LDFLAGS: -L./sodium/windows_amd64/lib -lsodium
 #include "sodium.h"
 */
 import "C"
@@ -14,7 +22,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"unsafe"
 )
 
 const (
@@ -26,16 +33,18 @@ const (
 	PRIMITIVE      = C.crypto_vrf_PRIMITIVE
 )
 
-var (
-	VrfLibsodiumUsed = true
-)
+func init() {
+	if C.sodium_init() == -1 {
+		panic("sodium_init() failed")
+	}
+}
 
 // Generate an Ed25519 key pair for use with VRF.
 func KeyPair() (*[PUBLICKEYBYTES]byte, *[SECRETKEYBYTES]byte) {
 	publicKey := [PUBLICKEYBYTES]byte{}
 	privateKey := [SECRETKEYBYTES]byte{}
-	publicKeyPtr := (*C.uchar)(unsafe.Pointer(&publicKey))
-	privateKeyPtr := (*C.uchar)(unsafe.Pointer(&privateKey))
+	publicKeyPtr := (*C.uchar)(&publicKey[0])
+	privateKeyPtr := (*C.uchar)(&privateKey[0])
 	C.crypto_vrf_keypair(publicKeyPtr, privateKeyPtr)
 	return &publicKey, &privateKey
 }
@@ -44,24 +53,24 @@ func KeyPair() (*[PUBLICKEYBYTES]byte, *[SECRETKEYBYTES]byte) {
 func KeyPairFromSeed(seed *[SEEDBYTES]byte) (*[PUBLICKEYBYTES]byte, *[SECRETKEYBYTES]byte) {
 	publicKey := [PUBLICKEYBYTES]byte{}
 	privateKey := [SECRETKEYBYTES]byte{}
-	publicKeyPtr := (*C.uchar)(unsafe.Pointer(&publicKey))
-	privateKeyPtr := (*C.uchar)(unsafe.Pointer(&privateKey))
-	seedPtr := (*C.uchar)(unsafe.Pointer(seed))
+	publicKeyPtr := (*C.uchar)(&publicKey[0])
+	privateKeyPtr := (*C.uchar)(&privateKey[0])
+	seedPtr := (*C.uchar)(&seed[0])
 	C.crypto_vrf_keypair_from_seed(publicKeyPtr, privateKeyPtr, seedPtr)
 	return &publicKey, &privateKey
 }
 
 // Verifies that the specified public key is valid.
 func IsValidKey(publicKey *[PUBLICKEYBYTES]byte) bool {
-	publicKeyPtr := (*C.uchar)(unsafe.Pointer(publicKey))
+	publicKeyPtr := (*C.uchar)(&publicKey[0])
 	return C.crypto_vrf_is_valid_key(publicKeyPtr) != 0
 }
 
 // Construct a VRF proof from given secret key and message.
 func Prove(privateKey *[SECRETKEYBYTES]byte, message []byte) (*[PROOFBYTES]byte, error) {
 	proof := [PROOFBYTES]byte{}
-	proofPtr := (*C.uchar)(unsafe.Pointer(&proof))
-	privateKeyPtr := (*C.uchar)(unsafe.Pointer(privateKey))
+	proofPtr := (*C.uchar)(&proof[0])
+	privateKeyPtr := (*C.uchar)(&privateKey[0])
 	messagePtr := bytesToUnsignedCharPointer(message)
 	messageLen := (C.ulonglong)(len(message))
 	if C.crypto_vrf_prove(proofPtr, privateKeyPtr, messagePtr, messageLen) != 0 {
@@ -76,16 +85,17 @@ func Prove(privateKey *[SECRETKEYBYTES]byte, message []byte) (*[PROOFBYTES]byte,
 // https://tools.ietf.org/html/draft-irtf-cfrg-vrf-04#section-5.3
 func Verify(publicKey *[PUBLICKEYBYTES]byte, proof *[PROOFBYTES]byte, message []byte) (*[OUTPUTBYTES]byte, error) {
 	output := [OUTPUTBYTES]byte{}
-	outputPtr := (*C.uchar)(unsafe.Pointer(&output))
-	publicKeyPtr := (*C.uchar)(unsafe.Pointer(publicKey))
-	proofPtr := (*C.uchar)(unsafe.Pointer(proof))
+	outputPtr := (*C.uchar)(&output[0])
+	publicKeyPtr := (*C.uchar)(&publicKey[0])
+	proofPtr := (*C.uchar)(&proof[0])
 	messagePtr := bytesToUnsignedCharPointer(message)
 	messageLen := (C.ulonglong)(len(message))
 	if C.crypto_vrf_verify(outputPtr, publicKeyPtr, proofPtr, messagePtr, messageLen) != 0 {
 		return nil, errors.New(fmt.Sprintf(
 			"given public key is invalid, or the proof isn't legitimately generated for the message:"+
-				" public_key=%s, proof=%s, message=%s",
-			hex.EncodeToString(publicKey[:]), hex.EncodeToString(proof[:]), hex.EncodeToString(message[:])))
+				" public_key=%s, proofSize=%d, proof=%s, message=%s",
+				hex.EncodeToString(publicKey[:]), len(proof), hex.EncodeToString(proof[:]),
+				hex.EncodeToString(message[:])))
 	}
 	return &output, nil
 }
@@ -95,8 +105,8 @@ func Verify(publicKey *[PUBLICKEYBYTES]byte, proof *[PROOFBYTES]byte, message []
 // this will return an error.
 func ProofToHash(proof *[PROOFBYTES]byte) (*[OUTPUTBYTES]byte, error) {
 	output := [OUTPUTBYTES]byte{}
-	outputPtr := (*C.uchar)(unsafe.Pointer(&output))
-	proofPtr := (*C.uchar)(unsafe.Pointer(proof))
+	outputPtr := (*C.uchar)(&output[0])
+	proofPtr := (*C.uchar)(&proof[0])
 	if C.crypto_vrf_proof_to_hash(outputPtr, proofPtr) != 0 {
 		return nil, errors.New(fmt.Sprintf(
 			"given proof isn't legitimately generated: proof=%s", hex.EncodeToString(proof[:])))
@@ -106,16 +116,16 @@ func ProofToHash(proof *[PROOFBYTES]byte) (*[OUTPUTBYTES]byte, error) {
 
 func SkToPk(privateKey *[SECRETKEYBYTES]byte) *[PUBLICKEYBYTES]byte {
 	publicKey := [PUBLICKEYBYTES]byte{}
-	publicKeyPtr := (*C.uchar)(unsafe.Pointer(&publicKey))
-	privateKeyPtr := (*C.uchar)(unsafe.Pointer(privateKey))
+	publicKeyPtr := (*C.uchar)(&publicKey[0])
+	privateKeyPtr := (*C.uchar)(&privateKey[0])
 	C.crypto_vrf_sk_to_pk(publicKeyPtr, privateKeyPtr) // void
 	return &publicKey
 }
 
 func SkToSeed(privateKey *[SECRETKEYBYTES]byte) *[SEEDBYTES]byte {
 	seed := [SEEDBYTES]byte{}
-	seedPtr := (*C.uchar)(unsafe.Pointer(&seed))
-	privateKeyPtr := (*C.uchar)(unsafe.Pointer(privateKey))
+	seedPtr := (*C.uchar)(&seed[0])
+	privateKeyPtr := (*C.uchar)(&privateKey[0])
 	C.crypto_vrf_sk_to_seed(seedPtr, privateKeyPtr) // void
 	return &seed
 }
@@ -124,5 +134,5 @@ func bytesToUnsignedCharPointer(msg []byte) *C.uchar {
 	if len(msg) == 0 {
 		return (*C.uchar)(C.NULL)
 	}
-	return (*C.uchar)(unsafe.Pointer(&msg[0]))
+	return (*C.uchar)(&msg[0])
 }

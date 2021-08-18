@@ -1,31 +1,36 @@
+// +build coniks
+
 package vrf
 
 import (
 	"bytes"
 	"errors"
 
-	coniksimpl "github.com/coniks-sys/coniks-go/crypto/vrf"
+	coniks "github.com/coniks-sys/coniks-go/crypto/vrf"
 )
 
-type vrfEd25519Coniks struct {
+type vrfEd25519coniks struct {
 	generatedHash  []byte
 	generatedProof []byte
 }
 
-func newVrfEd25519Coniks() *vrfEd25519Coniks {
-	return &vrfEd25519Coniks{nil, nil}
+func init() {
+	defaultVrf = newVrfEd25519coniks()
 }
 
-//nolint
-func newVrfEd25519ConiksForVerifier(output Output, proof Proof) *vrfEd25519Coniks {
-	return &vrfEd25519Coniks{output, proof}
+func newVrfEd25519coniks() *vrfEd25519coniks {
+	return &vrfEd25519coniks{nil, nil}
 }
 
-func (base *vrfEd25519Coniks) Prove(privateKey []byte, message []byte) (Proof, error) {
-	if len(privateKey) != coniksimpl.PrivateKeySize {
+func newVrfEd25519coniksForVerifier(output Output, proof Proof) *vrfEd25519coniks {
+	return &vrfEd25519coniks{output, proof}
+}
+
+func (base *vrfEd25519coniks) Prove(privateKey []byte, message []byte) (Proof, error) {
+	if len(privateKey) != coniks.PrivateKeySize {
 		return nil, errors.New("private key size is invalid")
 	}
-	coniksPrivKey := coniksimpl.PrivateKey(make([]byte, coniksimpl.PrivateKeySize))
+	coniksPrivKey := coniks.PrivateKey(make([]byte, coniks.PrivateKeySize))
 	copy(coniksPrivKey, privateKey)
 	hash, proof := coniksPrivKey.Prove(message)
 	base.generatedHash = hash
@@ -33,22 +38,22 @@ func (base *vrfEd25519Coniks) Prove(privateKey []byte, message []byte) (Proof, e
 	return proof, nil
 }
 
-func (base *vrfEd25519Coniks) Verify(publicKey []byte, proof Proof, message []byte) (bool, error) {
+func (base *vrfEd25519coniks) Verify(publicKey []byte, proof Proof, message []byte) (bool, error) {
 	if base.generatedHash == nil {
 		return false, errors.New("vrf hash was not given")
 	}
 	if !bytes.Equal(base.generatedProof, proof) {
 		return false, errors.New("proof is not same to the previously generated proof")
 	}
-	if len(publicKey) != coniksimpl.PublicKeySize {
+	if len(publicKey) != coniks.PublicKeySize {
 		return false, errors.New("public key size is invalid")
 	}
-	coniksPubKey := coniksimpl.PublicKey(make([]byte, coniksimpl.PublicKeySize))
+	coniksPubKey := coniks.PublicKey(make([]byte, coniks.PublicKeySize))
 	copy(coniksPubKey, publicKey)
 	return coniksPubKey.Verify(message, base.generatedHash, proof), nil
 }
 
-func (base *vrfEd25519Coniks) ProofToHash(proof Proof) (Output, error) {
+func (base *vrfEd25519coniks) ProofToHash(proof Proof) (Output, error) {
 	if base.generatedHash == nil {
 		return nil, errors.New("vrf hash was not given")
 	}

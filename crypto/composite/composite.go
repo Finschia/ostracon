@@ -92,9 +92,9 @@ func (sk PrivKey) Sign(msg []byte) ([]byte, error) {
 	return sk.SignKey.Sign(msg)
 }
 
-// VRFProve generates a VRF Proof for given seed to generate a verifiable random.
-func (sk PrivKey) VRFProve(seed []byte) (crypto.Proof, error) {
-	return sk.VrfKey.VRFProve(seed)
+// VRFProve generates a VRF Proof for given message to generate a verifiable random.
+func (sk PrivKey) VRFProve(message []byte) (crypto.Proof, error) {
+	return sk.VrfKey.VRFProve(message)
 }
 
 func (sk PrivKey) PubKey() crypto.PubKey {

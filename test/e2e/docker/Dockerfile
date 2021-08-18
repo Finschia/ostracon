@@ -4,10 +4,11 @@
 FROM golang:1.15
 
 RUN apt-get -qq update -y && apt-get -qq upgrade -y >/dev/null
-RUN apt-get -qq install -y libleveldb-dev librocksdb-dev >/dev/null
+RUN apt-get -qq install -y libleveldb-dev librocksdb-dev libtool >/dev/null
 
 # Set up build directory /src/ostracon
 ENV OSTRACON_BUILD_OPTIONS badgerdb,boltdb,cleveldb,rocksdb
+ENV LIBSODIUM 1
 WORKDIR /src/ostracon
 
 # Fetch dependencies separately (for layer caching)
