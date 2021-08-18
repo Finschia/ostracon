@@ -233,14 +233,16 @@ DESTINATION = ./index.html.md
 ###                           Documentation                                 ###
 ###############################################################################
 
+BRANCH := $(shell git branch --show-current)
+BRANCH_URI := $(shell git branch --show-current | sed 's/[\#]/%23/g')
 build-docs:
 	cd docs && \
-	while read p; do \
-		(git checkout $${p} . && npm install && VUEPRESS_BASE="/$${p}/" npm run build) ; \
-		mkdir -p ~/output/$${p} ; \
-		cp -r .vuepress/dist/* ~/output/$${p}/ ; \
-		cp ~/output/$${p}/index.html ~/output ; \
-	done < versions ;
+	npm install && \
+	VUEPRESS_BASE="/$(BRANCH_URI)/" npm run build && \
+	mkdir -p ~/output/$(BRANCH) && \
+	cp -r .vuepress/dist/* ~/output/$(BRANCH)/ && \
+	for f in `find . -name '*.png' | grep -v '/node_modules/'`; do if [ ! -e `dirname $$f` ]; then mkdir `dirname $$f`; fi; cp $$f ~/output/$(BRANCH)/`dirname $$f`; done && \
+	echo '<html><head><meta http-equiv="refresh" content="0;/$(BRANCH_URI)/index.html"/></head></html>' > ~/output/index.html
 .PHONY: build-docs
 
 sync-docs:
