@@ -372,7 +372,7 @@ func TestProposerSelection3(t *testing.T) {
 }
 
 func newValidator(address []byte, power int64) *Validator {
-	return &Validator{Address: address, StakingPower: power, PubKey: randPubKey()}
+	return &Validator{Address: address, StakingPower: power}
 }
 
 func randPubKey() crypto.PubKey {
@@ -1045,8 +1045,6 @@ func TestValSetUpdatesBasicTestsExecute(t *testing.T) {
 
 // Test that different permutations of an update give the same result.
 func TestValSetUpdatesOrderIndependenceTestsExecute(t *testing.T) {
-	// FIXME
-	t.Skip("Temporarily excluded because this a case that doesn't end due to Proposer selection changes.")
 
 	// startVals - initial validators to create the set with
 	// updateVals - a sequence of updates to be applied to the set.
