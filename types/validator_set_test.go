@@ -515,8 +515,6 @@ func TestAvgProposerPriority(t *testing.T) {
 }
 
 func TestAveragingInIncrementProposerPriority(t *testing.T) {
-	// FIXME
-	t.Skip("The ProposerPriority validated in this test case is excluded because it is not used in VRF.")
 
 	// Test that the averaging works as expected inside of IncrementProposerPriority.
 	// Each validator comes with zero voting power which simplifies reasoning about
@@ -549,7 +547,7 @@ func TestAveragingInIncrementProposerPriority(t *testing.T) {
 	}
 	for i, tc := range tcs {
 		// work on copy to have the old ProposerPriorities:
-		newVset := tc.vs.Copy()
+		newVset := tc.vs.CopyIncrementProposerPriority(tc.times)
 		for _, val := range tc.vs.Validators {
 			_, updatedVal := newVset.GetByAddress(val.Address)
 			assert.Equal(t, updatedVal.ProposerPriority, val.ProposerPriority-tc.avg, "test case: %v", i)
