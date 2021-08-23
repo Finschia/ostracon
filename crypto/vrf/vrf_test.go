@@ -32,58 +32,63 @@ func enc(s []byte) string {
 	return hex.EncodeToString(s)
 }
 
-func TestProofToHash(t *testing.T) {
-	secret := [SEEDBYTES]byte{}
-	privateKey := ed25519.NewKeyFromSeed(secret[:])
-	message := []byte("hello, world")
+func proveAndVerify(t *testing.T, privateKey, publicKey []byte) (bool, error) {
+	t.Logf("private key: %s (%d bytes)\n", enc(privateKey), len(privateKey))
+	t.Logf("public key: %s (%d bytes)\n", enc(privateKey), len(privateKey))
 
+	message := []byte("hello, world")
 	proof, err1 := Prove(privateKey, message)
 	if err1 != nil {
 		t.Fatalf("failed to prove: %s", err1)
 	}
+	t.Logf("proof: %s (%d bytes)\n", enc(proof[:]), len(proof))
 
-	_, err2 := ProofToHash(proof)
+	output, err2 := ProofToHash(proof)
 	if err2 != nil {
-		t.Errorf("failed to convert to hash: %s", enc(proof[:]))
+		t.Fatalf("failed to hash: %s", err2)
 	}
+	t.Logf("output: %s (%d bytes)\n", enc(output[:]), len(output))
 
-	t.Skip("Invalid proof checking is available only for libsodium")
-	// check to fail for invalid proof bytes
-	for i := range proof {
-		proof[i] = 0xFF
-	}
-	op3, err3 := ProofToHash(proof)
-	if err3 == nil {
-		t.Errorf("unexpected hash for invalid proof: %s", enc(op3[:]))
-	}
+	return Verify(publicKey, proof, message)
 }
 
-func TestProve(t *testing.T) {
+func TestProveAndVerify(t *testing.T) {
 	secret := [SEEDBYTES]byte{}
 	privateKey := ed25519.NewKeyFromSeed(secret[:])
 	publicKey := privateKey.Public().(ed25519.PublicKey)
 
-	t.Logf("private key: [%s]", enc(privateKey[:]))
-	t.Logf("public  key: [%s]", enc(publicKey[:]))
+	verified, err := proveAndVerify(t, privateKey, publicKey)
 
-	message := []byte("hello, world")
-	proof, err1 := Prove(privateKey, message)
-	if err1 != nil {
-		t.Fatalf("failed to prove: %s", err1)
-	}
-	t.Logf("proof: %s", enc(proof[:]))
-
-	hash1, err2 := ProofToHash(proof)
-	if err2 != nil {
-		t.Fatalf("failed to hash: %s", err2)
-	}
-	t.Logf("hash for \"%s\": %s", message, hash1.ToInt())
-
-	verified, err3 := Verify(publicKey, proof, message)
-	if err3 != nil {
-		t.Errorf("failed to verify: %s", err3)
+	if err != nil {
+		t.Fatalf("failed to verify: %s", err)
 	} else if !verified {
-		t.Errorf("incompatible output")
+		t.Fatalf("incompatible output")
+	}
+}
+
+func BenchmarkProveAndVerify(b *testing.B) {
+	secret := [SEEDBYTES]byte{}
+	privateKey := ed25519.NewKeyFromSeed(secret[:])
+	publicKey := privateKey.Public().(ed25519.PublicKey)
+	message := []byte("hello, world")
+
+	var proof []byte
+	var err error
+	b.Run("VRF prove", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			proof, err = Prove(privateKey, message)
+		}
+	})
+	if err != nil {
+		panic(err)
+	}
+	b.Run("VRF verify", func(b *testing.B) {
+		b.ResetTimer()
+		_, err = Verify(publicKey, proof, message)
+	})
+	if err != nil {
+		panic(err)
 	}
 }
 

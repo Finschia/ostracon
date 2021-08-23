@@ -3,26 +3,20 @@ SRCPATH=$(shell pwd)
 OUTPUT?=build/ostracon
 
 INCLUDE = -I=${GOPATH}/src/github.com/line/ostracon -I=${GOPATH}/src -I=${GOPATH}/src/github.com/gogo/protobuf/protobuf
-BUILD_TAGS?='ostracon'
+BUILD_TAGS?=ostracon
 VERSION := $(shell git describe --always)
-CGO_OPTPTION=0
 LIBSODIUM_TARGET=
-PREPARE_LIBSODIUM_TARGET=
 ifeq ($(LIBSODIUM), 1)
-  BUILD_TAGS='libsodium ostracon'
   LIBSODIUM_TARGET=libsodium
-ifneq ($(OS), Windows_NT)
-ifeq ($(shell uname -s), Linux)
-  PREPARE_LIBSODIUM_TARGET=prepare-libsodium-linux
+  BUILD_TAGS += libsodium
 endif
-endif
-endif
-LIBSODIM_BUILD_TAGS='libsodium ostracon'
 LD_FLAGS = -X github.com/line/ostracon/version.Version=$(VERSION)
 BUILD_FLAGS = -mod=readonly -ldflags "$(LD_FLAGS)"
 HTTPS_GIT := https://github.com/line/ostracon.git
 DOCKER_BUF := docker run -v $(shell pwd):/workspace --workdir /workspace bufbuild/buf
 CGO_ENABLED ?= 0
+TARGET_OS ?= $(shell go env GOOS)
+TARGET_ARCH ?= $(shell go env GOARCH)
 
 # handle nostrip
 ifeq (,$(findstring nostrip,$(OSTRACON_BUILD_OPTIONS)))
@@ -72,7 +66,7 @@ build: $(LIBSODIUM_TARGET)
 	CGO_ENABLED=1 go build $(BUILD_FLAGS) -tags "$(BUILD_TAGS)" -o $(OUTPUT) ./cmd/ostracon/
 .PHONY: build
 
-install:
+install: $(LIBSODIUM_TARGET)
 	CGO_ENABLED=1 go install $(BUILD_FLAGS) -tags "$(BUILD_TAGS)" ./cmd/ostracon
 .PHONY: install
 
@@ -151,15 +145,21 @@ install_abci:
 ########################################
 ### libsodium
 
-prepare-libsodium-linux:
-	apt-get update && apt-get -y install libtool libboost-all-dev autoconf build-essential
+VRF_ROOT = $(SRCPATH)/crypto/vrf/internal/vrf
+LIBSODIUM_ROOT = $(VRF_ROOT)/libsodium
+LIBSODIUM_OS = $(VRF_ROOT)/sodium/$(TARGET_OS)_$(TARGET_ARCH)
 
 libsodium:
-	cd $(SRCPATH)/crypto/vrf/internal/vrf/libsodium && \
-    		./autogen.sh && \
-    		./configure --disable-shared --prefix="$(SRCPATH)/crypto/vrf/internal/vrf/" &&	\
-    		$(MAKE) && \
-    		$(MAKE) install
+	rm -rf $(LIBSODIUM_ROOT)
+	mkdir $(LIBSODIUM_ROOT)
+	git submodule update --init --recursive
+	@if [ ! -f $(LIBSODIUM_OS)/lib/libsodium.a ]; then \
+		cd $(LIBSODIUM_ROOT) && \
+		./autogen.sh && \
+		./configure --disable-shared --prefix="$(LIBSODIUM_OS)" &&	\
+		$(MAKE) && \
+		$(MAKE) install; \
+	fi
 
 ########################################
 ### Distribution
@@ -233,14 +233,16 @@ DESTINATION = ./index.html.md
 ###                           Documentation                                 ###
 ###############################################################################
 
+BRANCH := $(shell git branch --show-current)
+BRANCH_URI := $(shell git branch --show-current | sed 's/[\#]/%23/g')
 build-docs:
 	cd docs && \
-	while read p; do \
-		(git checkout $${p} . && npm install && VUEPRESS_BASE="/$${p}/" npm run build) ; \
-		mkdir -p ~/output/$${p} ; \
-		cp -r .vuepress/dist/* ~/output/$${p}/ ; \
-		cp ~/output/$${p}/index.html ~/output ; \
-	done < versions ;
+	npm install && \
+	VUEPRESS_BASE="/$(BRANCH_URI)/" npm run build && \
+	mkdir -p ~/output/$(BRANCH) && \
+	cp -r .vuepress/dist/* ~/output/$(BRANCH)/ && \
+	for f in `find . -name '*.png' | grep -v '/node_modules/'`; do if [ ! -e `dirname $$f` ]; then mkdir `dirname $$f`; fi; cp $$f ~/output/$(BRANCH)/`dirname $$f`; done && \
+	echo '<html><head><meta http-equiv="refresh" content="0;/$(BRANCH_URI)/index.html"/></head></html>' > ~/output/index.html
 .PHONY: build-docs
 
 sync-docs:
@@ -287,9 +289,9 @@ DOCKER_CMD = docker run --rm \
                         -v `pwd`:$(DOCKER_HOME) \
                         -w $(DOCKER_HOME)
 DOCKER_IMG = golang:1.15-alpine
-BUILD_CMD = apk add --update --no-cache git make gcc libc-dev build-base curl jq file gmp-dev clang \
+BUILD_CMD = apk add --update --no-cache git make gcc libc-dev build-base curl jq bash file gmp-dev clang libtool autoconf automake \
 	&& cd $(DOCKER_HOME) \
-	&& make build-linux
+	&& LIBSODIUM=$(LIBSODIUM) make build-linux
 
 # Login docker-container for confirmation building linux binary
 build-shell:
