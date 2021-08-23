@@ -283,8 +283,8 @@ github.com/lightstep/lightstep-tracer-common/golang/gogo v0.0.0-20190605223551-b
 github.com/lightstep/lightstep-tracer-go v0.18.1/go.mod h1:jlF1pusYV4pidLvZ+XD0UBX0ZE6WURAspgAczcDHrL4=
 github.com/line/gorocksdb v0.0.0-20210406043732-d4bea34b6d55 h1:cXVtMiJkvQ4kn0pxM2svH1ncJbFgQsLHtnFC9qJj2VM=
 github.com/line/gorocksdb v0.0.0-20210406043732-d4bea34b6d55/go.mod h1:DHRJroSL7NaRkpvocRx3OtRsleXVsYSxBI9SfHFlTQ0=
-github.com/line/tm-db/v2 v2.0.0-init.1.0.20210413083915-5bb60e117524 h1:eKXXnUm1SblC0AIXAMNDaSyvIbQ50yXqFbh9+Q8Kjvg=
-github.com/line/tm-db/v2 v2.0.0-init.1.0.20210413083915-5bb60e117524/go.mod h1:wmkyPabXjtVZ1dvRofmurjaceghywtCSYGqFuFS+TbI=
+github.com/line/tm-db/v2 v2.0.0-init.1.0.20210823231108-b18c261ebc34 h1:suaVbWFSt0XafwX0SbxHKtECebTrI/ge59NJyEq/08U=
+github.com/line/tm-db/v2 v2.0.0-init.1.0.20210823231108-b18c261ebc34/go.mod h1:wmkyPabXjtVZ1dvRofmurjaceghywtCSYGqFuFS+TbI=
 github.com/lyft/protoc-gen-validate v0.0.13/go.mod h1:XbGvPuh87YZc5TdIa2/I4pLk0QoUACkjt2znoq26NVQ=
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
 github.com/magiconair/properties v1.8.1 h1:ZC2Vc7/ZFkGmsVC9KvOjumD+G5lXy2RtTKyzRKO2BQ4=
