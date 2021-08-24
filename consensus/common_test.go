@@ -526,7 +526,8 @@ func forceProposer(cs *State, vals []*validatorStub, index []int, height []int64
 			return
 		}
 	}
-	panic("no such LastProofHash making index validator to be proposer")
+	panic("Unfortunately, there is no such LastProofHash making index validator to be proposer. " +
+		"Please re-run the test since find LastProofHash")
 }
 
 //-------------------------------------------------------------------------------
