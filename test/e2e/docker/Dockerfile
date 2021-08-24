@@ -12,6 +12,7 @@ WORKDIR /
 RUN wget -O rocksdb-v6.20.3.tar.gz https://github.com/facebook/rocksdb/archive/v6.20.3.tar.gz
 RUN tar -zxvf rocksdb-v6.20.3.tar.gz
 RUN cd rocksdb-6.20.3 && make -j2 shared_lib && make install-shared
+RUN cp /usr/local/lib/librocksdb.so* /usr/lib
 
 # Set up build directory /src/ostracon
 ENV OSTRACON_BUILD_OPTIONS badgerdb,boltdb,cleveldb,rocksdb
