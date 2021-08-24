@@ -11,10 +11,11 @@ type sampleApp struct {
 	types.BaseApplication
 }
 
-func getResponseCallback(t *testing.T, called *bool) ResponseCallback {
+func getResponseCallback(t *testing.T, seq *int, target int) ResponseCallback {
 	return func (res *types.Response) {
 		require.NotNil(t, res)
-		*called = true
+		require.Equal(t, *seq, target)
+		*seq = *seq + 1
 	}
 }
 
@@ -27,91 +28,60 @@ func TestLocalClientCalls(t *testing.T) {
 		gbCalled = true
 	})
 
-	cbCalled := false
-	res := c.EchoAsync("msg", getResponseCallback(t, &cbCalled))
+	callSeq := 0
+	res := c.EchoAsync("msg", getResponseCallback(t, &callSeq, 0))
 	res.Wait()
-	require.True(t, cbCalled)
+	// callback is not called synchronously, so we cannot assure that the callback is called
+	// But we can assure the callback is called by turns
 	require.True(t, gbCalled)
 
-	cbCalled = false
-	res = c.FlushAsync(getResponseCallback(t, &cbCalled))
+	res = c.FlushAsync(getResponseCallback(t, &callSeq, 1))
 	res.Wait()
-	require.True(t, cbCalled)
 
-	cbCalled = false
-	res = c.InfoAsync(types.RequestInfo{}, getResponseCallback(t, &cbCalled))
+	res = c.InfoAsync(types.RequestInfo{}, getResponseCallback(t, &callSeq, 2))
 	res.Wait()
-	require.True(t, cbCalled)
 
-	cbCalled = false
-	res = c.SetOptionAsync(types.RequestSetOption{}, getResponseCallback(t, &cbCalled))
+	res = c.SetOptionAsync(types.RequestSetOption{}, getResponseCallback(t, &callSeq, 3))
 	res.Wait()
-	require.True(t, cbCalled)
 
-	cbCalled = false
-	res = c.DeliverTxAsync(types.RequestDeliverTx{}, getResponseCallback(t, &cbCalled))
+	res = c.DeliverTxAsync(types.RequestDeliverTx{}, getResponseCallback(t, &callSeq, 4))
 	res.Wait()
-	require.True(t, cbCalled)
 
-	cbCalled = false
-	res = c.CheckTxAsync(types.RequestCheckTx{}, getResponseCallback(t, &cbCalled))
+	res = c.CheckTxAsync(types.RequestCheckTx{}, getResponseCallback(t, &callSeq, 5))
 	res.Wait()
-	require.True(t, cbCalled)
 
-	cbCalled = false
-	res = c.QueryAsync(types.RequestQuery{}, getResponseCallback(t, &cbCalled))
+	res = c.QueryAsync(types.RequestQuery{}, getResponseCallback(t, &callSeq, 6))
 	res.Wait()
-	require.True(t, cbCalled)
 
-	cbCalled = false
-	res = c.CommitAsync(getResponseCallback(t, &cbCalled))
+	res = c.CommitAsync(getResponseCallback(t, &callSeq, 7))
 	res.Wait()
-	require.True(t, cbCalled)
 
-	cbCalled = false
-	res = c.InitChainAsync(types.RequestInitChain{}, getResponseCallback(t, &cbCalled))
+	res = c.InitChainAsync(types.RequestInitChain{}, getResponseCallback(t, &callSeq, 8))
 	res.Wait()
-	require.True(t, cbCalled)
 
-	cbCalled = false
-	res = c.BeginBlockAsync(types.RequestBeginBlock{}, getResponseCallback(t, &cbCalled))
+	res = c.BeginBlockAsync(types.RequestBeginBlock{}, getResponseCallback(t, &callSeq, 9))
 	res.Wait()
-	require.True(t, cbCalled)
 
-	cbCalled = false
-	res = c.EndBlockAsync(types.RequestEndBlock{}, getResponseCallback(t, &cbCalled))
+	res = c.EndBlockAsync(types.RequestEndBlock{}, getResponseCallback(t, &callSeq, 10))
 	res.Wait()
-	require.True(t, cbCalled)
 
-	cbCalled = false
-	res = c.BeginRecheckTxAsync(types.RequestBeginRecheckTx{}, getResponseCallback(t, &cbCalled))
+	res = c.BeginRecheckTxAsync(types.RequestBeginRecheckTx{}, getResponseCallback(t, &callSeq, 11))
 	res.Wait()
-	require.True(t, cbCalled)
 
-	cbCalled = false
-	res = c.EndRecheckTxAsync(types.RequestEndRecheckTx{}, getResponseCallback(t, &cbCalled))
+	res = c.EndRecheckTxAsync(types.RequestEndRecheckTx{}, getResponseCallback(t, &callSeq, 12))
 	res.Wait()
-	require.True(t, cbCalled)
 
-	cbCalled = false
-	res = c.ListSnapshotsAsync(types.RequestListSnapshots{}, getResponseCallback(t, &cbCalled))
+	res = c.ListSnapshotsAsync(types.RequestListSnapshots{}, getResponseCallback(t, &callSeq, 13))
 	res.Wait()
-	require.True(t, cbCalled)
 
-	cbCalled = false
-	res = c.OfferSnapshotAsync(types.RequestOfferSnapshot{}, getResponseCallback(t, &cbCalled))
+	res = c.OfferSnapshotAsync(types.RequestOfferSnapshot{}, getResponseCallback(t, &callSeq, 14))
 	res.Wait()
-	require.True(t, cbCalled)
 
-	cbCalled = false
-	res = c.LoadSnapshotChunkAsync(types.RequestLoadSnapshotChunk{}, getResponseCallback(t, &cbCalled))
+	res = c.LoadSnapshotChunkAsync(types.RequestLoadSnapshotChunk{}, getResponseCallback(t, &callSeq, 15))
 	res.Wait()
-	require.True(t, cbCalled)
 
-	cbCalled = false
-	res = c.ApplySnapshotChunkAsync(types.RequestApplySnapshotChunk{}, getResponseCallback(t, &cbCalled))
+	res = c.ApplySnapshotChunkAsync(types.RequestApplySnapshotChunk{}, getResponseCallback(t, &callSeq, 16))
 	res.Wait()
-	require.True(t, cbCalled)
 
 	_, err := c.EchoSync("msg")
 	require.NoError(t, err)
