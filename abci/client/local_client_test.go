@@ -2,6 +2,7 @@ package abcicli
 
 import (
 	"testing"
+	"time"
 
 	"github.com/line/ostracon/abci/types"
 	"github.com/stretchr/testify/require"
@@ -11,11 +12,24 @@ type sampleApp struct {
 	types.BaseApplication
 }
 
-func getResponseCallback(t *testing.T, seq *int, target int) ResponseCallback {
+func newDoneChan(t *testing.T) chan struct{} {
+	result := make(chan struct{})
+	go func(){
+		select {
+		case <-time.After(time.Second):
+			require.Fail(t, "callback is not called for a second")
+		case <-result:
+			return
+		}
+	}()
+	return result
+}
+
+func getResponseCallback(t *testing.T) ResponseCallback {
+	doneChan := newDoneChan(t)
 	return func (res *types.Response) {
 		require.NotNil(t, res)
-		require.Equal(t, *seq, target)
-		*seq = *seq + 1
+		doneChan<- struct{}{}
 	}
 }
 
@@ -28,60 +42,28 @@ func TestLocalClientCalls(t *testing.T) {
 		gbCalled = true
 	})
 
-	callSeq := 0
-	res := c.EchoAsync("msg", getResponseCallback(t, &callSeq, 0))
+	res := c.EchoAsync("msg", getResponseCallback(t))
 	res.Wait()
 	// callback is not called synchronously, so we cannot assure that the callback is called
 	// But we can assure the callback is called by turns
 	require.True(t, gbCalled)
 
-	res = c.FlushAsync(getResponseCallback(t, &callSeq, 1))
-	res.Wait()
-
-	res = c.InfoAsync(types.RequestInfo{}, getResponseCallback(t, &callSeq, 2))
-	res.Wait()
-
-	res = c.SetOptionAsync(types.RequestSetOption{}, getResponseCallback(t, &callSeq, 3))
-	res.Wait()
-
-	res = c.DeliverTxAsync(types.RequestDeliverTx{}, getResponseCallback(t, &callSeq, 4))
-	res.Wait()
-
-	res = c.CheckTxAsync(types.RequestCheckTx{}, getResponseCallback(t, &callSeq, 5))
-	res.Wait()
-
-	res = c.QueryAsync(types.RequestQuery{}, getResponseCallback(t, &callSeq, 6))
-	res.Wait()
-
-	res = c.CommitAsync(getResponseCallback(t, &callSeq, 7))
-	res.Wait()
-
-	res = c.InitChainAsync(types.RequestInitChain{}, getResponseCallback(t, &callSeq, 8))
-	res.Wait()
-
-	res = c.BeginBlockAsync(types.RequestBeginBlock{}, getResponseCallback(t, &callSeq, 9))
-	res.Wait()
-
-	res = c.EndBlockAsync(types.RequestEndBlock{}, getResponseCallback(t, &callSeq, 10))
-	res.Wait()
-
-	res = c.BeginRecheckTxAsync(types.RequestBeginRecheckTx{}, getResponseCallback(t, &callSeq, 11))
-	res.Wait()
-
-	res = c.EndRecheckTxAsync(types.RequestEndRecheckTx{}, getResponseCallback(t, &callSeq, 12))
-	res.Wait()
-
-	res = c.ListSnapshotsAsync(types.RequestListSnapshots{}, getResponseCallback(t, &callSeq, 13))
-	res.Wait()
-
-	res = c.OfferSnapshotAsync(types.RequestOfferSnapshot{}, getResponseCallback(t, &callSeq, 14))
-	res.Wait()
-
-	res = c.LoadSnapshotChunkAsync(types.RequestLoadSnapshotChunk{}, getResponseCallback(t, &callSeq, 15))
-	res.Wait()
-
-	res = c.ApplySnapshotChunkAsync(types.RequestApplySnapshotChunk{}, getResponseCallback(t, &callSeq, 16))
-	res.Wait()
+	c.FlushAsync(getResponseCallback(t))
+	c.InfoAsync(types.RequestInfo{}, getResponseCallback(t))
+	c.SetOptionAsync(types.RequestSetOption{}, getResponseCallback(t))
+	c.DeliverTxAsync(types.RequestDeliverTx{}, getResponseCallback(t))
+	c.CheckTxAsync(types.RequestCheckTx{}, getResponseCallback(t))
+	c.QueryAsync(types.RequestQuery{}, getResponseCallback(t))
+	c.CommitAsync(getResponseCallback(t))
+	c.InitChainAsync(types.RequestInitChain{}, getResponseCallback(t))
+	c.BeginBlockAsync(types.RequestBeginBlock{}, getResponseCallback(t))
+	c.EndBlockAsync(types.RequestEndBlock{}, getResponseCallback(t))
+	c.BeginRecheckTxAsync(types.RequestBeginRecheckTx{}, getResponseCallback(t))
+	c.EndRecheckTxAsync(types.RequestEndRecheckTx{}, getResponseCallback(t))
+	c.ListSnapshotsAsync(types.RequestListSnapshots{}, getResponseCallback(t))
+	c.OfferSnapshotAsync(types.RequestOfferSnapshot{}, getResponseCallback(t))
+	c.LoadSnapshotChunkAsync(types.RequestLoadSnapshotChunk{}, getResponseCallback(t))
+	c.ApplySnapshotChunkAsync(types.RequestApplySnapshotChunk{}, getResponseCallback(t))
 
 	_, err := c.EchoSync("msg")
 	require.NoError(t, err)
