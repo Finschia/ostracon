@@ -1,138 +1,26 @@
-package abcicli_test
+package abcicli
 
 import (
-	"fmt"
 	"testing"
-	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	abcicli "github.com/line/ostracon/abci/client"
-	"github.com/line/ostracon/abci/server"
 	"github.com/line/ostracon/abci/types"
-	tmrand "github.com/line/ostracon/libs/rand"
-	"github.com/line/ostracon/libs/service"
+	"github.com/stretchr/testify/require"
 )
 
-func TestProperSyncCalls(t *testing.T) {
-	app := slowApp{}
-
-	s, c := setupClientServer(t, app)
-	t.Cleanup(func() {
-		if err := s.Stop(); err != nil {
-			t.Error(err)
-		}
-	})
-	t.Cleanup(func() {
-		if err := c.Stop(); err != nil {
-			t.Error(err)
-		}
-	})
-
-	resp := make(chan error, 1)
-	go func() {
-		// This is BeginBlockSync unrolled....
-		reqres := c.BeginBlockAsync(types.RequestBeginBlock{}, nil)
-		_, err := c.FlushSync()
-		require.NoError(t, err)
-		res := reqres.Response.GetBeginBlock()
-		require.NotNil(t, res)
-		resp <- c.Error()
-	}()
-
-	select {
-	case <-time.After(time.Second):
-		require.Fail(t, "No response arrived")
-	case err, ok := <-resp:
-		require.True(t, ok, "Must not close channel")
-		assert.NoError(t, err, "This should return success")
-	}
-}
-
-func TestHangingSyncCalls(t *testing.T) {
-	app := slowApp{}
-
-	s, c := setupClientServer(t, app)
-	t.Cleanup(func() {
-		if err := s.Stop(); err != nil {
-			t.Log(err)
-		}
-	})
-	t.Cleanup(func() {
-		if err := c.Stop(); err != nil {
-			t.Log(err)
-		}
-	})
-
-	resp := make(chan error, 1)
-	go func() {
-		// Start BeginBlock and flush it
-		reqres := c.BeginBlockAsync(types.RequestBeginBlock{}, nil)
-		flush := c.FlushAsync(nil)
-		// wait 20 ms for all events to travel socket, but
-		// no response yet from server
-		time.Sleep(20 * time.Millisecond)
-		// kill the server, so the connections break
-		err := s.Stop()
-		require.NoError(t, err)
-
-		// wait for the response from BeginBlock
-		reqres.Wait()
-		flush.Wait()
-		resp <- c.Error()
-	}()
-
-	select {
-	case <-time.After(time.Second):
-		require.Fail(t, "No response arrived")
-	case err, ok := <-resp:
-		require.True(t, ok, "Must not close channel")
-		assert.Error(t, err, "We should get EOF error")
-	}
-}
-
-func setupClientServer(t *testing.T, app types.Application) (
-	service.Service, abcicli.Client) {
-	// some port between 20k and 30k
-	port := 20000 + tmrand.Int32()%10000
-	addr := fmt.Sprintf("localhost:%d", port)
-
-	s, err := server.NewServer(addr, "socket", app)
-	require.NoError(t, err)
-	err = s.Start()
-	require.NoError(t, err)
-
-	c := abcicli.NewSocketClient(addr, true)
-	err = c.Start()
-	require.NoError(t, err)
-
-	return s, c
-}
-
-type slowApp struct {
+type sampleApp struct {
 	types.BaseApplication
 }
 
-func (slowApp) BeginBlock(req types.RequestBeginBlock) types.ResponseBeginBlock {
-	time.Sleep(200 * time.Millisecond)
-	return types.ResponseBeginBlock{}
+func getResponseCallback(t *testing.T, called *bool) ResponseCallback {
+	return func (res *types.Response) {
+		require.NotNil(t, res)
+		*called = true
+	}
 }
 
-func TestSockerClientCalls(t *testing.T) {
+func TestLocalClientCalls(t *testing.T) {
 	app := sampleApp{}
-
-	s, c := setupClientServer(t, app)
-	t.Cleanup(func() {
-		if err := s.Stop(); err != nil {
-			t.Error(err)
-		}
-	})
-	t.Cleanup(func() {
-		if err := c.Stop(); err != nil {
-			t.Error(err)
-		}
-	})
+	c := NewLocalClient(nil, app)
 
 	gbCalled := false
 	c.SetGlobalCallback(func(*types.Request, *types.Response) {
@@ -275,15 +163,4 @@ func TestSockerClientCalls(t *testing.T) {
 
 	_, err = c.ApplySnapshotChunkSync(types.RequestApplySnapshotChunk{})
 	require.NoError(t, err)
-}
-
-type sampleApp struct {
-	types.BaseApplication
-}
-
-func getResponseCallback(t *testing.T, called *bool) abcicli.ResponseCallback {
-	return func (res *types.Response) {
-		require.NotNil(t, res)
-		*called = true
-	}
 }
