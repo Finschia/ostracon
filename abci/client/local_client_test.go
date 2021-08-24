@@ -37,17 +37,10 @@ func TestLocalClientCalls(t *testing.T) {
 	app := sampleApp{}
 	c := NewLocalClient(nil, app)
 
-	gbCalled := false
 	c.SetGlobalCallback(func(*types.Request, *types.Response) {
-		gbCalled = true
 	})
 
-	res := c.EchoAsync("msg", getResponseCallback(t))
-	res.Wait()
-	// callback is not called synchronously, so we cannot assure that the callback is called
-	// But we can assure the callback is called by turns
-	require.True(t, gbCalled)
-
+	c.EchoAsync("msg", getResponseCallback(t))
 	c.FlushAsync(getResponseCallback(t))
 	c.InfoAsync(types.RequestInfo{}, getResponseCallback(t))
 	c.SetOptionAsync(types.RequestSetOption{}, getResponseCallback(t))
