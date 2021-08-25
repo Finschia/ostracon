@@ -14,12 +14,12 @@ const (
 	moduleKey = "module"
 )
 
-type tmLogger struct {
+type ocLogger struct {
 	srcLogger kitlog.Logger
 }
 
 // Interface assertions
-var _ Logger = (*tmLogger)(nil)
+var _ Logger = (*ocLogger)(nil)
 
 // NewOCLogger returns a logger that encodes msg and keyvals to the Writer
 // using go-kit's log as an underlying logger and our custom formatter. Note
@@ -40,17 +40,17 @@ func NewOCLogger(w io.Writer) Logger {
 		}
 	}
 
-	return &tmLogger{term.NewLogger(w, NewTMFmtLogger, colorFn)}
+	return &ocLogger{term.NewLogger(w, NewOCFmtLogger, colorFn)}
 }
 
 // NewOCLoggerWithColorFn allows you to provide your own color function. See
 // NewOCLogger for documentation.
 func NewOCLoggerWithColorFn(w io.Writer, colorFn func(keyvals ...interface{}) term.FgBgColor) Logger {
-	return &tmLogger{term.NewLogger(w, NewTMFmtLogger, colorFn)}
+	return &ocLogger{term.NewLogger(w, NewOCFmtLogger, colorFn)}
 }
 
 // Info logs a message at level Info.
-func (l *tmLogger) Info(msg string, keyvals ...interface{}) {
+func (l *ocLogger) Info(msg string, keyvals ...interface{}) {
 	lWithLevel := kitlevel.Info(l.srcLogger)
 
 	if err := kitlog.With(lWithLevel, msgKey, msg).Log(keyvals...); err != nil {
@@ -60,7 +60,7 @@ func (l *tmLogger) Info(msg string, keyvals ...interface{}) {
 }
 
 // Debug logs a message at level Debug.
-func (l *tmLogger) Debug(msg string, keyvals ...interface{}) {
+func (l *ocLogger) Debug(msg string, keyvals ...interface{}) {
 	lWithLevel := kitlevel.Debug(l.srcLogger)
 
 	if err := kitlog.With(lWithLevel, msgKey, msg).Log(keyvals...); err != nil {
@@ -70,7 +70,7 @@ func (l *tmLogger) Debug(msg string, keyvals ...interface{}) {
 }
 
 // Error logs a message at level Error.
-func (l *tmLogger) Error(msg string, keyvals ...interface{}) {
+func (l *ocLogger) Error(msg string, keyvals ...interface{}) {
 	lWithLevel := kitlevel.Error(l.srcLogger)
 
 	lWithMsg := kitlog.With(lWithLevel, msgKey, msg)
@@ -81,6 +81,6 @@ func (l *tmLogger) Error(msg string, keyvals ...interface{}) {
 
 // With returns a new contextual logger with keyvals prepended to those passed
 // to calls to Info, Debug or Error.
-func (l *tmLogger) With(keyvals ...interface{}) Logger {
-	return &tmLogger{kitlog.With(l.srcLogger, keyvals...)}
+func (l *ocLogger) With(keyvals ...interface{}) Logger {
+	return &ocLogger{kitlog.With(l.srcLogger, keyvals...)}
 }

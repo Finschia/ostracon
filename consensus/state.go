@@ -117,34 +117,6 @@ type evidencePool interface {
 	ReportConflictingVotes(voteA, voteB *types.Vote)
 }
 
-type StepDuration struct {
-	started bool
-	start   time.Time
-	end     time.Time
-}
-
-func (sd *StepDuration) GetDuration() float64 {
-	if !sd.started && sd.end.After(sd.start) {
-		return float64(sd.end.Sub(sd.start).Microseconds()) / 1000
-	}
-	return 0
-}
-
-func (sd *StepDuration) SetStart() time.Time {
-	sd.start = tmtime.Now()
-	sd.started = true
-	return sd.start
-}
-
-func (sd *StepDuration) SetEnd() time.Time {
-	if sd.started {
-		// update only once at first; it will be reset when Start is re-assigned
-		sd.end = tmtime.Now()
-		sd.started = false
-	}
-	return sd.end
-}
-
 // State handles execution of the consensus algorithm.
 // It processes votes and proposals, and upon reaching agreement,
 // commits blocks to the chain and executes them against the application.

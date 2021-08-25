@@ -13,12 +13,12 @@ import (
 func NewOCJSONLogger(w io.Writer) Logger {
 	logger := kitlog.NewJSONLogger(w)
 	logger = kitlog.With(logger, "ts", kitlog.DefaultTimestampUTC)
-	return &tmLogger{logger}
+	return &ocLogger{logger}
 }
 
 // NewOCJSONLoggerNoTS is the same as NewOCJSONLogger, but without the
 // timestamp.
 func NewOCJSONLoggerNoTS(w io.Writer) Logger {
 	logger := kitlog.NewJSONLogger(w)
-	return &tmLogger{logger}
+	return &ocLogger{logger}
 }

@@ -36,8 +36,8 @@ message Request {
     RequestOfferSnapshot      offer_snapshot       = 13;
     RequestLoadSnapshotChunk  load_snapshot_chunk  = 14;
     RequestApplySnapshotChunk apply_snapshot_chunk = 15;
-    RequestBeginRecheckTx     begin_recheck_tx     = 100; // 16~99 are reserved for merging original tendermint
-    RequestEndRecheckTx       end_recheck_tx       = 101;
+    RequestBeginRecheckTx     begin_recheck_tx     = 1000; // 16~99 are reserved for merging original tendermint
+    RequestEndRecheckTx       end_recheck_tx       = 1001;
   }
 }
 
@@ -156,8 +156,8 @@ message Response {
     ResponseOfferSnapshot      offer_snapshot       = 14;
     ResponseLoadSnapshotChunk  load_snapshot_chunk  = 15;
     ResponseApplySnapshotChunk apply_snapshot_chunk = 16;
-    ResponseBeginRecheckTx     begin_recheck_tx     = 100; // 17~99 are reserved for merging original tendermint
-    ResponseEndRecheckTx       end_recheck_tx       = 101;
+    ResponseBeginRecheckTx     begin_recheck_tx     = 1000; // 17~99 are reserved for merging original tendermint
+    ResponseEndRecheckTx       end_recheck_tx       = 1001;
   }
 }
 

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/line/ostracon/crypto"
-	time2 "github.com/line/ostracon/types/time"
+	canonictime "github.com/line/ostracon/types/time"
 
 	abci "github.com/line/ostracon/abci/types"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
@@ -54,7 +54,7 @@ type CommitStepTimes struct {
 }
 
 func (st *CommitStepTimes) ToNextStep(from, next *types.StepDuration) time.Time {
-	now := time2.Now()
+	now := canonictime.Now()
 	if st.Current == from {
 		from.End, next.Start = now, now
 		st.Current = next
