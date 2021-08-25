@@ -1,6 +1,6 @@
 # Maverick
 
-A byzantine node used to test Ostracon consensus against a plethora of different faulty misbehaviors. Designed to easily create new faulty misbehaviors to examine how a Ostracon network reacts to the misbehavior. Can also be used for fuzzy testing with different network arrangements.
+A byzantine node used to test Ostracon consensus against a plethora of different faulty misbehaviors. Designed to easily create new faulty misbehaviors to examine how an Ostracon network reacts to the misbehavior. Can also be used for fuzzy testing with different network arrangements.
 
 ## Misbehaviors
 

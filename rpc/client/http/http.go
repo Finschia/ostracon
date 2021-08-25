@@ -20,7 +20,7 @@ import (
 )
 
 /*
-HTTP is a Client implementation that communicates with a Ostracon node over
+HTTP is a Client implementation that communicates with an Ostracon node over
 JSON RPC and WebSockets.
 
 This is the main implementation you probably want to use in production code.

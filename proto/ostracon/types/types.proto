@@ -55,7 +55,7 @@ message BlockID {
 
 // --------------------------------
 
-// Header defines the structure of a Ostracon block header.
+// Header defines the structure of an Ostracon block header.
 message Header {
   // basic block info
   ostracon.version.Consensus version  = 1 [(gogoproto.nullable) = false];

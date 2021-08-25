@@ -59,7 +59,7 @@ var (
 	defaultAddrBookPath = filepath.Join(defaultConfigDir, defaultAddrBookName)
 )
 
-// Config defines the top level configuration for a Ostracon node
+// Config defines the top level configuration for an Ostracon node
 type Config struct {
 	// Top level options use an anonymous struct
 	BaseConfig `mapstructure:",squash"`
@@ -75,7 +75,7 @@ type Config struct {
 	Instrumentation *InstrumentationConfig `mapstructure:"instrumentation"`
 }
 
-// DefaultConfig returns a default configuration for a Ostracon node
+// DefaultConfig returns a default configuration for an Ostracon node
 func DefaultConfig() *Config {
 	return &Config{
 		BaseConfig:      DefaultBaseConfig(),
@@ -148,7 +148,7 @@ func (cfg *Config) ValidateBasic() error {
 //-----------------------------------------------------------------------------
 // BaseConfig
 
-// BaseConfig defines the base configuration for a Ostracon node
+// BaseConfig defines the base configuration for an Ostracon node
 type BaseConfig struct { //nolint: maligned
 	// chainID is unexposed and immutable but here for convenience
 	chainID string
@@ -226,7 +226,7 @@ type BaseConfig struct { //nolint: maligned
 	PrivKeyType string `mapstructure:"priv_key_type"`
 }
 
-// DefaultBaseConfig returns a default base configuration for a Ostracon node
+// DefaultBaseConfig returns a default base configuration for an Ostracon node
 func DefaultBaseConfig() BaseConfig {
 	dbs := metadb.AvailableDBBackends()
 	defaultDBBackend := DefaultDBBackend
@@ -254,7 +254,7 @@ func DefaultBaseConfig() BaseConfig {
 	}
 }
 
-// TestBaseConfig returns a base configuration for testing a Ostracon node
+// TestBaseConfig returns a base configuration for testing an Ostracon node
 func TestBaseConfig() BaseConfig {
 	cfg := DefaultBaseConfig()
 	cfg.chainID = "ostracon_test"

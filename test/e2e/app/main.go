@@ -101,7 +101,7 @@ func startApp(cfg *Config) error {
 	return nil
 }
 
-// startNode starts a Ostracon node running the application directly. It assumes the Ostracon
+// startNode starts an Ostracon node running the application directly. It assumes the Ostracon
 // configuration is in $OCHOME/config/ostracon.toml.
 //
 // FIXME There is no way to simply load the configuration from a file, so we need to pull in Viper.

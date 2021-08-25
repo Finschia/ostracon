@@ -7,7 +7,7 @@ consensus algorithm and not the state machine transactions within.
 
 Ostracon light clients allow bandwidth & compute-constrained devices, such as
 smartphones, low-power embedded chips, or other blockchains to efficiently
-verify the consensus of a Ostracon blockchain. This forms the basis of safe
+verify the consensus of an Ostracon blockchain. This forms the basis of safe
 and efficient state synchronization for new network nodes and inter-blockchain
 communication (where a light client of one Ostracon instance runs in another
 chain's state machine).

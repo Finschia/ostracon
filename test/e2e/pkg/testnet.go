@@ -61,7 +61,7 @@ type Testnet struct {
 	KeyType          string
 }
 
-// Node represents a Ostracon node in a testnet.
+// Node represents an Ostracon node in a testnet.
 type Node struct {
 	Name             string
 	Testnet          *Testnet

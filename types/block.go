@@ -43,7 +43,7 @@ const (
 	MaxOverheadForBlock int64 = 11
 )
 
-// Block defines the atomic unit of a Ostracon blockchain.
+// Block defines the atomic unit of an Ostracon blockchain.
 type Block struct {
 	mtx tmsync.Mutex
 
@@ -329,7 +329,7 @@ func MaxDataBytesNoEvidence(maxBytes int64, valsCount int) int64 {
 
 //-----------------------------------------------------------------------------
 
-// Header defines the structure of a Ostracon block header.
+// Header defines the structure of an Ostracon block header.
 // NOTE: changes to the Header should be duplicated in:
 // - header.Hash()
 // - abci.Header
