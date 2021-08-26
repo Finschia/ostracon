@@ -22,6 +22,9 @@ message DuplicateVoteEvidence {
   int64                     total_voting_power = 3;
   int64                     validator_power    = 4;
   google.protobuf.Timestamp timestamp          = 5 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
+
+  // *** Ostracon Extended Fields ***
+  int64 voting_power = 1000;
 }
 
 // LightClientAttackEvidence contains evidence of a set of validators attempting to mislead a light client.

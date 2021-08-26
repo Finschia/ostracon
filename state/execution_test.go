@@ -189,6 +189,7 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 			Time:             defaultEvidenceTime,
 			Validator:        types.OC2PB.Validator(state.Validators.Validators[0]),
 			TotalVotingPower: 10,
+			VotingPower:      10,
 		},
 		{
 			Type:             abci.EvidenceType_LIGHT_CLIENT_ATTACK,
@@ -196,6 +197,7 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 			Time:             defaultEvidenceTime,
 			Validator:        types.OC2PB.Validator(state.Validators.Validators[0]),
 			TotalVotingPower: 12,
+			VotingPower:      0,
 		},
 	}
 

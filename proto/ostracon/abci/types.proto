@@ -395,6 +395,9 @@ message Evidence {
   // not store historical validators.
   // https://github.com/tendermint/tendermint/issues/4581
   int64 total_voting_power = 5;
+
+  // *** Ostracon Extended Fields ***
+  int64 voting_power = 1000;
 }
 
 //----------------------------------------

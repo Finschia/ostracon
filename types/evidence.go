@@ -54,6 +54,7 @@ type DuplicateVoteEvidence struct {
 
 	// abci specific information
 	TotalVotingPower int64
+	VotingPower      int64
 	ValidatorPower   int64
 	Timestamp        time.Time
 }
@@ -83,6 +84,7 @@ func NewDuplicateVoteEvidence(vote1, vote2 *Vote, blockTime time.Time, voterSet 
 		VoteA:            voteA,
 		VoteB:            voteB,
 		TotalVotingPower: voterSet.TotalVotingPower(),
+		VotingPower:      val.VotingPower,
 		ValidatorPower:   val.StakingPower,
 		Timestamp:        blockTime,
 	}
@@ -99,6 +101,7 @@ func (dve *DuplicateVoteEvidence) ABCI() []abci.Evidence {
 		Height:           dve.VoteA.Height,
 		Time:             dve.Timestamp,
 		TotalVotingPower: dve.TotalVotingPower,
+		VotingPower:      dve.VotingPower,
 	}}
 }
 
@@ -163,6 +166,7 @@ func (dve *DuplicateVoteEvidence) ToProto() *tmproto.DuplicateVoteEvidence {
 		VoteA:            voteA,
 		VoteB:            voteB,
 		TotalVotingPower: dve.TotalVotingPower,
+		VotingPower:      dve.VotingPower,
 		ValidatorPower:   dve.ValidatorPower,
 		Timestamp:        dve.Timestamp,
 	}
@@ -189,6 +193,7 @@ func DuplicateVoteEvidenceFromProto(pb *tmproto.DuplicateVoteEvidence) (*Duplica
 		VoteA:            vA,
 		VoteB:            vB,
 		TotalVotingPower: pb.TotalVotingPower,
+		VotingPower:      pb.VotingPower,
 		ValidatorPower:   pb.ValidatorPower,
 		Timestamp:        pb.Timestamp,
 	}
@@ -229,6 +234,7 @@ func (l *LightClientAttackEvidence) ABCI() []abci.Evidence {
 			Height:           l.Height(),
 			Time:             l.Timestamp,
 			TotalVotingPower: l.TotalVotingPower,
+			VotingPower:      0,
 		}
 	}
 	return abciEv
