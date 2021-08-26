@@ -10,8 +10,7 @@ import (
 	"time"
 
 	"github.com/line/ostracon/types"
-
-	dbm "github.com/tendermint/tm-db"
+	"github.com/line/tm-db/v2/goleveldb"
 
 	"github.com/line/ostracon/abci/example/kvstore"
 	"github.com/line/ostracon/libs/log"
@@ -24,7 +23,7 @@ import (
 
 // Automatically getting new headers and verifying them.
 func ExampleClient_Update() {
-	// give Tendermint time to generate some blocks
+	// give Ostracon time to generate some blocks
 	time.Sleep(5 * time.Second)
 
 	dbDir, err := ioutil.TempDir("", "light-client-example")
@@ -48,7 +47,7 @@ func ExampleClient_Update() {
 		stdlog.Fatal(err)
 	}
 
-	db, err := dbm.NewGoLevelDB("light-client-db", dbDir)
+	db, err := goleveldb.NewDB("light-client-db", dbDir)
 	if err != nil {
 		stdlog.Fatal(err)
 	}
@@ -93,7 +92,7 @@ func ExampleClient_Update() {
 
 // Manually getting light blocks and verifying them.
 func ExampleClient_VerifyLightBlockAtHeight() {
-	// give Tendermint time to generate some blocks
+	// give Ostracon time to generate some blocks
 	time.Sleep(5 * time.Second)
 
 	dbDir, err := ioutil.TempDir("", "light-client-example")
@@ -117,7 +116,7 @@ func ExampleClient_VerifyLightBlockAtHeight() {
 		stdlog.Fatal(err)
 	}
 
-	db, err := dbm.NewGoLevelDB("light-client-db", dbDir)
+	db, err := goleveldb.NewDB("light-client-db", dbDir)
 	if err != nil {
 		stdlog.Fatal(err)
 	}
@@ -162,11 +161,11 @@ func ExampleClient_VerifyLightBlockAtHeight() {
 func TestMain(m *testing.M) {
 	// start an ostracon node (and kvstore) in the background to test against
 	app := kvstore.NewApplication()
-	node := rpctest.StartTendermint(app, rpctest.SuppressStdout)
+	node := rpctest.StartOstracon(app, rpctest.SuppressStdout)
 
 	code := m.Run()
 
 	// and shut down proper at the end
-	rpctest.StopTendermint(node)
+	rpctest.StopOstracon(node)
 	os.Exit(code)
 }

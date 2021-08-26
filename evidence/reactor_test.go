@@ -9,11 +9,10 @@ import (
 
 	"github.com/fortytw2/leaktest"
 	"github.com/go-kit/kit/log/term"
+	"github.com/line/tm-db/v2/memdb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-
-	dbm "github.com/tendermint/tm-db"
 
 	cfg "github.com/line/ostracon/config"
 	"github.com/line/ostracon/crypto"
@@ -190,7 +189,7 @@ func TestReactorsGossipNoCommittedEvidence(t *testing.T) {
 func TestReactorBroadcastEvidenceMemoryLeak(t *testing.T) {
 	config := cfg.TestConfig()
 	evidenceTime := time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
-	evidenceDB := dbm.NewMemDB()
+	evidenceDB := memdb.NewDB()
 	blockStore := &mocks.BlockStore{}
 	blockStore.On("LoadBlockMeta", mock.AnythingOfType("int64")).Return(
 		&types.BlockMeta{Header: types.Header{Time: evidenceTime}},
@@ -247,7 +246,7 @@ func makeAndConnectReactorsAndPools(config *cfg.Config, stateStores []sm.Store) 
 	evidenceTime := time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
 
 	for i := 0; i < N; i++ {
-		evidenceDB := dbm.NewMemDB()
+		evidenceDB := memdb.NewDB()
 		blockStore := &mocks.BlockStore{}
 		blockStore.On("LoadBlockMeta", mock.AnythingOfType("int64")).Return(
 			&types.BlockMeta{Header: types.Header{Time: evidenceTime}},

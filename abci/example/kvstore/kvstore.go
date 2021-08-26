@@ -6,7 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	dbm "github.com/tendermint/tm-db"
+	dbm "github.com/line/tm-db/v2"
+	"github.com/line/tm-db/v2/memdb"
 
 	"github.com/line/ostracon/abci/example/code"
 	"github.com/line/ostracon/abci/types"
@@ -71,7 +72,7 @@ type Application struct {
 }
 
 func NewApplication() *Application {
-	state := loadState(dbm.NewMemDB())
+	state := loadState(memdb.NewDB())
 	return &Application{state: state}
 }
 
@@ -116,7 +117,15 @@ func (app *Application) DeliverTx(req types.RequestDeliverTx) types.ResponseDeli
 	return types.ResponseDeliverTx{Code: code.CodeTypeOK, Events: events}
 }
 
-func (app *Application) CheckTx(req types.RequestCheckTx) types.ResponseCheckTx {
+func (app *Application) CheckTxSync(req types.RequestCheckTx) types.ResponseCheckTx {
+	return app.checkTx(req)
+}
+
+func (app *Application) CheckTxAsync(req types.RequestCheckTx, callback types.CheckTxCallback) {
+	callback(app.checkTx(req))
+}
+
+func (app *Application) checkTx(req types.RequestCheckTx) types.ResponseCheckTx {
 	return types.ResponseCheckTx{Code: code.CodeTypeOK, GasWanted: 1}
 }
 

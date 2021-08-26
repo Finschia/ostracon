@@ -9,12 +9,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/line/tm-db/v2/memdb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	config2 "github.com/line/ostracon/config"
-
-	dbm "github.com/tendermint/tm-db"
 
 	abcicli "github.com/line/ostracon/abci/client"
 	abci "github.com/line/ostracon/abci/types"
@@ -51,17 +50,17 @@ func TestByzantinePrevoteEquivocation(t *testing.T) {
 
 	for i := 0; i < nValidators; i++ {
 		logger := consensusLogger().With("test", "byzantine", "validator", i)
-		stateDB := dbm.NewMemDB() // each state needs its own db
+		stateDB := memdb.NewDB() // each state needs its own db
 		stateStore := sm.NewStore(stateDB)
 		state, _ := stateStore.LoadFromDBOrGenesisDoc(genDoc)
 		thisConfig := ResetConfig(fmt.Sprintf("%s_%d", testName, i))
 		defer os.RemoveAll(thisConfig.RootDir)
 		ensureDir(path.Dir(thisConfig.Consensus.WalFile()), 0700) // dir for wal
 		app := appFunc()
-		vals := types.TM2PB.ValidatorUpdates(state.Validators)
+		vals := types.OC2PB.ValidatorUpdates(state.Validators)
 		app.InitChain(abci.RequestInitChain{Validators: vals})
 
-		blockDB := dbm.NewMemDB()
+		blockDB := memdb.NewDB()
 		blockStore := store.NewBlockStore(blockDB)
 
 		// one for mempool, one for consensus
@@ -77,7 +76,7 @@ func TestByzantinePrevoteEquivocation(t *testing.T) {
 		}
 
 		// Make a full instance of the evidence pool
-		evidenceDB := dbm.NewMemDB()
+		evidenceDB := memdb.NewDB()
 		evpool, err := evidence.NewPool(evidenceDB, stateStore, blockStore)
 		require.NoError(t, err)
 		evpool.SetLogger(logger.With("module", "evidence"))

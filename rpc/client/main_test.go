@@ -20,12 +20,12 @@ func TestMain(m *testing.M) {
 	}
 
 	app := kvstore.NewPersistentKVStoreApplication(dir)
-	node = rpctest.StartTendermint(app)
+	node = rpctest.StartOstracon(app)
 
 	code := m.Run()
 
 	// and shut down proper at the end
-	rpctest.StopTendermint(node)
+	rpctest.StopOstracon(node)
 	_ = os.RemoveAll(dir)
 	os.Exit(code)
 }

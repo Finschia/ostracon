@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/line/ostracon/crypto"
+	canonictime "github.com/line/ostracon/types/time"
 
 	abci "github.com/line/ostracon/abci/types"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
@@ -43,6 +44,30 @@ type BlockExecutor struct {
 	logger log.Logger
 
 	metrics *Metrics
+}
+
+type CommitStepTimes struct {
+	CommitExecuting  types.StepDuration
+	CommitCommitting types.StepDuration
+	CommitRechecking types.StepDuration
+	Current          *types.StepDuration
+}
+
+func (st *CommitStepTimes) ToNextStep(from, next *types.StepDuration) time.Time {
+	now := canonictime.Now()
+	if st.Current == from {
+		from.End, next.Start = now, now
+		st.Current = next
+	}
+	return now
+}
+
+func (st *CommitStepTimes) ToCommitCommitting() time.Time {
+	return st.ToNextStep(&st.CommitExecuting, &st.CommitCommitting)
+}
+
+func (st *CommitStepTimes) ToCommitRechecking() time.Time {
+	return st.ToNextStep(&st.CommitCommitting, &st.CommitRechecking)
 }
 
 type BlockExecutorOption func(executor *BlockExecutor)
@@ -130,24 +155,25 @@ func (blockExec *BlockExecutor) ValidateBlock(state State, round int32, block *t
 // from outside this package to process and commit an entire block.
 // It takes a blockID to avoid recomputing the parts hash.
 func (blockExec *BlockExecutor) ApplyBlock(
-	state State, blockID types.BlockID, block *types.Block,
+	state State, blockID types.BlockID, block *types.Block, stepTimes *CommitStepTimes,
 ) (State, int64, error) {
 
-	startTime := time.Now().UnixNano()
 	// When doing ApplyBlock, we don't need to check whether the block.Round is same to current round,
 	// so we just put block.Round for the current round parameter
 	if err := blockExec.ValidateBlock(state, block.Round, block); err != nil {
 		return state, 0, ErrInvalidBlock(err)
 	}
-	endTime := time.Now().UnixNano()
-	blockExec.metrics.BlockVerifyingTime.Observe(float64(endTime-startTime) / 1000000)
 
-	startTime = endTime
+	execStartTime := time.Now().UnixNano()
 	abciResponses, err := execBlockOnProxyApp(
 		blockExec.logger, blockExec.proxyApp, block, blockExec.store, state.InitialHeight, state.VoterParams,
 	)
-	endTime = time.Now().UnixNano()
-	blockExec.metrics.BlockProcessingTime.Observe(float64(endTime-startTime) / 1000000)
+	execEndTime := time.Now().UnixNano()
+
+	execTimeMs := float64(execEndTime-execStartTime) / 1000000
+	blockExec.metrics.BlockProcessingTime.Observe(execTimeMs)
+	blockExec.metrics.BlockExecutionTime.Set(execTimeMs)
+
 	if err != nil {
 		return state, 0, ErrProxyAppConn(err)
 	}
@@ -168,7 +194,7 @@ func (blockExec *BlockExecutor) ApplyBlock(
 		return state, 0, fmt.Errorf("error in validator updates: %v", err)
 	}
 
-	validatorUpdates, err := types.PB2TM.ValidatorUpdates(abciValUpdates)
+	validatorUpdates, err := types.PB2OC.ValidatorUpdates(abciValUpdates)
 	if err != nil {
 		return state, 0, err
 	}
@@ -182,14 +208,21 @@ func (blockExec *BlockExecutor) ApplyBlock(
 		return state, 0, fmt.Errorf("commit failed for application: %v", err)
 	}
 
-	startTime = time.Now().UnixNano()
+	if stepTimes != nil {
+		stepTimes.ToCommitCommitting()
+	}
+
 	// Lock mempool, commit app state, update mempoool.
-	appHash, retainHeight, err := blockExec.Commit(state, block, abciResponses.DeliverTxs)
+	commitStartTime := time.Now().UnixNano()
+	appHash, retainHeight, err := blockExec.Commit(state, block, abciResponses.DeliverTxs, stepTimes)
+	commitEndTime := time.Now().UnixNano()
+
+	commitTimeMs := float64(commitEndTime-commitStartTime) / 1000000
+	blockExec.metrics.BlockCommitTime.Set(commitTimeMs)
+
 	if err != nil {
 		return state, 0, fmt.Errorf("commit failed for application: %v", err)
 	}
-	endTime = time.Now().UnixNano()
-	blockExec.metrics.BlockCommittingTime.Observe(float64(endTime-startTime) / 1000000)
 
 	// Update evpool with the latest state.
 	blockExec.evpool.Update(state, block.Evidence.Evidence)
@@ -221,6 +254,7 @@ func (blockExec *BlockExecutor) Commit(
 	state State,
 	block *types.Block,
 	deliverTxResponses []*abci.ResponseDeliverTx,
+	stepTimes *CommitStepTimes,
 ) ([]byte, int64, error) {
 	blockExec.mempool.Lock()
 	defer blockExec.mempool.Unlock()
@@ -234,7 +268,13 @@ func (blockExec *BlockExecutor) Commit(
 	}
 
 	// Commit block, get hash back
+	appCommitStartTime := time.Now().UnixNano()
 	res, err := blockExec.proxyApp.CommitSync()
+	appCommitEndTime := time.Now().UnixNano()
+
+	appCommitTimeMs := float64(appCommitEndTime-appCommitStartTime) / 1000000
+	blockExec.metrics.BlockAppCommitTime.Set(appCommitTimeMs)
+
 	if err != nil {
 		blockExec.logger.Error("client error during proxyAppConn.CommitSync", "err", err)
 		return nil, 0, err
@@ -248,14 +288,21 @@ func (blockExec *BlockExecutor) Commit(
 		"app_hash", fmt.Sprintf("%X", res.Data),
 	)
 
+	if stepTimes != nil {
+		stepTimes.ToCommitRechecking()
+	}
+
 	// Update mempool.
+	updateMempoolStartTime := time.Now().UnixNano()
 	err = blockExec.mempool.Update(
-		block.Height,
-		block.Txs,
+		block,
 		deliverTxResponses,
 		TxPreCheck(state),
-		TxPostCheck(state),
 	)
+	updateMempoolEndTime := time.Now().UnixNano()
+
+	updateMempoolTimeMs := float64(updateMempoolEndTime-updateMempoolStartTime) / 1000000
+	blockExec.metrics.BlockUpdateMempoolTime.Set(updateMempoolTimeMs)
 
 	return res.Data, res.RetainHeight, err
 }
@@ -298,7 +345,7 @@ func execBlockOnProxyApp(
 			txIndex++
 		}
 	}
-	proxyAppConn.SetResponseCallback(proxyCb)
+	proxyAppConn.SetGlobalCallback(proxyCb)
 
 	commitInfo := getBeginBlockValidatorInfo(block, store, initialHeight, voterParams)
 
@@ -328,7 +375,7 @@ func execBlockOnProxyApp(
 	startTime := time.Now()
 	// run txs of block
 	for _, tx := range block.Txs {
-		proxyAppConn.DeliverTxAsync(abci.RequestDeliverTx{Tx: tx})
+		proxyAppConn.DeliverTxAsync(abci.RequestDeliverTx{Tx: tx}, nil)
 		if err := proxyAppConn.Error(); err != nil {
 			return nil, err
 		}
@@ -376,7 +423,7 @@ func getBeginBlockValidatorInfo(block *types.Block, store Store,
 		for i, voter := range lastVoterSet.Voters {
 			commitSig := block.LastCommit.Signatures[i]
 			voteInfos[i] = abci.VoteInfo{
-				Validator: types.TM2PB.Validator(voter),
+				Validator: types.OC2PB.Validator(voter),
 				// TODO We need to change distribution of cosmos-sdk in order to reference this power for reward later
 				VotingPower:     voter.VotingPower,
 				SignedLastBlock: !commitSig.Absent(),
@@ -495,7 +542,7 @@ func updateState(
 
 // Fire NewBlock, NewBlockHeader.
 // Fire TxEvent for every tx.
-// NOTE: if Tendermint crashes before commit, some or all of these events may be published again.
+// NOTE: if Ostracon crashes before commit, some or all of these events may be published again.
 func fireEvents(
 	logger log.Logger,
 	eventBus types.BlockEventPublisher,

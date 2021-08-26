@@ -7,13 +7,12 @@ import (
 	"strconv"
 	"strings"
 
-	dbm "github.com/tendermint/tm-db"
-
 	"github.com/line/ostracon/abci/example/code"
 	"github.com/line/ostracon/abci/types"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
 	"github.com/line/ostracon/libs/log"
 	pc "github.com/line/ostracon/proto/ostracon/crypto"
+	"github.com/line/tm-db/v2/goleveldb"
 )
 
 const (
@@ -37,7 +36,7 @@ type PersistentKVStoreApplication struct {
 
 func NewPersistentKVStoreApplication(dbDir string) *PersistentKVStoreApplication {
 	name := "kvstore"
-	db, err := dbm.NewGoLevelDB(name, dbDir)
+	db, err := goleveldb.NewDB(name, dbDir)
 	if err != nil {
 		panic(err)
 	}
@@ -80,8 +79,20 @@ func (app *PersistentKVStoreApplication) DeliverTx(req types.RequestDeliverTx) t
 	return app.app.DeliverTx(req)
 }
 
-func (app *PersistentKVStoreApplication) CheckTx(req types.RequestCheckTx) types.ResponseCheckTx {
-	return app.app.CheckTx(req)
+func (app *PersistentKVStoreApplication) CheckTxSync(req types.RequestCheckTx) types.ResponseCheckTx {
+	return app.app.CheckTxSync(req)
+}
+
+func (app *PersistentKVStoreApplication) CheckTxAsync(req types.RequestCheckTx, callback types.CheckTxCallback) {
+	app.app.CheckTxAsync(req, callback)
+}
+
+func (app *PersistentKVStoreApplication) BeginRecheckTx(req types.RequestBeginRecheckTx) types.ResponseBeginRecheckTx {
+	return app.app.BeginRecheckTx(req)
+}
+
+func (app *PersistentKVStoreApplication) EndRecheckTx(req types.RequestEndRecheckTx) types.ResponseEndRecheckTx {
+	return app.app.EndRecheckTx(req)
 }
 
 // Commit will panic if InitChain was not called

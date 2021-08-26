@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/gogo/protobuf/proto"
-	dbm "github.com/tendermint/tm-db"
+	dbm "github.com/line/tm-db/v2"
 
 	abci "github.com/line/ostracon/abci/types"
 	tmmath "github.com/line/ostracon/libs/math"
@@ -80,7 +80,7 @@ type Store interface {
 	PruneStates(int64, int64) error
 }
 
-// dbStore wraps a db (github.com/tendermint/tm-db)
+// dbStore wraps a db (github.com/line/tm-db/v2)
 type dbStore struct {
 	db dbm.DB
 }
@@ -171,7 +171,7 @@ func (store dbStore) save(state State, key []byte) error {
 	// If first block, save validators for the block.
 	if nextHeight == 1 {
 		nextHeight = state.InitialHeight
-		// This extra logic due to Tendermint validator set changes being delayed 1 block.
+		// This extra logic due to Ostracon validator set changes being delayed 1 block.
 		// It may get overwritten due to InitChain validator updates.
 		if err := store.saveValidatorsInfo(nextHeight, nextHeight, state.Validators); err != nil {
 			return err

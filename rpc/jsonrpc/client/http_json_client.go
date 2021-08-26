@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	tmsync "github.com/line/ostracon/libs/sync"
 	types "github.com/line/ostracon/rpc/jsonrpc/types"
@@ -21,6 +22,10 @@ const (
 	protoWSS   = "wss"
 	protoWS    = "ws"
 	protoTCP   = "tcp"
+
+	defaultMaxIdleConns          = 10000
+	defaultIdleConnTimeout       = 60 // sec
+	defaultExpectContinueTimeout = 1  // sec
 )
 
 //-------------------------------------------------------------
@@ -369,8 +374,12 @@ func DefaultHTTPClient(remoteAddr string) (*http.Client, error) {
 	client := &http.Client{
 		Transport: &http.Transport{
 			// Set to true to prevent GZIP-bomb DoS attacks
-			DisableCompression: true,
-			Dial:               dialFn,
+			DisableCompression:    true,
+			Dial:                  dialFn,
+			MaxIdleConns:          defaultMaxIdleConns,
+			MaxIdleConnsPerHost:   defaultMaxIdleConns,
+			IdleConnTimeout:       defaultIdleConnTimeout * time.Second,
+			ExpectContinueTimeout: defaultExpectContinueTimeout * time.Second,
 		},
 	}
 

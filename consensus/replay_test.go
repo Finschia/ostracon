@@ -14,9 +14,10 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	dbm "github.com/line/tm-db/v2"
+	"github.com/line/tm-db/v2/memdb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	dbm "github.com/tendermint/tm-db"
 
 	"github.com/line/ostracon/abci/example/kvstore"
 	abci "github.com/line/ostracon/abci/types"
@@ -112,7 +113,7 @@ func sendTxs(ctx context.Context, cs *State) {
 			return
 		default:
 			tx := []byte{byte(i)}
-			if err := assertMempool(cs.txNotifier).CheckTx(tx, nil, mempl.TxInfo{}); err != nil {
+			if _, err := assertMempool(cs.txNotifier).CheckTxSync(tx, mempl.TxInfo{}); err != nil {
 				panic(err)
 			}
 			i++
@@ -124,7 +125,7 @@ func sendTxs(ctx context.Context, cs *State) {
 func TestWALCrash(t *testing.T) {
 	// TODO The execution result of this test case often fail for indeterminate reasons.
 	// The reason for the fail is a timeout with an "Timed out waiting for new block" or "WAL did not panic for
-	// XX seconds" message, but the behavior that causes it is not reproducible. This issue also occurs in Tendermint,
+	// XX seconds" message, but the behavior that causes it is not reproducible. This issue also occurs in Ostracon,
 	// but seems to be somewhat more pronounced with some changes in Ostracon.
 	// See also: https://github.com/tendermint/tendermint/issues/1040
 	testCases := []struct {
@@ -163,7 +164,7 @@ LOOP:
 
 		// create consensus state from a clean slate
 		logger := log.NewNopLogger()
-		blockDB := dbm.NewMemDB()
+		blockDB := memdb.NewDB()
 		stateDB := blockDB
 		stateStore := sm.NewStore(stateDB)
 		state, err := sm.MakeGenesisStateFromFile(consensusReplayConfig.GenesisFile())
@@ -450,7 +451,7 @@ func TestSimulateValidatorsChange(t *testing.T) {
 		valPubKey1ABCI, err := cryptoenc.PubKeyToProto(newValidatorPubKey1)
 		assert.Nil(t, err)
 		newValidatorTx1 := kvstore.MakeValSetChangeTx(valPubKey1ABCI, testMinPower)
-		err = assertMempool(css[0].txNotifier).CheckTx(newValidatorTx1, nil, mempl.TxInfo{})
+		_, err = assertMempool(css[0].txNotifier).CheckTxSync(newValidatorTx1, mempl.TxInfo{})
 		assert.Nil(t, err)
 	})
 
@@ -464,15 +465,13 @@ func TestSimulateValidatorsChange(t *testing.T) {
 		updatePubKey1ABCI, err := cryptoenc.PubKeyToProto(updateValidatorPubKey1)
 		require.NoError(t, err)
 		updateValidatorTx1 := kvstore.MakeValSetChangeTx(updatePubKey1ABCI, 25)
-		err = assertMempool(css[0].txNotifier).CheckTx(updateValidatorTx1, nil, mempl.TxInfo{})
+		_, err = assertMempool(css[0].txNotifier).CheckTxSync(updateValidatorTx1, mempl.TxInfo{})
 		assert.Nil(t, err)
 	})
 
 	// height 4
 	height++
 	incrementHeight(vss...)
-
-	// re-calculate vss
 	newVss := make([]*validatorStub, nVals+1)
 	copy(newVss, vss[:nVals+1])
 	sort.Sort(ValidatorStubsByPower(newVss))
@@ -502,14 +501,14 @@ func TestSimulateValidatorsChange(t *testing.T) {
 		newVal2ABCI, err := cryptoenc.PubKeyToProto(newValidatorPubKey2)
 		require.NoError(t, err)
 		newValidatorTx2 := kvstore.MakeValSetChangeTx(newVal2ABCI, testMinPower)
-		err = assertMempool(css[0].txNotifier).CheckTx(newValidatorTx2, nil, mempl.TxInfo{})
+		_, err = assertMempool(css[0].txNotifier).CheckTxSync(newValidatorTx2, mempl.TxInfo{})
 		assert.Nil(t, err)
 		newValidatorPubKey3, err := css[nVals+2].privValidator.GetPubKey()
 		require.NoError(t, err)
 		newVal3ABCI, err := cryptoenc.PubKeyToProto(newValidatorPubKey3)
 		require.NoError(t, err)
 		newValidatorTx3 := kvstore.MakeValSetChangeTx(newVal3ABCI, testMinPower)
-		err = assertMempool(css[0].txNotifier).CheckTx(newValidatorTx3, nil, mempl.TxInfo{})
+		_, err = assertMempool(css[0].txNotifier).CheckTxSync(newValidatorTx3, mempl.TxInfo{})
 		assert.Nil(t, err)
 	})
 
@@ -542,7 +541,7 @@ func TestSimulateValidatorsChange(t *testing.T) {
 		newVal3ABCI, err := cryptoenc.PubKeyToProto(newValidatorPubKey3)
 		require.NoError(t, err)
 		removeValidatorTx3 := kvstore.MakeValSetChangeTx(newVal3ABCI, 0)
-		err = assertMempool(css[0].txNotifier).CheckTx(removeValidatorTx3, nil, mempl.TxInfo{})
+		_, err = assertMempool(css[0].txNotifier).CheckTxSync(removeValidatorTx3, mempl.TxInfo{})
 		assert.Nil(t, err)
 	})
 
@@ -646,10 +645,10 @@ func TestMockProxyApp(t *testing.T) {
 				txIndex++
 			}
 		}
-		mock.SetResponseCallback(proxyCb)
+		mock.SetGlobalCallback(proxyCb)
 
 		someTx := []byte("tx")
-		mock.DeliverTxAsync(abci.RequestDeliverTx{Tx: someTx})
+		mock.DeliverTxAsync(abci.RequestDeliverTx{Tx: someTx}, nil)
 	})
 	assert.True(t, validTxs == 1)
 	assert.True(t, invalidTxs == 0)
@@ -681,7 +680,7 @@ func testHandshakeReplay(t *testing.T, config *cfg.Config, nBlocks int, mode uin
 	if testValidatorsChange {
 		testConfig := ResetConfig(fmt.Sprintf("%s_%v_m", t.Name(), mode))
 		defer os.RemoveAll(testConfig.RootDir)
-		stateDB = dbm.NewMemDB()
+		stateDB = memdb.NewDB()
 
 		// Make the global variable "sim" be initialized forcefully by calling "TestSimulateValidatorChange()"
 		// if it is not initialized as in unit execution.
@@ -726,7 +725,7 @@ func testHandshakeReplay(t *testing.T, config *cfg.Config, nBlocks int, mode uin
 
 	state := genesisState.Copy()
 	// run the chain through state.ApplyBlock to build up the ostracon state
-	state = buildTMStateFromChain(config, stateStore, state, chain, nBlocks, mode)
+	state = buildOCStateFromChain(config, stateStore, state, chain, nBlocks, mode)
 	latestAppHash := state.AppHash
 
 	// make a new client creator
@@ -738,7 +737,7 @@ func testHandshakeReplay(t *testing.T, config *cfg.Config, nBlocks int, mode uin
 		// run nBlocks against a new client to build up the app state.
 		// use a throwaway ostracon state
 		proxyApp := proxy.NewAppConns(clientCreator2)
-		stateDB1 := dbm.NewMemDB()
+		stateDB1 := memdb.NewDB()
 		stateStore := sm.NewStore(stateDB1)
 		err := stateStore.Save(genesisState)
 		require.NoError(t, err)
@@ -807,7 +806,7 @@ func applyBlock(stateStore sm.Store, st sm.State, blk *types.Block, proxyApp pro
 	blockExec := sm.NewBlockExecutor(stateStore, log.TestingLogger(), proxyApp.Consensus(), mempool, evpool)
 
 	blkID := types.BlockID{Hash: blk.Hash(), PartSetHeader: blk.MakePartSet(testPartSize).Header()}
-	newState, _, err := blockExec.ApplyBlock(st, blkID, blk)
+	newState, _, err := blockExec.ApplyBlock(st, blkID, blk, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -823,7 +822,7 @@ func buildAppStateFromChain(proxyApp proxy.AppConns, stateStore sm.Store,
 	defer proxyApp.Stop() //nolint:errcheck // ignore
 
 	state.Version.Consensus.App = kvstore.ProtocolVersion // simulate handshake, receive app version
-	validators := types.TM2PB.ValidatorUpdates(state.Validators)
+	validators := types.OC2PB.ValidatorUpdates(state.Validators)
 	if _, err := proxyApp.Consensus().InitChainSync(abci.RequestInitChain{
 		Validators: validators,
 	}); err != nil {
@@ -855,7 +854,7 @@ func buildAppStateFromChain(proxyApp proxy.AppConns, stateStore sm.Store,
 
 }
 
-func buildTMStateFromChain(
+func buildOCStateFromChain(
 	config *cfg.Config,
 	stateStore sm.Store,
 	state sm.State,
@@ -873,7 +872,7 @@ func buildTMStateFromChain(
 	defer proxyApp.Stop() //nolint:errcheck
 
 	state.Version.Consensus.App = kvstore.ProtocolVersion // simulate handshake, receive app version
-	validators := types.TM2PB.ValidatorUpdates(state.Validators)
+	validators := types.OC2PB.ValidatorUpdates(state.Validators)
 	if _, err := proxyApp.Consensus().InitChainSync(abci.RequestInitChain{
 		Validators: validators,
 	}); err != nil {
@@ -925,7 +924,7 @@ func TestHandshakePanicsIfAppReturnsWrongAppHash(t *testing.T) {
 	blocks := makeBlocks(3, &state, privVal)
 	store.chain = blocks
 
-	// 2. Tendermint must panic if app returns wrong hash for the first block
+	// 2. Ostracon must panic if app returns wrong hash for the first block
 	//		- RANDOM HASH
 	//		- 0x02
 	//		- 0x03
@@ -949,7 +948,7 @@ func TestHandshakePanicsIfAppReturnsWrongAppHash(t *testing.T) {
 		})
 	}
 
-	// 3. Tendermint must panic if app returns wrong hash for the last block
+	// 3. Ostracon must panic if app returns wrong hash for the last block
 	//		- 0x01
 	//		- 0x02
 	//		- RANDOM HASH
@@ -1177,7 +1176,7 @@ func stateAndStore(
 	config *cfg.Config,
 	pubKey crypto.PubKey,
 	appVersion uint64) (dbm.DB, sm.State, *mockBlockStore) {
-	stateDB := dbm.NewMemDB()
+	stateDB := memdb.NewDB()
 	stateStore := sm.NewStore(stateDB)
 	state, _ := sm.MakeGenesisStateFromFile(config.GenesisFile())
 	state.Version.Consensus.App = appVersion
@@ -1246,7 +1245,7 @@ func (bs *mockBlockStore) PruneBlocks(height int64) (uint64, error) {
 func TestHandshakeUpdatesValidators(t *testing.T) {
 	val, _ := types.RandValidator(true, 10)
 	vals := types.NewValidatorSet([]*types.Validator{val})
-	app := &initChainApp{vals: types.TM2PB.ValidatorUpdates(vals)}
+	app := &initChainApp{vals: types.OC2PB.ValidatorUpdates(vals)}
 	clientCreator := proxy.NewLocalClientCreator(app)
 
 	config := ResetConfig("handshake_test_")

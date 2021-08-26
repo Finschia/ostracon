@@ -15,12 +15,16 @@ const (
 
 // Metrics contains metrics exposed by this package.
 type Metrics struct {
-	// Time of ValidBlock
-	BlockVerifyingTime metrics.Histogram
 	// Time between BeginBlock and EndBlock.
 	BlockProcessingTime metrics.Histogram
-	// Time of Commit
-	BlockCommittingTime metrics.Histogram
+	// Time gauge between BeginBlock and EndBlock.
+	BlockExecutionTime metrics.Gauge
+	// Time of commit
+	BlockCommitTime metrics.Gauge
+	// Time of app commit
+	BlockAppCommitTime metrics.Gauge
+	// Time of update mempool
+	BlockUpdateMempoolTime metrics.Gauge
 }
 
 // PrometheusMetrics returns Metrics build using Prometheus client library.
@@ -36,13 +40,6 @@ func PrometheusMetrics(namespace string, labelsAndValues ...string) *Metrics {
 	compositeBuckets = append(compositeBuckets, stdprometheus.LinearBuckets(1000, 500, 4)...)
 
 	return &Metrics{
-		BlockVerifyingTime: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
-			Namespace: namespace,
-			Subsystem: MetricsSubsystem,
-			Name:      "block_verifying_time",
-			Help:      "Time of ValidBlock in ms.",
-			Buckets:   stdprometheus.LinearBuckets(50, 50, 10),
-		}, labels).With(labelsAndValues...),
 		BlockProcessingTime: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
@@ -50,12 +47,29 @@ func PrometheusMetrics(namespace string, labelsAndValues ...string) *Metrics {
 			Help:      "Time between BeginBlock and EndBlock in ms.",
 			Buckets:   compositeBuckets,
 		}, labels).With(labelsAndValues...),
-		BlockCommittingTime: prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+		BlockExecutionTime: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
-			Name:      "block_committing_time",
-			Help:      "Time of Commit in ms.",
-			Buckets:   stdprometheus.LinearBuckets(20, 20, 10),
+			Name:      "block_execution_time",
+			Help:      "Time between BeginBlock and EndBlock in ms.",
+		}, labels).With(labelsAndValues...),
+		BlockCommitTime: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "block_commit_time",
+			Help:      "Time of commit in ms.",
+		}, labels).With(labelsAndValues...),
+		BlockAppCommitTime: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "block_app_commit_time",
+			Help:      "Time of app commit in ms.",
+		}, labels).With(labelsAndValues...),
+		BlockUpdateMempoolTime: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "block_update_mempool_time",
+			Help:      "Time of update mempool in ms.",
 		}, labels).With(labelsAndValues...),
 	}
 }
@@ -63,8 +77,10 @@ func PrometheusMetrics(namespace string, labelsAndValues ...string) *Metrics {
 // NopMetrics returns no-op Metrics.
 func NopMetrics() *Metrics {
 	return &Metrics{
-		BlockVerifyingTime:  discard.NewHistogram(),
-		BlockProcessingTime: discard.NewHistogram(),
-		BlockCommittingTime: discard.NewHistogram(),
+		BlockProcessingTime:    discard.NewHistogram(),
+		BlockExecutionTime:     discard.NewGauge(),
+		BlockCommitTime:        discard.NewGauge(),
+		BlockAppCommitTime:     discard.NewGauge(),
+		BlockUpdateMempoolTime: discard.NewGauge(),
 	}
 }

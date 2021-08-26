@@ -27,7 +27,7 @@ func TestWSClientReconnectWithJitter(t *testing.T) {
 	var errNotConnected = errors.New("not connected")
 	clientMap := make(map[int]*WSClient)
 	buf := new(bytes.Buffer)
-	logger := log.NewTMLogger(buf)
+	logger := log.NewOCLogger(buf)
 	for i := 0; i < n; i++ {
 		c, err := NewWS("tcp://foo", "/websocket")
 		require.Nil(t, err)

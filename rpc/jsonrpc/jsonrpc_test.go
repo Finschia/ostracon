@@ -107,7 +107,7 @@ var colorFn = func(keyvals ...interface{}) term.FgBgColor {
 
 // launch unix and tcp servers
 func setup() {
-	logger := log.NewTMLoggerWithColorFn(log.NewSyncWriter(os.Stdout), colorFn)
+	logger := log.NewOCLoggerWithColorFn(log.NewSyncWriter(os.Stdout), colorFn)
 
 	cmd := exec.Command("rm", "-f", unixSocket)
 	err := cmd.Start()

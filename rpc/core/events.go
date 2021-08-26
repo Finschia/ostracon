@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	// Buffer on the Tendermint (server) side to allow some slowness in clients.
+	// Buffer on the Ostracon (server) side to allow some slowness in clients.
 	subBufferSize = 100
 )
 
@@ -62,7 +62,7 @@ func Subscribe(ctx *rpctypes.Context, query string) (*ctypes.ResultSubscribe, er
 				if sub.Err() != tmpubsub.ErrUnsubscribed {
 					var reason string
 					if sub.Err() == nil {
-						reason = "Tendermint exited"
+						reason = "Ostracon exited"
 					} else {
 						reason = sub.Err().Error()
 					}

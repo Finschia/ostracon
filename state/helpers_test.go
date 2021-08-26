@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	dbm "github.com/tendermint/tm-db"
+	dbm "github.com/line/tm-db/v2"
+	"github.com/line/tm-db/v2/memdb"
 
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto"
@@ -64,7 +65,7 @@ func makeAndApplyGoodBlock(state sm.State, privVal types.PrivValidator, height i
 	}
 	blockID := types.BlockID{Hash: block.Hash(),
 		PartSetHeader: types.PartSetHeader{Total: 3, Hash: tmrand.Bytes(32)}}
-	state, _, err := blockExec.ApplyBlock(state, blockID, block)
+	state, _, err := blockExec.ApplyBlock(state, blockID, block, nil)
 	if err != nil {
 		return state, types.BlockID{}, err
 	}
@@ -123,7 +124,7 @@ func makeState(nVals, height int) (sm.State, dbm.DB, map[string]types.PrivValida
 		AppHash:    nil,
 	})
 
-	stateDB := dbm.NewMemDB()
+	stateDB := memdb.NewDB()
 	stateStore := sm.NewStore(stateDB)
 	if err := stateStore.Save(s); err != nil {
 		panic(err)
@@ -183,8 +184,8 @@ func makeHeaderPartsResponsesValPubKeyChange(
 	if !bytes.Equal(pubkey.Bytes(), val.PubKey.Bytes()) {
 		abciResponses.EndBlock = &abci.ResponseEndBlock{
 			ValidatorUpdates: []abci.ValidatorUpdate{
-				types.TM2PB.NewValidatorUpdate(val.PubKey, 0),
-				types.TM2PB.NewValidatorUpdate(pubkey, 10),
+				types.OC2PB.NewValidatorUpdate(val.PubKey, 0),
+				types.OC2PB.NewValidatorUpdate(pubkey, 10),
 			},
 		}
 	}
@@ -208,7 +209,7 @@ func makeHeaderPartsResponsesValPowerChange(
 	if val.StakingPower != power {
 		abciResponses.EndBlock = &abci.ResponseEndBlock{
 			ValidatorUpdates: []abci.ValidatorUpdate{
-				types.TM2PB.NewValidatorUpdate(val.PubKey, power),
+				types.OC2PB.NewValidatorUpdate(val.PubKey, power),
 			},
 		}
 	}
@@ -224,7 +225,7 @@ func makeHeaderPartsResponsesParams(
 	block := makeBlock(state, state.LastBlockHeight+1)
 	abciResponses := &tmstate.ABCIResponses{
 		BeginBlock: &abci.ResponseBeginBlock{},
-		EndBlock:   &abci.ResponseEndBlock{ConsensusParamUpdates: types.TM2PB.ConsensusParams(&params)},
+		EndBlock:   &abci.ResponseEndBlock{ConsensusParamUpdates: types.OC2PB.ConsensusParams(&params)},
 	}
 	return block.Header, types.BlockID{Hash: block.Hash(), PartSetHeader: types.PartSetHeader{}}, abciResponses
 }
@@ -280,8 +281,12 @@ func (app *testApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 	return abci.ResponseDeliverTx{Events: []abci.Event{}}
 }
 
-func (app *testApp) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
+func (app *testApp) CheckTxSync(req abci.RequestCheckTx) abci.ResponseCheckTx {
 	return abci.ResponseCheckTx{}
+}
+
+func (app *testApp) CheckTxAsync(req abci.RequestCheckTx, callback abci.CheckTxCallback) {
+	callback(abci.ResponseCheckTx{})
 }
 
 func (app *testApp) Commit() abci.ResponseCommit {

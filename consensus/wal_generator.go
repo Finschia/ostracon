@@ -9,9 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pkg/errors"
-	db "github.com/tendermint/tm-db"
-
 	"github.com/line/ostracon/abci/example/kvstore"
 	cfg "github.com/line/ostracon/config"
 	"github.com/line/ostracon/libs/log"
@@ -21,6 +18,8 @@ import (
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/store"
 	"github.com/line/ostracon/types"
+	"github.com/line/tm-db/v2/memdb"
+	"github.com/pkg/errors"
 )
 
 // WALGenerateNBlocks generates a consensus WAL. It does this by spinning up a
@@ -50,7 +49,7 @@ func WALGenerateNBlocks(t *testing.T, wr io.Writer, numBlocks int) (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to read genesis file: %w", err)
 	}
-	blockStoreDB := db.NewMemDB()
+	blockStoreDB := memdb.NewDB()
 	stateDB := blockStoreDB
 	stateStore := sm.NewStore(stateDB)
 	state, err := sm.MakeGenesisState(genDoc)

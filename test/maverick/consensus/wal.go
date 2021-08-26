@@ -32,9 +32,9 @@ const (
 //--------------------------------------------------------
 // types and functions for savings consensus messages
 // func init() {
-// 	tmjson.RegisterType(msgInfo{}, "tendermint/wal/MsgInfo")
-// 	tmjson.RegisterType(timeoutInfo{}, "tendermint/wal/TimeoutInfo")
-// 	tmjson.RegisterType(tmcon.EndHeightMessage  {}, "tendermint/wal/EndHeightMessage  ")
+// 	tmjson.RegisterType(msgInfo{}, "ostracon/wal/MsgInfo")
+// 	tmjson.RegisterType(timeoutInfo{}, "ostracon/wal/TimeoutInfo")
+// 	tmjson.RegisterType(tmcon.EndHeightMessage  {}, "ostracon/wal/EndHeightMessage  ")
 // }
 
 // Write ahead logger writes msgs to disk before they are processed.

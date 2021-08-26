@@ -186,10 +186,12 @@ func (memR *Reactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 		txInfo.SenderP2PID = src.ID()
 	}
 	for _, tx := range msg.Txs {
-		err = memR.mempool.CheckTx(tx, nil, txInfo)
-		if err != nil {
-			memR.Logger.Info("Could not check tx", "tx", txID(tx), "err", err)
-		}
+		tx := tx // pin! workaround for `scopelint` error
+		memR.mempool.CheckTxAsync(tx, txInfo, func(err error) {
+			if err != nil {
+				memR.Logger.Info("Could not check tx", "tx", txID(tx), "err", err)
+			}
+		}, nil)
 	}
 	// broadcasting happens from go routines per peer
 }

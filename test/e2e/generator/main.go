@@ -17,7 +17,7 @@ const (
 	randomSeed int64 = 4827085738
 )
 
-var logger = log.NewTMLogger(log.NewSyncWriter(os.Stdout))
+var logger = log.NewOCLogger(log.NewSyncWriter(os.Stdout))
 
 func main() {
 	NewCLI().Run()

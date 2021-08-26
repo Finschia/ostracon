@@ -17,7 +17,7 @@ var (
 	flagProfAddr    = "pprof-laddr"
 	flagFrequency   = "frequency"
 
-	logger = log.NewTMLogger(log.NewSyncWriter(os.Stdout))
+	logger = log.NewOCLogger(log.NewSyncWriter(os.Stdout))
 )
 
 // DebugCmd defines the root command containing subcommands that assist in

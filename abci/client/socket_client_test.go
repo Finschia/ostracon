@@ -33,8 +33,8 @@ func TestProperSyncCalls(t *testing.T) {
 	resp := make(chan error, 1)
 	go func() {
 		// This is BeginBlockSync unrolled....
-		reqres := c.BeginBlockAsync(types.RequestBeginBlock{})
-		err := c.FlushSync()
+		reqres := c.BeginBlockAsync(types.RequestBeginBlock{}, nil)
+		_, err := c.FlushSync()
 		require.NoError(t, err)
 		res := reqres.Response.GetBeginBlock()
 		require.NotNil(t, res)
@@ -68,8 +68,8 @@ func TestHangingSyncCalls(t *testing.T) {
 	resp := make(chan error, 1)
 	go func() {
 		// Start BeginBlock and flush it
-		reqres := c.BeginBlockAsync(types.RequestBeginBlock{})
-		flush := c.FlushAsync()
+		reqres := c.BeginBlockAsync(types.RequestBeginBlock{}, nil)
+		flush := c.FlushAsync(nil)
 		// wait 20 ms for all events to travel socket, but
 		// no response yet from server
 		time.Sleep(20 * time.Millisecond)
@@ -117,4 +117,117 @@ type slowApp struct {
 func (slowApp) BeginBlock(req types.RequestBeginBlock) types.ResponseBeginBlock {
 	time.Sleep(200 * time.Millisecond)
 	return types.ResponseBeginBlock{}
+}
+
+func TestSockerClientCalls(t *testing.T) {
+	app := sampleApp{}
+
+	s, c := setupClientServer(t, app)
+	t.Cleanup(func() {
+		if err := s.Stop(); err != nil {
+			t.Error(err)
+		}
+	})
+	t.Cleanup(func() {
+		if err := c.Stop(); err != nil {
+			t.Error(err)
+		}
+	})
+
+	c.SetGlobalCallback(func(*types.Request, *types.Response) {
+	})
+
+	c.EchoAsync("msg", getResponseCallback(t))
+	c.FlushAsync(getResponseCallback(t))
+	c.InfoAsync(types.RequestInfo{}, getResponseCallback(t))
+	c.SetOptionAsync(types.RequestSetOption{}, getResponseCallback(t))
+	c.DeliverTxAsync(types.RequestDeliverTx{}, getResponseCallback(t))
+	c.CheckTxAsync(types.RequestCheckTx{}, getResponseCallback(t))
+	c.QueryAsync(types.RequestQuery{}, getResponseCallback(t))
+	c.CommitAsync(getResponseCallback(t))
+	c.InitChainAsync(types.RequestInitChain{}, getResponseCallback(t))
+	c.BeginBlockAsync(types.RequestBeginBlock{}, getResponseCallback(t))
+	c.EndBlockAsync(types.RequestEndBlock{}, getResponseCallback(t))
+	c.BeginRecheckTxAsync(types.RequestBeginRecheckTx{}, getResponseCallback(t))
+	c.EndRecheckTxAsync(types.RequestEndRecheckTx{}, getResponseCallback(t))
+	c.ListSnapshotsAsync(types.RequestListSnapshots{}, getResponseCallback(t))
+	c.OfferSnapshotAsync(types.RequestOfferSnapshot{}, getResponseCallback(t))
+	c.LoadSnapshotChunkAsync(types.RequestLoadSnapshotChunk{}, getResponseCallback(t))
+	c.ApplySnapshotChunkAsync(types.RequestApplySnapshotChunk{}, getResponseCallback(t))
+
+	_, err := c.EchoSync("msg")
+	require.NoError(t, err)
+
+	_, err = c.FlushSync()
+	require.NoError(t, err)
+
+	_, err = c.InfoSync(types.RequestInfo{})
+	require.NoError(t, err)
+
+	_, err = c.SetOptionSync(types.RequestSetOption{})
+	require.NoError(t, err)
+
+	_, err = c.DeliverTxSync(types.RequestDeliverTx{})
+	require.NoError(t, err)
+
+	_, err = c.CheckTxSync(types.RequestCheckTx{})
+	require.NoError(t, err)
+
+	_, err = c.QuerySync(types.RequestQuery{})
+	require.NoError(t, err)
+
+	_, err = c.CommitSync()
+	require.NoError(t, err)
+
+	_, err = c.InitChainSync(types.RequestInitChain{})
+	require.NoError(t, err)
+
+	_, err = c.BeginBlockSync(types.RequestBeginBlock{})
+	require.NoError(t, err)
+
+	_, err = c.EndBlockSync(types.RequestEndBlock{})
+	require.NoError(t, err)
+
+	_, err = c.BeginRecheckTxSync(types.RequestBeginRecheckTx{})
+	require.NoError(t, err)
+
+	_, err = c.EndRecheckTxSync(types.RequestEndRecheckTx{})
+	require.NoError(t, err)
+
+	_, err = c.ListSnapshotsSync(types.RequestListSnapshots{})
+	require.NoError(t, err)
+
+	_, err = c.OfferSnapshotSync(types.RequestOfferSnapshot{})
+	require.NoError(t, err)
+
+	_, err = c.LoadSnapshotChunkSync(types.RequestLoadSnapshotChunk{})
+	require.NoError(t, err)
+
+	_, err = c.ApplySnapshotChunkSync(types.RequestApplySnapshotChunk{})
+	require.NoError(t, err)
+}
+
+type sampleApp struct {
+	types.BaseApplication
+}
+
+func newDoneChan(t *testing.T) chan struct{} {
+	result := make(chan struct{})
+	go func(){
+		select {
+		case <-time.After(time.Second):
+			require.Fail(t, "callback is not called for a second")
+		case <-result:
+			return
+		}
+	}()
+	return result
+}
+
+func getResponseCallback(t *testing.T) abcicli.ResponseCallback {
+	doneChan := newDoneChan(t)
+	return func (res *types.Response) {
+		require.NotNil(t, res)
+		doneChan<- struct{}{}
+	}
 }

@@ -32,13 +32,13 @@ var ABCIPubKeyTypesToNames = map[string]string{
 
 //-------------------------------------------------------
 
-// TM2PB is used for converting Tendermint ABCI to protobuf ABCI.
+// OC2PB is used for converting Ostracon ABCI to protobuf ABCI.
 // UNSTABLE
-var TM2PB = tm2pb{}
+var OC2PB = oc2pb{}
 
-type tm2pb struct{}
+type oc2pb struct{}
 
-func (tm2pb) Header(header *Header) tmproto.Header {
+func (oc2pb) Header(header *Header) tmproto.Header {
 	return tmproto.Header{
 		Version: header.Version,
 		ChainID: header.ChainID,
@@ -61,21 +61,21 @@ func (tm2pb) Header(header *Header) tmproto.Header {
 	}
 }
 
-func (tm2pb) Validator(val *Validator) abci.Validator {
+func (oc2pb) Validator(val *Validator) abci.Validator {
 	return abci.Validator{
 		Address: val.PubKey.Address(),
 		Power:   val.StakingPower,
 	}
 }
 
-func (tm2pb) BlockID(blockID BlockID) tmproto.BlockID {
+func (oc2pb) BlockID(blockID BlockID) tmproto.BlockID {
 	return tmproto.BlockID{
 		Hash:          blockID.Hash,
-		PartSetHeader: TM2PB.PartSetHeader(blockID.PartSetHeader),
+		PartSetHeader: OC2PB.PartSetHeader(blockID.PartSetHeader),
 	}
 }
 
-func (tm2pb) PartSetHeader(header PartSetHeader) tmproto.PartSetHeader {
+func (oc2pb) PartSetHeader(header PartSetHeader) tmproto.PartSetHeader {
 	return tmproto.PartSetHeader{
 		Total: header.Total,
 		Hash:  header.Hash,
@@ -83,7 +83,7 @@ func (tm2pb) PartSetHeader(header PartSetHeader) tmproto.PartSetHeader {
 }
 
 // XXX: panics on unknown pubkey type
-func (tm2pb) ValidatorUpdate(val *Validator) abci.ValidatorUpdate {
+func (oc2pb) ValidatorUpdate(val *Validator) abci.ValidatorUpdate {
 	pk, err := cryptoenc.PubKeyToProto(val.PubKey)
 	if err != nil {
 		panic(err)
@@ -95,15 +95,15 @@ func (tm2pb) ValidatorUpdate(val *Validator) abci.ValidatorUpdate {
 }
 
 // XXX: panics on nil or unknown pubkey type
-func (tm2pb) ValidatorUpdates(vals *ValidatorSet) []abci.ValidatorUpdate {
+func (oc2pb) ValidatorUpdates(vals *ValidatorSet) []abci.ValidatorUpdate {
 	validators := make([]abci.ValidatorUpdate, vals.Size())
 	for i, val := range vals.Validators {
-		validators[i] = TM2PB.ValidatorUpdate(val)
+		validators[i] = OC2PB.ValidatorUpdate(val)
 	}
 	return validators
 }
 
-func (tm2pb) ConsensusParams(params *tmproto.ConsensusParams) *abci.ConsensusParams {
+func (oc2pb) ConsensusParams(params *tmproto.ConsensusParams) *abci.ConsensusParams {
 	return &abci.ConsensusParams{
 		Block: &abci.BlockParams{
 			MaxBytes: params.Block.MaxBytes,
@@ -115,7 +115,7 @@ func (tm2pb) ConsensusParams(params *tmproto.ConsensusParams) *abci.ConsensusPar
 }
 
 // XXX: panics on nil or unknown pubkey type
-func (tm2pb) NewValidatorUpdate(pubkey crypto.PubKey, power int64) abci.ValidatorUpdate {
+func (oc2pb) NewValidatorUpdate(pubkey crypto.PubKey, power int64) abci.ValidatorUpdate {
 	pubkeyABCI, err := cryptoenc.PubKeyToProto(pubkey)
 	if err != nil {
 		panic(err)
@@ -128,9 +128,9 @@ func (tm2pb) NewValidatorUpdate(pubkey crypto.PubKey, power int64) abci.Validato
 
 //----------------------------------------------------------------------------
 
-// PB2TM is used for converting protobuf ABCI to Tendermint ABCI.
+// PB2OC is used for converting protobuf ABCI to Ostracon ABCI.
 // UNSTABLE
-var PB2TM = pb2tm{}
+var PB2OC = pb2tm{}
 
 type pb2tm struct{}
 

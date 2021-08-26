@@ -44,7 +44,7 @@ func main() {
 	rootCmd.AddCommand(cmd.NewInitCmd())
 	rootCmd.AddCommand(cmd.NewRunNodeCmd(nodeFunc))
 
-	cmd := cli.PrepareBaseCmd(rootCmd, "TM", os.ExpandEnv(filepath.Join("$HOME", cfg.DefaultOstraconDir)))
+	cmd := cli.PrepareBaseCmd(rootCmd, "OC", os.ExpandEnv(filepath.Join("$HOME", cfg.DefaultOstraconDir)))
 	if err := cmd.Execute(); err != nil {
 		panic(err)
 	}

@@ -12,11 +12,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/line/tm-db/v2/metadb"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 
-	dbm "github.com/tendermint/tm-db"
+	dbm "github.com/line/tm-db/v2"
 
 	abci "github.com/line/ostracon/abci/types"
 	bcv0 "github.com/line/ostracon/blockchain/v0"
@@ -95,8 +96,8 @@ type DBProvider func(*DBContext) (dbm.DB, error)
 // DefaultDBProvider returns a database using the DBBackend and DBDir
 // specified in the ctx.Config.
 func DefaultDBProvider(ctx *DBContext) (dbm.DB, error) {
-	dbType := dbm.BackendType(ctx.Config.DBBackend)
-	return dbm.NewDB(ctx.ID, dbType, ctx.Config.DBDir())
+	dbType := metadb.BackendType(ctx.Config.DBBackend)
+	return metadb.NewDB(ctx.ID, dbType, ctx.Config.DBDir())
 }
 
 // GenesisDocProvider returns a GenesisDoc.
@@ -115,7 +116,7 @@ func DefaultGenesisDocProviderFunc(config *cfg.Config) GenesisDocProvider {
 // Provider takes a config and a logger and returns a ready to go Node.
 type Provider func(*cfg.Config, log.Logger) (*Node, error)
 
-// DefaultNewNode returns a Tendermint node with default settings for the
+// DefaultNewNode returns an Ostracon node with default settings for the
 // PrivValidator, ClientCreator, GenesisDoc, and DBProvider.
 // It implements NodeProvider.
 func DefaultNewNode(config *cfg.Config, logger log.Logger, misbehaviors map[int64]cs.Misbehavior) (*Node, error) {
@@ -220,7 +221,7 @@ func StateProvider(stateProvider statesync.StateProvider) Option {
 
 //------------------------------------------------------------------------------
 
-// Node is the highest level interface to a full Tendermint node.
+// Node is the highest level interface to a full Ostracon node.
 // It includes all configuration information and running services.
 type Node struct {
 	service.BaseService
@@ -338,7 +339,7 @@ func doHandshake(
 func logNodeStartupInfo(state sm.State, pubKey crypto.PubKey, logger, consensusLogger log.Logger) {
 	// Log the version info.
 	logger.Info("Version info",
-		"software", version.TMCoreSemVer,
+		"software", version.OCCoreSemVer,
 		"block", version.BlockProtocol,
 		"p2p", version.P2PProtocol,
 	)
@@ -377,7 +378,6 @@ func createMempoolAndMempoolReactor(config *cfg.Config, proxyApp proxy.AppConns,
 		state.LastBlockHeight,
 		mempl.WithMetrics(memplMetrics),
 		mempl.WithPreCheck(sm.TxPreCheck(state)),
-		mempl.WithPostCheck(sm.TxPostCheck(state)),
 	)
 	mempoolLogger := logger.With("module", "mempool")
 	mempoolReactor := mempl.NewReactor(config.Mempool, config.P2P.RecvAsync, config.P2P.MempoolRecvBufSize, mempool)
@@ -697,7 +697,7 @@ func startStateSync(ssR *statesync.Reactor, bcR fastSyncReactor, conR *cs.Reacto
 	return nil
 }
 
-// NewNode returns a new, ready to go, Tendermint Node.
+// NewNode returns a new, ready to go, Ostracon Node.
 func NewNode(config *cfg.Config,
 	privValidator types.PrivValidator,
 	nodeKey *p2p.NodeKey,
@@ -1332,7 +1332,7 @@ func makeNodeInfo(
 		),
 		DefaultNodeID: nodeKey.ID(),
 		Network:       genDoc.ChainID,
-		Version:       version.TMCoreSemVer,
+		Version:       version.OCCoreSemVer,
 		Channels: []byte{
 			bcChannel,
 			cs.StateChannel, cs.DataChannel, cs.VoteChannel, cs.VoteSetBitsChannel,

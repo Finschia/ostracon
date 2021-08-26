@@ -15,9 +15,10 @@ import (
 	"time"
 
 	"github.com/go-kit/kit/log/term"
+	"github.com/line/tm-db/v2/memdb"
 	"github.com/stretchr/testify/require"
 
-	dbm "github.com/tendermint/tm-db"
+	dbm "github.com/line/tm-db/v2"
 
 	abcicli "github.com/line/ostracon/abci/client"
 	"github.com/line/ostracon/abci/example/counter"
@@ -385,7 +386,7 @@ func newStateWithConfig(
 	pv types.PrivValidator,
 	app abci.Application,
 ) *State {
-	blockDB := dbm.NewMemDB()
+	blockDB := memdb.NewDB()
 	return newStateWithConfigAndBlockStore(thisConfig, state, pv, app, blockDB)
 }
 
@@ -771,7 +772,7 @@ func randConsensusNet(nValidators int, testName string, tickerFunc func() Timeou
 	logger := consensusLogger()
 	configRootDirs := make([]string, 0, nValidators)
 	for i := 0; i < nValidators; i++ {
-		stateDB := dbm.NewMemDB() // each state needs its own db
+		stateDB := memdb.NewDB() // each state needs its own db
 		stateStore := sm.NewStore(stateDB)
 		state, err := stateStore.LoadFromDBOrGenesisDoc(genDoc)
 		if err != nil {
@@ -786,7 +787,7 @@ func randConsensusNet(nValidators int, testName string, tickerFunc func() Timeou
 		}
 		ensureDir(filepath.Dir(thisConfig.Consensus.WalFile()), 0700) // dir for wal
 		app := appFunc()
-		vals := types.TM2PB.ValidatorUpdates(state.Validators)
+		vals := types.OC2PB.ValidatorUpdates(state.Validators)
 		app.InitChain(abci.RequestInitChain{Validators: vals})
 
 		css[i] = newStateWithConfigAndBlockStore(thisConfig, state, privVals[i], app, stateDB)
@@ -849,7 +850,7 @@ func createPeersAndValidators(nValidators, nPeers int, testName string,
 	var peer0Config *cfg.Config
 	configRootDirs := make([]string, 0, nPeers)
 	for i := 0; i < nPeers; i++ {
-		stateDB := dbm.NewMemDB() // each state needs its own db
+		stateDB := memdb.NewDB() // each state needs its own db
 		stateStore := sm.NewStore(stateDB)
 		state, _ := stateStore.LoadFromDBOrGenesisDoc(genDoc)
 		thisConfig := ResetConfig(fmt.Sprintf("%s_%d", testName, i))
@@ -875,7 +876,7 @@ func createPeersAndValidators(nValidators, nPeers int, testName string,
 		}
 
 		app := appFunc(path.Join(config.DBDir(), fmt.Sprintf("%s_%d", testName, i)))
-		vals := types.TM2PB.ValidatorUpdates(state.Validators)
+		vals := types.OC2PB.ValidatorUpdates(state.Validators)
 		if _, ok := app.(*kvstore.PersistentKVStoreApplication); ok {
 			// simulate handshake, receive app version. If don't do this, replay test will fail
 			state.Version.Consensus.App = kvstore.ProtocolVersion

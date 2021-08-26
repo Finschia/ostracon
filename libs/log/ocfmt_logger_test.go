@@ -17,7 +17,7 @@ import (
 func TestTMFmtLogger(t *testing.T) {
 	t.Parallel()
 	buf := &bytes.Buffer{}
-	logger := log.NewTMFmtLogger(buf)
+	logger := log.NewOCFmtLogger(buf)
 
 	if err := logger.Log("hello", "world"); err != nil {
 		t.Fatal(err)
@@ -62,16 +62,16 @@ func TestTMFmtLogger(t *testing.T) {
 }
 
 func BenchmarkTMFmtLoggerSimple(b *testing.B) {
-	benchmarkRunnerKitlog(b, log.NewTMFmtLogger(ioutil.Discard), baseMessage)
+	benchmarkRunnerKitlog(b, log.NewOCFmtLogger(ioutil.Discard), baseMessage)
 }
 
 func BenchmarkTMFmtLoggerContextual(b *testing.B) {
-	benchmarkRunnerKitlog(b, log.NewTMFmtLogger(ioutil.Discard), withMessage)
+	benchmarkRunnerKitlog(b, log.NewOCFmtLogger(ioutil.Discard), withMessage)
 }
 
 func TestTMFmtLoggerConcurrency(t *testing.T) {
 	t.Parallel()
-	testConcurrency(t, log.NewTMFmtLogger(ioutil.Discard), 10000)
+	testConcurrency(t, log.NewOCFmtLogger(ioutil.Discard), 10000)
 }
 
 func benchmarkRunnerKitlog(b *testing.B, logger kitlog.Logger, f func(kitlog.Logger)) {

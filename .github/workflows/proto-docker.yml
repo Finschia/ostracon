@@ -1,4 +1,4 @@
-name: Build & Push TM Proto Builder
+name: Build & Push OC Proto Builder
 on:
   pull_request:
     paths:

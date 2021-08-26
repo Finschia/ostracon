@@ -14,17 +14,21 @@ import (
 )
 
 //-----------------------------------------------------------------------------
-// NOTE: tx should be signed, but this is only checked at the app level (not by Tendermint!)
+// NOTE: tx should be signed, but this is only checked at the app level (not by Ostracon!)
 
 // BroadcastTxAsync returns right away, with no response. Does not wait for
 // CheckTx nor DeliverTx results.
 // More: https://docs.tendermint.com/master/rpc/#/Tx/broadcast_tx_async
 func BroadcastTxAsync(ctx *rpctypes.Context, tx types.Tx) (*ctypes.ResultBroadcastTx, error) {
-	err := env.Mempool.CheckTx(tx, nil, mempl.TxInfo{})
-
+	chErr := make(chan error)
+	env.Mempool.CheckTxAsync(tx, mempl.TxInfo{}, func(err error) {
+		chErr <- err
+	}, nil)
+	err := <-chErr
 	if err != nil {
 		return nil, err
 	}
+
 	return &ctypes.ResultBroadcastTx{Hash: tx.Hash()}, nil
 }
 
@@ -32,14 +36,10 @@ func BroadcastTxAsync(ctx *rpctypes.Context, tx types.Tx) (*ctypes.ResultBroadca
 // DeliverTx result.
 // More: https://docs.tendermint.com/master/rpc/#/Tx/broadcast_tx_sync
 func BroadcastTxSync(ctx *rpctypes.Context, tx types.Tx) (*ctypes.ResultBroadcastTx, error) {
-	resCh := make(chan *abci.Response, 1)
-	err := env.Mempool.CheckTx(tx, func(res *abci.Response) {
-		resCh <- res
-	}, mempl.TxInfo{})
+	res, err := env.Mempool.CheckTxSync(tx, mempl.TxInfo{})
 	if err != nil {
 		return nil, err
 	}
-	res := <-resCh
 	r := res.GetCheckTx()
 	return &ctypes.ResultBroadcastTx{
 		Code:      r.Code,
@@ -77,16 +77,12 @@ func BroadcastTxCommit(ctx *rpctypes.Context, tx types.Tx) (*ctypes.ResultBroadc
 		}
 	}()
 
-	// Broadcast tx and wait for CheckTx result
-	checkTxResCh := make(chan *abci.Response, 1)
-	err = env.Mempool.CheckTx(tx, func(res *abci.Response) {
-		checkTxResCh <- res
-	}, mempl.TxInfo{})
+	// Broadcast tx and check tx
+	checkTxResMsg, err := env.Mempool.CheckTxSync(tx, mempl.TxInfo{})
 	if err != nil {
 		env.Logger.Error("Error on broadcastTxCommit", "err", err)
 		return nil, fmt.Errorf("error on broadcastTxCommit: %v", err)
 	}
-	checkTxResMsg := <-checkTxResCh
 	checkTxRes := checkTxResMsg.GetCheckTx()
 	if checkTxRes.Code != abci.CodeTypeOK {
 		return &ctypes.ResultBroadcastTxCommit{
@@ -109,7 +105,7 @@ func BroadcastTxCommit(ctx *rpctypes.Context, tx types.Tx) (*ctypes.ResultBroadc
 	case <-deliverTxSub.Cancelled():
 		var reason string
 		if deliverTxSub.Err() == nil {
-			reason = "Tendermint exited"
+			reason = "Ostracon exited"
 		} else {
 			reason = deliverTxSub.Err().Error()
 		}

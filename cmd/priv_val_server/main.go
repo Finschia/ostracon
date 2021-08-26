@@ -20,7 +20,7 @@ func main() {
 		privValKeyPath   = flag.String("priv-key", "", "priv val key file path")
 		privValStatePath = flag.String("priv-state", "", "priv val state file path")
 
-		logger = log.NewTMLogger(
+		logger = log.NewOCLogger(
 			log.NewSyncWriter(os.Stdout),
 		).With("module", "priv_val")
 	)

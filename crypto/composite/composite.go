@@ -16,8 +16,8 @@ import (
 // composite.PubKey and composite.PrivKey are intended to allow public key algorithms to be selected for each function.
 
 const (
-	PubKeyName  = "tendermint/PubKeyComposite"
-	PrivKeyName = "tendermint/PrivKeyComposite"
+	PubKeyName  = "ostracon/PubKeyComposite"
+	PrivKeyName = "ostracon/PrivKeyComposite"
 
 	KeyType               = "composite"
 	KeyTypeBlsWithEd25519 = KeyType + "(" + bls.KeyType + "," + ed25519.KeyType + ")"

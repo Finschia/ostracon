@@ -873,7 +873,7 @@ func (cs *State) updateToState(state sm.State) {
 		}
 		cs.LastCommit = cs.Votes.Precommits(cs.CommitRound)
 	case cs.LastCommit == nil:
-		// NOTE: when Tendermint starts, it has no votes. reconstructLastCommit
+		// NOTE: when Ostracon starts, it has no votes. reconstructLastCommit
 		// must be called to reconstruct LastCommit from SeenCommit.
 		panic(fmt.Sprintf("LastCommit cannot be empty after initial block (H:%d)",
 			state.LastBlockHeight+1,
@@ -1514,7 +1514,7 @@ func (cs *State) finalizeCommit(height int64) {
 	stateCopy, retainHeight, err = cs.blockExec.ApplyBlock(
 		stateCopy,
 		types.BlockID{Hash: block.Hash(), PartSetHeader: blockParts.Header()},
-		block)
+		block, nil)
 	if err != nil {
 		cs.Logger.Error("Error on ApplyBlock", "err", err)
 		return
@@ -1647,7 +1647,7 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 	if height > 1 {
 		lastBlockMeta := cs.blockStore.LoadBlockMeta(height - 1)
 		if lastBlockMeta != nil {
-			cs.metrics.BlockIntervalSeconds.Observe(
+			cs.metrics.BlockIntervalSeconds.Set(
 				block.Time.Sub(lastBlockMeta.Header.Time).Seconds(),
 			)
 		}

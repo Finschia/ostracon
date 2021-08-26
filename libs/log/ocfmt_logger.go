@@ -14,43 +14,43 @@ import (
 	"github.com/go-logfmt/logfmt"
 )
 
-type tmfmtEncoder struct {
+type ocfmtEncoder struct {
 	*logfmt.Encoder
 	buf bytes.Buffer
 }
 
-func (l *tmfmtEncoder) Reset() {
+func (l *ocfmtEncoder) Reset() {
 	l.Encoder.Reset()
 	l.buf.Reset()
 }
 
-var tmfmtEncoderPool = sync.Pool{
+var ocfmtEncoderPool = sync.Pool{
 	New: func() interface{} {
-		var enc tmfmtEncoder
+		var enc ocfmtEncoder
 		enc.Encoder = logfmt.NewEncoder(&enc.buf)
 		return &enc
 	},
 }
 
-type tmfmtLogger struct {
+type ocfmtLogger struct {
 	w io.Writer
 }
 
-// NewTMFmtLogger returns a logger that encodes keyvals to the Writer in
-// Tendermint custom format. Note complex types (structs, maps, slices)
+// NewOCFmtLogger returns a logger that encodes keyvals to the Writer in
+// Ostracon custom format. Note complex types (structs, maps, slices)
 // formatted as "%+v".
 //
 // Each log event produces no more than one call to w.Write.
 // The passed Writer must be safe for concurrent use by multiple goroutines if
 // the returned Logger will be used concurrently.
-func NewTMFmtLogger(w io.Writer) kitlog.Logger {
-	return &tmfmtLogger{w}
+func NewOCFmtLogger(w io.Writer) kitlog.Logger {
+	return &ocfmtLogger{w}
 }
 
-func (l tmfmtLogger) Log(keyvals ...interface{}) error {
-	enc := tmfmtEncoderPool.Get().(*tmfmtEncoder)
+func (l ocfmtLogger) Log(keyvals ...interface{}) error {
+	enc := ocfmtEncoderPool.Get().(*ocfmtEncoder)
 	enc.Reset()
-	defer tmfmtEncoderPool.Put(enc)
+	defer ocfmtEncoderPool.Put(enc)
 
 	const unknown = "unknown"
 	lvl := "none"
@@ -89,7 +89,7 @@ func (l tmfmtLogger) Log(keyvals ...interface{}) error {
 		}
 	}
 
-	// Form a custom Tendermint line
+	// Form a custom Ostracon line
 	//
 	// Example:
 	//     D[2016-05-02|11:06:44.322]   Stopping AddrBook (ignoring: already stopped)

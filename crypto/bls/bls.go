@@ -17,8 +17,8 @@ import (
 var _ crypto.PrivKey = PrivKey{}
 
 const (
-	PrivKeyName   = "tendermint/PrivKeyBLS12"
-	PubKeyName    = "tendermint/PubKeyBLS12"
+	PrivKeyName   = "ostracon/PrivKeyBLS12"
+	PubKeyName    = "ostracon/PubKeyBLS12"
 	PrivKeySize   = 32
 	PubKeySize    = 48
 	SignatureSize = 96

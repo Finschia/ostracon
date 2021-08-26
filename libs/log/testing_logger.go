@@ -35,7 +35,7 @@ func TestingLoggerWithOutput(w io.Writer) Logger {
 	}
 
 	if testing.Verbose() {
-		_testingLogger = NewTMLogger(NewSyncWriter(w))
+		_testingLogger = NewOCLogger(NewSyncWriter(w))
 	} else {
 		_testingLogger = NewNopLogger()
 	}
@@ -51,7 +51,7 @@ func TestingLoggerWithColorFn(colorFn func(keyvals ...interface{}) term.FgBgColo
 	}
 
 	if testing.Verbose() {
-		_testingLogger = NewTMLoggerWithColorFn(NewSyncWriter(os.Stdout), colorFn)
+		_testingLogger = NewOCLoggerWithColorFn(NewSyncWriter(os.Stdout), colorFn)
 	} else {
 		_testingLogger = NewNopLogger()
 	}

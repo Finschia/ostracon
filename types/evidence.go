@@ -515,8 +515,8 @@ func EvidenceFromProto(evidence *tmproto.Evidence) (Evidence, error) {
 }
 
 func init() {
-	tmjson.RegisterType(&DuplicateVoteEvidence{}, "tendermint/DuplicateVoteEvidence")
-	tmjson.RegisterType(&LightClientAttackEvidence{}, "tendermint/LightClientAttackEvidence")
+	tmjson.RegisterType(&DuplicateVoteEvidence{}, "ostracon/DuplicateVoteEvidence")
+	tmjson.RegisterType(&LightClientAttackEvidence{}, "ostracon/LightClientAttackEvidence")
 }
 
 //-------------------------------------------- ERRORS --------------------------------------

@@ -51,7 +51,7 @@ func TestApplyBlock(t *testing.T) {
 	block := makeBlockWithPrivVal(state, privVals[state.Validators.Validators[0].Address.String()], 1)
 	blockID := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
 
-	state, retainHeight, err := blockExec.ApplyBlock(state, blockID, block)
+	state, retainHeight, err := blockExec.ApplyBlock(state, blockID, block, nil)
 	require.Nil(t, err)
 	assert.EqualValues(t, retainHeight, 1)
 
@@ -187,14 +187,14 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 			Type:             abci.EvidenceType_DUPLICATE_VOTE,
 			Height:           3,
 			Time:             defaultEvidenceTime,
-			Validator:        types.TM2PB.Validator(state.Validators.Validators[0]),
+			Validator:        types.OC2PB.Validator(state.Validators.Validators[0]),
 			TotalVotingPower: 10,
 		},
 		{
 			Type:             abci.EvidenceType_LIGHT_CLIENT_ATTACK,
 			Height:           8,
 			Time:             defaultEvidenceTime,
-			Validator:        types.TM2PB.Validator(state.Validators.Validators[0]),
+			Validator:        types.OC2PB.Validator(state.Validators.Validators[0]),
 			TotalVotingPower: 12,
 		},
 	}
@@ -271,7 +271,7 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 	proof, _ := privVal.GenerateVRFProof(message)
 	block.Proof = bytes.HexBytes(proof)
 
-	state, retainHeight, err := blockExec.ApplyBlock(state, blockID, block)
+	state, retainHeight, err := blockExec.ApplyBlock(state, blockID, block, nil)
 	require.Nil(t, err)
 	assert.EqualValues(t, retainHeight, 1)
 
@@ -389,7 +389,7 @@ func TestUpdateValidators(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			updates, err := types.PB2TM.ValidatorUpdates(tc.abciUpdates)
+			updates, err := types.PB2OC.ValidatorUpdates(tc.abciUpdates)
 			assert.NoError(t, err)
 			err = tc.currentSet.UpdateWithChangeSet(updates)
 			if tc.shouldErr {
@@ -453,7 +453,7 @@ func TestEndBlockValidatorUpdates(t *testing.T) {
 		{PubKey: pk, Power: 10},
 	}
 
-	state, _, err = blockExec.ApplyBlock(state, blockID, block)
+	state, _, err = blockExec.ApplyBlock(state, blockID, block, nil)
 	require.Nil(t, err)
 	// test new validator was added to NextValidators
 	if assert.Equal(t, state.Validators.Size()+1, state.NextValidators.Size()) {
@@ -509,7 +509,7 @@ func TestEndBlockValidatorUpdatesResultingInEmptySet(t *testing.T) {
 		{PubKey: vp, Power: 0},
 	}
 
-	assert.NotPanics(t, func() { state, _, err = blockExec.ApplyBlock(state, blockID, block) })
+	assert.NotPanics(t, func() { state, _, err = blockExec.ApplyBlock(state, blockID, block, nil) })
 	assert.NotNil(t, err)
 	assert.NotEmpty(t, state.NextValidators.Validators)
 }

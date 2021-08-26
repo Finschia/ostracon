@@ -14,7 +14,7 @@ import (
 	tmproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
-// PrivValidator defines the functionality of a local Tendermint validator
+// PrivValidator defines the functionality of a local Ostracon validator
 // that signs votes and proposals, and never double signs.
 type PrivValidator interface {
 	GetPubKey() (crypto.PubKey, error)

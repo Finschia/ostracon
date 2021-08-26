@@ -4,10 +4,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/line/tm-db/v2/metadb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	dbm "github.com/tendermint/tm-db"
 
 	tmrand "github.com/line/ostracon/libs/rand"
 	sm "github.com/line/ostracon/state"
@@ -31,7 +30,7 @@ func TestTxFilter(t *testing.T) {
 	}
 
 	for i, tc := range testCases {
-		stateDB, err := dbm.NewDB("state", "memdb", os.TempDir())
+		stateDB, err := metadb.NewDB("state", "memdb", os.TempDir())
 		require.NoError(t, err)
 		stateStore := sm.NewStore(stateDB)
 		state, err := stateStore.LoadFromDBOrGenesisDoc(genDoc)

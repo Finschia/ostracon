@@ -9,10 +9,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/line/tm-db/v2/memdb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	dbm "github.com/tendermint/tm-db"
+	dbm "github.com/line/tm-db/v2"
 
 	"github.com/line/ostracon/abci/example/kvstore"
 	cfg "github.com/line/ostracon/config"
@@ -248,13 +249,12 @@ func TestCreateProposalBlock(t *testing.T) {
 		state.LastBlockHeight,
 		mempl.WithMetrics(memplMetrics),
 		mempl.WithPreCheck(sm.TxPreCheck(state)),
-		mempl.WithPostCheck(sm.TxPostCheck(state)),
 	)
 	mempool.SetLogger(logger)
 
 	// Make EvidencePool
-	evidenceDB := dbm.NewMemDB()
-	blockStore := store.NewBlockStore(dbm.NewMemDB())
+	evidenceDB := memdb.NewDB()
+	blockStore := store.NewBlockStore(memdb.NewDB())
 	evidencePool, err := evidence.NewPool(evidenceDB, stateStore, blockStore)
 	require.NoError(t, err)
 	evidencePool.SetLogger(logger)
@@ -278,7 +278,7 @@ func TestCreateProposalBlock(t *testing.T) {
 	txLength := 100
 	for i := 0; i <= maxBytes/txLength; i++ {
 		tx := tmrand.Bytes(txLength)
-		err := mempool.CheckTx(tx, nil, mempl.TxInfo{})
+		_, err := mempool.CheckTxSync(tx, mempl.TxInfo{})
 		assert.NoError(t, err)
 	}
 
@@ -344,14 +344,13 @@ func TestMaxProposalBlockSize(t *testing.T) {
 		state.LastBlockHeight,
 		mempl.WithMetrics(memplMetrics),
 		mempl.WithPreCheck(sm.TxPreCheck(state)),
-		mempl.WithPostCheck(sm.TxPostCheck(state)),
 	)
 	mempool.SetLogger(logger)
 
 	// fill the mempool with one txs just below the maximum size
 	txLength := int(types.MaxDataBytesNoEvidence(maxBytes, 1))
 	tx := tmrand.Bytes(txLength - 4) // to account for the varint
-	err = mempool.CheckTx(tx, nil, mempl.TxInfo{})
+	_, err = mempool.CheckTxSync(tx, mempl.TxInfo{})
 	assert.NoError(t, err)
 
 	blockExec := sm.NewBlockExecutor(
@@ -439,7 +438,7 @@ func state(nVals int, height int64) (sm.State, dbm.DB, []types.PrivValidator) {
 	})
 
 	// save validators to db for 2 heights
-	stateDB := dbm.NewMemDB()
+	stateDB := memdb.NewDB()
 	stateStore := sm.NewStore(stateDB)
 	if err := stateStore.Save(s); err != nil {
 		panic(err)

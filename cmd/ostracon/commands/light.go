@@ -12,9 +12,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/line/tm-db/v2/goleveldb"
 	"github.com/spf13/cobra"
 
-	dbm "github.com/tendermint/tm-db"
+	dbm "github.com/line/tm-db/v2"
 
 	"github.com/line/ostracon/crypto/merkle"
 	"github.com/line/ostracon/libs/log"
@@ -105,7 +106,7 @@ func init() {
 
 func runProxy(cmd *cobra.Command, args []string) error {
 	// Initialise logger.
-	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
+	logger := log.NewOCLogger(log.NewSyncWriter(os.Stdout))
 	var option log.Option
 	if verbose {
 		option, _ = log.AllowLevel("debug")
@@ -122,7 +123,7 @@ func runProxy(cmd *cobra.Command, args []string) error {
 		witnessesAddrs = strings.Split(witnessAddrsJoined, ",")
 	}
 
-	db, err := dbm.NewGoLevelDB("light-client-db", home)
+	db, err := goleveldb.NewDB("light-client-db", home)
 	if err != nil {
 		return fmt.Errorf("can't create a db: %w", err)
 	}

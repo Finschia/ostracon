@@ -10,7 +10,6 @@ require (
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/confio/ics23/go v0.6.3
 	github.com/coniks-sys/coniks-go v0.0.0-20180722014011-11acf4819b71
-	github.com/cosmos/iavl v0.15.3
 	github.com/fortytw2/leaktest v1.3.0
 	github.com/go-kit/kit v0.10.0
 	github.com/go-logfmt/logfmt v0.5.0
@@ -20,6 +19,7 @@ require (
 	github.com/gtank/merlin v0.1.1
 	github.com/herumi/bls-eth-go-binary v0.0.0-20200923072303-32b29e5d8cbf
 	github.com/libp2p/go-buffer-pool v0.0.2
+	github.com/line/tm-db/v2 v2.0.0-init.1.0.20210824011847-fcfa67dd3c70
 	github.com/minio/highwayhash v1.0.1
 	github.com/pelletier/go-toml v1.6.0 // indirect
 	github.com/pkg/errors v0.9.1
@@ -36,7 +36,6 @@ require (
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/tendermint/go-amino v0.16.0
-	github.com/tendermint/tm-db v0.6.4
 	github.com/yahoo/coname v0.0.0-20170609175141-84592ddf8673 // indirect
 	golang.org/x/crypto v0.0.0-20201117144127-c1f2f97bffc9
 	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4

@@ -97,7 +97,7 @@ func createConfig() *cfg.Config {
 	tm, rpc, grpc := makeAddrs()
 	c.P2P.ListenAddress = tm
 	c.RPC.ListenAddress = rpc
-	c.RPC.CORSAllowedOrigins = []string{"https://tendermint.com/"}
+	c.RPC.CORSAllowedOrigins = []string{"https://ostracon.com/"}
 	c.RPC.GRPCListenAddress = grpc
 	return c
 }
@@ -115,13 +115,13 @@ func GetGRPCClient() core_grpc.BroadcastAPIClient {
 	return core_grpc.StartGRPCClient(grpcAddr)
 }
 
-// StartTendermint starts a test ostracon server in a go routine and returns when it is initialized
-func StartTendermint(app abci.Application, opts ...func(*Options)) *nm.Node {
+// StartOstracon starts a test ostracon server in a go routine and returns when it is initialized
+func StartOstracon(app abci.Application, opts ...func(*Options)) *nm.Node {
 	nodeOpts := defaultOptions
 	for _, opt := range opts {
 		opt(&nodeOpts)
 	}
-	node := NewTendermint(app, &nodeOpts)
+	node := NewOstracon(app, &nodeOpts)
 	err := node.Start()
 	if err != nil {
 		panic(err)
@@ -132,15 +132,15 @@ func StartTendermint(app abci.Application, opts ...func(*Options)) *nm.Node {
 	waitForGRPC()
 
 	if !nodeOpts.suppressStdout {
-		fmt.Println("Tendermint running!")
+		fmt.Println("Ostracon running!")
 	}
 
 	return node
 }
 
-// StopTendermint stops a test ostracon server, waits until it's stopped and
+// StopOstracon stops a test ostracon server, waits until it's stopped and
 // cleans up test/config files.
-func StopTendermint(node *nm.Node) {
+func StopOstracon(node *nm.Node) {
 	if err := node.Stop(); err != nil {
 		node.Logger.Error("Error when tryint to stop node", "err", err)
 	}
@@ -148,15 +148,15 @@ func StopTendermint(node *nm.Node) {
 	os.RemoveAll(node.Config().RootDir)
 }
 
-// NewTendermint creates a new ostracon server and sleeps forever
-func NewTendermint(app abci.Application, opts *Options) *nm.Node {
+// NewOstracon creates a new ostracon server and sleeps forever
+func NewOstracon(app abci.Application, opts *Options) *nm.Node {
 	// Create & start node
 	config := GetConfig(opts.recreateConfig)
 	var logger log.Logger
 	if opts.suppressStdout {
 		logger = log.NewNopLogger()
 	} else {
-		logger = log.NewTMLogger(log.NewSyncWriter(os.Stdout))
+		logger = log.NewOCLogger(log.NewSyncWriter(os.Stdout))
 		logger = log.NewFilter(logger, log.AllowError())
 	}
 	pvKeyFile := config.PrivValidatorKeyFile()
@@ -179,7 +179,7 @@ func NewTendermint(app abci.Application, opts *Options) *nm.Node {
 	return node
 }
 
-// SuppressStdout is an option that tries to make sure the RPC test Tendermint
+// SuppressStdout is an option that tries to make sure the RPC test Ostracon
 // node doesn't log anything to stdout.
 func SuppressStdout(o *Options) {
 	o.suppressStdout = true

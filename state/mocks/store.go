@@ -6,9 +6,9 @@ import (
 	mock "github.com/stretchr/testify/mock"
 	state "github.com/line/ostracon/state"
 
-	tendermintstate "github.com/line/ostracon/proto/ostracon/state"
+	ostraconstate "github.com/line/ostracon/proto/ostracon/state"
 
-	tenderminttypes "github.com/line/ostracon/types"
+	ostracontypes "github.com/line/ostracon/types"
 
 	types "github.com/line/ostracon/proto/ostracon/types"
 )
@@ -54,15 +54,15 @@ func (_m *Store) Load() (state.State, error) {
 }
 
 // LoadABCIResponses provides a mock function with given fields: _a0
-func (_m *Store) LoadABCIResponses(_a0 int64) (*tendermintstate.ABCIResponses, error) {
+func (_m *Store) LoadABCIResponses(_a0 int64) (*ostraconstate.ABCIResponses, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *tendermintstate.ABCIResponses
-	if rf, ok := ret.Get(0).(func(int64) *tendermintstate.ABCIResponses); ok {
+	var r0 *ostraconstate.ABCIResponses
+	if rf, ok := ret.Get(0).(func(int64) *ostraconstate.ABCIResponses); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*tendermintstate.ABCIResponses)
+			r0 = ret.Get(0).(*ostraconstate.ABCIResponses)
 		}
 	}
 
@@ -98,18 +98,18 @@ func (_m *Store) LoadConsensusParams(_a0 int64) (types.ConsensusParams, error) {
 }
 
 // LoadFromDBOrGenesisDoc provides a mock function with given fields: _a0
-func (_m *Store) LoadFromDBOrGenesisDoc(_a0 *tenderminttypes.GenesisDoc) (state.State, error) {
+func (_m *Store) LoadFromDBOrGenesisDoc(_a0 *ostracontypes.GenesisDoc) (state.State, error) {
 	ret := _m.Called(_a0)
 
 	var r0 state.State
-	if rf, ok := ret.Get(0).(func(*tenderminttypes.GenesisDoc) state.State); ok {
+	if rf, ok := ret.Get(0).(func(*ostracontypes.GenesisDoc) state.State); ok {
 		r0 = rf(_a0)
 	} else {
 		r0 = ret.Get(0).(state.State)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*tenderminttypes.GenesisDoc) error); ok {
+	if rf, ok := ret.Get(1).(func(*ostracontypes.GenesisDoc) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
@@ -140,15 +140,15 @@ func (_m *Store) LoadFromDBOrGenesisFile(_a0 string) (state.State, error) {
 }
 
 // LoadValidators provides a mock function with given fields: _a0
-func (_m *Store) LoadValidators(_a0 int64) (*tenderminttypes.ValidatorSet, error) {
+func (_m *Store) LoadValidators(_a0 int64) (*ostracontypes.ValidatorSet, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *tenderminttypes.ValidatorSet
-	if rf, ok := ret.Get(0).(func(int64) *tenderminttypes.ValidatorSet); ok {
+	var r0 *ostracontypes.ValidatorSet
+	if rf, ok := ret.Get(0).(func(int64) *ostracontypes.ValidatorSet); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*tenderminttypes.ValidatorSet)
+			r0 = ret.Get(0).(*ostracontypes.ValidatorSet)
 		}
 	}
 
@@ -163,20 +163,20 @@ func (_m *Store) LoadValidators(_a0 int64) (*tenderminttypes.ValidatorSet, error
 }
 
 // LoadVoters provides a mock function with given fields: _a0, _a1
-func (_m *Store) LoadVoters(_a0 int64, _a1 *tenderminttypes.VoterParams) (*tenderminttypes.VoterSet, error) {
+func (_m *Store) LoadVoters(_a0 int64, _a1 *ostracontypes.VoterParams) (*ostracontypes.VoterSet, error) {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 *tenderminttypes.VoterSet
-	if rf, ok := ret.Get(0).(func(int64, *tenderminttypes.VoterParams) *tenderminttypes.VoterSet); ok {
+	var r0 *ostracontypes.VoterSet
+	if rf, ok := ret.Get(0).(func(int64, *ostracontypes.VoterParams) *ostracontypes.VoterSet); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*tenderminttypes.VoterSet)
+			r0 = ret.Get(0).(*ostracontypes.VoterSet)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(int64, *tenderminttypes.VoterParams) error); ok {
+	if rf, ok := ret.Get(1).(func(int64, *ostracontypes.VoterParams) error); ok {
 		r1 = rf(_a0, _a1)
 	} else {
 		r1 = ret.Error(1)
@@ -214,11 +214,11 @@ func (_m *Store) Save(_a0 state.State) error {
 }
 
 // SaveABCIResponses provides a mock function with given fields: _a0, _a1
-func (_m *Store) SaveABCIResponses(_a0 int64, _a1 *tendermintstate.ABCIResponses) error {
+func (_m *Store) SaveABCIResponses(_a0 int64, _a1 *ostraconstate.ABCIResponses) error {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int64, *tendermintstate.ABCIResponses) error); ok {
+	if rf, ok := ret.Get(0).(func(int64, *ostraconstate.ABCIResponses) error); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		r0 = ret.Error(0)

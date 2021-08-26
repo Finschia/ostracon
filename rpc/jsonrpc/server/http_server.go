@@ -27,6 +27,8 @@ type Config struct {
 	ReadTimeout time.Duration
 	// mirrors http.Server#WriteTimeout
 	WriteTimeout time.Duration
+	// mirrors http.Server#IdleTimeout
+	IdleTimeout time.Duration
 	// MaxBodyBytes controls the maximum number of bytes the
 	// server will read parsing the request body.
 	MaxBodyBytes int64
@@ -40,6 +42,7 @@ func DefaultConfig() *Config {
 		MaxOpenConnections: 0, // unlimited
 		ReadTimeout:        10 * time.Second,
 		WriteTimeout:       10 * time.Second,
+		IdleTimeout:        60 * time.Second,
 		MaxBodyBytes:       int64(1000000), // 1MB
 		MaxHeaderBytes:     1 << 20,        // same as the net/http default
 	}
@@ -56,6 +59,7 @@ func Serve(listener net.Listener, handler http.Handler, logger log.Logger, confi
 		Handler:        RecoverAndLogHandler(maxBytesHandler{h: handler, n: config.MaxBodyBytes}, logger),
 		ReadTimeout:    config.ReadTimeout,
 		WriteTimeout:   config.WriteTimeout,
+		IdleTimeout:    config.IdleTimeout,
 		MaxHeaderBytes: config.MaxHeaderBytes,
 	}
 	err := s.Serve(listener)
@@ -81,6 +85,7 @@ func ServeTLS(
 		Handler:        RecoverAndLogHandler(maxBytesHandler{h: handler, n: config.MaxBodyBytes}, logger),
 		ReadTimeout:    config.ReadTimeout,
 		WriteTimeout:   config.WriteTimeout,
+		IdleTimeout:    config.IdleTimeout,
 		MaxHeaderBytes: config.MaxHeaderBytes,
 	}
 	err := s.ServeTLS(listener, certFile, keyFile)

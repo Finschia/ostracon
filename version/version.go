@@ -1,15 +1,15 @@
 package version
 
 var (
-	// TMCoreSemVer is the current version of Tendermint Core.
+	// OCCoreSemVer is the current version of Ostracon Core.
 	// It's the Semantic Version of the software.
-	TMCoreSemVer string
+	OCCoreSemVer string
 
 	// GitCommit is the current HEAD set using ldflags.
 	GitCommit string
 
 	// Version is the built softwares version.
-	Version = TMCoreSemVer + "-" + LINECoreSemVer
+	Version = OCCoreSemVer + "-" + LINECoreSemVer
 )
 
 func init() {
@@ -19,7 +19,7 @@ func init() {
 }
 
 const (
-	// LINECoreSemVer is the current version of LINE Tendermint Core.
+	// LINECoreSemVer is the current version of LINE Ostracon Core.
 	LINECoreSemVer = "0.3"
 
 	// ABCISemVer is the semantic version of the ABCI library

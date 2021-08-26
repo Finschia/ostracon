@@ -11,11 +11,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/line/tm-db/v2/memdb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-
-	dbm "github.com/tendermint/tm-db"
 
 	abcicli "github.com/line/ostracon/abci/client"
 	"github.com/line/ostracon/abci/example/kvstore"
@@ -135,21 +134,21 @@ func TestReactorWithEvidence(t *testing.T) {
 	css := make([]*State, nValidators)
 	logger := consensusLogger()
 	for i := 0; i < nValidators; i++ {
-		stateDB := dbm.NewMemDB() // each state needs its own db
+		stateDB := memdb.NewDB() // each state needs its own db
 		stateStore := sm.NewStore(stateDB)
 		state, _ := stateStore.LoadFromDBOrGenesisDoc(genDoc)
 		thisConfig := ResetConfig(fmt.Sprintf("%s_%d", testName, i))
 		defer os.RemoveAll(thisConfig.RootDir)
 		ensureDir(path.Dir(thisConfig.Consensus.WalFile()), 0700) // dir for wal
 		app := appFunc()
-		vals := types.TM2PB.ValidatorUpdates(state.Validators)
+		vals := types.OC2PB.ValidatorUpdates(state.Validators)
 		app.InitChain(abci.RequestInitChain{Validators: vals})
 
 		pv := privVals[i]
 		// duplicate code from:
 		// css[i] = newStateWithConfig(thisConfig, state, privVals[i], app)
 
-		blockDB := dbm.NewMemDB()
+		blockDB := memdb.NewDB()
 		blockStore := store.NewBlockStore(blockDB)
 
 		// one for mempool, one for consensus
@@ -221,7 +220,7 @@ func TestReactorCreatesBlockWhenEmptyBlocksFalse(t *testing.T) {
 	defer stopConsensusNet(log.TestingLogger(), reactors, eventBuses)
 
 	// send a tx
-	if err := assertMempool(css[3].txNotifier).CheckTx([]byte{1, 2, 3}, nil, mempl.TxInfo{}); err != nil {
+	if _, err := assertMempool(css[3].txNotifier).CheckTxSync([]byte{1, 2, 3}, mempl.TxInfo{}); err != nil {
 		t.Error(err)
 	}
 
@@ -549,7 +548,7 @@ func waitForAndValidateBlock(
 		err := validateBlock(newBlock, activeVals)
 		assert.Nil(t, err)
 		for _, tx := range txs {
-			err := assertMempool(css[j].txNotifier).CheckTx(tx, nil, mempl.TxInfo{})
+			_, err := assertMempool(css[j].txNotifier).CheckTxSync(tx, mempl.TxInfo{})
 			assert.Nil(t, err)
 		}
 	}, css)

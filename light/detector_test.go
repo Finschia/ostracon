@@ -4,10 +4,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/line/tm-db/v2/memdb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	dbm "github.com/tendermint/tm-db"
 
 	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/light"
@@ -19,7 +18,7 @@ import (
 
 func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 	t.Skip("Voter selection in Ostracon only supports sequential verification mode, " +
-		"but Tendermint has a few test case for skipping mode.")
+		"but Ostracon has a few test case for skipping mode.")
 	// primary performs a lunatic attack
 	var (
 		latestHeight      = int64(10)
@@ -66,7 +65,7 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 		},
 		primary,
 		[]provider.Provider{witness},
-		dbs.New(dbm.NewMemDB(), chainID),
+		dbs.New(memdb.NewDB(), chainID),
 		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 		light.MaxRetryAttempts(1),
@@ -106,7 +105,7 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 
 func TestLightClientAttackEvidence_Equivocation(t *testing.T) {
 	t.Skip("Voter selection in Ostracon only supports sequential verification mode, " +
-		"but Tendermint has a few test case for skipping mode.")
+		"but Ostracon has a few test case for skipping mode.")
 	verificationOptions := map[string]light.Option{
 		"sequential": light.SequentialVerification(),
 		"skipping":   light.SkippingVerification(light.DefaultTrustLevel),
@@ -158,7 +157,7 @@ func TestLightClientAttackEvidence_Equivocation(t *testing.T) {
 			},
 			primary,
 			[]provider.Provider{witness},
-			dbs.New(dbm.NewMemDB(), chainID),
+			dbs.New(memdb.NewDB(), chainID),
 			types.DefaultVoterParams(),
 			light.Logger(log.TestingLogger()),
 			light.MaxRetryAttempts(1),
@@ -216,7 +215,7 @@ func TestClientDivergentTraces1(t *testing.T) {
 		},
 		primary,
 		[]provider.Provider{witness},
-		dbs.New(dbm.NewMemDB(), chainID),
+		dbs.New(memdb.NewDB(), chainID),
 		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 		light.MaxRetryAttempts(1),
@@ -241,7 +240,7 @@ func TestClientDivergentTraces2(t *testing.T) {
 		},
 		primary,
 		[]provider.Provider{deadNode, deadNode, primary},
-		dbs.New(dbm.NewMemDB(), chainID),
+		dbs.New(memdb.NewDB(), chainID),
 		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 		light.MaxRetryAttempts(1),
@@ -278,7 +277,7 @@ func TestClientDivergentTraces3(t *testing.T) {
 		},
 		primary,
 		[]provider.Provider{witness},
-		dbs.New(dbm.NewMemDB(), chainID),
+		dbs.New(memdb.NewDB(), chainID),
 		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 		light.MaxRetryAttempts(1),

@@ -7,9 +7,6 @@ import (
 	"time"
 
 	"github.com/line/ostracon/crypto/vrf"
-
-	dbm "github.com/tendermint/tm-db"
-
 	"github.com/line/ostracon/libs/log"
 	tmsync "github.com/line/ostracon/libs/sync"
 	"github.com/line/ostracon/light"
@@ -21,6 +18,7 @@ import (
 	rpchttp "github.com/line/ostracon/rpc/client/http"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"
+	"github.com/line/tm-db/v2/memdb"
 )
 
 //go:generate mockery --case underscore --name StateProvider
@@ -83,7 +81,7 @@ func NewLightClientStateProvider(
 	}
 
 	lc, err := light.NewClient(ctx, chainID, trustOptions, providers[0], providers[1:],
-		lightdb.New(dbm.NewMemDB(), ""), voterParams, light.Logger(logger), light.MaxRetryAttempts(5))
+		lightdb.New(memdb.NewDB(), ""), voterParams, light.Logger(logger), light.MaxRetryAttempts(5))
 	if err != nil {
 		return nil, err
 	}
