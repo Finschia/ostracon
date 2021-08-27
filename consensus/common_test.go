@@ -68,7 +68,7 @@ func ResetConfig(name string) *cfg.Config {
 // validator stub (a kvstore consensus peer we control)
 
 type validatorStub struct {
-	Index  int32 // Validator index. NOTE: we don't assume validator set changes.
+	Index  int32 // Voter index. NOTE: we don't assume validator set changes.
 	Height int64
 	Round  int32
 	types.PrivValidator
