@@ -1769,7 +1769,6 @@ func TestStartNextHeightCorrectlyAfterTimeout(t *testing.T) {
 }
 
 func TestResetTimeoutPrecommitUponNewHeight(t *testing.T) {
-	t.Skipf("NON-deterministic test: race detected during execution of test")
 	config.Consensus.SkipTimeoutCommit = false
 	cs1, vss := randState(4)
 
