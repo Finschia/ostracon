@@ -816,10 +816,11 @@ conditions for fair reward
 2. large total staking(a small total staking power makes a large error when converting float into int)
 3. many sampling count
 4. loop count
-*/
 
-func TestElectVotersNonDupEquity(t *testing.T) {
-	t.Skip("this test case need a new reward rule")
+for testing:
+go test -bench BenchmarkElectVotersNonDupEquity github.com/line/ostracon/types -run ^$ -count 1 -benchmem -v
+*/
+func BenchmarkElectVotersNonDupEquity(b *testing.B) {
 	loopCount := 10000
 
 	// good condition
@@ -832,8 +833,8 @@ func TestElectVotersNonDupEquity(t *testing.T) {
 	accumulatedRewards := make(map[string]int64, 100)
 	totalAccumulateRewards := int64(0)
 	for i := 0; i < loopCount; i++ {
-		electVotersNonDup(candidates.Validators, uint64(i), 20, 0)
-		totalAccumulateRewards += accumulateAndResetReward(candidates.Validators, accumulatedRewards)
+		winners := electVotersNonDup(candidates.Validators, uint64(i), 20, 0)
+		totalAccumulateRewards += accumulateAndResetReward(winners, accumulatedRewards)
 	}
 	for i := 0; i < 99; i++ {
 		rewardRate := float64(accumulatedRewards[candidates.Validators[i].Address.String()]) /
@@ -841,7 +842,12 @@ func TestElectVotersNonDupEquity(t *testing.T) {
 		stakingRate := float64(candidates.Validators[i].StakingPower) / float64(totalStaking)
 		rate := rewardRate / stakingRate
 		rewardPerStakingDiff := math.Abs(1 - rate)
-		assert.True(t, rewardPerStakingDiff < 0.01)
+		b.Log("rewardPerStakingDiff", rewardPerStakingDiff)
+		//
+		// rewardPerStakingDiff: guarantees the fairness of rewards
+		// if false, then we should consider `rewardPerStakingDiff` value
+		//
+		assert.True(b, rewardPerStakingDiff < 0.02)
 	}
 
 	// =======================================================================================================
@@ -852,8 +858,8 @@ func TestElectVotersNonDupEquity(t *testing.T) {
 	candidates = newValidatorSet(100, func(i int) int64 { return rand.Int64() & 0xFFFFFFFFF })
 	accumulatedRewards = make(map[string]int64, 100)
 	for i := 0; i < loopCount; i++ {
-		electVotersNonDup(candidates.Validators, uint64(i), 20, 0)
-		accumulateAndResetReward(candidates.Validators, accumulatedRewards)
+		winners := electVotersNonDup(candidates.Validators, uint64(i), 20, 0)
+		accumulateAndResetReward(winners, accumulatedRewards)
 	}
 	maxRewardPerStakingDiff := float64(0)
 	for i := 0; i < 99; i++ {
@@ -864,14 +870,14 @@ func TestElectVotersNonDupEquity(t *testing.T) {
 			maxRewardPerStakingDiff = rewardPerStakingDiff
 		}
 	}
-	t.Logf("[! condition 1] max reward per staking difference: %f", maxRewardPerStakingDiff)
+	b.Logf("[! condition 1] max reward per staking difference: %f", maxRewardPerStakingDiff)
 
 	// violation of condition 2
 	candidates = newValidatorSet(100, func(i int) int64 { return rand.Int64() & 0xFFFFF })
 	accumulatedRewards = make(map[string]int64, 100)
 	for i := 0; i < loopCount; i++ {
-		electVotersNonDup(candidates.Validators, uint64(i), 20, 0)
-		accumulateAndResetReward(candidates.Validators, accumulatedRewards)
+		winners := electVotersNonDup(candidates.Validators, uint64(i), 20, 0)
+		accumulateAndResetReward(winners, accumulatedRewards)
 	}
 	maxRewardPerStakingDiff = float64(0)
 	for i := 0; i < 99; i++ {
@@ -882,14 +888,14 @@ func TestElectVotersNonDupEquity(t *testing.T) {
 			maxRewardPerStakingDiff = rewardPerStakingDiff
 		}
 	}
-	t.Logf("[! condition 2] max reward per staking difference: %f", maxRewardPerStakingDiff)
+	b.Logf("[! condition 2] max reward per staking difference: %f", maxRewardPerStakingDiff)
 
 	// violation of condition 3
 	candidates = newValidatorSet(100, func(i int) int64 { return 1000000 + rand.Int64()&0xFFFFF })
 	accumulatedRewards = make(map[string]int64, 100)
 	for i := 0; i < loopCount; i++ {
-		electVotersNonDup(candidates.Validators, uint64(i), 20, 0)
-		accumulateAndResetReward(candidates.Validators, accumulatedRewards)
+		winners := electVotersNonDup(candidates.Validators, uint64(i), 20, 0)
+		accumulateAndResetReward(winners, accumulatedRewards)
 	}
 	maxRewardPerStakingDiff = float64(0)
 	for i := 0; i < 99; i++ {
@@ -900,15 +906,15 @@ func TestElectVotersNonDupEquity(t *testing.T) {
 			maxRewardPerStakingDiff = rewardPerStakingDiff
 		}
 	}
-	t.Logf("[! condition 3] max reward per staking difference: %f", maxRewardPerStakingDiff)
+	b.Logf("[! condition 3] max reward per staking difference: %f", maxRewardPerStakingDiff)
 
 	// violation of condition 4
 	loopCount = 100
 	candidates = newValidatorSet(100, func(i int) int64 { return 1000000 + rand.Int64()&0xFFFFF })
 	accumulatedRewards = make(map[string]int64, 100)
 	for i := 0; i < loopCount; i++ {
-		electVotersNonDup(candidates.Validators, uint64(i), 33, 0)
-		accumulateAndResetReward(candidates.Validators, accumulatedRewards)
+		winners := electVotersNonDup(candidates.Validators, uint64(i), 33, 0)
+		accumulateAndResetReward(winners, accumulatedRewards)
 	}
 	maxRewardPerStakingDiff = float64(0)
 	for i := 0; i < 99; i++ {
@@ -919,7 +925,7 @@ func TestElectVotersNonDupEquity(t *testing.T) {
 			maxRewardPerStakingDiff = rewardPerStakingDiff
 		}
 	}
-	t.Logf("[! condition 4] max reward per staking difference: %f", maxRewardPerStakingDiff)
+	b.Logf("[! condition 4] max reward per staking difference: %f", maxRewardPerStakingDiff)
 }
 
 func newValidatorSet(length int, prio func(int) int64) *ValidatorSet {
