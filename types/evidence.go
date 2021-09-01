@@ -225,8 +225,9 @@ func (l *LightClientAttackEvidence) ABCI() []abci.Evidence {
 	abciEv := make([]abci.Evidence, len(l.ByzantineValidators))
 	for idx, val := range l.ByzantineValidators {
 		pb := abci.Validator{
-			Address: val.Address,
-			Power:   val.StakingPower,
+			Address:     val.Address,
+			Power:       val.StakingPower,
+			VotingPower: val.VotingPower,
 		}
 		abciEv[idx] = abci.Evidence{
 			Type:             abci.EvidenceType_LIGHT_CLIENT_ATTACK,
