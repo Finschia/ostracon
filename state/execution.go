@@ -423,7 +423,7 @@ func getBeginBlockValidatorInfo(block *types.Block, store Store,
 		for i, voter := range lastVoterSet.Voters {
 			commitSig := block.LastCommit.Signatures[i]
 			voteInfos[i] = abci.VoteInfo{
-				Validator: types.OC2PB.Validator(voter),
+				Validator:       types.OC2PB.Validator(voter),
 				SignedLastBlock: !commitSig.Absent(),
 			}
 		}

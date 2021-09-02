@@ -95,8 +95,8 @@ func (dve *DuplicateVoteEvidence) ABCI() []abci.Evidence {
 	return []abci.Evidence{{
 		Type: abci.EvidenceType_DUPLICATE_VOTE,
 		Validator: abci.Validator{
-			Address: dve.VoteA.ValidatorAddress,
-			Power:   dve.ValidatorPower,
+			Address:     dve.VoteA.ValidatorAddress,
+			Power:       dve.ValidatorPower,
 			VotingPower: dve.VotingPower,
 		},
 		Height:           dve.VoteA.Height,
