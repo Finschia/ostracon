@@ -8,8 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-        with:
-          submodules: recursive
+#        with:
+#          submodules: recursive
       - name: Create a file with all the pkgs
         run: go list ./... > pkgs.txt
       - name: Split pkgs into 4 files
@@ -45,8 +45,8 @@ jobs:
         with:
           go-version: "^1.15.4"
       - uses: actions/checkout@v2
-        with:
-          submodules: recursive
+#        with:
+#          submodules: recursive
       - uses: technote-space/get-diff-action@v4
         with:
           PATTERNS: |
