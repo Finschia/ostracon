@@ -65,8 +65,8 @@ test:
 .PHONY: test
 
 test_race:
-	@echo "--> Running go test -- race"
-	@go test -p 1 -v -race $(PACKAGES)
+	@echo "--> Running go test -- race $(BUILD_TAGS)"
+	@go test -p 1 -v -race $(PACKAGES) -tags "$(BUILD_TAGS)"
 .PHONY: test_race
 
 test_deadlock:
@@ -75,7 +75,7 @@ test_deadlock:
 .PHONY: test_race
 
 test_tags:
-	@echo "--> Running go test"
+	@echo "--> Running go test -- $(BUILD_TAGS)"
 	@go test -p 1 $(PACKAGES) -tags "$(BUILD_TAGS)"
 .PHONY: test
 
