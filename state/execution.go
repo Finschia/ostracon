@@ -424,8 +424,6 @@ func getBeginBlockValidatorInfo(block *types.Block, store Store,
 			commitSig := block.LastCommit.Signatures[i]
 			voteInfos[i] = abci.VoteInfo{
 				Validator: types.OC2PB.Validator(voter),
-				// TODO We need to change distribution of cosmos-sdk in order to reference this power for reward later
-				VotingPower:     voter.VotingPower,
 				SignedLastBlock: !commitSig.Absent(),
 			}
 		}

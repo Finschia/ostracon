@@ -97,11 +97,11 @@ func (dve *DuplicateVoteEvidence) ABCI() []abci.Evidence {
 		Validator: abci.Validator{
 			Address: dve.VoteA.ValidatorAddress,
 			Power:   dve.ValidatorPower,
+			VotingPower: dve.VotingPower,
 		},
 		Height:           dve.VoteA.Height,
 		Time:             dve.Timestamp,
 		TotalVotingPower: dve.TotalVotingPower,
-		VotingPower:      dve.VotingPower,
 	}}
 }
 
@@ -235,7 +235,6 @@ func (l *LightClientAttackEvidence) ABCI() []abci.Evidence {
 			Height:           l.Height(),
 			Time:             l.Timestamp,
 			TotalVotingPower: l.TotalVotingPower,
-			VotingPower:      0,
 		}
 	}
 	return abciEv
