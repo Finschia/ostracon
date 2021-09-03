@@ -292,7 +292,7 @@ func TestCheckEvidenceWithLightClientAttack(t *testing.T) {
 			ValidatorSet: conflictingVals,
 			VoterSet:     conflictingVoters,
 		},
-		CommonHeight:        10,
+		CommonHeight:        height,
 		TotalVotingPower:    int64(nValidators) * validatorPower,
 		ByzantineValidators: conflictingVals.Validators,
 		Timestamp:           defaultEvidenceTime,
@@ -326,12 +326,6 @@ func TestCheckEvidenceWithLightClientAttack(t *testing.T) {
 
 	err = pool.CheckEvidence(types.EvidenceList{ev})
 	assert.NoError(t, err)
-
-	// take away the last signature -> there are less validators then what we have detected,
-	// hence this should fail
-	commit.Signatures = append(commit.Signatures[:nValidators-1], types.NewCommitSigAbsent())
-	err = pool.CheckEvidence(types.EvidenceList{ev})
-	assert.Error(t, err)
 }
 
 // Tests that restarting the evidence pool after a potential failure will recover the
