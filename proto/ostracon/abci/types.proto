@@ -356,16 +356,16 @@ message TxResult {
 message Validator {
   bytes address = 1;  // The first 20 bytes of SHA256(public key)
   // PubKey pub_key = 2 [(gogoproto.nullable)=false];
-  int64 power = 3;  // The voting power
+  int64 power = 3;    // The staking power
 
   // *** Ostracon Extended Fields ***
-  int64 voting_power = 1000;
+  int64 voting_power = 1000;  // The voting power
 }
 
 // ValidatorUpdate
 message ValidatorUpdate {
   ostracon.crypto.PublicKey pub_key = 1 [(gogoproto.nullable) = false];
-  int64                     power   = 2;
+  int64                     power   = 2;    // The staking power
 }
 
 // VoteInfo
