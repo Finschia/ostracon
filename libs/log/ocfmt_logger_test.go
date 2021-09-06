@@ -14,7 +14,7 @@ import (
 	"github.com/line/ostracon/libs/log"
 )
 
-func TestTMFmtLogger(t *testing.T) {
+func TestOCFmtLogger(t *testing.T) {
 	t.Parallel()
 	buf := &bytes.Buffer{}
 	logger := log.NewOCFmtLogger(buf)
@@ -61,15 +61,15 @@ func TestTMFmtLogger(t *testing.T) {
 	assert.Regexp(t, regexp.MustCompile(`N\[.+\] unknown \s+ hash=74657374206D65\n$`), buf.String())
 }
 
-func BenchmarkTMFmtLoggerSimple(b *testing.B) {
+func BenchmarkOCFmtLoggerSimple(b *testing.B) {
 	benchmarkRunnerKitlog(b, log.NewOCFmtLogger(ioutil.Discard), baseMessage)
 }
 
-func BenchmarkTMFmtLoggerContextual(b *testing.B) {
+func BenchmarkOCFmtLoggerContextual(b *testing.B) {
 	benchmarkRunnerKitlog(b, log.NewOCFmtLogger(ioutil.Discard), withMessage)
 }
 
-func TestTMFmtLoggerConcurrency(t *testing.T) {
+func TestOCFmtLoggerConcurrency(t *testing.T) {
 	t.Parallel()
 	testConcurrency(t, log.NewOCFmtLogger(ioutil.Discard), 10000)
 }

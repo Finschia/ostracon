@@ -89,11 +89,11 @@ func TestError(t *testing.T) {
 	}
 }
 
-func BenchmarkTMLoggerSimple(b *testing.B) {
+func BenchmarkOCLoggerSimple(b *testing.B) {
 	benchmarkRunner(b, log.NewOCLogger(ioutil.Discard), baseInfoMessage)
 }
 
-func BenchmarkTMLoggerContextual(b *testing.B) {
+func BenchmarkOCLoggerContextual(b *testing.B) {
 	benchmarkRunner(b, log.NewOCLogger(ioutil.Discard), withInfoMessage)
 }
 
