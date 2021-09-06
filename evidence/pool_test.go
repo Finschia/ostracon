@@ -99,11 +99,11 @@ func TestEvidencePoolBasic(t *testing.T) {
 	var evidenceBytes int64
 	switch keyType := voterSet.Voters[0].PubKey.(type) {
 	case ed25519.PubKey:
-		evidenceBytes = 372
+		evidenceBytes = 375
 	case bls.PubKey:
-		evidenceBytes = 436
+		evidenceBytes = 439
 	case composite.PubKey:
-		evidenceBytes = 436
+		evidenceBytes = 439
 	default:
 		assert.Fail(t, fmt.Sprintf("unknown public key: %s", keyType))
 	}
