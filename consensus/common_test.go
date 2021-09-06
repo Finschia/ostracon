@@ -68,7 +68,7 @@ func ResetConfig(name string) *cfg.Config {
 // validator stub (a kvstore consensus peer we control)
 
 type validatorStub struct {
-	Index  int32 // Validator index. NOTE: we don't assume validator set changes.
+	Index  int32 // Voter index. NOTE: we don't assume validator set changes.
 	Height int64
 	Round  int32
 	types.PrivValidator
@@ -195,19 +195,8 @@ func decideProposal(
 	height int64,
 	round int32,
 ) (proposal *types.Proposal, block *types.Block) {
-	oldPrivValidator := cs1.privValidator
-	oldPrivValidatorPubKey := cs1.privValidatorPubKey
 	cs1.mtx.Lock()
-	pubKey1, _ := cs1.privValidator.GetPubKey()
-	pubKey2, _ := vs.PrivValidator.GetPubKey()
-	if !pubKey1.Equals(pubKey2) {
-		// block creator must be the cs.privValidator
-		cs1.privValidator = vs.PrivValidator
-		cs1.privValidatorPubKey = pubKey2
-	}
-	block, blockParts := cs1.createProposalBlock(round)
-	cs1.privValidator = oldPrivValidator
-	cs1.privValidatorPubKey = oldPrivValidatorPubKey
+	block, blockParts := createProposalBlockSlim(cs1, vs, round)
 	validRound := cs1.ValidRound
 	chainID := cs1.state.ChainID
 	cs1.mtx.Unlock()
@@ -226,6 +215,25 @@ func decideProposal(
 	proposal.Signature = p.Signature
 
 	return proposal, block
+}
+
+// createProposalBlockSlim is copy from consensus/state.go:createProposalBlock and slimmed down
+func createProposalBlockSlim(cs *State, vs *validatorStub, round int32) (*types.Block, *types.PartSet) {
+	var commit *types.Commit
+	if cs.Height == 1 {
+		commit = types.NewCommit(0, 0, types.BlockID{}, nil)
+	} else {
+		commit = cs.LastCommit.MakeCommit()
+	}
+	pubKey, _ := vs.GetPubKey()
+	proposerAddr := pubKey.Address()
+	message := cs.state.MakeHashMessage(round)
+	proof, err := vs.GenerateVRFProof(message)
+	if err != nil {
+		cs.Logger.Error("enterPropose: Cannot generate vrf proof: %s", err.Error())
+		return nil, nil
+	}
+	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerAddr, round, proof)
 }
 
 func addVotes(to *State, votes ...*types.Vote) {
@@ -526,7 +534,8 @@ func forceProposer(cs *State, vals []*validatorStub, index []int, height []int64
 			return
 		}
 	}
-	panic("no such LastProofHash making index validator to be proposer")
+	panic("Unfortunately, there is no such LastProofHash making index validator to be proposer. " +
+		"Please re-run the test since find LastProofHash")
 }
 
 //-------------------------------------------------------------------------------

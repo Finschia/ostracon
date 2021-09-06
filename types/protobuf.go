@@ -63,8 +63,9 @@ func (oc2pb) Header(header *Header) tmproto.Header {
 
 func (oc2pb) Validator(val *Validator) abci.Validator {
 	return abci.Validator{
-		Address: val.PubKey.Address(),
-		Power:   val.StakingPower,
+		Address:     val.PubKey.Address(),
+		Power:       val.StakingPower,
+		VotingPower: val.VotingPower,
 	}
 }
 

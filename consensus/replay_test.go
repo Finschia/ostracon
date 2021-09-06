@@ -331,32 +331,20 @@ func getProposerIdx(state *State, height int64, round int32) (int32, *types.Vali
 	return state.Voters.GetByAddress(proposer.PubKey.Address())
 }
 
-func createProposalBlock(cs *State, proposerState *State, round int32) (*types.Block, *types.PartSet) {
-	var commit *types.Commit
-	if cs.Height == 1 {
-		commit = types.NewCommit(0, 0, types.BlockID{}, nil)
-	} else {
-		commit = cs.LastCommit.MakeCommit()
-	}
-	pubKey, _ := proposerState.privValidator.GetPubKey()
-	proposerAddr := pubKey.Address()
-	message := cs.state.MakeHashMessage(round)
-	proof, err := proposerState.privValidator.GenerateVRFProof(message)
-	if err != nil {
-		cs.Logger.Error("enterPropose: Cannot generate vrf proof: %s", err.Error())
-		return nil, nil
-	}
-	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerAddr, round, proof)
-}
+func consensusNewBlock(t *testing.T, height int64, vss []*validatorStub, css []*State,
+	newRoundCh, proposalCH <-chan tmpubsub.Message, addTxFn func()) {
 
-func consensusNewBlock(t *testing.T, height int64, vss []*validatorStub, css []*State, selfIndex int,
-	newRoundCh, proposalCH <-chan tmpubsub.Message, voterList []int, addTxFn func()) {
 	// perform added tx
 	if addTxFn != nil {
 		addTxFn()
 	}
 
-	proposerIdx, prop := getProposerIdx(css[0], height, 0)
+	// state0 is main started machine (css[0])
+	cs := css[0]
+	csPubKey, err := cs.privValidator.GetPubKey()
+	require.NoError(t, err)
+	proposerIdx, prop := getProposerIdx(cs, height, 0)
+
 	// search idx of proposer in the css
 	proposerIdxOfCSS := 0
 	for i, cs := range css {
@@ -368,39 +356,42 @@ func consensusNewBlock(t *testing.T, height int64, vss []*validatorStub, css []*
 		}
 	}
 
-	// state0 is main started machine (css[0])
-	if proposerIdxOfCSS == 0 {
-		ensureNewProposal(proposalCH, height, 0)
-		rs := css[0].GetRoundState()
-		for i, voterIdx := range voterList {
-			if i == selfIndex {
-				continue
-			}
-			signAddVotes(css[0], tmproto.PrecommitType, rs.ProposalBlock.Hash(), rs.ProposalBlockParts.Header(), vss[voterIdx])
+	// make idx of voter in the vss
+	proposerIdxOfVSS := 0
+	voterSet := cs.Voters
+	vssIndexOfVoterList := make([]int, len(voterSet.Voters)-1)
+	var idx = 0
+	for i, vs := range vss {
+		vsPubKey, err := vs.GetPubKey()
+		require.NoError(t, err)
+		if vsPubKey.Equals(csPubKey) {
+			continue
 		}
-	} else {
-		propBlock, _ := createProposalBlock(css[0], css[proposerIdxOfCSS], 0)
-		propBlockParts := propBlock.MakePartSet(types.BlockPartSizeBytes)
-		blockID := types.BlockID{Hash: propBlock.Hash(), PartSetHeader: propBlockParts.Header()}
-		proposal := types.NewProposal(vss[proposerIdx].Height, 0, -1, blockID)
-		p := proposal.ToProto()
-		if err := vss[proposerIdx].SignProposal(config.ChainID(), p); err != nil {
-			t.Fatal("failed to sign bad proposal", err)
+		index, voter := voterSet.GetByAddress(vsPubKey.Address())
+		if index == -1 && voter == nil {
+			continue
 		}
-		proposal.Signature = p.Signature
+		if index == proposerIdx {
+			proposerIdxOfVSS = i
+		}
+		vs.Index = index // Update validatorStub.Index for signAndVote since VoterSet's order is changed
+		vssIndexOfVoterList[idx] = i
+		idx++
+	}
 
+	if proposerIdxOfCSS != 0 {
+		proposal, propBlock := decideProposal(cs, vss[proposerIdxOfVSS], height, 0)
+		propBlockParts := propBlock.MakePartSet(types.BlockPartSizeBytes)
 		// set the proposal block
-		if err := css[0].SetProposalAndBlock(proposal, propBlock, propBlockParts, "some peer"); err != nil {
+		if err := cs.SetProposalAndBlock(proposal, propBlock, propBlockParts, "some peer"); err != nil {
 			t.Fatal(err)
 		}
-		ensureNewProposal(proposalCH, height, 0)
-		rs := css[0].GetRoundState()
-		for i, voterIdx := range voterList {
-			if i == selfIndex {
-				continue
-			}
-			signAddVotes(css[0], tmproto.PrecommitType, rs.ProposalBlock.Hash(), rs.ProposalBlockParts.Header(), vss[voterIdx])
-		}
+	}
+
+	ensureNewProposal(proposalCH, height, 0)
+	rs := cs.GetRoundState()
+	for _, voterIdx := range vssIndexOfVoterList {
+		signAddVotes(cs, tmproto.PrecommitType, rs.ProposalBlock.Hash(), rs.ProposalBlockParts.Header(), vss[voterIdx])
 	}
 
 	ensureNewRound(newRoundCh, height+1, 0)
@@ -408,8 +399,6 @@ func consensusNewBlock(t *testing.T, height int64, vss []*validatorStub, css []*
 
 // This is actually not a test, it's for storing validator change tx data for testHandshakeReplay
 func TestSimulateValidatorsChange(t *testing.T) {
-	t.Skipf("We will skip this test case and prepare another one later" +
-		" because it's difficult to apply to random sampling with VRF.")
 	const nPeers = 7
 	const nVals = 4
 	css, genDoc, config, cleanup := randConsensusNetWithPeers(
@@ -437,7 +426,7 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	ensureNewRound(newRoundCh, height, 0)
 
 	// height 1
-	consensusNewBlock(t, height, vss, css, -1, newRoundCh, proposalCh, []int{1, 2, 3}, nil)
+	consensusNewBlock(t, height, vss, css, newRoundCh, proposalCh, nil)
 
 	// height 2
 	height++
@@ -445,7 +434,7 @@ func TestSimulateValidatorsChange(t *testing.T) {
 
 	// proposal.Signature = p.Signature
 
-	consensusNewBlock(t, height, vss, css, -1, newRoundCh, proposalCh, []int{1, 2, 3}, func() {
+	consensusNewBlock(t, height, vss, css, newRoundCh, proposalCh, func() {
 		newValidatorPubKey1, err := css[nVals].privValidator.GetPubKey()
 		assert.Nil(t, err)
 		valPubKey1ABCI, err := cryptoenc.PubKeyToProto(newValidatorPubKey1)
@@ -459,7 +448,7 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	height++
 	incrementHeight(vss...)
 
-	consensusNewBlock(t, height, vss, css, -1, newRoundCh, proposalCh, []int{1, 2, 3}, func() {
+	consensusNewBlock(t, height, vss, css, newRoundCh, proposalCh, func() {
 		updateValidatorPubKey1, err := css[nVals].privValidator.GetPubKey()
 		require.NoError(t, err)
 		updatePubKey1ABCI, err := cryptoenc.PubKeyToProto(updateValidatorPubKey1)
@@ -475,27 +464,8 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	newVss := make([]*validatorStub, nVals+1)
 	copy(newVss, vss[:nVals+1])
 	sort.Sort(ValidatorStubsByPower(newVss))
-	voterList := make([]int, nVals)
 
-	// re-calculate voterList
-	valIndexFn := func(cssIdx int) int {
-		for i, vs := range newVss {
-			vsPubKey, err := vs.GetPubKey()
-			require.NoError(t, err)
-
-			cssPubKey, err := css[cssIdx].privValidator.GetPubKey()
-			require.NoError(t, err)
-
-			if vsPubKey.Equals(cssPubKey) {
-				return i
-			}
-		}
-		panic(fmt.Sprintf("validator css[%d] not found in newVss", cssIdx))
-	}
-
-	selfIndex := valIndexFn(0)
-
-	consensusNewBlock(t, height, newVss, css, selfIndex, newRoundCh, proposalCh, voterList, func() {
+	consensusNewBlock(t, height, newVss, css, newRoundCh, proposalCh, func() {
 		newValidatorPubKey2, err := css[nVals+1].privValidator.GetPubKey()
 		require.NoError(t, err)
 		newVal2ABCI, err := cryptoenc.PubKeyToProto(newValidatorPubKey2)
@@ -515,10 +485,21 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	// height 5
 	height++
 	incrementHeight(vss...)
-	consensusNewBlock(t, height, newVss, css, selfIndex, newRoundCh, proposalCh, voterList, nil)
+	consensusNewBlock(t, height, newVss, css, newRoundCh, proposalCh, nil)
 
 	// Reflect the changes to vss[nVals] at height 3 and resort newVss.
-	newVssIdx := valIndexFn(nVals)
+	newVssIdx := func(cssIdx int) int {
+		for i, vs := range newVss {
+			vsPubKey, err := vs.GetPubKey()
+			require.NoError(t, err)
+			cssPubKey, err := css[cssIdx].privValidator.GetPubKey()
+			require.NoError(t, err)
+			if vsPubKey.Equals(cssPubKey) {
+				return i
+			}
+		}
+		panic(fmt.Sprintf("validator css[%d] not found in newVss", cssIdx))
+	}(nVals)
 	newVss[newVssIdx].VotingPower = 25
 	sort.Sort(ValidatorStubsByPower(newVss))
 
@@ -531,11 +512,7 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	copy(newVss, vss[:nVals+3])
 	sort.Sort(ValidatorStubsByPower(newVss))
 
-	// re-calculate voterList
-	voterList = make([]int, nVals+2)
-	selfIndex = valIndexFn(0)
-
-	consensusNewBlock(t, height, newVss, css, selfIndex, newRoundCh, proposalCh, voterList, func() {
+	consensusNewBlock(t, height, newVss, css, newRoundCh, proposalCh, func() {
 		newValidatorPubKey3, err := css[nVals+2].privValidator.GetPubKey()
 		require.NoError(t, err)
 		newVal3ABCI, err := cryptoenc.PubKeyToProto(newValidatorPubKey3)
@@ -555,8 +532,6 @@ func TestSimulateValidatorsChange(t *testing.T) {
 
 // Sync from scratch
 func TestHandshakeReplayAll(t *testing.T) {
-	t.Skip("With decision to skip TestSimulateValidatorsChange, we also skip this test case" +
-		" that uses the StateDB/BlockDB created in there.")
 	for _, m := range modes {
 		testHandshakeReplay(t, config, 0, m, false)
 	}
@@ -567,8 +542,6 @@ func TestHandshakeReplayAll(t *testing.T) {
 
 // Sync many, not from scratch
 func TestHandshakeReplaySome(t *testing.T) {
-	t.Skip("With decision to skip TestSimulateValidatorsChange, we also skip this test case" +
-		" that uses the StateDB/BlockDB created in there.")
 	for _, m := range modes {
 		testHandshakeReplay(t, config, 2, m, false)
 	}
@@ -579,8 +552,6 @@ func TestHandshakeReplaySome(t *testing.T) {
 
 // Sync from lagging by one
 func TestHandshakeReplayOne(t *testing.T) {
-	t.Skip("With decision to skip TestSimulateValidatorsChange, we also skip this test case" +
-		" that uses the StateDB/BlockDB created in there.")
 	for _, m := range modes {
 		testHandshakeReplay(t, config, numBlocks-1, m, false)
 	}
@@ -591,8 +562,6 @@ func TestHandshakeReplayOne(t *testing.T) {
 
 // Sync from caught up
 func TestHandshakeReplayNone(t *testing.T) {
-	t.Skip("With decision to skip TestSimulateValidatorsChange, we also skip this test case" +
-		" that uses the StateDB/BlockDB created in there.")
 	for _, m := range modes {
 		testHandshakeReplay(t, config, numBlocks, m, false)
 	}
@@ -603,8 +572,6 @@ func TestHandshakeReplayNone(t *testing.T) {
 
 // Test mockProxyApp should not panic when app return ABCIResponses with some empty ResponseDeliverTx
 func TestMockProxyApp(t *testing.T) {
-	t.Skip("With decision to skip TestSimulateValidatorsChange, we also skip this test case" +
-		" that uses global variable `sim` initialized in testHandshakeReplay.")
 	sim.CleanupFunc() // clean the test env created in TestSimulateValidatorsChange
 	logger := log.TestingLogger()
 	var validTxs, invalidTxs = 0, 0

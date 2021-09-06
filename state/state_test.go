@@ -3,13 +3,14 @@ package state_test
 import (
 	"bytes"
 	"fmt"
-	"math"
 	"math/big"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/line/tm-db/v2/metadb"
+	"gonum.org/v1/gonum/stat/distuv"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -388,8 +389,6 @@ func TestLoadAndSaveVoters(t *testing.T) {
 }
 
 func TestProposerFrequency(t *testing.T) {
-	t.Skip("This test is for priority based proposer. Vrf selection based proposer skips this test.")
-
 	// some explicit test cases
 	testCases := []struct {
 		powers []int64
@@ -479,9 +478,8 @@ func genValSetWithPowers(powers []int64) *types.ValidatorSet {
 
 // test a proposer appears as frequently as expected
 func testProposerFreq(t *testing.T, caseNum int, valSet *types.ValidatorSet) {
-	voterSet := types.ToVoterAll(valSet.Validators)
-	N := voterSet.Size()
-	totalPower := voterSet.TotalVotingPower()
+	N := valSet.Size()
+	totalPower := valSet.TotalStakingPower()
 
 	// run the proposer selection and track frequencies
 	runMult := 1
@@ -494,24 +492,67 @@ func testProposerFreq(t *testing.T, caseNum int, valSet *types.ValidatorSet) {
 		valSet.IncrementProposerPriority(1)
 	}
 
-	// assert frequencies match expected (max off by 1)
+	// Ostracon cannot test by bound(margin of error) since `SelectProposer` depends on VRF
+	/*
+		// assert frequencies match expected (max off by 1)
+		for i, freq := range freqs {
+			_, val := valSet.GetByIndex(int32(i))
+			expectFreq := int(val.StakingPower) * runMult
+			gotFreq := freq
+			abs := int(math.Abs(float64(expectFreq - gotFreq)))
+
+			// max bound on expected vs seen freq was proven
+			// to be 1 for the 2 validator case in
+			// https://github.com/cwgoes/tm-proposer-idris
+			// and inferred to generalize to N-1
+			bound := N - 1
+			require.True(
+				t,
+				abs <= bound,
+				fmt.Sprintf("Case %d val %d (%d): got %d, expected %d", caseNum, i, N, gotFreq, expectFreq),
+			)
+		}
+	*/
+
+	// Chi-squared test for `SelectProposer`
+	chiSquareds := make([]ChiSquared, N)
 	for i, freq := range freqs {
 		_, val := valSet.GetByIndex(int32(i))
-		expectFreq := int(val.StakingPower) * runMult
-		gotFreq := freq
-		abs := int(math.Abs(float64(expectFreq - gotFreq)))
-
-		// max bound on expected vs seen freq was proven
-		// to be 1 for the 2 validator case in
-		// https://github.com/cwgoes/tm-proposer-idris
-		// and inferred to generalize to N-1
-		bound := N - 1
-		require.True(
-			t,
-			abs <= bound,
-			fmt.Sprintf("Case %d val %d (%d): got %d, expected %d", caseNum, i, N, gotFreq, expectFreq),
-		)
+		expectFreq := val.StakingPower * int64(runMult)
+		chiSquareds[i] = ChiSquared{int64(freq), expectFreq}
 	}
+	_, p := chiSquaredTest(chiSquareds)
+	var expectedP float64
+	switch {
+	case runs < 100:
+		expectedP = 0.03
+	default:
+		expectedP = 0.05
+	}
+	require.True(t, p > expectedP,
+		fmt.Sprintf("Case %d validator N(%d): Chi-squared test failure: "+
+			"runs=%d, p-Value[%f] <= expected p-Value%f]. "+
+			"Please re-run test since This test case is a probabilistic test",
+			caseNum, N, runs, p, expectedP))
+}
+
+type ChiSquared struct {
+	observed int64
+	expected int64
+}
+
+func (cs ChiSquared) test() float64 {
+	return float64((cs.observed-cs.expected)*(cs.observed-cs.expected)) / float64(cs.expected)
+}
+
+func chiSquaredTest(tests []ChiSquared) (float64, float64) {
+	var x2 float64
+	for _, chisquared := range tests {
+		x2 += chisquared.test()
+	}
+	cs := distuv.ChiSquared{K: float64(len(tests) - 1)}
+	p := 1 - cs.CDF(x2)
+	return x2, p
 }
 
 // TestProposerPriorityDoesNotGetResetToZero assert that we preserve accum when calling updateState

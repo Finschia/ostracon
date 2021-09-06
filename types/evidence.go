@@ -54,6 +54,7 @@ type DuplicateVoteEvidence struct {
 
 	// abci specific information
 	TotalVotingPower int64
+	VotingPower      int64
 	ValidatorPower   int64
 	Timestamp        time.Time
 }
@@ -83,6 +84,7 @@ func NewDuplicateVoteEvidence(vote1, vote2 *Vote, blockTime time.Time, voterSet 
 		VoteA:            voteA,
 		VoteB:            voteB,
 		TotalVotingPower: voterSet.TotalVotingPower(),
+		VotingPower:      val.VotingPower,
 		ValidatorPower:   val.StakingPower,
 		Timestamp:        blockTime,
 	}
@@ -93,8 +95,9 @@ func (dve *DuplicateVoteEvidence) ABCI() []abci.Evidence {
 	return []abci.Evidence{{
 		Type: abci.EvidenceType_DUPLICATE_VOTE,
 		Validator: abci.Validator{
-			Address: dve.VoteA.ValidatorAddress,
-			Power:   dve.ValidatorPower,
+			Address:     dve.VoteA.ValidatorAddress,
+			Power:       dve.ValidatorPower,
+			VotingPower: dve.VotingPower,
 		},
 		Height:           dve.VoteA.Height,
 		Time:             dve.Timestamp,
@@ -163,6 +166,7 @@ func (dve *DuplicateVoteEvidence) ToProto() *tmproto.DuplicateVoteEvidence {
 		VoteA:            voteA,
 		VoteB:            voteB,
 		TotalVotingPower: dve.TotalVotingPower,
+		VotingPower:      dve.VotingPower,
 		ValidatorPower:   dve.ValidatorPower,
 		Timestamp:        dve.Timestamp,
 	}
@@ -189,6 +193,7 @@ func DuplicateVoteEvidenceFromProto(pb *tmproto.DuplicateVoteEvidence) (*Duplica
 		VoteA:            vA,
 		VoteB:            vB,
 		TotalVotingPower: pb.TotalVotingPower,
+		VotingPower:      pb.VotingPower,
 		ValidatorPower:   pb.ValidatorPower,
 		Timestamp:        pb.Timestamp,
 	}
@@ -219,13 +224,9 @@ var _ Evidence = &LightClientAttackEvidence{}
 func (l *LightClientAttackEvidence) ABCI() []abci.Evidence {
 	abciEv := make([]abci.Evidence, len(l.ByzantineValidators))
 	for idx, val := range l.ByzantineValidators {
-		pb := abci.Validator{
-			Address: val.Address,
-			Power:   val.StakingPower,
-		}
 		abciEv[idx] = abci.Evidence{
 			Type:             abci.EvidenceType_LIGHT_CLIENT_ATTACK,
-			Validator:        pb,
+			Validator:        OC2PB.Validator(val),
 			Height:           l.Height(),
 			Time:             l.Timestamp,
 			TotalVotingPower: l.TotalVotingPower,

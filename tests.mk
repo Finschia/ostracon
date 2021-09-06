@@ -60,22 +60,22 @@ vagrant_test:
 
 ### go tests
 test:
-	@echo "--> Running go test"
-	@go test -p 1 $(PACKAGES) -tags deadlock
+	@echo "--> Running go test -- deadlock $(BUILD_TAGS)"
+	@go test -p 1 $(PACKAGES) -tags "deadlock $(BUILD_TAGS)"
 .PHONY: test
 
 test_race:
-	@echo "--> Running go test --race"
-	@go test -p 1 -v -race $(PACKAGES)
+	@echo "--> Running go test -- race $(BUILD_TAGS)"
+	@go test -p 1 -v -race $(PACKAGES) -tags "$(BUILD_TAGS)"
 .PHONY: test_race
 
 test_deadlock:
-	@echo "--> Running go test --deadlock"
+	@echo "--> Running go test -- deadlock"
 	@go test -p 1 -v  $(PACKAGES) -tags deadlock
 .PHONY: test_race
 
 test_tags:
-	@echo "--> Running go test"
+	@echo "--> Running go test -- $(BUILD_TAGS)"
 	@go test -p 1 $(PACKAGES) -tags "$(BUILD_TAGS)"
 .PHONY: test
 

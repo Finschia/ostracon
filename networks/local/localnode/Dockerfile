@@ -2,7 +2,7 @@ FROM golang:1.15-alpine
 
 RUN apk update && \
     apk upgrade && \
-    apk add --no-cache git make gcc libc-dev build-base curl jq bash file gmp-dev clang
+    apk add --no-cache git make gcc libc-dev build-base curl jq bash file gmp-dev clang libtool autoconf automake
 
 VOLUME [ "/ostracon" ]
 WORKDIR /ostracon

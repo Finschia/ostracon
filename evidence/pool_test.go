@@ -99,11 +99,11 @@ func TestEvidencePoolBasic(t *testing.T) {
 	var evidenceBytes int64
 	switch keyType := voterSet.Voters[0].PubKey.(type) {
 	case ed25519.PubKey:
-		evidenceBytes = 372
+		evidenceBytes = 375
 	case bls.PubKey:
-		evidenceBytes = 436
+		evidenceBytes = 439
 	case composite.PubKey:
-		evidenceBytes = 436
+		evidenceBytes = 439
 	default:
 		assert.Fail(t, fmt.Sprintf("unknown public key: %s", keyType))
 	}
@@ -292,7 +292,7 @@ func TestCheckEvidenceWithLightClientAttack(t *testing.T) {
 			ValidatorSet: conflictingVals,
 			VoterSet:     conflictingVoters,
 		},
-		CommonHeight:        10,
+		CommonHeight:        height,
 		TotalVotingPower:    int64(nValidators) * validatorPower,
 		ByzantineValidators: conflictingVals.Validators,
 		Timestamp:           defaultEvidenceTime,
@@ -326,12 +326,6 @@ func TestCheckEvidenceWithLightClientAttack(t *testing.T) {
 
 	err = pool.CheckEvidence(types.EvidenceList{ev})
 	assert.NoError(t, err)
-
-	// take away the last signature -> there are less validators then what we have detected,
-	// hence this should fail
-	commit.Signatures = append(commit.Signatures[:nValidators-1], types.NewCommitSigAbsent())
-	err = pool.CheckEvidence(types.EvidenceList{ev})
-	assert.Error(t, err)
 }
 
 // Tests that restarting the evidence pool after a potential failure will recover the

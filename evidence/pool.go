@@ -270,14 +270,15 @@ func (evpool *Pool) fastCheck(ev types.Evidence) bool {
 			evpool.logger.Error("Failed to load light client attack evidence", "err", err, "key(height/hash)", key)
 			return false
 		}
-		var trustedPb tmproto.LightClientAttackEvidence
-		err = trustedPb.Unmarshal(evBytes)
+		var trustedPbEv tmproto.Evidence
+		err = trustedPbEv.Unmarshal(evBytes)
+		trustedPb := trustedPbEv.GetLightClientAttackEvidence()
 		if err != nil {
 			evpool.logger.Error("Failed to convert light client attack evidence from bytes",
 				"err", err, "key(height/hash)", key)
 			return false
 		}
-		trustedEv, err := types.LightClientAttackEvidenceFromProto(&trustedPb)
+		trustedEv, err := types.LightClientAttackEvidenceFromProto(trustedPb)
 		if err != nil {
 			evpool.logger.Error("Failed to convert light client attack evidence from protobuf",
 				"err", err, "key(height/hash)", key)
