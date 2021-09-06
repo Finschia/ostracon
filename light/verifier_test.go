@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/line/ostracon/crypto/tmhash"
+	"github.com/line/ostracon/crypto/vrf"
 
 	"github.com/stretchr/testify/assert"
 
@@ -180,14 +181,18 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 	for i, tc := range testCases {
 		tc := tc
 		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
-			err := light.VerifyAdjacent(
+			proofHash, err := vrf.ProofToHash(header.Proof.Bytes())
+			if err != nil {
+				assert.NoError(t, err)
+			}
+			voters := types.SelectVoter(tc.newVals, proofHash, types.DefaultVoterParams())
+			err = light.VerifyAdjacent(
 				header,
 				tc.newHeader,
-				tc.newVals,
+				voters,
 				tc.trustingPeriod,
 				tc.now,
 				maxClockDrift,
-				types.DefaultVoterParams(),
 			)
 			switch {
 			case tc.expErr != nil && assert.Error(t, err):
@@ -362,8 +367,12 @@ func TestVerifyAdjacentHeadersWithVoterSampling(t *testing.T) {
 	for i, tc := range testCases {
 		tc := tc
 		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
-			err := light.VerifyAdjacent(header, tc.newHeader, tc.newVals, tc.trustingPeriod, tc.now,
-				maxClockDrift, voterParamsHalf)
+			proofHash, err := vrf.ProofToHash(tc.newHeader.Proof.Bytes())
+			if err != nil {
+				assert.NoError(t, err)
+			}
+			voters := types.SelectVoter(tc.newVals, proofHash, voterParamsHalf)
+			err = light.VerifyAdjacent(header, tc.newHeader, voters, tc.trustingPeriod, tc.now, maxClockDrift)
 			switch {
 			case tc.expErr != nil && assert.Error(t, err):
 				assert.Equal(t, tc.expErr, err)
@@ -492,9 +501,18 @@ func TestVerifyNonAdjacentHeaders(t *testing.T) {
 	for i, tc := range testCases {
 		tc := tc
 		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
-			err := light.VerifyNonAdjacent(header, vals, tc.newHeader, tc.newVals, tc.trustingPeriod,
-				tc.now, maxClockDrift,
-				light.DefaultTrustLevel, types.DefaultVoterParams())
+			proofHash, err := vrf.ProofToHash(header.Proof.Bytes())
+			if err != nil {
+				assert.NoError(t, err)
+			}
+			trustedVoters := types.SelectVoter(vals, proofHash, types.DefaultVoterParams())
+			proofHash, err = vrf.ProofToHash(tc.newHeader.Proof.Bytes())
+			if err != nil {
+				assert.NoError(t, err)
+			}
+			voters := types.SelectVoter(tc.newVals, proofHash, types.DefaultVoterParams())
+			err = light.VerifyNonAdjacent(header, trustedVoters, tc.newHeader, voters, tc.trustingPeriod, tc.now,
+				maxClockDrift, light.DefaultTrustLevel)
 
 			switch {
 			case tc.expErr != nil && assert.Error(t, err):
