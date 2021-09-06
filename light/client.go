@@ -8,6 +8,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/line/ostracon/crypto/vrf"
 	"github.com/line/ostracon/libs/log"
 	tmmath "github.com/line/ostracon/libs/math"
 	tmsync "github.com/line/ostracon/libs/sync"
@@ -635,8 +636,14 @@ func (c *Client) verifySequential(
 			"newHeight", interimBlock.Height,
 			"newHash", interimBlock.Hash())
 
-		err = VerifyAdjacent(verifiedBlock.SignedHeader, interimBlock.SignedHeader, interimBlock.ValidatorSet,
-			c.trustingPeriod, now, c.maxClockDrift, c.voterParams)
+		proofHash, err := vrf.ProofToHash(interimBlock.SignedHeader.Proof.Bytes())
+		if err != nil {
+			return fmt.Errorf("invalid proof: %s", err.Error())
+		}
+		voterSet := types.SelectVoter(interimBlock.ValidatorSet, proofHash, c.voterParams)
+
+		err = VerifyAdjacent(verifiedBlock.SignedHeader, interimBlock.SignedHeader, voterSet,
+			c.trustingPeriod, now, c.maxClockDrift)
 		if err != nil {
 			err := ErrVerificationFailed{From: verifiedBlock.Height, To: interimBlock.Height, Reason: err}
 
