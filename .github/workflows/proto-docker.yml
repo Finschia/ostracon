@@ -11,7 +11,7 @@ on:
     - cron: "* * 1 * *"
 
 jobs:
-  build:
+  build-proto:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
