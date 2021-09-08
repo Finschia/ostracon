@@ -36,9 +36,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        goarch: ["amd64"] # ["arm", "amd64"]
+        include:
+          - goarch: "amd64"
+            gcc: "gcc"
+            package: ""
+          - goarch: "arm64"
+            gcc: "aarch64-linux-gnu-gcc"
+            package: "g++-aarch64-linux-gnu"
+#          - goarch: "arm"
+#            gcc: "arm-linux-gnueabihf-gcc"
+#            package: "g++-arm-linux-gnueabihf"
     timeout-minutes: 5
     steps:
+      - run: sudo apt update && sudo apt install -y ${{ matrix.package }} qemu-user-binfmt
+        if: "matrix.package != ''"
       - uses: actions/setup-go@v2
         with:
           go-version: "^1.15.4"
@@ -50,7 +61,7 @@ jobs:
             go.mod
             go.sum
       - name: install
-        run: GOOS=linux GOARCH=${{ matrix.goarch }} make build
+        run: GOOS=linux GOARCH=${{ matrix.goarch }} CC=${{ matrix.gcc }} make build
         if: "env.GIT_DIFF != ''"
 
   tests:

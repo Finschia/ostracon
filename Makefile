@@ -263,7 +263,7 @@ sync-docs:
 # Build linux binary on other platforms
 # Should run from within a linux if CGO_ENABLED=1
 build-linux:
-	GOOS=linux GOARCH=amd64 $(MAKE) build
+	GOOS=linux GOARCH=$(TARGET_ARCH) $(MAKE) build
 .PHONY: build-linux
 
 build-linux-docker:
