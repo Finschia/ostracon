@@ -1,4 +1,4 @@
-name: Lint
+name: Linter
 on:
   push:
     paths:
@@ -10,7 +10,7 @@ on:
       - "**.md"
 
 jobs:
-  build:
+  build-linter:
     name: Super linter
     runs-on: ubuntu-latest
     steps:

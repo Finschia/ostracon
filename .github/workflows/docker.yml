@@ -11,7 +11,7 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+-rc*" # Push events to matching v*, i.e. v1.0-rc1, v20.15.10-rc5
 
 jobs:
-  build:
+  build-docker:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
@@ -54,6 +54,6 @@ jobs:
         with:
           context: .
           file: ./DOCKER/Dockerfile
-          platforms: linux/amd64 # linux/amd64,linux/arm64
-          push: ${{ github.event_name != 'pull_request' }}
+          platforms: linux/amd64,linux/arm64
+          #push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.prep.outputs.tags }}
