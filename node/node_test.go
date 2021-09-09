@@ -299,6 +299,7 @@ func TestCreateProposalBlock(t *testing.T) {
 		proposerAddr,
 		0,
 		proof,
+		0,
 	)
 
 	// check that the part set does not exceed the maximum block size
@@ -370,6 +371,7 @@ func TestMaxProposalBlockSize(t *testing.T) {
 		proposerAddr,
 		0,
 		proof,
+		0,
 	)
 
 	pb, err := block.ToProto()

@@ -125,6 +125,7 @@ func (blockExec *BlockExecutor) CreateProposalBlock(
 	proposerAddr []byte,
 	round int32,
 	proof crypto.Proof,
+	maxTxs int64,
 ) (*types.Block, *types.PartSet) {
 
 	maxBytes := state.ConsensusParams.Block.MaxBytes
@@ -135,7 +136,7 @@ func (blockExec *BlockExecutor) CreateProposalBlock(
 	// Fetch a limited amount of valid txs
 	maxDataBytes := types.MaxDataBytes(maxBytes, commit, evidence)
 
-	txs := blockExec.mempool.ReapMaxBytesMaxGas(maxDataBytes, maxGas)
+	txs := blockExec.mempool.ReapMaxBytesMaxGasMaxTxs(maxDataBytes, maxGas, maxTxs)
 
 	return state.MakeBlock(height, txs, commit, evidence, proposerAddr, round, proof)
 }
