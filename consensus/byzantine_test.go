@@ -84,7 +84,6 @@ func TestByzantinePrevoteEquivocation(t *testing.T) {
 		// Make State
 		blockExec := sm.NewBlockExecutor(stateStore, log.TestingLogger(), proxyAppConnCon, mempool, evpool)
 		cs := NewState(thisConfig.Consensus, state, blockExec, blockStore, mempool, evpool)
-		cs.SetLogger(cs.Logger)
 		// set private validator
 		pv := privVals[i]
 		cs.SetPrivValidator(pv)
@@ -130,7 +129,7 @@ func TestByzantinePrevoteEquivocation(t *testing.T) {
 	// make connected switches and start all reactors
 	p2p.MakeConnectedSwitches(config.P2P, nValidators, func(i int, s *p2p.Switch, c *config2.P2PConfig) *p2p.Switch {
 		s.AddReactor("CONSENSUS", reactors[i])
-		s.SetLogger(reactors[i].conS.Logger.With("module", "p2p"))
+		s.SetLogger(log.NewNopLogger().With("module", "p2p")) // Switch log is noisy for this test
 		return s
 	}, p2p.Connect2Switches)
 
