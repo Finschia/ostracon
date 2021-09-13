@@ -1,6 +1,6 @@
 # Ostracon: A Fast, Secure Consensus Layer for The Blockchain of New Token Economy
 
-Version 1.0 :: [English](index.md)
+Version 1.0 :: [English](README.md)
 
 ## Ostracon Overview
 
@@ -62,8 +62,8 @@ Networking レイヤーが含まれています。
 
 ## Ostracon Features
 
-* [Extending Tendermint-BFT with VRF-based Election](consensus_ja.md)
-* [BLS Signature Aggregation](signature_aggregation_ja.md)
+* [Extending Tendermint-BFT with VRF-based Election](consensus/index_ja.md)
+* [BLS Signature Aggregation](signature-aggregation/index_ja.md)
 
 ## Consideration with Other Consensus Schemes
 
