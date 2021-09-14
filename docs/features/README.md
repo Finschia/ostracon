@@ -18,7 +18,7 @@ P2P consensus algorithms based on BFT are more suitable than Bitcoin-like proof 
 
 We are introducing two new cryptographic technologies with Tendermint-BFT to further improve our blockchain. One is Verifiable Random Function (VRF), which was introduced to randomly select the Proposer node that will generate blocks and makes future selection unpredictable. This randomness is expected to deter malicious attacks and make it difficult for participants to act in collusion at some point in the future.
 
-Another feature is the  Boneh–Lynn–Shacham (BLS) signature. BLS signature schemes, which are based on bilinear mapping, gives us the ability to aggregate multiple digital signatures into a single one. In many blockchain protocols, large amounts of signatures must be stored to approve a block. Enabling BLS signature aggregation reduces the footprint and can significantly improve communication overhead and storage consumption.
+Another feature is the Boneh–Lynn–Shacham (BLS) signature. BLS signature scheme, which is based on bilinear mapping, gives us the ability to aggregate multiple digital signatures into a single one. In many blockchain protocols, large amounts of signatures must be stored to approve a block. Enabling BLS signature aggregation reduces the footprint and can significantly improve communication overhead and storage consumption.
 
 ## Layered Structure
 
@@ -50,8 +50,8 @@ Transactions that have not yet been incorporated into a block are shared among n
 
 ## Ostracon Features
 
-* [Extending Tendermint-BFT with VRF-based Election](consensus/index.md)
-* [BLS Signature Aggregation](signature-aggregation/index.md)
+* [Extending Tendermint-BFT with VRF-based Election](consensus/README.md)
+* [BLS Signature Aggregation](signature-aggregation/README.md)
 
 ## Consideration with Other Consensus Schemes
 

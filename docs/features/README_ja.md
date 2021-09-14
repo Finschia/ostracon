@@ -62,8 +62,8 @@ Networking レイヤーが含まれています。
 
 ## Ostracon Features
 
-* [Extending Tendermint-BFT with VRF-based Election](consensus/index_ja.md)
-* [BLS Signature Aggregation](signature-aggregation/index_ja.md)
+* [Extending Tendermint-BFT with VRF-based Election](consensus/README_ja.md)
+* [BLS Signature Aggregation](signature-aggregation/README_ja.md)
 
 ## Consideration with Other Consensus Schemes
 
