@@ -405,6 +405,17 @@ func newStateWithConfigAndBlockStore(
 	app abci.Application,
 	blockDB dbm.DB,
 ) *State {
+	return newStateWithConfigAndBlockStoreWithLoggers(thisConfig, state, pv, app, blockDB, DefaultTestLoggers())
+}
+
+func newStateWithConfigAndBlockStoreWithLoggers(
+	thisConfig *cfg.Config,
+	state sm.State,
+	pv types.PrivValidator,
+	app abci.Application,
+	blockDB dbm.DB,
+	loggers TestLoggers,
+) *State {
 	// Get BlockStore
 	blockStore := store.NewBlockStore(blockDB)
 
@@ -415,7 +426,7 @@ func newStateWithConfigAndBlockStore(
 
 	// Make Mempool
 	mempool := mempl.NewCListMempool(thisConfig.Mempool, proxyAppConnMem, 0)
-	mempool.SetLogger(log.TestingLogger().With("module", "mempool"))
+	mempool.SetLogger(loggers.memLogger.With("module", "mempool"))
 	if thisConfig.Consensus.WaitForTxs() {
 		mempool.EnableTxsAvailable()
 	}
@@ -429,13 +440,13 @@ func newStateWithConfigAndBlockStore(
 		panic(err)
 	}
 
-	blockExec := sm.NewBlockExecutor(stateStore, log.TestingLogger(), proxyAppConnCon, mempool, evpool)
+	blockExec := sm.NewBlockExecutor(stateStore, loggers.execLogger, proxyAppConnCon, mempool, evpool)
 	cs := NewState(thisConfig.Consensus, state, blockExec, blockStore, mempool, evpool)
-	cs.SetLogger(log.TestingLogger().With("module", "consensus"))
+	cs.SetLogger(loggers.csLogger.With("module", "consensus"))
 	cs.SetPrivValidator(pv)
 
 	eventBus := types.NewEventBus()
-	eventBus.SetLogger(log.TestingLogger().With("module", "events"))
+	eventBus.SetLogger(loggers.eventLogger.With("module", "events"))
 	err := eventBus.Start()
 	if err != nil {
 		panic(err)
@@ -760,6 +771,34 @@ func ensureNewEventOnChannel(ch <-chan tmpubsub.Message) {
 
 //-------------------------------------------------------------------------------
 // consensus nets
+
+type TestLoggers struct {
+	memLogger   log.Logger
+	evLogger    log.Logger
+	execLogger  log.Logger
+	csLogger    log.Logger
+	eventLogger log.Logger
+}
+
+func NewTestLoggers(memLogger, evLogger, execLogger, csLogger, eventLogger log.Logger) TestLoggers {
+	return TestLoggers{
+		memLogger:   memLogger,
+		evLogger:    evLogger,
+		execLogger:  execLogger,
+		csLogger:    csLogger,
+		eventLogger: eventLogger,
+	}
+}
+
+func DefaultTestLoggers() TestLoggers {
+	return NewTestLoggers(
+		log.TestingLogger(), log.TestingLogger(), log.TestingLogger(), log.TestingLogger(), log.TestingLogger())
+}
+
+func NopTestLoggers() TestLoggers {
+	return NewTestLoggers(
+		log.NewNopLogger(), log.NewNopLogger(), log.NewNopLogger(), log.NewNopLogger(), log.NewNopLogger())
+}
 
 // consensusLogger is a TestingLogger which uses a different
 // color for each validator ("validator" key must exist).
