@@ -922,7 +922,7 @@ type ConsensusConfig struct {
 	CreateEmptyBlocks         bool          `mapstructure:"create_empty_blocks"`
 	CreateEmptyBlocksInterval time.Duration `mapstructure:"create_empty_blocks_interval"`
 
-	// Max transactions per block. No limit if <= 0.
+	// Max transactions per block when creating a block. Not a global configuration. No limit if <= 0.
 	MaxTxs int64 `mapstructure:"max_txs"`
 
 	// Reactor sleep duration parameters
