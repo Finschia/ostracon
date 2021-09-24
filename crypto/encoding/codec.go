@@ -16,6 +16,8 @@ func init() {
 	json.RegisterType((*pc.PublicKey)(nil), "ostracon.crypto.PublicKey")
 	json.RegisterType((*pc.PublicKey_Ed25519)(nil), "ostracon.crypto.PublicKey_Ed25519")
 	json.RegisterType((*pc.PublicKey_Secp256K1)(nil), "ostracon.crypto.PublicKey_Secp256K1")
+	json.RegisterType((*pc.PublicKey_Composite)(nil), "ostracon.crypto.PublicKey_Composite")
+	json.RegisterType((*pc.PublicKey_Bls12)(nil), "ostracon.crypto.PublicKey_Bls12")
 }
 
 // PubKeyToProto takes crypto.PubKey and transforms it to a protobuf Pubkey
@@ -81,14 +83,6 @@ func PubKeyFromProto(k *pc.PublicKey) (crypto.PubKey, error) {
 			VrfKey:  vrf,
 		}
 		return pk, nil
-	case *pc.PublicKey_Ed25519:
-		if len(k.Ed25519) != ed25519.PubKeySize {
-			return nil, fmt.Errorf("invalid size for PubKeyEd25519. Got %d, expected %d",
-				len(k.Ed25519), ed25519.PubKeySize)
-		}
-		pk := make(ed25519.PubKey, ed25519.PubKeySize)
-		copy(pk, k.Ed25519)
-		return pk, nil
 	case *pc.PublicKey_Bls12:
 		if len(k.Bls12) != bls.PubKeySize {
 			return nil, fmt.Errorf("invalid size for PubKeyBls12. Got %d, expected %d",
@@ -96,6 +90,14 @@ func PubKeyFromProto(k *pc.PublicKey) (crypto.PubKey, error) {
 		}
 		pk := bls.PubKey{}
 		copy(pk[:], k.Bls12)
+		return pk, nil
+	case *pc.PublicKey_Ed25519:
+		if len(k.Ed25519) != ed25519.PubKeySize {
+			return nil, fmt.Errorf("invalid size for PubKeyEd25519. Got %d, expected %d",
+				len(k.Ed25519), ed25519.PubKeySize)
+		}
+		pk := make(ed25519.PubKey, ed25519.PubKeySize)
+		copy(pk, k.Ed25519)
 		return pk, nil
 	case *pc.PublicKey_Secp256K1:
 		if len(k.Secp256K1) != secp256k1.PubKeySize {

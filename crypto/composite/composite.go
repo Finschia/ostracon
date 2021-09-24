@@ -35,6 +35,17 @@ type PubKey struct {
 	VrfKey  crypto.PubKey `json:"vrf"`
 }
 
+func PubKeyFromBytes(bz []byte) PubKey {
+	if len(bz) != bls.PubKeySize+ed25519.PubKeySize {
+		panic(fmt.Sprintf("Wrong PubKey bytes size: %d", len(bz)))
+	}
+	sign := bls.PubKey{}
+	copy(sign[:], bz[:bls.PubKeySize])
+	vrf := ed25519.PubKey(make([]byte, ed25519.PubKeySize))
+	copy(vrf, bz[bls.PubKeySize:])
+	return PubKey{SignKey: sign, VrfKey: vrf}
+}
+
 func (pk *PubKey) Identity() crypto.PubKey {
 	return pk.VrfKey
 }
@@ -44,9 +55,9 @@ func (pk PubKey) Address() crypto.Address {
 }
 
 func (pk PubKey) Bytes() []byte {
-	msg := bytes.NewBuffer(pk.SignKey.Bytes())
-	msg.Write(pk.VrfKey.Bytes())
-	return msg.Bytes()
+	bz := bytes.NewBuffer(pk.SignKey.Bytes())
+	bz.Write(pk.VrfKey.Bytes())
+	return bz.Bytes()
 }
 
 func (pk PubKey) VerifySignature(msg []byte, sig []byte) bool {
@@ -80,12 +91,27 @@ func NewPrivKeyComposite(sign crypto.PrivKey, vrf crypto.PrivKey) *PrivKey {
 	return &PrivKey{SignKey: sign, VrfKey: vrf}
 }
 
+// PrivKeyFromBytes depends on PrivKey.Bytes
+// See PrivKey.Bytes
+func PrivKeyFromBytes(bz []byte) *PrivKey {
+	if len(bz) != bls.PrivKeySize+ed25519.PrivateKeySize {
+		panic(fmt.Sprintf("Wrong PrivKey bytes size: %d", len(bz)))
+	}
+	sign := bls.PrivKey{}
+	copy(sign[:], bz[:bls.PrivKeySize])
+	vrf := ed25519.PrivKey(make([]byte, ed25519.PrivateKeySize))
+	copy(vrf, bz[bls.PrivKeySize:])
+	return &PrivKey{SignKey: sign, VrfKey: vrf}
+}
+
 func (sk PrivKey) Identity() crypto.PrivKey {
 	return sk.VrfKey
 }
 
 func (sk PrivKey) Bytes() []byte {
-	return sk.Identity().Bytes()
+	bz := bytes.NewBuffer(sk.SignKey.Bytes())
+	bz.Write(sk.VrfKey.Bytes())
+	return bz.Bytes()
 }
 
 func (sk PrivKey) Sign(msg []byte) ([]byte, error) {

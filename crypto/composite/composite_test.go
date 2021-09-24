@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	tmjson "github.com/line/ostracon/libs/json"
 
 	"github.com/line/ostracon/crypto/bls"
@@ -14,11 +16,24 @@ import (
 	"github.com/line/ostracon/crypto/ed25519"
 )
 
+func TestGenPrivKey(t *testing.T) {
+	sk := composite.GenPrivKey()
+	sign := sk.SignKey
+	vrf := sk.VrfKey
+	compositeKey := composite.NewPrivKeyComposite(sign, vrf)
+	assert.Equal(t, sk, compositeKey)
+	bz := compositeKey.Bytes()
+	assert.Equal(t, sk, composite.PrivKeyFromBytes(bz))
+}
+
 func TestPrivKeyComposite_Bytes(t *testing.T) {
 	sign := bls.GenPrivKey()
 	vrf := ed25519.GenPrivKey()
 	sk := composite.NewPrivKeyComposite(sign, vrf)
-	sk.Bytes()
+	compositeKey := composite.PrivKeyFromBytes(sk.Bytes())
+	assert.Equal(t, sign, compositeKey.SignKey)
+	assert.Equal(t, vrf, compositeKey.VrfKey)
+	assert.Equal(t, sk, compositeKey)
 }
 
 func TestPrivKeyComposite_Equals(t *testing.T) {
@@ -56,7 +71,11 @@ func TestPrivKeyComposite_PubKey(t *testing.T) {
 	sign := bls.GenPrivKey()
 	vrf := ed25519.GenPrivKey()
 	sk := composite.NewPrivKeyComposite(sign, vrf)
-	sk.PubKey()
+	pk := sk.PubKey()
+	compositeKey := composite.PubKeyFromBytes(pk.Bytes())
+	assert.Equal(t, sign.PubKey(), compositeKey.SignKey)
+	assert.Equal(t, vrf.PubKey(), compositeKey.VrfKey)
+	assert.Equal(t, pk, compositeKey)
 }
 
 func TestPrivKeyComposite_Sign(t *testing.T) {
@@ -105,7 +124,10 @@ func TestPubKeyComposite_Bytes(t *testing.T) {
 	vrf := ed25519.GenPrivKey()
 	sk := composite.NewPrivKeyComposite(sign, vrf)
 	pk := sk.PubKey().(composite.PubKey)
-	pk.Bytes()
+	compositeKey := composite.PubKeyFromBytes(pk.Bytes())
+	assert.Equal(t, sign.PubKey(), compositeKey.SignKey)
+	assert.Equal(t, vrf.PubKey(), compositeKey.VrfKey)
+	assert.Equal(t, pk, compositeKey)
 }
 
 func TestPubKeyComposite_Equals(t *testing.T) {
@@ -135,7 +157,7 @@ func TestPubKeyComposite_Identity(t *testing.T) {
 	vrf := ed25519.GenPrivKey()
 	sk := composite.NewPrivKeyComposite(sign, vrf)
 	pk := sk.PubKey().(composite.PubKey)
-	pk.Identity()
+	assert.Equal(t, vrf.PubKey(), pk.Identity())
 }
 
 func TestPubKeyComposite_VerifyBytes(t *testing.T) {
