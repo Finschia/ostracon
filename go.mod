@@ -11,19 +11,19 @@ require (
 	github.com/confio/ics23/go v0.6.3
 	github.com/coniks-sys/coniks-go v0.0.0-20180722014011-11acf4819b71
 	github.com/fortytw2/leaktest v1.3.0
-	github.com/go-kit/kit v0.10.0
-	github.com/go-logfmt/logfmt v0.5.0
+	github.com/go-kit/kit v0.12.0
+	github.com/go-logfmt/logfmt v0.5.1
 	github.com/gogo/protobuf v1.3.2
-	github.com/golang/protobuf v1.4.3
+	github.com/golang/protobuf v1.5.2
 	github.com/gorilla/websocket v1.4.2
 	github.com/gtank/merlin v0.1.1
 	github.com/herumi/bls-eth-go-binary v0.0.0-20200923072303-32b29e5d8cbf
 	github.com/libp2p/go-buffer-pool v0.0.2
 	github.com/line/tm-db/v2 v2.0.0-init.1.0.20210824011847-fcfa67dd3c70
-	github.com/minio/highwayhash v1.0.1
+	github.com/minio/highwayhash v1.0.2
 	github.com/pelletier/go-toml v1.6.0 // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.8.0
+	github.com/prometheus/client_golang v1.11.0
 	github.com/r2ishiguro/vrf v0.0.0-20180716233122-192de52975eb
 	github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0
 	github.com/rs/cors v1.7.0
@@ -37,10 +37,9 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/tendermint/go-amino v0.16.0
 	github.com/yahoo/coname v0.0.0-20170609175141-84592ddf8673 // indirect
-	golang.org/x/crypto v0.0.0-20201117144127-c1f2f97bffc9
-	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4
-	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
+	golang.org/x/crypto v0.0.0-20210915214749-c084706c2272
+	golang.org/x/net v0.0.0-20210917221730-978cfadd31cf
 	gonum.org/v1/gonum v0.9.3
-	google.golang.org/grpc v1.35.0
-	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
+	google.golang.org/grpc v1.40.0
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )
