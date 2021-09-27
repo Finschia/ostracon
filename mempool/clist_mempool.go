@@ -611,6 +611,44 @@ func (mem *CListMempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Txs {
 }
 
 // Safe for concurrent use by multiple goroutines.
+func (mem *CListMempool) ReapMaxBytesMaxGasMaxTxs(maxBytes, maxGas, maxTxs int64) types.Txs {
+	mem.updateMtx.RLock()
+	defer mem.updateMtx.RUnlock()
+
+	var totalGas int64
+
+	if maxTxs <= 0 {
+		maxTxs = int64(mem.txs.Len())
+	}
+
+	// TODO: we will get a performance boost if we have a good estimate of avg
+	// size per tx, and set the initial capacity based off of that.
+	// txs := make([]types.Tx, 0, tmmath.MinInt(mem.txs.Len(), max/mem.avgTxSize))
+	txs := make([]types.Tx, 0, mem.txs.Len())
+	protoTxs := tmproto.Data{}
+	for e := mem.txs.Front(); e != nil && len(txs) < int(maxTxs); e = e.Next() {
+		memTx := e.Value.(*mempoolTx)
+
+		protoTxs.Txs = append(protoTxs.Txs, memTx.tx)
+		// Check total size requirement
+		if maxBytes > -1 && int64(protoTxs.Size()) > maxBytes {
+			return txs
+		}
+		// Check total gas requirement.
+		// If maxGas is negative, skip this check.
+		// Since newTotalGas < masGas, which
+		// must be non-negative, it follows that this won't overflow.
+		newTotalGas := totalGas + memTx.gasWanted
+		if maxGas > -1 && newTotalGas > maxGas {
+			return txs
+		}
+		totalGas = newTotalGas
+		txs = append(txs, memTx.tx)
+	}
+	return txs
+}
+
+// Safe for concurrent use by multiple goroutines.
 func (mem *CListMempool) ReapMaxTxs(max int) types.Txs {
 	mem.updateMtx.RLock()
 	defer mem.updateMtx.RUnlock()

@@ -233,7 +233,7 @@ func createProposalBlockSlim(cs *State, vs *validatorStub, round int32) (*types.
 		cs.Logger.Error("enterPropose: Cannot generate vrf proof: %s", err.Error())
 		return nil, nil
 	}
-	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerAddr, round, proof)
+	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerAddr, round, proof, 0)
 }
 
 func addVotes(to *State, votes ...*types.Vote) {

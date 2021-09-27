@@ -1257,7 +1257,7 @@ func (cs *State) createProposalBlock(round int32) (block *types.Block, blockPart
 		return
 	}
 
-	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerAddr, round, proof)
+	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerAddr, round, proof, cs.config.MaxTxs)
 }
 
 // Enter: `timeoutPropose` after entering Propose.

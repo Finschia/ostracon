@@ -114,26 +114,35 @@ func TestReapMaxBytesMaxGas(t *testing.T) {
 		maxBytes       int64
 		maxGas         int64
 		expectedNumTxs int
+		maxTxs         int64
 	}{
-		{20, -1, -1, 20},
-		{20, -1, 0, 0},
-		{20, -1, 10, 10},
-		{20, -1, 30, 20},
-		{20, 0, -1, 0},
-		{20, 0, 10, 0},
-		{20, 10, 10, 0},
-		{20, 24, 10, 1},
-		{20, 240, 5, 5},
-		{20, 240, -1, 10},
-		{20, 240, 10, 10},
-		{20, 240, 15, 10},
-		{20, 20000, -1, 20},
-		{20, 20000, 5, 5},
-		{20, 20000, 30, 20},
+		{20, -1, -1, 20, 0},
+		{20, -1, 0, 0, 0},
+		{20, -1, 10, 10, 0},
+		{20, -1, 30, 20, 0},
+		{20, 0, -1, 0, 0},
+		{20, 0, 10, 0, 0},
+		{20, 10, 10, 0, 0},
+		{20, 24, 10, 1, 0},
+		{20, 240, 5, 5, 0},
+		{20, 240, -1, 10, 0},
+		{20, 240, 10, 10, 0},
+		{20, 240, 15, 10, 0},
+		{20, 20000, -1, 20, 0},
+		{20, 20000, 5, 5, 0},
+		{20, 20000, 30, 20, 0},
+		{20, 20000, 30, 20, 0},
+		{20, 20000, 30, 10, 10},
+		{20, 20000, 30, 20, 100},
 	}
 	for tcIndex, tt := range tests {
 		checkTxs(t, mempool, tt.numTxsToCreate, UnknownPeerID)
-		got := mempool.ReapMaxBytesMaxGas(tt.maxBytes, tt.maxGas)
+		var got types.Txs
+		if tt.maxTxs <= 0 {
+			got = mempool.ReapMaxBytesMaxGas(tt.maxBytes, tt.maxGas)
+		} else {
+			got = mempool.ReapMaxBytesMaxGasMaxTxs(tt.maxBytes, tt.maxGas, tt.maxTxs)
+		}
 		assert.Equal(t, tt.expectedNumTxs, len(got), "Got %d txs, expected %d, tc #%d",
 			len(got), tt.expectedNumTxs, tcIndex)
 		mempool.Flush()

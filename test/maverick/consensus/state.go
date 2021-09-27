@@ -1278,7 +1278,7 @@ func (cs *State) createProposalBlock(round int32) (block *types.Block, blockPart
 		cs.Logger.Error(fmt.Sprintf("enterPropose: %v", err))
 		return
 	}
-	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerAddr, round, proof)
+	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerAddr, round, proof, 0)
 }
 
 // Enter: any +2/3 prevotes at next round.

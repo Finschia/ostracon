@@ -25,6 +25,9 @@ type Mempool interface {
 	// transactions (~ all available transactions).
 	ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Txs
 
+	// Puts cap on txs as well on top of ReapMaxBytesMaxGas
+	ReapMaxBytesMaxGasMaxTxs(maxBytes, maxGas, maxTxs int64) types.Txs
+
 	// ReapMaxTxs reaps up to max transactions from the mempool.
 	// If max is negative, there is no cap on the size of all returned
 	// transactions (~ all available transactions).

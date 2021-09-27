@@ -206,7 +206,7 @@ func TestByzantinePrevoteEquivocation(t *testing.T) {
 		message := lazyProposer.state.MakeHashMessage(lazyProposer.Round)
 		proof, _ := lazyProposer.privValidator.GenerateVRFProof(message)
 		block, blockParts := lazyProposer.blockExec.CreateProposalBlock(
-			lazyProposer.Height, lazyProposer.state, commit, proposerAddr, lazyProposer.Round, proof,
+			lazyProposer.Height, lazyProposer.state, commit, proposerAddr, lazyProposer.Round, proof, 0,
 		)
 
 		// Flush the WAL. Otherwise, we may not recompute the same proposal to sign,

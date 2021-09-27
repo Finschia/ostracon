@@ -454,6 +454,9 @@ skip_timeout_commit = {{ .Consensus.SkipTimeoutCommit }}
 create_empty_blocks = {{ .Consensus.CreateEmptyBlocks }}
 create_empty_blocks_interval = "{{ .Consensus.CreateEmptyBlocksInterval }}"
 
+# Max transactions per block. No limit if <= 0.
+max_txs = {{ .Consensus.MaxTxs }}
+
 # Reactor sleep duration parameters
 peer_gossip_sleep_duration = "{{ .Consensus.PeerGossipSleepDuration }}"
 peer_query_maj23_sleep_duration = "{{ .Consensus.PeerQueryMaj23SleepDuration }}"

@@ -20,8 +20,9 @@ func (Mempool) CheckTxSync(_ types.Tx, _ mempl.TxInfo) (*abci.Response, error) {
 }
 func (Mempool) CheckTxAsync(_ types.Tx, _ mempl.TxInfo, _ func(error), _ func(*abci.Response)) {
 }
-func (Mempool) ReapMaxBytesMaxGas(_, _ int64) types.Txs { return types.Txs{} }
-func (Mempool) ReapMaxTxs(n int) types.Txs              { return types.Txs{} }
+func (Mempool) ReapMaxBytesMaxGas(_, _ int64) types.Txs          { return types.Txs{} }
+func (Mempool) ReapMaxBytesMaxGasMaxTxs(_, _, _ int64) types.Txs { return types.Txs{} }
+func (Mempool) ReapMaxTxs(n int) types.Txs                       { return types.Txs{} }
 func (Mempool) Update(
 	_ *types.Block,
 	_ []*abci.ResponseDeliverTx,
