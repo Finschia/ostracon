@@ -66,22 +66,24 @@ func TestMain(m *testing.M) {
 // and which ones we need the wal for - then we'd also be able to only flush the
 // wal writer when we need to, instead of with every message.
 
-func startNewStateAndWaitForBlock(t *testing.T, consensusReplayConfig *cfg.Config,
-	lastBlockHeight int64, blockDB dbm.DB, stateStore sm.Store) {
-	logger := log.TestingLogger()
+func startNewStateAndWaitForBlock(t *testing.T, i int, consensusReplayConfig *cfg.Config,
+	blockDB dbm.DB, stateStore sm.Store) {
+	logger := log.TestingLogger().With("attr", "make block", "i", i)
 	state, _ := stateStore.LoadFromDBOrGenesisFile(consensusReplayConfig.GenesisFile())
 	privValidator := loadPrivValidator(consensusReplayConfig)
-	cs := newStateWithConfigAndBlockStore(
+	cs := newStateWithConfigAndBlockStoreWithLoggers(
 		consensusReplayConfig,
 		state,
 		privValidator,
 		kvstore.NewApplication(),
 		blockDB,
+		NewTestLoggers(
+			log.NewNopLogger().With("module", "mempool"),
+			log.NewNopLogger().With("module", "evidence"),
+			logger.With("module", "executor"),
+			logger.With("module", "consensus"),
+			log.NewNopLogger().With("module", "event")),
 	)
-	cs.SetLogger(logger)
-
-	bytes, _ := ioutil.ReadFile(cs.config.WalFile())
-	t.Logf("====== WAL: \n\r%X\n", bytes)
 
 	err := cs.Start()
 	require.NoError(t, err)
@@ -89,6 +91,8 @@ func startNewStateAndWaitForBlock(t *testing.T, consensusReplayConfig *cfg.Confi
 		if err := cs.Stop(); err != nil {
 			t.Error(err)
 		}
+		// Wait for closing WAL after writing remains messages to WAL
+		cs.Wait()
 	}()
 
 	// This is just a signal that we haven't halted; its not something contained
@@ -98,7 +102,9 @@ func startNewStateAndWaitForBlock(t *testing.T, consensusReplayConfig *cfg.Confi
 	newBlockSub, err := cs.eventBus.Subscribe(context.Background(), testSubscriber, types.EventQueryNewBlock)
 	require.NoError(t, err)
 	select {
-	case <-newBlockSub.Out():
+	case msg := <-newBlockSub.Out():
+		height := msg.Data().(types.EventDataNewBlock).Block.Height
+		t.Logf("Make Block.Height[%d]", height)
 	case <-newBlockSub.Cancelled():
 		t.Fatal("newBlockSub was cancelled")
 	case <-time.After(10 * time.Second): // XXX 120 second is too much time, so we changed to 10 second
@@ -155,7 +161,7 @@ func TestWALCrash(t *testing.T) {
 func crashWALandCheckLiveness(t *testing.T, consensusReplayConfig *cfg.Config,
 	initFn func(dbm.DB, *State, context.Context), heightToStop int64) {
 	walPanicked := make(chan error)
-	crashingWal := &crashingWAL{panicCh: walPanicked, heightToStop: heightToStop}
+	crashingWal := &crashingWAL{t: t, panicCh: walPanicked, heightToStop: heightToStop}
 
 	i := 1
 LOOP:
@@ -163,21 +169,26 @@ LOOP:
 		t.Logf("====== LOOP %d\n", i)
 
 		// create consensus state from a clean slate
-		logger := log.NewNopLogger()
 		blockDB := memdb.NewDB()
 		stateDB := blockDB
 		stateStore := sm.NewStore(stateDB)
 		state, err := sm.MakeGenesisStateFromFile(consensusReplayConfig.GenesisFile())
 		require.NoError(t, err)
 		privValidator := loadPrivValidator(consensusReplayConfig)
-		cs := newStateWithConfigAndBlockStore(
+		logger := log.TestingLogger().With("attr", "crash wal", "i", i)
+		cs := newStateWithConfigAndBlockStoreWithLoggers(
 			consensusReplayConfig,
 			state,
 			privValidator,
 			kvstore.NewApplication(),
 			blockDB,
+			NewTestLoggers(
+				log.NewNopLogger().With("module", "mempool"),
+				log.NewNopLogger().With("module", "evidence"),
+				logger.With("module", "executor"),
+				logger.With("module", "consensus"),
+				log.NewNopLogger().With("module", "event")),
 		)
-		cs.SetLogger(logger)
 
 		// start sending transactions
 		ctx, cancel := context.WithCancel(context.Background())
@@ -200,18 +211,18 @@ LOOP:
 		err = cs.Start()
 		require.NoError(t, err)
 
-		i++
-
 		select {
 		case err := <-walPanicked:
 			t.Logf("WAL panicked: %v", err)
 
-			// make sure we can make blocks after a crash
-			startNewStateAndWaitForBlock(t, consensusReplayConfig, cs.Height, blockDB, stateStore)
-
 			// stop consensus state and transactions sender (initFn)
 			cs.Stop() //nolint:errcheck // Logging this error causes failure
 			cancel()
+			// For safety since nobody stops and writing WAL continue sometimes.
+			cs.wal.Stop()
+
+			// make sure we can make blocks after a crash
+			startNewStateAndWaitForBlock(t, i, consensusReplayConfig, blockDB, stateStore)
 
 			// if we reached the required height, exit
 			if _, ok := err.(ReachedHeightToStopError); ok {
@@ -220,6 +231,8 @@ LOOP:
 		case <-time.After(10 * time.Second):
 			t.Fatal("WAL did not panic for 10 seconds (check the log)")
 		}
+
+		i++
 	}
 }
 
@@ -227,6 +240,7 @@ LOOP:
 // (before and after). It remembers a message for which we last panicked
 // (lastPanickedForMsgIndex), so we don't panic for it in subsequent iterations.
 type crashingWAL struct {
+	t            *testing.T
 	next         WAL
 	panicCh      chan error
 	heightToStop int64
@@ -260,13 +274,27 @@ func (e ReachedHeightToStopError) Error() string {
 // exiting the cs.receiveRoutine.
 func (w *crashingWAL) Write(m WALMessage) error {
 	if endMsg, ok := m.(EndHeightMessage); ok {
-		if endMsg.Height == w.heightToStop {
+		if endMsg.Height >= w.heightToStop {
+			w.t.Logf("Rearched[%d] WAL messasge[%T], Height[%d]", w.msgIndex, m, endMsg.Height)
 			w.panicCh <- ReachedHeightToStopError{endMsg.Height}
 			runtime.Goexit()
 			return nil
 		}
-
+		w.t.Logf("Not-Rearched[%d] WAL messasge[%T], Height[%d]", w.msgIndex, m, endMsg.Height)
+		w.msgIndex++
 		return w.next.Write(m)
+	}
+
+	if mi, ok := m.(msgInfo); ok {
+		if pm, ok := mi.Msg.(*ProposalMessage); ok {
+			w.t.Logf("Skipped[%d] WAL message[%T]:[%T]:[%v]", w.msgIndex, m, mi.Msg, pm.Proposal.Type)
+		} else if vm, ok := mi.Msg.(*VoteMessage); ok {
+			w.t.Logf("Skipped[%d] WAL message[%T]:[%T]:[%v]", w.msgIndex, m, mi.Msg, vm.Vote.Type)
+		} else {
+			w.t.Logf("Skipped[%d] WAL message[%T]:[%T]", w.msgIndex, m, mi.Msg)
+		}
+	} else {
+		w.t.Logf("Skipped[%d] WAL message[%T]", w.msgIndex, m)
 	}
 
 	if w.msgIndex > w.lastPanickedForMsgIndex {

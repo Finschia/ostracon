@@ -43,7 +43,11 @@ func CreateRandomPeer(outbound bool) Peer {
 		mconn:    &conn.MConnection{},
 		metrics:  NopMetrics(),
 	}
-	p.SetLogger(log.TestingLogger().With("peer", addr))
+	if p.Logger == nil {
+		p.SetLogger(log.TestingLogger().With("peer", addr))
+	} else {
+		p.SetLogger(p.Logger.With("peer", addr))
+	}
 	return p
 }
 
@@ -200,7 +204,11 @@ func MakeSwitch(
 
 	// TODO: let the config be passed in?
 	sw := initSwitch(i, NewSwitch(cfg, t, opts...), cfg) // receive buffer size is all 1000 in test
-	sw.SetLogger(log.TestingLogger().With("switch", i))
+	if sw.Logger == nil {
+		sw.SetLogger(log.TestingLogger().With("switch", i))
+	} else {
+		sw.SetLogger(sw.Logger.With("switch", i))
+	}
 	sw.SetNodeKey(&nodeKey)
 
 	ni := nodeInfo.(DefaultNodeInfo)
