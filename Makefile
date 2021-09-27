@@ -150,6 +150,9 @@ install_abci:
 VRF_ROOT = $(SRCPATH)/crypto/vrf/internal/vrf
 LIBSODIUM_ROOT = $(VRF_ROOT)/libsodium
 LIBSODIUM_OS = $(VRF_ROOT)/sodium/$(TARGET_OS)_$(TARGET_ARCH)
+ifneq ($(TARGET_HOST), "")
+LIBSODIUM_HOST = "--host=$(TARGET_HOST)"
+endif
 
 libsodium:
 	@if [ ! -f $(LIBSODIUM_OS)/lib/libsodium.a ]; then \
@@ -158,7 +161,7 @@ libsodium:
 		git submodule update --init --recursive && \
 		cd $(LIBSODIUM_ROOT) && \
 		./autogen.sh && \
-		./configure --disable-shared --prefix="$(LIBSODIUM_OS)" &&	\
+		./configure --disable-shared --prefix="$(LIBSODIUM_OS)" $(LIBSODIUM_HOST) &&	\
 		$(MAKE) && \
 		$(MAKE) install; \
 	fi

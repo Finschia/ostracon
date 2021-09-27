@@ -1,4 +1,3 @@
-// default: r2ishiguro
 // +build !libsodium,!coniks
 
 package vrf
