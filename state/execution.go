@@ -366,7 +366,6 @@ func execBlockOnProxyApp(
 	}
 	proxyAppConn.SetGlobalCallback(proxyCb)
 
-	startTime := time.Now()
 	commitInfo := getBeginBlockValidatorInfo(block, store, initialHeight, voterParams)
 
 	byzVals := make([]abci.Evidence, 0)
@@ -392,6 +391,7 @@ func execBlockOnProxyApp(
 		return nil, err
 	}
 
+	startTime := time.Now()
 	// run txs of block
 	for _, tx := range block.Txs {
 		proxyAppConn.DeliverTxAsync(abci.RequestDeliverTx{Tx: tx}, nil)
