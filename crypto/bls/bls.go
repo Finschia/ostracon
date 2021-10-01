@@ -217,7 +217,7 @@ func (pubKey PubKey) VRFVerify(proof crypto.Proof, seed []byte) (crypto.Output, 
 }
 
 func (pubKey PubKey) String() string {
-	return fmt.Sprintf("PubKey{%X}", pubKey[:])
+	return fmt.Sprintf("PubKeyBLS12{%X}", pubKey[:])
 }
 
 func (pubKey PubKey) Equals(other crypto.PubKey) bool {
