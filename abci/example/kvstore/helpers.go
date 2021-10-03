@@ -1,13 +1,33 @@
 package kvstore
 
 import (
+	"fmt"
+	"io/ioutil"
+
 	"github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/composite"
+	tmjson "github.com/line/ostracon/libs/json"
+	tmos "github.com/line/ostracon/libs/os"
 	tmrand "github.com/line/ostracon/libs/rand"
+	"github.com/line/ostracon/privval"
 )
 
-// Generates a default private key for use in an example or test.
+// LoadPrivValidatorKeyFile Load private key for use in an example or test.
+func LoadPrivValidatorKeyFile(keyFilePath string) (*privval.FilePVKey, error) {
+	if !tmos.FileExists(keyFilePath) {
+		return nil, fmt.Errorf("private validator file %s does not exist", keyFilePath)
+	}
+	keyJSONBytes, _ := ioutil.ReadFile(keyFilePath)
+	pvKey := privval.FilePVKey{}
+	err := tmjson.Unmarshal(keyJSONBytes, &pvKey)
+	if err != nil {
+		return nil, fmt.Errorf("error reading PrivValidator key from %v: %v", keyFilePath, err)
+	}
+	return &pvKey, nil
+}
+
+// GenDefaultPrivKey Generates a default private key for use in an example or test.
 func GenDefaultPrivKey() crypto.PrivKey {
 	return composite.GenPrivKey()
 }

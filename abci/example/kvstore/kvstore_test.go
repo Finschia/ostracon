@@ -6,6 +6,8 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/line/ostracon/libs/log"
@@ -182,6 +184,9 @@ func TestValUpdates(t *testing.T) {
 	vals2 = kvstore.Validators()
 	valsEqual(t, vals1, vals2)
 
+	for _, v := range vals2 {
+		existInPersistStore(t, kvstore, v)
+	}
 }
 
 func makeApplyBlock(
@@ -208,6 +213,27 @@ func makeApplyBlock(
 
 	valsEqual(t, diff, resEndBlock.ValidatorUpdates)
 
+}
+
+func existInPersistStore(t *testing.T, kvstore types.Application, v types.ValidatorUpdate) {
+	// success
+	pubkeyStr, _ := MakeValSetChangeTxAndMore(v.PubKey, v.Power)
+	resQuery := kvstore.Query(types.RequestQuery{Path: "/val", Data: []byte(pubkeyStr)})
+	assert.False(t, resQuery.IsErr(), resQuery)
+	assert.Regexp(t, "^key=.+, validatorUpdate.PubKey=.+, validatorUpdate.Power=.+$", resQuery.Log)
+	// failures
+	{
+		// default Query: does not exist
+		r := kvstore.Query(types.RequestQuery{Path: "/val_", Data: []byte(pubkeyStr)})
+		assert.False(t, r.IsErr(), r)
+		assert.Contains(t, r.Log, "does not exist")
+	}
+	{
+		// Query: does not exist
+		r := kvstore.Query(types.RequestQuery{Path: "/val", Data: []byte{}})
+		assert.False(t, r.IsErr(), r)
+		assert.Contains(t, r.Log, "cannot get")
+	}
 }
 
 // order doesn't matter

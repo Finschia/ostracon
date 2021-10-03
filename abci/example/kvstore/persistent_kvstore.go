@@ -113,6 +113,19 @@ func (app *PersistentKVStoreApplication) Query(reqQuery types.RequestQuery) (res
 
 		resQuery.Key = reqQuery.Data
 		resQuery.Value = value
+
+		if value == nil {
+			resQuery.Log = "cannot get"
+			return
+		}
+		validatorUpdate := types.ValidatorUpdate{}
+		err = types.ReadMessage(bytes.NewReader(resQuery.Value), &validatorUpdate)
+		if err != nil {
+			panic(err)
+		}
+		pubKey, _ := cryptoenc.PubKeyFromProto(&validatorUpdate.PubKey)
+		resQuery.Log = fmt.Sprintf("key=%s, validatorUpdate.PubKey=%v, validatorUpdate.Power=%d",
+			resQuery.Key, pubKey, validatorUpdate.Power)
 		return
 	default:
 		return app.app.Query(reqQuery)
@@ -206,12 +219,17 @@ func (app *PersistentKVStoreApplication) Validators() (validators []types.Valida
 }
 
 func MakeValSetChangeTx(pubkey pc.PublicKey, power int64) []byte {
+	_, tx := MakeValSetChangeTxAndMore(pubkey, power)
+	return []byte(tx)
+}
+
+func MakeValSetChangeTxAndMore(pubkey pc.PublicKey, power int64) (string, string) {
 	pkBytes, err := pubkey.Marshal()
 	if err != nil {
 		panic(err)
 	}
 	pubStr := base64.StdEncoding.EncodeToString(pkBytes)
-	return []byte(fmt.Sprintf("val:%s!%d", pubStr, power))
+	return pubStr, fmt.Sprintf("val:%s!%d", pubStr, power)
 }
 
 func isValidatorTx(tx []byte) bool {
@@ -219,7 +237,8 @@ func isValidatorTx(tx []byte) bool {
 }
 
 // format is "val:pubkey!power"
-// pubkey is a base64-encoded 32-byte ed25519 key
+// pubkey is a base64-encoded proto.ostracon.crypto.PublicKey bytes
+// See MakeValSetChangeTx
 func (app *PersistentKVStoreApplication) execValidatorTx(tx []byte) types.ResponseDeliverTx {
 	tx = tx[len(ValidatorSetChangePrefix):]
 
@@ -237,20 +256,20 @@ func (app *PersistentKVStoreApplication) execValidatorTx(tx []byte) types.Respon
 	if err != nil {
 		return types.ResponseDeliverTx{
 			Code: code.CodeTypeEncodingError,
-			Log:  fmt.Sprintf("Pubkey (%s) is invalid base64", pubkeyS)}
+			Log:  fmt.Sprintf("pubkeyS (%s) is invalid base64", pubkeyS)}
 	}
 	var pkProto pc.PublicKey
 	err = pkProto.Unmarshal(pkBytes)
 	if err != nil {
 		return types.ResponseDeliverTx{
 			Code: code.CodeTypeEncodingError,
-			Log:  fmt.Sprintf("Pubkey (%s) is invalid binary", pubkeyS)}
+			Log:  fmt.Sprintf("pkBytes (%x) is invalid binary", pkBytes)}
 	}
 	pubkey, err := cryptoenc.PubKeyFromProto(&pkProto)
 	if err != nil {
 		return types.ResponseDeliverTx{
 			Code: code.CodeTypeEncodingError,
-			Log:  fmt.Sprintf("Pubkey (%s) is invalid binary", pubkeyS)}
+			Log:  fmt.Sprintf("pkProto (%s) is invalid binary", pkProto)}
 	}
 
 	// decode the power
@@ -266,6 +285,7 @@ func (app *PersistentKVStoreApplication) execValidatorTx(tx []byte) types.Respon
 }
 
 // add, update, or remove a validator
+// See MakeValSetChangeTx
 func (app *PersistentKVStoreApplication) updateValidator(v types.ValidatorUpdate) types.ResponseDeliverTx {
 	pubkey, err := cryptoenc.PubKeyFromProto(&v.PubKey)
 	if err != nil {
@@ -273,7 +293,8 @@ func (app *PersistentKVStoreApplication) updateValidator(v types.ValidatorUpdate
 			Code: code.CodeTypeEncodingError,
 			Log:  fmt.Sprintf("Error encoding Public Key: %s", err)}
 	}
-	key := []byte("val:" + string(pubkey.Bytes()))
+	pubStr, _ := MakeValSetChangeTxAndMore(v.PubKey, v.Power)
+	key := []byte("val:" + pubStr)
 
 	if v.Power == 0 {
 		// remove validator
@@ -282,7 +303,6 @@ func (app *PersistentKVStoreApplication) updateValidator(v types.ValidatorUpdate
 			panic(err)
 		}
 		if !hasKey {
-			pubStr := base64.StdEncoding.EncodeToString(pubkey.Bytes())
 			return types.ResponseDeliverTx{
 				Code: code.CodeTypeUnauthorized,
 				Log:  fmt.Sprintf("Cannot remove non-existent validator %s", pubStr)}
