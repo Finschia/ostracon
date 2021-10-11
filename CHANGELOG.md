@@ -1,5 +1,36 @@
 # Changelog
 
+## v1.0.1
+
+*Sep 30, 2021*
+
+* Improved performances
+* Improved interfaces for abci/light client
+* Add max txs per block
+* Make documents for VRF/BLS
+* Fixed test environments
+
+### BREAKING CHANGES
+- Nothing
+
+### FEATURES
+- [performance] [\#287](https://github.com/line/ostracon/pull/287) perf: improve performance and modify some abci
+- [abci] [\#312](https://github.com/line/ostracon/pull/312) Add VotingPower to abci.Evidence
+- [light] [\#313](https://github.com/line/ostracon/pull/313) fix: modify verifying interface for integrating lfb
+- [mempool] [\#317](https://github.com/line/ostracon/pull/317) feat: added max txs per block to config.toml
+- [logging] [\#324](https://github.com/line/ostracon/pull/324) chore: added extra timing info regarding block generation
+- [docs] [\#294](https://github.com/line/ostracon/pull/294) doc: [ja] Add ostracon-specific VRF+BLS feature documents
+- [docs] [\#304](https://github.com/line/ostracon/pull/304) doc: [en] Add ostracon-specific VRF+BLS feature documents
+
+### BUG FIXES
+- [test] [\#290](https://github.com/line/ostracon/pull/290) Fix broken Github Actions environments of main branch
+- [test] [\#301](https://github.com/line/ostracon/pull/301) Enable maverick node for e2e test
+- [test] [\#297](https://github.com/line/ostracon/pull/297) Support for VRF implementation with libsodium
+- [test] [\#303](https://github.com/line/ostracon/pull/303) Update libsodium impl and add benchmark test
+- [test] [\#307](https://github.com/line/ostracon/pull/307) Remove t.Skip in testcases
+- [test] [\#315](https://github.com/line/ostracon/pull/315) Support arm64 and arm
+- [test] [\#319](https://github.com/line/ostracon/pull/319) Fix the test case that often fails
+
 ## v1.0.0
 
 *Jun 29, 2021*
