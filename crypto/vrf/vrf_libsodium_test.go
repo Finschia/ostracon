@@ -14,7 +14,7 @@ import (
 )
 
 func TestKeyPairCompatibilityLibsodium(t *testing.T) {
-	secret := [SEEDBYTES]byte{}
+	secret := [libsodium.SEEDBYTES]byte{}
 	publicKey, privateKey := libsodium.KeyPairFromSeed(&secret)
 
 	privateKey2 := ed25519.PrivateKey(make([]byte, 64))
@@ -28,7 +28,7 @@ func TestKeyPairCompatibilityLibsodium(t *testing.T) {
 }
 
 func TestProveAndVerify_LibsodiumByCryptoED25519(t *testing.T) {
-	secret := [SEEDBYTES]byte{}
+	secret := [libsodium.SEEDBYTES]byte{}
 	privateKey := ed25519.NewKeyFromSeed(secret[:])
 	publicKey := privateKey.Public().(ed25519.PublicKey)
 
@@ -41,7 +41,7 @@ func TestProveAndVerify_LibsodiumByCryptoED25519(t *testing.T) {
 }
 
 func TestProveAndVerify_LibsodiumByConiksED25519(t *testing.T) {
-	secret := [SEEDBYTES]byte{}
+	secret := [libsodium.SEEDBYTES]byte{}
 	privateKey, _ := coniks.GenerateKey(bytes.NewReader(secret[:]))
 	publicKey, _ := privateKey.Public()
 
@@ -55,7 +55,7 @@ func TestProveAndVerify_LibsodiumByConiksED25519(t *testing.T) {
 }
 
 func TestProveAndVerify_LibsodiumByLibsodiumED25519(t *testing.T) {
-	secret := [SEEDBYTES]byte{}
+	secret := [libsodium.SEEDBYTES]byte{}
 	publicKey, privateKey := libsodium.KeyPairFromSeed(&secret)
 
 	verified, err := proveAndVerify(t, privateKey[:], publicKey[:])
@@ -67,7 +67,7 @@ func TestProveAndVerify_LibsodiumByLibsodiumED25519(t *testing.T) {
 }
 
 func TestProveAndVerifyCompatibilityLibsodium(t *testing.T) {
-	secret := [SEEDBYTES]byte{}
+	secret := [libsodium.SEEDBYTES]byte{}
 	message := []byte("hello, world")
 	privateKey := ed25519.NewKeyFromSeed(secret[:])
 	publicKey := privateKey.Public().(ed25519.PublicKey)

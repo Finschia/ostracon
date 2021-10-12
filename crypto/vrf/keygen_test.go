@@ -32,7 +32,9 @@ func keyGen_coniks_ed25519(secret [SEEDBYTES]byte) (ed25519.PrivateKey, ed25519.
 }
 
 func keyGen_libsodium_ed25519(secret [SEEDBYTES]byte) (ed25519.PrivateKey, ed25519.PublicKey) {
-	pubKey, privKey := libsodium.KeyPairFromSeed(&secret)
+	var seed [libsodium.SEEDBYTES]byte
+	copy(seed[:], secret[:])
+	pubKey, privKey := libsodium.KeyPairFromSeed(&seed)
 	privateKey := make([]byte, libsodium.SECRETKEYBYTES)
 	copy(privateKey, privKey[:])
 	publicKey := make([]byte, libsodium.PUBLICKEYBYTES)
