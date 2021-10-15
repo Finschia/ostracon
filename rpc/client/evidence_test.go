@@ -115,6 +115,7 @@ func makeEvidences(
 }
 
 func TestBroadcastEvidence_DuplicateVoteEvidence(t *testing.T) {
+	time.Sleep(100 * time.Millisecond)
 	var (
 		config  = rpctest.GetConfig()
 		chainID = config.ChainID()
