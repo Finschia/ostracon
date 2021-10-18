@@ -22,6 +22,7 @@ coverage.txt
 docs/_build
 docs/dist
 docs/.vuepress/dist
+docs/package-lock.json   # To avoid security notifications. If the time comes to use VuePress, activate this.
 *.log
 docs/node_modules/
 index.html.md
