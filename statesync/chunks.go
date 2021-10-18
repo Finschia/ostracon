@@ -42,7 +42,7 @@ type chunkQueue struct {
 // newChunkQueue creates a new chunk queue for a snapshot, using a temp dir for storage.
 // Callers must call Close() when done.
 func newChunkQueue(snapshot *snapshot, tempDir string) (*chunkQueue, error) {
-	dir, err := ioutil.TempDir(tempDir, "tm-statesync")
+	dir, err := ioutil.TempDir(tempDir, "oc-statesync")
 	if err != nil {
 		return nil, fmt.Errorf("unable to create temp dir for state sync chunks: %w", err)
 	}
