@@ -115,6 +115,10 @@ func makeEvidences(
 }
 
 func TestBroadcastEvidence_DuplicateVoteEvidence(t *testing.T) {
+	// https://github.com/tendermint/tendermint/pull/6678
+	// previous versions of this test used a shared fixture with
+	// other tests, and in this version we give it a little time
+	// for the node to make progress before running the test
 	time.Sleep(100 * time.Millisecond)
 	var (
 		config  = rpctest.GetConfig()
