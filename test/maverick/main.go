@@ -125,7 +125,11 @@ func main() {
 			"e.g. --misbehaviors double-prevote,3\n"+
 			"You can also have multiple misbehaviors: e.g. double-prevote,3,no-vote,5")
 
-	cmd := cli.PrepareBaseCmd(rootCmd, "OC", os.ExpandEnv(filepath.Join("$HOME", cfg.DefaultOstraconDir)))
+	userHome, err := os.UserHomeDir()
+	if err != nil {
+		panic(err)
+	}
+	cmd := cli.PrepareBaseCmd(rootCmd, "OC", filepath.Join(userHome, cfg.DefaultOstraconDir))
 	if err := cmd.Execute(); err != nil {
 		panic(err)
 	}

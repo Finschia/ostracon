@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"path/filepath"
 
 	"github.com/line/ostracon/abci/example/kvstore"
 	"github.com/line/ostracon/config"
@@ -13,7 +14,11 @@ import (
 
 func main() {
 	c := config.DefaultConfig()
-	c.SetRoot(os.Getenv("HOME") + "/" + config.DefaultOstraconDir)
+	userHome, err := os.UserHomeDir()
+	if err != nil {
+		panic(err)
+	}
+	c.SetRoot(filepath.Join(userHome, config.DefaultOstraconDir))
 	keyFilePath := c.PrivValidatorKeyFile()
 	var flagKeyFilePath = flag.String("priv-key", keyFilePath, "priv val key file path")
 	var flagStakingPower = flag.Int64("staking", 10, "staking power for priv valedator")

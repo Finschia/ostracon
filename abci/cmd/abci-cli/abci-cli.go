@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/line/ostracon/config"
@@ -713,7 +714,11 @@ func cmdKVStore(cmd *cobra.Command, args []string) error {
 
 func cmdPersistKVStoreMakeValSetChangeTx(cmd *cobra.Command, args []string) error {
 	c := config.DefaultConfig()
-	c.SetRoot(os.Getenv("HOME") + "/" + config.DefaultOstraconDir)
+	userHome, err := os.UserHomeDir()
+	if err != nil {
+		panic(err)
+	}
+	c.SetRoot(filepath.Join(userHome, config.DefaultOstraconDir))
 	keyFilePath := c.PrivValidatorKeyFile()
 	if !tmos.FileExists(keyFilePath) {
 		return fmt.Errorf("private validator file %s does not exist", keyFilePath)
