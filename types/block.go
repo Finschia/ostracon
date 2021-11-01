@@ -888,7 +888,11 @@ func CommitToVoteSet(chainID string, commit *Commit, voters *VoterSet) *VoteSet 
 				panic(fmt.Sprintf("Cannot find voter %d in voterSet of size %d", vote.ValidatorIndex, voters.Size()))
 			}
 			msg := VoteSignBytes(chainID, vote.ToProto())
-			blsPubKeys = append(blsPubKeys, voter.PubKey.(composite.PubKey).SignKey.(bls.PubKey))
+			blsPubKey := GetSignatureKey(voter.PubKey)
+			if blsPubKey == nil {
+				panic(fmt.Errorf("signature %d has been omitted, even though it is not a BLS key", idx))
+			}
+			blsPubKeys = append(blsPubKeys, *blsPubKey)
 			msgs = append(msgs, msg)
 		}
 	}

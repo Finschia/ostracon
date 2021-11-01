@@ -2,12 +2,16 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
+
+	"github.com/line/ostracon/config"
 
 	"github.com/spf13/cobra"
 
@@ -22,6 +26,7 @@ import (
 	servertest "github.com/line/ostracon/abci/tests/server"
 	"github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/abci/version"
+	"github.com/line/ostracon/crypto/encoding"
 	"github.com/line/ostracon/proto/ostracon/crypto"
 )
 
@@ -49,6 +54,9 @@ var (
 
 	// kvstore
 	flagPersist string
+
+	// staking power for make validator_tx
+	flagStakingPower int64
 )
 
 var RootCmd = &cobra.Command{
@@ -136,11 +144,18 @@ func addQueryFlags() {
 }
 
 func addCounterFlags() {
-	counterCmd.PersistentFlags().BoolVarP(&flagSerial, "serial", "", false, "enforce incrementing (serial) transactions")
+	counterCmd.PersistentFlags().BoolVarP(&flagSerial, "serial", "", false,
+		"enforce incrementing (serial) transactions")
 }
 
 func addKVStoreFlags() {
-	kvstoreCmd.PersistentFlags().StringVarP(&flagPersist, "persist", "", "", "directory to use for a database")
+	kvstoreCmd.PersistentFlags().StringVarP(&flagPersist, "persist", "", "",
+		"directory to use for a database")
+}
+
+func addPersistKVStoreMakeValSetChangeTxFlags() {
+	kvstoreCmd.PersistentFlags().Int64VarP(&flagStakingPower, "staking_power", "p", int64(10),
+		"stakin power for ValSetChangeTx")
 }
 
 func addCommands() {
@@ -162,6 +177,10 @@ func addCommands() {
 	RootCmd.AddCommand(counterCmd)
 	addKVStoreFlags()
 	RootCmd.AddCommand(kvstoreCmd)
+
+	// for examples of persist_kvstore
+	addPersistKVStoreMakeValSetChangeTxFlags()
+	RootCmd.AddCommand(persistKvstoreMakeValSetChangeTxCmd)
 }
 
 var batchCmd = &cobra.Command{
@@ -269,18 +288,26 @@ var queryCmd = &cobra.Command{
 
 var counterCmd = &cobra.Command{
 	Use:   "counter",
-	Short: "ABCI demo example",
-	Long:  "ABCI demo example",
+	Short: "ABCI demo example - counter",
+	Long:  "ABCI demo example - counter",
 	Args:  cobra.ExactArgs(0),
 	RunE:  cmdCounter,
 }
 
 var kvstoreCmd = &cobra.Command{
 	Use:   "kvstore",
-	Short: "ABCI demo example",
-	Long:  "ABCI demo example",
+	Short: "ABCI demo example - kvstore",
+	Long:  "ABCI demo example - kvstore",
 	Args:  cobra.ExactArgs(0),
 	RunE:  cmdKVStore,
+}
+
+var persistKvstoreMakeValSetChangeTxCmd = &cobra.Command{
+	Use:   "valset_change_tx",
+	Short: "persist_kvstore - make ValSetChangeTx",
+	Long:  "persist_kvstore - make ValSetChangeTx",
+	Args:  cobra.ExactArgs(0),
+	RunE:  cmdPersistKVStoreMakeValSetChangeTx,
 }
 
 var testCmd = &cobra.Command{
@@ -685,6 +712,61 @@ func cmdKVStore(cmd *cobra.Command, args []string) error {
 	select {}
 }
 
+func cmdPersistKVStoreMakeValSetChangeTx(cmd *cobra.Command, args []string) error {
+	c := config.DefaultConfig()
+	userHome, err := os.UserHomeDir()
+	if err != nil {
+		panic(err)
+	}
+	c.SetRoot(filepath.Join(userHome, config.DefaultOstraconDir))
+	keyFilePath := c.PrivValidatorKeyFile()
+	if !tmos.FileExists(keyFilePath) {
+		return fmt.Errorf("private validator file %s does not exist", keyFilePath)
+	}
+	keyFile, err := kvstore.LoadPrivValidatorKeyFile(keyFilePath)
+	if err != nil {
+		panic(err)
+	}
+	publicKey, err := encoding.PubKeyToProto(keyFile.PubKey)
+	if err != nil {
+		panic(err)
+	}
+	pubStr, tx := kvstore.MakeValSetChangeTxAndMore(publicKey, flagStakingPower)
+	{
+		fmt.Printf("DeliverTxSync: data=%s, tx=%s\n", pubStr, tx)
+		res, err := client.DeliverTxSync(types.RequestDeliverTx{Tx: []byte(tx)})
+		if err != nil {
+			return err
+		}
+		printResponse(cmd, args, response{
+			Code: res.Code,
+			Data: res.Data,
+			Info: res.Info,
+			Log:  res.Log,
+		})
+	}
+	{
+		fmt.Printf("QuerySync: data=%s\n", pubStr)
+		res, err := client.QuerySync(types.RequestQuery{Path: "/val", Data: []byte(pubStr)})
+		if err != nil {
+			return err
+		}
+		printResponse(cmd, args, response{
+			Code: res.Code,
+			Info: res.Info,
+			Log:  res.Log,
+		})
+		fmt.Printf("original:publicKey:%s\n", publicKey)
+		validatorUpdate := types.ValidatorUpdate{}
+		err = types.ReadMessage(bytes.NewReader(res.Value), &validatorUpdate)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("saved   :publicKey:%s\n", validatorUpdate.PubKey)
+	}
+	return nil
+}
+
 //--------------------------------------------------------------------------------
 
 func printResponse(cmd *cobra.Command, args []string, rsp response) {
@@ -702,7 +784,7 @@ func printResponse(cmd *cobra.Command, args []string, rsp response) {
 	}
 
 	if len(rsp.Data) != 0 {
-		// Do no print this line when using the commit command
+		// Do not print this line when using the commit command
 		// because the string comes out as gibberish
 		if cmd.Use != "commit" {
 			fmt.Printf("-> data: %s\n", rsp.Data)
