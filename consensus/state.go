@@ -2280,7 +2280,7 @@ func (cs *State) signVote(
 	}
 
 	addr := cs.privValidatorPubKey.Address()
-	valIdx, _ := cs.Validators.GetByAddress(addr)
+	valIdx, _ := cs.Voters.GetByAddress(addr)
 
 	vote := &types.Vote{
 		ValidatorAddress: addr,
