@@ -17,7 +17,7 @@
 - [abci] [\#335](https://github.com/line/ostracon/pull/335) Improve composite key Bytes/FromBytes and make tools
 
 ### BUG FIXES
-- [Security] [\#336](https://github.com/line/ostracon/pull/336) Remove unused package-lock.json
+- [security] [\#336](https://github.com/line/ostracon/pull/336) Remove unused package-lock.json
 - [refactor] [\#338](https://github.com/line/ostracon/pull/338) bugfix: wrong binary name
 - [consensus] [\#340](https://github.com/line/ostracon/pull/340) Modify omission of change to change ValidatorSet to VoterSet
 
