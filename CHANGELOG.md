@@ -1,5 +1,26 @@
 # Changelog
 
+## v1.0.2
+
+*Nov 08, 2021*
+
+* Added the function to add a validator
+* Corrected the validatorIndex at prevote step to use the index number of VoterSet instead of ValidatorSet
+* Add libsodium test on Github Actions
+
+### BREAKING CHANGES
+- Nothing
+
+### FEATURES
+- [test] [\#327](https://github.com/line/ostracon/pull/327) Add libsodium test on Github Actions
+- [bot] [\#337](https://github.com/line/ostracon/pull/337) Improve dependabot
+- [bot] [\#335](https://github.com/line/ostracon/pull/335) Improve composite key Bytes/FromBytes and make tools
+
+### BUG FIXES
+- [Security] [\#336](https://github.com/line/ostracon/pull/336) Remove unused package-lock.json
+- [refactor] [\#338](https://github.com/line/ostracon/pull/338) bugfix: wrong binary name
+- [consensus] [\#340](https://github.com/line/ostracon/pull/340) Modify omission of change to change ValidatorSet to VoterSet
+
 ## v1.0.1
 
 *Sep 30, 2021*
