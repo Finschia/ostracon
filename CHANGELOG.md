@@ -14,7 +14,7 @@
 ### FEATURES
 - [test] [\#327](https://github.com/line/ostracon/pull/327) Add libsodium test on Github Actions
 - [bot] [\#337](https://github.com/line/ostracon/pull/337) Improve dependabot
-- [bot] [\#335](https://github.com/line/ostracon/pull/335) Improve composite key Bytes/FromBytes and make tools
+- [abci] [\#335](https://github.com/line/ostracon/pull/335) Improve composite key Bytes/FromBytes and make tools
 
 ### BUG FIXES
 - [Security] [\#336](https://github.com/line/ostracon/pull/336) Remove unused package-lock.json
