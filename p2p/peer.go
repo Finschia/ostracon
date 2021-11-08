@@ -404,13 +404,14 @@ func createMConnection(
 				ChID: chID,
 				Peer: p,
 				Msg:  copied}:
-			default:
-				// if the channel is full, we abandon this message
-				// Should check `config.Config.XxxBufSize`
-				p.Logger.Error("Lost the message since BaseReactor.recvMsgBuf is full",
-					"reactor", reactor,
-					"msgBytes.len", len(msgBytes), "msgBytes", fmt.Sprintf("%X", msgBytes))
-				p.metrics.NumAbandonedPeerMsgs.With(labels...).Add(1)
+			// Remove `default` case since shouldn't abandon message although blocking sending message into golang channel
+			//default:
+			//	// if the channel is full, we abandon this message
+			//	// Should check `config.Config.XxxBufSize`
+			//	p.Logger.Error("Lost the message since BaseReactor.recvMsgBuf is full",
+			//		"reactor", reactor,
+			//		"msgBytes.len", len(msgBytes), "msgBytes", fmt.Sprintf("%X", msgBytes))
+			//	p.metrics.NumAbandonedPeerMsgs.With(labels...).Add(1)
 			}
 		} else {
 			reactor.Receive(chID, p, msgBytes)
