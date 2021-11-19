@@ -338,8 +338,8 @@ cd test/e2e && \
 
 ### Maverick
 
-**If you're changing the code in `consensus` package, please make sure to
-replicate all the changes in `./test/maverick/consensus`**. Maverick is a
+**If you're changing the code in `consensus` package or `node` package, please make sure to
+replicate all the changes in `./test/maverick/consensus`** and `./test/maverick/node`**. Maverick is a
 byzantine node used to assert that the validator gets punished for malicious
 behavior.
 
