@@ -8,7 +8,7 @@ builds:
   - id: "Ostracon"
     main: ./cmd/ostracon/main.go
     ldflags:
-      - -s -w -X github.com/line/ostracon/version.Version={{ .Version }}
+      - -s -w -X github.com/line/ostracon/version.OCCoreSemVer={{ .Version }}
     env:
       - CGO_ENABLED=0
     goos:

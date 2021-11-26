@@ -4,24 +4,9 @@ var (
 	// OCCoreSemVer is the current version of Ostracon Core.
 	// It's the Semantic Version of the software.
 	OCCoreSemVer string
-
-	// GitCommit is the current HEAD set using ldflags.
-	GitCommit string
-
-	// Version is the built softwares version.
-	Version = OCCoreSemVer + "-" + LINECoreSemVer
 )
 
-func init() {
-	if GitCommit != "" {
-		Version += "-" + GitCommit
-	}
-}
-
 const (
-	// LINECoreSemVer is the current version of LINE Ostracon Core.
-	LINECoreSemVer = "0.3"
-
 	// ABCISemVer is the semantic version of the ABCI library
 	ABCISemVer = "0.17.0"
 

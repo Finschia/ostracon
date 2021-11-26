@@ -41,7 +41,7 @@ for arch in "${arch_list[@]}"; do
 	for os in "${os_list[@]}"; do
 		if [[ "$XC_EXCLUDE" !=  *" $os/$arch "* ]]; then
 			echo "--> $os/$arch"
-			GOOS=${os} GOARCH=${arch} go build -ldflags "-s -w -X ${GIT_IMPORT}.Version=${VERSION}" -tags="${BUILD_TAGS}" -o "build/pkg/${os}_${arch}/ostracon" ./cmd/ostracon
+			GOOS=${os} GOARCH=${arch} go build -ldflags "-s -w -X ${GIT_IMPORT}.OCCoreSemVer=${VERSION}" -tags="${BUILD_TAGS}" -o "build/pkg/${os}_${arch}/ostracon" ./cmd/ostracon
 		fi
 	done
 done
