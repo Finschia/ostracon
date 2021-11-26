@@ -4,13 +4,9 @@ set -e
 # WARN: non hermetic build (people must run this script inside docker to
 # produce deterministic binaries).
 
-# Get the version from the environment, or try to figure it out.
-if [ -z $VERSION ]; then
-	VERSION=$(awk -F\" '/Version =/ { print $2; exit }' < version/version.go)
-fi
 if [ -z "$VERSION" ]; then
-    echo "Please specify a version."
-    exit 1
+	echo "Please specify a version."
+	exit 1
 fi
 echo "==> Building version $VERSION..."
 
@@ -19,8 +15,6 @@ echo "==> Removing old directory..."
 rm -rf build/pkg
 mkdir -p build/pkg
 
-# Get the git commit
-VERSION := "$(git describe --always)"
 GIT_IMPORT="github.com/line/ostracon/version"
 
 # Determine the arch/os combos we're building for
@@ -61,7 +55,7 @@ done
 rm -rf ./build/dist
 mkdir -p ./build/dist
 for FILENAME in $(find ./build/pkg -mindepth 1 -maxdepth 1 -type f); do
-  FILENAME=$(basename "$FILENAME")
+	FILENAME=$(basename "$FILENAME")
 	cp "./build/pkg/${FILENAME}" "./build/dist/ostracon_${VERSION}_${FILENAME}"
 done
 
