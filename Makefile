@@ -12,7 +12,7 @@ else
   BUILD_TAGS += r2ishiguro
   LIBSODIUM_TARGET =
 endif
-LD_FLAGS = -X github.com/line/ostracon/version.Version=$(VERSION)
+LD_FLAGS = -X github.com/line/ostracon/version.OCCoreSemVer=$(VERSION)
 BUILD_FLAGS = -mod=readonly -ldflags "$(LD_FLAGS)"
 HTTPS_GIT := https://github.com/line/ostracon.git
 DOCKER_BUF := docker run -v $(shell pwd):/workspace --workdir /workspace bufbuild/buf

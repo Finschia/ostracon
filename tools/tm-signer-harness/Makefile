@@ -3,7 +3,7 @@
 OSTRACON_VERSION?=latest
 BUILD_TAGS?='ostracon'
 VERSION := $(shell git describe --always)
-BUILD_FLAGS = -ldflags "-X github.com/line/ostracon/version.Version=$(VERSION)
+BUILD_FLAGS = -ldflags "-X github.com/line/ostracon/version.OCCoreSemVer=$(VERSION)"
 
 .DEFAULT_GOAL := build
 
