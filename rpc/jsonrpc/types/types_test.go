@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -80,4 +81,44 @@ func TestRPCError(t *testing.T) {
 			Code:    12,
 			Message: "Badness",
 		}))
+}
+
+func TestRPCRequestUnmarshalJSON(t *testing.T) {
+	tcs := []struct {
+		assert   bool
+		expected RPCRequest
+	}{
+		{
+			assert:   true,
+			expected: RPCRequest{ID: JSONRPCIntID(1), Method: "id int", Params: json.RawMessage(`{"p1":"v1"}`)},
+		}, {
+			assert:   true,
+			expected: RPCRequest{ID: JSONRPCStringID("s"), Method: "id string", Params: json.RawMessage(`{"p1":"v1"}`)},
+		}, {
+			assert:   true,
+			expected: RPCRequest{ID: JSONRPCStringID(""), Method: "id empty", Params: json.RawMessage(`{"p1":"v1"}`)},
+		}, {
+			// can't treat nil as jsonrpcid
+			assert:   false,
+			expected: RPCRequest{ID: nil, Method: "id nil", Params: json.RawMessage(`{"p1":"v1"}`)},
+		}, {
+			assert:   true,
+			expected: RPCRequest{ID: JSONRPCIntID(1), Method: "params null", Params: json.RawMessage(`null`)},
+		}, {
+			// can't treat nil as json.RawMessage: the value of `nil` become "null" string
+			assert:   false,
+			expected: RPCRequest{ID: JSONRPCIntID(1), Method: "params nil", Params: nil},
+		},
+	}
+	for _, tc := range tcs {
+		data, _ := json.Marshal(tc.expected)
+		actual := RPCRequest{}
+		json.Unmarshal(data, &actual) // nolint: errcheck
+		assert.Equal(t, reflect.DeepEqual(tc.expected, actual), tc.assert,
+			"expected:", tc.expected, "actual:", actual)
+		actual2 := RPCRequest{}
+		actual2.UnmarshalJSON(data) // nolint: errcheck
+		assert.Equal(t, reflect.DeepEqual(tc.expected, actual2), tc.assert,
+			"expected:", tc.expected, "actual2:", actual2)
+	}
 }
