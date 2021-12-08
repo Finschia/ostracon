@@ -8,6 +8,8 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -181,4 +183,98 @@ func TestWriteRPCResponseHTTPError(t *testing.T) {
     "data": "foo"
   }
 }`, string(body))
+}
+func TestWriteRPCResponseHTTP_MarshalIndent_error(t *testing.T) {
+	w := NewFailedWriteResponseWriter()
+	result, _ := TestRawMSG.MarshalJSON()
+	// json.MarshalIndent error
+	err := WriteRPCResponseHTTP(w,
+		types.RPCResponse{Result: result[1:]}) // slice json for error
+	require.Error(t, err)
+	assert.NotEqual(t, w.error, err)
+}
+
+func TestWriteRPCResponseHTTP_Write_error(t *testing.T) {
+	w := NewFailedWriteResponseWriter()
+	result, _ := TestRawMSG.MarshalJSON()
+	// w.Write error
+	err := WriteRPCResponseHTTP(w,
+		types.NewRPCSuccessResponse(TestJSONIntID, result))
+	require.Error(t, err)
+	assert.Equal(t, w.error, err)
+}
+
+func TestWriteRPCResponseHTTPError_MarshallIndent_error(t *testing.T) {
+	w := NewFailedWriteResponseWriter()
+	// json.MarshalIndent error
+	result, _ := TestRawMSG.MarshalJSON()
+	err := WriteRPCResponseHTTPError(w, http.StatusInternalServerError,
+		types.RPCResponse{Result: result[1:], Error: TestRPCError}) // slice json for error
+	require.Error(t, err)
+	assert.NotEqual(t, w.error, err)
+}
+
+func TestWriteRPCResponseHTTPError_Write_error(t *testing.T) {
+	w := NewFailedWriteResponseWriter()
+	// w.Write error
+	err := WriteRPCResponseHTTPError(w, http.StatusInternalServerError,
+		types.RPCInternalError(TestJSONIntID, ErrFoo))
+	require.Error(t, err)
+	assert.Equal(t, w.error, err)
+}
+
+func TestWriteRPCResponseHTTPError_rerErrorIsNil_panic(t *testing.T) {
+	w := NewFailedWriteResponseWriter()
+	// panic: res.Error == nil
+	defer func() {
+		e := recover()
+		assert.True(t, e != nil)
+	}()
+	result, _ := TestRawMSG.MarshalJSON()
+	WriteRPCResponseHTTPError(w, http.StatusInternalServerError, types.RPCResponse{Result: result}) // nolint: errcheck
+}
+
+func TestRecoverAndLogHandler_RPCResponseOK_WriteRPCResponseHTTPError_error(t *testing.T) {
+	// RPCResponse == ok and WriteRPCResponseHTTPError is error
+	handlerFunc := makeJSONRPCHandler(TestFuncMap, log.TestingLogger())
+	handler := RecoverAndLogHandler(handlerFunc, log.TestingLogger())
+	assert.NotNil(t, handler)
+	req, _ := http.NewRequest("GET", "http://localhost/", strings.NewReader(TestGoodBody))
+	// throwing and encounter
+	rec := NewFailedWriteResponseWriter()
+	rec.fm.throwPanic = true
+	rec.fm.failedCounter = 1
+	handler.ServeHTTP(rec, req)
+	assert.Equal(t,
+		strconv.Itoa(http.StatusOK),
+		rec.Header().Get(http.StatusText(http.StatusOK)))
+}
+
+func TestRecoverAndLogHandler_RPCResponseNG_WriteRPCResponseHTTPError_error(t *testing.T) {
+	// RPCResponse != ok and WriteRPCResponseHTTPError is error
+	handler := RecoverAndLogHandler(nil, log.TestingLogger())
+	assert.NotNil(t, handler)
+	req, _ := http.NewRequest("GET", "http://localhost/", strings.NewReader(TestGoodBody))
+	// encounter
+	rec := NewFailedWriteResponseWriter()
+	handler.ServeHTTP(rec, req)
+	assert.Equal(t,
+		strconv.Itoa(http.StatusInternalServerError),
+		rec.Header().Get(http.StatusText(http.StatusInternalServerError)))
+}
+
+func TestRecoverAndLogHandler_RPCResponseNG_WriteRPCResponseHTTPError_error_panic(t *testing.T) {
+	// RPCResponse != ok and WriteRPCResponseHTTPError is error and logger.Error is panic on 2nd times
+	// encounter
+	logger := NewFailedLogger()
+	logger.fm.failedCounter = 1
+	handler := RecoverAndLogHandler(nil, &logger)
+	assert.NotNil(t, handler)
+	req, _ := http.NewRequest("GET", "http://localhost/", strings.NewReader(TestGoodBody))
+	// encounter
+	rec := NewFailedWriteResponseWriter()
+	handler.ServeHTTP(rec, req)
+	assert.Equal(t,
+		strconv.Itoa(http.StatusInternalServerError),
+		rec.Header().Get(http.StatusText(http.StatusInternalServerError)))
 }
