@@ -160,6 +160,29 @@ func (_m *Client) BlockResults(ctx context.Context, height *int64) (*coretypes.R
 	return r0, r1
 }
 
+// BlockSearch provides a mock function with given fields: ctx, query, page, perPage, orderBy
+func (_m *Client) BlockSearch(ctx context.Context, query string, page *int, perPage *int, orderBy string) (*coretypes.ResultBlockSearch, error) {
+	ret := _m.Called(ctx, query, page, perPage, orderBy)
+
+	var r0 *coretypes.ResultBlockSearch
+	if rf, ok := ret.Get(0).(func(context.Context, string, *int, *int, string) *coretypes.ResultBlockSearch); ok {
+		r0 = rf(ctx, query, page, perPage, orderBy)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*coretypes.ResultBlockSearch)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *int, *int, string) error); ok {
+		r1 = rf(ctx, query, page, perPage, orderBy)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // BlockchainInfo provides a mock function with given fields: ctx, minHeight, maxHeight
 func (_m *Client) BlockchainInfo(ctx context.Context, minHeight int64, maxHeight int64) (*coretypes.ResultBlockchainInfo, error) {
 	ret := _m.Called(ctx, minHeight, maxHeight)

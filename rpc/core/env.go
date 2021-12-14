@@ -12,6 +12,7 @@ import (
 	"github.com/line/ostracon/p2p"
 	"github.com/line/ostracon/proxy"
 	sm "github.com/line/ostracon/state"
+	"github.com/line/ostracon/state/indexer"
 	"github.com/line/ostracon/state/txindex"
 	"github.com/line/ostracon/types"
 )
@@ -85,6 +86,7 @@ type Environment struct {
 	PubKey           crypto.PubKey
 	GenDoc           *types.GenesisDoc // cache the genesis structure
 	TxIndexer        txindex.TxIndexer
+	BlockIndexer     indexer.BlockIndexer
 	ConsensusReactor *consensus.Reactor
 	EventBus         *types.EventBus // thread safe
 	Mempool          mempl.Mempool

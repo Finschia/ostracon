@@ -5,11 +5,12 @@ import (
 	"time"
 
 	"github.com/line/tm-db/v2/memdb"
-	"github.com/stretchr/testify/assert"
+	"github.com/line/tm-db/v2/prefixdb"
 	"github.com/stretchr/testify/require"
 
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/log"
+	blockidxkv "github.com/line/ostracon/state/indexer/block/kv"
 	"github.com/line/ostracon/state/txindex"
 	"github.com/line/ostracon/state/txindex/kv"
 	"github.com/line/ostracon/types"
@@ -30,8 +31,9 @@ func TestIndexerServiceIndexesBlocks(t *testing.T) {
 	// tx indexer
 	store := memdb.NewDB()
 	txIndexer := kv.NewTxIndex(store)
+	blockIndexer := blockidxkv.New(prefixdb.NewDB(store, []byte("block_events")))
 
-	service := txindex.NewIndexerService(txIndexer, eventBus)
+	service := txindex.NewIndexerService(txIndexer, blockIndexer, eventBus)
 	service.SetLogger(log.TestingLogger())
 	err = service.Start()
 	require.NoError(t, err)
@@ -66,11 +68,15 @@ func TestIndexerServiceIndexesBlocks(t *testing.T) {
 
 	time.Sleep(100 * time.Millisecond)
 
-	// check the result
 	res, err := txIndexer.Get(types.Tx("foo").Hash())
-	assert.NoError(t, err)
-	assert.Equal(t, txResult1, res)
+	require.NoError(t, err)
+	require.Equal(t, txResult1, res)
+
+	ok, err := blockIndexer.Has(1)
+	require.NoError(t, err)
+	require.True(t, ok)
+
 	res, err = txIndexer.Get(types.Tx("bar").Hash())
-	assert.NoError(t, err)
-	assert.Equal(t, txResult2, res)
+	require.NoError(t, err)
+	require.Equal(t, txResult2, res)
 }
