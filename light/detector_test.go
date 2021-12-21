@@ -197,6 +197,8 @@ func TestLightClientAttackEvidence_Equivocation(t *testing.T) {
 }
 
 func TestLightClientAttackEvidence_ForwardLunatic(t *testing.T) {
+	t.Skip("Voter selection in Ostracon only supports sequential verification mode, " +
+		"but Ostracon has a few test case for skipping mode.")
 	// primary performs a lunatic attack but changes the time of the header to
 	// something in the future relative to the blockchain
 	var (
