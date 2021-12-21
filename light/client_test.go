@@ -81,8 +81,7 @@ var (
 		valSet,
 		voterSet,
 	)
-	deadNode      = mockp.NewDeadMock(chainID)
-	largeFullNode = mockp.New(genMockNode(chainID, 10, 3, 0, bTime))
+	deadNode = mockp.NewDeadMock(chainID)
 )
 
 func TestValidateTrustOptions(t *testing.T) {
@@ -923,6 +922,7 @@ func TestClientReplacesPrimaryWithWitnessIfPrimaryIsUnavailable(t *testing.T) {
 }
 
 func TestClient_BackwardsVerification(t *testing.T) {
+	largeFullNode := mockp.New(genMockNode(chainID, 10, 3, 0, bTime))
 	{
 		trustHeader, _ := largeFullNode.LightBlock(ctx, 6)
 		c, err := light.NewClient(
