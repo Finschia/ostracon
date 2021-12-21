@@ -57,8 +57,10 @@ func (lb LightBlock) StringIndented(indent string) string {
 	return fmt.Sprintf(`LightBlock{
 %s  %v
 %s  %v
+%s  %v
 %s}`,
 		indent, lb.SignedHeader.StringIndented(indent+"  "),
+		indent, lb.ValidatorSet.StringIndented(indent+"  "),
 		indent, lb.VoterSet.StringIndented(indent+"  "),
 		indent)
 }
