@@ -17,8 +17,6 @@ import (
 )
 
 func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
-	t.Skip("Voter selection in Ostracon only supports sequential verification mode, " +
-		"but Ostracon has a few test case for skipping mode.")
 	// primary performs a lunatic attack
 	var (
 		latestHeight      = int64(10)
@@ -32,25 +30,35 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 	witnessHeaders, witnessValidators, witnessVoters, chainKeys :=
 		genMockNodeWithKeys(chainID, latestHeight, valSize, 2, bTime)
 	witness := mockp.New(chainID, witnessHeaders, witnessValidators, witnessVoters)
-	forgedKeys := chainKeys[divergenceHeight-1].ChangeKeys(3) // we change 3 out of the 5 validators (still 2/5 remain)
-	forgedVals := forgedKeys.ToValidators(2, 0)
 
-	for height := int64(1); height <= latestHeight; height++ {
-		if height < divergenceHeight {
-			primaryHeaders[height] = witnessHeaders[height]
-			primaryValidators[height] = witnessValidators[height]
-			primaryVoters[height] = witnessVoters[height]
-			continue
-		}
-		primaryHeaders[height] = forgedKeys.GenSignedHeader(chainID, height, bTime.Add(time.Duration(height)*time.Minute),
-			nil, forgedVals, forgedVals, hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(forgedKeys),
-			types.DefaultVoterParams())
-		primaryValidators[height] = forgedVals
-		primaryVoters[height] = types.SelectVoter(
-			primaryValidators[height],
-			proofHash(primaryHeaders[height]),
-			types.DefaultVoterParams(),
-		)
+	preDivergenceHeight := divergenceHeight - 1
+	for height := int64(1); height < preDivergenceHeight; height++ {
+		primaryHeaders[height] = witnessHeaders[height]
+		primaryValidators[height] = witnessValidators[height]
+		primaryVoters[height] = witnessVoters[height]
+	}
+	// previous divergence height
+	curKeys := chainKeys[preDivergenceHeight]
+	forgedKeys := curKeys.ChangeKeys(3) // we change 3 out of the 5 validators (still 2/5 remain)
+	forgedVals := forgedKeys.ToValidators(2, 0)
+	header, vals, voters, _ := genMockNodeWithKey(chainID, preDivergenceHeight,
+		curKeys, forgedKeys, // Should specify the correct current/next keys
+		nil, forgedVals, primaryHeaders[preDivergenceHeight-1],
+		bTime.Add(time.Duration(preDivergenceHeight)*time.Minute),
+		0, nil)
+	primaryHeaders[preDivergenceHeight] = header
+	primaryValidators[preDivergenceHeight] = vals
+	primaryVoters[preDivergenceHeight] = voters
+	// after divergence height
+	for height := divergenceHeight; height <= latestHeight; height++ {
+		header, vals, voters, _ := genMockNodeWithKey(chainID, height,
+			forgedKeys, forgedKeys,
+			forgedVals, forgedVals, primaryHeaders[height-1],
+			bTime.Add(time.Duration(height)*time.Minute),
+			0, nil)
+		primaryHeaders[height] = header
+		primaryValidators[height] = vals
+		primaryVoters[height] = voters
 	}
 
 	primary := mockp.New(chainID, primaryHeaders, primaryValidators, primaryVoters)
@@ -80,9 +88,9 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 
 	// Check evidence was sent to both full nodes.
 	evAgainstPrimary := &types.LightClientAttackEvidence{
-		// after the divergence height the valset doesn't change so we expect the evidence to be for height 10
+		// after the divergence height the valset doesn't change, so we expect the evidence to be for height 10
 		ConflictingBlock: &types.LightBlock{
-			SignedHeader: primaryHeaders[10],
+			SignedHeader: primaryHeaders[preDivergenceHeight], // Need to specify the exact header
 			ValidatorSet: primaryValidators[10],
 			VoterSet:     primaryVoters[10],
 		},
@@ -94,7 +102,7 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 		// when forming evidence against witness we learn that the canonical chain continued to change validator sets
 		// hence the conflicting block is at 7
 		ConflictingBlock: &types.LightBlock{
-			SignedHeader: witnessHeaders[7],
+			SignedHeader: witnessHeaders[preDivergenceHeight], // Need to specify the exact header
 			ValidatorSet: witnessValidators[7],
 			VoterSet:     witnessVoters[7],
 		},
