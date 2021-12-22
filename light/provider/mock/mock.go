@@ -121,6 +121,7 @@ func (p *Mock) AddLightBlock(lb *types.LightBlock) {
 	}
 	p.headers[lb.Height] = lb.SignedHeader
 	p.vals[lb.Height] = lb.ValidatorSet
+	p.voters[lb.Height] = lb.VoterSet
 	if lb.Height > p.latestHeight {
 		p.latestHeight = lb.Height
 	}

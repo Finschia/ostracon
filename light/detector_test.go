@@ -207,8 +207,6 @@ func TestLightClientAttackEvidence_Equivocation(t *testing.T) {
 }
 
 func TestLightClientAttackEvidence_ForwardLunatic(t *testing.T) {
-	t.Skip("Voter selection in Ostracon only supports sequential verification mode, " +
-		"but Ostracon has a few test case for skipping mode.")
 	// primary performs a lunatic attack but changes the time of the header to
 	// something in the future relative to the blockchain
 	var (
@@ -229,27 +227,33 @@ func TestLightClientAttackEvidence_ForwardLunatic(t *testing.T) {
 	for h := range witnessHeaders {
 		primaryHeaders[h] = witnessHeaders[h]
 		primaryValidators[h] = witnessValidators[h]
+		primaryVoters[h] = witnessVoters[h]
 	}
-	forgedKeys := chainKeys[latestHeight].ChangeKeys(3) // we change 3 out of the 5 validators (still 2/5 remain)
-	primaryValidators[forgedHeight] = forgedKeys.ToValidators(2, 0)
-	primaryVoters[forgedHeight] = types.SelectVoter(
-		primaryValidators[forgedHeight],
-		proofHash(primaryHeaders[forgedHeight]),
-		types.DefaultVoterParams(),
-	)
-	primaryHeaders[forgedHeight] = forgedKeys.GenSignedHeader(
-		chainID,
-		forgedHeight,
-		bTime.Add(time.Duration(latestHeight+1)*time.Minute), // 11 mins
-		nil,
-		primaryValidators[forgedHeight],
-		primaryValidators[forgedHeight],
-		hash("app_hash"),
-		hash("cons_hash"),
-		hash("results_hash"),
+
+	// Make height=proofHeight for forgedHeight
+	proofKeys := chainKeys[proofHeight]
+	forgedKeys := proofKeys.ChangeKeys(3) // we change 3 out of the 5 validators (still 2/5 remain)
+	forgedVals := forgedKeys.ToValidators(2, 0)
+	header, vals, voters, _ := genMockNodeWithKey(chainID, proofHeight, nil,
+		proofKeys, forgedKeys,
+		nil, forgedVals, primaryHeaders[proofHeight-1],
+		bTime.Add(time.Duration(proofHeight)*time.Minute), // 11 mins
+		0, len(proofKeys),
+		0, nil)
+	primaryHeaders[proofHeight] = header
+	primaryValidators[proofHeight] = vals
+	primaryVoters[proofHeight] = voters
+
+	// Make height=forgedHeight for forward lunatic
+	header, vals, voters, _ = genMockNodeWithKey(chainID, forgedHeight, nil,
+		forgedKeys, forgedKeys,
+		forgedVals, forgedVals, primaryHeaders[forgedHeight-1],
+		bTime.Add(time.Duration(forgedHeight)*time.Minute),
 		0, len(forgedKeys),
-		types.DefaultVoterParams(),
-	)
+		0, nil)
+	primaryHeaders[forgedHeight] = header
+	primaryValidators[forgedHeight] = vals
+	primaryVoters[forgedHeight] = voters
 
 	witness := mockp.New(chainID, witnessHeaders, witnessValidators, witnessVoters)
 	primary := mockp.New(chainID, primaryHeaders, primaryValidators, primaryVoters)
@@ -278,24 +282,18 @@ func TestLightClientAttackEvidence_ForwardLunatic(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	// two seconds later, the supporting withness should receive the header that can be used
+	// two seconds later, the supporting witness should receive the header that can be used
 	// to prove that there was an attack
-	vals := chainKeys[latestHeight].ToValidators(2, 0)
+	header, vals, voters, _ = genMockNodeWithKey(chainID, proofHeight, nil,
+		proofKeys, proofKeys,
+		nil, nil, primaryHeaders[proofHeight-1],
+		bTime.Add(time.Duration(proofHeight+1)*time.Minute), // 12 mins
+		0, len(proofKeys),
+		0, nil)
 	newLb := &types.LightBlock{
-		SignedHeader: chainKeys[latestHeight].GenSignedHeader(
-			chainID,
-			proofHeight,
-			bTime.Add(time.Duration(proofHeight+1)*time.Minute), // 12 mins
-			nil,
-			vals,
-			vals,
-			hash("app_hash"),
-			hash("cons_hash"),
-			hash("results_hash"),
-			0, len(chainKeys),
-			types.DefaultVoterParams(),
-		),
+		SignedHeader: header,
 		ValidatorSet: vals,
+		VoterSet:     voters,
 	}
 	go func() {
 		time.Sleep(2 * time.Second)
@@ -312,8 +310,9 @@ func TestLightClientAttackEvidence_ForwardLunatic(t *testing.T) {
 	// Check evidence was sent to the witness against the full node
 	evAgainstPrimary := &types.LightClientAttackEvidence{
 		ConflictingBlock: &types.LightBlock{
-			SignedHeader: primaryHeaders[forgedHeight],
-			ValidatorSet: primaryValidators[forgedHeight],
+			SignedHeader: primaryHeaders[proofHeight],
+			ValidatorSet: primaryValidators[proofHeight],
+			VoterSet:     primaryVoters[proofHeight],
 		},
 		CommonHeight: latestHeight,
 	}
