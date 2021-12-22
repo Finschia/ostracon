@@ -273,10 +273,12 @@ func genCalcValVariationFunc() func(valVariation float32) int {
 func genMockNodeWithKey(
 	chainID string,
 	height int64,
+	txs types.Txs,
 	keys, newKeys privKeys,
 	valSet, newValSet *types.ValidatorSet,
 	lastHeader *types.SignedHeader,
 	bTime time.Time,
+	first, last int,
 	valVariation float32,
 	calcValVariation func(valVariation float32) int) (
 	*types.SignedHeader, *types.ValidatorSet, *types.VoterSet, privKeys) {
@@ -293,9 +295,9 @@ func genMockNodeWithKey(
 	if lastHeader == nil {
 		header := keys.GenSignedHeader(
 			chainID, height, bTime,
-			nil, valSet, newValSet,
+			txs, valSet, newValSet,
 			hash("app_hash"), hash("cons_hash"), hash("results_hash"),
-			0, len(keys),
+			first, last,
 			types.DefaultVoterParams(),
 		)
 		voterSet := types.SelectVoter(valSet, proofHash(header), types.DefaultVoterParams())
@@ -342,10 +344,11 @@ func genMockNodeWithKeys(chainID string, blockSize int64, valSize int, valVariat
 	keymap[height] = keys
 	calcValVariationFunc := genCalcValVariationFunc()
 
-	header, vals, voters, newKeys := genMockNodeWithKey(chainID, height,
+	header, vals, voters, newKeys := genMockNodeWithKey(chainID, height, nil,
 		keys, nil,
 		nil, nil, nil,
 		bTime.Add(time.Duration(height)*time.Minute),
+		0, len(keys),
 		valVariation, calcValVariationFunc)
 
 	// genesis header and vals
@@ -355,10 +358,11 @@ func genMockNodeWithKeys(chainID string, blockSize int64, valSize int, valVariat
 	lastHeader := header
 
 	for height := int64(2); height <= blockSize; height++ {
-		header, vals, voters, newKeys := genMockNodeWithKey(chainID, height,
+		header, vals, voters, newKeys := genMockNodeWithKey(chainID, height, nil,
 			keys, nil,
 			nil, nil, lastHeader,
 			bTime.Add(time.Duration(height)*time.Minute),
+			0, len(keys),
 			valVariation, calcValVariationFunc)
 		if !bytes.Equal(header.Hash(), header.Commit.BlockID.Hash) {
 			panic(fmt.Sprintf("commit hash didn't match: %X != %X", header.Hash(), header.Commit.BlockID.Hash))

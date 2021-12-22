@@ -41,20 +41,22 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 	curKeys := chainKeys[preDivergenceHeight]
 	forgedKeys := curKeys.ChangeKeys(3) // we change 3 out of the 5 validators (still 2/5 remain)
 	forgedVals := forgedKeys.ToValidators(2, 0)
-	header, vals, voters, _ := genMockNodeWithKey(chainID, preDivergenceHeight,
+	header, vals, voters, _ := genMockNodeWithKey(chainID, preDivergenceHeight, nil,
 		curKeys, forgedKeys, // Should specify the correct current/next keys
 		nil, forgedVals, primaryHeaders[preDivergenceHeight-1],
 		bTime.Add(time.Duration(preDivergenceHeight)*time.Minute),
+		0, len(curKeys),
 		0, nil)
 	primaryHeaders[preDivergenceHeight] = header
 	primaryValidators[preDivergenceHeight] = vals
 	primaryVoters[preDivergenceHeight] = voters
 	// after divergence height
 	for height := divergenceHeight; height <= latestHeight; height++ {
-		header, vals, voters, _ := genMockNodeWithKey(chainID, height,
+		header, vals, voters, _ := genMockNodeWithKey(chainID, height, nil,
 			forgedKeys, forgedKeys,
 			forgedVals, forgedVals, primaryHeaders[height-1],
 			bTime.Add(time.Duration(height)*time.Minute),
+			0, len(forgedKeys),
 			0, nil)
 		primaryHeaders[height] = header
 		primaryValidators[height] = vals
@@ -112,11 +114,9 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 }
 
 func TestLightClientAttackEvidence_Equivocation(t *testing.T) {
-	t.Skip("Voter selection in Ostracon only supports sequential verification mode, " +
-		"but Ostracon has a few test case for skipping mode.")
 	verificationOptions := map[string]light.Option{
 		"sequential": light.SequentialVerification(),
-		"skipping":   light.SkippingVerification(light.DefaultTrustLevel),
+		// "skipping":   light.SkippingVerification(light.DefaultTrustLevel), // Cannot do skipping-test
 	}
 
 	for s, verificationOption := range verificationOptions {
@@ -143,15 +143,17 @@ func TestLightClientAttackEvidence_Equivocation(t *testing.T) {
 				primaryVoters[height] = witnessVoters[height]
 				continue
 			}
-			// we don't have a network partition so we will make 4/5 (greater than 2/3) malicious and vote again for
+			// we don't have a network partition, so we will make 4/5 (greater than 2/3) malicious and vote again for
 			// a different block (which we do by adding txs)
-			primaryHeaders[height] = chainKeys[height].GenSignedHeader(chainID, height,
-				bTime.Add(time.Duration(height)*time.Minute), []types.Tx{[]byte("abcd")},
-				witnessValidators[height], witnessValidators[height+1], hash("app_hash"),
-				hash("cons_hash"), hash("results_hash"), 0, len(chainKeys[height])-1,
-				types.DefaultVoterParams())
-			primaryValidators[height] = witnessValidators[height]
-			primaryVoters[height] = witnessVoters[height]
+			header, vals, voters, _ := genMockNodeWithKey(chainID, height, []types.Tx{[]byte("abcd")},
+				chainKeys[height], chainKeys[height+1],
+				witnessValidators[height], witnessValidators[height+1], primaryHeaders[height-1],
+				bTime.Add(time.Duration(height)*time.Minute),
+				0, len(chainKeys[height])-1, // make 4/5
+				0, nil)
+			primaryHeaders[height] = header
+			primaryValidators[height] = vals
+			primaryVoters[height] = voters
 		}
 		primary := mockp.New(chainID, primaryHeaders, primaryValidators, primaryVoters)
 
@@ -196,7 +198,7 @@ func TestLightClientAttackEvidence_Equivocation(t *testing.T) {
 			ConflictingBlock: &types.LightBlock{
 				SignedHeader: witnessHeaders[divergenceHeight],
 				ValidatorSet: witnessValidators[divergenceHeight],
-				VoterSet:     primaryVoters[divergenceHeight],
+				VoterSet:     witnessVoters[divergenceHeight],
 			},
 			CommonHeight: divergenceHeight,
 		}
