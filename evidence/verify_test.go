@@ -50,6 +50,7 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 
 	conflictingHeader := makeHeaderRandom(10)
 	conflictingHeader.Time = defaultEvidenceTime.Add(1 * time.Hour)
+	conflictingHeader.ValidatorsHash = conflictingVals.Hash()
 	conflictingHeader.VotersHash = conflictingVoterSet.Hash()
 	conflictingHeader.Proof = proof
 
@@ -133,6 +134,7 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 	forwardConflictingHeader := makeHeaderRandom(11)
 	forwardConflictingHeader.Time = defaultEvidenceTime.Add(30 * time.Minute)
 	forwardConflictingHeader.ValidatorsHash = conflictingVals.Hash()
+	forwardConflictingHeader.VotersHash = conflictingVoterSet.Hash()
 	forwardBlockID := makeBlockID(forwardConflictingHeader.Hash(), 1000, []byte("partshash"))
 	forwardVoteSet := types.NewVoteSet(evidenceChainID, 11, 1, tmproto.SignedMsgType(2), conflictingVoterSet)
 	forwardCommit, err := types.MakeCommit(forwardBlockID, 11, 1, forwardVoteSet, conflictingPrivVals, defaultEvidenceTime)
@@ -144,6 +146,7 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 				Commit: forwardCommit,
 			},
 			ValidatorSet: conflictingVals,
+			VoterSet:     conflictingVoterSet,
 		},
 		CommonHeight:        4,
 		TotalVotingPower:    20,
