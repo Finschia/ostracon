@@ -65,14 +65,17 @@ type mockBlockStore struct {
 	blocks map[int64]*types.Block
 }
 
+// nolint:unused // ignore
 func (ml *mockBlockStore) Height() int64 {
 	return int64(len(ml.blocks))
 }
 
+// nolint:unused // ignore
 func (ml *mockBlockStore) LoadBlock(height int64) *types.Block {
 	return ml.blocks[height]
 }
 
+// nolint:unused // ignore
 func (ml *mockBlockStore) SaveBlock(block *types.Block, part *types.PartSet, commit *types.Commit) {
 	ml.blocks[block.Height] = block
 }

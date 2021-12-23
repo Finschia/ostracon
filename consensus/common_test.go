@@ -801,7 +801,6 @@ func DefaultTestLoggers() TestLoggers {
 		log.TestingLogger(), log.TestingLogger(), log.TestingLogger(), log.TestingLogger(), log.TestingLogger())
 }
 
-// nolint:unused
 func NopTestLoggers() TestLoggers {
 	return NewTestLoggers(
 		log.NewNopLogger(), log.NewNopLogger(), log.NewNopLogger(), log.NewNopLogger(), log.NewNopLogger())

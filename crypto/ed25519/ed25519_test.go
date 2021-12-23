@@ -2,8 +2,9 @@ package ed25519_test
 
 import (
 	"encoding/hex"
-	coniks "github.com/coniks-sys/coniks-go/crypto/vrf"
 	"testing"
+
+	coniks "github.com/coniks-sys/coniks-go/crypto/vrf"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

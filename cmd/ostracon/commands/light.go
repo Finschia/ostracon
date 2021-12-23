@@ -5,12 +5,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	rpchttp "github.com/line/ostracon/rpc/client/http"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	rpchttp "github.com/line/ostracon/rpc/client/http"
 
 	"github.com/line/tm-db/v2/goleveldb"
 	"github.com/spf13/cobra"

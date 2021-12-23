@@ -31,6 +31,7 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 	// use the correct Proof to bypass the checks in libsodium
 	var proof []byte
 	proof, err := commonPrivVals[0].GenerateVRFProof([]byte{})
+	require.NoError(t, err)
 
 	newVal, newPrivVal := types.RandValidatorForPrivKey(types.PrivKeyEd25519, false, 9)
 

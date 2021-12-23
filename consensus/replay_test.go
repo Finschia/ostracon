@@ -219,7 +219,7 @@ LOOP:
 			cs.Stop() //nolint:errcheck // Logging this error causes failure
 			cancel()
 			// For safety since nobody stops and writing WAL continue sometimes.
-			cs.wal.Stop()
+			cs.wal.Stop() //nolint:errcheck
 
 			// make sure we can make blocks after a crash
 			startNewStateAndWaitForBlock(t, i, consensusReplayConfig, blockDB, stateStore)
