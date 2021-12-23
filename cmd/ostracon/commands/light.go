@@ -5,10 +5,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	rpchttp "github.com/line/ostracon/rpc/client/http"
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
@@ -17,7 +17,6 @@ import (
 
 	dbm "github.com/line/tm-db/v2"
 
-	"github.com/line/ostracon/crypto/merkle"
 	"github.com/line/ostracon/libs/log"
 	tmmath "github.com/line/ostracon/libs/math"
 	tmos "github.com/line/ostracon/libs/os"
@@ -25,7 +24,6 @@ import (
 	lproxy "github.com/line/ostracon/light/proxy"
 	lrpc "github.com/line/ostracon/light/rpc"
 	dbs "github.com/line/ostracon/light/store/db"
-	rpchttp "github.com/line/ostracon/rpc/client/http"
 	rpcserver "github.com/line/ostracon/rpc/jsonrpc/server"
 )
 
@@ -233,12 +231,11 @@ func runProxy(cmd *cobra.Command, args []string) error {
 		cfg.WriteTimeout = config.RPC.TimeoutBroadcastTxCommit + 1*time.Second
 	}
 
-	p := lproxy.Proxy{
-		Addr:   listenAddr,
-		Config: cfg,
-		Client: lrpc.NewClient(rpcClient, c, lrpc.KeyPathFn(defaultMerkleKeyPathFn())),
-		Logger: logger,
+	p, err := lproxy.NewProxy(c, listenAddr, primaryAddr, cfg, logger, lrpc.KeyPathFn(lrpc.DefaultMerkleKeyPathFn()))
+	if err != nil {
+		return err
 	}
+
 	// Stop upon receiving SIGTERM or CTRL-C.
 	tmos.TrapSignal(logger, func() {
 		p.Listener.Close()
@@ -276,22 +273,4 @@ func saveProviders(db dbm.DB, primaryAddr, witnessesAddrs string) error {
 		return fmt.Errorf("failed to save witness providers: %w", err)
 	}
 	return nil
-}
-
-func defaultMerkleKeyPathFn() lrpc.KeyPathFunc {
-	// regexp for extracting store name from /abci_query path
-	storeNameRegexp := regexp.MustCompile(`\/store\/(.+)\/key`)
-
-	return func(path string, key []byte) (merkle.KeyPath, error) {
-		matches := storeNameRegexp.FindStringSubmatch(path)
-		if len(matches) != 2 {
-			return nil, fmt.Errorf("can't find store name in %s using %s", path, storeNameRegexp)
-		}
-		storeName := matches[1]
-
-		kp := merkle.KeyPath{}
-		kp = kp.AppendKey([]byte(storeName), merkle.KeyEncodingURL)
-		kp = kp.AppendKey(key, merkle.KeyEncodingURL)
-		return kp, nil
-	}
 }

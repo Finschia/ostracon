@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"github.com/line/ostracon/types"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/spf13/viper"
@@ -16,10 +20,16 @@ import (
 	tmflags "github.com/line/ostracon/libs/cli/flags"
 	"github.com/line/ostracon/libs/log"
 	tmnet "github.com/line/ostracon/libs/net"
+	"github.com/line/ostracon/light"
+	lproxy "github.com/line/ostracon/light/proxy"
+	lrpc "github.com/line/ostracon/light/rpc"
+	dbs "github.com/line/ostracon/light/store/db"
 	"github.com/line/ostracon/node"
 	"github.com/line/ostracon/p2p"
 	"github.com/line/ostracon/privval"
 	"github.com/line/ostracon/proxy"
+	rpcserver "github.com/line/ostracon/rpc/jsonrpc/server"
+	e2e "github.com/line/ostracon/test/e2e/pkg"
 	mcs "github.com/line/ostracon/test/maverick/consensus"
 	maverick "github.com/line/ostracon/test/maverick/node"
 )
@@ -66,7 +76,11 @@ func run(configFile string) error {
 		err = startApp(cfg)
 	case "builtin":
 		if len(cfg.Misbehaviors) == 0 {
-			err = startNode(cfg)
+			if cfg.Mode == string(e2e.ModeLight) {
+				err = startLightClient(cfg)
+			} else {
+				err = startNode(cfg)
+			}
 		} else {
 			err = startMaverick(cfg)
 		}
@@ -139,8 +153,67 @@ func startNode(cfg *Config) error {
 	return n.Start()
 }
 
-// startMaverick starts a Maverick node that runs the application directly. It assumes the Ostracon
-// configuration is in $OCHOME/config/ostracon.toml.
+func startLightClient(cfg *Config) error {
+	tmcfg, nodeLogger, _, err := setupNode()
+	if err != nil {
+		return err
+	}
+
+	dbContext := &node.DBContext{ID: "light", Config: tmcfg}
+	lightDB, err := node.DefaultDBProvider(dbContext)
+	if err != nil {
+		return err
+	}
+
+	providers := rpcEndpoints(tmcfg.P2P.PersistentPeers)
+
+	c, err := light.NewHTTPClient(
+		context.Background(),
+		cfg.ChainID,
+		light.TrustOptions{
+			Period: tmcfg.StateSync.TrustPeriod,
+			Height: tmcfg.StateSync.TrustHeight,
+			Hash:   tmcfg.StateSync.TrustHashBytes(),
+		},
+		providers[0],
+		providers[1:],
+		dbs.New(lightDB, "light"),
+		types.DefaultVoterParams(),
+		light.Logger(nodeLogger),
+	)
+	if err != nil {
+		return err
+	}
+
+	rpccfg := rpcserver.DefaultConfig()
+	rpccfg.MaxBodyBytes = tmcfg.RPC.MaxBodyBytes
+	rpccfg.MaxHeaderBytes = tmcfg.RPC.MaxHeaderBytes
+	rpccfg.MaxOpenConnections = tmcfg.RPC.MaxOpenConnections
+	// If necessary adjust global WriteTimeout to ensure it's greater than
+	// TimeoutBroadcastTxCommit.
+	// See https://github.com/tendermint/tendermint/issues/3435
+	if rpccfg.WriteTimeout <= tmcfg.RPC.TimeoutBroadcastTxCommit {
+		rpccfg.WriteTimeout = tmcfg.RPC.TimeoutBroadcastTxCommit + 1*time.Second
+	}
+
+	p, err := lproxy.NewProxy(c, tmcfg.RPC.ListenAddress, providers[0], rpccfg, nodeLogger,
+		lrpc.KeyPathFn(lrpc.DefaultMerkleKeyPathFn()))
+	if err != nil {
+		return err
+	}
+
+	logger.Info("Starting proxy...", "laddr", tmcfg.RPC.ListenAddress)
+	if err := p.ListenAndServe(); err != http.ErrServerClosed {
+		// Error starting or closing listener:
+		logger.Error("proxy ListenAndServe", "err", err)
+	}
+
+	return nil
+}
+
+// FIXME: Temporarily disconnected maverick until it is redesigned
+// startMaverick starts a Maverick node that runs the application directly. It assumes the Tendermint
+// configuration is in $TMHOME/config/tendermint.toml.
 func startMaverick(cfg *Config) error {
 	app, err := NewApplication(cfg)
 	if err != nil {
@@ -246,4 +319,20 @@ func setupNode() (*config.Config, log.Logger, *p2p.NodeKey, error) {
 	}
 
 	return tmcfg, nodeLogger, nodeKey, nil
+}
+
+// rpcEndpoints takes a list of persistent peers and splits them into a list of rpc endpoints
+// using 26657 as the port number
+func rpcEndpoints(peers string) []string {
+	arr := strings.Split(peers, ",")
+	endpoints := make([]string, len(arr))
+	for i, v := range arr {
+		urlString := strings.SplitAfter(v, "@")[1]
+		hostName := strings.Split(urlString, ":26656")[0]
+		// use RPC port instead
+		port := 26657
+		rpcEndpoint := "http://" + hostName + ":" + fmt.Sprint(port)
+		endpoints[i] = rpcEndpoint
+	}
+	return endpoints
 }

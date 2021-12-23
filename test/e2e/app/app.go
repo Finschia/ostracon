@@ -120,7 +120,7 @@ func (app *Application) Commit() abci.ResponseCommit {
 		if err != nil {
 			panic(err)
 		}
-		logger.Info("Created state sync snapshot", "height", snapshot.Height)
+		app.logger.Info("Created state sync snapshot", "height", snapshot.Height)
 	}
 	retainHeight := int64(0)
 	if app.cfg.RetainBlocks > 0 {
