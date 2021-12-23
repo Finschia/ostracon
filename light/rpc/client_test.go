@@ -160,3 +160,19 @@ func testOpDecoder(pop tmcrypto.ProofOp) (merkle.ProofOperator, error) {
 	}
 	return op, nil
 }
+
+func TestDefaultMerkleKeyPathFn(t *testing.T) {
+	f := DefaultMerkleKeyPathFn()
+	require.NotNil(t, f)
+	{
+		path, err := f("", nil)
+		require.Error(t, err)
+		require.Nil(t, path)
+	}
+	{
+		path, err := f("/store/test-merkle-path/key", []byte("test"))
+		require.NoError(t, err)
+		require.NotNil(t, path)
+		require.Equal(t, "/test-merkle-path/test", path.String())
+	}
+}
