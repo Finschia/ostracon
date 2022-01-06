@@ -4,6 +4,8 @@ import (
 	context "golang.org/x/net/context"
 )
 
+//go:generate mockery --case underscore --name Application
+
 type CheckTxCallback func(ResponseCheckTx)
 
 // Application is an interface that enables any finite, deterministic state machine

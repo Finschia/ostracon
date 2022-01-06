@@ -213,7 +213,7 @@ type sampleApp struct {
 
 func newDoneChan(t *testing.T) chan struct{} {
 	result := make(chan struct{})
-	go func(){
+	go func() {
 		select {
 		case <-time.After(time.Second):
 			require.Fail(t, "callback is not called for a second")
@@ -226,8 +226,8 @@ func newDoneChan(t *testing.T) chan struct{} {
 
 func getResponseCallback(t *testing.T) abcicli.ResponseCallback {
 	doneChan := newDoneChan(t)
-	return func (res *types.Response) {
+	return func(res *types.Response) {
 		require.NotNil(t, res)
-		doneChan<- struct{}{}
+		doneChan <- struct{}{}
 	}
 }

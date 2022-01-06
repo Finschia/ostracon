@@ -31,6 +31,7 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 	// use the correct Proof to bypass the checks in libsodium
 	var proof []byte
 	proof, err := commonPrivVals[0].GenerateVRFProof([]byte{})
+	require.NoError(t, err)
 
 	newVal, newPrivVal := types.RandValidatorForPrivKey(types.PrivKeyEd25519, false, 9)
 
@@ -45,9 +46,11 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 	commonHeader.Time = defaultEvidenceTime
 	commonHeader.Proof = proof
 	trustedHeader := makeHeaderRandom(10)
+	trustedHeader.Time = defaultEvidenceTime.Add(1 * time.Hour)
 
 	conflictingHeader := makeHeaderRandom(10)
 	conflictingHeader.Time = defaultEvidenceTime.Add(1 * time.Hour)
+	conflictingHeader.ValidatorsHash = conflictingVals.Hash()
 	conflictingHeader.VotersHash = conflictingVoterSet.Hash()
 	conflictingHeader.Proof = proof
 
@@ -128,6 +131,40 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 	assert.Error(t, err)
 	ev.TotalVotingPower = 20
 
+	forwardConflictingHeader := makeHeaderRandom(11)
+	forwardConflictingHeader.Time = defaultEvidenceTime.Add(30 * time.Minute)
+	forwardConflictingHeader.ValidatorsHash = conflictingVals.Hash()
+	forwardConflictingHeader.VotersHash = conflictingVoterSet.Hash()
+	forwardBlockID := makeBlockID(forwardConflictingHeader.Hash(), 1000, []byte("partshash"))
+	forwardVoteSet := types.NewVoteSet(evidenceChainID, 11, 1, tmproto.SignedMsgType(2), conflictingVoterSet)
+	forwardCommit, err := types.MakeCommit(forwardBlockID, 11, 1, forwardVoteSet, conflictingPrivVals, defaultEvidenceTime)
+	require.NoError(t, err)
+	forwardLunaticEv := &types.LightClientAttackEvidence{
+		ConflictingBlock: &types.LightBlock{
+			SignedHeader: &types.SignedHeader{
+				Header: forwardConflictingHeader,
+				Commit: forwardCommit,
+			},
+			ValidatorSet: conflictingVals,
+			VoterSet:     conflictingVoterSet,
+		},
+		CommonHeight:        4,
+		TotalVotingPower:    20,
+		ByzantineValidators: commonVals.Validators,
+		Timestamp:           defaultEvidenceTime,
+	}
+	err = evidence.VerifyLightClientAttack(
+		forwardLunaticEv,
+		commonSignedHeader,
+		trustedSignedHeader,
+		commonVals,
+		commonVoters,
+		defaultEvidenceTime.Add(2*time.Hour),
+		3*time.Hour,
+		types.DefaultVoterParams(),
+	)
+	assert.NoError(t, err)
+
 	state := sm.State{
 		LastBlockTime:   defaultEvidenceTime.Add(2 * time.Hour),
 		LastBlockHeight: 11,
@@ -141,8 +178,10 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 	blockStore := &mocks.BlockStore{}
 	blockStore.On("LoadBlockMeta", int64(4)).Return(&types.BlockMeta{Header: *commonHeader})
 	blockStore.On("LoadBlockMeta", int64(10)).Return(&types.BlockMeta{Header: *trustedHeader})
+	blockStore.On("LoadBlockMeta", int64(11)).Return(nil)
 	blockStore.On("LoadBlockCommit", int64(4)).Return(commit)
 	blockStore.On("LoadBlockCommit", int64(10)).Return(trustedCommit)
+	blockStore.On("Height").Return(int64(10))
 
 	pool, err := evidence.NewPool(memdb.NewDB(), stateStore, blockStore)
 	require.NoError(t, err)
@@ -161,6 +200,15 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 	err = pool.CheckEvidence(evList)
 	assert.Error(t, err)
 	ev.ByzantineValidators = commonVals.Validators // restore evidence
+
+	// If evidence is submitted with an altered timestamp it should return an error
+	ev.Timestamp = defaultEvidenceTime.Add(1 * time.Minute)
+	err = pool.CheckEvidence(evList)
+	assert.Error(t, err)
+
+	evList = types.EvidenceList{forwardLunaticEv}
+	err = pool.CheckEvidence(evList)
+	assert.NoError(t, err)
 }
 
 func TestVerifyLightClientAttack_Equivocation(t *testing.T) {

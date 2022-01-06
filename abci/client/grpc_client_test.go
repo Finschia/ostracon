@@ -26,7 +26,7 @@ func TestGrpcClientCalls(t *testing.T) {
 	})
 	err0 = c.Start()
 	require.NoError(t, err0)
-	
+
 	c.EchoAsync("msg", getResponseCallback(t))
 	c.FlushAsync(getResponseCallback(t))
 	c.InfoAsync(types.RequestInfo{}, getResponseCallback(t))

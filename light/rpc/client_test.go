@@ -96,6 +96,64 @@ func TestABCIQuery(t *testing.T) {
 	assert.NotNil(t, res)
 }
 
+func TestTxSearch(t *testing.T) {
+
+	query := "query/test"
+	prove := false
+	page := 0
+	perPage := 1
+	orderBy := ""
+
+	next := &rpcmock.Client{}
+	next.On(
+		"TxSearch",
+		context.Background(),
+		query,
+		prove,
+		&page,
+		&perPage,
+		orderBy,
+	).Return(&ctypes.ResultTxSearch{
+		Txs:        nil,
+		TotalCount: 0,
+	}, nil)
+
+	lc := &lcmock.LightClient{}
+
+	c := NewClient(next, lc)
+	res, err := c.TxSearch(context.Background(), query, prove, &page, &perPage, orderBy)
+	require.NoError(t, err)
+	assert.NotNil(t, res)
+}
+
+func TestBlockSearch(t *testing.T) {
+
+	query := "query/test"
+	page := 0
+	perPage := 1
+	orderBy := ""
+
+	next := &rpcmock.Client{}
+	next.On(
+		"BlockSearch",
+		context.Background(),
+		query,
+		&page,
+		&perPage,
+		orderBy,
+	).Return(&ctypes.ResultBlockSearch{
+		Blocks:     nil,
+		TotalCount: 0,
+	}, nil)
+
+	lc := &lcmock.LightClient{}
+
+	c := NewClient(next, lc)
+	res, err := c.BlockSearch(context.Background(), query, &page, &perPage, orderBy)
+	require.NoError(t, err)
+	assert.NotNil(t, res)
+}
+
 type testOp struct {
 	Spec  *ics23.ProofSpec
 	Key   []byte
@@ -159,4 +217,20 @@ func testOpDecoder(pop tmcrypto.ProofOp) (merkle.ProofOperator, error) {
 		Proof: proof,
 	}
 	return op, nil
+}
+
+func TestDefaultMerkleKeyPathFn(t *testing.T) {
+	f := DefaultMerkleKeyPathFn()
+	require.NotNil(t, f)
+	{
+		path, err := f("", nil)
+		require.Error(t, err)
+		require.Nil(t, path)
+	}
+	{
+		path, err := f("/store/test-merkle-path/key", []byte("test"))
+		require.NoError(t, err)
+		require.NotNil(t, path)
+		require.Equal(t, "/test-merkle-path/test", path.String())
+	}
 }

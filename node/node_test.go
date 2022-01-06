@@ -418,6 +418,42 @@ func TestNodeNewNodeCustomReactors(t *testing.T) {
 	assert.Equal(t, customBlockchainReactor, n.Switch().Reactor("BLOCKCHAIN"))
 }
 
+func TestNodeNewNodeTxIndexIndexer(t *testing.T) {
+	config := cfg.ResetTestRoot("node_new_node_tx_index_indexer_test")
+	defer os.RemoveAll(config.RootDir)
+
+	doTest := func(doProvider func(ctx *DBContext) (dbm.DB, error)) (*Node, error) {
+		nodeKey, err := p2p.LoadOrGenNodeKey(config.NodeKeyFile())
+		require.NoError(t, err)
+
+		pvKey, _ := privval.LoadOrGenFilePV(config.PrivValidatorKeyFile(), config.PrivValidatorStateFile(),
+			config.PrivValidatorKeyType())
+		return NewNode(config,
+			pvKey,
+			nodeKey,
+			proxy.DefaultClientCreator(config.ProxyApp, config.ABCI, config.DBDir()),
+			DefaultGenesisDocProviderFunc(config),
+			doProvider,
+			DefaultMetricsProvider(config.Instrumentation),
+			log.TestingLogger(),
+		)
+	}
+
+	{
+		// Change to panic-provider for test
+		n, err := doTest(func(ctx *DBContext) (dbm.DB, error) { return nil, fmt.Errorf("test error") })
+		require.Error(t, err)
+		require.Nil(t, n)
+	}
+	{
+		// Change to non-default-value for test
+		config.TxIndex.Indexer = ""
+		n, err := doTest(DefaultDBProvider)
+		require.NoError(t, err)
+		require.NotNil(t, n)
+	}
+}
+
 func state(nVals int, height int64) (sm.State, dbm.DB, []types.PrivValidator) {
 	privVals := make([]types.PrivValidator, nVals)
 	vals := make([]types.GenesisValidator, nVals)

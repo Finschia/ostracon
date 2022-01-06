@@ -190,7 +190,7 @@ func genHeader(chainID string, height int64, bTime time.Time, txs types.Txs,
 		Proof:              proof,
 		ConsensusHash:      consHash,
 		LastResultsHash:    resHash,
-		ProposerAddress:    voterSet.Voters[0].Address,
+		ProposerAddress:    valset.SelectProposer(proof, height, 0).Address,
 	}
 }
 
@@ -259,66 +259,118 @@ func (pkz privKeys) ChangeKeys(delta int) privKeys {
 	return newKeys.Extend(delta)
 }
 
+func genCalcValVariationFunc() func(valVariation float32) int {
+	totalVariation := float32(0)
+	valVariationInt := int(totalVariation)
+	return func(valVariation float32) int {
+		totalVariation += valVariation
+		valVariationInt = int(totalVariation)
+		totalVariation = -float32(valVariationInt)
+		return valVariationInt
+	}
+}
+
+func genMockNodeWithKey(
+	chainID string,
+	height int64,
+	txs types.Txs,
+	keys, newKeys privKeys,
+	valSet, newValSet *types.ValidatorSet,
+	lastHeader *types.SignedHeader,
+	bTime time.Time,
+	first, last int,
+	valVariation float32,
+	calcValVariation func(valVariation float32) int) (
+	*types.SignedHeader, *types.ValidatorSet, *types.VoterSet, privKeys) {
+
+	if newKeys == nil {
+		newKeys = keys.ChangeKeys(calcValVariation(valVariation))
+	}
+	if valSet == nil {
+		valSet = keys.ToValidators(2, 2)
+	}
+	if newValSet == nil {
+		newValSet = newKeys.ToValidators(2, 2)
+	}
+	if lastHeader == nil {
+		header := keys.GenSignedHeader(
+			chainID, height, bTime,
+			txs, valSet, newValSet,
+			hash("app_hash"), hash("cons_hash"), hash("results_hash"),
+			first, last,
+			types.DefaultVoterParams(),
+		)
+		voterSet := types.SelectVoter(valSet, proofHash(header), types.DefaultVoterParams())
+		return header, valSet, voterSet, newKeys
+	}
+	header := keys.GenSignedHeaderLastBlockID(
+		chainID, height, bTime,
+		nil, valSet, newValSet,
+		hash("app_hash"), hash("cons_hash"), hash("results_hash"),
+		0, len(keys),
+		types.BlockID{Hash: lastHeader.Hash()},
+		types.DefaultVoterParams(),
+	)
+	voterSet := types.SelectVoter(valSet, proofHash(header), types.DefaultVoterParams())
+	return header, valSet, voterSet, newKeys
+}
+
 // Generates the header and validator set to create a full entire mock node with blocks to height (
 // blockSize) and with variation in validator sets. BlockIntervals are in per minute.
 // NOTE: Expected to have a large validator set size ~ 100 validators.
-func genMockNodeWithKeys(
-	chainID string,
-	blockSize int64,
-	valSize int,
-	valVariation float32,
-	bTime time.Time) (
+func genMockNodeWithKeys(chainID string, blockSize int64, valSize int, valVariation float32, bTime time.Time) (
 	map[int64]*types.SignedHeader,
 	map[int64]*types.ValidatorSet,
 	map[int64]*types.VoterSet,
 	map[int64]privKeys) {
 
 	var (
-		headers         = make(map[int64]*types.SignedHeader, blockSize)
-		valSet          = make(map[int64]*types.ValidatorSet, blockSize+1)
-		voterSet        = make(map[int64]*types.VoterSet, blockSize+1)
-		keymap          = make(map[int64]privKeys, blockSize+1)
-		keys            = genPrivKeys(valSize)
-		totalVariation  = valVariation
-		valVariationInt int
-		newKeys         privKeys
+		headers  = make(map[int64]*types.SignedHeader, blockSize)
+		valSet   = make(map[int64]*types.ValidatorSet, blockSize+1)
+		voterSet = make(map[int64]*types.VoterSet, blockSize+1)
+		keymap   = make(map[int64]privKeys, blockSize+1)
 	)
 
-	valVariationInt = int(totalVariation)
-	totalVariation = -float32(valVariationInt)
-	newKeys = keys.ChangeKeys(valVariationInt)
-	keymap[1] = keys
-	keymap[2] = newKeys
+	setter := func(height int64,
+		header *types.SignedHeader, vals *types.ValidatorSet, voters *types.VoterSet, newKeys privKeys) {
+		headers[height] = header
+		valSet[height] = vals
+		voterSet[height] = voters
+		keymap[height+1] = newKeys
+	}
+
+	height := int64(1)
+	keys := genPrivKeys(valSize)
+	keymap[height] = keys
+	calcValVariationFunc := genCalcValVariationFunc()
+
+	header, vals, voters, newKeys := genMockNodeWithKey(chainID, height, nil,
+		keys, nil,
+		nil, nil, nil,
+		bTime.Add(time.Duration(height)*time.Minute),
+		0, len(keys),
+		valVariation, calcValVariationFunc)
 
 	// genesis header and vals
-	valSet[1] = keys.ToValidators(2, 2)
-	lastHeader := keys.GenSignedHeader(chainID, 1, bTime.Add(1*time.Minute), nil,
-		valSet[1], newKeys.ToValidators(2, 2),
-		hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys), types.DefaultVoterParams())
-	currentHeader := lastHeader
-	headers[1] = currentHeader
-	voterSet[1] = types.SelectVoter(valSet[1], proofHash(headers[1]), types.DefaultVoterParams())
+	setter(height, header, vals, voters, newKeys)
+
 	keys = newKeys
+	lastHeader := header
 
 	for height := int64(2); height <= blockSize; height++ {
-		totalVariation += valVariation
-		valVariationInt = int(totalVariation)
-		totalVariation = -float32(valVariationInt)
-		newKeys = keys.ChangeKeys(valVariationInt)
-		valSet[height] = keys.ToValidators(2, 2)
-		currentHeader = keys.GenSignedHeaderLastBlockID(chainID, height, bTime.Add(time.Duration(height)*time.Minute),
-			nil,
-			valSet[height], newKeys.ToValidators(2, 2),
-			hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys),
-			types.BlockID{Hash: lastHeader.Hash()}, types.DefaultVoterParams())
-		if !bytes.Equal(currentHeader.Hash(), currentHeader.Commit.BlockID.Hash) {
-			panic(fmt.Sprintf("commit hash didn't match: %X != %X", currentHeader.Hash(), currentHeader.Commit.BlockID.Hash))
+		header, vals, voters, newKeys := genMockNodeWithKey(chainID, height, nil,
+			keys, nil,
+			nil, nil, lastHeader,
+			bTime.Add(time.Duration(height)*time.Minute),
+			0, len(keys),
+			valVariation, calcValVariationFunc)
+		if !bytes.Equal(header.Hash(), header.Commit.BlockID.Hash) {
+			panic(fmt.Sprintf("commit hash didn't match: %X != %X", header.Hash(), header.Commit.BlockID.Hash))
 		}
-		headers[height] = currentHeader
-		voterSet[height] = types.SelectVoter(valSet[height], proofHash(headers[height]), types.DefaultVoterParams())
-		lastHeader = currentHeader
+		setter(height, header, vals, voters, newKeys)
+
 		keys = newKeys
-		keymap[height+1] = keys
+		lastHeader = header
 	}
 
 	return headers, valSet, voterSet, keymap

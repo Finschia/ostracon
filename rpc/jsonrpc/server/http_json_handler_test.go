@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -226,4 +227,27 @@ func TestUnknownRPCPath(t *testing.T) {
 	// Always expecting back a 404 error
 	require.Equal(t, http.StatusNotFound, res.StatusCode, "should always return 404")
 	res.Body.Close()
+}
+
+func TestMakeJSONRPCHandler_Unmarshal_WriteRPCResponseHTTPError_error(t *testing.T) {
+	handlerFunc := makeJSONRPCHandler(nil, log.TestingLogger())
+	// json.Unmarshal error
+	req, _ := http.NewRequest("GET", "http://localhost/", strings.NewReader("hoge"))
+	// WriteRPCResponseHTTPError error
+	rec := NewFailedWriteResponseWriter()
+	handlerFunc.ServeHTTP(rec, req)
+	assert.Equal(t,
+		strconv.Itoa(http.StatusInternalServerError),
+		rec.Header().Get(http.StatusText(http.StatusInternalServerError)))
+}
+
+func TestMakeJSONRPCHandler_last_WriteRPCResponseHTTP_error(t *testing.T) {
+	handlerFunc := makeJSONRPCHandler(TestFuncMap, log.TestingLogger())
+	req, _ := http.NewRequest("GET", "http://localhost/", strings.NewReader(TestGoodBody))
+	// WriteRPCResponseHTTP error
+	rec := NewFailedWriteResponseWriter()
+	handlerFunc.ServeHTTP(rec, req)
+	assert.Equal(t,
+		strconv.Itoa(http.StatusOK),
+		rec.Header().Get(http.StatusText(http.StatusOK)))
 }

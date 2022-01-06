@@ -1,8 +1,9 @@
 package commands
 
 import (
-	"github.com/line/ostracon/version"
 	"testing"
+
+	"github.com/line/ostracon/version"
 )
 
 func TestVersionCmd(t *testing.T) {

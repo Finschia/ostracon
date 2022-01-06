@@ -505,7 +505,7 @@ func (mem *CListMempool) resCbFirstTime(
 			}
 			memTx.senders.Store(peerID, true)
 			mem.addTx(memTx)
-			mem.logger.Info("Added good transaction",
+			mem.logger.Debug("added good transaction",
 				"tx", txID(tx),
 				"res", r,
 				"height", memTx.height,
@@ -545,7 +545,7 @@ func (mem *CListMempool) resCbRecheck(req *abci.Request, res *abci.Response) {
 				// Good, nothing to do.
 			} else {
 				// Tx became invalidated due to newly committed block.
-				mem.logger.Info("tx is no longer valid", "tx", txID(tx), "res", r)
+				mem.logger.Debug("tx is no longer valid", "tx", txID(tx), "res", r)
 				// NOTE: we remove tx from the cache because it might be good later
 				mem.removeTx(tx, celem, true)
 			}
@@ -713,10 +713,8 @@ func (mem *CListMempool) Update(
 		if err != nil {
 			mem.logger.Error("error in proxyAppConn.BeginRecheckTxSync", "err", err)
 		}
-
-		mem.logger.Info("recheck txs", "numtxs", mem.Size(), "height", block.Height)
+		mem.logger.Debug("recheck txs", "numtxs", mem.Size(), "height", block.Height)
 		mem.recheckTxs()
-
 		_, err = mem.proxyAppConn.EndRecheckTxSync(abci.RequestEndRecheckTx{Height: block.Height})
 		if err != nil {
 			mem.logger.Error("error in proxyAppConn.EndRecheckTxSync", "err", err)
@@ -726,10 +724,6 @@ func (mem *CListMempool) Update(
 
 		recheckTimeMs := float64(recheckEndTime-recheckStartTime) / 1000000
 		mem.metrics.RecheckTime.Set(recheckTimeMs)
-
-		// At this point, mem.txs are being rechecked.
-		// mem.recheckCursor re-scans mem.txs and possibly removes some txs.
-		// Before mem.Reap(), we should wait for mem.recheckCursor to be nil.
 	}
 
 	// notify there're some txs left.

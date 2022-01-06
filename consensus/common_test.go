@@ -466,36 +466,42 @@ func loadPrivValidator(config *cfg.Config) *privval.FilePV {
 }
 
 func randState(nValidators int) (*State, []*validatorStub) {
-	return randStateWithVoterParams(nValidators, types.DefaultVoterParams())
+	return randStateWithVoterParamsWithApp(
+		nValidators,
+		types.DefaultVoterParams(),
+		counter.NewApplication(true))
 }
 
-func randStateWithVoterParams(nValidators int, voterParams *types.VoterParams) (*State, []*validatorStub) {
+func randStateWithVoterParams(
+	nValidators int,
+	voterParams *types.VoterParams) (*State, []*validatorStub) {
+	return randStateWithVoterParamsWithApp(
+		nValidators,
+		voterParams,
+		counter.NewApplication(true))
+}
+
+func randStateWithVoterParamsWithPersistentKVStoreApp(
+	nValidators int,
+	voterParams *types.VoterParams,
+	testName string) (*State, []*validatorStub) {
+	return randStateWithVoterParamsWithApp(
+		nValidators,
+		voterParams,
+		newPersistentKVStoreWithPath(path.Join(config.DBDir(), testName)))
+}
+
+func randStateWithVoterParamsWithApp(
+	nValidators int,
+	voterParams *types.VoterParams,
+	app abci.Application) (*State, []*validatorStub) {
+
 	// Get State
 	state, privVals := randGenesisState(nValidators, false, 10, voterParams)
 	state.LastProofHash = []byte{2}
 
 	vss := make([]*validatorStub, nValidators)
 
-	cs := newState(state, privVals[0], counter.NewApplication(true))
-
-	for i := 0; i < nValidators; i++ {
-		vss[i] = newValidatorStub(privVals[i], int32(i))
-	}
-	// since cs1 starts at 1
-	incrementHeight(vss[1:]...)
-
-	return cs, vss
-}
-
-func randStateWithVoterParamsWithApp(nValidators int, voterParams *types.VoterParams, testName string) (
-	*State, []*validatorStub) {
-	// Get State
-	state, privVals := randGenesisState(nValidators, false, 10, voterParams)
-	state.LastProofHash = []byte{2}
-
-	vss := make([]*validatorStub, nValidators)
-
-	app := newPersistentKVStoreWithPath(path.Join(config.DBDir(), testName))
 	cs := newState(state, privVals[0], app)
 
 	for i := 0; i < nValidators; i++ {
