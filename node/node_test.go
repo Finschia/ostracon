@@ -23,6 +23,7 @@ import (
 	tmrand "github.com/line/ostracon/libs/rand"
 	mempl "github.com/line/ostracon/mempool"
 	"github.com/line/ostracon/p2p"
+	"github.com/line/ostracon/p2p/conn"
 	p2pmock "github.com/line/ostracon/p2p/mock"
 	"github.com/line/ostracon/privval"
 	"github.com/line/ostracon/proxy"
@@ -388,6 +389,14 @@ func TestNodeNewNodeCustomReactors(t *testing.T) {
 	defer os.RemoveAll(config.RootDir)
 
 	cr := p2pmock.NewReactor()
+	cr.Channels = []*conn.ChannelDescriptor{
+		{
+			ID:                  byte(0x31),
+			Priority:            5,
+			SendQueueCapacity:   100,
+			RecvMessageCapacity: 100,
+		},
+	}
 	customBlockchainReactor := p2pmock.NewReactor()
 
 	nodeKey, err := p2p.LoadOrGenNodeKey(config.NodeKeyFile())
@@ -416,6 +425,10 @@ func TestNodeNewNodeCustomReactors(t *testing.T) {
 
 	assert.True(t, customBlockchainReactor.IsRunning())
 	assert.Equal(t, customBlockchainReactor, n.Switch().Reactor("BLOCKCHAIN"))
+
+	channels := n.NodeInfo().(p2p.DefaultNodeInfo).Channels
+	assert.Contains(t, channels, mempl.MempoolChannel)
+	assert.Contains(t, channels, cr.Channels[0].ID)
 }
 
 func TestNodeNewNodeTxIndexIndexer(t *testing.T) {
