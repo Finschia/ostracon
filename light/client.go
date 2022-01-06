@@ -256,7 +256,7 @@ func NewClientFromTrustedStore(
 
 	// Validate the number of witnesses.
 	if len(c.witnesses) < 1 {
-		return nil, errNoWitnesses{}
+		return nil, ErrNoWitnesses
 	}
 
 	// Verify witnesses are all on the same chain.
@@ -1149,7 +1149,7 @@ func (c *Client) compareFirstHeaderWithWitnesses(ctx context.Context, h *types.S
 	defer c.providerMutex.Unlock()
 
 	if len(c.witnesses) < 1 {
-		return errNoWitnesses{}
+		return ErrNoWitnesses
 	}
 
 	errc := make(chan error, len(c.witnesses))
