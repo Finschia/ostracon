@@ -126,6 +126,35 @@ func TestMempoolConfigValidateBasic(t *testing.T) {
 func TestStateSyncConfigValidateBasic(t *testing.T) {
 	cfg := TestStateSyncConfig()
 	require.NoError(t, cfg.ValidateBasic())
+
+	testVerify := func(expectedError string) {
+		actual := cfg.ValidateBasic()
+		require.Error(t, actual)
+		require.Equal(t, expectedError, actual.Error())
+	}
+
+	// Enabled
+	cfg.Enable = true
+	testVerify("rpc_servers is required")
+	cfg.RPCServers = []string{""}
+	testVerify("at least two rpc_servers entries is required")
+	cfg.RPCServers = []string{"", ""}
+	testVerify("found empty rpc_servers entry")
+	cfg.RPCServers = []string{"a", "b"}
+	cfg.DiscoveryTime = 1 * time.Second
+	testVerify("discovery time must be 0s or greater than five seconds")
+	cfg.DiscoveryTime = 0
+	cfg.TrustPeriod = 0
+	testVerify("trusted_period is required")
+	cfg.TrustPeriod = 1
+	testVerify("trusted_height is required")
+	cfg.TrustHeight = 1
+	testVerify("trusted_hash is required")
+	cfg.TrustHash = "0"
+	testVerify("invalid trusted_hash: encoding/hex: odd length hex string")
+	cfg.TrustHash = "00"
+	// Success with Enabled
+	require.NoError(t, cfg.ValidateBasic())
 }
 
 func TestFastSyncConfigValidateBasic(t *testing.T) {
