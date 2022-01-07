@@ -1,8 +1,12 @@
 package evidence_test
 
 import (
+	"bytes"
+	"sort"
 	"testing"
 	"time"
+
+	"github.com/line/ostracon/light"
 
 	"github.com/coniks-sys/coniks-go/crypto/vrf"
 	"github.com/line/tm-db/v2/memdb"
@@ -25,190 +29,181 @@ import (
 	"github.com/line/ostracon/version"
 )
 
+const (
+	defaultVotingPower = 10
+)
+
 func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
-
-	commonVals, commonVoters, commonPrivVals := types.RandVoterSet(2, 10)
-	// use the correct Proof to bypass the checks in libsodium
-	var proof []byte
-	proof, err := commonPrivVals[0].GenerateVRFProof([]byte{})
-	require.NoError(t, err)
-
-	newVal, newPrivVal := types.RandValidatorForPrivKey(types.PrivKeyEd25519, false, 9)
-
-	conflictingVals, err := types.ValidatorSetFromExistingValidators(append(commonVals.Validators, newVal))
-	require.NoError(t, err)
-	conflictingVoters, err := types.ValidatorSetFromExistingValidators(append(commonVoters.Voters, newVal))
-	require.NoError(t, err)
-	conflictingVoterSet := types.ToVoterAll(conflictingVoters.Validators)
-	conflictingPrivVals := append(commonPrivVals, newPrivVal)
-
-	commonHeader := makeHeaderRandom(4)
-	commonHeader.Time = defaultEvidenceTime
-	commonHeader.Proof = proof
-	trustedHeader := makeHeaderRandom(10)
-	trustedHeader.Time = defaultEvidenceTime.Add(1 * time.Hour)
-
-	conflictingHeader := makeHeaderRandom(10)
-	conflictingHeader.Time = defaultEvidenceTime.Add(1 * time.Hour)
-	conflictingHeader.ValidatorsHash = conflictingVals.Hash()
-	conflictingHeader.VotersHash = conflictingVoterSet.Hash()
-	conflictingHeader.Proof = proof
-
-	// we are simulating a lunatic light client attack
-	blockID := makeBlockID(conflictingHeader.Hash(), 1000, []byte("partshash"))
-	voteSet := types.NewVoteSet(evidenceChainID, 10, 1, tmproto.SignedMsgType(2), conflictingVoterSet)
-	commit, err := types.MakeCommit(blockID, 10, 1, voteSet, conflictingPrivVals, defaultEvidenceTime)
-	require.NoError(t, err)
-	ev := &types.LightClientAttackEvidence{
-		ConflictingBlock: &types.LightBlock{
-			SignedHeader: &types.SignedHeader{
-				Header: conflictingHeader,
-				Commit: commit,
-			},
-			ValidatorSet: conflictingVals,
-			VoterSet:     conflictingVoterSet,
-		},
-		CommonHeight:        4,
-		TotalVotingPower:    20,
-		ByzantineValidators: commonVals.Validators,
-		Timestamp:           defaultEvidenceTime,
-	}
-
-	commonSignedHeader := &types.SignedHeader{
-		Header: commonHeader,
-		Commit: &types.Commit{},
-	}
-	commonSignedHeader.Proof = proof
-
-	trustedBlockID := makeBlockID(trustedHeader.Hash(), 1000, []byte("partshash"))
-	_, voters, privVals := types.RandVoterSet(3, 8)
-	trustedVoteSet := types.NewVoteSet(evidenceChainID, 10, 1, tmproto.SignedMsgType(2), voters)
-	trustedCommit, err := types.MakeCommit(trustedBlockID, 10, 1, trustedVoteSet, privVals, defaultEvidenceTime)
-	require.NoError(t, err)
-	trustedSignedHeader := &types.SignedHeader{
-		Header: trustedHeader,
-		Commit: trustedCommit,
-	}
+	const (
+		height       int64 = 10
+		commonHeight int64 = 4
+		totalVals          = 10
+		byzVals            = 4
+	)
+	attackTime := defaultEvidenceTime.Add(1 * time.Hour)
+	// create valid lunatic evidence
+	ev, trusted, common := makeLunaticEvidence(
+		t, height, commonHeight, totalVals, byzVals, totalVals-byzVals, defaultEvidenceTime, attackTime)
+	require.NoError(t, ev.ValidateBasic())
 
 	// good pass -> no error
-	err = evidence.VerifyLightClientAttack(
-		ev,
-		commonSignedHeader,
-		trustedSignedHeader,
-		commonVals,
-		commonVoters,
-		defaultEvidenceTime.Add(2*time.Hour),
-		3*time.Hour,
-		types.DefaultVoterParams(),
-	)
+	err := evidence.VerifyLightClientAttack(ev, common.SignedHeader, trusted.SignedHeader,
+		common.ValidatorSet,
+		ev.ConflictingBlock.VoterSet, // Should use correct VoterSet for bls.VerifyAggregatedSignature
+		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour, types.DefaultVoterParams())
 	assert.NoError(t, err)
 
 	// trusted and conflicting hashes are the same -> an error should be returned
-	err = evidence.VerifyLightClientAttack(
-		ev,
-		commonSignedHeader,
-		ev.ConflictingBlock.SignedHeader,
-		commonVals,
-		commonVoters,
-		defaultEvidenceTime.Add(2*time.Hour),
-		3*time.Hour,
-		types.DefaultVoterParams(),
-	)
+	err = evidence.VerifyLightClientAttack(ev, common.SignedHeader, ev.ConflictingBlock.SignedHeader,
+		common.ValidatorSet, common.VoterSet,
+		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour, types.DefaultVoterParams())
 	assert.Error(t, err)
 
 	// evidence with different total validator power should fail
-	ev.TotalVotingPower = 1
-	err = evidence.VerifyLightClientAttack(
-		ev,
-		commonSignedHeader,
-		trustedSignedHeader,
-		commonVals,
-		commonVoters,
-		defaultEvidenceTime.Add(2*time.Hour),
-		3*time.Hour,
-		types.DefaultVoterParams(),
-	)
+	ev.TotalVotingPower = 1 * defaultVotingPower
+	err = evidence.VerifyLightClientAttack(ev, common.SignedHeader, trusted.SignedHeader,
+		common.ValidatorSet, common.VoterSet,
+		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour, types.DefaultVoterParams())
 	assert.Error(t, err)
-	ev.TotalVotingPower = 20
 
-	forwardConflictingHeader := makeHeaderRandom(11)
-	forwardConflictingHeader.Time = defaultEvidenceTime.Add(30 * time.Minute)
-	forwardConflictingHeader.ValidatorsHash = conflictingVals.Hash()
-	forwardConflictingHeader.VotersHash = conflictingVoterSet.Hash()
-	forwardBlockID := makeBlockID(forwardConflictingHeader.Hash(), 1000, []byte("partshash"))
-	forwardVoteSet := types.NewVoteSet(evidenceChainID, 11, 1, tmproto.SignedMsgType(2), conflictingVoterSet)
-	forwardCommit, err := types.MakeCommit(forwardBlockID, 11, 1, forwardVoteSet, conflictingPrivVals, defaultEvidenceTime)
-	require.NoError(t, err)
-	forwardLunaticEv := &types.LightClientAttackEvidence{
-		ConflictingBlock: &types.LightBlock{
-			SignedHeader: &types.SignedHeader{
-				Header: forwardConflictingHeader,
-				Commit: forwardCommit,
-			},
-			ValidatorSet: conflictingVals,
-			VoterSet:     conflictingVoterSet,
-		},
-		CommonHeight:        4,
-		TotalVotingPower:    20,
-		ByzantineValidators: commonVals.Validators,
-		Timestamp:           defaultEvidenceTime,
-	}
-	err = evidence.VerifyLightClientAttack(
-		forwardLunaticEv,
-		commonSignedHeader,
-		trustedSignedHeader,
-		commonVals,
-		commonVoters,
-		defaultEvidenceTime.Add(2*time.Hour),
-		3*time.Hour,
-		types.DefaultVoterParams(),
+	// evidence without enough malicious votes should fail
+	ev, trusted, common = makeLunaticEvidence(
+		t, height, commonHeight, totalVals, byzVals-1, totalVals-byzVals, defaultEvidenceTime, attackTime)
+	err = evidence.VerifyLightClientAttack(ev, common.SignedHeader, trusted.SignedHeader,
+		common.ValidatorSet, common.VoterSet,
+		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour, types.DefaultVoterParams())
+	assert.Error(t, err)
+}
+
+func TestVerify_LunaticAttackAgainstState(t *testing.T) {
+	const (
+		height       int64 = 10
+		commonHeight int64 = 4
+		totalVals          = 10
+		byzVals            = 4
 	)
-	assert.NoError(t, err)
+	attackTime := defaultEvidenceTime.Add(1 * time.Hour)
+	// create valid lunatic evidence
+	ev, trusted, common := makeLunaticEvidence(
+		t, height, commonHeight, totalVals, byzVals, totalVals-byzVals, defaultEvidenceTime, attackTime)
 
+	// now we try to test verification against state
 	state := sm.State{
 		LastBlockTime:   defaultEvidenceTime.Add(2 * time.Hour),
-		LastBlockHeight: 11,
+		LastBlockHeight: height + 1,
 		ConsensusParams: *types.DefaultConsensusParams(),
 		VoterParams:     types.DefaultVoterParams(),
 	}
 	stateStore := &smmocks.Store{}
-	stateStore.On("LoadValidators", int64(4)).Return(commonVals, nil)
-	stateStore.On("LoadVoters", int64(4), mock.AnythingOfType("*types.VoterParams")).Return(commonVoters, nil)
+	stateStore.On("LoadValidators", commonHeight).Return(common.ValidatorSet, nil)
+	stateStore.On("LoadVoters", commonHeight, mock.AnythingOfType("*types.VoterParams")).Return(
+		ev.ConflictingBlock.VoterSet, nil) // Should use correct VoterSet for bls.VerifyAggregatedSignature
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
-	blockStore.On("LoadBlockMeta", int64(4)).Return(&types.BlockMeta{Header: *commonHeader})
-	blockStore.On("LoadBlockMeta", int64(10)).Return(&types.BlockMeta{Header: *trustedHeader})
-	blockStore.On("LoadBlockMeta", int64(11)).Return(nil)
-	blockStore.On("LoadBlockCommit", int64(4)).Return(commit)
-	blockStore.On("LoadBlockCommit", int64(10)).Return(trustedCommit)
-	blockStore.On("Height").Return(int64(10))
-
+	blockStore.On("LoadBlockMeta", commonHeight).Return(&types.BlockMeta{Header: *common.Header})
+	blockStore.On("LoadBlockMeta", height).Return(&types.BlockMeta{Header: *trusted.Header})
+	blockStore.On("LoadBlockCommit", commonHeight).Return(common.Commit)
+	blockStore.On("LoadBlockCommit", height).Return(trusted.Commit)
 	pool, err := evidence.NewPool(memdb.NewDB(), stateStore, blockStore)
 	require.NoError(t, err)
 	pool.SetLogger(log.TestingLogger())
 
 	evList := types.EvidenceList{ev}
-	err = pool.CheckEvidence(evList)
-	assert.NoError(t, err)
+	// check that the evidence pool correctly verifies the evidence
+	assert.NoError(t, pool.CheckEvidence(evList))
 
+	// as it was not originally in the pending bucket, it should now have been added
 	pendingEvs, _ := pool.PendingEvidence(state.ConsensusParams.Evidence.MaxBytes)
-	assert.Equal(t, 1, len(pendingEvs))
+	require.Equal(t, 1, len(pendingEvs))
+	assert.Equal(t, ev, pendingEvs[0])
 
 	// if we submit evidence only against a single byzantine validator when we see there are more validators then this
 	// should return an error
-	ev.ByzantineValidators = []*types.Validator{commonVals.Validators[0]}
-	err = pool.CheckEvidence(evList)
-	assert.Error(t, err)
-	ev.ByzantineValidators = commonVals.Validators // restore evidence
+	ev.ByzantineValidators = ev.ByzantineValidators[:1]
+	t.Log(evList)
+	assert.Error(t, pool.CheckEvidence(evList))
+	// restore original byz vals
+	ev.ByzantineValidators = ev.GetByzantineValidators(common.VoterSet, trusted.SignedHeader)
+
+	// duplicate evidence should be rejected
+	evList = types.EvidenceList{ev, ev}
+	pool, err = evidence.NewPool(memdb.NewDB(), stateStore, blockStore)
+	require.NoError(t, err)
+	assert.Error(t, pool.CheckEvidence(evList))
 
 	// If evidence is submitted with an altered timestamp it should return an error
 	ev.Timestamp = defaultEvidenceTime.Add(1 * time.Minute)
-	err = pool.CheckEvidence(evList)
-	assert.Error(t, err)
+	pool, err = evidence.NewPool(memdb.NewDB(), stateStore, blockStore)
+	require.NoError(t, err)
+	assert.Error(t, pool.AddEvidence(ev))
+	ev.Timestamp = defaultEvidenceTime
 
-	evList = types.EvidenceList{forwardLunaticEv}
-	err = pool.CheckEvidence(evList)
-	assert.NoError(t, err)
+	// Evidence submitted with a different validator power should fail
+	ev.TotalVotingPower = 1
+	pool, err = evidence.NewPool(memdb.NewDB(), stateStore, blockStore)
+	require.NoError(t, err)
+	assert.Error(t, pool.AddEvidence(ev))
+	ev.TotalVotingPower = common.VoterSet.TotalVotingPower()
+}
+
+func TestVerify_ForwardLunaticAttack(t *testing.T) {
+	const (
+		nodeHeight   int64 = 8
+		attackHeight int64 = 10
+		commonHeight int64 = 4
+		totalVals          = 10
+		byzVals            = 5
+	)
+	attackTime := defaultEvidenceTime.Add(1 * time.Hour)
+
+	// create a forward lunatic attack
+	ev, trusted, common := makeLunaticEvidence(
+		t, attackHeight, commonHeight, totalVals, byzVals, totalVals-byzVals, defaultEvidenceTime, attackTime)
+
+	// now we try to test verification against state
+	state := sm.State{
+		LastBlockTime:   defaultEvidenceTime.Add(2 * time.Hour),
+		LastBlockHeight: nodeHeight,
+		ConsensusParams: *types.DefaultConsensusParams(),
+	}
+
+	// modify trusted light block so that it is of a height less than the conflicting one
+	trusted.Header.Height = state.LastBlockHeight
+	trusted.Header.Time = state.LastBlockTime
+
+	stateStore := &smmocks.Store{}
+	stateStore.On("LoadValidators", commonHeight).Return(common.ValidatorSet, nil)
+	stateStore.On("LoadVoters", commonHeight, mock.AnythingOfType("*types.VoterParams")).Return(
+		ev.ConflictingBlock.VoterSet, nil) // Should use correct VoterSet for bls.VerifyAggregatedSignature
+	stateStore.On("Load").Return(state, nil)
+	blockStore := &mocks.BlockStore{}
+	blockStore.On("LoadBlockMeta", commonHeight).Return(&types.BlockMeta{Header: *common.Header})
+	blockStore.On("LoadBlockMeta", nodeHeight).Return(&types.BlockMeta{Header: *trusted.Header})
+	blockStore.On("LoadBlockMeta", attackHeight).Return(nil)
+	blockStore.On("LoadBlockCommit", commonHeight).Return(common.Commit)
+	blockStore.On("LoadBlockCommit", nodeHeight).Return(trusted.Commit)
+	blockStore.On("Height").Return(nodeHeight)
+	pool, err := evidence.NewPool(memdb.NewDB(), stateStore, blockStore)
+	require.NoError(t, err)
+
+	// check that the evidence pool correctly verifies the evidence
+	assert.NoError(t, pool.CheckEvidence(types.EvidenceList{ev}))
+
+	// now we use a time which isn't able to contradict the FLA - thus we can't verify the evidence
+	oldBlockStore := &mocks.BlockStore{}
+	oldHeader := trusted.Header
+	oldHeader.Time = defaultEvidenceTime
+	oldBlockStore.On("LoadBlockMeta", commonHeight).Return(&types.BlockMeta{Header: *common.Header})
+	oldBlockStore.On("LoadBlockMeta", nodeHeight).Return(&types.BlockMeta{Header: *oldHeader})
+	oldBlockStore.On("LoadBlockMeta", attackHeight).Return(nil)
+	oldBlockStore.On("LoadBlockCommit", commonHeight).Return(common.Commit)
+	oldBlockStore.On("LoadBlockCommit", nodeHeight).Return(trusted.Commit)
+	oldBlockStore.On("Height").Return(nodeHeight)
+	require.Equal(t, defaultEvidenceTime, oldBlockStore.LoadBlockMeta(nodeHeight).Header.Time)
+
+	pool, err = evidence.NewPool(memdb.NewDB(), stateStore, oldBlockStore)
+	require.NoError(t, err)
+	assert.Error(t, pool.CheckEvidence(types.EvidenceList{ev}))
 }
 
 func TestVerifyLightClientAttack_Equivocation(t *testing.T) {
@@ -240,7 +235,7 @@ func TestVerifyLightClientAttack_Equivocation(t *testing.T) {
 			VoterSet:     conflictingVoters,
 		},
 		CommonHeight:        10,
-		ByzantineValidators: conflictingVals.Validators[:4],
+		ByzantineValidators: conflictingVoters.Voters[:4],
 		TotalVotingPower:    50,
 		Timestamp:           defaultEvidenceTime,
 	}
@@ -507,6 +502,108 @@ func TestVerifyDuplicateVoteEvidence(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func makeLunaticEvidence(
+	t *testing.T,
+	height, commonHeight int64,
+	totalVals, byzVals, phantomVals int,
+	commonTime, attackTime time.Time,
+) (ev *types.LightClientAttackEvidence, trusted *types.LightBlock, common *types.LightBlock) {
+	commonValSet, commonVoterSet, commonPrivVals := types.RandVoterSet(totalVals, defaultVotingPower)
+	require.Greater(t, totalVals, byzVals)
+
+	// use the correct Proof to bypass the checks in libsodium
+	var proof []byte
+	proof, err := commonPrivVals[0].GenerateVRFProof([]byte{})
+	require.NoError(t, err)
+
+	// extract out the subset of byzantine validators in the common validator set
+	byzValidators, byzVoters, byzPrivVals :=
+		commonValSet.Validators[:byzVals], commonVoterSet.Voters[:byzVals], commonPrivVals[:byzVals]
+
+	phantomValSet, phantomVoterSet, phantomPrivVals := types.RandVoterSet(phantomVals, defaultVotingPower)
+
+	conflictingVals := types.NewValidatorSet(append(phantomValSet.Validators, byzValidators...))
+	conflictingVoters := types.ToVoterAll(append(phantomVoterSet.Voters, byzVoters...))
+	conflictingPrivVals := append(phantomPrivVals, byzPrivVals...)
+
+	// Should be the same order between VoterSet.Voters and PrivValidators for Commit
+	conflictingPrivVals = orderPrivValsByVoterSet(t, conflictingVoters, conflictingPrivVals)
+
+	conflictingHeader := makeHeaderRandom(height)
+	conflictingHeader.Proof = proof
+	conflictingHeader.Time = attackTime
+	conflictingHeader.ValidatorsHash = conflictingVals.Hash()
+	conflictingHeader.VotersHash = conflictingVoters.Hash()
+
+	blockID := makeBlockID(conflictingHeader.Hash(), 1000, []byte("partshash"))
+	voteSet := types.NewVoteSet(evidenceChainID, height, 1, tmproto.SignedMsgType(2), conflictingVoters)
+	commit, err := types.MakeCommit(blockID, height, 1, voteSet, conflictingPrivVals, defaultEvidenceTime)
+	require.NoError(t, err)
+	err = conflictingVoters.VerifyCommitLightTrusting(evidenceChainID, commit, light.DefaultTrustLevel)
+	require.NoError(t, err)
+	byzantineValidators := conflictingVoters.Copy().Voters
+	sort.Sort(types.ValidatorsByVotingPower(byzantineValidators))
+	ev = &types.LightClientAttackEvidence{
+		ConflictingBlock: &types.LightBlock{
+			SignedHeader: &types.SignedHeader{
+				Header: conflictingHeader,
+				Commit: commit,
+			},
+			ValidatorSet: conflictingVals,
+			VoterSet:     conflictingVoters,
+		},
+		CommonHeight:        commonHeight,
+		TotalVotingPower:    commonVoterSet.TotalVotingPower(),
+		ByzantineValidators: byzantineValidators,
+		Timestamp:           commonTime,
+	}
+
+	trustedHeader := makeHeaderRandom(height)
+	trustedHeader.Proof = proof
+	trustedBlockID := makeBlockID(trustedHeader.Hash(), 1000, []byte("partshash"))
+	trustedVals, trustedVoters, trustedPrivVals := types.RandVoterSet(totalVals, defaultVotingPower)
+
+	// Should be the same order between VoterSet.Voters and PrivValidators for Commit
+	trustedPrivVals = orderPrivValsByVoterSet(t, trustedVoters, trustedPrivVals)
+
+	trustedVoteSet := types.NewVoteSet(evidenceChainID, height, 1, tmproto.SignedMsgType(2), trustedVoters)
+	trustedCommit, err := types.MakeCommit(trustedBlockID, height, 1, trustedVoteSet, trustedPrivVals, defaultEvidenceTime)
+	require.NoError(t, err)
+	err = trustedVoters.VerifyCommitLightTrusting(evidenceChainID, trustedCommit, light.DefaultTrustLevel)
+	require.NoError(t, err)
+	trusted = &types.LightBlock{
+		SignedHeader: &types.SignedHeader{
+			Header: trustedHeader,
+			Commit: trustedCommit,
+		},
+		ValidatorSet: trustedVals,
+		VoterSet:     trustedVoters,
+	}
+
+	commonHeader := makeHeaderRandom(commonHeight)
+	commonHeader.Proof = proof
+	commonHeader.Time = commonTime
+	common = &types.LightBlock{
+		SignedHeader: &types.SignedHeader{
+			Header: commonHeader,
+			// we can leave this empty because we shouldn't be checking this
+			Commit: &types.Commit{},
+		},
+		ValidatorSet: commonValSet,
+		VoterSet:     commonVoterSet,
+	}
+
+	return ev, trusted, common
+}
+
+// func makeEquivocationEvidence() *types.LightClientAttackEvidence {
+
+// }
+
+// func makeAmnesiaEvidence() *types.LightClientAttackEvidence {
+
+// }
+
 func makeVote(
 	t *testing.T, val types.PrivValidator, chainID string, valIndex int32, height int64,
 	round int32, step int, blockID types.BlockID, time time.Time) *types.Vote {
@@ -566,4 +663,21 @@ func makeBlockID(hash []byte, partSetSize uint32, partSetHash []byte) types.Bloc
 			Hash:  psH,
 		},
 	}
+}
+
+func orderPrivValsByVoterSet(
+	t *testing.T, voters *types.VoterSet, privVals []types.PrivValidator) []types.PrivValidator {
+	output := make([]types.PrivValidator, len(privVals))
+	for idx, v := range voters.Voters {
+		for _, p := range privVals {
+			pubKey, err := p.GetPubKey()
+			require.NoError(t, err)
+			if bytes.Equal(v.Address, pubKey.Address()) {
+				output[idx] = p
+				break
+			}
+		}
+		require.NotEmpty(t, output[idx])
+	}
+	return output
 }
