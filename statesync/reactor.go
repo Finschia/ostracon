@@ -261,11 +261,16 @@ func (r *Reactor) Sync(
 	r.syncer = newSyncer(r.Logger, r.conn, r.connQuery, stateProvider, r.tempDir)
 	r.mtx.Unlock()
 
-	// Request snapshots from all currently connected peers
-	r.Logger.Debug("Requesting snapshots from known peers")
-	r.Switch.Broadcast(SnapshotChannel, mustEncodeMsg(&ssproto.SnapshotsRequest{}))
+	hook := func() {
+		r.Logger.Debug("Requesting snapshots from known peers")
+		// Request snapshots from all currently connected peers
+		r.Switch.Broadcast(SnapshotChannel, mustEncodeMsg(&ssproto.SnapshotsRequest{}))
+	}
 
-	state, previousState, commit, err := r.syncer.SyncAny(discoveryTime)
+	hook()
+
+	state, previousState, commit, err := r.syncer.SyncAny(discoveryTime, hook)
+
 	r.mtx.Lock()
 	r.syncer = nil
 	r.mtx.Unlock()
