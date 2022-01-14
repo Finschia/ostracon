@@ -241,10 +241,13 @@ func (voters *VoterSet) VerifyCommitLight(chainID string, blockID BlockID,
 			continue
 		}
 
-		// The vals and commit have a 1-to-1 correspondance.
+		// The voters and commit have a 1-to-1 correspondence.
 		// This means we don't need the voter address or to do any lookup.
 		// voter := voters.Voters[idx]
-		_, voter := voters.GetByAddress(commitSig.ValidatorAddress)
+		index, voter := voters.GetByAddress(commitSig.ValidatorAddress)
+		if index == -1 && voter == nil {
+			continue
+		}
 
 		// Validate signature.
 		voteSignBytes := commit.VoteSignBytes(chainID, int32(idx))

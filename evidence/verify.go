@@ -145,9 +145,9 @@ func VerifyLightClientAttack(
 	}
 
 	// Assert the correct amount of voting power of the validator set
-	if evTotal, valsTotal := e.TotalVotingPower, commonVoters.TotalVotingPower(); evTotal != valsTotal {
-		return fmt.Errorf("total voting power from the evidence and our validator set does not match (%d != %d)",
-			evTotal, valsTotal)
+	if evTotal, votersTotal := e.TotalVotingPower, commonVoters.TotalVotingPower(); evTotal != votersTotal {
+		return fmt.Errorf("total voting power from the evidence and our voter set does not match (%d != %d)",
+			evTotal, votersTotal)
 	}
 
 	// check in the case of a forward lunatic attack that monotonically increasing time has been violated
@@ -240,10 +240,6 @@ func validateABCIEvidence(
 	commonVoter *types.VoterSet,
 	trustedHeader *types.SignedHeader,
 ) error {
-	if evTotal, valsTotal := ev.TotalVotingPower, commonVoter.TotalVotingPower(); evTotal != valsTotal {
-		return fmt.Errorf("total voting power from the evidence and our validator set does not match (%d != %d)",
-			evTotal, valsTotal)
-	}
 
 	// Find out what type of attack this was and thus extract the malicious
 	// validators. Note, in the case of an Amnesia attack we don't have any

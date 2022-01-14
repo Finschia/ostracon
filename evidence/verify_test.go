@@ -75,6 +75,85 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestVerifyLightClientAttack_validateABCIEvidence(t *testing.T) {
+	const (
+		height             = int64(10)
+		commonHeight int64 = 4
+		totalVals          = 10
+		byzVals            = 4
+		votingPower        = defaultVotingPower
+	)
+	attackTime := defaultEvidenceTime.Add(1 * time.Hour)
+	// create valid lunatic evidence
+	ev, trusted, common := makeLunaticEvidence(
+		t, height, commonHeight, totalVals, byzVals, totalVals-byzVals, defaultEvidenceTime, attackTime)
+	require.NoError(t, ev.ValidateBasic())
+
+	// good pass -> no error
+	err := evidence.VerifyLightClientAttack(ev, common.SignedHeader, trusted.SignedHeader,
+		common.ValidatorSet,
+		ev.ConflictingBlock.VoterSet, // Should use correct VoterSet for bls.VerifyAggregatedSignature
+		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour, types.DefaultVoterParams())
+	assert.NoError(t, err)
+
+	// illegal nil validators
+	validator, _ := types.RandValidator(false, votingPower)
+	ev.ByzantineValidators = []*types.Validator{validator}
+	amnesiaHeader, err := types.SignedHeaderFromProto(ev.ConflictingBlock.SignedHeader.ToProto())
+	require.NoError(t, err)
+	amnesiaHeader.ProposerAddress = nil
+	amnesiaHeader.Commit.Round = 2
+	err = evidence.VerifyLightClientAttack(ev, common.SignedHeader, amnesiaHeader, // illegal header
+		common.ValidatorSet,
+		ev.ConflictingBlock.VoterSet, // Should use correct VoterSet for bls.VerifyAggregatedSignature
+		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour, types.DefaultVoterParams())
+	require.Error(t, err)
+	require.Equal(t, "expected nil validators from an amnesia light client attack but got 1", err.Error())
+
+	// illegal byzantine validators
+	equivocationHeader, err := types.SignedHeaderFromProto(ev.ConflictingBlock.SignedHeader.ToProto())
+	require.NoError(t, err)
+	equivocationHeader.ProposerAddress = nil
+	err = evidence.VerifyLightClientAttack(ev, common.SignedHeader, equivocationHeader, // illegal header
+		common.ValidatorSet,
+		ev.ConflictingBlock.VoterSet, // Should use correct VoterSet for bls.VerifyAggregatedSignature
+		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour, types.DefaultVoterParams())
+	require.Error(t, err)
+	require.Equal(t, "expected 10 byzantine validators from evidence but got 1", err.Error())
+
+	// illegal byzantine validator address
+	_, phantomVoterSet, _ := types.RandVoterSet(totalVals, defaultVotingPower)
+	ev.ByzantineValidators = phantomVoterSet.Voters
+	err = evidence.VerifyLightClientAttack(ev, common.SignedHeader, trusted.SignedHeader,
+		common.ValidatorSet,
+		ev.ConflictingBlock.VoterSet, // Should use correct VoterSet for bls.VerifyAggregatedSignature
+		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour, types.DefaultVoterParams())
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "evidence contained an unexpected byzantine validator address;")
+
+	// illegal byzantine validator staking power
+	phantomVoterSet = types.ToVoterAll(ev.ConflictingBlock.VoterSet.Voters)
+	phantomVoterSet.Voters[0].StakingPower = votingPower + 1
+	ev.ByzantineValidators = phantomVoterSet.Voters
+	err = evidence.VerifyLightClientAttack(ev, common.SignedHeader, trusted.SignedHeader,
+		common.ValidatorSet,
+		ev.ConflictingBlock.VoterSet, // Should use correct VoterSet for bls.VerifyAggregatedSignature
+		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour, types.DefaultVoterParams())
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "evidence contained unexpected byzantine validator staking power;")
+
+	// illegal byzantine validator voting power
+	phantomVoterSet = types.ToVoterAll(ev.ConflictingBlock.VoterSet.Voters)
+	phantomVoterSet.Voters[0].VotingPower = votingPower + 1
+	ev.ByzantineValidators = phantomVoterSet.Voters
+	err = evidence.VerifyLightClientAttack(ev, common.SignedHeader, trusted.SignedHeader,
+		common.ValidatorSet,
+		ev.ConflictingBlock.VoterSet, // Should use correct VoterSet for bls.VerifyAggregatedSignature
+		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour, types.DefaultVoterParams())
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "evidence contained unexpected byzantine validator voting power;")
+}
+
 func TestVerify_LunaticAttackAgainstState(t *testing.T) {
 	const (
 		height       int64 = 10
