@@ -70,7 +70,8 @@ func TestReactor_Receive_ChunkRequest(t *testing.T) {
 			}
 
 			// Start a reactor and send a ssproto.ChunkRequest, then wait for and check response
-			r := NewReactor(conn, nil, true, 1000)
+			cfg := config.DefaultStateSyncConfig()
+			r := NewReactor(*cfg, conn, nil, true, 1000)
 			err := r.Start()
 			require.NoError(t, err)
 			t.Cleanup(func() {
@@ -147,7 +148,8 @@ func TestReactor_Receive_SnapshotsRequest(t *testing.T) {
 			}
 
 			// Start a reactor and send a SnapshotsRequestMessage, then wait for and check responses
-			r := NewReactor(conn, nil, true, 1000)
+			cfg := config.DefaultStateSyncConfig()
+			r := NewReactor(*cfg, conn, nil, true, 1000)
 			err := r.Start()
 			require.NoError(t, err)
 			t.Cleanup(func() {
@@ -178,9 +180,10 @@ func makeTestStateSyncReactor(
 	name := "STATE_SYNC_REACTOR_FOR_TEST"
 	size := 2
 	reactors := make([]*Reactor, size)
-	initSwitch := func(i int, s *p2p.Switch, config *config.P2PConfig) *p2p.Switch {
+	initSwitch := func(i int, s *p2p.Switch, p2pConfig *config.P2PConfig) *p2p.Switch {
 		logger := log.TestingLogger()
-		reactors[i] = NewReactor(connSnapshot, connQuery, true, 1000)
+		cfg := config.DefaultStateSyncConfig()
+		reactors[i] = NewReactor(*cfg, connSnapshot, connQuery, true, 1000)
 		reactors[i].SetLogger(logger)
 		reactors[i].SetSwitch(s)
 
