@@ -1050,6 +1050,10 @@ func (n *Node) ConfigureRPC() error {
 
 		Config: *n.config.RPC,
 	})
+	if err := rpccore.InitGenesisChunks(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
