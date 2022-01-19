@@ -18,8 +18,9 @@ var (
 	// This is very brittle, see: https://github.com/tendermint/tendermint/issues/4740
 	regexpMissingHeight = regexp.MustCompile(`height \d+ is not available`)
 	regexpTooHigh       = regexp.MustCompile(`height \d+ must be less than or equal to`)
+	regexpTimedOut      = regexp.MustCompile(`Timeout exceeded`)
 
-	maxRetryAttempts      = 10
+	maxRetryAttempts      = 5
 	timeout          uint = 5 // sec.
 )
 
@@ -121,48 +122,54 @@ func (p *http) voterSet(ctx context.Context, height *int64) (*types.ValidatorSet
 		total   = -1
 	)
 
-	for len(voters) != total && page <= maxPages {
+OUTER_LOOP:
+	for len(vals) != total && page <= maxPages {
 		for attempt := 1; attempt <= maxRetryAttempts; attempt++ {
 			res, err := p.client.Validators(ctx, height, &page, &perPage)
-			if err != nil {
-				// TODO: standardize errors on the RPC side
-				if regexpTooHigh.MatchString(err.Error()) {
-					return nil, nil, provider.ErrHeightTooHigh
+			switch {
+			case err == nil:
+				// Validate response.
+				if len(res.Validators) == 0 {
+					return nil, nil, provider.ErrBadLightBlock{
+						Reason: fmt.Errorf("validator set is empty (height: %d, page: %d, per_page: %d)",
+							height, page, perPage),
+					}
+				}
+				if res.Total <= 0 {
+					return nil, nil, provider.ErrBadLightBlock{
+						Reason: fmt.Errorf("total number of vals is <= 0: %d (height: %d, page: %d, per_page: %d)",
+							res.Total, height, page, perPage),
+					}
 				}
 
-				if regexpMissingHeight.MatchString(err.Error()) {
-					return nil, nil, provider.ErrLightBlockNotFound
+				total = res.Total
+				vals = append(vals, res.Validators...)
+				for i := range res.VoterIndices {
+					voters = append(voters, res.Validators[res.VoterIndices[i]])
 				}
-				// if we have exceeded retry attempts then return no response error
-				if attempt == maxRetryAttempts {
-					return nil, nil, provider.ErrNoResponse
-				}
-				// else we wait and try again with exponential backoff
+				page++
+				continue OUTER_LOOP
+
+			case regexpTooHigh.MatchString(err.Error()):
+				return nil, nil, provider.ErrHeightTooHigh
+
+			case regexpMissingHeight.MatchString(err.Error()):
+				return nil, nil, provider.ErrLightBlockNotFound
+
+			// if we have exceeded retry attempts then return no response error
+			case attempt == maxRetryAttempts:
+				return nil, nil, provider.ErrNoResponse
+
+			case regexpTimedOut.MatchString(err.Error()):
+				// we wait and try again with exponential backoff
 				time.Sleep(backoffTimeout(uint16(attempt)))
 				continue
+
+			// context canceled or connection refused we return the error
+			default:
+				return nil, nil, err
 			}
 
-			// Validate response.
-			if len(res.Validators) == 0 {
-				return nil, nil, provider.ErrBadLightBlock{
-					Reason: fmt.Errorf("validator/voter set is empty (height: %d, page: %d, per_page: %d)",
-						height, page, perPage),
-				}
-			}
-			if res.Total <= 0 {
-				return nil, nil, provider.ErrBadLightBlock{
-					Reason: fmt.Errorf("total number of vals is <= 0: %d (height: %d, page: %d, per_page: %d)",
-						res.Total, height, page, perPage),
-				}
-			}
-
-			total = res.Total
-			vals = append(vals, res.Validators...)
-			for i := range res.VoterIndices {
-				voters = append(voters, res.Validators[res.VoterIndices[i]])
-			}
-			page++
-			break
 		}
 	}
 
@@ -176,20 +183,25 @@ func (p *http) voterSet(ctx context.Context, height *int64) (*types.ValidatorSet
 func (p *http) signedHeader(ctx context.Context, height *int64) (*types.SignedHeader, error) {
 	for attempt := 1; attempt <= maxRetryAttempts; attempt++ {
 		commit, err := p.client.Commit(ctx, height)
-		if err != nil {
-			// TODO: standardize errors on the RPC side
-			if regexpTooHigh.MatchString(err.Error()) {
-				return nil, provider.ErrHeightTooHigh
-			}
+		switch {
+		case err == nil:
+			return &commit.SignedHeader, nil
 
-			if regexpMissingHeight.MatchString(err.Error()) {
-				return nil, provider.ErrLightBlockNotFound
-			}
+		case regexpTooHigh.MatchString(err.Error()):
+			return nil, provider.ErrHeightTooHigh
+
+		case regexpMissingHeight.MatchString(err.Error()):
+			return nil, provider.ErrLightBlockNotFound
+
+		case regexpTimedOut.MatchString(err.Error()):
 			// we wait and try again with exponential backoff
 			time.Sleep(backoffTimeout(uint16(attempt)))
 			continue
+
+		// either context was cancelled or connection refused.
+		default:
+			return nil, err
 		}
-		return &commit.SignedHeader, nil
 	}
 	return nil, provider.ErrNoResponse
 }
