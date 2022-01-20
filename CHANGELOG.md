@@ -5,7 +5,7 @@
 *Jan 20, 2022*
 * Improve p2p/peer reactor
 
-### BREAKING CHAN
+### BREAKING CHANGE
 - Nothing
 
 ### FEATURES
