@@ -7,7 +7,7 @@ import (
 
 	"github.com/line/ostracon/crypto/secp256k1"
 
-	"github.com/golang/protobuf/proto" // nolint: staticcheck // still used by gogoproto
+	"github.com/golang/protobuf/proto"
 	"github.com/tendermint/go-amino"
 
 	"github.com/line/ostracon/proto/ostracon/version"

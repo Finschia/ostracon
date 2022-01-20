@@ -53,9 +53,9 @@ type DuplicateVoteEvidence struct {
 	VoteB *Vote `json:"vote_b"`
 
 	// abci specific information
-	TotalVotingPower int64
-	VotingPower      int64
-	ValidatorPower   int64
+	TotalVotingPower int64 // VoterSet.totalVotingPower
+	VotingPower      int64 // Validator.VotingPower
+	ValidatorPower   int64 // Validator.StakingPower
 	Timestamp        time.Time
 }
 
@@ -214,7 +214,7 @@ type LightClientAttackEvidence struct {
 
 	// abci specific information
 	ByzantineValidators []*Validator // validators in the validator set that misbehaved in creating the conflicting block
-	TotalVotingPower    int64        // total voting power of the validator set at the common height
+	TotalVotingPower    int64        // total voting power of the voter set at the common height
 	Timestamp           time.Time    // timestamp of the block at the common height
 }
 
@@ -251,20 +251,20 @@ func (l *LightClientAttackEvidence) Bytes() []byte {
 // GetByzantineValidators finds out what style of attack LightClientAttackEvidence was and then works out who
 // the malicious validators were and returns them. This is used both for forming the ByzantineValidators
 // field and for validating that it is correct. Validators are ordered based on validator power
-func (l *LightClientAttackEvidence) GetByzantineValidators(commonVals *VoterSet,
+func (l *LightClientAttackEvidence) GetByzantineValidators(commonVoters *VoterSet,
 	trusted *SignedHeader) []*Validator {
 	var validators []*Validator
 	// First check if the header is invalid. This means that it is a lunatic attack and therefore we take the
-	// validators who are in the commonVals and voted for the lunatic header
+	// validators who are in the commonVoters and voted for the lunatic header
 	if l.ConflictingHeaderIsInvalid(trusted.Header) {
 		for _, commitSig := range l.ConflictingBlock.Commit.Signatures {
 			if !commitSig.ForBlock() {
 				continue
 			}
 
-			_, val := commonVals.GetByAddress(commitSig.ValidatorAddress)
+			_, val := commonVoters.GetByAddress(commitSig.ValidatorAddress)
 			if val == nil {
-				// validator wasn't in the common validator set
+				// validator wasn't in the common voter set
 				continue
 			}
 			validators = append(validators, val)
@@ -295,7 +295,7 @@ func (l *LightClientAttackEvidence) GetByzantineValidators(commonVals *VoterSet,
 	}
 	// if the rounds are different then this is an amnesia attack. Unfortunately, given the nature of the attack,
 	// we aren't able yet to deduce which are malicious validators and which are not hence we return an
-	// empty validator set.
+	// empty voter set.
 	return validators
 }
 
@@ -315,7 +315,10 @@ func (l *LightClientAttackEvidence) ConflictingHeaderIsInvalid(trustedHeader *He
 // with evidence that have the same conflicting header and common height but different permutations
 // of validator commit signatures. The reason for this is that we don't want to allow several
 // permutations of the same evidence to be committed on chain. Ideally we commit the header with the
-// most commit signatures (captures the most byzantine validators) but anything greater than 1/3 is sufficient.
+// most commit signatures (captures the most byzantine validators) but anything greater than 1/3 is
+// sufficient.
+// TODO: We should change the hash to include the commit, header, total voting power, byzantine
+// validators and timestamp
 func (l *LightClientAttackEvidence) Hash() []byte {
 	buf := make([]byte, binary.MaxVarintLen64)
 	n := binary.PutVarint(buf, l.CommonHeight)
@@ -334,8 +337,14 @@ func (l *LightClientAttackEvidence) Height() int64 {
 
 // String returns a string representation of LightClientAttackEvidence
 func (l *LightClientAttackEvidence) String() string {
-	return fmt.Sprintf("LightClientAttackEvidence{ConflictingBlock: %v, CommonHeight: %d}",
-		l.ConflictingBlock.String(), l.CommonHeight)
+	return fmt.Sprintf(`LightClientAttackEvidence{
+		ConflictingBlock: %v,
+		CommonHeight: %d,
+		ByzatineValidators: %v,
+		TotalVotingPower: %d,
+		Timestamp: %v}#%X`,
+		l.ConflictingBlock.String(), l.CommonHeight, l.ByzantineValidators,
+		l.TotalVotingPower, l.Timestamp, l.Hash())
 }
 
 // Time returns the time of the common block where the infraction leveraged off.
@@ -354,8 +363,8 @@ func (l *LightClientAttackEvidence) ValidateBasic() error {
 		return errors.New("conflicting block missing header")
 	}
 
-	if err := l.ConflictingBlock.ValidateBasic(l.ConflictingBlock.ChainID); err != nil {
-		return fmt.Errorf("invalid conflicting light block: %w", err)
+	if l.TotalVotingPower <= 0 {
+		return errors.New("negative or zero total voting power")
 	}
 
 	if l.CommonHeight <= 0 {
@@ -368,6 +377,10 @@ func (l *LightClientAttackEvidence) ValidateBasic() error {
 	if l.CommonHeight > l.ConflictingBlock.Height {
 		return fmt.Errorf("common height is ahead of the conflicting block height (%d > %d)",
 			l.CommonHeight, l.ConflictingBlock.Height)
+	}
+
+	if err := l.ConflictingBlock.ValidateBasic(l.ConflictingBlock.ChainID); err != nil {
+		return fmt.Errorf("invalid conflicting light block: %w", err)
 	}
 
 	return nil
@@ -441,6 +454,8 @@ func (evl EvidenceList) Hash() []byte {
 	// the Evidence size is capped.
 	evidenceBzs := make([][]byte, len(evl))
 	for i := 0; i < len(evl); i++ {
+		// TODO: We should change this to the hash. Using bytes contains some unexported data that
+		// may cause different hashes
 		evidenceBzs[i] = evl[i].Bytes()
 	}
 	return merkle.HashFromByteSlices(evidenceBzs)

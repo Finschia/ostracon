@@ -796,8 +796,12 @@ func NewNode(config *cfg.Config,
 	// FIXME The way we do phased startups (e.g. replay -> fast sync -> consensus) is very messy,
 	// we should clean this whole thing up. See:
 	// https://github.com/tendermint/tendermint/issues/4644
-	stateSyncReactor := statesync.NewReactor(proxyApp.Snapshot(), proxyApp.Query(),
-		config.P2P.RecvAsync, config.P2P.StatesyncRecvBufSize)
+	stateSyncReactor := statesync.NewReactor(
+		*config.StateSync,
+		proxyApp.Snapshot(),
+		proxyApp.Query(),
+		config.P2P.RecvAsync,
+		config.P2P.StatesyncRecvBufSize)
 	stateSyncReactor.SetLogger(logger.With("module", "statesync"))
 
 	nodeInfo, err := makeNodeInfo(config, nodeKey, txIndexer, genDoc, state)
