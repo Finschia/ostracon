@@ -44,6 +44,7 @@ import (
 	"github.com/line/ostracon/state/indexer"
 	blockidxkv "github.com/line/ostracon/state/indexer/block/kv"
 	blockidxnull "github.com/line/ostracon/state/indexer/block/null"
+	"github.com/line/ostracon/state/indexer/sink/psql"
 	"github.com/line/ostracon/state/txindex"
 	"github.com/line/ostracon/state/txindex/kv"
 	"github.com/line/ostracon/state/txindex/null"
@@ -270,6 +271,7 @@ func createAndStartEventBus(logger log.Logger) (*types.EventBus, error) {
 
 func createAndStartIndexerService(
 	config *cfg.Config,
+	chainID string,
 	dbProvider DBProvider,
 	eventBus *types.EventBus,
 	logger log.Logger,
@@ -289,6 +291,18 @@ func createAndStartIndexerService(
 
 		txIndexer = kv.NewTxIndex(store)
 		blockIndexer = blockidxkv.New(pdbm.NewDB(store, []byte("block_events")))
+
+	case "psql":
+		if config.TxIndex.PsqlConn == "" {
+			return nil, nil, nil, errors.New(`no psql-conn is set for the "psql" indexer`)
+		}
+		es, err := psql.NewEventSink(config.TxIndex.PsqlConn, chainID)
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf("creating psql indexer: %w", err)
+		}
+		txIndexer = es.TxIndexer()
+		blockIndexer = es.BlockIndexer()
+
 	default:
 		txIndexer = &null.TxIndex{}
 		blockIndexer = &blockidxnull.BlockerIndexer{}
@@ -703,7 +717,8 @@ func NewNode(config *cfg.Config,
 		return nil, err
 	}
 
-	indexerService, txIndexer, blockIndexer, err := createAndStartIndexerService(config, dbProvider, eventBus, logger)
+	indexerService, txIndexer, blockIndexer, err := createAndStartIndexerService(config,
+		genDoc.ChainID, dbProvider, eventBus, logger)
 	if err != nil {
 		return nil, err
 	}
