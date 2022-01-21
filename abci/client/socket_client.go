@@ -34,11 +34,11 @@ type socketClient struct {
 	reqQueue   chan *ReqRes
 	flushTimer *timer.ThrottleTimer
 
-	mtx     tmsync.Mutex
+	mtx     tmsync.RWMutex
 	err     error
 	reqSent *list.List // list of requests sent, waiting for response
 
-	globalCbMtx tmsync.Mutex
+	globalCbMtx tmsync.RWMutex
 	globalCb    GlobalCallback
 }
 
@@ -101,21 +101,21 @@ func (cli *socketClient) OnStop() {
 
 // Error returns an error if the client was stopped abruptly.
 func (cli *socketClient) Error() error {
-	cli.mtx.Lock()
-	defer cli.mtx.Unlock()
+	cli.mtx.RLock()
+	defer cli.mtx.RUnlock()
 	return cli.err
 }
 
 func (cli *socketClient) SetGlobalCallback(globalCb GlobalCallback) {
 	cli.globalCbMtx.Lock()
+	defer cli.globalCbMtx.Unlock()
 	cli.globalCb = globalCb
-	cli.globalCbMtx.Unlock()
 }
 
 func (cli *socketClient) GetGlobalCallback() (cb GlobalCallback) {
 	cli.globalCbMtx.Lock()
+	defer cli.globalCbMtx.Unlock()
 	cb = cli.globalCb
-	cli.globalCbMtx.Unlock()
 	return cb
 }
 
