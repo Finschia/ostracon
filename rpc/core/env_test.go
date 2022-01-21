@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/line/ostracon/types"
+	"github.com/stretchr/testify/require"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -79,4 +82,24 @@ func TestPaginationPerPage(t *testing.T) {
 	// nil case
 	p := validatePerPage(nil)
 	assert.Equal(t, defaultPerPage, p)
+}
+
+func TestInitGenesisChunks(t *testing.T) {
+	env = &Environment{}
+
+	//
+	// success
+	//
+	env.genChunks = nil
+	env.GenDoc = &types.GenesisDoc{}
+	err := InitGenesisChunks()
+	require.NoError(t, err)
+
+	env.genChunks = []string{}
+	err = InitGenesisChunks()
+	require.NoError(t, err)
+
+	env.GenDoc = nil
+	err = InitGenesisChunks()
+	require.NoError(t, err)
 }

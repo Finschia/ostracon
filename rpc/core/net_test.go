@@ -85,3 +85,57 @@ func TestUnsafeDialPeers(t *testing.T) {
 		}
 	}
 }
+
+func TestGenesis(t *testing.T) {
+	env = &Environment{}
+
+	// success
+	env.genChunks = []string{}
+	res, err := Genesis(&rpctypes.Context{})
+	assert.NoError(t, err)
+	assert.NotNil(t, res)
+
+	// error
+	env.genChunks = []string{"", ""}
+	res, err = Genesis(&rpctypes.Context{})
+	assert.Error(t, err)
+	assert.Equal(t, "genesis response is large, please use the genesis_chunked API instead", err.Error())
+	assert.Nil(t, res)
+}
+
+func TestGenesisChunked(t *testing.T) {
+	env = &Environment{}
+
+	// success
+	env.genChunks = []string{""}
+	chunk := uint(0)
+	res, err := GenesisChunked(&rpctypes.Context{}, chunk)
+	assert.NoError(t, err)
+	assert.NotNil(t, res)
+
+	//
+	// errors
+	//
+
+	env.genChunks = nil
+	chunk = uint(0)
+	res, err = GenesisChunked(&rpctypes.Context{}, chunk)
+	assert.Error(t, err)
+	assert.Equal(t, "service configuration error, genesis chunks are not initialized", err.Error())
+	assert.Nil(t, res)
+
+	env.genChunks = []string{}
+	chunk = uint(0)
+	res, err = GenesisChunked(&rpctypes.Context{}, chunk)
+	assert.Error(t, err)
+	assert.Equal(t, "service configuration error, there are no chunks", err.Error())
+	assert.Nil(t, res)
+
+	env.genChunks = []string{""}
+	chunk = uint(1)
+	res, err = GenesisChunked(&rpctypes.Context{}, chunk)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "there are ")
+	assert.Contains(t, err.Error(), " is invalid")
+	assert.Nil(t, res)
+}
