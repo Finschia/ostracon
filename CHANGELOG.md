@@ -1,5 +1,30 @@
 # Changelog
 
+## v1.0.3
+
+*Jan 20, 2022*
+
+* Improve p2p/peer reactor　so as not to abandon the message
+* Apply changes up to tendermint v0.34.11
+
+### BREAKING CHANGE
+- Nothing
+
+### FEATURES
+- Nothing
+
+### IMPROVEMENTS
+- [p2p/peer] [\#341](https://github.com/line/ostracon/pull/341) Remove default case
+- [github] [\#346](https://github.com/line/ostracon/pull/346) Add CODEOWNERS
+- [backport/tendermint] [\#349](https://github.com/line/ostracon/pull/349) Main patch from tm-v0.34.9
+- [lint] [\#356](https://github.com/line/ostracon/pull/356) Upgrade to super-linter-v4 for avoiding broken version
+- [backport/tendermint] [\#358](https://github.com/line/ostracon/pull/358) Main patch from tm-v0.34.10
+- [backport/tendermint] [\#359](https://github.com/line/ostracon/pull/359) Main patch tm-v0.34.11
+
+### BUG FIXES
+- [consensus] [\#345](https://github.com/line/ostracon/pull/345) fix: Modify omission of change to change ValidatorSet to VoterSet for marverick
+- [version] [\#348](https://github.com/line/ostracon/pull/348) Fix version.go (Rollback to only use OCCoreSemVer)
+
 ## v1.0.2
 
 *Nov 08, 2021*
