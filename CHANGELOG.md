@@ -4,7 +4,7 @@
 
 *Jan 20, 2022*
 
-* Improve p2p/peer reactor
+* Improve p2p/peer reactor　so as not to abandon the message
 
 ### BREAKING CHANGE
 - Nothing
