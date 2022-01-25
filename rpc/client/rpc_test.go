@@ -2,6 +2,7 @@ package client_test
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"math"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	abci "github.com/line/ostracon/abci/types"
+	tmjson "github.com/line/ostracon/libs/json"
 	"github.com/line/ostracon/libs/log"
 	tmmath "github.com/line/ostracon/libs/math"
 	mempl "github.com/line/ostracon/mempool"
@@ -191,6 +193,31 @@ func TestGenesisAndValidators(t *testing.T) {
 		assert.Equal(t, gval.PubKey, val.PubKey)
 		assert.Equal(t, gval.Power, voter.StakingPower)
 		assert.Equal(t, gval.PubKey, voter.PubKey)
+	}
+}
+
+func TestGenesisChunked(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	for _, c := range GetClients() {
+		first, err := c.GenesisChunked(ctx, 0)
+		require.NoError(t, err)
+
+		decoded := make([]string, 0, first.TotalChunks)
+		for i := 0; i < first.TotalChunks; i++ {
+			chunk, err := c.GenesisChunked(ctx, uint(i))
+			require.NoError(t, err)
+			data, err := base64.StdEncoding.DecodeString(chunk.Data)
+			require.NoError(t, err)
+			decoded = append(decoded, string(data))
+
+		}
+		doc := []byte(strings.Join(decoded, ""))
+
+		var out types.GenesisDoc
+		require.NoError(t, tmjson.Unmarshal(doc, &out),
+			"first: %+v, doc: %s", first, string(doc))
 	}
 }
 

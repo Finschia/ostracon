@@ -1018,6 +1018,9 @@ func (c *Client) lightBlockFromPrimary(ctx context.Context, height int64) (*type
 		// Everything went smoothly. We reset the lightBlockRequests and return the light block
 		return l, nil
 
+	case context.Canceled, context.DeadlineExceeded:
+		return l, err
+
 	case provider.ErrNoResponse, provider.ErrLightBlockNotFound, provider.ErrHeightTooHigh:
 		// we find a new witness to replace the primary
 		c.logger.Debug("error from light block request from primary, replacing...",
@@ -1171,14 +1174,19 @@ func (c *Client) compareFirstHeaderWithWitnesses(ctx context.Context, h *types.S
 and remove witness. Otherwise, use the different primary`, e.WitnessIndex), "witness", c.witnesses[e.WitnessIndex])
 			return err
 		case errBadWitness:
-			// If witness sent us an invalid header, then remove it. If it didn't
-			// respond or couldn't find the block, then we ignore it and move on to
-			// the next witness.
-			if _, ok := e.Reason.(provider.ErrBadLightBlock); ok {
-				c.logger.Info("Witness sent us invalid header / vals -> removing it",
-					"witness", c.witnesses[e.WitnessIndex], "err", err)
-				witnessesToRemove = append(witnessesToRemove, e.WitnessIndex)
+			// If witness sent us an invalid header, then remove it
+			c.logger.Info("witness sent an invalid light block, removing...",
+				"witness", c.witnesses[e.WitnessIndex],
+				"err", err)
+			witnessesToRemove = append(witnessesToRemove, e.WitnessIndex)
+		default: // benign errors can be ignored with the exception of context errors
+			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+				return err
 			}
+
+			// the witness either didn't respond or didn't have the block. We ignore it.
+			c.logger.Info("error comparing first header with witness. You may want to consider removing the witness",
+				"err", err)
 		}
 
 	}
