@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/line/ostracon/light"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -665,6 +667,113 @@ func TestSyncer_verifyApp(t *testing.T) {
 				assert.Equal(t, tc.response.AppVersion, version)
 			}
 		})
+	}
+}
+
+func TestSyncer_Sync(t *testing.T) {
+	connQuery := &proxymocks.AppConnQuery{}
+	connSnapshot := &proxymocks.AppConnSnapshot{}
+	stateProvider := &mocks.StateProvider{}
+
+	cfg := config.DefaultStateSyncConfig()
+	syncer := newSyncer(*cfg, log.NewNopLogger(), connSnapshot, connQuery, stateProvider, "")
+	snapshot := &snapshot{}
+	chunkQueue := &chunkQueue{}
+
+	{
+		stateProvider.On("AppHash", mock.Anything, mock.Anything).Once().Return(nil, light.ErrNoWitnesses)
+
+		state, previousState, commit, err := syncer.Sync(snapshot, chunkQueue)
+		require.Error(t, err)
+		require.Equal(t, light.ErrNoWitnesses, err)
+		require.NotNil(t, state)
+		require.NotNil(t, previousState)
+		require.Nil(t, commit)
+	}
+	{
+		stateProvider.On("AppHash", mock.Anything, mock.Anything).Once().Return(nil, errRejectSnapshot)
+
+		state, previousState, commit, err := syncer.Sync(snapshot, chunkQueue)
+		require.Error(t, err)
+		require.Equal(t, errRejectSnapshot, err)
+		require.NotNil(t, state)
+		require.NotNil(t, previousState)
+		require.Nil(t, commit)
+	}
+
+	stateProvider.On("AppHash", mock.Anything, mock.Anything).Return([]byte("app_hash"), nil)
+	connSnapshot.On("OfferSnapshotSync", mock.Anything).Return(
+		&abci.ResponseOfferSnapshot{Result: abci.ResponseOfferSnapshot_ACCEPT}, nil)
+	snapshot.Height = 2
+
+	{
+		stateProvider.On("State", mock.Anything, snapshot.Height).Once().Return(sm.State{}, light.ErrNoWitnesses)
+
+		state, previousState, commit, err := syncer.Sync(snapshot, chunkQueue)
+		require.Error(t, err)
+		require.Equal(t, light.ErrNoWitnesses, err)
+		require.NotNil(t, state)
+		require.NotNil(t, previousState)
+		require.Nil(t, commit)
+	}
+
+	{
+		stateProvider.On("State", mock.Anything, snapshot.Height).Once().Return(sm.State{}, errRejectSnapshot)
+
+		state, previousState, commit, err := syncer.Sync(snapshot, chunkQueue)
+		require.Error(t, err)
+		require.Equal(t, errRejectSnapshot, err)
+		require.NotNil(t, state)
+		require.NotNil(t, previousState)
+		require.Nil(t, commit)
+	}
+
+	stateProvider.On("State", mock.Anything, snapshot.Height).Return(sm.State{}, nil)
+
+	{
+		stateProvider.On("State", mock.Anything, snapshot.Height-1).Once().Return(sm.State{}, light.ErrNoWitnesses)
+
+		state, previousState, commit, err := syncer.Sync(snapshot, chunkQueue)
+		require.Error(t, err)
+		require.Equal(t, light.ErrNoWitnesses, err)
+		require.NotNil(t, state)
+		require.NotNil(t, previousState)
+		require.Nil(t, commit)
+	}
+
+	{
+		stateProvider.On("State", mock.Anything, snapshot.Height-1).Once().Return(sm.State{}, errRejectSnapshot)
+
+		state, previousState, commit, err := syncer.Sync(snapshot, chunkQueue)
+		require.Error(t, err)
+		require.Equal(t, errRejectSnapshot, err)
+		require.NotNil(t, state)
+		require.NotNil(t, previousState)
+		require.Nil(t, commit)
+	}
+
+	stateProvider.On("State", mock.Anything, snapshot.Height-1).Return(sm.State{}, nil)
+
+	{
+		stateProvider.On("Commit", mock.Anything, snapshot.Height).Once().Return(nil, light.ErrNoWitnesses)
+
+		state, previousState, commit, err := syncer.Sync(snapshot, chunkQueue)
+		require.Error(t, err)
+		require.Equal(t, light.ErrNoWitnesses, err)
+		require.NotNil(t, state)
+		require.NotNil(t, previousState)
+		require.Nil(t, commit)
+	}
+
+	{
+		stateProvider.On("Commit", mock.Anything, snapshot.Height).Once().Return(nil, errRejectSnapshot)
+
+		state, previousState, commit, err := syncer.Sync(snapshot, chunkQueue)
+		require.Error(t, err)
+		require.Equal(t, errRejectSnapshot, err)
+		require.NotNil(t, state)
+		require.NotNil(t, previousState)
+		require.Nil(t, commit)
 	}
 }
 
