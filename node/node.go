@@ -53,6 +53,8 @@ import (
 	"github.com/line/ostracon/types"
 	tmtime "github.com/line/ostracon/types/time"
 	"github.com/line/ostracon/version"
+
+	_ "github.com/lib/pq" // Register the Postgres database driver.
 )
 
 //------------------------------------------------------------------------------
