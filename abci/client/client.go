@@ -87,7 +87,7 @@ type ReqRes struct {
 	*types.Request
 	*types.Response // Not set atomically, so be sure to use WaitGroup.
 
-	mtx  tmsync.RWMutex
+	mtx  tmsync.Mutex
 	wg   *sync.WaitGroup
 	done bool             // Gets set to true once *after* WaitGroup.Done().
 	cb   ResponseCallback // A single callback that may be set.
@@ -107,8 +107,8 @@ func NewReqRes(req *types.Request, cb ResponseCallback) *ReqRes {
 // InvokeCallback invokes a thread-safe execution of the configured callback
 // if non-nil.
 func (reqRes *ReqRes) InvokeCallback() {
-	reqRes.mtx.RLock()
-	defer reqRes.mtx.RUnlock()
+	reqRes.mtx.Lock()
+	defer reqRes.mtx.Unlock()
 
 	if reqRes.cb != nil {
 		reqRes.cb(reqRes.Response)
@@ -116,7 +116,7 @@ func (reqRes *ReqRes) InvokeCallback() {
 }
 
 func (reqRes *ReqRes) SetDone(res *types.Response) (set bool) {
-	reqRes.mtx.RLock()
+	reqRes.mtx.Lock()
 	// TODO should we panic if it's already done?
 	set = !reqRes.done
 	if set {
@@ -124,7 +124,7 @@ func (reqRes *ReqRes) SetDone(res *types.Response) (set bool) {
 		reqRes.done = true
 		reqRes.wg.Done()
 	}
-	reqRes.mtx.RUnlock()
+	reqRes.mtx.Unlock()
 
 	// NOTE `reqRes.cb` is immutable so we're safe to access it at here without `mtx`
 	if set && reqRes.cb != nil {
