@@ -335,7 +335,7 @@ paths:
         https://godoc.org/github.com/line/ostracon/libs/pubsub/query.
 
         ```go
-        import rpchttp "github.com/tendermint/rpc/client/http"
+        import rpchttp "github.com/line/ostracon/rpc/client/http"
         import "github.com/line/ostracon/types"
 
         client := rpchttp.New("tcp:0.0.0.0:26657", "/websocket")
