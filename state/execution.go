@@ -425,7 +425,7 @@ func getBeginBlockValidatorInfo(block *types.Block, store Store,
 	// Remember that the first LastCommit is intentionally empty, so it makes
 	// sense for LastCommitInfo.Votes to also be empty.
 	if block.Height > initialHeight {
-		lastVoterSet, err := store.LoadVoters(block.Height-1, voterParams)
+		_, lastVoterSet, _, _, err := store.LoadVoters(block.Height-1, voterParams)
 		if err != nil {
 			panic(err)
 		}

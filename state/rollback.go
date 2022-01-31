@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/line/ostracon/types"
-
 	tmstate "github.com/line/ostracon/proto/ostracon/state"
 	tmversion "github.com/line/ostracon/proto/ostracon/version"
 	"github.com/line/ostracon/version"
@@ -29,7 +27,12 @@ func Rollback(bs BlockStore, ss Store) (int64, []byte, error) {
 		return -1, nil, fmt.Errorf("block at height %d not found", rollbackHeight)
 	}
 
-	previousVoterSet, err := ss.LoadVoters(rollbackHeight-1, types.DefaultVoterParams())
+	_, prevVoterSet, _, _, err := ss.LoadVoters(rollbackHeight-1, nil)
+	if err != nil {
+		return -1, nil, err
+	}
+
+	currValidatorSet, currVoterSet, currVoterParam, currProofHash, err := ss.LoadVoters(rollbackHeight, nil)
 	if err != nil {
 		return -1, nil, err
 	}
@@ -64,13 +67,16 @@ func Rollback(bs BlockStore, ss Store) (int64, []byte, error) {
 		ChainID:       invalidState.ChainID,
 		InitialHeight: invalidState.InitialHeight,
 
-		LastBlockHeight: invalidState.LastBlockHeight - 1,
+		LastBlockHeight: rollbackHeight - 1,
 		LastBlockID:     rollbackBlock.Header.LastBlockID,
 		LastBlockTime:   rollbackBlock.Header.Time,
 
 		NextValidators:              invalidState.Validators,
-		Voters:                      invalidState.LastVoters,
-		LastVoters:                  previousVoterSet,
+		Validators:                  currValidatorSet,
+		Voters:                      currVoterSet,
+		VoterParams:                 currVoterParam,
+		LastVoters:                  prevVoterSet,
+		LastProofHash:               currProofHash,
 		LastHeightValidatorsChanged: valChangeHeight,
 
 		ConsensusParams:                  previousParams,

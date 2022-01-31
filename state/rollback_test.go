@@ -24,7 +24,16 @@ func TestRollback(t *testing.T) {
 		appVersion uint64 = 10
 	)
 
-	valSet, voterSet, _ := types.RandVoterSet(5, 10)
+	proofHash := []byte{0}
+	voterParams := types.DefaultVoterParams()
+	previousValSet, _ := types.RandValidatorSet(5, 10)
+	previousVoterSet := types.SelectVoter(previousValSet, proofHash, voterParams)
+	lastValSet := previousValSet.CopyIncrementProposerPriority(1)
+	lastVoterSet := types.SelectVoter(lastValSet, proofHash, voterParams)
+	initialValSet := lastValSet.CopyIncrementProposerPriority(1)
+	initialVoterSet := types.SelectVoter(initialValSet, proofHash, voterParams)
+	nextValSet := initialValSet.CopyIncrementProposerPriority(1)
+	nextVoterSet := types.SelectVoter(nextValSet, proofHash, voterParams)
 
 	params := types.DefaultConsensusParams()
 	params.Version.AppVersion = appVersion
@@ -35,7 +44,7 @@ func TestRollback(t *testing.T) {
 		Version: tmstate.Version{
 			Consensus: tmversion.Consensus{
 				Block: version.BlockProtocol,
-				App:   10,
+				App:   appVersion,
 			},
 			Software: version.OCCoreSemVer,
 		},
@@ -45,13 +54,25 @@ func TestRollback(t *testing.T) {
 		AppHash:                          tmhash.Sum([]byte("app_hash")),
 		LastResultsHash:                  tmhash.Sum([]byte("last_results_hash")),
 		LastBlockHeight:                  height,
-		LastVoters:                       voterSet,
-		Validators:                       valSet.CopyIncrementProposerPriority(1),
-		NextValidators:                   valSet.CopyIncrementProposerPriority(2),
+		LastVoters:                       lastVoterSet,
+		LastProofHash:                    proofHash,
+		Voters:                           initialVoterSet,
+		VoterParams:                      voterParams,
+		Validators:                       initialValSet,
+		NextValidators:                   nextValSet,
 		LastHeightValidatorsChanged:      height + 1,
 		ConsensusParams:                  *params,
 		LastHeightConsensusParamsChanged: height + 1,
 	}
+	previousState := initialState.Copy()
+	previousState.LastBlockHeight = initialState.LastBlockHeight - 1
+	previousState.LastHeightConsensusParamsChanged = initialState.LastHeightConsensusParamsChanged - 1
+	previousState.LastHeightValidatorsChanged = initialState.LastHeightValidatorsChanged - 1
+	previousState.LastVoters = previousVoterSet
+	previousState.Voters = lastVoterSet
+	previousState.Validators = lastValSet
+	previousState.NextValidators = initialValSet
+	require.NoError(t, stateStore.Bootstrap(previousState))
 	require.NoError(t, stateStore.Bootstrap(initialState))
 
 	height++
@@ -72,9 +93,10 @@ func TestRollback(t *testing.T) {
 	nextState.Version.Consensus.App = appVersion
 	nextState.LastBlockID = makeBlockIDRandom()
 	nextState.AppHash = tmhash.Sum([]byte("next_app_hash"))
-	nextState.LastVoters = initialState.Voters
-	nextState.Validators = initialState.NextValidators
-	nextState.NextValidators = initialState.NextValidators.CopyIncrementProposerPriority(1)
+	nextState.LastVoters = initialVoterSet
+	nextState.Voters = nextVoterSet
+	nextState.Validators = nextValSet
+	nextState.NextValidators = nextValSet.CopyIncrementProposerPriority(1)
 	nextState.ConsensusParams = *newParams
 	nextState.LastHeightConsensusParamsChanged = height + 1
 	nextState.LastHeightValidatorsChanged = height + 1
@@ -134,6 +156,9 @@ func TestRollbackNoBlocks(t *testing.T) {
 		LastResultsHash:                  tmhash.Sum([]byte("last_results_hash")),
 		LastBlockHeight:                  height,
 		LastVoters:                       voterSet,
+		LastProofHash:                    []byte{0},
+		Voters:                           voterSet,
+		VoterParams:                      types.DefaultVoterParams(),
 		Validators:                       valSet.CopyIncrementProposerPriority(1),
 		NextValidators:                   valSet.CopyIncrementProposerPriority(2),
 		LastHeightValidatorsChanged:      height + 1,
