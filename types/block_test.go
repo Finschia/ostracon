@@ -454,7 +454,7 @@ func TestMaxCommitBytes(t *testing.T) {
 
 func TestCommitHash(t *testing.T) {
 	t.Run("receiver is nil", func(t *testing.T) {
-		var commit *Commit = nil
+		var commit *Commit
 		assert.Nil(t, commit.Hash())
 	})
 

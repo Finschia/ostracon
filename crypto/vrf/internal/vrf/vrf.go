@@ -1,3 +1,4 @@
+//go:build libsodium
 // +build libsodium
 
 // Package vrf makes the VRF API in Algorand's libsodium C library available to golang.
@@ -94,8 +95,8 @@ func Verify(publicKey *[PUBLICKEYBYTES]byte, proof *[PROOFBYTES]byte, message []
 		return nil, errors.New(fmt.Sprintf(
 			"given public key is invalid, or the proof isn't legitimately generated for the message:"+
 				" public_key=%s, proofSize=%d, proof=%s, message=%s",
-				hex.EncodeToString(publicKey[:]), len(proof), hex.EncodeToString(proof[:]),
-				hex.EncodeToString(message[:])))
+			hex.EncodeToString(publicKey[:]), len(proof), hex.EncodeToString(proof[:]),
+			hex.EncodeToString(message[:])))
 	}
 	return &output, nil
 }

@@ -1,3 +1,4 @@
+//go:build libsodium
 // +build libsodium
 
 // This libsodiumwrap package makes the VRF API in Algorand's libsodium C library available to golang.

@@ -1,3 +1,4 @@
+//go:build coniks
 // +build coniks
 
 package vrf

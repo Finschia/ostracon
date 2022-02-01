@@ -22,15 +22,18 @@ Use `func init()` with `build` option
 * package/file
   * line/ostracon/crypto/vrf
     * (r2ishiguro = default)
+      * `//go:build libsodium`
       * `// +build !libsodium,!coniks`
       * `func init() { defaultVrf = newVrfEd25519r2ishiguro() }`
       * vrf_r2ishiguro.go
     * (coniks)
+      * `//go:build coniks`
       * `// +build coniks`
       * `func init() { defaultVrf = newVrfEd25519coniks() }`
       * vrf_coniks.go
       * vrf_coniks_test.go
     * (libsodium)
+      * `//go:build libsodium`
       * `// +build libsodium`
       * `func init() { defaultVrf = newVrfEd25519libsodium() }`
       * vrf_libsodium.go
