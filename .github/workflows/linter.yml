@@ -8,6 +8,7 @@ on:
   pull_request:
     paths:
       - "**.md"
+      - "**.yml"
 
 jobs:
   build-linter:
@@ -15,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.4.0
       - name: Lint Code Base
         uses: docker://github/super-linter:v4
         env:
@@ -24,6 +25,5 @@ jobs:
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VALIDATE_MD: true
-          MARKDOWN_CONFIG_FILE: .markdownlint.yml
-          VALIDATE_OPAENAPI: true
+          VALIDATE_OPENAPI: true
           VALIDATE_YAML: true
