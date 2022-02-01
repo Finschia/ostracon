@@ -78,6 +78,8 @@ type Store interface {
 	Bootstrap(State) error
 	// PruneStates takes the height from which to start prning and which height stop at
 	PruneStates(int64, int64) error
+	// Close closes the connection with the database
+	Close() error
 }
 
 // dbStore wraps a db (github.com/line/tm-db/v2)
@@ -730,4 +732,8 @@ func (store dbStore) saveConsensusParamsInfo(nextHeight, changeHeight int64, par
 	}
 
 	return nil
+}
+
+func (store dbStore) Close() error {
+	return store.db.Close()
 }
