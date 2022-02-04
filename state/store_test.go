@@ -52,11 +52,70 @@ func TestStoreLoadVoters(t *testing.T) {
 	val, _ := types.RandValidator(true, 10)
 	vals := types.NewValidatorSet([]*types.Validator{val})
 
-	err := stateStore.Save(createState(1, 1, 1, vals))
+	height := int64(1)
+
+	state := createState(height, 1, 1, vals)
+	err := stateStore.Save(state)
 	require.NoError(t, err)
-	_, loadedVoters, _, _, err := stateStore.LoadVoters(1, nil)
+
+	{
+		_, loadedVoters, _, _, err := stateStore.LoadVoters(height, nil)
+		require.NoError(t, err)
+		assert.Equal(t, vals.Size(), loadedVoters.Size())
+	}
+	{
+		_, _, _, _, err := stateStore.LoadVoters(height-1, nil)
+		require.Error(t, err)
+		require.Equal(t, sm.ErrNoValSetForHeight{Height: height - 1}, err)
+	}
+	{
+		_, _, _, _, err := stateStore.LoadVoters(height+1, nil)
+		require.Error(t, err)
+		require.Error(t, sm.ErrNoValSetForHeight{Height: height + 1}, err)
+	}
+
+	state.Validators = types.NewValidatorSet([]*types.Validator{})
+	err = stateStore.Save(state)
 	require.NoError(t, err)
-	assert.NotZero(t, loadedVoters.Size())
+
+	{
+		_, _, _, _, err := stateStore.LoadVoters(height, nil)
+		require.Error(t, err)
+		require.Equal(t, "validator set is nil or empty", err.Error())
+	}
+	{
+		_, _, _, _, err := stateStore.LoadVoters(height+1, nil)
+		require.Error(t, err)
+		require.Equal(t, "validator set is nil or empty", err.Error())
+	}
+
+	err = sm.SaveValidatorsInfo(stateDB, height, height, []byte{}, types.NewValidatorSet([]*types.Validator{val}))
+	require.NoError(t, err)
+
+	height++
+	{
+		_, _, _, _, err := stateStore.LoadVoters(height, nil)
+		require.Error(t, err)
+		require.Equal(t, sm.ErrNoVoterParamsForHeight{Height: height}, err)
+	}
+
+	err = sm.SaveVoterParams(stateDB, height, types.DefaultVoterParams())
+	require.NoError(t, err)
+
+	{
+		_, _, _, _, err := stateStore.LoadVoters(height, nil)
+		require.Error(t, err)
+		require.Equal(t, sm.ErrNoProofHashForHeight{Height: height}, err)
+	}
+
+	err = sm.SaveProofHash(stateDB, height, []byte{0})
+	require.NoError(t, err)
+
+	{
+		_, loadedVoters, _, _, err := stateStore.LoadVoters(height, nil)
+		require.NoError(t, err)
+		assert.Equal(t, vals.Size(), loadedVoters.Size())
+	}
 }
 
 func BenchmarkLoadValidators(b *testing.B) {

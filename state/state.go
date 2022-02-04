@@ -107,7 +107,7 @@ func (state State) Copy() State {
 		NextValidators:              state.NextValidators.Copy(),
 		Validators:                  state.Validators.Copy(),
 		Voters:                      state.Voters.Copy(),
-		LastVoters:                  state.LastVoters.Copy(),
+		LastVoters:                  state.LastVoters.Copy(), // there is a possibility of nil when height is 1
 		LastHeightValidatorsChanged: state.LastHeightValidatorsChanged,
 
 		ConsensusParams:                  state.ConsensusParams,
