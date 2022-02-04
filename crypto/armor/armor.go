@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"golang.org/x/crypto/openpgp/armor"
+	"golang.org/x/crypto/openpgp/armor" //nolint: staticcheck // nobody uses this package but leave for a moment
 )
 
 func EncodeArmor(blockType string, headers map[string]string, data []byte) string {

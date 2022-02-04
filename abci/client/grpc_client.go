@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/grpc/credentials/insecure"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
@@ -54,7 +56,9 @@ func (cli *grpcClient) OnStart() error {
 
 RETRY_LOOP:
 	for {
-		conn, err := grpc.Dial(cli.addr, grpc.WithInsecure(), grpc.WithContextDialer(dialerFunc))
+		conn, err := grpc.Dial(cli.addr,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithContextDialer(dialerFunc))
 		if err != nil {
 			if cli.mustConnect {
 				return err

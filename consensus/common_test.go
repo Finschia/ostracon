@@ -14,13 +14,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-kit/kit/log/term"
+	"github.com/go-kit/log/term"
 	"github.com/line/tm-db/v2/memdb"
 	"github.com/stretchr/testify/require"
 
 	dbm "github.com/line/tm-db/v2"
 
 	abcicli "github.com/line/ostracon/abci/client"
+
 	"github.com/line/ostracon/abci/example/counter"
 	"github.com/line/ostracon/abci/example/kvstore"
 	abci "github.com/line/ostracon/abci/types"
