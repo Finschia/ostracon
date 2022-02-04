@@ -1,0 +1,46 @@
+name: Build for Linux
+on:
+  pull_request:
+  push:
+
+jobs:
+
+  build-linux:
+    name: Build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goarch: "amd64"
+            gcc: "gcc"
+            package: ""
+            host: ""
+          - goarch: "arm64"
+            gcc: "aarch64-linux-gnu-gcc"
+            package: "g++-aarch64-linux-gnu"
+            host: "aarch64-linux-gnu"
+          - goarch: "arm"
+            gcc: "arm-linux-gnueabi-gcc"
+            package: "g++-arm-linux-gnueabi"
+            host: "arm-linux-gnueabi"
+    timeout-minutes: 5
+    steps:
+      - run: sudo apt update && sudo apt install -y ${{ matrix.package }} qemu-user-binfmt
+        if: "matrix.package != ''"
+      - uses: actions/setup-go@v2
+        with:
+          go-version: "^1.15.4"
+      - uses: actions/checkout@v2.4.0
+      - uses: technote-space/get-diff-action@v6.0.1
+        with:
+          PATTERNS: |
+            **/**.go
+            go.mod
+            go.sum
+      - name: Build Linux
+        run: GOOS=linux GOARCH=${{ matrix.goarch }} CC=${{ matrix.gcc }} TARGET_HOST=${{ matrix.host }} make build
+        if: "env.GIT_DIFF != ''"
+      - name: Build Linux with Libsodium
+        run: GOOS=linux GOARCH=${{ matrix.goarch }} CC=${{ matrix.gcc }} TARGET_HOST=${{ matrix.host }} LIBSODIUM=1 make build
+        if: "env.GIT_DIFF != ''"
