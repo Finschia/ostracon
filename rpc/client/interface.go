@@ -146,6 +146,7 @@ type EvidenceClient interface {
 }
 
 // RemoteClient is a Client, which can also return the remote network address.
+//go:generate mockery --case underscore --name RemoteClient
 type RemoteClient interface {
 	Client
 
