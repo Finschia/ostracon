@@ -9,6 +9,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ory/dockertest"
+	"github.com/ory/dockertest/docker"
+
 	"github.com/line/tm-db/v2/memdb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -465,6 +468,59 @@ func TestNodeNewNodeTxIndexIndexer(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, n)
 	}
+	{
+		// Change to psql for test
+		config.TxIndex.Indexer = "psql"
+		n, err := doTest(DefaultDBProvider)
+		require.Error(t, err)
+		require.Equal(t, "no psql-conn is set for the \"psql\" indexer", err.Error())
+		require.Nil(t, n)
+
+		// config.TxIndex.PsqlConn = "cannot test with no-import postgres driver"
+		// n, err = doTest(DefaultDBProvider)
+		// require.Error(t, err)
+		// require.Equal(t, "creating psql indexer: sql: unknown driver \"postgres\" (forgotten import?)", err.Error())
+		// require.Nil(t, n)
+
+		config.TxIndex.PsqlConn = makeTestPsqlConn(t)
+		n, err = doTest(DefaultDBProvider)
+		require.NoError(t, err)
+		require.NotNil(t, n)
+	}
+}
+
+func makeTestPsqlConn(t *testing.T) string {
+	user := "postgres"
+	password := "secret"
+	port := "5432"
+	dsn := "postgres://%s:%s@localhost:%s/%s?sslmode=disable"
+	dbName := "postgres"
+
+	pool, err := dockertest.NewPool(os.Getenv("DOCKER_URL"))
+	if err != nil {
+		require.NoError(t, err)
+	}
+	resource, err := pool.RunWithOptions(&dockertest.RunOptions{
+		Repository: "postgres",
+		Tag:        "13",
+		Env: []string{
+			"POSTGRES_USER=" + user,
+			"POSTGRES_PASSWORD=" + password,
+			"POSTGRES_DB=" + dbName,
+			"listen_addresses = '*'",
+		},
+		ExposedPorts: []string{port},
+	}, func(config *docker.HostConfig) {
+		// set AutoRemove to true so that stopped container goes away by itself
+		config.AutoRemove = true
+		config.RestartPolicy = docker.RestartPolicy{
+			Name: "no",
+		}
+	})
+	if err != nil {
+		require.NoError(t, err)
+	}
+	return fmt.Sprintf(dsn, user, password, resource.GetPort(port+"/tcp"), dbName)
 }
 
 func state(nVals int, height int64) (sm.State, dbm.DB, []types.PrivValidator) {

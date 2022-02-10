@@ -26,11 +26,11 @@ type grpcClient struct {
 	client types.ABCIApplicationClient
 	conn   *grpc.ClientConn
 
-	mtx  tmsync.Mutex
+	mtx  tmsync.RWMutex
 	addr string
 	err  error
 
-	globalCbMtx sync.Mutex
+	globalCbMtx sync.RWMutex
 	globalCb    func(*types.Request, *types.Response) // listens to all callbacks
 }
 
@@ -109,21 +109,21 @@ func (cli *grpcClient) StopForError(err error) {
 }
 
 func (cli *grpcClient) Error() error {
-	cli.mtx.Lock()
-	defer cli.mtx.Unlock()
+	cli.mtx.RLock()
+	defer cli.mtx.RUnlock()
 	return cli.err
 }
 
 func (cli *grpcClient) SetGlobalCallback(globalCb GlobalCallback) {
 	cli.globalCbMtx.Lock()
+	defer cli.globalCbMtx.Unlock()
 	cli.globalCb = globalCb
-	cli.globalCbMtx.Unlock()
 }
 
 func (cli *grpcClient) GetGlobalCallback() (cb GlobalCallback) {
 	cli.globalCbMtx.Lock()
+	defer cli.globalCbMtx.Unlock()
 	cb = cli.globalCb
-	cli.globalCbMtx.Unlock()
 	return cb
 }
 

@@ -11,6 +11,7 @@ import (
 	"github.com/line/ostracon/config"
 	"github.com/line/ostracon/libs/log"
 	tmsync "github.com/line/ostracon/libs/sync"
+	"github.com/line/ostracon/light"
 	"github.com/line/ostracon/p2p"
 	ssproto "github.com/line/ostracon/proto/ostracon/statesync"
 	"github.com/line/ostracon/proxy"
@@ -78,7 +79,7 @@ func newSyncer(
 		stateProvider: stateProvider,
 		conn:          conn,
 		connQuery:     connQuery,
-		snapshots:     newSnapshotPool(stateProvider),
+		snapshots:     newSnapshotPool(),
 		tempDir:       tempDir,
 		chunkFetchers: cfg.ChunkFetchers,
 		retryTimeout:  cfg.ChunkRequestTimeout,
@@ -247,26 +248,43 @@ func (s *syncer) Sync(snapshot *snapshot, chunks *chunkQueue) (sm.State, sm.Stat
 		s.mtx.Unlock()
 	}()
 
+	hctx, cancel := context.WithTimeout(context.TODO(), 30*time.Second)
+	defer cancel()
+
+	appHash, err := s.stateProvider.AppHash(hctx, snapshot.Height)
+	if err != nil {
+		s.logger.Info("failed to fetch and verify app hash", "err", err)
+		if err == light.ErrNoWitnesses {
+			return sm.State{}, sm.State{}, nil, err
+		}
+		return sm.State{}, sm.State{}, nil, errRejectSnapshot
+	}
+	snapshot.trustedAppHash = appHash
+
 	// Offer snapshot to ABCI app.
-	err := s.offerSnapshot(snapshot)
+	err = s.offerSnapshot(snapshot)
 	if err != nil {
 		return sm.State{}, sm.State{}, nil, err
 	}
 
 	// Spawn chunk fetchers. They will terminate when the chunk queue is closed or context cancelled.
-	ctx, cancel := context.WithCancel(context.Background())
+	fetchCtx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 	for i := int32(0); i < s.chunkFetchers; i++ {
-		go s.fetchChunks(ctx, snapshot, chunks)
+		go s.fetchChunks(fetchCtx, snapshot, chunks)
 	}
 
-	pctx, pcancel := context.WithTimeout(context.Background(), 15*time.Second)
+	pctx, pcancel := context.WithTimeout(context.TODO(), 30*time.Second)
 	defer pcancel()
 
 	// Optimistically build new state, so we don't discover any light client failures at the end.
 	state, err := s.stateProvider.State(pctx, snapshot.Height)
 	if err != nil {
-		return sm.State{}, sm.State{}, nil, fmt.Errorf("failed to build new state: %w", err)
+		s.logger.Info("failed to fetch and verify ostracon state", "err", err)
+		if err == light.ErrNoWitnesses {
+			return sm.State{}, sm.State{}, nil, err
+		}
+		return sm.State{}, sm.State{}, nil, errRejectSnapshot
 	}
 	var previousState sm.State
 	if snapshot.Height-1 < 1 {
@@ -274,12 +292,20 @@ func (s *syncer) Sync(snapshot *snapshot, chunks *chunkQueue) (sm.State, sm.Stat
 	} else {
 		previousState, err = s.stateProvider.State(pctx, snapshot.Height-1)
 		if err != nil {
-			return sm.State{}, sm.State{}, nil, fmt.Errorf("failed to build new prvious state: %w", err)
+			s.logger.Info("failed to fetch and verify ostracon previous state", "err", err)
+			if err == light.ErrNoWitnesses {
+				return sm.State{}, sm.State{}, nil, err
+			}
+			return sm.State{}, sm.State{}, nil, errRejectSnapshot
 		}
 	}
 	commit, err := s.stateProvider.Commit(pctx, snapshot.Height)
 	if err != nil {
-		return sm.State{}, sm.State{}, nil, fmt.Errorf("failed to fetch commit: %w", err)
+		s.logger.Info("failed to fetch and verify commit", "err", err)
+		if err == light.ErrNoWitnesses {
+			return sm.State{}, sm.State{}, nil, err
+		}
+		return sm.State{}, sm.State{}, nil, errRejectSnapshot
 	}
 
 	// Restore snapshot
