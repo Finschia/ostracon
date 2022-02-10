@@ -45,7 +45,7 @@ require (
 	golang.org/x/crypto v0.0.0-20201117144127-c1f2f97bffc9
 	golang.org/x/net v0.0.0-20210903162142-ad29c8ab022f
 	golang.org/x/sys v0.0.0-20210903071746-97244b99971b // indirect
-	gonum.org/v1/gonum v0.8.2
+	gonum.org/v1/gonum v0.9.3
 	google.golang.org/grpc v1.37.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )
