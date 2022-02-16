@@ -30,6 +30,7 @@ import (
 	"github.com/line/ostracon/privval"
 	"github.com/line/ostracon/proxy"
 	rpcserver "github.com/line/ostracon/rpc/jsonrpc/server"
+	"github.com/line/ostracon/test/e2e/app"
 	e2e "github.com/line/ostracon/test/e2e/pkg"
 	mcs "github.com/line/ostracon/test/maverick/consensus"
 	maverick "github.com/line/ostracon/test/maverick/node"
@@ -100,7 +101,7 @@ func run(configFile string) error {
 
 // startApp starts the application server, listening for connections from Ostracon.
 func startApp(cfg *Config) error {
-	app, err := NewApplication(cfg)
+	app, err := app.NewApplication(cfg.App())
 	if err != nil {
 		return err
 	}
@@ -121,7 +122,7 @@ func startApp(cfg *Config) error {
 //
 // FIXME There is no way to simply load the configuration from a file, so we need to pull in Viper.
 func startNode(cfg *Config) error {
-	app, err := NewApplication(cfg)
+	app, err := app.NewApplication(cfg.App())
 	if err != nil {
 		return err
 	}
@@ -213,10 +214,10 @@ func startLightClient(cfg *Config) error {
 }
 
 // FIXME: Temporarily disconnected maverick until it is redesigned
-// startMaverick starts a Maverick node that runs the application directly. It assumes the Tendermint
-// configuration is in $TMHOME/config/tendermint.toml.
+// startMaverick starts a Maverick node that runs the application directly. It assumes the Ostracon
+// configuration is in $OCHOME/config/ostracon.toml.
 func startMaverick(cfg *Config) error {
-	app, err := NewApplication(cfg)
+	app, err := app.NewApplication(cfg.App())
 	if err != nil {
 		return err
 	}

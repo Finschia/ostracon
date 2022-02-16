@@ -51,20 +51,15 @@ func TestEvidencePoolBasic(t *testing.T) {
 	)
 
 	valSet, voterSet, privVals := types.RandVoterSet(1, 10)
+	state := createState(height+1, valSet)
 
 	blockStore.On("LoadBlockMeta", mock.AnythingOfType("int64")).Return(
 		&types.BlockMeta{Header: types.Header{Time: defaultEvidenceTime}},
 	)
-	stateStore.On(
-		"LoadValidators",
-		mock.AnythingOfType("int64"),
-	).Return(valSet, nil)
-	stateStore.On(
-		"LoadVoters",
-		mock.AnythingOfType("int64"),
-		mock.AnythingOfType("*types.VoterParams"),
-	).Return(voterSet, nil)
-	stateStore.On("Load").Return(createState(height+1, valSet), nil)
+	stateStore.On("LoadValidators", mock.AnythingOfType("int64")).Return(valSet, nil)
+	stateStore.On("LoadVoters", mock.AnythingOfType("int64"), state.VoterParams).Return(
+		valSet, voterSet, state.VoterParams, state.LastProofHash, nil)
+	stateStore.On("Load").Return(state, nil)
 
 	pool, err := evidence.NewPool(evidenceDB, stateStore, blockStore)
 	require.NoError(t, err)
@@ -273,14 +268,17 @@ func TestLightClientAttackEvidenceLifecycle(t *testing.T) {
 		LastBlockTime:   defaultEvidenceTime.Add(2 * time.Hour),
 		LastBlockHeight: 110,
 		ConsensusParams: *types.DefaultConsensusParams(),
+		VoterParams:     types.DefaultVoterParams(),
 	}
 	stateStore := &smmocks.Store{}
 	stateStore.On("LoadValidators", height).Return(trusted.ValidatorSet, nil)
 	stateStore.On("LoadValidators", commonHeight).Return(common.ValidatorSet, nil)
-	stateStore.On("LoadVoters", height, mock.AnythingOfType("*types.VoterParams")).Return(
-		ev.ConflictingBlock.VoterSet, nil) // Should use correct VoterSet for bls.VerifyAggregatedSignature
-	stateStore.On("LoadVoters", commonHeight, mock.AnythingOfType("*types.VoterParams")).Return(
-		ev.ConflictingBlock.VoterSet, nil) // Should use correct VoterSet for bls.VerifyAggregatedSignature
+	// Should use correct VoterSet for bls.VerifyAggregatedSignature
+	stateStore.On("LoadVoters", height, state.VoterParams).Return(
+		trusted.ValidatorSet, ev.ConflictingBlock.VoterSet, state.VoterParams, mock.Anything, nil)
+	// Should use correct VoterSet for bls.VerifyAggregatedSignature
+	stateStore.On("LoadVoters", commonHeight, state.VoterParams).Return(
+		trusted.ValidatorSet, ev.ConflictingBlock.VoterSet, state.VoterParams, state.LastProofHash, nil)
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
 	blockStore.On("LoadBlockMeta", height).Return(&types.BlockMeta{Header: *trusted.Header})
@@ -480,5 +478,6 @@ func createState(height int64, valSet *types.ValidatorSet) sm.State {
 		LastBlockTime:   defaultEvidenceTime,
 		Validators:      valSet,
 		ConsensusParams: *types.DefaultConsensusParams(),
+		VoterParams:     types.DefaultVoterParams(),
 	}
 }

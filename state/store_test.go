@@ -54,7 +54,7 @@ func TestStoreLoadVoters(t *testing.T) {
 
 	err := stateStore.Save(createState(1, 1, 1, vals))
 	require.NoError(t, err)
-	loadedVoters, err := stateStore.LoadVoters(1, nil)
+	_, loadedVoters, _, _, err := stateStore.LoadVoters(1, nil)
 	require.NoError(t, err)
 	assert.NotZero(t, loadedVoters.Size())
 }

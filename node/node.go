@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	_ "net/http/pprof" // nolint: gosec // securely exposed on separate, optional port
 	"strings"
 	"time"
 
@@ -54,7 +53,9 @@ import (
 	tmtime "github.com/line/ostracon/types/time"
 	"github.com/line/ostracon/version"
 
-	_ "github.com/lib/pq" // Register the Postgres database driver.
+	_ "net/http/pprof" // nolint: gosec // securely exposed on separate, optional port
+
+	_ "github.com/lib/pq" // provide the psql db driver
 )
 
 //------------------------------------------------------------------------------

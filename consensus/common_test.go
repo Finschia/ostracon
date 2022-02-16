@@ -434,7 +434,7 @@ func newStateWithConfigAndBlockStoreWithLoggers(
 	blockStore := store.NewBlockStore(blockDB)
 
 	// one for mempool, one for consensus
-	mtx := new(tmsync.RWMutex)
+	mtx := new(tmsync.Mutex)
 	proxyAppConnMem := abcicli.NewLocalClient(mtx, app)
 	proxyAppConnCon := abcicli.NewLocalClient(mtx, app)
 

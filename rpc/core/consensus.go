@@ -23,12 +23,7 @@ func Validators(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *in
 		return nil, err
 	}
 
-	vals, err := env.StateStore.LoadValidators(height)
-	if err != nil {
-		return nil, err
-	}
-
-	voters, err := env.StateStore.LoadVoters(height, nil)
+	vals, voters, _, _, err := env.StateStore.LoadVoters(height, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +72,7 @@ func Voters(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *int) (
 		return nil, err
 	}
 
-	voters, err := env.StateStore.LoadVoters(height, nil)
+	_, voters, _, _, err := env.StateStore.LoadVoters(height, nil)
 	if err != nil {
 		return nil, err
 	}

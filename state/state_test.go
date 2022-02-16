@@ -223,16 +223,16 @@ func TestValidatorSimpleSaveLoad(t *testing.T) {
 	statestore := sm.NewStore(stateDB)
 
 	// Can't load anything for height 0.
-	_, err := statestore.LoadVoters(0, state.VoterParams)
+	_, _, _, _, err := statestore.LoadVoters(0, state.VoterParams) // nolint: dogsled
 	assert.IsType(sm.ErrNoValSetForHeight{}, err, "expected err at height 0")
 
 	// Should be able to load for height 1.
-	v, err := statestore.LoadVoters(1, state.VoterParams)
+	_, v, _, _, err := statestore.LoadVoters(1, state.VoterParams)
 	assert.Nil(err, "expected no err at height 1")
 	assert.Equal(v.Hash(), state.Validators.Hash(), "expected validator hashes to match")
 
 	// Can't load last voter set because of proof hash is not defined for last height
-	v, err = statestore.LoadVoters(2, state.VoterParams)
+	_, v, _, _, err = statestore.LoadVoters(2, state.VoterParams)
 	assert.Nil(v)
 	assert.Error(err, sm.ErrNoProofHashForHeight{Height: 2}.Error())
 
@@ -242,13 +242,13 @@ func TestValidatorSimpleSaveLoad(t *testing.T) {
 	state.LastVoters = types.ToVoterAll(state.Validators.Validators) // Cannot be nil or empty if LastBlockHash != 0
 	err = statestore.Save(state)
 	require.NoError(t, err)
-	vp0, err := statestore.LoadVoters(nextHeight+0, state.VoterParams)
+	_, vp0, _, _, err := statestore.LoadVoters(nextHeight+0, state.VoterParams)
 	assert.Nil(err, "expected no err")
 	vp1, err := statestore.LoadValidators(nextHeight + 1)
 	assert.Nil(err, "expected no err")
 	assert.Equal(vp0.Hash(), state.Voters.Hash(), "expected voter hashes to match")
 	assert.Equal(vp1.Hash(), state.NextValidators.Hash(), "expected next validator hashes to match")
-	_, err = statestore.LoadVoters(nextHeight+1, state.VoterParams)
+	_, _, _, _, err = statestore.LoadVoters(nextHeight+1, state.VoterParams) // nolint: dogsled
 	assert.Error(err, sm.ErrNoProofHashForHeight{Height: nextHeight + 1}.Error())
 }
 
@@ -300,7 +300,8 @@ func TestOneValidatorChangesSaveLoad(t *testing.T) {
 	}
 
 	for i, power := range testCases {
-		v, err := stateStore.LoadValidators(int64(i + 1 + 1)) // +1 because vset changes delayed by 1 block.
+		// +1 because validator set changes delayed by 1 block.
+		v, err := stateStore.LoadValidators(int64(i + 1 + 1))
 		assert.Nil(t, err, fmt.Sprintf("expected no err at height %d", i))
 		assert.Equal(t, v.Size(), 1, "validator set size is greater than 1: %d", v.Size())
 		_, val := v.GetByIndex(0)
@@ -309,11 +310,12 @@ func TestOneValidatorChangesSaveLoad(t *testing.T) {
                 height %d`, i))
 	}
 
-	testCases = testCases[:len(testCases)-1] // except last height
+	testCases = testCases[:len(testCases)-1] // except last height since voter set don't save with last height
 	for i, power := range testCases {
-		v, err := stateStore.LoadVoters(int64(i+1+1), state.VoterParams) // +1 because vset changes delayed by 1 block.
+		// +1 because voter set changes delayed by 1 block.
+		_, v, _, _, err := stateStore.LoadVoters(int64(i+1+1), state.VoterParams)
 		assert.Nil(t, err, fmt.Sprintf("expected no err at height %d", i))
-		assert.Equal(t, v.Size(), 1, "validator set size is greater than 1: %d", v.Size())
+		assert.Equal(t, v.Size(), 1, "voter set size is greater than 1: %d", v.Size())
 		_, val := v.GetByIndex(0)
 
 		assert.Equal(t, val.StakingPower, power, fmt.Sprintf(`unexpected powerat
@@ -376,11 +378,9 @@ func TestLoadAndSaveVoters(t *testing.T) {
 	}
 
 	for i := int64(1); i <= int64(lastHeight); i++ {
-		voterSet, err := stateStore.LoadVoters(i, voterParam)
+		validatorSet, voterSet, _, _, err := stateStore.LoadVoters(i, voterParam)
 		assert.NoError(t, err, "LoadVoters should succeed")
 		mustBeSameVoterSet(t, voters[i-1], voterSet)
-		validatorSet, err := stateStore.LoadValidators(i)
-		assert.NoError(t, err, "LoadValidators should succeed")
 		mustBeSameValidatorSet(t, validators[i-1], validatorSet)
 	}
 	validatorSet, err := stateStore.LoadValidators(int64(lastHeight + 1))
@@ -1100,9 +1100,12 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 		t.Fatal("expected to find old validator")
 	}
 	// verify voters
-	voterSetOf1, err := stateStore.LoadVoters(nextHeight, state.VoterParams)
+	validatorSetOf0, voterSetOf0, voterParamOf0, proofHashOf0, err := stateStore.LoadVoters(nextHeight, state.VoterParams)
 	assert.NoError(t, err)
-	mustBeSameVoterSet(t, state.Voters, voterSetOf1)
+	assert.Equal(t, v0, validatorSetOf0)
+	assert.Equal(t, state.VoterParams, voterParamOf0)
+	assert.Equal(t, state.LastProofHash, proofHashOf0)
+	mustBeSameVoterSet(t, state.Voters, voterSetOf0)
 
 	// Load nextheight+1, it should be the new pubkey.
 	v1, err := stateStore.LoadValidators(nextHeight + 1)
@@ -1113,7 +1116,7 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 	if index < 0 {
 		t.Fatal("expected to find newly added validator")
 	}
-	_, err = stateStore.LoadVoters(nextHeight+1, state.VoterParams)
+	_, _, _, _, err = stateStore.LoadVoters(nextHeight+1, state.VoterParams) // nolint: dogsled
 	assert.Error(t, err, sm.ErrNoProofHashForHeight{})
 }
 

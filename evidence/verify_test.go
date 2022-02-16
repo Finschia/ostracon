@@ -11,8 +11,6 @@ import (
 	"github.com/coniks-sys/coniks-go/crypto/vrf"
 	"github.com/line/tm-db/v2/memdb"
 
-	"github.com/stretchr/testify/mock"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -175,8 +173,9 @@ func TestVerify_LunaticAttackAgainstState(t *testing.T) {
 	}
 	stateStore := &smmocks.Store{}
 	stateStore.On("LoadValidators", commonHeight).Return(common.ValidatorSet, nil)
-	stateStore.On("LoadVoters", commonHeight, mock.AnythingOfType("*types.VoterParams")).Return(
-		ev.ConflictingBlock.VoterSet, nil) // Should use correct VoterSet for bls.VerifyAggregatedSignature
+	// Should use correct VoterSet for bls.VerifyAggregatedSignature
+	stateStore.On("LoadVoters", commonHeight, state.VoterParams).Return(
+		common.ValidatorSet, ev.ConflictingBlock.VoterSet, state.VoterParams, state.LastProofHash, nil)
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
 	blockStore.On("LoadBlockMeta", commonHeight).Return(&types.BlockMeta{Header: *common.Header})
@@ -244,6 +243,7 @@ func TestVerify_ForwardLunaticAttack(t *testing.T) {
 		LastBlockTime:   defaultEvidenceTime.Add(2 * time.Hour),
 		LastBlockHeight: nodeHeight,
 		ConsensusParams: *types.DefaultConsensusParams(),
+		VoterParams:     types.DefaultVoterParams(),
 	}
 
 	// modify trusted light block so that it is of a height less than the conflicting one
@@ -252,8 +252,9 @@ func TestVerify_ForwardLunaticAttack(t *testing.T) {
 
 	stateStore := &smmocks.Store{}
 	stateStore.On("LoadValidators", commonHeight).Return(common.ValidatorSet, nil)
-	stateStore.On("LoadVoters", commonHeight, mock.AnythingOfType("*types.VoterParams")).Return(
-		ev.ConflictingBlock.VoterSet, nil) // Should use correct VoterSet for bls.VerifyAggregatedSignature
+	// Should use correct VoterSet for bls.VerifyAggregatedSignature
+	stateStore.On("LoadVoters", commonHeight, state.VoterParams).Return(
+		common.ValidatorSet, ev.ConflictingBlock.VoterSet, state.VoterParams, state.LastProofHash, nil)
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
 	blockStore.On("LoadBlockMeta", commonHeight).Return(&types.BlockMeta{Header: *common.Header})
@@ -367,10 +368,13 @@ func TestVerifyLightClientAttack_Equivocation(t *testing.T) {
 		LastBlockTime:   defaultEvidenceTime.Add(1 * time.Minute),
 		LastBlockHeight: 11,
 		ConsensusParams: *types.DefaultConsensusParams(),
+		VoterParams:     types.DefaultVoterParams(),
 	}
 	stateStore := &smmocks.Store{}
 	stateStore.On("LoadValidators", int64(10)).Return(conflictingVals, nil)
-	stateStore.On("LoadVoters", int64(10), mock.AnythingOfType("*types.VoterParams")).Return(conflictingVoters, nil)
+	// Should use correct VoterSet for bls.VerifyAggregatedSignature
+	stateStore.On("LoadVoters", int64(10), state.VoterParams).Return(
+		conflictingVals, conflictingVoters, state.VoterParams, state.LastProofHash, nil)
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
 	blockStore.On("LoadBlockMeta", int64(10)).Return(&types.BlockMeta{Header: *trustedHeader})
@@ -460,10 +464,13 @@ func TestVerifyLightClientAttack_Amnesia(t *testing.T) {
 		LastBlockTime:   defaultEvidenceTime.Add(1 * time.Minute),
 		LastBlockHeight: 11,
 		ConsensusParams: *types.DefaultConsensusParams(),
+		VoterParams:     types.DefaultVoterParams(),
 	}
 	stateStore := &smmocks.Store{}
 	stateStore.On("LoadValidators", int64(10)).Return(conflictingVals, nil)
-	stateStore.On("LoadVoters", int64(10), mock.AnythingOfType("*types.VoterParams")).Return(conflictingVoters, nil)
+	// Should use correct VoterSet for bls.VerifyAggregatedSignature
+	stateStore.On("LoadVoters", int64(10), state.VoterParams).Return(
+		conflictingVals, conflictingVoters, state.VoterParams, state.LastProofHash, nil)
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
 	blockStore.On("LoadBlockMeta", int64(10)).Return(&types.BlockMeta{Header: *trustedHeader})
@@ -556,9 +563,12 @@ func TestVerifyDuplicateVoteEvidence(t *testing.T) {
 		LastBlockTime:   defaultEvidenceTime.Add(1 * time.Minute),
 		LastBlockHeight: 11,
 		ConsensusParams: *types.DefaultConsensusParams(),
+		VoterParams:     types.DefaultVoterParams(),
 	}
 	stateStore := &smmocks.Store{}
-	stateStore.On("LoadVoters", int64(10), mock.AnythingOfType("*types.VoterParams")).Return(voterSet, nil)
+	// Should use correct VoterSet for bls.VerifyAggregatedSignature
+	stateStore.On("LoadVoters", int64(10), state.VoterParams).Return(
+		valSet, voterSet, state.VoterParams, state.LastProofHash, nil)
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
 	blockStore.On("LoadBlockMeta", int64(10)).Return(&types.BlockMeta{Header: types.Header{Time: defaultEvidenceTime}})
