@@ -18,7 +18,7 @@ require (
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/protobuf v1.5.2
 	github.com/google/orderedcode v0.0.1
-	github.com/gorilla/websocket v1.4.2
+	github.com/gorilla/websocket v1.5.0
 	github.com/gtank/merlin v0.1.1
 	github.com/herumi/bls-eth-go-binary v0.0.0-20200923072303-32b29e5d8cbf
 	github.com/lib/pq v1.10.4
