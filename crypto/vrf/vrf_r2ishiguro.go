@@ -1,3 +1,4 @@
+//go:build !libsodium && !coniks
 // +build !libsodium,!coniks
 
 package vrf
@@ -12,7 +13,11 @@ type vrfEd25519r2ishiguro struct {
 }
 
 func init() {
-	defaultVrf = newVrfEd25519r2ishiguro()
+	// if you use build option for other implementation, defaultVrf is overridden by other implementation.
+	// It may vrfEd25519libsodium
+	if defaultVrf == nil {
+		defaultVrf = newVrfEd25519r2ishiguro()
+	}
 }
 
 func newVrfEd25519r2ishiguro() vrfEd25519r2ishiguro {

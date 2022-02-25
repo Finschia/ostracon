@@ -107,7 +107,7 @@ func (state State) Copy() State {
 		NextValidators:              state.NextValidators.Copy(),
 		Validators:                  state.Validators.Copy(),
 		Voters:                      state.Voters.Copy(),
-		LastVoters:                  state.LastVoters.Copy(),
+		LastVoters:                  state.LastVoters.Copy(), // there is a possibility of nil when height is 1
 		LastHeightValidatorsChanged: state.LastHeightValidatorsChanged,
 
 		ConsensusParams:                  state.ConsensusParams,
@@ -199,8 +199,8 @@ func (state *State) ToProto() (*tmstate.State, error) {
 	return sm, nil
 }
 
-// StateFromProto takes a state proto message & returns the local state type
-func StateFromProto(pb *tmstate.State) (*State, error) { //nolint:golint
+// FromProto takes a state proto message & returns the local state type
+func FromProto(pb *tmstate.State) (*State, error) { //nolint:golint
 	if pb == nil {
 		return nil, errors.New("nil State")
 	}

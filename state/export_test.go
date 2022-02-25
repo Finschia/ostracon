@@ -54,3 +54,13 @@ func SaveValidatorsInfo(
 	}
 	return stateStore.saveValidatorsInfo(height, lastHeightChanged, valSet)
 }
+
+func SaveVoterParams(db dbm.DB, height int64, params *types.VoterParams) error {
+	stateStore := dbStore{db}
+	return stateStore.saveVoterParams(height, params)
+}
+
+func SaveProofHash(db dbm.DB, height int64, proofHash []byte) error {
+	stateStore := dbStore{db}
+	return stateStore.saveProofHash(height, proofHash)
+}

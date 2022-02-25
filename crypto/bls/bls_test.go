@@ -227,10 +227,10 @@ func TestAggregatedSignature(t *testing.T) {
 	// aggregate signatures
 	aggrSig, err := aggregateSignatures(nil, sigs)
 	if err != nil {
-		t.Error(fmt.Sprintf("fail to aggregate BLS signatures: %s", err))
+		t.Errorf("fail to aggregate BLS signatures: %s", err)
 	}
 	if len(aggrSig) != bls.SignatureSize {
-		t.Error(fmt.Sprintf("inconpatible signature size: %d != %d", len(aggrSig), bls.SignatureSize))
+		t.Errorf("inconpatible signature size: %d != %d", len(aggrSig), bls.SignatureSize)
 	}
 
 	// validate the aggregated signature

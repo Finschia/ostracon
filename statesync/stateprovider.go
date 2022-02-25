@@ -60,7 +60,7 @@ func NewLightClientStateProvider(
 
 	providers := make([]lightprovider.Provider, 0, len(servers))
 	providerRemotes := make(map[lightprovider.Provider]string)
-	var voterParams *types.VoterParams = nil
+	var voterParams *types.VoterParams
 	for _, server := range servers {
 		client, err := rpcClient(server)
 		if err != nil {

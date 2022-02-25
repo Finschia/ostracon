@@ -53,6 +53,8 @@ func proveAndVerify(t *testing.T, privateKey, publicKey []byte) (bool, error) {
 }
 
 func TestProveAndVerify(t *testing.T) {
+	require.NotNil(t, defaultVrf)
+	t.Logf("defaultVrf:%T", defaultVrf)
 	secret := [SEEDBYTES]byte{}
 	privateKey := ed25519.NewKeyFromSeed(secret[:])
 	publicKey := privateKey.Public().(ed25519.PublicKey)

@@ -3,6 +3,8 @@ package coregrpc
 import (
 	"net"
 
+	"google.golang.org/grpc/credentials/insecure"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
@@ -26,7 +28,9 @@ func StartGRPCServer(ln net.Listener) error {
 // StartGRPCClient dials the gRPC server using protoAddr and returns a new
 // BroadcastAPIClient.
 func StartGRPCClient(protoAddr string) BroadcastAPIClient {
-	conn, err := grpc.Dial(protoAddr, grpc.WithInsecure(), grpc.WithContextDialer(dialerFunc))
+	conn, err := grpc.Dial(protoAddr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithContextDialer(dialerFunc))
 	if err != nil {
 		panic(err)
 	}

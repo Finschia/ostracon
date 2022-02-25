@@ -16,16 +16,102 @@ import (
 	"github.com/line/ostracon/version"
 )
 
+var (
+	appVersion  uint64 = 10
+	proofHash          = []byte{0}
+	voterParams        = types.DefaultVoterParams()
+)
+
 func TestRollback(t *testing.T) {
+	var (
+		height     int64 = 100
+		nextHeight int64 = 101
+	)
+	blockStore := &mocks.BlockStore{}
+	stateStore := setupStateStore(t, height)
+	initialState, err := stateStore.Load()
+	require.NoError(t, err)
+
+	// perform the rollback over a version bump
+	newParams := types.DefaultConsensusParams()
+	newParams.Version.AppVersion = 11
+	newParams.Block.MaxBytes = 1000
+	nextState := initialState.Copy()
+	nextState.LastBlockHeight = nextHeight
+	nextState.Version.Consensus.App = 11
+	nextState.LastBlockID = makeBlockIDRandom()
+	nextState.AppHash = tmhash.Sum([]byte("app_hash"))
+	nextState.LastVoters = initialState.Voters
+	nextState.Voters = types.SelectVoter(initialState.NextValidators, proofHash, voterParams)
+	nextState.Validators = initialState.NextValidators
+	nextState.NextValidators = initialState.NextValidators.CopyIncrementProposerPriority(1)
+	nextState.ConsensusParams = *newParams
+	nextState.LastHeightConsensusParamsChanged = nextHeight + 1
+	nextState.LastHeightValidatorsChanged = nextHeight + 1
+
+	// update the state
+	require.NoError(t, stateStore.Save(nextState))
+
+	block := &types.BlockMeta{
+		BlockID: initialState.LastBlockID,
+		Header: types.Header{
+			Height:          initialState.LastBlockHeight,
+			AppHash:         initialState.AppHash,
+			LastBlockID:     makeBlockIDRandom(),
+			LastResultsHash: initialState.LastResultsHash,
+		},
+	}
+	blockStore.On("LoadBlockMeta", initialState.LastBlockHeight).Return(block)
+	blockStore.On("Height").Return(nextHeight)
+
+	// rollback the state
+	rollbackHeight, rollbackHash, err := state.Rollback(blockStore, stateStore)
+	require.NoError(t, err)
+	require.EqualValues(t, height, rollbackHeight)
+	require.EqualValues(t, initialState.AppHash, rollbackHash)
+	blockStore.AssertExpectations(t)
+
+	// assert that we've recovered the prior state
+	loadedState, err := stateStore.Load()
+	require.NoError(t, err)
+	require.EqualValues(t, initialState, loadedState)
+}
+
+func TestRollbackNoState(t *testing.T) {
 	stateStore := state.NewStore(dbm.NewDB())
 	blockStore := &mocks.BlockStore{}
-	var (
-		height     int64  = 100
-		appVersion uint64 = 10
-	)
 
-	proofHash := []byte{0}
-	voterParams := types.DefaultVoterParams()
+	_, _, err := state.Rollback(blockStore, stateStore)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "no state found")
+}
+
+func TestRollbackNoBlocks(t *testing.T) {
+	const height = int64(100)
+	stateStore := setupStateStore(t, height)
+	blockStore := &mocks.BlockStore{}
+	blockStore.On("Height").Return(height)
+	blockStore.On("LoadBlockMeta", height-1).Return(nil)
+
+	_, _, err := state.Rollback(blockStore, stateStore)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "block at height 99 not found")
+}
+
+func TestRollbackDifferentStateHeight(t *testing.T) {
+	const height = int64(100)
+	stateStore := setupStateStore(t, height)
+	blockStore := &mocks.BlockStore{}
+	blockStore.On("Height").Return(height + 2)
+
+	_, _, err := state.Rollback(blockStore, stateStore)
+	require.Error(t, err)
+	require.Equal(t, err.Error(), "statestore height (100) is not one below or equal to blockstore height (102)")
+}
+
+func setupStateStore(t *testing.T, height int64) state.Store {
+	stateStore := state.NewStore(dbm.NewDB())
+
 	previousValSet, _ := types.RandValidatorSet(5, 10)
 	previousVoterSet := types.SelectVoter(previousValSet, proofHash, voterParams)
 	lastValSet := previousValSet.CopyIncrementProposerPriority(1)
@@ -33,12 +119,9 @@ func TestRollback(t *testing.T) {
 	initialValSet := lastValSet.CopyIncrementProposerPriority(1)
 	initialVoterSet := types.SelectVoter(initialValSet, proofHash, voterParams)
 	nextValSet := initialValSet.CopyIncrementProposerPriority(1)
-	nextVoterSet := types.SelectVoter(nextValSet, proofHash, voterParams)
 
 	params := types.DefaultConsensusParams()
 	params.Version.AppVersion = appVersion
-	newParams := types.DefaultConsensusParams()
-	newParams.Block.MaxBytes = 10000
 
 	initialState := state.State{
 		Version: tmstate.Version{
@@ -64,6 +147,8 @@ func TestRollback(t *testing.T) {
 		ConsensusParams:                  *params,
 		LastHeightConsensusParamsChanged: height + 1,
 	}
+
+	// Need to set previous initial state for VRF verify
 	previousState := initialState.Copy()
 	previousState.LastBlockHeight = initialState.LastBlockHeight - 1
 	previousState.LastHeightConsensusParamsChanged = initialState.LastHeightConsensusParamsChanged - 1
@@ -73,104 +158,9 @@ func TestRollback(t *testing.T) {
 	previousState.Validators = lastValSet
 	previousState.NextValidators = initialValSet
 	require.NoError(t, stateStore.Bootstrap(previousState))
+
 	require.NoError(t, stateStore.Bootstrap(initialState))
-
-	height++
-	block := &types.BlockMeta{
-		Header: types.Header{
-			Height:          height,
-			AppHash:         initialState.AppHash,
-			LastBlockID:     initialState.LastBlockID,
-			LastResultsHash: initialState.LastResultsHash,
-		},
-	}
-	blockStore.On("LoadBlockMeta", height).Return(block)
-
-	appVersion++
-	newParams.Version.AppVersion = appVersion
-	nextState := initialState.Copy()
-	nextState.LastBlockHeight = height
-	nextState.Version.Consensus.App = appVersion
-	nextState.LastBlockID = makeBlockIDRandom()
-	nextState.AppHash = tmhash.Sum([]byte("next_app_hash"))
-	nextState.LastVoters = initialVoterSet
-	nextState.Voters = nextVoterSet
-	nextState.Validators = nextValSet
-	nextState.NextValidators = nextValSet.CopyIncrementProposerPriority(1)
-	nextState.ConsensusParams = *newParams
-	nextState.LastHeightConsensusParamsChanged = height + 1
-	nextState.LastHeightValidatorsChanged = height + 1
-
-	// update the state
-	require.NoError(t, stateStore.Save(nextState))
-
-	// rollback the state
-	rollbackHeight, rollbackHash, err := state.Rollback(blockStore, stateStore)
-	require.NoError(t, err)
-	require.EqualValues(t, int64(100), rollbackHeight)
-	require.EqualValues(t, initialState.AppHash, rollbackHash)
-	blockStore.AssertExpectations(t)
-
-	// assert that we've recovered the prior state
-	loadedState, err := stateStore.Load()
-	require.NoError(t, err)
-	require.EqualValues(t, initialState, loadedState)
-}
-
-func TestRollbackNoState(t *testing.T) {
-	stateStore := state.NewStore(dbm.NewDB())
-	blockStore := &mocks.BlockStore{}
-
-	_, _, err := state.Rollback(blockStore, stateStore)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "no state found")
-}
-
-func TestRollbackNoBlocks(t *testing.T) {
-	stateStore := state.NewStore(dbm.NewDB())
-	blockStore := &mocks.BlockStore{}
-	var (
-		height     int64  = 100
-		appVersion uint64 = 10
-	)
-
-	valSet, voterSet, _ := types.RandVoterSet(5, 10)
-
-	params := types.DefaultConsensusParams()
-	params.Version.AppVersion = appVersion
-	newParams := types.DefaultConsensusParams()
-	newParams.Block.MaxBytes = 10000
-
-	initialState := state.State{
-		Version: tmstate.Version{
-			Consensus: tmversion.Consensus{
-				Block: version.BlockProtocol,
-				App:   10,
-			},
-			Software: version.OCCoreSemVer,
-		},
-		ChainID:                          "test-chain",
-		InitialHeight:                    10,
-		LastBlockID:                      makeBlockIDRandom(),
-		AppHash:                          tmhash.Sum([]byte("app_hash")),
-		LastResultsHash:                  tmhash.Sum([]byte("last_results_hash")),
-		LastBlockHeight:                  height,
-		LastVoters:                       voterSet,
-		LastProofHash:                    []byte{0},
-		Voters:                           voterSet,
-		VoterParams:                      types.DefaultVoterParams(),
-		Validators:                       valSet.CopyIncrementProposerPriority(1),
-		NextValidators:                   valSet.CopyIncrementProposerPriority(2),
-		LastHeightValidatorsChanged:      height + 1,
-		ConsensusParams:                  *params,
-		LastHeightConsensusParamsChanged: height + 1,
-	}
-	require.NoError(t, stateStore.Save(initialState))
-	blockStore.On("LoadBlockMeta", height).Return(nil)
-
-	_, _, err := state.Rollback(blockStore, stateStore)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "block at height 100 not found")
+	return stateStore
 }
 
 func makeBlockIDRandom() types.BlockID {

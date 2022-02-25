@@ -3,7 +3,7 @@ package log
 import (
 	"io"
 
-	kitlog "github.com/go-kit/kit/log"
+	kitlog "github.com/go-kit/log"
 )
 
 // NewOCJSONLogger returns a Logger that encodes keyvals to the Writer as a

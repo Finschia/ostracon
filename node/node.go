@@ -1037,6 +1037,16 @@ func (n *Node) OnStop() {
 			n.Logger.Error("Prometheus HTTP server Shutdown", "err", err)
 		}
 	}
+	if n.blockStore != nil {
+		if err := n.blockStore.Close(); err != nil {
+			n.Logger.Error("problem closing blockstore", "err", err)
+		}
+	}
+	if n.stateStore != nil {
+		if err := n.stateStore.Close(); err != nil {
+			n.Logger.Error("problem closing statestore", "err", err)
+		}
+	}
 }
 
 // ConfigureRPC makes sure RPC has all the objects it needs to operate.
@@ -1115,6 +1125,7 @@ func (n *Node) startRPC() ([]net.Listener, error) {
 				}
 			}),
 			rpcserver.ReadLimit(config.MaxBodyBytes),
+			rpcserver.WriteChanCapacity(n.config.RPC.WebSocketWriteBufferSize),
 		)
 		wm.SetLogger(wmLogger)
 		mux.HandleFunc("/websocket", wm.WebsocketHandler)

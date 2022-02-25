@@ -99,6 +99,9 @@ func copyValidatorListShallow(vals []*Validator) []*Validator {
 
 // VoterSet.Copy() copies validator list shallow
 func (voters *VoterSet) Copy() *VoterSet {
+	if voters == nil {
+		return nil
+	}
 	return &VoterSet{
 		Voters:           copyValidatorListShallow(voters.Voters),
 		totalVotingPower: voters.totalVotingPower,
