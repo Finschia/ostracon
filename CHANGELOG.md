@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.0.4
+
+*Feb 25, 2022*
+
+* Apply changes up to tendermint v0.34.14
+
+### BREAKING CHANGE
+- Nothing
+
+### FEATURES
+- Nothing
+
+### IMPROVEMENTS
+- [backport/tendermint] [\#361](https://github.com/line/ostracon/pull/361) Main patch tm-v0.34.12
+- [backport/tendermint] [\#364](https://github.com/line/ostracon/pull/364) Main patch tm-v0.34.13
+- [backport/tendermint] [\#366](https://github.com/line/ostracon/pull/366) Main patch tm v0.34.14
+
+### BUG FIXES
+- Nothing
+
 ## v1.0.3
 
 *Jan 20, 2022*
