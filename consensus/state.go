@@ -2404,9 +2404,9 @@ func (cs *State) calculatePrevoteMessageDelayMetrics() {
 	})
 	var votingPowerSeen int64
 	for _, v := range pl {
-		_, val := cs.Validators.GetByAddress(v.ValidatorAddress)
-		votingPowerSeen += val.VotingPower
-		if votingPowerSeen >= cs.Validators.TotalVotingPower()*2/3+1 {
+		_, voter := cs.Voters.GetByAddress(v.ValidatorAddress)
+		votingPowerSeen += voter.VotingPower
+		if votingPowerSeen >= cs.Voters.TotalVotingPower()*2/3+1 {
 			cs.metrics.QuorumPrevoteMessageDelay.Set(v.Timestamp.Sub(cs.Proposal.Timestamp).Seconds())
 			break
 		}
