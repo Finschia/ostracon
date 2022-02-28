@@ -18,6 +18,7 @@ import (
 	rpchttp "github.com/line/ostracon/rpc/client/http"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"
+	"github.com/line/ostracon/version"
 	"github.com/line/tm-db/v2/memdb"
 )
 
@@ -171,6 +172,10 @@ func (s *lightClientStateProvider) State(ctx context.Context, height uint64) (sm
 		return sm.State{}, err
 	}
 
+	state.Version = tmstate.Version{
+		Consensus: currentLightBlock.Version,
+		Software:  version.OCCoreSemVer,
+	}
 	state.LastBlockHeight = lastLightBlock.Height
 	state.LastBlockTime = lastLightBlock.Time
 	state.LastBlockID = lastLightBlock.Commit.BlockID

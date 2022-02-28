@@ -257,7 +257,7 @@ func makeTestStateAndCommit(appHash string, height int64) (sm.State, *types.Comm
 		Version: tmstate.Version{
 			Consensus: tmversion.Consensus{
 				Block: version.BlockProtocol,
-				App:   0,
+				App:   9,
 			},
 
 			Software: version.OCCoreSemVer,
