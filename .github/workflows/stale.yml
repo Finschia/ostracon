@@ -15,4 +15,4 @@ jobs:
     for your contributions."
           days-before-stale: 10
           days-before-close: 4
-          exempt-pr-labels: "S:wip"
+          days-before-issue-close: -1
