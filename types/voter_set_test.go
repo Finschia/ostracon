@@ -391,18 +391,21 @@ The result when we set LoopCount to 10000
   << min power=100, max power=100000000, actual average voters=10, max voters=10 >> largest gap: 0.076536
   << min power=100, max power=100000000, actual average voters=20, max voters=20 >> largest gap: 0.076547
   << min power=100, max power=100000000, actual average voters=29, max voters=29 >> largest gap: 0.147867
+
+for testing:
+go test -bench BenchmarkSelectVoterReasonableStakingPower github.com/line/ostracon/types -run ^$ -count 1 -benchmem -v
 */
-func TestSelectVoterReasonableStakingPower(t *testing.T) {
+func BenchmarkSelectVoterReasonableStakingPower(b *testing.B) {
 	// Raise LoopCount to get smaller gap over 10000. But large LoopCount takes a lot of time
 	const LoopCount = 100
 	for minMaxRate := 1; minMaxRate <= 1000000; minMaxRate *= 100 {
-		findLargestStakingPowerGap(t, LoopCount, minMaxRate, 10)
-		findLargestStakingPowerGap(t, LoopCount, minMaxRate, 20)
-		findLargestStakingPowerGap(t, LoopCount, minMaxRate, 29)
+		findLargestStakingPowerGap(b, LoopCount, minMaxRate, 10)
+		findLargestStakingPowerGap(b, LoopCount, minMaxRate, 20)
+		findLargestStakingPowerGap(b, LoopCount, minMaxRate, 29)
 	}
 }
 
-func findLargestStakingPowerGap(t *testing.T, loopCount int, minMaxRate int, maxVoters int) {
+func findLargestStakingPowerGap(b *testing.B, loopCount int, minMaxRate int, maxVoters int) {
 	valSet, privMap := randValidatorSetWithMinMax(PrivKeyEd25519, 30, 100, 100*int64(minMaxRate))
 	genDoc := &GenesisDoc{
 		GenesisTime: tmtime.Now(),
@@ -432,7 +435,7 @@ func findLargestStakingPowerGap(t *testing.T, loopCount int, minMaxRate int, max
 			largestGap = math.Abs(float64(val.StakingPower-acc)) / float64(val.StakingPower)
 		}
 	}
-	t.Logf("<< min power=100, max power=%d, actual average voters=%d, max voters=%d >> largest gap: %f",
+	b.Logf("<< min power=100, max power=%d, actual average voters=%d, max voters=%d >> largest gap: %f",
 		100*minMaxRate, totalVoters/loopCount, maxVoters, largestGap)
 }
 
@@ -442,17 +445,20 @@ func findLargestStakingPowerGap(t *testing.T, loopCount int, minMaxRate int, max
 	MaxSamplingLoopTry.
   If MaxSamplingLoopTry is very large then actual elected voters is up to MaxVoters,
   but large MaxSamplingLoopTry takes too much time.
+
+for testing:
+go test -bench BenchmarkSelectVoterMaxVarious github.com/line/ostracon/types -run ^$ -count 1 -benchmem -v
 */
-func TestSelectVoterMaxVarious(t *testing.T) {
+func BenchmarkSelectVoterMaxVarious(b *testing.B) {
 	hash := 0
 	for minMaxRate := 1; minMaxRate <= 100000000; minMaxRate *= 10000 {
-		t.Logf("<<< min: 100, max: %d >>>", 100*minMaxRate)
+		b.Logf("<<< min: 100, max: %d >>>", 100*minMaxRate)
 		for validators := 16; validators <= 256; validators *= 4 {
 			for voters := 1; voters <= validators; voters += 10 {
 				valSet, _ := randValidatorSetWithMinMax(PrivKeyEd25519, validators, 100, 100*int64(minMaxRate))
 				voterSet := SelectVoter(valSet, []byte{byte(hash)}, &VoterParams{int32(voters), 20})
 				if voterSet.Size() < voters {
-					t.Logf("Cannot elect voters up to MaxVoters: validators=%d, MaxVoters=%d, actual voters=%d",
+					b.Logf("Cannot elect voters up to MaxVoters: validators=%d, MaxVoters=%d, actual voters=%d",
 						validators, voters, voterSet.Size())
 					break
 				}
@@ -977,7 +983,11 @@ func TestMyMy(t *testing.T) {
 	t.Logf("a=%v, b=%v", a, b)
 }
 
-func TestElectVotersNonDup(t *testing.T) {
+/**
+for testing:
+go test -bench BenchmarkElectVotersNonDup github.com/line/ostracon/types -run ^$ -count 1 -benchmem -v
+*/
+func BenchmarkElectVotersNonDup(b *testing.B) {
 	for n := 100; n <= 1000; n += 100 {
 		rand.Seed(int64(n))
 		validators := newValidatorSet(n, func(i int) int64 {
@@ -992,7 +1002,7 @@ func TestElectVotersNonDup(t *testing.T) {
 			}
 			break
 		}
-		assert.True(t, isByzantineTolerable(winners, 30))
+		assert.True(b, isByzantineTolerable(winners, 30))
 	}
 }
 
@@ -1117,7 +1127,11 @@ func TestElectVotersNonDupWithOverflow(t *testing.T) {
 	electVotersNonDup(validators.Validators, 0, 30, 0)
 }
 
-func TestElectVotersNonDupDistribution(t *testing.T) {
+/**
+for testing:
+go test -bench BenchmarkElectVotersNonDupDistribution github.com/line/ostracon/types -run ^$ -count 1 -benchmem -v
+*/
+func BenchmarkElectVotersNonDupDistribution(b *testing.B) {
 	validators := newValidatorSet(100, func(i int) int64 {
 		return 1000
 	})
@@ -1133,7 +1147,7 @@ func TestElectVotersNonDupDistribution(t *testing.T) {
 	}
 
 	for _, v := range scores {
-		assert.True(t, v >= 900 && v <= 1100)
+		assert.True(b, v >= 900 && v <= 1100)
 	}
 }
 

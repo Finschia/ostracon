@@ -7,6 +7,7 @@ import (
 	dbm "github.com/line/tm-db/v2/memdb"
 	"github.com/stretchr/testify/require"
 
+	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/tmhash"
 	tmstate "github.com/line/ostracon/proto/ostracon/state"
 	tmversion "github.com/line/ostracon/proto/ostracon/version"
@@ -56,12 +57,22 @@ func TestRollback(t *testing.T) {
 		BlockID: initialState.LastBlockID,
 		Header: types.Header{
 			Height:          initialState.LastBlockHeight,
-			AppHash:         initialState.AppHash,
+			AppHash:         crypto.CRandBytes(tmhash.Size),
 			LastBlockID:     makeBlockIDRandom(),
 			LastResultsHash: initialState.LastResultsHash,
 		},
 	}
-	blockStore.On("LoadBlockMeta", initialState.LastBlockHeight).Return(block)
+	nextBlock := &types.BlockMeta{
+		BlockID: initialState.LastBlockID,
+		Header: types.Header{
+			Height:          nextState.LastBlockHeight,
+			AppHash:         initialState.AppHash,
+			LastBlockID:     block.BlockID,
+			LastResultsHash: nextState.LastResultsHash,
+		},
+	}
+	blockStore.On("LoadBlockMeta", height).Return(block)
+	blockStore.On("LoadBlockMeta", nextHeight).Return(nextBlock)
 	blockStore.On("Height").Return(nextHeight)
 
 	// rollback the state
@@ -91,11 +102,18 @@ func TestRollbackNoBlocks(t *testing.T) {
 	stateStore := setupStateStore(t, height)
 	blockStore := &mocks.BlockStore{}
 	blockStore.On("Height").Return(height)
-	blockStore.On("LoadBlockMeta", height-1).Return(nil)
+	blockStore.On("LoadBlockMeta", height-1).Once().Return(nil)
 
 	_, _, err := state.Rollback(blockStore, stateStore)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "block at height 99 not found")
+	require.Contains(t, err.Error(), "block at RollbackHeight 99 not found")
+
+	blockStore.On("LoadBlockMeta", height-1).Once().Return(&types.BlockMeta{})
+	blockStore.On("LoadBlockMeta", height).Return(nil)
+
+	_, _, err = state.Rollback(blockStore, stateStore)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "block at LastBlockHeight 100 not found")
 }
 
 func TestRollbackDifferentStateHeight(t *testing.T) {

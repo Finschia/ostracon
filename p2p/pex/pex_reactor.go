@@ -397,7 +397,6 @@ func (r *Reactor) ReceiveAddrs(addrs []*p2p.NetAddress, src Peer) error {
 		// If this address came from a seed node, try to connect to it without
 		// waiting (#2093)
 		if srcIsSeed {
-			r.Logger.Info("Will dial address, which came from seed", "addr", netAddr, "seed", srcAddr)
 			go func(addr *p2p.NetAddress) {
 				err := r.dialPeer(addr)
 				if err != nil {
@@ -405,7 +404,7 @@ func (r *Reactor) ReceiveAddrs(addrs []*p2p.NetAddress, src Peer) error {
 					case errMaxAttemptsToDial, errTooEarlyToDial, p2p.ErrCurrentlyDialingOrExistingAddress:
 						r.Logger.Debug(err.Error(), "addr", addr)
 					default:
-						r.Logger.Error(err.Error(), "addr", addr)
+						r.Logger.Debug(err.Error(), "addr", addr)
 					}
 				}
 			}(netAddr)
@@ -501,7 +500,6 @@ func (r *Reactor) ensurePeers() {
 		// TODO: consider moving some checks from toDial into here
 		// so we don't even consider dialing peers that we want to wait
 		// before dialling again, or have dialed too many times already
-		r.Logger.Info("Will dial address", "addr", try)
 		toDial[try.ID] = try
 	}
 
@@ -514,7 +512,7 @@ func (r *Reactor) ensurePeers() {
 				case errMaxAttemptsToDial, errTooEarlyToDial:
 					r.Logger.Debug(err.Error(), "addr", addr)
 				default:
-					r.Logger.Error(err.Error(), "addr", addr)
+					r.Logger.Debug(err.Error(), "addr", addr)
 				}
 			}
 		}(addr)
@@ -727,7 +725,7 @@ func (r *Reactor) crawlPeers(addrs []*p2p.NetAddress) {
 			case errMaxAttemptsToDial, errTooEarlyToDial, p2p.ErrCurrentlyDialingOrExistingAddress:
 				r.Logger.Debug(err.Error(), "addr", addr)
 			default:
-				r.Logger.Error(err.Error(), "addr", addr)
+				r.Logger.Debug(err.Error(), "addr", addr)
 			}
 			continue
 		}

@@ -242,7 +242,7 @@ DESTINATION = ./index.html.md
 BRANCH := $(shell git branch --show-current)
 BRANCH_URI := $(shell git branch --show-current | sed 's/[\#]/%23/g')
 build-docs:
-	cd docs && \
+	@cd docs && \
 	npm install && \
 	VUEPRESS_BASE="/$(BRANCH_URI)/" npm run build && \
 	mkdir -p ~/output/$(BRANCH) && \

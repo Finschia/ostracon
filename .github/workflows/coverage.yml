@@ -79,7 +79,7 @@ jobs:
           path: crypto/vrf/internal/vrf/sodium
       - name: test & coverage report creation
         run: |
-          cat pkgs.txt.part.${{ matrix.part }} | xargs go test -mod=readonly -timeout 10m -race -coverprofile=${{ matrix.part }}profile.out -covermode=atomic -tags ${{ matrix.vrf }}
+          cat pkgs.txt.part.${{ matrix.part }} | xargs go test -mod=readonly -timeout 7m -race -coverprofile=${{ matrix.part }}profile.out -covermode=atomic -tags ${{ matrix.vrf }}
         if: env.GIT_DIFF
       - uses: actions/upload-artifact@v2
         with:

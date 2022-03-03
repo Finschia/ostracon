@@ -28,6 +28,8 @@ import (
 	"github.com/line/ostracon/version"
 )
 
+const testAppVersion = 9
+
 // Sets up a basic syncer that can be used to test OfferSnapshot requests
 func setupOfferSyncer(t *testing.T) (*syncer, *proxymocks.AppConnSnapshot) {
 	connQuery := &proxymocks.AppConnQuery{}
@@ -53,7 +55,7 @@ func TestSyncer_SyncAny(t *testing.T) {
 		Version: tmstate.Version{
 			Consensus: tmversion.Consensus{
 				Block: version.BlockProtocol,
-				App:   0,
+				App:   testAppVersion,
 			},
 
 			Software: version.OCCoreSemVer,
@@ -189,7 +191,7 @@ func TestSyncer_SyncAny(t *testing.T) {
 		Index: 2, Chunk: []byte{1, 1, 2},
 	}).Once().Return(&abci.ResponseApplySnapshotChunk{Result: abci.ResponseApplySnapshotChunk_ACCEPT}, nil)
 	connQuery.On("InfoSync", proxy.RequestInfo).Return(&abci.ResponseInfo{
-		AppVersion:       9,
+		AppVersion:       testAppVersion,
 		LastBlockHeight:  1,
 		LastBlockAppHash: []byte("app_hash"),
 	}, nil)
@@ -203,12 +205,8 @@ func TestSyncer_SyncAny(t *testing.T) {
 	assert.Equal(t, map[uint32]int{0: 1, 1: 2, 2: 1}, chunkRequests)
 	chunkRequestsMtx.Unlock()
 
-	// The syncer should have updated the state app version from the ABCI info response.
 	expectState := state
-	expectState.Version.Consensus.App = 9
-
 	expectPreviousState := sm.State{}
-	expectPreviousState.Version.Consensus.App = expectState.Version.Consensus.App
 
 	assert.Equal(t, expectState, newState)
 	assert.Equal(t, expectPreviousState, previousState)
@@ -622,6 +620,8 @@ func TestSyncer_applyChunks_RejectSenders(t *testing.T) {
 
 func TestSyncer_verifyApp(t *testing.T) {
 	boom := errors.New("boom")
+	const appVersion = 9
+	appVersionMismatchErr := errors.New("app version mismatch. Expected: 9, got: 2")
 	s := &snapshot{Height: 3, Format: 1, Chunks: 5, Hash: []byte{1, 2, 3}, trustedAppHash: []byte("app_hash")}
 
 	testcases := map[string]struct {
@@ -632,17 +632,22 @@ func TestSyncer_verifyApp(t *testing.T) {
 		"verified": {&abci.ResponseInfo{
 			LastBlockHeight:  3,
 			LastBlockAppHash: []byte("app_hash"),
-			AppVersion:       9,
+			AppVersion:       appVersion,
 		}, nil, nil},
+		"invalid app version": {&abci.ResponseInfo{
+			LastBlockHeight:  3,
+			LastBlockAppHash: []byte("app_hash"),
+			AppVersion:       2,
+		}, nil, appVersionMismatchErr},
 		"invalid height": {&abci.ResponseInfo{
 			LastBlockHeight:  5,
 			LastBlockAppHash: []byte("app_hash"),
-			AppVersion:       9,
+			AppVersion:       appVersion,
 		}, nil, errVerifyFailed},
 		"invalid hash": {&abci.ResponseInfo{
 			LastBlockHeight:  3,
 			LastBlockAppHash: []byte("xxx"),
-			AppVersion:       9,
+			AppVersion:       appVersion,
 		}, nil, errVerifyFailed},
 		"error": {nil, boom, boom},
 	}
@@ -657,15 +662,12 @@ func TestSyncer_verifyApp(t *testing.T) {
 			syncer := newSyncer(*cfg, log.NewNopLogger(), connSnapshot, connQuery, stateProvider, "")
 
 			connQuery.On("InfoSync", proxy.RequestInfo).Return(tc.response, tc.err)
-			version, err := syncer.verifyApp(s)
+			err := syncer.verifyApp(s, appVersion)
 			unwrapped := errors.Unwrap(err)
 			if unwrapped != nil {
 				err = unwrapped
 			}
-			assert.Equal(t, tc.expectErr, err)
-			if err == nil {
-				assert.Equal(t, tc.response.AppVersion, version)
-			}
+			require.Equal(t, tc.expectErr, err)
 		})
 	}
 }

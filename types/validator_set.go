@@ -331,8 +331,8 @@ func (vals *ValidatorSet) updateTotalStakingPower() {
 	vals.totalStakingPower = sum
 }
 
-// TotalStakingPower returns the sum of the voting powers of all validators.
-// It recomputes the total voting power if required.
+// TotalStakingPower returns the sum of the staking powers of all validators.
+// It recomputes the total staking power if required.
 func (vals *ValidatorSet) TotalStakingPower() int64 {
 	if vals.totalStakingPower == 0 {
 		vals.updateTotalStakingPower()

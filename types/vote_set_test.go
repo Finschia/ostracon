@@ -56,6 +56,30 @@ func randVoteSetForPrivKeys(
 	return NewVoteSet("test_chain_id", height, round, signedMsgType, voterSet), vals, voterSet, privValidators
 }
 
+func addVoteByAllVoterSet(t *testing.T, voteSet *VoteSet, privVals []PrivValidator, height int64, round int32) []Vote {
+	votes := make([]Vote, voteSet.Size())
+	for i, voter := range voteSet.voterSet.Voters {
+		vote := &Vote{
+			Type:             tmproto.PrevoteType,
+			Height:           height,
+			Round:            round,
+			BlockID:          randBlockID(),
+			Timestamp:        tmtime.Now(),
+			ValidatorAddress: voter.Address,
+			ValidatorIndex:   int32(i),
+		}
+		v := vote.ToProto()
+		err := privVals[i].SignVote(voteSet.chainID, v)
+		require.NoError(t, err)
+		vote.Signature = v.Signature
+		added, err := voteSet.AddVote(vote)
+		require.NoError(t, err)
+		require.True(t, added)
+		votes[i] = *vote
+	}
+	return votes
+}
+
 // Convenience: Return new vote with different validator address/index
 func withValidator(vote *Vote, addr []byte, idx int32) *Vote {
 	vote = vote.Copy()
@@ -205,6 +229,29 @@ func TestVoteSet_AddVote_Bad(t *testing.T) {
 			t.Errorf("expected VoteSet.Add to fail, wrong type")
 		}
 	}
+}
+
+func TestVoteSet_List(t *testing.T) {
+	height, round := int64(1), int32(0)
+	voteSet, _, _, privVals := randVoteSet(height, round, tmproto.PrevoteType, 10, 1)
+
+	votes := addVoteByAllVoterSet(t, voteSet, privVals, height, round)
+	assert.Equal(t, votes, voteSet.List())
+
+	voteSet = nil
+	assert.Nil(t, voteSet.List())
+}
+
+func TestVoteSet_HasAll(t *testing.T) {
+	height, round := int64(1), int32(0)
+	voteSet, _, _, privVals := randVoteSet(height, round, tmproto.PrevoteType, 10, 1)
+	assert.False(t, voteSet.HasAll())
+
+	addVoteByAllVoterSet(t, voteSet, privVals, height, round)
+	assert.True(t, voteSet.HasAll())
+
+	voteSet = nil
+	assert.False(t, voteSet.HasAll())
 }
 
 func TestVoteSet_2_3Majority(t *testing.T) {

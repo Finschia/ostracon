@@ -4,7 +4,7 @@
   "description": "Ostracon Documentation",
   "main": "index.js",
   "dependencies": {
-    "vuepress-theme-cosmos": "^1.0.180"
+    "vuepress-theme-cosmos": "^1.0.183"
   },
   "devDependencies": {
     "watchpack": "^2.1.1"
