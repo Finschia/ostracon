@@ -4,7 +4,7 @@
 
 Ostracon is forked from Tendermint Core at 2021-03-15.
 
-**Node**: Requires [Go 1.15+](https://golang.org/dl/)
+**Node**: Requires [Go 1.17+](https://golang.org/dl/)
 
 **Warnings**: Initial development is in progress, but there has not yet been a stable.
 
