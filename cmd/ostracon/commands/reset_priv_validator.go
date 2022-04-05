@@ -80,6 +80,10 @@ func resetAll(dbDir, addrBookFile, privValKeyFile, privValStateFile, privKeyType
 		logger.Error("Error removing all blockchain history", "dir", dbDir, "err", err)
 	}
 
+	// recreate the dbDir since the privVal state needs to live there
+	if err := tmos.EnsureDir(dbDir, 0700); err != nil {
+		logger.Error("unable to recreate dbDir", "err", err)
+	}
 	resetFilePV(privValKeyFile, privValStateFile, privKeyType, logger)
 	return nil
 }
@@ -157,7 +161,9 @@ func resetFilePV(privValKeyFile, privValStateFile, privKeyType string, logger lo
 		if err != nil {
 			return err
 		}
-		pv.Save()
+		if pv != nil {
+			pv.Save()
+		}
 		logger.Info("Generated private validator file", "keyFile", privValKeyFile,
 			"stateFile", privValStateFile)
 	}
