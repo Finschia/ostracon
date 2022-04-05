@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	coniks "github.com/coniks-sys/coniks-go/crypto/vrf"
+	ed25519consensus "github.com/hdevalence/ed25519consensus"
 	libsodium "github.com/line/ostracon/crypto/vrf/internal/vrf"
 	xed25519 "golang.org/x/crypto/ed25519"
 )
@@ -20,7 +21,9 @@ var secret [SEEDBYTES]byte
 var message []byte = []byte("hello, world")
 
 func TestKeygen(t *testing.T) {
-
+	for i := 0; i < SEEDBYTES; i++ {
+		secret[i] = uint8(i)
+	}
 	privateKey, publicKey := keygen_ed25519(secret)
 
 	t.Run("ed25519 and x/ed25519 have compatibility",
@@ -169,7 +172,7 @@ func testKeypair_compatibility_libsodium_ed25519(
 
 func TestSignVerify(t *testing.T) {
 	sk, pk := keygen_ed25519(secret)
-	t.Run("ed25519 and xed25119 have compatibility", func(t *testing.T) {
+	t.Run("ed25519( and ed25519consensus.Verify) and xed25119 have compatibility", func(t *testing.T) {
 		pk1, sk1, _ := xed25519.GenerateKey(bytes.NewReader(secret[:]))
 
 		signature := ed25519.Sign(sk, message)
@@ -178,6 +181,9 @@ func TestSignVerify(t *testing.T) {
 
 		signature = xed25519.Sign(sk1, message)
 		valid = ed25519.Verify(pk, message, signature)
+		assert.True(t, valid)
+
+		valid = ed25519consensus.Verify(pk, message, signature)
 		assert.True(t, valid)
 	})
 }
