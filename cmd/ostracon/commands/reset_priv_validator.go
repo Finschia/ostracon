@@ -84,8 +84,7 @@ func resetAll(dbDir, addrBookFile, privValKeyFile, privValStateFile, privKeyType
 	if err := tmos.EnsureDir(dbDir, 0700); err != nil {
 		logger.Error("unable to recreate dbDir", "err", err)
 	}
-	resetFilePV(privValKeyFile, privValStateFile, privKeyType, logger)
-	return nil
+	return resetFilePV(privValKeyFile, privValStateFile, privKeyType, logger)
 }
 
 // resetState removes address book files plus all databases.
