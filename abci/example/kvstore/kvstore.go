@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	dbm "github.com/line/tm-db/v2"
-	"github.com/line/tm-db/v2/memdb"
 
 	"github.com/line/ostracon/abci/example/code"
 	"github.com/line/ostracon/abci/types"
@@ -72,7 +71,7 @@ type Application struct {
 }
 
 func NewApplication() *Application {
-	state := loadState(memdb.NewDB())
+	state := loadState(dbm.NewMemDB())
 	return &Application{state: state}
 }
 

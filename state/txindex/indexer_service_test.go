@@ -4,8 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/line/tm-db/v2/memdb"
-	"github.com/line/tm-db/v2/prefixdb"
+	dbm "github.com/line/tm-db/v2"
 	"github.com/stretchr/testify/require"
 
 	abci "github.com/line/ostracon/abci/types"
@@ -29,9 +28,9 @@ func TestIndexerServiceIndexesBlocks(t *testing.T) {
 	})
 
 	// tx indexer
-	store := memdb.NewDB()
+	store := dbm.NewMemDB()
 	txIndexer := kv.NewTxIndex(store)
-	blockIndexer := blockidxkv.New(prefixdb.NewDB(store, []byte("block_events")))
+	blockIndexer := blockidxkv.New(dbm.NewPrefixDB(store, []byte("block_events")))
 
 	service := txindex.NewIndexerService(txIndexer, blockIndexer, eventBus)
 	service.SetLogger(log.TestingLogger())

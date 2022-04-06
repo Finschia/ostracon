@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/line/tm-db/v2/metadb"
 	"gonum.org/v1/gonum/stat/distuv"
 
 	"github.com/stretchr/testify/assert"
@@ -31,8 +30,8 @@ import (
 // setupTestCase does setup common to all test cases.
 func setupTestCase(t *testing.T) (func(t *testing.T), dbm.DB, sm.State) {
 	config := cfg.ResetTestRoot("state_")
-	dbType := metadb.BackendType(config.DBBackend)
-	stateDB, err := metadb.NewDB("state", dbType, config.DBDir())
+	dbType := dbm.BackendType(config.DBBackend)
+	stateDB, err := dbm.NewDB("state", dbType, config.DBDir())
 	stateStore := sm.NewStore(stateDB)
 	require.NoError(t, err)
 	state, err := stateStore.LoadFromDBOrGenesisFile(config.GenesisFile())

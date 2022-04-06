@@ -10,13 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/line/tm-db/v2/metadb"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 
 	dbm "github.com/line/tm-db/v2"
-	pdbm "github.com/line/tm-db/v2/prefixdb"
 
 	abci "github.com/line/ostracon/abci/types"
 	bcv0 "github.com/line/ostracon/blockchain/v0"
@@ -72,8 +70,8 @@ type DBProvider func(*DBContext) (dbm.DB, error)
 // DefaultDBProvider returns a database using the DBBackend and DBDir
 // specified in the ctx.Config.
 func DefaultDBProvider(ctx *DBContext) (dbm.DB, error) {
-	dbType := metadb.BackendType(ctx.Config.DBBackend)
-	return metadb.NewDB(ctx.ID, dbType, ctx.Config.DBDir())
+	dbType := dbm.BackendType(ctx.Config.DBBackend)
+	return dbm.NewDB(ctx.ID, dbType, ctx.Config.DBDir())
 }
 
 // GenesisDocProvider returns a GenesisDoc.
@@ -293,7 +291,7 @@ func createAndStartIndexerService(
 		}
 
 		txIndexer = kv.NewTxIndex(store)
-		blockIndexer = blockidxkv.New(pdbm.NewDB(store, []byte("block_events")))
+		blockIndexer = blockidxkv.New(dbm.NewPrefixDB(store, []byte("block_events")))
 
 	case "psql":
 		if config.TxIndex.PsqlConn == "" {

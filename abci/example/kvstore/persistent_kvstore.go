@@ -12,7 +12,7 @@ import (
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
 	"github.com/line/ostracon/libs/log"
 	pc "github.com/line/ostracon/proto/ostracon/crypto"
-	"github.com/line/tm-db/v2/goleveldb"
+	dbm "github.com/line/tm-db/v2"
 )
 
 const (
@@ -36,7 +36,7 @@ type PersistentKVStoreApplication struct {
 
 func NewPersistentKVStoreApplication(dbDir string) *PersistentKVStoreApplication {
 	name := "kvstore"
-	db, err := goleveldb.NewDB(name, dbDir)
+	db, err := dbm.NewGoLevelDB(name, dbDir)
 	if err != nil {
 		panic(err)
 	}

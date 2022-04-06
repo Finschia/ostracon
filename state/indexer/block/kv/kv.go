@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/google/orderedcode"
-	db "github.com/line/tm-db/v2"
+	dbm "github.com/line/tm-db/v2"
 
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/pubsub/query"
@@ -23,10 +23,10 @@ var _ indexer.BlockIndexer = (*BlockerIndexer)(nil)
 // events with an underlying KV store. Block events are indexed by their height,
 // such that matching search criteria returns the respective block height(s).
 type BlockerIndexer struct {
-	store db.DB
+	store dbm.DB
 }
 
-func New(store db.DB) *BlockerIndexer {
+func New(store dbm.DB) *BlockerIndexer {
 	return &BlockerIndexer{
 		store: store,
 	}
@@ -453,7 +453,7 @@ func (idx *BlockerIndexer) match(
 	return filteredHeights, nil
 }
 
-func (idx *BlockerIndexer) indexEvents(batch db.Batch, events []abci.Event, typ string, height int64) error {
+func (idx *BlockerIndexer) indexEvents(batch dbm.Batch, events []abci.Event, typ string, height int64) error {
 	heightBz := int64ToBytes(height)
 
 	for _, event := range events {

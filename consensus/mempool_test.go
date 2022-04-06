@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/line/tm-db/v2/memdb"
+	dbm "github.com/line/tm-db/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -112,7 +112,7 @@ func deliverTxsRange(cs *State, start, end int) {
 
 func TestMempoolTxConcurrentWithCommit(t *testing.T) {
 	state, privVals := randGenesisState(1, false, 10, nil)
-	blockDB := memdb.NewDB()
+	blockDB := dbm.NewMemDB()
 	stateStore := sm.NewStore(blockDB)
 	cs := newStateWithConfigAndBlockStore(config, state, privVals[0], NewCounterApplication(), blockDB)
 	err := stateStore.Save(state)
@@ -137,7 +137,7 @@ func TestMempoolTxConcurrentWithCommit(t *testing.T) {
 func TestMempoolRmBadTx(t *testing.T) {
 	state, privVals := randGenesisState(1, false, 10, nil)
 	app := NewCounterApplication()
-	blockDB := memdb.NewDB()
+	blockDB := dbm.NewMemDB()
 	stateStore := sm.NewStore(blockDB)
 	cs := newStateWithConfigAndBlockStore(config, state, privVals[0], app, blockDB)
 	err := stateStore.Save(state)

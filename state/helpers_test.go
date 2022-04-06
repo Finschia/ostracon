@@ -6,7 +6,6 @@ import (
 	"time"
 
 	dbm "github.com/line/tm-db/v2"
-	"github.com/line/tm-db/v2/memdb"
 
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto"
@@ -124,7 +123,7 @@ func makeState(nVals, height int) (sm.State, dbm.DB, map[string]types.PrivValida
 		AppHash:    nil,
 	})
 
-	stateDB := memdb.NewDB()
+	stateDB := dbm.NewMemDB()
 	stateStore := sm.NewStore(stateDB)
 	if err := stateStore.Save(s); err != nil {
 		panic(err)

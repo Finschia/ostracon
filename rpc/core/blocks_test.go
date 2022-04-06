@@ -1,7 +1,7 @@
 package core
 
 import (
-	errors "errors"
+	"errors"
 	"fmt"
 	"os"
 	"testing"
@@ -16,7 +16,7 @@ import (
 	blockidxnull "github.com/line/ostracon/state/indexer/block/null"
 	"github.com/line/ostracon/store"
 
-	"github.com/line/tm-db/v2/memdb"
+	dbm "github.com/line/tm-db/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -92,7 +92,7 @@ func TestBlockResults(t *testing.T) {
 	}
 
 	env = &Environment{}
-	env.StateStore = sm.NewStore(memdb.NewDB())
+	env.StateStore = sm.NewStore(dbm.NewMemDB())
 	err := env.StateStore.SaveABCIResponses(100, results)
 	require.NoError(t, err)
 	env.BlockStore = mockBlockStore{height: 100}
@@ -240,7 +240,7 @@ func TestBlockSearch_errors(t *testing.T) {
 	{
 		// error: switch orderBy
 		env = &Environment{}
-		env.BlockIndexer = blockidxkv.New(memdb.NewDB())
+		env.BlockIndexer = blockidxkv.New(dbm.NewMemDB())
 		q = fmt.Sprintf("%s>%d", types.BlockHeightKey, 1)
 
 		res, err := BlockSearch(ctx, q, &page, &perPage, orderBy)
@@ -254,7 +254,7 @@ func TestBlockSearch_errors(t *testing.T) {
 	{
 		// error: validatePage(pagePtr, perPage, totalCount)
 		env = &Environment{}
-		env.BlockIndexer = blockidxkv.New(memdb.NewDB())
+		env.BlockIndexer = blockidxkv.New(dbm.NewMemDB())
 		q = fmt.Sprintf("%s>%d", types.BlockHeightKey, 1)
 		orderBy = TestOrderByDesc
 
@@ -271,10 +271,10 @@ func TestBlockSearch_errors(t *testing.T) {
 func makeTestState() (sm.State, func()) {
 	config := cfg.ResetTestRoot("rpc_core_test")
 	env = &Environment{}
-	env.StateStore = sm.NewStore(memdb.NewDB())
-	env.BlockStore = store.NewBlockStore(memdb.NewDB())
-	env.BlockIndexer = blockidxkv.New(memdb.NewDB())
-	env.TxIndexer = txidxkv.NewTxIndex(memdb.NewDB())
+	env.StateStore = sm.NewStore(dbm.NewMemDB())
+	env.BlockStore = store.NewBlockStore(dbm.NewMemDB())
+	env.BlockIndexer = blockidxkv.New(dbm.NewMemDB())
+	env.TxIndexer = txidxkv.NewTxIndex(dbm.NewMemDB())
 
 	state, _ := env.StateStore.LoadFromDBOrGenesisFile(config.GenesisFile())
 	return state, func() { os.RemoveAll(config.RootDir) }

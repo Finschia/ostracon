@@ -9,8 +9,9 @@ import (
 	"path/filepath"
 	"time"
 
+	dbm "github.com/line/tm-db/v2"
+
 	"github.com/line/ostracon/privval"
-	"github.com/line/tm-db/v2/metadb"
 )
 
 const (
@@ -231,7 +232,7 @@ type BaseConfig struct { //nolint: maligned
 
 // DefaultBaseConfig returns a default base configuration for an Ostracon node
 func DefaultBaseConfig() BaseConfig {
-	dbs := metadb.AvailableDBBackends()
+	dbs := dbm.AvailableDBBackends()
 	defaultDBBackend := DefaultDBBackend
 	for _, b := range dbs {
 		defaultDBBackend = string(b)

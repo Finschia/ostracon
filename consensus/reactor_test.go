@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/line/tm-db/v2/memdb"
+	dbm "github.com/line/tm-db/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -134,7 +134,7 @@ func TestReactorWithEvidence(t *testing.T) {
 	css := make([]*State, nValidators)
 	logger := consensusLogger()
 	for i := 0; i < nValidators; i++ {
-		stateDB := memdb.NewDB() // each state needs its own db
+		stateDB := dbm.NewMemDB() // each state needs its own db
 		stateStore := sm.NewStore(stateDB)
 		state, _ := stateStore.LoadFromDBOrGenesisDoc(genDoc)
 		thisConfig := ResetConfig(fmt.Sprintf("%s_%d", testName, i))
@@ -148,7 +148,7 @@ func TestReactorWithEvidence(t *testing.T) {
 		// duplicate code from:
 		// css[i] = newStateWithConfig(thisConfig, state, privVals[i], app)
 
-		blockDB := memdb.NewDB()
+		blockDB := dbm.NewMemDB()
 		blockStore := store.NewBlockStore(blockDB)
 
 		// one for mempool, one for consensus
