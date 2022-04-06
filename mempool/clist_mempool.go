@@ -537,20 +537,18 @@ func (mem *CListMempool) resCbFirstTime(
 func (mem *CListMempool) resCbRecheck(req *abci.Request, res *abci.Response) {
 	switch r := res.Value.(type) {
 	case *abci.Response_CheckTx:
-		tx := req.GetCheckTx().Tx
-		txHash := TxKey(tx)
-		if e, ok := mem.txsMap.Load(txHash); ok {
-			celem := e.(*clist.CElement)
-			if r.CheckTx.Code == abci.CodeTypeOK {
-				// Good, nothing to do.
-			} else {
+		if r.CheckTx.Code == abci.CodeTypeOK {
+			// Good, nothing to do.
+		} else {
+			tx := req.GetCheckTx().Tx
+			txHash := TxKey(tx)
+			if e, ok := mem.txsMap.Load(txHash); ok {
+				celem := e.(*clist.CElement)
 				// Tx became invalidated due to newly committed block.
-				mem.logger.Debug("tx is no longer valid", "tx", txID(tx), "res", r)
+				mem.logger.Info("tx is no longer valid", "tx", txID(tx), "res", r)
 				// NOTE: we remove tx from the cache because it might be good later
 				mem.removeTx(tx, celem, true)
 			}
-		} else {
-			panic(fmt.Sprintf("unexpected tx response from proxy during recheck\ntxHash=%X, tx=%X", txHash, tx))
 		}
 	default:
 		// ignore other messages
