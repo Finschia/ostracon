@@ -545,9 +545,14 @@ func (mem *CListMempool) resCbRecheck(req *abci.Request, res *abci.Response) {
 			if e, ok := mem.txsMap.Load(txHash); ok {
 				celem := e.(*clist.CElement)
 				// Tx became invalidated due to newly committed block.
-				mem.logger.Info("tx is no longer valid", "tx", txID(tx), "res", r)
+				mem.logger.Debug("tx is no longer valid", "tx", txID(tx), "res", r)
 				// NOTE: we remove tx from the cache because it might be good later
 				mem.removeTx(tx, celem, true)
+			} else {
+				mem.logger.Debug(
+					"re-CheckTx transaction does not exist",
+					"expected", types.Tx(tx),
+				)
 			}
 		}
 	default:
