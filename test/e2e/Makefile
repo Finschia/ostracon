@@ -3,6 +3,9 @@ all: docker generator runner
 docker:
 	docker build --rm --tag ostracon/e2e-node -f docker/Dockerfile ../..
 
+docker-bash:
+	docker run --rm -it --entrypoint '' ostracon/e2e-node /bin/bash
+
 # We need to build support for database backends into the app in
 # order to build a binary with an Ostracon node in it (for built-in
 # ABCI testing).
