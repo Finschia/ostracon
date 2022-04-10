@@ -7,7 +7,7 @@ BINDIR ?= $(GOPATH)/bin
 
 ## required to be run first by most tests
 build_docker_test_image:
-	docker build -t tester -f ./test/docker/Dockerfile .
+	docker build --rm -t tester -f ./test/docker/Dockerfile .
 .PHONY: build_docker_test_image
 
 ### coverage, app, persistence, and libs tests

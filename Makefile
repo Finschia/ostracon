@@ -15,7 +15,7 @@ endif
 LD_FLAGS = -X github.com/line/ostracon/version.OCCoreSemVer=$(VERSION)
 BUILD_FLAGS = -mod=readonly -ldflags "$(LD_FLAGS)"
 HTTPS_GIT := https://github.com/line/ostracon.git
-DOCKER_BUF := docker run -v $(shell pwd):/workspace --workdir /workspace bufbuild/buf
+DOCKER_BUF := docker run --rm -v $(shell pwd):/workspace --workdir /workspace bufbuild/buf
 CGO_ENABLED ?= 0
 TARGET_OS ?= $(shell go env GOOS)
 TARGET_ARCH ?= $(shell go env GOARCH)
@@ -65,11 +65,11 @@ include tests.mk
 ###############################################################################
 
 build: $(LIBSODIUM_TARGET)
-	CGO_ENABLED=1 go build $(BUILD_FLAGS) -tags "$(BUILD_TAGS)" -o $(OUTPUT) ./cmd/ostracon/
+	@CGO_ENABLED=1 go build $(BUILD_FLAGS) -tags "$(BUILD_TAGS)" -o $(OUTPUT) ./cmd/ostracon/
 .PHONY: build
 
 install: $(LIBSODIUM_TARGET)
-	CGO_ENABLED=1 go install $(BUILD_FLAGS) -tags "$(BUILD_TAGS)" ./cmd/ostracon
+	@CGO_ENABLED=1 go install $(BUILD_FLAGS) -tags "$(BUILD_TAGS)" ./cmd/ostracon
 .PHONY: install
 
 ###############################################################################
@@ -86,7 +86,7 @@ install: $(LIBSODIUM_TARGET)
 # go get github.com/vektra/mockery/v2/.../
 
 mock-gen:
-	go generate ./...
+	@go generate ./...
 .PHONY: mock
 
 ###############################################################################
@@ -117,7 +117,8 @@ proto-lint:
 
 proto-format:
 	@echo "Formatting Protobuf files"
-	docker run --rm -v $(shell pwd):/workspace --workdir /workspace tendermintdev/docker-build-proto find ./ -not -path "./third_party/*" -name *.proto -exec clang-format -i {} \;
+	@docker run --rm -v $(shell pwd):/workspace --workdir /workspace tendermintdev/docker-build-proto \
+	find ./ -not -path "./third_party/*" -name *.proto -exec clang-format -i {} \;
 .PHONY: proto-format
 
 proto-check-breaking:
@@ -161,7 +162,7 @@ libsodium:
 		git submodule update --init --recursive && \
 		cd $(LIBSODIUM_ROOT) && \
 		./autogen.sh && \
-		./configure --disable-shared --prefix="$(LIBSODIUM_OS)" $(LIBSODIUM_HOST) &&	\
+		./configure --disable-shared --prefix="$(LIBSODIUM_OS)" $(LIBSODIUM_HOST) && \
 		$(MAKE) && \
 		$(MAKE) install; \
 	fi
@@ -188,7 +189,7 @@ go.sum: go.mod
 
 draw_deps:
 	@# requires brew install graphviz or apt-get install graphviz
-	go get github.com/RobotsAndPencils/goviz
+	@go get github.com/RobotsAndPencils/goviz
 	@goviz -i github.com/line/ostracon/cmd/ostracon -d 3 | dot -Tpng -o dependency-graph.png
 .PHONY: draw_deps
 
@@ -247,12 +248,17 @@ build-docs:
 	VUEPRESS_BASE="/$(BRANCH_URI)/" npm run build && \
 	mkdir -p ~/output/$(BRANCH) && \
 	cp -r .vuepress/dist/* ~/output/$(BRANCH)/ && \
-	for f in `find . -name '*.png' | grep -v '/node_modules/'`; do if [ ! -e `dirname $$f` ]; then mkdir `dirname $$f`; fi; cp $$f ~/output/$(BRANCH)/`dirname $$f`; done && \
+	for f in `find . -name '*.png' | grep -v '/node_modules/'`; do \
+		if [ ! -e `dirname $$f` ]; then \
+			mkdir `dirname $$f`; \
+		fi; \
+		cp $$f ~/output/$(BRANCH)/`dirname $$f`; \
+	done && \
 	echo '<html><head><meta http-equiv="refresh" content="0;/$(BRANCH_URI)/index.html"/></head></html>' > ~/output/index.html
 .PHONY: build-docs
 
 sync-docs:
-	cd ~/output && \
+	@cd ~/output && \
 	echo "role_arn = ${DEPLOYMENT_ROLE_ARN}" >> /root/.aws/config ; \
 	echo "CI job = ${CIRCLE_BUILD_URL}" >> version.html ; \
 	aws s3 sync . s3://${WEBSITE_BUCKET} --profile terraform --delete ; \
@@ -266,15 +272,15 @@ sync-docs:
 # Build linux binary on other platforms
 # Should run from within a linux if CGO_ENABLED=1
 build-linux:
-	GOOS=linux GOARCH=$(TARGET_ARCH) $(MAKE) build
+	@GOOS=linux GOARCH=$(TARGET_ARCH) $(MAKE) build
 .PHONY: build-linux
 
 build-linux-docker:
-	docker build --label=ostracon --tag="ostracon/ostracon" -f ./DOCKER/Dockerfile .
+	@docker build --rm --label=ostracon --tag="ostracon/ostracon" -f ./DOCKER/Dockerfile .
 .PHONY: build-linux-docker
 
 standalone-linux-docker:
-	docker run -it --rm -v "/tmp:/ostracon" -p 26656:26656 -p 26657:26657 -p 26660:26660  ostracon/ostracon
+	@docker run --rm -it -v "/tmp:/ostracon" -p 26656:26656 -p 26657:26657 -p 26660:26660  ostracon/ostracon
 .PHONY: standalone-linux-docker
 
 # XXX Warning: Not test yet
@@ -283,7 +289,7 @@ standalone-linux-docker:
 # Linux-compatible binary. Produces a compatible binary at ./build/ostracon
 build_c-amazonlinux:
 	$(MAKE) -C ./DOCKER build_amazonlinux_buildimage
-	docker run --rm -it -v `pwd`:/ostracon ostracon/ostracon:build_c-amazonlinux
+	@docker run --rm -it -v `pwd`:/ostracon ostracon/ostracon:build_c-amazonlinux
 .PHONY: build_c-amazonlinux
 
 ###############################################################################
@@ -291,9 +297,7 @@ build_c-amazonlinux:
 ###############################################################################
 
 DOCKER_HOME = /go/src/github.com/line/ostracon
-DOCKER_CMD = docker run --rm \
-                        -v `pwd`:$(DOCKER_HOME) \
-                        -w $(DOCKER_HOME)
+DOCKER_CMD = docker run --rm -v `pwd`:$(DOCKER_HOME) -w $(DOCKER_HOME)
 DOCKER_IMG = golang:1.15-alpine
 BUILD_CMD = apk add --update --no-cache git make gcc libc-dev build-base curl jq bash file gmp-dev clang libtool autoconf automake \
 	&& cd $(DOCKER_HOME) \
@@ -314,7 +318,10 @@ build-localnode-docker: build-localnode
 
 # Run a 4-node testnet locally
 localnet-start: localnet-stop build-localnode-docker
-	@if ! [ -f build/node0/config/genesis.json ]; then docker run --rm -v $(CURDIR)/build:/ostracon:Z ostracon/localnode testnet --config /etc/ostracon/config-template.toml --o . --starting-ip-address 192.167.10.2; fi
+	@if ! [ -f build/node0/config/genesis.json ]; then \
+		docker run --rm -v $(CURDIR)/build:/ostracon:Z ostracon/localnode testnet \
+		--config /etc/ostracon/config-template.toml --o . --starting-ip-address 192.167.10.2; \
+	fi
 	docker-compose up
 .PHONY: localnet-start
 

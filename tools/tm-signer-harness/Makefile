@@ -15,7 +15,7 @@ install:
 
 docker-image:
 	GOOS=linux GOARCH=amd64 go build $(BUILD_FLAGS) -tags $(BUILD_TAGS) -o tm-signer-harness main.go
-	docker build \
+	docker build --rm \
 		--build-arg OSTRACON_VERSION=$(OSTRACON_VERSION) \
 		-t ostracon/tm-signer-harness:$(OSTRACON_VERSION) .
 	rm -rf tm-signer-harness

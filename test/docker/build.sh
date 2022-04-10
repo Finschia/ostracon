@@ -1,3 +1,3 @@
 #! /bin/bash
 
-docker build -t tester -f ./test/docker/Dockerfile .
+docker build --rm -t tester -f ./test/docker/Dockerfile .
