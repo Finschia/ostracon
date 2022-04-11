@@ -13,27 +13,27 @@ jobs:
       - name: Split pkgs into 6 files
         run: split -d -n l/6 pkgs.txt pkgs.txt.part.
       # cache multiple
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: "${{ github.sha }}-00"
           path: ./pkgs.txt.part.00
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: "${{ github.sha }}-01"
           path: ./pkgs.txt.part.01
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: "${{ github.sha }}-02"
           path: ./pkgs.txt.part.02
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: "${{ github.sha }}-03"
           path: ./pkgs.txt.part.03
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: "${{ github.sha }}-04"
           path: ./pkgs.txt.part.04
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: "${{ github.sha }}-05"
           path: ./pkgs.txt.part.05
@@ -45,7 +45,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: make libsodium
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: libsodium
           path: crypto/vrf/internal/vrf/sodium
@@ -81,7 +81,7 @@ jobs:
         run: |
           cat pkgs.txt.part.${{ matrix.part }} | xargs go test -mod=readonly -timeout 7m -race -coverprofile=${{ matrix.part }}profile.out -covermode=atomic -tags ${{ matrix.vrf }}
         if: env.GIT_DIFF
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: "${{ github.sha }}-${{ matrix.part }}-coverage"
           path: ./${{ matrix.part }}profile.out
