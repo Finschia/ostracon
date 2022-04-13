@@ -80,11 +80,13 @@ func resetAll(dbDir, addrBookFile, privValKeyFile, privValStateFile, privKeyType
 		logger.Error("Error removing all blockchain history", "dir", dbDir, "err", err)
 	}
 
-	// recreate the dbDir since the privVal state needs to live there
 	if err := tmos.EnsureDir(dbDir, 0700); err != nil {
 		logger.Error("unable to recreate dbDir", "err", err)
 	}
-	return resetFilePV(privValKeyFile, privValStateFile, privKeyType, logger)
+
+	// recreate the dbDir since the privVal state needs to live there
+	resetFilePV(privValKeyFile, privValStateFile, privKeyType, logger)
+	return nil
 }
 
 // resetState removes address book files plus all databases.
@@ -94,7 +96,6 @@ func resetState(dbDir string, logger log.Logger) error {
 	wal := filepath.Join(dbDir, "cs.wal")
 	evidence := filepath.Join(dbDir, "evidence.db")
 	txIndex := filepath.Join(dbDir, "tx_index.db")
-	peerstore := filepath.Join(dbDir, "peerstore.db")
 
 	if tmos.FileExists(blockdb) {
 		if err := os.RemoveAll(blockdb); err == nil {
@@ -136,13 +137,6 @@ func resetState(dbDir string, logger log.Logger) error {
 		}
 	}
 
-	if tmos.FileExists(peerstore) {
-		if err := os.RemoveAll(peerstore); err == nil {
-			logger.Info("Removed peerstore.db", "dir", peerstore)
-		} else {
-			logger.Error("error removing peerstore.db", "dir", peerstore, "err", err)
-		}
-	}
 	if err := tmos.EnsureDir(dbDir, 0700); err != nil {
 		logger.Error("unable to recreate dbDir", "err", err)
 	}
