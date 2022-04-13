@@ -81,9 +81,9 @@ func resetPrivValidator(cmd *cobra.Command, args []string) (err error) {
 		return err
 	}
 
-	resetFilePV(config.PrivValidatorKeyFile(), config.PrivValidatorStateFile(),
+	return resetFilePV(config.PrivValidatorKeyFile(), config.PrivValidatorStateFile(),
 		config.PrivValidatorKeyType(), logger)
-	return nil
+
 }
 
 // resetAll removes address book files plus all data, and resets the privValdiator data.
@@ -105,8 +105,7 @@ func resetAll(dbDir, addrBookFile, privValKeyFile, privValStateFile, privKeyType
 	}
 
 	// recreate the dbDir since the privVal state needs to live there
-	resetFilePV(privValKeyFile, privValStateFile, privKeyType, logger)
-	return nil
+	return resetFilePV(privValKeyFile, privValStateFile, privKeyType, logger)
 }
 
 // resetState removes address book files plus all databases.
