@@ -1,8 +1,11 @@
 package commands
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/spf13/viper"
 
 	"github.com/stretchr/testify/require"
 
@@ -10,6 +13,30 @@ import (
 	"github.com/line/ostracon/privval"
 )
 
+func setupEnv(t *testing.T) {
+	rootDir := t.TempDir()
+	viper.SetEnvPrefix("OC")
+	require.NoError(t, viper.BindEnv("HOME"))
+	require.NoError(t, os.Setenv("OC_HOME", rootDir))
+}
+
+func TestResetAllCmd(t *testing.T) {
+	setupEnv(t)
+	err := ResetAllCmd.RunE(ResetAllCmd, nil)
+	require.NoError(t, err)
+}
+
+func TestResetStateCmd(t *testing.T) {
+	setupEnv(t)
+	err := ResetStateCmd.RunE(ResetStateCmd, nil)
+	require.NoError(t, err)
+}
+
+func TestResetPrivValidatorCmd(t *testing.T) {
+	setupEnv(t)
+	err := ResetPrivValidatorCmd.RunE(ResetPrivValidatorCmd, nil)
+	require.NoError(t, err)
+}
 func Test_ResetAll(t *testing.T) {
 	config := cfg.TestConfig()
 	dir := t.TempDir()
