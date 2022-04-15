@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestProveAndVerify_r2ishiguro_by_crypto_ed25519(t *testing.T) {
+func TestProveAndVerifyR2ishiguroByCryptoEd25519(t *testing.T) {
 	secret := [SEEDBYTES]byte{}
 	privateKey := ed25519.NewKeyFromSeed(secret[:])
 	publicKey := privateKey.Public().(ed25519.PublicKey)

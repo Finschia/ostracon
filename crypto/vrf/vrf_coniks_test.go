@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestProveAndVerify_coniks_by_crypto_ed25519(t *testing.T) {
+func TestProveAndVerifyConiksByCryptoEd25519(t *testing.T) {
 	secret := [SEEDBYTES]byte{}
 	privateKey := ed25519.NewKeyFromSeed(secret[:])
 	publicKey := privateKey.Public().(ed25519.PublicKey)
@@ -27,7 +27,7 @@ func TestProveAndVerify_coniks_by_crypto_ed25519(t *testing.T) {
 	require.False(t, verified)
 }
 
-func TestProveAndVerify_coniks_by_coniks_ed25519(t *testing.T) {
+func TestProveAndVerifyConiksByConiksEd25519(t *testing.T) {
 	secret := [SEEDBYTES]byte{}
 	privateKey, _ := coniks.GenerateKey(bytes.NewReader(secret[:]))
 	publicKey, _ := privateKey.Public()

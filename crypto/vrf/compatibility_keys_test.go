@@ -24,26 +24,26 @@ func TestKeygen(t *testing.T) {
 	for i := 0; i < SEEDBYTES; i++ {
 		secret[i] = uint8(i)
 	}
-	privateKey, publicKey := keygen_ed25519(secret)
+	privateKey, publicKey := keygenByEd25519(secret)
 
 	t.Run("ed25519 and x/ed25519 have compatibility",
 		func(t *testing.T) {
-			testKeygen_compatibility(t, privateKey, publicKey,
-				keygen_xed25519, require.Equal, require.Equal)
+			testKeygenCompatibility(t, privateKey, publicKey,
+				keygenByXed25519, require.Equal, require.Equal)
 		})
 	t.Run("ed25519 and coniks have NOT compatibility",
 		func(t *testing.T) {
-			testKeygen_compatibility(t, privateKey, publicKey,
-				keygen_coniks_ed25519, require.NotEqual, require.NotEqual)
+			testKeygenCompatibility(t, privateKey, publicKey,
+				keygenByConiksEd25519, require.NotEqual, require.NotEqual)
 		})
 	t.Run("ed25519 and libsodium have compatibility",
 		func(t *testing.T) {
-			testKeygen_compatibility(t, privateKey, publicKey,
-				keygen_libsodium_ed25519, require.Equal, require.Equal)
+			testKeygenCompatibility(t, privateKey, publicKey,
+				keygenByLibsodiumEd25519, require.Equal, require.Equal)
 		})
 }
 
-func testKeygen_compatibility(
+func testKeygenCompatibility(
 	t *testing.T,
 	sk1 ed25519.PrivateKey, pk1 ed25519.PublicKey,
 	keyGen2 func(secret [SEEDBYTES]byte) (ed25519.PrivateKey, ed25519.PublicKey),
@@ -55,18 +55,18 @@ func testKeygen_compatibility(
 	pkTest(t, pk1, pk2)
 }
 
-func keygen_ed25519(secret [SEEDBYTES]byte) (ed25519.PrivateKey, ed25519.PublicKey) {
+func keygenByEd25519(secret [SEEDBYTES]byte) (ed25519.PrivateKey, ed25519.PublicKey) {
 	privateKey := ed25519.NewKeyFromSeed(secret[:])
 	publicKey := privateKey.Public().(ed25519.PublicKey)
 	return privateKey, publicKey
 }
 
-func keygen_xed25519(secret [SEEDBYTES]byte) (ed25519.PrivateKey, ed25519.PublicKey) {
+func keygenByXed25519(secret [SEEDBYTES]byte) (ed25519.PrivateKey, ed25519.PublicKey) {
 	publicKey, privateKey, _ := xed25519.GenerateKey(bytes.NewReader(secret[:]))
 	return privateKey, publicKey
 }
 
-func keygen_coniks_ed25519(secret [SEEDBYTES]byte) (ed25519.PrivateKey, ed25519.PublicKey) {
+func keygenByConiksEd25519(secret [SEEDBYTES]byte) (ed25519.PrivateKey, ed25519.PublicKey) {
 	privKey, _ := coniks.GenerateKey(bytes.NewReader(secret[:]))
 	pubKey, _ := privKey.Public()
 	privateKey := make([]byte, coniks.PrivateKeySize)
@@ -76,7 +76,7 @@ func keygen_coniks_ed25519(secret [SEEDBYTES]byte) (ed25519.PrivateKey, ed25519.
 	return privateKey, publicKey
 }
 
-func keygen_libsodium_ed25519(secret [SEEDBYTES]byte) (ed25519.PrivateKey, ed25519.PublicKey) {
+func keygenByLibsodiumEd25519(secret [SEEDBYTES]byte) (ed25519.PrivateKey, ed25519.PublicKey) {
 	var seed [libsodium.SEEDBYTES]byte
 	copy(seed[:], secret[:])
 	pubKey, privKey := libsodium.KeyPairFromSeed(&seed)
@@ -88,26 +88,26 @@ func keygen_libsodium_ed25519(secret [SEEDBYTES]byte) (ed25519.PrivateKey, ed255
 }
 
 func TestKeypair(t *testing.T) {
-	privateKey, publicKey := keygen_ed25519(secret)
+	privateKey, publicKey := keygenByEd25519(secret)
 
 	t.Run("ed25519 and x/ed25519 have compatibility",
 		func(t *testing.T) {
-			testKeypair_compatibility_xed25519(t, privateKey, publicKey,
+			testKeypairCompatibilityWithXed25519(t, privateKey, publicKey,
 				require.EqualValues, require.EqualValues)
 		})
 	t.Run("ed25519 and coniks have NOT compatibility",
 		func(t *testing.T) {
-			testKeypair_compatibility_coniks_ed25519(t, privateKey, publicKey,
+			testKeypairCompatibilityWithConiksEd25519(t, privateKey, publicKey,
 				require.EqualValues, require.NotEqualValues)
 		})
 	t.Run("ed25519 and libsodium have compatibility",
 		func(t *testing.T) {
-			testKeypair_compatibility_libsodium_ed25519(t, privateKey, publicKey,
+			testKeypairCompatibilityWithLibsodiumEd25519(t, privateKey, publicKey,
 				require.EqualValues, require.EqualValues)
 		})
 }
 
-func testKeypair_compatibility_xed25519(
+func testKeypairCompatibilityWithXed25519(
 	t *testing.T,
 	sk ed25519.PrivateKey, pk ed25519.PublicKey,
 	toPkTest func(t require.TestingT, expected interface{}, actual interface{}, msgAndArgs ...interface{}),
@@ -127,7 +127,7 @@ func testKeypair_compatibility_xed25519(
 	fromSkTest(t, pk1[:], pk2[:])
 }
 
-func testKeypair_compatibility_coniks_ed25519(
+func testKeypairCompatibilityWithConiksEd25519(
 	t *testing.T,
 	sk ed25519.PrivateKey, pk ed25519.PublicKey,
 	toPkTest func(t require.TestingT, expected interface{}, actual interface{}, msgAndArgs ...interface{}),
@@ -148,7 +148,7 @@ func testKeypair_compatibility_coniks_ed25519(
 	fromSkTest(t, pk1[:], pk2[:])
 }
 
-func testKeypair_compatibility_libsodium_ed25519(
+func testKeypairCompatibilityWithLibsodiumEd25519(
 	t *testing.T,
 	sk ed25519.PrivateKey, pk ed25519.PublicKey,
 	toPkTest func(t require.TestingT, expected interface{}, actual interface{}, msgAndArgs ...interface{}),
@@ -171,7 +171,7 @@ func testKeypair_compatibility_libsodium_ed25519(
 }
 
 func TestSignVerify(t *testing.T) {
-	sk, pk := keygen_ed25519(secret)
+	sk, pk := keygenByEd25519(secret)
 	t.Run("ed25519( and ed25519consensus.Verify) and xed25119 have compatibility", func(t *testing.T) {
 		pk1, sk1, _ := xed25519.GenerateKey(bytes.NewReader(secret[:]))
 
@@ -188,23 +188,23 @@ func TestSignVerify(t *testing.T) {
 	})
 }
 
-func BenchmarkKeyGen_ed25519(b *testing.B) {
+func BenchmarkKeyGenByEd25519(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		keygen_ed25519(secret)
+		keygenByEd25519(secret)
 	}
 }
 
-func BenchmarkKeyGen_coniks_ed25519(b *testing.B) {
+func BenchmarkKeyGenByConiksEd25519(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		keygen_coniks_ed25519(secret)
+		keygenByConiksEd25519(secret)
 	}
 }
 
-func BenchmarkKeyGen_libsodium_ed25519(b *testing.B) {
+func BenchmarkKeyGenByLibsodiumEd25519(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		keygen_libsodium_ed25519(secret)
+		keygenByLibsodiumEd25519(secret)
 	}
 }
