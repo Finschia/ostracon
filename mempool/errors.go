@@ -6,7 +6,9 @@ import (
 )
 
 var (
-	// ErrTxInCache is returned to the client if we saw tx earlier
+	// ErrTxInMap is returned to the client if we saw tx earlier in txsMap
+	ErrTxInMap = errors.New("tx already exists in txsMap")
+	// ErrTxInCache is returned to the client if we saw tx earlier in cache
 	ErrTxInCache = errors.New("tx already exists in cache")
 )
 

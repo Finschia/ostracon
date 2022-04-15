@@ -297,6 +297,11 @@ func (mem *CListMempool) checkTxAsync(tx types.Tx, txInfo TxInfo, prepareCb func
 
 // CONTRACT: `caller` should held `mem.updateMtx.RLock()`
 func (mem *CListMempool) prepareCheckTx(tx types.Tx, txInfo TxInfo) error {
+	// For keeping the consistency between `mem.txs` and `mem.txsMap`
+	if _, ok := mem.txsMap.Load(TxKey(tx)); ok {
+		return ErrTxInMap
+	}
+
 	txSize := len(tx)
 
 	if err := mem.isFull(txSize); err != nil {
