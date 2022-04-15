@@ -72,11 +72,10 @@ func (pvKey FilePVKey) Save() {
 	if err != nil {
 		panic(err)
 	}
-	err = tempfile.WriteFileAtomic(outFile, jsonBytes, 0600)
-	if err != nil {
+
+	if err := tempfile.WriteFileAtomic(outFile, jsonBytes, 0600); err != nil {
 		panic(err)
 	}
-
 }
 
 //-------------------------------------------------------------------------------
