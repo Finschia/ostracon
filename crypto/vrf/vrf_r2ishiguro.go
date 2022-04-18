@@ -14,7 +14,6 @@ type vrfEd25519r2ishiguro struct {
 
 func init() {
 	// if you use build option for other implementation, defaultVrf is overridden by other implementation.
-	// It may vrfEd25519libsodium
 	if defaultVrf == nil {
 		defaultVrf = newVrfEd25519r2ishiguro()
 	}

@@ -2,8 +2,6 @@ package vrf
 
 import (
 	"crypto/ed25519"
-	"encoding/hex"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -28,26 +26,15 @@ var (
 	}
 )
 
-func enc(s []byte) string {
-	return hex.EncodeToString(s)
-}
-
 func proveAndVerify(t *testing.T, privateKey, publicKey []byte) (bool, error) {
-	t.Logf("private key: %s (%d bytes)\n", enc(privateKey), len(privateKey))
-	t.Logf("public key: %s (%d bytes)\n", enc(privateKey), len(privateKey))
-
 	message := []byte("hello, world")
 	proof, err1 := Prove(privateKey, message)
-	if err1 != nil {
-		t.Fatalf("failed to prove: %s", err1)
-	}
-	t.Logf("proof: %s (%d bytes)\n", enc(proof[:]), len(proof))
+	require.NoError(t, err1)
+	require.NotNil(t, proof)
 
 	output, err2 := ProofToHash(proof)
-	if err2 != nil {
-		t.Fatalf("failed to hash: %s", err2)
-	}
-	t.Logf("output: %s (%d bytes)\n", enc(output[:]), len(output))
+	require.NoError(t, err2)
+	require.NotNil(t, output)
 
 	return Verify(publicKey, proof, message)
 }
@@ -60,12 +47,8 @@ func TestProveAndVerify(t *testing.T) {
 	publicKey := privateKey.Public().(ed25519.PublicKey)
 
 	verified, err := proveAndVerify(t, privateKey, publicKey)
-
-	if err != nil {
-		t.Fatalf("failed to verify: %s", err)
-	} else if !verified {
-		t.Fatalf("incompatible output")
-	}
+	require.NoError(t, err)
+	require.True(t, verified)
 }
 
 func BenchmarkProveAndVerify(b *testing.B) {
@@ -82,18 +65,19 @@ func BenchmarkProveAndVerify(b *testing.B) {
 			proof, err = Prove(privateKey, message)
 		}
 	})
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(b, err)
 	b.Run("VRF verify", func(b *testing.B) {
 		b.ResetTimer()
 		_, err = Verify(publicKey, proof, message)
 	})
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(b, err)
 }
 
+// Test avalanche effect for VRF prove hash
+// https://en.wikipedia.org/wiki/Avalanche_effect
+//
+// Test the quality of the VRF prove hash generated
+// by the external library(r2ishiguro, libsodium, and etc.) as a pseudo-random number
 func TestAvalancheEffect(t *testing.T) {
 	secret := [SEEDBYTES]byte{}
 	privateKey := ed25519.NewKeyFromSeed(secret[:])
@@ -106,10 +90,7 @@ func TestAvalancheEffect(t *testing.T) {
 		hash, err := ProofToHash(proof)
 		require.NoError(t, err)
 
-		var avalanche []float32
 		n := len(message) * 8
-		avalanche = make([]float32, n)
-
 		for i := 0; i < n; i++ {
 			old := message[i/8]
 			message[i/8] ^= byte(uint(1) << (uint(i) % uint(8))) // modify 1 bit
@@ -119,17 +100,12 @@ func TestAvalancheEffect(t *testing.T) {
 			hash2, err := ProofToHash(proof2)
 			require.NoError(t, err)
 
-			avalanche[i] = getAvalanche(hash, hash2)
+			// test
+			require.InDelta(t, 0.5, getAvalanche(hash, hash2), 0.13)
 
 			// restore old value
 			message[i/8] = old
 		}
-
-		var result string
-		for j := 0; j < n; j++ {
-			result = fmt.Sprintf("%s, %.2f", result, avalanche[j])
-		}
-		t.Logf(result)
 	}
 }
 
