@@ -9,8 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/grpc/credentials/insecure"
-
 	"github.com/stretchr/testify/require"
 
 	"google.golang.org/grpc"
@@ -150,9 +148,8 @@ func testGRPCSync(t *testing.T, app types.ABCIApplicationServer) {
 	})
 
 	// Connect to the socket
-	conn, err := grpc.Dial(socket,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithContextDialer(dialerFunc))
+	//nolint:staticcheck // SA1019 Existing use of deprecated but supported dial option.
+	conn, err := grpc.Dial(socket, grpc.WithInsecure(), grpc.WithContextDialer(dialerFunc))
 	if err != nil {
 		t.Fatalf("Error dialing GRPC server: %v", err.Error())
 	}
