@@ -1,5 +1,33 @@
 # Changelog
 
+## v1.0.5
+
+*May 9, 2022*
+
+* Improve checking tx with txsMap for fixing the inconsistency between mem.txs and mem.txsMap
+* Apply changes up to tendermint v0.34.19
+
+### BREAKING CHANGE
+- Nothing
+
+### FEATURES
+- Nothing
+
+### IMPROVEMENTS
+- [mempool] [\#394](https://github.com/line/ostracon/pull/394) Remove panic for unexpected tx response in resCbRecheck
+- [mempool] [\#404](https://github.com/line/ostracon/pull/404) Improve checking tx with txsMap for fixing the inconsistency between mem.txs and mem.txsMap
+- [upgrade/tm-db] [\#402](https://github.com/line/ostracon/pull/402) Upgrade to line/tm-db-v2.0.0-init.1.0.20220121012851-61d2bc1d9486
+- [backport/tendermint] [\#368](https://github.com/line/ostracon/pull/368) Main patch tm-v0.34.15
+- [backport/tendermint] [\#407](https://github.com/line/ostracon/pull/407) Revert: not to use grpc/credentials/insecure for compatibility
+- [backport/tendermint] [\#375](https://github.com/line/ostracon/pull/375) Main patch tm-v0.34.16
+- [backport/tendermint] [\#389](https://github.com/line/ostracon/pull/389) Main patch tm-v0.34.17
+- [backport/tendermint] [\#401](https://github.com/line/ostracon/pull/401) Main patch tm-v0.34.18, tm-v0.34.19
+- [github/stale] [\#377](https://github.com/line/ostracon/pull/377) Exclude auto-closing of issues in github actions
+- [test] [\#403](https://github.com/line/ostracon/pull/403) Improve vrf test
+
+### BUG FIXES
+- Nothing
+
 ## v1.0.4
 
 *Feb 25, 2022*
