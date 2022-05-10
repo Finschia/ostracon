@@ -156,11 +156,12 @@ func (sl *SignerListenerEndpoint) acceptNewConnection() (net.Conn, error) {
 	}
 
 	// wait for a new conn
-	sl.Logger.Info("SignerListener: Listening for new connection")
+	sl.Logger.Info(fmt.Sprintf("SignerListener: Listening for new connection: %s", sl.listener.Addr()))
 	conn, err := sl.listener.Accept()
 	if err != nil {
 		return nil, err
 	}
+	sl.Logger.Info(fmt.Sprintf("SignerListener: Accept new connection from: %s -> %s", conn.RemoteAddr(), conn.LocalAddr()))
 
 	return conn, nil
 }
