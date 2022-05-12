@@ -9,8 +9,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/line/ostracon/privval"
 	"github.com/line/tm-db/v2/metadb"
+
+	"github.com/line/ostracon/privval"
 )
 
 const (
@@ -146,6 +147,14 @@ func (cfg *Config) ValidateBasic() error {
 		return fmt.Errorf("error in [instrumentation] section: %w", err)
 	}
 	return nil
+}
+
+func (cfg *Config) Save() {
+	cfg.SaveAs(filepath.Join(cfg.RootDir, defaultConfigFilePath))
+}
+
+func (cfg *Config) SaveAs(file string) {
+	WriteConfigFile(file, cfg)
 }
 
 //-----------------------------------------------------------------------------

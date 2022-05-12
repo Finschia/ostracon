@@ -84,6 +84,10 @@ func initFilesWithConfig(config *cfg.Config) error {
 		}
 	}()
 
+	// Save default settings with additional command-line specified options (default settings implicitly saved by
+	// root.go will be overwritten).
+	config.Save()
+
 	nodeKeyFile := config.NodeKeyFile()
 	if tmos.FileExists(nodeKeyFile) {
 		logger.Info("Found node key", "path", nodeKeyFile)
