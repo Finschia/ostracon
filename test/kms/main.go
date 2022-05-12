@@ -8,15 +8,16 @@ package main
 
 import (
 	"fmt"
+	"net"
+	"os"
+	"time"
+
 	"github.com/line/ostracon/crypto/ed25519"
 	"github.com/line/ostracon/libs/log"
 	tmnet "github.com/line/ostracon/libs/net"
 	"github.com/line/ostracon/privval"
 	types2 "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/types"
-	"net"
-	"os"
-	"time"
 )
 
 const VrfProofSize = 80
@@ -29,7 +30,7 @@ func main() {
 	protocol, address := tmnet.ProtocolAndAddress("tcp://0.0.0.0:45666")
 	ln, err := net.Listen(protocol, address)
 	NoError(err)
-	listener := privval.NewTCPListener(ln, ed25519.GenPrivKey())
+	listener := privval.NewTCPListener(ln, ed25519.GenPrivKeyFromSecret([]byte("🏺")))
 	endpoint := privval.NewSignerListenerEndpoint(logger, listener)
 	client, err := privval.NewSignerClient(endpoint, chainId)
 	NoError(err)

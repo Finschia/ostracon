@@ -9,8 +9,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/line/ostracon/privval"
 	"github.com/line/tm-db/v2/metadb"
+
+	"github.com/line/ostracon/privval"
 )
 
 const (

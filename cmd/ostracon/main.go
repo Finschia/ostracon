@@ -40,7 +40,7 @@ func main() {
 	//	* Provide their own DB implementation
 	// can copy this file and use something other than the
 	// DefaultNewNode function
-	nodeFunc := nm.DefaultNewNode
+	nodeFunc := nm.NewOstraconNode
 
 	// Create & start node
 	rootCmd.AddCommand(cmd.NewInitCmd())
