@@ -2,7 +2,8 @@ package commands
 
 import (
 	"fmt"
-
+	"github.com/line/ostracon/node"
+	"github.com/line/ostracon/types"
 	"github.com/spf13/cobra"
 
 	tmjson "github.com/line/ostracon/libs/json"
@@ -20,12 +21,21 @@ var ShowValidatorCmd = &cobra.Command{
 }
 
 func showValidator(cmd *cobra.Command, args []string) error {
-	keyFilePath := config.PrivValidatorKeyFile()
-	if !tmos.FileExists(keyFilePath) {
-		return fmt.Errorf("private validator file %s does not exist", keyFilePath)
+	var pv types.PrivValidator
+	var err error
+	if config.PrivValidatorListenAddr != "" {
+		chainID := ""	// currently not in use
+		pv, err = node.CreateAndStartPrivValidatorSocketClient(config.PrivValidatorListenAddr, chainID, logger)
+		if err != nil {
+			return err
+		}
+	} else {
+		keyFilePath := config.PrivValidatorKeyFile()
+		if !tmos.FileExists(keyFilePath) {
+			return fmt.Errorf("private validator file %s does not exist", keyFilePath)
+		}
+		pv = privval.LoadFilePV(keyFilePath, config.PrivValidatorStateFile())
 	}
-
-	pv := privval.LoadFilePV(keyFilePath, config.PrivValidatorStateFile())
 
 	pubKey, err := pv.GetPubKey()
 	if err != nil {
