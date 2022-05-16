@@ -26,13 +26,13 @@ const VrfOutputSize = 64
 func main() {
 	logger := log.NewOCLogger(log.NewSyncWriter(os.Stdout))
 
-	chainId := "test-chain"
+	chainID := "test-chain"
 	protocol, address := tmnet.ProtocolAndAddress("tcp://0.0.0.0:45666")
 	ln, err := net.Listen(protocol, address)
 	NoError(err)
 	listener := privval.NewTCPListener(ln, ed25519.GenPrivKeyFromSecret([]byte("🏺")))
 	endpoint := privval.NewSignerListenerEndpoint(logger, listener)
-	client, err := privval.NewSignerClient(endpoint, chainId)
+	client, err := privval.NewSignerClient(endpoint, chainID)
 	NoError(err)
 
 	// Ping
@@ -51,7 +51,7 @@ func main() {
 	}
 
 	// SignVote
-	blockId := types.BlockID{
+	blockID := types.BlockID{
 		Hash: make([]byte, 32),
 		PartSetHeader: types.PartSetHeader{
 			Total: 10,
@@ -62,14 +62,14 @@ func main() {
 		Type:             types2.PrevoteType,
 		Height:           1,
 		Round:            0,
-		BlockID:          blockId,
+		BlockID:          blockID,
 		Timestamp:        time.Now(),
 		ValidatorAddress: pubKey.Address(),
 		ValidatorIndex:   0,
 		Signature:        nil,
 	}
 	pv := vote.ToProto()
-	err = client.SignVote(chainId, pv)
+	err = client.SignVote(chainID, pv)
 	NoError(err)
 	logger.Info("✅ SignVote: call")
 	if len(pv.Signature) != ed25519.SignatureSize {
@@ -77,9 +77,9 @@ func main() {
 	} else {
 		logger.Info(fmt.Sprintf("✅ SignVote: signature size = %d", len(pv.Signature)))
 	}
-	bytes := types.VoteSignBytes(chainId, pv)
+	bytes := types.VoteSignBytes(chainID, pv)
 	if !pubKey.VerifySignature(bytes, pv.Signature) {
-		logger.Error(fmt.Sprintf("❌ SignVote: signature verification"))
+		logger.Error("❌ SignVote: signature verification")
 	} else {
 		logger.Info("✅ SignVote: signature verification")
 	}
@@ -90,12 +90,12 @@ func main() {
 		Height:    1,
 		Round:     0,
 		POLRound:  -1,
-		BlockID:   blockId,
+		BlockID:   blockID,
 		Timestamp: time.Now(),
 		Signature: nil,
 	}
 	pp := proposal.ToProto()
-	err = client.SignProposal(chainId, pp)
+	err = client.SignProposal(chainID, pp)
 	NoError(err)
 	logger.Info("✅ SignProposal: call")
 	if len(pp.Signature) != ed25519.SignatureSize {
@@ -103,9 +103,9 @@ func main() {
 	} else {
 		logger.Info(fmt.Sprintf("✅ SignProposal: signature size = %d", len(pp.Signature)))
 	}
-	bytes = types.ProposalSignBytes(chainId, pp)
+	bytes = types.ProposalSignBytes(chainID, pp)
 	if !pubKey.VerifySignature(bytes, pp.Signature) {
-		logger.Error(fmt.Sprintf("❌ SignProposal: signature verification"))
+		logger.Error("❌ SignProposal: signature verification")
 	} else {
 		logger.Info("✅ SignProposal: signature verification")
 	}

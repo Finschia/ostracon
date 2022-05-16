@@ -149,8 +149,12 @@ func (cfg *Config) ValidateBasic() error {
 	return nil
 }
 
+func (cfg *Config) Path() string {
+	return filepath.Join(cfg.RootDir, defaultConfigFilePath)
+}
+
 func (cfg *Config) Save() {
-	cfg.SaveAs(filepath.Join(cfg.RootDir, defaultConfigFilePath))
+	cfg.SaveAs(cfg.Path())
 }
 
 func (cfg *Config) SaveAs(file string) {

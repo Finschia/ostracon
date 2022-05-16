@@ -2,14 +2,14 @@ package commands
 
 import (
 	"fmt"
-	"github.com/line/ostracon/node"
-	"io"
 
 	"github.com/spf13/cobra"
 
 	cfg "github.com/line/ostracon/config"
+	"github.com/line/ostracon/crypto"
 	tmos "github.com/line/ostracon/libs/os"
 	tmrand "github.com/line/ostracon/libs/rand"
+	"github.com/line/ostracon/node"
 	"github.com/line/ostracon/p2p"
 	"github.com/line/ostracon/privval"
 	"github.com/line/ostracon/types"
@@ -42,15 +42,14 @@ func initFiles(cmd *cobra.Command, args []string) error {
 	return initFilesWithConfig(config)
 }
 
-func initFilesWithConfig(config *cfg.Config) error {
+func initFilesWithConfig(config *cfg.Config) (err error) {
 	chainID := fmt.Sprintf("test-chain-%v", tmrand.Str(6))
 
 	// private validator
-	var pv types.PrivValidator
-	var err error
+	var pubKey crypto.PubKey
 	if config.PrivValidatorListenAddr != "" {
 		// If an address is provided, listen on the socket for a connection from an external signing process.
-		pv, err = node.CreateAndStartPrivValidatorSocketClient(config.PrivValidatorListenAddr, chainID, logger)
+		pubKey, err = node.ObtainRemoteSignerPubKeyInformally(config.PrivValidatorListenAddr, chainID, logger)
 		if err != nil {
 			return fmt.Errorf("error with private validator socket client: %w", err)
 		}
@@ -66,7 +65,7 @@ func initFilesWithConfig(config *cfg.Config) error {
 		} else {
 			pv, err = privval.GenFilePV(privValKeyFile, privValStateFile, privKeyType)
 			if err != nil {
-				return err
+				return
 			}
 			if pv != nil {
 				pv.Save()
@@ -74,19 +73,11 @@ func initFilesWithConfig(config *cfg.Config) error {
 			logger.Info("Generated private validator", "keyFile", privValKeyFile,
 				"stateFile", privValStateFile)
 		}
-	}
-
-	defer func() {
-		if c, ok := pv.(io.Closer); ok {
-			if err := c.Close(); err != nil {
-				logger.Debug("Failed to close the socket for remote singer", err)
-			}
+		pubKey, err = pv.GetPubKey()
+		if err != nil {
+			return
 		}
-	}()
-
-	// Save default settings with additional command-line specified options (default settings implicitly saved by
-	// root.go will be overwritten).
-	config.Save()
+	}
 
 	nodeKeyFile := config.NodeKeyFile()
 	if tmos.FileExists(nodeKeyFile) {
@@ -109,10 +100,6 @@ func initFilesWithConfig(config *cfg.Config) error {
 			ConsensusParams: types.DefaultConsensusParams(),
 			VoterParams:     types.DefaultVoterParams(),
 		}
-		pubKey, err := pv.GetPubKey()
-		if err != nil {
-			return fmt.Errorf("can't get pubkey: %w", err)
-		}
 		genDoc.Validators = []types.GenesisValidator{{
 			Address: pubKey.Address(),
 			PubKey:  pubKey,
@@ -123,6 +110,15 @@ func initFilesWithConfig(config *cfg.Config) error {
 			return err
 		}
 		logger.Info("Generated genesis file", "path", genFile)
+	}
+
+	// Save default settings with additional command-line specified options (default settings implicitly saved by
+	// root.go will be overwritten) when all operations succeed.
+	configFile = config.Path()
+	if tmos.FileExists(configFile) {
+		logger.Info("Found config.toml", "path", configFile)
+	} else {
+		config.Save()
 	}
 
 	return nil

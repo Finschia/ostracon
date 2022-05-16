@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/line/ostracon/node"
+
 	"github.com/spf13/cobra"
 
 	"github.com/line/ostracon/libs/log"
@@ -81,9 +83,19 @@ func resetPrivValidator(cmd *cobra.Command, args []string) (err error) {
 		return err
 	}
 
-	return resetFilePV(config.PrivValidatorKeyFile(), config.PrivValidatorStateFile(),
-		config.PrivValidatorKeyType(), logger)
+	if config.PrivValidatorListenAddr != "" {
+		// If an address is provided, listen on the socket for a connection from an external signing process.
+		_, err = node.ObtainRemoteSignerPubKeyInformally(config.PrivValidatorListenAddr, chainID, logger)
+	} else {
+		err = resetFilePV(config.PrivValidatorKeyFile(), config.PrivValidatorStateFile(),
+			config.PrivValidatorKeyType(), logger)
+	}
 
+	if err == nil {
+		config.Save()
+	}
+
+	return err
 }
 
 // resetAll removes address book files plus all data, and resets the privValdiator data.

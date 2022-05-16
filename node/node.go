@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"strings"
@@ -219,6 +220,31 @@ func StateProvider(stateProvider statesync.StateProvider) Option {
 	return func(n *Node) {
 		n.stateSyncProvider = stateProvider
 	}
+}
+
+// ObtainRemoteSignerPubKeyInformally loads or builds a PrivValidator from configuration, saves it and return the
+// PrivValidator's public key. If overwrite parameter is true, the PrivValidator key file will be overwritten.
+func ObtainRemoteSignerPubKeyInformally(
+	privValListenAddr,
+	chainID string,
+	logger log.Logger,
+) (pubKey crypto.PubKey, err error) {
+	if privValListenAddr == "" {
+		panic("priv_validator_laddr is empty; specify a listening address like \"tcp://0.0.0.0:12345\"")
+	}
+	// If an address is provided, listen on the socket for a connection from an external signing process.
+	var pv types.PrivValidator
+	pv, err = createAndStartPrivValidatorSocketClient(privValListenAddr, chainID, logger)
+	if err != nil {
+		return
+	}
+	pubKey, err = pv.GetPubKey()
+	if c, ok := pv.(io.Closer); ok {
+		if err := c.Close(); err != nil {
+			logger.Debug("Failed to close the socket for remote singer", err)
+		}
+	}
+	return
 }
 
 //------------------------------------------------------------------------------
@@ -756,7 +782,7 @@ func NewNode(config *cfg.Config,
 	// external signing process.
 	if config.PrivValidatorListenAddr != "" {
 		// FIXME: we should start services inside OnStart
-		privValidator, err = CreateAndStartPrivValidatorSocketClient(config.PrivValidatorListenAddr, genDoc.ChainID, logger)
+		privValidator, err = createAndStartPrivValidatorSocketClient(config.PrivValidatorListenAddr, genDoc.ChainID, logger)
 		if err != nil {
 			return nil, fmt.Errorf("error with private validator socket client: %w", err)
 		}
@@ -1464,7 +1490,7 @@ func saveGenesisDoc(db dbm.DB, genDoc *types.GenesisDoc) error {
 	return nil
 }
 
-func CreateAndStartPrivValidatorSocketClient(
+func createAndStartPrivValidatorSocketClient(
 	listenAddr,
 	chainID string,
 	logger log.Logger,

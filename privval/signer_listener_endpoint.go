@@ -161,7 +161,9 @@ func (sl *SignerListenerEndpoint) acceptNewConnection() (net.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	sl.Logger.Info(fmt.Sprintf("SignerListener: Accept new connection from: %s -> %s", conn.RemoteAddr(), conn.LocalAddr()))
+	sl.Logger.Info(fmt.Sprintf(
+		"SignerListener: Accept new connection from: %s -> %s",
+		conn.RemoteAddr(), conn.LocalAddr()))
 
 	return conn, nil
 }

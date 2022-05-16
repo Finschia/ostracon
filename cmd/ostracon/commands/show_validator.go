@@ -2,12 +2,13 @@ package commands
 
 import (
 	"fmt"
-	"github.com/line/ostracon/node"
-	"github.com/line/ostracon/types"
+
 	"github.com/spf13/cobra"
 
+	"github.com/line/ostracon/crypto"
 	tmjson "github.com/line/ostracon/libs/json"
 	tmos "github.com/line/ostracon/libs/os"
+	"github.com/line/ostracon/node"
 	"github.com/line/ostracon/privval"
 )
 
@@ -21,23 +22,20 @@ var ShowValidatorCmd = &cobra.Command{
 }
 
 func showValidator(cmd *cobra.Command, args []string) error {
-	var pv types.PrivValidator
+	var pubKey crypto.PubKey
 	var err error
 	if config.PrivValidatorListenAddr != "" {
-		chainID := ""	// currently not in use
-		pv, err = node.CreateAndStartPrivValidatorSocketClient(config.PrivValidatorListenAddr, chainID, logger)
-		if err != nil {
-			return err
-		}
+		chainID := "" // currently not in use
+		pubKey, err = node.ObtainRemoteSignerPubKeyInformally(config.PrivValidatorListenAddr, chainID, logger)
 	} else {
 		keyFilePath := config.PrivValidatorKeyFile()
 		if !tmos.FileExists(keyFilePath) {
 			return fmt.Errorf("private validator file %s does not exist", keyFilePath)
 		}
-		pv = privval.LoadFilePV(keyFilePath, config.PrivValidatorStateFile())
+		pv := privval.LoadFilePV(keyFilePath, config.PrivValidatorStateFile())
+		pubKey, err = pv.GetPubKey()
 	}
 
-	pubKey, err := pv.GetPubKey()
 	if err != nil {
 		return fmt.Errorf("can't get pubkey: %w", err)
 	}
