@@ -1,7 +1,7 @@
 all: docker generator runner
 
 docker:
-	docker build --tag ostracon/e2e-node -f docker/Dockerfile ../..
+	docker build --progress=plain --tag ostracon/e2e-node -f docker/Dockerfile ../..
 
 # We need to build support for database backends into the app in
 # order to build a binary with an Ostracon node in it (for built-in
