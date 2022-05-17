@@ -29,8 +29,8 @@ func init() {
 /****** these are for production settings ***********/
 
 // EnsureRoot creates the root, config, and data directories if they don't exist,
-// and panics if it fails.
-func EnsureRoot(rootDir string) {
+// and panics if it fails. This function returns true when a new configuration file with default settings is created.
+func EnsureRoot(rootDir string) bool {
 	if err := tmos.EnsureDir(rootDir, DefaultDirPerm); err != nil {
 		panic(err.Error())
 	}
@@ -46,7 +46,9 @@ func EnsureRoot(rootDir string) {
 	// Write default config file if missing.
 	if !tmos.FileExists(configFilePath) {
 		writeDefaultConfigFile(configFilePath)
+		return true
 	}
+	return false
 }
 
 // XXX: this func should probably be called by cmd/ostracon/commands/init.go

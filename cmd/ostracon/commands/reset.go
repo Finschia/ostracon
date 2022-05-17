@@ -31,7 +31,7 @@ var ResetStateCmd = &cobra.Command{
 	Short:  "Remove all the data and WAL",
 	PreRun: deprecateSnakeCase,
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		config, err = ParseConfig()
+		config, _, err = ParseConfig()
 		if err != nil {
 			return err
 		}
@@ -60,7 +60,7 @@ var ResetPrivValidatorCmd = &cobra.Command{
 // XXX: this is totally unsafe.
 // it's only suitable for testnets.
 func resetAllCmd(cmd *cobra.Command, args []string) (err error) {
-	config, err = ParseConfig()
+	config, _, err = ParseConfig()
 	if err != nil {
 		return err
 	}
@@ -78,7 +78,7 @@ func resetAllCmd(cmd *cobra.Command, args []string) (err error) {
 // XXX: this is totally unsafe.
 // it's only suitable for testnets.
 func resetPrivValidator(cmd *cobra.Command, args []string) (err error) {
-	config, err = ParseConfig()
+	config, _, err = ParseConfig()
 	if err != nil {
 		return err
 	}

@@ -1,5 +1,5 @@
 // This program tests that SignerClient can connect to KMS and make API calls.
-// To test, address the KMS connection to port 45666 on the machine running this program and run the following:
+// To test, address the KMS connection to port 26659 on the machine running this program and run the following:
 //
 // $ cd test/kms
 // $ go run -tags libsodium .
@@ -27,7 +27,7 @@ func main() {
 	logger := log.NewOCLogger(log.NewSyncWriter(os.Stdout))
 
 	chainID := "test-chain"
-	protocol, address := tmnet.ProtocolAndAddress("tcp://0.0.0.0:45666")
+	protocol, address := tmnet.ProtocolAndAddress("tcp://0.0.0.0:26659")
 	ln, err := net.Listen(protocol, address)
 	NoError(err)
 	listener := privval.NewTCPListener(ln, ed25519.GenPrivKeyFromSecret([]byte("🏺")))

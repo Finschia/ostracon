@@ -15,8 +15,9 @@ import (
 )
 
 var (
-	config = cfg.DefaultConfig()
-	logger = log.NewOCLogger(log.NewSyncWriter(os.Stdout))
+	config              = cfg.DefaultConfig()
+	configFileGenerated = false
+	logger              = log.NewOCLogger(log.NewSyncWriter(os.Stdout))
 )
 
 func init() {
@@ -29,18 +30,18 @@ func registerFlagsRootCmd(cmd *cobra.Command) {
 
 // ParseConfig retrieves the default environment configuration,
 // sets up the Ostracon root and ensures that the root exists
-func ParseConfig() (*cfg.Config, error) {
+func ParseConfig() (*cfg.Config, bool, error) {
 	conf := cfg.DefaultConfig()
 	err := viper.Unmarshal(conf)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	conf.SetRoot(conf.RootDir)
-	cfg.EnsureRoot(conf.RootDir)
+	gen := cfg.EnsureRoot(conf.RootDir)
 	if err := conf.ValidateBasic(); err != nil {
-		return nil, fmt.Errorf("error in config file: %v", err)
+		return nil, false, fmt.Errorf("error in config file: %v", err)
 	}
-	return conf, nil
+	return conf, gen, nil
 }
 
 // RootCmd is the root command for Ostracon core.
@@ -52,10 +53,12 @@ var RootCmd = &cobra.Command{
 			return nil
 		}
 
-		config, err = ParseConfig()
+		var gen bool
+		config, gen, err = ParseConfig()
 		if err != nil {
 			return err
 		}
+		configFileGenerated = configFileGenerated || gen
 
 		if config.LogFormat == cfg.LogFormatJSON {
 			logger = log.NewOCJSONLogger(log.NewSyncWriter(os.Stdout))

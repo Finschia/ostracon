@@ -8,7 +8,6 @@ import (
 	cfg "github.com/line/ostracon/config"
 	"github.com/line/ostracon/crypto"
 	tmos "github.com/line/ostracon/libs/os"
-	tmrand "github.com/line/ostracon/libs/rand"
 	"github.com/line/ostracon/node"
 	"github.com/line/ostracon/p2p"
 	"github.com/line/ostracon/privval"
@@ -43,7 +42,7 @@ func initFiles(cmd *cobra.Command, args []string) error {
 }
 
 func initFilesWithConfig(config *cfg.Config) (err error) {
-	chainID := fmt.Sprintf("test-chain-%v", tmrand.Str(6))
+	chainID := config.ChainID()
 
 	// private validator
 	var pubKey crypto.PubKey
@@ -114,11 +113,14 @@ func initFilesWithConfig(config *cfg.Config) (err error) {
 
 	// Save default settings with additional command-line specified options (default settings implicitly saved by
 	// root.go will be overwritten) when all operations succeed.
+	// If no configuration file exists when the `init` subcommand is executed and a new file is implicitly
+	// created with default settings, overwrite with specified ones by the command line options.
 	configFile = config.Path()
-	if tmos.FileExists(configFile) {
-		logger.Info("Found config.toml", "path", configFile)
+	if !configFileGenerated && tmos.FileExists(configFile) {
+		logger.Info("Found existing configuration", "path", configFile)
 	} else {
 		config.Save()
+		logger.Info("Generated configuration file", "path", configFile)
 	}
 
 	return nil
