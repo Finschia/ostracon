@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+
 	"github.com/line/ostracon/node"
 	"github.com/line/ostracon/types"
 	"github.com/spf13/cobra"
@@ -24,7 +25,7 @@ func showValidator(cmd *cobra.Command, args []string) error {
 	var pv types.PrivValidator
 	var err error
 	if config.PrivValidatorListenAddr != "" {
-		chainID := ""	// currently not in use
+		chainID := "" // currently not in use
 		pv, err = node.CreateAndStartPrivValidatorSocketClient(config.PrivValidatorListenAddr, chainID, logger)
 		if err != nil {
 			return err
