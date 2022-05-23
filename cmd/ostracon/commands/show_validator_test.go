@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"os"
+	"sync"
 	"testing"
 
 	cfg "github.com/line/ostracon/config"
@@ -61,10 +62,11 @@ func TestShowValidatorWithKMS(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		// output must match the KMS public key
+		// output must contains the KMS public key
 		bz, err := tmjson.Marshal(privKey.PubKey())
 		require.NoError(t, err)
-		require.Equal(t, string(bz), output)
+		expected := string(bz)
+		require.Contains(t, output, expected)
 	})
 }
 
@@ -78,17 +80,22 @@ func loadFilePVKey(t *testing.T, file string) privval.FilePVKey {
 	return privKey
 }
 
-func captureStdout(f func()) (string, error) {
-	original := os.Stdout
-	defer func() {
-		os.Stdout = original
-	}()
+var stdoutMutex sync.Mutex
 
+func captureStdout(f func()) (string, error) {
 	r, w, err := os.Pipe()
 	if err != nil {
 		return "", err
 	}
+
+	stdoutMutex.Lock()
+	original := os.Stdout
+	defer func() {
+		os.Stdout = original
+	}()
 	os.Stdout = w
+	stdoutMutex.Unlock()
+
 	f()
 	_ = w.Close()
 	var buffer bytes.Buffer
