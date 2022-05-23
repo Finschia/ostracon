@@ -3,12 +3,14 @@ package commands
 import (
 	"fmt"
 	"net"
+	"os"
 	"path"
 	"testing"
 	"time"
 
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/ed25519"
+	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/privval"
 )
 
@@ -31,6 +33,7 @@ func WithMockKMS(t *testing.T, dir, chainID string, f func(string, crypto.PrivKe
 	privKey := ed25519.GenPrivKeyFromSecret([]byte("🏺"))
 	shutdown := make(chan string)
 	go func() {
+		logger := log.NewOCLogger(log.NewSyncWriter(os.Stdout))
 		logger.Info(fmt.Sprintf("MockKMS starting: [%s] %s", chainID, addr))
 		pv := privval.NewFilePV(privKey, path.Join(dir, "keyfile"), path.Join(dir, "statefile"))
 		connTimeout := 5 * time.Second
