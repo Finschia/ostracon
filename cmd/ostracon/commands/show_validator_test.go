@@ -41,14 +41,20 @@ func TestShowValidator(t *testing.T) {
 	require.Equal(t, string(bz), output)
 }
 
-func TestShowValidatorWithKMS(t *testing.T) {
-	original := config
-	defer func() {
-		config = original
-	}()
+func TestShowValidatorWithoutLocalKeyFile(t *testing.T) {
+	setupEnv(t)
+	config := cfg.DefaultConfig()
+	if tmos.FileExists(config.PrivValidatorKeyFile()) {
+		err := os.Remove(config.PrivValidatorKeyFile())
+		require.NoError(t, err)
+	}
+	err := showValidator(ShowValidatorCmd, nil, config)
+	require.Error(t, err)
+}
 
+func TestShowValidatorWithKMS(t *testing.T) {
 	dir := setupEnv(t)
-	config = cfg.DefaultConfig()
+	config := cfg.DefaultConfig()
 	if tmos.FileExists(config.PrivValidatorKeyFile()) {
 		err := os.Remove(config.PrivValidatorKeyFile())
 		require.NoError(t, err)
@@ -57,7 +63,7 @@ func TestShowValidatorWithKMS(t *testing.T) {
 		config.PrivValidatorListenAddr = addr
 		require.NoFileExists(t, config.PrivValidatorKeyFile())
 		output, err := captureStdout(func() {
-			err := ShowValidatorCmd.RunE(ShowValidatorCmd, nil)
+			err := showValidator(ShowValidatorCmd, nil, config)
 			require.NoError(t, err)
 		})
 		require.NoError(t, err)
@@ -68,6 +74,18 @@ func TestShowValidatorWithKMS(t *testing.T) {
 		expected := string(bz)
 		require.Contains(t, output, expected)
 	})
+}
+
+func TestShowValidatorWithInefficientKMSAddress(t *testing.T) {
+	setupEnv(t)
+	config := cfg.DefaultConfig()
+	if tmos.FileExists(config.PrivValidatorKeyFile()) {
+		err := os.Remove(config.PrivValidatorKeyFile())
+		require.NoError(t, err)
+	}
+	config.PrivValidatorListenAddr = "127.0.0.1:inefficient"
+	err := showValidator(ShowValidatorCmd, nil, config)
+	require.Error(t, err)
 }
 
 func loadFilePVKey(t *testing.T, file string) privval.FilePVKey {

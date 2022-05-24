@@ -7,6 +7,7 @@ import (
 	"github.com/line/ostracon/types"
 	"github.com/spf13/cobra"
 
+	cfg "github.com/line/ostracon/config"
 	tmjson "github.com/line/ostracon/libs/json"
 	tmos "github.com/line/ostracon/libs/os"
 	"github.com/line/ostracon/privval"
@@ -17,11 +18,13 @@ var ShowValidatorCmd = &cobra.Command{
 	Use:     "show-validator",
 	Aliases: []string{"show_validator"},
 	Short:   "Show this node's validator info",
-	RunE:    showValidator,
-	PreRun:  deprecateSnakeCase,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return showValidator(cmd, args, config)
+	},
+	PreRun: deprecateSnakeCase,
 }
 
-func showValidator(cmd *cobra.Command, args []string) error {
+func showValidator(cmd *cobra.Command, args []string, config *cfg.Config) error {
 	var pv types.PrivValidator
 	var err error
 	if config.PrivValidatorListenAddr != "" {
