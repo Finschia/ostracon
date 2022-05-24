@@ -161,7 +161,7 @@ libsodium:
 		git submodule update --init --recursive && \
 		cd $(LIBSODIUM_ROOT) && \
 		./autogen.sh && \
-		./configure --disable-shared --prefix="$(LIBSODIUM_OS)" $(LIBSODIUM_HOST) &&	\
+		./configure --disable-shared --prefix="$(LIBSODIUM_OS)" $(LIBSODIUM_HOST) && \
 		$(MAKE) && \
 		$(MAKE) install; \
 	fi
