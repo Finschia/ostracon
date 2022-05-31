@@ -1,4 +1,4 @@
-package commands
+package privval
 
 import (
 	"fmt"
@@ -11,9 +11,11 @@ import (
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/ed25519"
 	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/privval"
 )
 
+// WithMockKMS function starts/stops a mock KMS function for testing on an unused local port. The continuation function
+// f is passed the address to connect to and the private key that KMS uses for signing. Thus, it is possible to test
+// the connection to KMS and verify the signature in the continuation function.
 func WithMockKMS(t *testing.T, dir, chainID string, f func(string, crypto.PrivKey)) {
 	// This process is based on cmd/priv_validator_server/main.go
 
@@ -30,20 +32,16 @@ func WithMockKMS(t *testing.T, dir, chainID string, f func(string, crypto.PrivKe
 	}
 
 	// start mock kms server
+	logger := log.NewOCLogger(log.NewSyncWriter(os.Stdout))
 	privKey := ed25519.GenPrivKeyFromSecret([]byte("🏺"))
 	shutdown := make(chan string)
 	go func() {
-		stdoutMutex.Lock()
-		stdout := os.Stdout
-		stdoutMutex.Unlock()
-
-		logger := log.NewOCLogger(log.NewSyncWriter(stdout))
 		logger.Info(fmt.Sprintf("MockKMS starting: [%s] %s", chainID, addr))
-		pv := privval.NewFilePV(privKey, path.Join(dir, "keyfile"), path.Join(dir, "statefile"))
+		pv := NewFilePV(privKey, path.Join(dir, "keyfile"), path.Join(dir, "statefile"))
 		connTimeout := 5 * time.Second
-		dialer := privval.DialTCPFn(addr, connTimeout, ed25519.GenPrivKeyFromSecret([]byte("🔌")))
-		sd := privval.NewSignerDialerEndpoint(logger, dialer)
-		ss := privval.NewSignerServer(sd, chainID, pv)
+		dialer := DialTCPFn(addr, connTimeout, ed25519.GenPrivKeyFromSecret([]byte("🔌")))
+		sd := NewSignerDialerEndpoint(logger, dialer)
+		ss := NewSignerServer(sd, chainID, pv)
 		err := ss.Start()
 		if err != nil {
 			panic(err)

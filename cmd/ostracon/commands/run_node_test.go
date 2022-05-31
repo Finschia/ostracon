@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	cfg "github.com/line/ostracon/config"
-
 	"github.com/line/ostracon/crypto"
 	nm "github.com/line/ostracon/node"
+	"github.com/line/ostracon/privval"
 	"github.com/line/ostracon/types"
 	"github.com/stretchr/testify/require"
 )
@@ -63,7 +63,7 @@ func TestNewOstraconNodeWithKMS(t *testing.T) {
 	require.NoError(t, err)
 	chainID := genDoc.ChainID
 
-	WithMockKMS(t, dir, chainID, func(addr string, privKey crypto.PrivKey) {
+	privval.WithMockKMS(t, dir, chainID, func(addr string, privKey crypto.PrivKey) {
 
 		// start node
 		config.ProxyApp = "noop"

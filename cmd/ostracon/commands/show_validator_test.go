@@ -59,7 +59,7 @@ func TestShowValidatorWithKMS(t *testing.T) {
 		err := os.Remove(config.PrivValidatorKeyFile())
 		require.NoError(t, err)
 	}
-	WithMockKMS(t, dir, config.ChainID(), func(addr string, privKey crypto.PrivKey) {
+	privval.WithMockKMS(t, dir, config.ChainID(), func(addr string, privKey crypto.PrivKey) {
 		config.PrivValidatorListenAddr = addr
 		require.NoFileExists(t, config.PrivValidatorKeyFile())
 		output, err := captureStdout(func() {
@@ -109,7 +109,9 @@ func captureStdout(f func()) (string, error) {
 	stdoutMutex.Lock()
 	original := os.Stdout
 	defer func() {
+		stdoutMutex.Lock()
 		os.Stdout = original
+		stdoutMutex.Unlock()
 	}()
 	os.Stdout = w
 	stdoutMutex.Unlock()
