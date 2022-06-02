@@ -45,7 +45,7 @@ func TestNewOstraconNode(t *testing.T) {
 	require.NotNil(t, pubKey)
 }
 
-func TestNewOstraconNode_WithoutNodeKye(t *testing.T) {
+func TestNewOstraconNode_WithoutNodeKey(t *testing.T) {
 	config := cfg.ResetTestRootWithChainID("TestNewOstraconNode", "new_ostracon_node_wo_node_key")
 	defer os.RemoveAll(config.RootDir)
 	_ = os.Remove(config.NodeKeyFile())
