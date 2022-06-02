@@ -26,9 +26,8 @@ var ShowValidatorCmd = &cobra.Command{
 
 func showValidator(cmd *cobra.Command, args []string, config *cfg.Config) error {
 	var pv types.PrivValidator
-	var err error
 	if config.PrivValidatorListenAddr != "" {
-		chainID := "" // currently not in use
+		chainID, err := loadChainID(config)
 		pv, err = node.CreateAndStartPrivValidatorSocketClient(config.PrivValidatorListenAddr, chainID, logger)
 		if err != nil {
 			return err
@@ -53,4 +52,20 @@ func showValidator(cmd *cobra.Command, args []string, config *cfg.Config) error 
 
 	fmt.Println(string(bz))
 	return nil
+}
+
+func loadChainID(config *cfg.Config) (string, error) {
+	stateDB, err := node.DefaultDBProvider(&node.DBContext{ID: "state", Config: config})
+	if err != nil {
+		return "", err
+	}
+	defer func() {
+		var _ = stateDB.Close()
+	}()
+	genesisDocProvider := node.DefaultGenesisDocProviderFunc(config)
+	_, genDoc, err := node.LoadStateFromDBOrGenesisDocProvider(stateDB, genesisDocProvider)
+	if err != nil {
+		return "", err
+	}
+	return genDoc.ChainID, nil
 }
