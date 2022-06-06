@@ -28,6 +28,9 @@ func showValidator(cmd *cobra.Command, args []string, config *cfg.Config) error 
 	var pv types.PrivValidator
 	if config.PrivValidatorListenAddr != "" {
 		chainID, err := loadChainID(config)
+		if err != nil {
+			return err
+		}
 		pv, err = node.CreateAndStartPrivValidatorSocketClient(config.PrivValidatorListenAddr, chainID, logger)
 		if err != nil {
 			return err

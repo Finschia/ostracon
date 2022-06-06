@@ -54,12 +54,29 @@ func TestShowValidatorWithoutLocalKeyFile(t *testing.T) {
 
 func TestShowValidatorWithKMS(t *testing.T) {
 	dir := setupEnv(t)
-	config := cfg.DefaultConfig()
+	cfg.EnsureRoot(dir)
+
+	original := config
+	defer func() {
+		config = original
+	}()
+
+	config = cfg.DefaultConfig()
+	config.SetRoot(dir)
+	err := RootCmd.PersistentPreRunE(RootCmd, nil)
+	require.NoError(t, err)
+	init := NewInitCmd()
+	err = init.RunE(init, nil)
+	require.NoError(t, err)
+
+	chainID, err := loadChainID(config)
+	require.NoError(t, err)
+
 	if tmos.FileExists(config.PrivValidatorKeyFile()) {
 		err := os.Remove(config.PrivValidatorKeyFile())
 		require.NoError(t, err)
 	}
-	privval.WithMockKMS(t, dir, config.ChainID(), func(addr string, privKey crypto.PrivKey) {
+	privval.WithMockKMS(t, dir, chainID, func(addr string, privKey crypto.PrivKey) {
 		config.PrivValidatorListenAddr = addr
 		require.NoFileExists(t, config.PrivValidatorKeyFile())
 		output, err := captureStdout(func() {
