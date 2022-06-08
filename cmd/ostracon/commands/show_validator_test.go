@@ -7,6 +7,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/line/ostracon/types"
+
 	cfg "github.com/line/ostracon/config"
 	"github.com/line/ostracon/crypto"
 	tmjson "github.com/line/ostracon/libs/json"
@@ -94,14 +96,71 @@ func TestShowValidatorWithKMS(t *testing.T) {
 }
 
 func TestShowValidatorWithInefficientKMSAddress(t *testing.T) {
-	setupEnv(t)
-	config := cfg.DefaultConfig()
+	dir := setupEnv(t)
+	cfg.EnsureRoot(dir)
+
+	original := config
+	defer func() {
+		config = original
+	}()
+
+	config = cfg.DefaultConfig()
+	config.SetRoot(dir)
+	err := RootCmd.PersistentPreRunE(RootCmd, nil)
+	require.NoError(t, err)
+	init := NewInitCmd()
+	err = init.RunE(init, nil)
+	require.NoError(t, err)
+
 	if tmos.FileExists(config.PrivValidatorKeyFile()) {
 		err := os.Remove(config.PrivValidatorKeyFile())
 		require.NoError(t, err)
 	}
 	config.PrivValidatorListenAddr = "127.0.0.1:inefficient"
-	err := showValidator(ShowValidatorCmd, nil, config)
+	err = showValidator(ShowValidatorCmd, nil, config)
+	require.Error(t, err)
+}
+
+func TestLoadChainID(t *testing.T) {
+	dir := setupEnv(t)
+	cfg.EnsureRoot(dir)
+
+	original := config
+	defer func() {
+		config = original
+	}()
+
+	config = cfg.DefaultConfig()
+	config.SetRoot(dir)
+	err := RootCmd.PersistentPreRunE(RootCmd, nil)
+	require.NoError(t, err)
+	init := NewInitCmd()
+	err = init.RunE(init, nil)
+	require.NoError(t, err)
+	require.FileExists(t, config.GenesisFile())
+
+	genDoc, err := types.GenesisDocFromFile(config.GenesisFile())
+	require.NoError(t, err)
+	expected := genDoc.ChainID
+
+	chainID, err := loadChainID(config)
+	require.NoError(t, err)
+	require.Equal(t, expected, chainID)
+}
+
+func TestLoadChainIDWithoutStateDB(t *testing.T) {
+	dir := setupEnv(t)
+	config := cfg.DefaultConfig()
+	config.SetRoot(dir)
+	err := RootCmd.PersistentPreRunE(RootCmd, nil)
+	require.NoError(t, err)
+	init := NewInitCmd()
+	err = init.RunE(init, nil)
+	require.NoError(t, err)
+
+	config.DBPath = "/../path with containing chars that cannot be used\\/:*?\"<>|\x00"
+
+	_, err = loadChainID(config)
 	require.Error(t, err)
 }
 
