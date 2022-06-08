@@ -45,5 +45,8 @@ require (
 	google.golang.org/grpc v1.46.2
 	gopkg.in/yaml.v3 v3.0.1
 )
-
+// `runc` is referenced by `github.com/adlio/schema`.
+// This is a temporary fix for a security vulnerability of `runc`.
+// So, remove this `replace` when `github.com/adlio/schema` releases a version that references `runc 1.1.2`.
+// For details, see here https://nvd.nist.gov/vuln/detail/CVE-2022-29162.
 replace github.com/opencontainers/runc => github.com/opencontainers/runc v1.1.2
