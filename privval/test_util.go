@@ -1,5 +1,7 @@
 package privval
 
+// This file defines the functions only used in the test. *DON'T add functions for production use*.
+
 import (
 	"fmt"
 	"net"
