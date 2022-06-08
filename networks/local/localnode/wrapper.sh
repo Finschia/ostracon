@@ -17,11 +17,6 @@ elif ! [ -x "${BINARY}" ]; then
 	echo "The binary $(basename "${BINARY}") is not executable."
 	exit 1
 fi
-BINARY_CHECK="$(file "$BINARY" | grep 'ELF 64-bit LSB executable, x86-64')"
-if [ -z "${BINARY_CHECK}" ]; then
-	echo "Binary needs to be OS linux, ARCH amd64"
-	exit 1
-fi
 
 ##
 ## Run binary with all parameters
