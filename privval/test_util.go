@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/ed25519"
 	"github.com/line/ostracon/libs/log"
@@ -23,15 +25,10 @@ func WithMockKMS(t *testing.T, dir, chainID string, f func(string, crypto.PrivKe
 
 	// obtain an address using a vacancy port number
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
+	require.NoError(t, err)
 	addr := listener.Addr().String()
-	if err = listener.Close(); err != nil {
-		t.Fatal(err)
-		return
-	}
+	err = listener.Close()
+	require.NoError(t, err)
 
 	// start mock kms server
 	logger := log.NewOCLogger(log.NewSyncWriter(os.Stdout))
@@ -45,15 +42,12 @@ func WithMockKMS(t *testing.T, dir, chainID string, f func(string, crypto.PrivKe
 		sd := NewSignerDialerEndpoint(logger, dialer)
 		ss := NewSignerServer(sd, chainID, pv)
 		err := ss.Start()
-		if err != nil {
-			panic(err)
-		}
+		require.NoError(t, err)
 		logger.Info("MockKMS started")
 		<-shutdown
 		logger.Info("MockKMS stopping")
-		if err = ss.Stop(); err != nil {
-			panic(err)
-		}
+		err = ss.Stop()
+		require.NoError(t, err)
 		logger.Info("MockKMS stopped")
 	}()
 	defer func() {
