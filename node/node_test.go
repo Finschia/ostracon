@@ -9,12 +9,14 @@ import (
 	"testing"
 	"time"
 
-	dbm "github.com/line/tm-db/v2"
-	"github.com/line/tm-db/v2/memdb"
 	"github.com/ory/dockertest"
 	"github.com/ory/dockertest/docker"
+
+	"github.com/line/tm-db/v2/memdb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	dbm "github.com/line/tm-db/v2"
 
 	"github.com/line/ostracon/abci/example/kvstore"
 	cfg "github.com/line/ostracon/config"
