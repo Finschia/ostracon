@@ -20,10 +20,6 @@ jobs:
             gcc: "aarch64-linux-gnu-gcc"
             package: "g++-aarch64-linux-gnu"
             host: "aarch64-linux-gnu"
-          - goarch: "arm"
-            gcc: "arm-linux-gnueabi-gcc"
-            package: "g++-arm-linux-gnueabi"
-            host: "arm-linux-gnueabi"
     timeout-minutes: 5
     steps:
       - run: sudo apt update && sudo apt install -y ${{ matrix.package }} qemu-user-binfmt
