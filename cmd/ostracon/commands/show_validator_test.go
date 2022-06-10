@@ -122,26 +122,16 @@ func TestShowValidatorWithInefficientKMSAddress(t *testing.T) {
 }
 
 func TestLoadChainID(t *testing.T) {
-	dir := setupEnv(t)
-	cfg.EnsureRoot(dir)
-
-	original := config
+	expected := "c57861"
+	config := cfg.ResetTestRootWithChainID("TestLoadChainID", expected)
 	defer func() {
-		config = original
+		var _ = os.RemoveAll(config.RootDir)
 	}()
 
-	config = cfg.DefaultConfig()
-	config.SetRoot(dir)
-	err := RootCmd.PersistentPreRunE(RootCmd, nil)
-	require.NoError(t, err)
-	init := NewInitCmd()
-	err = init.RunE(init, nil)
-	require.NoError(t, err)
 	require.FileExists(t, config.GenesisFile())
-
 	genDoc, err := types.GenesisDocFromFile(config.GenesisFile())
 	require.NoError(t, err)
-	expected := genDoc.ChainID
+	require.Equal(t, expected, genDoc.ChainID)
 
 	chainID, err := loadChainID(config)
 	require.NoError(t, err)
@@ -149,18 +139,16 @@ func TestLoadChainID(t *testing.T) {
 }
 
 func TestLoadChainIDWithoutStateDB(t *testing.T) {
-	dir := setupEnv(t)
-	config := cfg.DefaultConfig()
-	config.SetRoot(dir)
-	err := RootCmd.PersistentPreRunE(RootCmd, nil)
-	require.NoError(t, err)
-	init := NewInitCmd()
-	err = init.RunE(init, nil)
-	require.NoError(t, err)
+	expected := "c34091"
+	config := cfg.ResetTestRootWithChainID("TestLoadChainID", expected)
+	defer func() {
+		var _ = os.RemoveAll(config.RootDir)
+	}()
 
+	config.DBBackend = "goleveldb"
 	config.DBPath = "/../path with containing chars that cannot be used\\/:*?\"<>|\x00"
 
-	_, err = loadChainID(config)
+	_, err := loadChainID(config)
 	require.Error(t, err)
 }
 
