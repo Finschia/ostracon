@@ -12,8 +12,6 @@ package vrf
 #cgo linux,amd64 LDFLAGS: -L./sodium/linux_amd64/lib -lsodium
 #cgo linux,arm64 CFLAGS: -I./sodium/linux_arm64/include
 #cgo linux,arm64 LDFLAGS: -L./sodium/linux_arm64/lib -lsodium
-#cgo linux,arm CFLAGS: -I./sodium/linux_arm/include
-#cgo linux,arm LDFLAGS: -L./sodium/linux_arm/lib -lsodium
 #cgo windows,amd64 CFLAGS: -I./sodium/windows_amd64/include
 #cgo windows,amd64 LDFLAGS: -L./sodium/windows_amd64/lib -lsodium
 #include "sodium.h"
