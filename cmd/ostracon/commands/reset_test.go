@@ -13,11 +13,12 @@ import (
 	"github.com/line/ostracon/privval"
 )
 
-func setupEnv(t *testing.T) {
+func setupEnv(t *testing.T) string {
 	rootDir := t.TempDir()
 	viper.SetEnvPrefix("OC")
 	require.NoError(t, viper.BindEnv("HOME"))
 	require.NoError(t, os.Setenv("OC_HOME", rootDir))
+	return rootDir
 }
 
 func TestResetAllCmd(t *testing.T) {

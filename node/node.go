@@ -120,6 +120,32 @@ func DefaultNewNode(config *cfg.Config, logger log.Logger) (*Node, error) {
 	)
 }
 
+// NewOstraconNode returns an Ostracon node for more safe production environments that don't automatically generate
+// critical files. This function doesn't reference local key pair in configurations using KMS.
+func NewOstraconNode(config *cfg.Config, logger log.Logger) (*Node, error) {
+	nodeKey, err := p2p.LoadNodeKey(config.NodeKeyFile())
+	if err != nil {
+		return nil, fmt.Errorf("failed to load node key %s: %w", config.NodeKeyFile(), err)
+	}
+
+	var privKey types.PrivValidator
+	if config.PrivValidatorListenAddr == "" {
+		privKey = privval.LoadFilePV(
+			config.PrivValidatorKeyFile(),
+			config.PrivValidatorStateFile())
+	}
+	return NewNode(
+		config,
+		privKey,
+		nodeKey,
+		proxy.DefaultClientCreator(config.ProxyApp, config.ABCI, config.DBDir()),
+		DefaultGenesisDocProviderFunc(config),
+		DefaultDBProvider,
+		DefaultMetricsProvider(config.Instrumentation),
+		logger,
+	)
+}
+
 // MetricsProvider returns a consensus, p2p and mempool Metrics.
 type MetricsProvider func(chainID string) (*cs.Metrics, *p2p.Metrics, *mempl.Metrics, *sm.Metrics)
 
@@ -730,7 +756,7 @@ func NewNode(config *cfg.Config,
 	// external signing process.
 	if config.PrivValidatorListenAddr != "" {
 		// FIXME: we should start services inside OnStart
-		privValidator, err = createAndStartPrivValidatorSocketClient(config.PrivValidatorListenAddr, genDoc.ChainID, logger)
+		privValidator, err = CreateAndStartPrivValidatorSocketClient(config.PrivValidatorListenAddr, genDoc.ChainID, logger)
 		if err != nil {
 			return nil, fmt.Errorf("error with private validator socket client: %w", err)
 		}
@@ -1438,7 +1464,7 @@ func saveGenesisDoc(db dbm.DB, genDoc *types.GenesisDoc) error {
 	return nil
 }
 
-func createAndStartPrivValidatorSocketClient(
+func CreateAndStartPrivValidatorSocketClient(
 	listenAddr,
 	chainID string,
 	logger log.Logger,

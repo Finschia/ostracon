@@ -560,6 +560,7 @@ func ResetTestRootWithChainID(testName string, chainID string) *Config {
 	genesisFilePath := filepath.Join(rootDir, baseConfig.Genesis)
 	privKeyFilePath := filepath.Join(rootDir, baseConfig.PrivValidatorKey)
 	privStateFilePath := filepath.Join(rootDir, baseConfig.PrivValidatorState)
+	nodeKeyFilePath := filepath.Join(rootDir, baseConfig.NodeKey)
 
 	// Write default config file if missing.
 	if !tmos.FileExists(configFilePath) {
@@ -575,6 +576,7 @@ func ResetTestRootWithChainID(testName string, chainID string) *Config {
 	// we always overwrite the priv val
 	tmos.MustWriteFile(privKeyFilePath, []byte(testPrivValidatorKey), 0644)
 	tmos.MustWriteFile(privStateFilePath, []byte(testPrivValidatorState), 0644)
+	tmos.MustWriteFile(nodeKeyFilePath, []byte(testNodeKey), 0644)
 
 	config := TestConfig().SetRoot(rootDir)
 	return config
@@ -630,6 +632,13 @@ var testPrivValidatorKey = `{
   "priv_key": {
     "type": "ostracon/PrivKeyEd25519",
     "value": "EVkqJO/jIXp3rkASXfh9YnyToYXRXhBr6g9cQVxPFnQBP/5povV4HTjvsy530kybxKHwEi85iU8YL0qQhSYVoQ=="
+  }
+}`
+
+var testNodeKey = `{
+  "priv_key": {
+    "type": "ostracon/PrivKeyEd25519",
+    "value": "hICuZLlVwHdzz6pAQOKk07MFn3Hze1EwwTUUhEDIdti9a1cQLR5Co/lxAzeGcyPWS/LuEr7qbgHmDUJT/nxx+Q=="
   }
 }`
 

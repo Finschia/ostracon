@@ -3,8 +3,11 @@ package commands
 import (
 	"fmt"
 
+	"github.com/line/ostracon/node"
+	"github.com/line/ostracon/types"
 	"github.com/spf13/cobra"
 
+	cfg "github.com/line/ostracon/config"
 	tmjson "github.com/line/ostracon/libs/json"
 	tmos "github.com/line/ostracon/libs/os"
 	"github.com/line/ostracon/privval"
@@ -15,17 +18,30 @@ var ShowValidatorCmd = &cobra.Command{
 	Use:     "show-validator",
 	Aliases: []string{"show_validator"},
 	Short:   "Show this node's validator info",
-	RunE:    showValidator,
-	PreRun:  deprecateSnakeCase,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return showValidator(cmd, args, config)
+	},
+	PreRun: deprecateSnakeCase,
 }
 
-func showValidator(cmd *cobra.Command, args []string) error {
-	keyFilePath := config.PrivValidatorKeyFile()
-	if !tmos.FileExists(keyFilePath) {
-		return fmt.Errorf("private validator file %s does not exist", keyFilePath)
+func showValidator(cmd *cobra.Command, args []string, config *cfg.Config) error {
+	var pv types.PrivValidator
+	if config.PrivValidatorListenAddr != "" {
+		chainID, err := loadChainID(config)
+		if err != nil {
+			return err
+		}
+		pv, err = node.CreateAndStartPrivValidatorSocketClient(config.PrivValidatorListenAddr, chainID, logger)
+		if err != nil {
+			return err
+		}
+	} else {
+		keyFilePath := config.PrivValidatorKeyFile()
+		if !tmos.FileExists(keyFilePath) {
+			return fmt.Errorf("private validator file %s does not exist", keyFilePath)
+		}
+		pv = privval.LoadFilePV(keyFilePath, config.PrivValidatorStateFile())
 	}
-
-	pv := privval.LoadFilePV(keyFilePath, config.PrivValidatorStateFile())
 
 	pubKey, err := pv.GetPubKey()
 	if err != nil {
@@ -39,4 +55,20 @@ func showValidator(cmd *cobra.Command, args []string) error {
 
 	fmt.Println(string(bz))
 	return nil
+}
+
+func loadChainID(config *cfg.Config) (string, error) {
+	stateDB, err := node.DefaultDBProvider(&node.DBContext{ID: "state", Config: config})
+	if err != nil {
+		return "", err
+	}
+	defer func() {
+		var _ = stateDB.Close()
+	}()
+	genesisDocProvider := node.DefaultGenesisDocProviderFunc(config)
+	_, genDoc, err := node.LoadStateFromDBOrGenesisDocProvider(stateDB, genesisDocProvider)
+	if err != nil {
+		return "", err
+	}
+	return genDoc.ChainID, nil
 }

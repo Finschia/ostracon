@@ -36,6 +36,25 @@ import (
 	tmtime "github.com/line/ostracon/types/time"
 )
 
+func TestNewOstraconNode(t *testing.T) {
+	config := cfg.ResetTestRootWithChainID("TestNewOstraconNode", "new_ostracon_node")
+	defer os.RemoveAll(config.RootDir)
+	require.Equal(t, config.PrivValidatorListenAddr, "")
+	node, err := NewOstraconNode(config, log.TestingLogger())
+	require.NoError(t, err)
+	pubKey, err := node.PrivValidator().GetPubKey()
+	require.NoError(t, err)
+	require.NotNil(t, pubKey)
+}
+
+func TestNewOstraconNode_WithoutNodeKey(t *testing.T) {
+	config := cfg.ResetTestRootWithChainID("TestNewOstraconNode", "new_ostracon_node_wo_node_key")
+	defer os.RemoveAll(config.RootDir)
+	_ = os.Remove(config.NodeKeyFile())
+	_, err := NewOstraconNode(config, log.TestingLogger())
+	require.Error(t, err)
+}
+
 func TestNodeStartStop(t *testing.T) {
 	config := cfg.ResetTestRoot("node_node_test")
 	defer os.RemoveAll(config.RootDir)
