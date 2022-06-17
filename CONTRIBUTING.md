@@ -94,20 +94,6 @@ For linting and checking breaking changes, we use [buf](https://buf.build/). If 
 
 We use [Docker](https://www.docker.com/) to generate the protobuf stubs. To generate the stubs yourself, make sure docker is running then run `make proto-gen`.
 
-## Vagrant
-
-If you are a [Vagrant](https://www.vagrantup.com/) user, you can get started
-hacking Ostracon with the commands below.
-
-NOTE: In case you installed Vagrant in 2017, you might need to run
-`vagrant box update` to upgrade to the latest `ubuntu/xenial64`.
-
-```sh
-vagrant up
-vagrant ssh
-make test
-```
-
 ## Changelog
 
 Every fix, improvement, feature, or breaking change should be made in a
