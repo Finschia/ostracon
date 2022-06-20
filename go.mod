@@ -6,9 +6,10 @@ require (
 	github.com/BurntSushi/toml v1.1.0
 	github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d
 	github.com/Workiva/go-datastructures v1.0.52
-	github.com/adlio/schema v1.3.0
+	github.com/adlio/schema v1.3.3
 	github.com/btcsuite/btcd v0.22.1
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
+	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/coniks-sys/coniks-go v0.0.0-20180722014011-11acf4819b71
 	github.com/fortytw2/leaktest v1.3.0
 	github.com/go-kit/kit v0.12.0
@@ -18,6 +19,7 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/google/orderedcode v0.0.1
 	github.com/gorilla/websocket v1.5.0
+	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
 	github.com/gtank/merlin v0.1.1
 	github.com/hdevalence/ed25519consensus v0.0.0-20200813231810-1694d75e712a
 	github.com/herumi/bls-eth-go-binary v0.0.0-20220509081320-2d8ab06de53c
@@ -40,11 +42,13 @@ require (
 	github.com/tendermint/go-amino v0.16.0
 	github.com/yahoo/coname v0.0.0-20170609175141-84592ddf8673 // indirect
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4
-	golang.org/x/net v0.0.0-20220520000938-2e3eb7b945c2
+	golang.org/x/net v0.0.0-20220617184016-355a448f1bc9
 	gonum.org/v1/gonum v0.11.0
 	google.golang.org/grpc v1.47.0
 	gopkg.in/yaml.v3 v3.0.1
+	gotest.tools v2.2.0+incompatible // indirect
 )
+
 // `runc` is referenced by `github.com/adlio/schema`.
 // This is a temporary fix for a security vulnerability of `runc`.
 // So, remove this `replace` when `github.com/adlio/schema` releases a version that references `runc 1.1.2`.
