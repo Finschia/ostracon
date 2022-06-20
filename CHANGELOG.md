@@ -1,5 +1,32 @@
 # Changelog
 
+## v1.0.6
+
+*Jun 17, 2022*
+
+* Improve behavior of KMS in Ostracon
+* Improve supporting build environment
+  * Support building/running darwin/arm64
+  * Support building/running of linux/arm64 on Local/Docker via darwin/arm64
+  * Stop supporting linux/arm(32bit)
+
+### BREAKING CHANGE
+- [build] [\#431](https://github.com/line/ostracon/pull/431) Stop support for linux/arm(32bit)
+
+### FEATURES
+- Nothing
+
+### IMPROVEMENTS
+- [kms] [\#417](https://github.com/line/ostracon/pull/417) Add KMS functionality
+- [build] [\#426](https://github.com/line/ostracon/pull/426) Remove binary check for localnode
+- [build] [\#428](https://github.com/line/ostracon/pull/428) bls-eth-go-binary version update for apple M1 chip
+- [security] [\#429](https://github.com/line/ostracon/pull/429) Apply runc version 1.1.2
+- [test] [\#408](https://github.com/line/ostracon/pull/408) Use Docker Buildx and Cache in e2e.yml
+- [repository/config] [\#432](https://github.com/line/ostracon/pull/432) Clean up unused configuration files
+
+### BUG FIXES
+- Nothing
+
 ## v1.0.5
 
 *May 9, 2022*
