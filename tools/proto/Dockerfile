@@ -1,6 +1,6 @@
 FROM bufbuild/buf:latest as buf
 
-FROM golang:1.16.15-alpine as builder
+FROM golang:1.17.11-alpine as builder
 
 RUN apk add --update --no-cache build-base curl git upx && \
   rm -rf /var/cache/apk/*
