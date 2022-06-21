@@ -33,7 +33,7 @@ require (
 	github.com/rs/cors v1.8.2
 	github.com/sasha-s/go-deadlock v0.2.1-0.20190427202633-1595213edefa
 	github.com/snikch/goodman v0.0.0-20171125024755-10e37e294daa
-	github.com/spf13/cobra v1.4.0
+	github.com/spf13/cobra v1.5.0
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.7.2
@@ -45,6 +45,7 @@ require (
 	google.golang.org/grpc v1.47.0
 	gopkg.in/yaml.v3 v3.0.1
 )
+
 // `runc` is referenced by `github.com/adlio/schema`.
 // This is a temporary fix for a security vulnerability of `runc`.
 // So, remove this `replace` when `github.com/adlio/schema` releases a version that references `runc 1.1.2`.
