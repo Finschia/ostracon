@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/line/tm-db/v2/metadb"
+	dbm "github.com/tendermint/tm-db"
 
 	cfg "github.com/line/ostracon/config"
 	"github.com/line/ostracon/libs/log"
@@ -284,16 +284,16 @@ func (pb *playback) replayConsoleLoop() int {
 
 // convenience for replay mode
 func newConsensusStateForReplay(config cfg.BaseConfig, csConfig *cfg.ConsensusConfig) *State {
-	dbType := metadb.BackendType(config.DBBackend)
+	dbType := dbm.BackendType(config.DBBackend)
 	// Get BlockStore
-	blockStoreDB, err := metadb.NewDB("blockstore", dbType, config.DBDir())
+	blockStoreDB, err := dbm.NewDB("blockstore", dbType, config.DBDir())
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
 	blockStore := store.NewBlockStore(blockStoreDB)
 
 	// Get State
-	stateDB, err := metadb.NewDB("state", dbType, config.DBDir())
+	stateDB, err := dbm.NewDB("state", dbType, config.DBDir())
 	if err != nil {
 		tmos.Exit(err.Error())
 	}

@@ -10,9 +10,10 @@ import (
 	"testing"
 
 	"github.com/line/ostracon/libs/log"
-	"github.com/line/tm-db/v2/metadb"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	dbm "github.com/tendermint/tm-db"
 )
 
 func TestTrustMetricStoreSaveLoad(t *testing.T) {
@@ -20,7 +21,7 @@ func TestTrustMetricStoreSaveLoad(t *testing.T) {
 	require.NoError(t, err)
 	defer os.Remove(dir)
 
-	historyDB, err := metadb.NewDB("trusthistory", "goleveldb", dir)
+	historyDB, err := dbm.NewDB("trusthistory", "goleveldb", dir)
 	require.NoError(t, err)
 
 	// 0 peers saved
@@ -83,7 +84,7 @@ func TestTrustMetricStoreSaveLoad(t *testing.T) {
 }
 
 func TestTrustMetricStoreConfig(t *testing.T) {
-	historyDB, err := metadb.NewDB("", "memdb", "")
+	historyDB, err := dbm.NewDB("", "memdb", "")
 	require.NoError(t, err)
 
 	config := MetricConfig{
@@ -108,7 +109,7 @@ func TestTrustMetricStoreConfig(t *testing.T) {
 }
 
 func TestTrustMetricStoreLookup(t *testing.T) {
-	historyDB, err := metadb.NewDB("", "memdb", "")
+	historyDB, err := dbm.NewDB("", "memdb", "")
 	require.NoError(t, err)
 
 	store := NewTrustMetricStore(historyDB, DefaultConfig())
@@ -131,7 +132,7 @@ func TestTrustMetricStoreLookup(t *testing.T) {
 }
 
 func TestTrustMetricStorePeerScore(t *testing.T) {
-	historyDB, err := metadb.NewDB("", "memdb", "")
+	historyDB, err := dbm.NewDB("", "memdb", "")
 	require.NoError(t, err)
 
 	store := NewTrustMetricStore(historyDB, DefaultConfig())

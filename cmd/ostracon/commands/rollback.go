@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/line/tm-db/v2/metadb"
+	dbm "github.com/tendermint/tm-db"
 
 	cfg "github.com/line/ostracon/config"
 	"github.com/line/ostracon/state"
@@ -53,17 +53,17 @@ func RollbackState(config *cfg.Config) (int64, []byte, error) {
 }
 
 func loadStateAndBlockStore(config *cfg.Config) (*store.BlockStore, state.Store, error) {
-	dbType := metadb.BackendType(config.DBBackend)
+	dbType := dbm.BackendType(config.DBBackend)
 
 	// Get BlockStore
-	blockStoreDB, err := metadb.NewDB("blockstore", dbType, config.DBDir())
+	blockStoreDB, err := dbm.NewDB("blockstore", dbType, config.DBDir())
 	if err != nil {
 		return nil, nil, err
 	}
 	blockStore := store.NewBlockStore(blockStoreDB)
 
 	// Get StateStore
-	stateDB, err := metadb.NewDB("state", dbType, config.DBDir())
+	stateDB, err := dbm.NewDB("state", dbType, config.DBDir())
 	if err != nil {
 		return nil, nil, err
 	}

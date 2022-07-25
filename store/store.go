@@ -5,8 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gogo/protobuf/proto"
-
-	dbm "github.com/line/tm-db/v2"
+	dbm "github.com/tendermint/tm-db"
 
 	tmsync "github.com/line/ostracon/libs/sync"
 	tmstore "github.com/line/ostracon/proto/ostracon/store"

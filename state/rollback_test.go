@@ -4,8 +4,8 @@ import (
 	"crypto/rand"
 	"testing"
 
-	dbm "github.com/line/tm-db/v2/memdb"
 	"github.com/stretchr/testify/require"
+	dbm "github.com/tendermint/tm-db"
 
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/tmhash"
@@ -89,7 +89,7 @@ func TestRollback(t *testing.T) {
 }
 
 func TestRollbackNoState(t *testing.T) {
-	stateStore := state.NewStore(dbm.NewDB())
+	stateStore := state.NewStore(dbm.NewMemDB())
 	blockStore := &mocks.BlockStore{}
 
 	_, _, err := state.Rollback(blockStore, stateStore)
@@ -128,7 +128,7 @@ func TestRollbackDifferentStateHeight(t *testing.T) {
 }
 
 func setupStateStore(t *testing.T, height int64) state.Store {
-	stateStore := state.NewStore(dbm.NewDB())
+	stateStore := state.NewStore(dbm.NewMemDB())
 
 	previousValSet, _ := types.RandValidatorSet(5, 10)
 	previousVoterSet := types.SelectVoter(previousValSet, proofHash, voterParams)

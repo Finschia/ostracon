@@ -8,9 +8,10 @@ import (
 	"testing"
 	"time"
 
+	dbm "github.com/tendermint/tm-db"
+
 	txidxkv "github.com/line/ostracon/state/txindex/kv"
 	txidxnull "github.com/line/ostracon/state/txindex/null"
-	"github.com/line/tm-db/v2/memdb"
 	"github.com/stretchr/testify/require"
 
 	rpctypes "github.com/line/ostracon/rpc/jsonrpc/types"
@@ -184,7 +185,7 @@ func TestTxSearch_errors(t *testing.T) {
 	{
 		// error: lookForHash
 		env = &Environment{}
-		env.TxIndexer = txidxkv.NewTxIndex(memdb.NewDB())
+		env.TxIndexer = txidxkv.NewTxIndex(dbm.NewMemDB())
 		q = fmt.Sprintf("%s=%s", types.TxHashKey, "'1'")
 
 		res, err := TxSearch(ctx, q, prove, &page, &perPage, orderBy)
@@ -198,7 +199,7 @@ func TestTxSearch_errors(t *testing.T) {
 	{
 		// error: switch orderBy
 		env = &Environment{}
-		env.TxIndexer = txidxkv.NewTxIndex(memdb.NewDB())
+		env.TxIndexer = txidxkv.NewTxIndex(dbm.NewMemDB())
 		q = fmt.Sprintf("%s=%s", types.TxHashKey, "'1234567890abcdef'")
 
 		res, err := TxSearch(ctx, q, prove, &page, &perPage, orderBy)
@@ -212,7 +213,7 @@ func TestTxSearch_errors(t *testing.T) {
 	{
 		// error: validatePage(pagePtr, perPage, totalCount)
 		env = &Environment{}
-		env.TxIndexer = txidxkv.NewTxIndex(memdb.NewDB())
+		env.TxIndexer = txidxkv.NewTxIndex(dbm.NewMemDB())
 		q = fmt.Sprintf("%s=%s", types.TxHashKey, "'1234567890abcdef'")
 		orderBy = TestOrderByAsc
 

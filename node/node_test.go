@@ -12,11 +12,10 @@ import (
 	"github.com/ory/dockertest"
 	"github.com/ory/dockertest/docker"
 
-	"github.com/line/tm-db/v2/memdb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	dbm "github.com/line/tm-db/v2"
+	dbm "github.com/tendermint/tm-db"
 
 	"github.com/line/ostracon/abci/example/kvstore"
 	cfg "github.com/line/ostracon/config"
@@ -144,7 +143,7 @@ func TestNodeSetAppVersion(t *testing.T) {
 	require.NoError(t, err)
 
 	// default config uses the kvstore app
-	var appVersion uint64 = kvstore.ProtocolVersion
+	var appVersion = kvstore.ProtocolVersion
 
 	// check version is set in state
 	state, err := n.stateStore.Load()
@@ -276,8 +275,8 @@ func TestCreateProposalBlock(t *testing.T) {
 	mempool.SetLogger(logger)
 
 	// Make EvidencePool
-	evidenceDB := memdb.NewDB()
-	blockStore := store.NewBlockStore(memdb.NewDB())
+	evidenceDB := dbm.NewMemDB()
+	blockStore := store.NewBlockStore(dbm.NewMemDB())
 	evidencePool, err := evidence.NewPool(evidenceDB, stateStore, blockStore)
 	require.NoError(t, err)
 	evidencePool.SetLogger(logger)
@@ -564,7 +563,7 @@ func state(nVals int, height int64) (sm.State, dbm.DB, []types.PrivValidator) {
 	})
 
 	// save validators to db for 2 heights
-	stateDB := memdb.NewDB()
+	stateDB := dbm.NewMemDB()
 	stateStore := sm.NewStore(stateDB)
 	if err := stateStore.Save(s); err != nil {
 		panic(err)

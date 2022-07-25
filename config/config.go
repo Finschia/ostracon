@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/line/ostracon/privval"
-	"github.com/line/tm-db/v2/metadb"
 )
 
 const (
@@ -231,14 +230,6 @@ type BaseConfig struct { //nolint: maligned
 
 // DefaultBaseConfig returns a default base configuration for an Ostracon node
 func DefaultBaseConfig() BaseConfig {
-	dbs := metadb.AvailableDBBackends()
-	defaultDBBackend := DefaultDBBackend
-	for _, b := range dbs {
-		defaultDBBackend = string(b)
-		if defaultDBBackend == DefaultDBBackend {
-			break
-		}
-	}
 	return BaseConfig{
 		Genesis:            defaultGenesisJSONPath,
 		PrivValidatorKey:   defaultPrivValKeyPath,
@@ -251,7 +242,7 @@ func DefaultBaseConfig() BaseConfig {
 		LogFormat:          LogFormatPlain,
 		FastSyncMode:       true,
 		FilterPeers:        false,
-		DBBackend:          defaultDBBackend,
+		DBBackend:          DefaultDBBackend,
 		DBPath:             "data",
 		PrivKeyType:        privval.PrivKeyTypeEd25519,
 	}

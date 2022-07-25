@@ -5,17 +5,17 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+	db "github.com/tendermint/tm-db"
+
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/pubsub/query"
 	blockidxkv "github.com/line/ostracon/state/indexer/block/kv"
 	"github.com/line/ostracon/types"
-	dbm "github.com/line/tm-db/v2/memdb"
-	dbp "github.com/line/tm-db/v2/prefixdb"
-	"github.com/stretchr/testify/require"
 )
 
 func TestBlockIndexer(t *testing.T) {
-	store := dbp.NewDB(dbm.NewDB(), []byte("block_events"))
+	store := db.NewPrefixDB(db.NewMemDB(), []byte("block_events"))
 	indexer := blockidxkv.New(store)
 	require.NoError(t, indexer.Index(types.EventDataNewBlockHeader{
 		Header: types.Header{Height: 1},

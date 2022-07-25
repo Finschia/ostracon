@@ -11,6 +11,9 @@ require (
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/coniks-sys/coniks-go v0.0.0-20180722014011-11acf4819b71
+	github.com/facebookgo/ensure v0.0.0-20200202191622-63f1cf65ac4c // indirect
+	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
+	github.com/facebookgo/subset v0.0.0-20200203212716-c811ad88dec4 // indirect
 	github.com/fortytw2/leaktest v1.3.0
 	github.com/go-kit/kit v0.12.0
 	github.com/go-kit/log v0.2.1
@@ -25,7 +28,6 @@ require (
 	github.com/herumi/bls-eth-go-binary v0.0.0-20220509081320-2d8ab06de53c
 	github.com/lib/pq v1.10.6
 	github.com/libp2p/go-buffer-pool v0.1.0
-	github.com/line/tm-db/v2 v2.0.0-init.1.0.20220121012851-61d2bc1d9486
 	github.com/minio/highwayhash v1.0.2
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/pkg/errors v0.9.1
@@ -39,6 +41,7 @@ require (
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.8.0
 	github.com/tendermint/go-amino v0.16.0
+	github.com/tendermint/tm-db v0.6.6
 	github.com/yahoo/coname v0.0.0-20170609175141-84592ddf8673 // indirect
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4
 	golang.org/x/net v0.0.0-20220617184016-355a448f1bc9

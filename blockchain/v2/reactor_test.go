@@ -24,9 +24,9 @@ import (
 	"github.com/line/ostracon/store"
 	"github.com/line/ostracon/types"
 	tmtime "github.com/line/ostracon/types/time"
-	"github.com/line/tm-db/v2/memdb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	dbm "github.com/tendermint/tm-db"
 )
 
 type mockPeer struct {
@@ -159,7 +159,7 @@ func newTestReactor(p testReactorParams) *BlockchainReactor {
 		if err != nil {
 			panic(fmt.Errorf("error start app: %w", err))
 		}
-		db := memdb.NewDB()
+		db := dbm.NewMemDB()
 		stateStore := sm.NewStore(db)
 		appl = sm.NewBlockExecutor(stateStore, p.logger, proxyApp.Consensus(), mock.Mempool{}, sm.EmptyEvidencePool{})
 		if err = stateStore.Save(state); err != nil {
@@ -505,15 +505,15 @@ func newReactorStore(
 		panic(fmt.Errorf("error start app: %w", err))
 	}
 
-	stateDB := memdb.NewDB()
-	blockStore := store.NewBlockStore(memdb.NewDB())
+	stateDB := dbm.NewMemDB()
+	blockStore := store.NewBlockStore(dbm.NewMemDB())
 	stateStore := sm.NewStore(stateDB)
 	state, err := stateStore.LoadFromDBOrGenesisDoc(genDoc)
 	if err != nil {
 		panic(fmt.Errorf("error constructing state from genesis file: %w", err))
 	}
 
-	db := memdb.NewDB()
+	db := dbm.NewMemDB()
 	stateStore = sm.NewStore(db)
 	blockExec := sm.NewBlockExecutor(stateStore, log.TestingLogger(), proxyApp.Consensus(),
 		mock.Mempool{}, sm.EmptyEvidencePool{})

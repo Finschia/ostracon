@@ -10,9 +10,9 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	gogotypes "github.com/gogo/protobuf/types"
-	dbm "github.com/line/tm-db/v2"
+	dbm "github.com/tendermint/tm-db"
 
-	clist "github.com/line/ostracon/libs/clist"
+	"github.com/line/ostracon/libs/clist"
 	"github.com/line/ostracon/libs/log"
 	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	sm "github.com/line/ostracon/state"
@@ -365,7 +365,7 @@ func (evpool *Pool) listEvidence(prefixKey byte, maxBytes int64) ([]types.Eviden
 		evList    tmproto.EvidenceList // used for calculating the bytes size
 	)
 
-	iter, err := evpool.evidenceStore.PrefixIterator([]byte{prefixKey})
+	iter, err := dbm.IteratePrefix(evpool.evidenceStore, []byte{prefixKey})
 	if err != nil {
 		return nil, totalSize, fmt.Errorf("database error: %v", err)
 	}
@@ -401,7 +401,7 @@ func (evpool *Pool) listEvidence(prefixKey byte, maxBytes int64) ([]types.Eviden
 }
 
 func (evpool *Pool) removeExpiredPendingEvidence() (int64, time.Time) {
-	iter, err := evpool.evidenceStore.PrefixIterator([]byte{baseKeyPending})
+	iter, err := dbm.IteratePrefix(evpool.evidenceStore, []byte{baseKeyPending})
 	if err != nil {
 		evpool.logger.Error("Unable to iterate over pending evidence", "err", err)
 		return evpool.State().LastBlockHeight, evpool.State().LastBlockTime

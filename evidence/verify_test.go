@@ -9,10 +9,11 @@ import (
 	"github.com/line/ostracon/light"
 
 	"github.com/coniks-sys/coniks-go/crypto/vrf"
-	"github.com/line/tm-db/v2/memdb"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	dbm "github.com/tendermint/tm-db"
 
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/tmhash"
@@ -182,7 +183,7 @@ func TestVerify_LunaticAttackAgainstState(t *testing.T) {
 	blockStore.On("LoadBlockMeta", height).Return(&types.BlockMeta{Header: *trusted.Header})
 	blockStore.On("LoadBlockCommit", commonHeight).Return(common.Commit)
 	blockStore.On("LoadBlockCommit", height).Return(trusted.Commit)
-	pool, err := evidence.NewPool(memdb.NewDB(), stateStore, blockStore)
+	pool, err := evidence.NewPool(dbm.NewMemDB(), stateStore, blockStore)
 	require.NoError(t, err)
 	pool.SetLogger(log.TestingLogger())
 
@@ -205,20 +206,20 @@ func TestVerify_LunaticAttackAgainstState(t *testing.T) {
 
 	// duplicate evidence should be rejected
 	evList = types.EvidenceList{ev, ev}
-	pool, err = evidence.NewPool(memdb.NewDB(), stateStore, blockStore)
+	pool, err = evidence.NewPool(dbm.NewMemDB(), stateStore, blockStore)
 	require.NoError(t, err)
 	assert.Error(t, pool.CheckEvidence(evList))
 
 	// If evidence is submitted with an altered timestamp it should return an error
 	ev.Timestamp = defaultEvidenceTime.Add(1 * time.Minute)
-	pool, err = evidence.NewPool(memdb.NewDB(), stateStore, blockStore)
+	pool, err = evidence.NewPool(dbm.NewMemDB(), stateStore, blockStore)
 	require.NoError(t, err)
 	assert.Error(t, pool.AddEvidence(ev))
 	ev.Timestamp = defaultEvidenceTime
 
 	// Evidence submitted with a different validator power should fail
 	ev.TotalVotingPower = 1
-	pool, err = evidence.NewPool(memdb.NewDB(), stateStore, blockStore)
+	pool, err = evidence.NewPool(dbm.NewMemDB(), stateStore, blockStore)
 	require.NoError(t, err)
 	assert.Error(t, pool.AddEvidence(ev))
 	ev.TotalVotingPower = common.VoterSet.TotalVotingPower()
@@ -263,7 +264,7 @@ func TestVerify_ForwardLunaticAttack(t *testing.T) {
 	blockStore.On("LoadBlockCommit", commonHeight).Return(common.Commit)
 	blockStore.On("LoadBlockCommit", nodeHeight).Return(trusted.Commit)
 	blockStore.On("Height").Return(nodeHeight)
-	pool, err := evidence.NewPool(memdb.NewDB(), stateStore, blockStore)
+	pool, err := evidence.NewPool(dbm.NewMemDB(), stateStore, blockStore)
 	require.NoError(t, err)
 
 	// check that the evidence pool correctly verifies the evidence
@@ -281,7 +282,7 @@ func TestVerify_ForwardLunaticAttack(t *testing.T) {
 	oldBlockStore.On("Height").Return(nodeHeight)
 	require.Equal(t, defaultEvidenceTime, oldBlockStore.LoadBlockMeta(nodeHeight).Header.Time)
 
-	pool, err = evidence.NewPool(memdb.NewDB(), stateStore, oldBlockStore)
+	pool, err = evidence.NewPool(dbm.NewMemDB(), stateStore, oldBlockStore)
 	require.NoError(t, err)
 	assert.Error(t, pool.CheckEvidence(types.EvidenceList{ev}))
 }
@@ -380,7 +381,7 @@ func TestVerifyLightClientAttack_Equivocation(t *testing.T) {
 	blockStore.On("LoadBlockMeta", int64(10)).Return(&types.BlockMeta{Header: *trustedHeader})
 	blockStore.On("LoadBlockCommit", int64(10)).Return(trustedCommit)
 
-	pool, err := evidence.NewPool(memdb.NewDB(), stateStore, blockStore)
+	pool, err := evidence.NewPool(dbm.NewMemDB(), stateStore, blockStore)
 	require.NoError(t, err)
 	pool.SetLogger(log.TestingLogger())
 
@@ -476,7 +477,7 @@ func TestVerifyLightClientAttack_Amnesia(t *testing.T) {
 	blockStore.On("LoadBlockMeta", int64(10)).Return(&types.BlockMeta{Header: *trustedHeader})
 	blockStore.On("LoadBlockCommit", int64(10)).Return(trustedCommit)
 
-	pool, err := evidence.NewPool(memdb.NewDB(), stateStore, blockStore)
+	pool, err := evidence.NewPool(dbm.NewMemDB(), stateStore, blockStore)
 	require.NoError(t, err)
 	pool.SetLogger(log.TestingLogger())
 
@@ -573,7 +574,7 @@ func TestVerifyDuplicateVoteEvidence(t *testing.T) {
 	blockStore := &mocks.BlockStore{}
 	blockStore.On("LoadBlockMeta", int64(10)).Return(&types.BlockMeta{Header: types.Header{Time: defaultEvidenceTime}})
 
-	pool, err := evidence.NewPool(memdb.NewDB(), stateStore, blockStore)
+	pool, err := evidence.NewPool(dbm.NewMemDB(), stateStore, blockStore)
 	require.NoError(t, err)
 
 	evList := types.EvidenceList{goodEv}
