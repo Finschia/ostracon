@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/gogo/protobuf/proto"
-	dbm "github.com/line/tm-db/v2"
+	dbm "github.com/tendermint/tm-db"
 
 	abci "github.com/line/ostracon/abci/types"
 	tmmath "github.com/line/ostracon/libs/math"
@@ -82,7 +82,7 @@ type Store interface {
 	Close() error
 }
 
-// dbStore wraps a db (github.com/line/tm-db/v2)
+// dbStore wraps a db (github.com/tendermint/tm-db)
 type dbStore struct {
 	db dbm.DB
 }

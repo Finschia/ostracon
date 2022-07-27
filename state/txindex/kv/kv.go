@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
-	dbm "github.com/line/tm-db/v2"
+	dbm "github.com/tendermint/tm-db"
 
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/pubsub/query"
@@ -312,7 +312,7 @@ func (txi *TxIndex) match(
 
 	switch {
 	case c.Op == query.OpEqual:
-		it, err := txi.store.PrefixIterator(startKeyBz)
+		it, err := dbm.IteratePrefix(txi.store, startKeyBz)
 		if err != nil {
 			panic(err)
 		}
@@ -335,7 +335,7 @@ func (txi *TxIndex) match(
 	case c.Op == query.OpExists:
 		// XXX: can't use startKeyBz here because c.Operand is nil
 		// (e.g. "account.owner/<nil>/" won't match w/ a single row)
-		it, err := txi.store.PrefixIterator(startKey(c.CompositeKey))
+		it, err := dbm.IteratePrefix(txi.store, startKey(c.CompositeKey))
 		if err != nil {
 			panic(err)
 		}
@@ -359,7 +359,7 @@ func (txi *TxIndex) match(
 		// XXX: startKey does not apply here.
 		// For example, if startKey = "account.owner/an/" and search query = "account.owner CONTAINS an"
 		// we can't iterate with prefix "account.owner/an/" because we might miss keys like "account.owner/Ulan/"
-		it, err := txi.store.PrefixIterator(startKey(c.CompositeKey))
+		it, err := dbm.IteratePrefix(txi.store, startKey(c.CompositeKey))
 		if err != nil {
 			panic(err)
 		}
@@ -439,7 +439,7 @@ func (txi *TxIndex) matchRange(
 	lowerBound := qr.LowerBoundValue()
 	upperBound := qr.UpperBoundValue()
 
-	it, err := txi.store.PrefixIterator(startKey)
+	it, err := dbm.IteratePrefix(txi.store, startKey)
 	if err != nil {
 		panic(err)
 	}

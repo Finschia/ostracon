@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/line/tm-db/v2/memdb"
+	db "github.com/tendermint/tm-db"
 
 	"github.com/line/ostracon/abci/example/kvstore"
 	cfg "github.com/line/ostracon/config"
@@ -50,7 +50,7 @@ func WALGenerateNBlocks(t *testing.T, wr io.Writer, numBlocks int) (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to read genesis file: %w", err)
 	}
-	blockStoreDB := memdb.NewDB()
+	blockStoreDB := db.NewMemDB()
 	stateDB := blockStoreDB
 	stateStore := sm.NewStore(stateDB)
 	state, err := sm.MakeGenesisState(genDoc)

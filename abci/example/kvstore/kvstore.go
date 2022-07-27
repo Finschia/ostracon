@@ -6,8 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	dbm "github.com/line/tm-db/v2"
-	"github.com/line/tm-db/v2/memdb"
+	dbm "github.com/tendermint/tm-db"
 
 	"github.com/line/ostracon/abci/example/code"
 	"github.com/line/ostracon/abci/types"
@@ -72,7 +71,7 @@ type Application struct {
 }
 
 func NewApplication() *Application {
-	state := loadState(memdb.NewDB())
+	state := loadState(dbm.NewMemDB())
 	return &Application{state: state}
 }
 

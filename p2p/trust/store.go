@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	dbm "github.com/line/tm-db/v2"
+	dbm "github.com/tendermint/tm-db"
 
 	"github.com/line/ostracon/libs/service"
 	tmsync "github.com/line/ostracon/libs/sync"

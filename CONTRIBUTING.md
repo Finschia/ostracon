@@ -84,7 +84,7 @@ up-to-date.
 When updating dependencies, please only update the particular dependencies you
 need. Instead of running `go get -u=patch`, which will update anything,
 specify exactly the dependency you want to update, eg.
-`GO111MODULE=on go get -u github.com/line/tm-db@main`.
+`GO111MODULE=on go get -u github.com/tendermint/tm-db@master`.
 
 ## Protobuf
 

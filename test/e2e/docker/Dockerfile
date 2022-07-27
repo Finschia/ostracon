@@ -4,23 +4,9 @@
 FROM golang:1.15
 
 RUN apt-get -qq update -y && apt-get -qq upgrade -y >/dev/null
-RUN apt-get -qq install -y libleveldb-dev make libc-dev libtool >/dev/null
+RUN apt-get -qq install -y libleveldb-dev librocksdb-dev make libc-dev libtool >/dev/null
 
 ARG SRCDIR=/src/ostracon
-
-# There is currently no librocksdb-dev v6.17.3 or higher that is necessary by line/gorocksdb.
-# So we download rocksdb and build it.
-# See:
-#    - line/gorocksdb: https://github.com/line/gorocksdb/pull/3
-#    - line/tm-db: https://github.com/line/tm-db/blob/main/tools/Dockerfile
-ARG ROCKSDB_VERSION=6.20.3
-ARG ROCKSDB_FILE=rocksdb-v${ROCKSDB_VERSION}.tar.gz
-ARG ROCKSDB_DIR=rocksdb-${ROCKSDB_VERSION}
-RUN wget -O ${ROCKSDB_FILE} https://github.com/facebook/rocksdb/archive/v${ROCKSDB_VERSION}.tar.gz
-RUN tar -zxvf ${ROCKSDB_FILE}
-RUN cd ${ROCKSDB_DIR} && make -j2 shared_lib && make install-shared
-RUN cp /usr/local/lib/librocksdb.so* /usr/lib
-RUN rm -rf ${ROCKSDB_FILE} ${ROCKSDB_DIR}
 
 # Build/Install libsodium separately (for layer caching)
 ARG VRF_ROOT=crypto/vrf/internal/vrf
