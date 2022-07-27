@@ -372,8 +372,8 @@ func exampleVote(t byte) *types.Vote {
 func TestEvidenceVectors(t *testing.T) {
 
 	val := &types.Validator{
-		Address:      crypto.AddressHash([]byte("validator_address")),
-		StakingPower: 10,
+		Address:     crypto.AddressHash([]byte("validator_address")),
+		VotingPower: 10,
 	}
 
 	voterSet := types.WrapValidatorsToVoterSet([]*types.Validator{val})

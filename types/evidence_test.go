@@ -215,7 +215,7 @@ func TestLightClientAttackEvidenceBasic(t *testing.T) {
 			VoterSet: voterSet,
 		},
 		CommonHeight:        commonHeight,
-		TotalVotingPower:    voterSet.TotalVotingPower(),
+		TotalVotingPower:    voterSet.TotalStakingPower(),
 		Timestamp:           header.Time,
 		ByzantineValidators: valSet.Validators[:nValidators/2],
 	}
@@ -245,7 +245,7 @@ func TestLightClientAttackEvidenceBasic(t *testing.T) {
 				ValidatorSet: valSet,
 			},
 			CommonHeight:        commonHeight,
-			TotalVotingPower:    voterSet.TotalVotingPower(),
+			TotalVotingPower:    voterSet.TotalStakingPower(),
 			Timestamp:           header.Time,
 			ByzantineValidators: valSet.Validators[:nValidators/2],
 		}
@@ -275,7 +275,7 @@ func TestLightClientAttackEvidenceValidation(t *testing.T) {
 			VoterSet: voterSet,
 		},
 		CommonHeight:        commonHeight,
-		TotalVotingPower:    voterSet.TotalVotingPower(),
+		TotalVotingPower:    voterSet.TotalStakingPower(),
 		Timestamp:           header.Time,
 		ByzantineValidators: valSet.Validators[:nValidators/2],
 	}
@@ -315,7 +315,7 @@ func TestLightClientAttackEvidenceValidation(t *testing.T) {
 					VoterSet: voterSet,
 				},
 				CommonHeight:        commonHeight,
-				TotalVotingPower:    voterSet.TotalVotingPower(),
+				TotalVotingPower:    voterSet.TotalStakingPower(),
 				Timestamp:           header.Time,
 				ByzantineValidators: valSet.Validators[:nValidators/2],
 			}

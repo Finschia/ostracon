@@ -266,7 +266,7 @@ func TestOneValidatorChangesSaveLoad(t *testing.T) {
 	highestHeight := changeHeights[N-1] + 5
 	changeIndex := 0
 	_, val := state.Validators.GetByIndex(0)
-	power := val.StakingPower
+	power := val.VotingPower
 	var err error
 	var validatorUpdates []*types.Validator
 	for i := int64(1); i < highestHeight; i++ {
@@ -287,7 +287,7 @@ func TestOneValidatorChangesSaveLoad(t *testing.T) {
 	// On each height change, increment the power by one.
 	testCases := make([]int64, highestHeight)
 	changeIndex = 0
-	power = val.StakingPower
+	power = val.VotingPower
 	for i := int64(1); i < highestHeight+1; i++ {
 		// We get to the height after a change height use the next pubkey (note
 		// our counter starts at 0 this time).
@@ -305,7 +305,7 @@ func TestOneValidatorChangesSaveLoad(t *testing.T) {
 		assert.Equal(t, v.Size(), 1, "validator set size is greater than 1: %d", v.Size())
 		_, val := v.GetByIndex(0)
 
-		assert.Equal(t, val.StakingPower, power, fmt.Sprintf(`unexpected powerat
+		assert.Equal(t, val.VotingPower, power, fmt.Sprintf(`unexpected powerat
                 height %d`, i))
 	}
 
@@ -317,7 +317,7 @@ func TestOneValidatorChangesSaveLoad(t *testing.T) {
 		assert.Equal(t, v.Size(), 1, "voter set size is greater than 1: %d", v.Size())
 		_, val := v.GetByIndex(0)
 
-		assert.Equal(t, val.StakingPower, power, fmt.Sprintf(`unexpected powerat
+		assert.Equal(t, val.VotingPower, power, fmt.Sprintf(`unexpected powerat
                 height %d`, i))
 	}
 }
@@ -327,8 +327,8 @@ func mustBeSameVoterSet(t *testing.T, a, b *types.VoterSet) {
 	for i, v := range a.Voters {
 		assert.True(t, bytes.Equal(v.PubKey.Bytes(), b.Voters[i].PubKey.Bytes()),
 			"voter public key is different")
-		assert.True(t, v.StakingPower == b.Voters[i].StakingPower, "voter staking power is different")
 		assert.True(t, v.VotingPower == b.Voters[i].VotingPower, "voter voting power is different")
+		assert.True(t, v.StakingPower == b.Voters[i].StakingPower, "voter staking power is different")
 	}
 }
 
@@ -337,8 +337,8 @@ func mustBeSameValidatorSet(t *testing.T, a, b *types.ValidatorSet) {
 	for i, v := range a.Validators {
 		assert.True(t, bytes.Equal(v.PubKey.Bytes(), b.Validators[i].PubKey.Bytes()),
 			"validator public key is different")
-		assert.True(t, v.StakingPower == b.Validators[i].StakingPower, "validator staking power is different")
 		assert.True(t, v.VotingPower == b.Validators[i].VotingPower, "validator voting power is different")
+		assert.True(t, v.StakingPower == b.Validators[i].StakingPower, "validator staking power is different")
 	}
 }
 
@@ -478,7 +478,7 @@ func genValSetWithPowers(powers []int64) *types.ValidatorSet {
 // test a proposer appears as frequently as expected
 func testProposerFreq(t *testing.T, caseNum int, valSet *types.ValidatorSet) {
 	N := valSet.Size()
-	totalPower := valSet.TotalStakingPower()
+	totalPower := valSet.TotalVotingPower()
 
 	// run the proposer selection and track frequencies
 	runMult := 1
@@ -496,7 +496,7 @@ func testProposerFreq(t *testing.T, caseNum int, valSet *types.ValidatorSet) {
 		// assert frequencies match expected (max off by 1)
 		for i, freq := range freqs {
 			_, val := valSet.GetByIndex(int32(i))
-			expectFreq := int(val.StakingPower) * runMult
+			expectFreq := int(val.VotingPower) * runMult
 			gotFreq := freq
 			abs := int(math.Abs(float64(expectFreq - gotFreq)))
 
@@ -517,7 +517,7 @@ func testProposerFreq(t *testing.T, caseNum int, valSet *types.ValidatorSet) {
 	chiSquareds := make([]ChiSquared, N)
 	for i, freq := range freqs {
 		_, val := valSet.GetByIndex(int32(i))
-		expectFreq := val.StakingPower * int64(runMult)
+		expectFreq := val.VotingPower * int64(runMult)
 		chiSquareds[i] = ChiSquared{int64(freq), expectFreq}
 	}
 	_, p := chiSquaredTest(chiSquareds)
@@ -559,9 +559,9 @@ func chiSquaredTest(tests []ChiSquared) (float64, float64) {
 func TestProposerPriorityDoesNotGetResetToZero(t *testing.T) {
 	tearDown, _, state := setupTestCase(t)
 	defer tearDown(t)
-	val1StakingPower := int64(10)
+	val1VotingPower := int64(10)
 	val1PubKey := ed25519.GenPrivKey().PubKey()
-	val1 := &types.Validator{Address: val1PubKey.Address(), PubKey: val1PubKey, StakingPower: val1StakingPower}
+	val1 := &types.Validator{Address: val1PubKey.Address(), PubKey: val1PubKey, VotingPower: val1VotingPower}
 
 	state.Validators = types.NewValidatorSet([]*types.Validator{val1})
 	state.NextValidators = state.Validators
@@ -579,17 +579,17 @@ func TestProposerPriorityDoesNotGetResetToZero(t *testing.T) {
 	require.NoError(t, err)
 	updatedState, err := sm.UpdateState(state, blockID, &block.Header, abciResponses, validatorUpdates)
 	assert.NoError(t, err)
-	curTotal := val1StakingPower
+	curTotal := val1VotingPower
 	// one increment step and one validator: 0 + power - total_power == 0
-	assert.Equal(t, 0+val1StakingPower-curTotal, updatedState.NextValidators.Validators[0].ProposerPriority)
+	assert.Equal(t, 0+val1VotingPower-curTotal, updatedState.NextValidators.Validators[0].ProposerPriority)
 
 	// add a validator
 	val2PubKey := ed25519.GenPrivKey().PubKey()
-	val2StakingPower := int64(100)
+	val2VotingPower := int64(100)
 	fvp, err := cryptoenc.PubKeyToProto(val2PubKey)
 	require.NoError(t, err)
 
-	updateAddVal := abci.ValidatorUpdate{PubKey: fvp, Power: val2StakingPower}
+	updateAddVal := abci.ValidatorUpdate{PubKey: fvp, Power: val2VotingPower}
 	validatorUpdates, err = types.PB2OC.ValidatorUpdates([]abci.ValidatorUpdate{updateAddVal})
 	assert.NoError(t, err)
 	updatedState2, err := sm.UpdateState(updatedState, blockID, &block.Header, abciResponses, validatorUpdates)
@@ -604,7 +604,7 @@ func TestProposerPriorityDoesNotGetResetToZero(t *testing.T) {
 	// Steps from adding new validator:
 	// 0 - val1 prio is 0, TVP after add:
 	wantVal1Prio := int64(0)
-	totalPowerAfter := val1StakingPower + val2StakingPower
+	totalPowerAfter := val1VotingPower + val2VotingPower
 	// 1. Add - Val2 should be initially added with (-123) =>
 	wantVal2Prio := -(totalPowerAfter + (totalPowerAfter >> 3))
 	// 2. Scale - noop
@@ -615,22 +615,22 @@ func TestProposerPriorityDoesNotGetResetToZero(t *testing.T) {
 	wantVal1Prio -= avg.Int64() // 62
 
 	// 4. Steps from IncrementProposerPriority
-	wantVal1Prio += val1StakingPower // 72
-	wantVal2Prio += val2StakingPower // 39
-	wantVal1Prio -= totalPowerAfter  // -38 as val1 is proposer
+	wantVal1Prio += val1VotingPower // 72
+	wantVal2Prio += val2VotingPower // 39
+	wantVal1Prio -= totalPowerAfter // -38 as val1 is proposer
 
 	assert.Equal(t, wantVal1Prio, updatedVal1.ProposerPriority)
 	assert.Equal(t, wantVal2Prio, addedVal2.ProposerPriority)
 
 	// Updating a validator does not reset the ProposerPriority to zero:
-	// 1. Add - Val2 StakingPower change to 1 =>
+	// 1. Add - Val2 VotingPower change to 1 =>
 	updatedVotingPowVal2 := int64(1)
 	updateVal := abci.ValidatorUpdate{PubKey: fvp, Power: updatedVotingPowVal2}
 	validatorUpdates, err = types.PB2OC.ValidatorUpdates([]abci.ValidatorUpdate{updateVal})
 	assert.NoError(t, err)
 
 	// this will cause the diff of priorities (77)
-	// to be larger than threshold == 2*totalStakingPower (22):
+	// to be larger than threshold == 2*totalVotingPower (22):
 	updatedState3, err := sm.UpdateState(updatedState2, blockID, &block.Header, abciResponses, validatorUpdates)
 	assert.NoError(t, err)
 
@@ -646,7 +646,7 @@ func TestProposerPriorityDoesNotGetResetToZero(t *testing.T) {
 	wantVal2Prio = prevVal2.ProposerPriority
 	// scale to diffMax = 22 = 2 * tvp, diff=39-(-38)=77
 	// new totalPower
-	totalPower := updatedVal1.StakingPower + updatedVal2.StakingPower
+	totalPower := updatedVal1.VotingPower + updatedVal2.VotingPower
 	dist := wantVal2Prio - wantVal1Prio
 	// ratio := (dist + 2*totalPower - 1) / 2*totalPower = 98/22 = 4
 	ratio := (dist + 2*totalPower - 1) / (2 * totalPower)
@@ -658,9 +658,9 @@ func TestProposerPriorityDoesNotGetResetToZero(t *testing.T) {
 	// 4. IncrementProposerPriority() ->
 	// v1(10):-9+10, v2(1):9+1 -> v2 proposer so subsract tvp(11)
 	// v1(10):1, v2(1):-1
-	wantVal2Prio += updatedVal2.StakingPower // 10 -> prop
-	wantVal1Prio += updatedVal1.StakingPower // 1
-	wantVal2Prio -= totalPower               // -1
+	wantVal2Prio += updatedVal2.VotingPower // 10 -> prop
+	wantVal1Prio += updatedVal1.VotingPower // 1
+	wantVal2Prio -= totalPower              // -1
 
 	assert.Equal(t, wantVal2Prio, updatedVal2.ProposerPriority)
 	assert.Equal(t, wantVal1Prio, updatedVal1.ProposerPriority)
@@ -674,9 +674,9 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 	// have the same voting power (and the 2nd was added later).
 	tearDown, _, state := setupTestCase(t)
 	defer tearDown(t)
-	val1StakingPower := int64(10)
+	val1VotingPower := int64(10)
 	val1PubKey := ed25519.GenPrivKey().PubKey()
-	val1 := &types.Validator{Address: val1PubKey.Address(), PubKey: val1PubKey, StakingPower: val1StakingPower}
+	val1 := &types.Validator{Address: val1PubKey.Address(), PubKey: val1PubKey, VotingPower: val1VotingPower}
 
 	// reset state validators to above validator
 	state.Validators = types.NewValidatorSet([]*types.Validator{val1})
@@ -699,8 +699,8 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 	assert.NoError(t, err)
 
 	// 0 + 10 (initial prio) - 10 (avg) - 10 (mostest - total) = -10
-	totalPower := val1StakingPower
-	wantVal1Prio := 0 + val1StakingPower - totalPower
+	totalPower := val1VotingPower
+	wantVal1Prio := 0 + val1VotingPower - totalPower
 	assert.Equal(t, wantVal1Prio, updatedState.NextValidators.Validators[0].ProposerPriority)
 	assert.Equal(t, val1PubKey.Address(), updatedState.NextValidators.Validators[0].Address)
 
@@ -708,7 +708,7 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 	val2PubKey := ed25519.GenPrivKey().PubKey()
 	fvp, err := cryptoenc.PubKeyToProto(val2PubKey)
 	require.NoError(t, err)
-	updateAddVal := abci.ValidatorUpdate{PubKey: fvp, Power: val1StakingPower}
+	updateAddVal := abci.ValidatorUpdate{PubKey: fvp, Power: val1VotingPower}
 	validatorUpdates, err = types.PB2OC.ValidatorUpdates([]abci.ValidatorUpdate{updateAddVal})
 	assert.NoError(t, err)
 
@@ -729,8 +729,8 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 	_, updatedVal2 := updatedState2.NextValidators.GetByAddress(val2PubKey.Address())
 
 	// 1. Add
-	val2StakingPower := val1StakingPower
-	totalPower = val1StakingPower + val2StakingPower         // 20
+	val2VotingPower := val1VotingPower
+	totalPower = val1VotingPower + val2VotingPower           // 20
 	v2PrioWhenAddedVal2 := -(totalPower + (totalPower >> 3)) // -22
 	// 2. Scale - noop
 	// 3. Center
@@ -739,9 +739,9 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 	expectedVal2Prio := v2PrioWhenAddedVal2 - avg.Int64()      // -11
 	expectedVal1Prio := oldVal1.ProposerPriority - avg.Int64() // 11
 	// 4. Increment
-	expectedVal2Prio += val2StakingPower // -11 + 10 = -1
-	expectedVal1Prio += val1StakingPower // 11 + 10 == 21
-	expectedVal1Prio -= totalPower       // 1, val1 proposer
+	expectedVal2Prio += val2VotingPower // -11 + 10 = -1
+	expectedVal1Prio += val1VotingPower // 11 + 10 == 21
+	expectedVal1Prio -= totalPower      // 1, val1 proposer
 
 	assert.EqualValues(t, expectedVal1Prio, updatedVal1.ProposerPriority)
 	assert.EqualValues(
@@ -769,9 +769,9 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 
 	// check if expected proposer prio is matched:
 	// Increment
-	expectedVal2Prio2 := expectedVal2Prio + val2StakingPower // -1 + 10 = 9
-	expectedVal1Prio2 := expectedVal1Prio + val1StakingPower // 1 + 10 == 11
-	expectedVal1Prio2 -= totalPower                          // -9, val1 proposer
+	expectedVal2Prio2 := expectedVal2Prio + val2VotingPower // -1 + 10 = 9
+	expectedVal1Prio2 := expectedVal1Prio + val1VotingPower // 1 + 10 == 11
+	expectedVal1Prio2 -= totalPower                         // -9, val1 proposer
 
 	assert.EqualValues(
 		t,
@@ -848,13 +848,13 @@ func TestLargeGenesisValidator(t *testing.T) {
 	tearDown, _, state := setupTestCase(t)
 	defer tearDown(t)
 
-	genesisStakingPower := types.MaxTotalStakingPower / 1000
+	genesisVotingPower := types.MaxTotalVotingPower / 1000
 	genesisPubKey := ed25519.GenPrivKey().PubKey()
 	// fmt.Println("genesis addr: ", genesisPubKey.Address())
 	genesisVal := &types.Validator{
-		Address:      genesisPubKey.Address(),
-		PubKey:       genesisPubKey,
-		StakingPower: genesisStakingPower,
+		Address:     genesisPubKey.Address(),
+		PubKey:      genesisPubKey,
+		VotingPower: genesisVotingPower,
 	}
 	// reset state validators to above validator
 	state.Validators = types.NewValidatorSet([]*types.Validator{genesisVal})
@@ -878,7 +878,7 @@ func TestLargeGenesisValidator(t *testing.T) {
 
 		updatedState, err := sm.UpdateState(oldState, blockID, &block.Header, abciResponses, validatorUpdates)
 		require.NoError(t, err)
-		// no changes in voting power (ProposerPrio += StakingPower == Voting in 1st round; than shiftByAvg == 0,
+		// no changes in voting power (ProposerPrio += VotingPower == Voting in 1st round; than shiftByAvg == 0,
 		// than -Total == -Voting)
 		// -> no change in ProposerPrio (stays zero):
 		assert.EqualValues(t, oldState.NextValidators, updatedState.NextValidators)
@@ -893,10 +893,10 @@ func TestLargeGenesisValidator(t *testing.T) {
 	// see how long it takes until the effect wears off and both begin to alternate
 	// see: https://github.com/tendermint/tendermint/issues/2960
 	firstAddedValPubKey := ed25519.GenPrivKey().PubKey()
-	firstAddedValStakingPower := int64(10)
+	firstAddedValVotingPower := int64(10)
 	fvp, err := cryptoenc.PubKeyToProto(firstAddedValPubKey)
 	require.NoError(t, err)
-	firstAddedVal := abci.ValidatorUpdate{PubKey: fvp, Power: firstAddedValStakingPower}
+	firstAddedVal := abci.ValidatorUpdate{PubKey: fvp, Power: firstAddedValVotingPower}
 	validatorUpdates, err := types.PB2OC.ValidatorUpdates([]abci.ValidatorUpdate{firstAddedVal})
 	assert.NoError(t, err)
 	abciResponses := &tmstate.ABCIResponses{
@@ -943,7 +943,7 @@ func TestLargeGenesisValidator(t *testing.T) {
 		addedPubKey := ed25519.GenPrivKey().PubKey()
 		ap, err := cryptoenc.PubKeyToProto(addedPubKey)
 		require.NoError(t, err)
-		addedVal := abci.ValidatorUpdate{PubKey: ap, Power: firstAddedValStakingPower}
+		addedVal := abci.ValidatorUpdate{PubKey: ap, Power: firstAddedValVotingPower}
 		validatorUpdates, err := types.PB2OC.ValidatorUpdates([]abci.ValidatorUpdate{addedVal})
 		assert.NoError(t, err)
 
@@ -1285,7 +1285,7 @@ func TestMedianTime(t *testing.T) {
 		voters := types.ToVoterAll(vals)
 		for j, power := range tc.votingPowers {
 			// reset voting power with a value that is not staking power
-			voters.Voters[j].VotingPower = power
+			voters.Voters[j].StakingPower = power
 			commits[j] = types.NewCommitSigForBlock(tmrand.Bytes(10), voters.Voters[j].Address, tc.times[j])
 		}
 		commit := types.NewCommit(10, 0, types.BlockID{Hash: []byte("0xDEADBEEF")}, commits)

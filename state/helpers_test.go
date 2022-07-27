@@ -205,7 +205,7 @@ func makeHeaderPartsResponsesValPowerChange(
 
 	// If the pubkey is new, remove the old and add the new.
 	_, val := state.NextValidators.GetByIndex(0)
-	if val.StakingPower != power {
+	if val.VotingPower != power {
 		abciResponses.EndBlock = &abci.ResponseEndBlock{
 			ValidatorUpdates: []abci.ValidatorUpdate{
 				types.OC2PB.NewValidatorUpdate(val.PubKey, power),

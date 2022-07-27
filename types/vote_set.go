@@ -237,7 +237,7 @@ func (voteSet *VoteSet) addVote(vote *Vote, execVoteVerify func(chainID string,
 	}
 
 	// Add vote and get conflicting vote if any.
-	added, conflicting := voteSet.addVerifiedVote(vote, blockKey, voter.VotingPower)
+	added, conflicting := voteSet.addVerifiedVote(vote, blockKey, voter.StakingPower)
 	if conflicting != nil {
 		return added, NewConflictingVoteError(conflicting, vote)
 	}
@@ -310,7 +310,7 @@ func (voteSet *VoteSet) addVerifiedVote(
 
 	// Before adding to votesByBlock, see if we'll exceed quorum
 	origSum := votesByBlock.sum
-	quorum := voteSet.voterSet.TotalVotingPower()*2/3 + 1
+	quorum := voteSet.voterSet.TotalStakingPower()*2/3 + 1
 
 	// Add vote to votesByBlock
 	votesByBlock.addVerifiedVote(vote, votingPower)
@@ -462,7 +462,7 @@ func (voteSet *VoteSet) HasTwoThirdsAny() bool {
 	}
 	voteSet.mtx.Lock()
 	defer voteSet.mtx.Unlock()
-	return voteSet.sum > voteSet.voterSet.TotalVotingPower()*2/3
+	return voteSet.sum > voteSet.voterSet.TotalStakingPower()*2/3
 }
 
 func (voteSet *VoteSet) HasAll() bool {
@@ -471,7 +471,7 @@ func (voteSet *VoteSet) HasAll() bool {
 	}
 	voteSet.mtx.Lock()
 	defer voteSet.mtx.Unlock()
-	return voteSet.sum == voteSet.voterSet.TotalVotingPower()
+	return voteSet.sum == voteSet.voterSet.TotalStakingPower()
 }
 
 // If there was a +2/3 majority for blockID, return blockID and true.
@@ -626,7 +626,7 @@ func (voteSet *VoteSet) LogString() string {
 
 // return the power voted, the total, and the fraction
 func (voteSet *VoteSet) sumTotalFrac() (int64, int64, float64) {
-	voted, total := voteSet.sum, voteSet.voterSet.TotalVotingPower()
+	voted, total := voteSet.sum, voteSet.voterSet.TotalStakingPower()
 	fracVoted := float64(voted) / float64(total)
 	return voted, total, fracVoted
 }

@@ -411,11 +411,11 @@ func newLightClientAttackEvidence(conflicted, trusted, common *types.LightBlock)
 	if ev.ConflictingHeaderIsInvalid(trusted.Header) {
 		ev.CommonHeight = common.Height
 		ev.Timestamp = common.Time
-		ev.TotalVotingPower = common.VoterSet.TotalVotingPower()
+		ev.TotalVotingPower = common.VoterSet.TotalStakingPower()
 	} else {
 		ev.CommonHeight = trusted.Height
 		ev.Timestamp = trusted.Time
-		ev.TotalVotingPower = trusted.VoterSet.TotalVotingPower()
+		ev.TotalVotingPower = trusted.VoterSet.TotalStakingPower()
 	}
 	ev.ByzantineValidators = ev.GetByzantineValidators(common.VoterSet, trusted.SignedHeader)
 	return ev

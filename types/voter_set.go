@@ -24,13 +24,13 @@ type VoterSet struct {
 	Voters []*Validator `json:"voters"`
 
 	// cached (unexported)
-	totalVotingPower int64
+	totalStakingPower int64
 }
 
 func WrapValidatorsToVoterSet(vals []*Validator) *VoterSet {
 	sort.Sort(ValidatorsByVotingPower(vals))
-	voterSet := &VoterSet{Voters: vals, totalVotingPower: 0}
-	voterSet.updateTotalVotingPower()
+	voterSet := &VoterSet{Voters: vals, totalStakingPower: 0}
+	voterSet.updateTotalStakingPower()
 	return voterSet
 }
 
@@ -103,33 +103,33 @@ func (voters *VoterSet) Copy() *VoterSet {
 		return nil
 	}
 	return &VoterSet{
-		Voters:           copyValidatorListShallow(voters.Voters),
-		totalVotingPower: voters.totalVotingPower,
+		Voters:            copyValidatorListShallow(voters.Voters),
+		totalStakingPower: voters.totalStakingPower,
 	}
 }
 
-// Forces recalculation of the set's total voting power.
-// Panics if total voting power is bigger than MaxTotalStakingPower.
-func (voters *VoterSet) updateTotalVotingPower() {
+// Forces recalculation of the set's total staking power.
+// Panics if total staking power is bigger than MaxTotalStakingPower.
+func (voters *VoterSet) updateTotalStakingPower() {
 	sum := int64(0)
 	for _, val := range voters.Voters {
 		// mind overflow
-		sum = safeAddClip(sum, val.VotingPower)
-		if sum > MaxTotalVotingPower {
+		sum = safeAddClip(sum, val.StakingPower)
+		if sum > MaxTotalStakingPower {
 			panic(fmt.Sprintf(
-				"Total voting power should be guarded to not exceed %v; got: %v",
-				MaxTotalVotingPower,
+				"Total staking power should be guarded to not exceed %v; got: %v",
+				MaxTotalStakingPower,
 				sum))
 		}
 	}
-	voters.totalVotingPower = sum
+	voters.totalStakingPower = sum
 }
 
-func (voters *VoterSet) TotalVotingPower() int64 {
-	if voters.totalVotingPower == 0 {
-		voters.updateTotalVotingPower()
+func (voters *VoterSet) TotalStakingPower() int64 {
+	if voters.totalStakingPower == 0 {
+		voters.updateTotalStakingPower()
 	}
-	return voters.totalVotingPower
+	return voters.totalStakingPower
 }
 
 // Hash returns the Merkle root hash build using voters (as leaves) in the
@@ -167,8 +167,8 @@ func (voters *VoterSet) VerifyCommit(chainID string, blockID BlockID, height int
 			blockID, commit.BlockID)
 	}
 
-	talliedVotingPower := int64(0)
-	votingPowerNeeded := voters.TotalVotingPower() * 2 / 3 // FIXME: 🏺 arithmetic overflow
+	talliedStakingPower := int64(0)
+	stakingPowerNeeded := voters.TotalStakingPower() * 2 / 3 // FIXME: 🏺 arithmetic overflow
 	blsPubKeys := make([]bls.PubKey, 0, len(commit.Signatures))
 	messages := make([][]byte, 0, len(commit.Signatures))
 	for idx, commitSig := range commit.Signatures {
@@ -182,7 +182,7 @@ func (voters *VoterSet) VerifyCommit(chainID string, blockID BlockID, height int
 
 		// Validate signature.
 		voteSignBytes := commit.VoteSignBytes(chainID, int32(idx))
-		verifiedVotingPower, unverifiedVotingPower, err := verifySignatureOrCollectBlsPubKeysAndGetVotingPower(
+		verifiedStakingPower, unverifiedStakingPower, err := verifySignatureOrCollectBlsPubKeysAndGetStakingPower(
 			idx, commitSig, voter, voteSignBytes, &blsPubKeys, &messages)
 		if err != nil {
 			return err
@@ -190,7 +190,7 @@ func (voters *VoterSet) VerifyCommit(chainID string, blockID BlockID, height int
 
 		// Good!
 		if commitSig.ForBlock() {
-			talliedVotingPower += verifiedVotingPower + unverifiedVotingPower
+			talliedStakingPower += verifiedStakingPower + unverifiedStakingPower
 		}
 
 		// else {
@@ -199,13 +199,14 @@ func (voters *VoterSet) VerifyCommit(chainID string, blockID BlockID, height int
 		// }
 	}
 
-	// Validate signature.
+	// Validate aggregate signature
 	if err := bls.VerifyAggregatedSignature(commit.AggregatedSignature, blsPubKeys, messages); err != nil {
 		return fmt.Errorf("wrong aggregated signature: %X; %s", commit.AggregatedSignature, err)
 	}
 
-	if got, needed := talliedVotingPower, votingPowerNeeded; got <= needed {
-		return ErrNotEnoughVotingPowerSigned{Got: got, Needed: needed}
+	// add staking power for BLS batch verification and return without error if trust-level of the signatures are verified
+	if got, needed := talliedStakingPower, stakingPowerNeeded; got <= needed {
+		return ErrNotEnoughStakingPowerSigned{Got: got, Needed: needed}
 	}
 
 	return nil
@@ -233,9 +234,9 @@ func (voters *VoterSet) VerifyCommitLight(chainID string, blockID BlockID,
 			blockID, commit.BlockID)
 	}
 
-	talliedVotingPower := int64(0)
-	talliedUnverifiedVotingPower := int64(0)
-	votingPowerNeeded := voters.TotalVotingPower() * 2 / 3 // FIXME: 🏺 arithmetic overflow
+	talliedStakingPower := int64(0)
+	talliedUnverifiedStakingPower := int64(0)
+	stakingPowerNeeded := voters.TotalStakingPower() * 2 / 3 // FIXME: 🏺 arithmetic overflow
 	blsPubKeys := make([]bls.PubKey, 0, len(commit.Signatures))
 	messages := make([][]byte, 0, len(commit.Signatures))
 	for idx, commitSig := range commit.Signatures {
@@ -254,31 +255,32 @@ func (voters *VoterSet) VerifyCommitLight(chainID string, blockID BlockID,
 
 		// Validate signature.
 		voteSignBytes := commit.VoteSignBytes(chainID, int32(idx))
-		verifiedVootingPower, unverifiedVotingPower, err := verifySignatureOrCollectBlsPubKeysAndGetVotingPower(
+		verifiedStakingPower, unverifiedStakingPower, err := verifySignatureOrCollectBlsPubKeysAndGetStakingPower(
 			idx, commitSig, voter, voteSignBytes, &blsPubKeys, &messages)
 		if err != nil {
 			return err
 		}
 
-		talliedVotingPower += verifiedVootingPower
-		talliedUnverifiedVotingPower += unverifiedVotingPower
+		talliedStakingPower += verifiedStakingPower
+		talliedUnverifiedStakingPower += unverifiedStakingPower
 
 		// return as soon as +2/3 of the signatures are verified by individual verification
-		if talliedVotingPower > votingPowerNeeded {
+		if talliedStakingPower > stakingPowerNeeded {
 			return nil
 		}
 	}
 
-	// add voting power for BLS batch verification and return without error if +2/3 of the signatures are verified
+	// Validate aggregate signature
 	if err := bls.VerifyAggregatedSignature(commit.AggregatedSignature, blsPubKeys, messages); err != nil {
 		return fmt.Errorf("wrong aggregated signature: %X; %s", commit.AggregatedSignature, err)
 	}
-	talliedVotingPower += talliedUnverifiedVotingPower
-	if talliedVotingPower > votingPowerNeeded {
+	// add staking power for BLS batch verification and return without error if +2/3 of the signatures are verified
+	talliedStakingPower += talliedUnverifiedStakingPower
+	if talliedStakingPower > stakingPowerNeeded {
 		return nil
 	}
 
-	return ErrNotEnoughVotingPowerSigned{Got: talliedVotingPower, Needed: votingPowerNeeded}
+	return ErrNotEnoughStakingPowerSigned{Got: talliedStakingPower, Needed: stakingPowerNeeded}
 }
 
 // VerifyCommitLightTrusting verifies that trustLevel of the voter set signed
@@ -296,17 +298,18 @@ func (voters *VoterSet) VerifyCommitLightTrusting(chainID string, commit *Commit
 	}
 
 	var (
-		talliedVotingPower           int64
-		talliedUnverifiedVotingPower int64
-		seenVoters                   = make(map[int32]int, len(commit.Signatures)) // voter index -> commit index
+		talliedStakingPower           int64
+		talliedUnverifiedStakingPower int64
+		seenVoters                    = make(map[int32]int, len(commit.Signatures)) // voter index -> commit index
 	)
 
-	// Safely calculate voting power needed.
-	totalVotingPowerMulByNumerator, overflow := safeMul(voters.TotalVotingPower(), int64(trustLevel.Numerator))
+	// Safely calculate staking power needed.
+	totalStakingPowerMulByNumerator, overflow := safeMul(voters.TotalStakingPower(), int64(trustLevel.Numerator))
 	if overflow {
-		return errors.New("int64 overflow while calculating voting power needed. please provide smaller trustLevel numerator")
+		return errors.New("int64 overflow while calculating staking power needed. " +
+			"please provide smaller trustLevel numerator")
 	}
-	votingPowerNeeded := totalVotingPowerMulByNumerator / int64(trustLevel.Denominator)
+	stakingPowerNeeded := totalStakingPowerMulByNumerator / int64(trustLevel.Denominator)
 
 	blsPubKeys := make([]bls.PubKey, 0, len(commit.Signatures))
 	messages := make([][]byte, 0, len(commit.Signatures))
@@ -330,60 +333,61 @@ func (voters *VoterSet) VerifyCommitLightTrusting(chainID string, commit *Commit
 
 			// Verify Signature
 			voteSignBytes := commit.VoteSignBytes(chainID, int32(idx))
-			verifiedVotingPower, unverifiedVotingPower, err := verifySignatureOrCollectBlsPubKeysAndGetVotingPower(
+			verifiedStakingPower, unverifiedStakingPower, err := verifySignatureOrCollectBlsPubKeysAndGetStakingPower(
 				idx, commitSig, voter, voteSignBytes, &blsPubKeys, &messages)
 			if err != nil {
 				return err
 			}
 
-			talliedVotingPower += verifiedVotingPower
-			talliedUnverifiedVotingPower += unverifiedVotingPower
+			talliedStakingPower += verifiedStakingPower
+			talliedUnverifiedStakingPower += unverifiedStakingPower
 
-			if talliedVotingPower > votingPowerNeeded {
+			if talliedStakingPower > stakingPowerNeeded {
 				return nil
 			}
 		}
 	}
 
-	// add voting power for BLS batch verification and return without error if trust-level of the signatures are verified
+	// Validate aggregate signature
 	if err := bls.VerifyAggregatedSignature(commit.AggregatedSignature, blsPubKeys, messages); err != nil {
 		return fmt.Errorf("wrong aggregated signature: %X; %s", commit.AggregatedSignature, err)
 	}
-	talliedVotingPower += talliedUnverifiedVotingPower
-	if talliedVotingPower > votingPowerNeeded {
+	// add staking power for BLS batch verification and return without error if trust-level of the signatures are verified
+	talliedStakingPower += talliedUnverifiedStakingPower
+	if talliedStakingPower > stakingPowerNeeded {
 		return nil
 	}
 
-	return ErrNotEnoughVotingPowerSigned{Got: talliedVotingPower, Needed: votingPowerNeeded}
+	return ErrNotEnoughStakingPowerSigned{Got: talliedStakingPower, Needed: stakingPowerNeeded}
 }
 
-func verifySignatureOrCollectBlsPubKeysAndGetVotingPower(
+func verifySignatureOrCollectBlsPubKeysAndGetStakingPower(
 	idx int, commitSig CommitSig, val *Validator, voteSignBytes []byte,
 	blsPubKeys *[]bls.PubKey, messages *[][]byte) (int64, int64, error) {
-	verifiedVotingPower := int64(0)
-	unverifiedVotingPower := int64(0)
+	verifiedStakingPower := int64(0)
+	unverifiedStakingPower := int64(0)
 	if commitSig.Signature != nil {
 		if !val.PubKey.VerifySignature(voteSignBytes, commitSig.Signature) {
-			return verifiedVotingPower, unverifiedVotingPower, fmt.Errorf(
+			return verifiedStakingPower, unverifiedStakingPower, fmt.Errorf(
 				"wrong signature (#%d): %X",
 				idx,
 				commitSig.Signature,
 			)
 		}
-		verifiedVotingPower = val.VotingPower
+		verifiedStakingPower = val.StakingPower
 	} else {
 		blsPubKey := GetSignatureKey(val.PubKey)
 		if blsPubKey == nil {
-			return verifiedVotingPower, unverifiedVotingPower, fmt.Errorf(
+			return verifiedStakingPower, unverifiedStakingPower, fmt.Errorf(
 				"signature %d has been omitted, even though it is not a BLS key",
 				idx,
 			)
 		}
 		*blsPubKeys = append(*blsPubKeys, *blsPubKey)
 		*messages = append(*messages, voteSignBytes)
-		unverifiedVotingPower = val.VotingPower
+		unverifiedStakingPower = val.StakingPower
 	}
-	return verifiedVotingPower, unverifiedVotingPower, nil
+	return verifiedStakingPower, unverifiedStakingPower, nil
 }
 
 // ToProto converts VoterSet to protobuf
@@ -402,7 +406,7 @@ func (voters *VoterSet) ToProto() (*tmproto.VoterSet, error) {
 		votersProto[i] = voterp
 	}
 	vsp.Voters = votersProto
-	vsp.TotalVotingPower = voters.totalVotingPower
+	vsp.TotalStakingPower = voters.totalStakingPower
 
 	return vsp, nil
 }
@@ -425,29 +429,29 @@ func VoterSetFromProto(vp *tmproto.VoterSet) (*VoterSet, error) {
 		valsProto[i] = v
 	}
 	voters.Voters = valsProto
-	voters.totalVotingPower = vp.GetTotalVotingPower()
+	voters.totalStakingPower = vp.GetTotalStakingPower()
 
 	return voters, voters.ValidateBasic()
 }
 
 //-----------------
 
-// IsErrNotEnoughVotingPowerSigned returns true if err is
-// ErrNotEnoughVotingPowerSigned.
-func IsErrNotEnoughVotingPowerSigned(err error) bool {
-	_, ok := errors.Cause(err).(ErrNotEnoughVotingPowerSigned)
+// IsErrNotEnoughStakingPowerSigned returns true if err is
+// ErrNotEnoughStakingPowerSigned.
+func IsErrNotEnoughStakingPowerSigned(err error) bool {
+	_, ok := errors.Cause(err).(ErrNotEnoughStakingPowerSigned)
 	return ok
 }
 
-// ErrNotEnoughVotingPowerSigned is returned when not enough voters signed
+// ErrNotEnoughStakingPowerSigned is returned when not enough voters signed
 // a commit.
-type ErrNotEnoughVotingPowerSigned struct {
+type ErrNotEnoughStakingPowerSigned struct {
 	Got    int64
 	Needed int64
 }
 
-func (e ErrNotEnoughVotingPowerSigned) Error() string {
-	return fmt.Sprintf("invalid commit -- insufficient voting power: got %d, needed more than %d", e.Got, e.Needed)
+func (e ErrNotEnoughStakingPowerSigned) Error() string {
+	return fmt.Sprintf("invalid commit -- insufficient staking power: got %d, needed more than %d", e.Got, e.Needed)
 }
 
 //----------------
@@ -499,15 +503,15 @@ func SelectVoter(validators *ValidatorSet, proofHash []byte, voterParams *VoterP
 func ToVoterAll(validators []*Validator) *VoterSet {
 	newVoters := make([]*Validator, 0, len(validators))
 	for _, val := range validators {
-		if val.StakingPower == 0 {
-			// remove the validator with the staking power of 0 from the voter set
+		if val.VotingPower == 0 {
+			// remove the validator with the voting power of 0 from the voter set
 			continue
 		}
 		newVoters = append(newVoters, &Validator{
 			Address:          val.Address,
 			PubKey:           val.PubKey,
-			StakingPower:     val.StakingPower,
-			VotingPower:      val.StakingPower,
+			VotingPower:      val.VotingPower,
+			StakingPower:     val.VotingPower,
 			ProposerPriority: val.ProposerPriority,
 		})
 	}
@@ -563,13 +567,13 @@ func electVoter(
 	found := false
 	cumulativePriority := int64(0)
 	for i, candidate := range candidates[:len(candidates)-voterNum] {
-		if threshold < uint64(cumulativePriority+candidate.StakingPower) {
+		if threshold < uint64(cumulativePriority+candidate.VotingPower) {
 			winner = candidates[i]
 			winnerIdx = i
 			found = true
 			break
 		}
-		cumulativePriority += candidate.StakingPower
+		cumulativePriority += candidate.VotingPower
 	}
 
 	if !found {
@@ -597,58 +601,58 @@ func electVotersNonDup(validators []*Validator, seed uint64, tolerableByzantineP
 	}
 
 	candidates := validatorListCopy(validators)
-	totalStakingPower := getTotalStakingPower(candidates)
-	tolerableByzantinePower := getTolerableByzantinePower(totalStakingPower, tolerableByzantinePercent)
+	totalVotingPower := getTotalVotingPower(candidates)
+	tolerableByzantinePower := getTolerableByzantinePower(totalVotingPower, tolerableByzantinePercent)
 	voters := make([]*voter, 0)
 	sortValidators(candidates)
 
 	zeroValidators := 0
-	for i := len(candidates); candidates[i-1].StakingPower == 0; i-- {
+	for i := len(candidates); candidates[i-1].VotingPower == 0; i-- {
 		zeroValidators++
 	}
 
-	losersStakingPower := totalStakingPower
+	losersVotingPower := totalVotingPower
 	for {
 		// accumulateWinPoints(voters)
 		for _, voter := range voters {
 			// i = v1 ... vt
-			// stakingPower(i) * 1000 / (stakingPower(vt+1 ... vn) + stakingPower(i))
-			additionalWinPoint := new(big.Int).Mul(big.NewInt(voter.val.StakingPower),
+			// votingPower(i) * 1000 / (votingPower(vt+1 ... vn) + votingPower(i))
+			additionalWinPoint := new(big.Int).Mul(big.NewInt(voter.val.VotingPower),
 				big.NewInt(precisionForSelection))
-			additionalWinPoint.Div(additionalWinPoint, new(big.Int).Add(big.NewInt(losersStakingPower),
-				big.NewInt(voter.val.StakingPower)))
+			additionalWinPoint.Div(additionalWinPoint, new(big.Int).Add(big.NewInt(losersVotingPower),
+				big.NewInt(voter.val.VotingPower)))
 			voter.winPoint.Add(voter.winPoint, additionalWinPoint)
 		}
 		// electVoter
-		winnerIdx, winner := electVoter(&seed, candidates, len(voters)+zeroValidators, losersStakingPower)
+		winnerIdx, winner := electVoter(&seed, candidates, len(voters)+zeroValidators, losersVotingPower)
 
 		moveWinnerToLast(candidates, winnerIdx)
 		voters = append(voters, &voter{
 			val:      winner,
 			winPoint: big.NewInt(precisionForSelection),
 		})
-		losersStakingPower -= winner.StakingPower
+		losersVotingPower -= winner.VotingPower
 
-		// calculateVotingPowers(voters)
+		// calculateStakingPowers(voters)
 		totalWinPoint := new(big.Int)
 		for _, voter := range voters {
 			totalWinPoint.Add(totalWinPoint, voter.winPoint)
 		}
-		totalVotingPower := int64(0)
+		totalStakingPower := int64(0)
 		for _, voter := range voters {
 			winPoint := new(big.Int).Mul(voter.winPoint, big.NewInt(precisionForSelection))
-			bigVotingPower := new(big.Int).Div(new(big.Int).Mul(winPoint, big.NewInt(totalStakingPower)), totalWinPoint)
-			votingPower := new(big.Int).Div(bigVotingPower, big.NewInt(precisionCorrectionForSelection)).Int64()
-			voter.val.VotingPower = votingPower
-			totalVotingPower += votingPower
+			bigStakingPower := new(big.Int).Div(new(big.Int).Mul(winPoint, big.NewInt(totalVotingPower)), totalWinPoint)
+			stakingPower := new(big.Int).Div(bigStakingPower, big.NewInt(precisionCorrectionForSelection)).Int64()
+			voter.val.StakingPower = stakingPower
+			totalStakingPower += stakingPower
 		}
 
 		if len(voters) >= minVoters {
-			// sort voters in ascending votingPower/stakingPower
+			// sort voters in ascending stakingPower/votingPower
 			sortVoters(voters)
 
-			topFVotersVotingPower := getTopByzantineVotingPower(voters, tolerableByzantinePower)
-			if topFVotersVotingPower < totalVotingPower/3 {
+			topFVotersStakingPower := getTopByzantineStakingPower(voters, tolerableByzantinePower)
+			if topFVotersStakingPower < totalStakingPower/3 {
 				break
 			}
 		}
@@ -657,7 +661,7 @@ func electVotersNonDup(validators []*Validator, seed uint64, tolerableByzantineP
 			// there is no voter group satisfying the finality
 			// cannot do sampling voters
 			for _, c := range candidates {
-				c.VotingPower = c.StakingPower
+				c.StakingPower = c.VotingPower
 			}
 			return candidates
 		}
@@ -669,43 +673,43 @@ func electVotersNonDup(validators []*Validator, seed uint64, tolerableByzantineP
 	return result
 }
 
-func getTotalStakingPower(validators []*Validator) int64 {
-	totalStaking := int64(0)
+func getTotalVotingPower(validators []*Validator) int64 {
+	totalVoting := int64(0)
 	for _, v := range validators {
-		totalStaking += v.StakingPower
+		totalVoting += v.VotingPower
 	}
-	return totalStaking
+	return totalVoting
 }
 
-func getTopByzantineVotingPower(voters []*voter, tolerableByzantinePower int64) int64 {
-	topFVotersStakingPower := int64(0)
+func getTopByzantineStakingPower(voters []*voter, tolerableByzantinePower int64) int64 {
 	topFVotersVotingPower := int64(0)
+	topFVotersStakingPower := int64(0)
 	for _, voter := range voters {
-		prev := topFVotersStakingPower
-		topFVotersStakingPower += voter.val.StakingPower
+		prev := topFVotersVotingPower
 		topFVotersVotingPower += voter.val.VotingPower
-		if prev < tolerableByzantinePower && topFVotersStakingPower >= tolerableByzantinePower {
+		topFVotersStakingPower += voter.val.StakingPower
+		if prev < tolerableByzantinePower && topFVotersVotingPower >= tolerableByzantinePower {
 			break
 		}
 	}
-	return topFVotersVotingPower
+	return topFVotersStakingPower
 }
 
 // sort validators in-place
 func sortValidators(validators []*Validator) {
 	sort.Slice(validators, func(i, j int) bool {
-		if validators[i].StakingPower == validators[j].StakingPower {
+		if validators[i].VotingPower == validators[j].VotingPower {
 			return bytes.Compare(validators[i].Address, validators[j].Address) == -1
 		}
-		return validators[i].StakingPower > validators[j].StakingPower
+		return validators[i].VotingPower > validators[j].VotingPower
 	})
 }
 
-// sortVoters is function to sort voters in descending votingPower/stakingPower in-place
+// sortVoters is function to sort voters in descending stakingPower/votingPower in-place
 func sortVoters(candidates []*voter) {
 	sort.Slice(candidates, func(i, j int) bool {
-		bigA := new(big.Int).Mul(big.NewInt(candidates[i].val.VotingPower), big.NewInt(candidates[j].val.StakingPower))
-		bigB := new(big.Int).Mul(big.NewInt(candidates[j].val.VotingPower), big.NewInt(candidates[i].val.StakingPower))
+		bigA := new(big.Int).Mul(big.NewInt(candidates[i].val.StakingPower), big.NewInt(candidates[j].val.VotingPower))
+		bigB := new(big.Int).Mul(big.NewInt(candidates[j].val.StakingPower), big.NewInt(candidates[i].val.VotingPower))
 		compareResult := bigA.Cmp(bigB)
 		if compareResult == 0 {
 			return bytes.Compare(candidates[i].val.Address, candidates[j].val.Address) == -1
@@ -720,9 +724,9 @@ func moveWinnerToLast(candidates []*Validator, winner int) {
 	candidates[len(candidates)-1] = winnerCandidate
 }
 
-func getTolerableByzantinePower(totalStakingPower int64, tolerableByzantinePercent int) int64 {
-	// `totalStakingPower * tolerableByzantinePercent` may be overflow for int64 type
-	bigMultiplied := new(big.Int).Mul(big.NewInt(totalStakingPower), big.NewInt(int64(tolerableByzantinePercent)))
+func getTolerableByzantinePower(totalVotingPower int64, tolerableByzantinePercent int) int64 {
+	// `totalVotingPower * tolerableByzantinePercent` may be overflow for int64 type
+	bigMultiplied := new(big.Int).Mul(big.NewInt(totalVotingPower), big.NewInt(int64(tolerableByzantinePercent)))
 	tolerableByzantinePower := new(big.Int).Div(bigMultiplied, big.NewInt(100))
 
 	// ceiling

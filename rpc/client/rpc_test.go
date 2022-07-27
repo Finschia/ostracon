@@ -189,9 +189,9 @@ func TestGenesisAndValidators(t *testing.T) {
 		voter := voters.Voters[0]
 
 		// make sure the current set is also the genesis set
-		assert.Equal(t, gval.Power, val.StakingPower)
+		assert.Equal(t, gval.Power, val.VotingPower)
 		assert.Equal(t, gval.PubKey, val.PubKey)
-		assert.Equal(t, gval.Power, voter.StakingPower)
+		assert.Equal(t, gval.Power, voter.VotingPower)
 		assert.Equal(t, gval.PubKey, voter.PubKey)
 	}
 }

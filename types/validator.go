@@ -13,28 +13,28 @@ import (
 )
 
 // Volatile state for each Validator
-// NOTE: The ProposerPriority, VotingPower is not included in Validator.Hash();
+// NOTE: The ProposerPriority, StakingPower is not included in Validator.Hash();
 // make sure to update that method if changes are made here
-// StakingPower is the potential voting power proportional to the amount of stake,
-// and VotingPower is the actual voting power granted by the election process.
-// StakingPower is durable and can be changed by staking txs.
-// VotingPower is volatile and can be changed at every height.
+// VotingPower is the potential voting power proportional to the amount of stake,
+// and StakingPower is the actual voting power granted by the election process.
+// VotingPower is durable and can be changed by staking txs.
+// StakingPower is volatile and can be changed at every height.
 type Validator struct {
-	Address      Address       `json:"address"`
-	PubKey       crypto.PubKey `json:"pub_key"`
-	StakingPower int64         `json:"staking_power"`
+	Address     Address       `json:"address"`
+	PubKey      crypto.PubKey `json:"pub_key"`
+	VotingPower int64         `json:"voting_power"`
 
-	VotingPower      int64 `json:"voting_power"`
+	StakingPower     int64 `json:"staking_power"`
 	ProposerPriority int64 `json:"proposer_priority"`
 }
 
 // NewValidator returns a new validator with the given pubkey and staking power.
-func NewValidator(pubKey crypto.PubKey, stakingPower int64) *Validator {
+func NewValidator(pubKey crypto.PubKey, votingPower int64) *Validator {
 	return &Validator{
 		Address:          pubKey.Address(),
 		PubKey:           pubKey,
-		StakingPower:     stakingPower,
-		VotingPower:      0,
+		VotingPower:      votingPower,
+		StakingPower:     0,
 		ProposerPriority: 0,
 	}
 }
@@ -48,7 +48,7 @@ func (v *Validator) ValidateBasic() error {
 		return errors.New("validator does not have a public key")
 	}
 
-	if v.StakingPower < 0 {
+	if v.VotingPower < 0 {
 		return errors.New("validator has negative voting power")
 	}
 
@@ -102,7 +102,7 @@ func (v *Validator) String() string {
 	return fmt.Sprintf("Validator{%v %v VP:%v A:%v}",
 		v.Address,
 		v.PubKey,
-		v.StakingPower,
+		v.VotingPower,
 		v.ProposerPriority)
 }
 
@@ -110,7 +110,7 @@ func (v *Validator) String() string {
 func ValidatorListString(vals []*Validator) string {
 	chunks := make([]string, len(vals))
 	for i, val := range vals {
-		chunks[i] = fmt.Sprintf("%s:%d", val.Address, val.StakingPower)
+		chunks[i] = fmt.Sprintf("%s:%d", val.Address, val.VotingPower)
 	}
 
 	return strings.Join(chunks, ",")
@@ -127,8 +127,8 @@ func (v *Validator) Bytes() []byte {
 	}
 
 	pbv := tmproto.SimpleValidator{
-		PubKey:       &pk,
-		StakingPower: v.StakingPower,
+		PubKey:      &pk,
+		VotingPower: v.VotingPower,
 	}
 
 	bz, err := pbv.Marshal()
@@ -152,8 +152,8 @@ func (v *Validator) ToProto() (*tmproto.Validator, error) {
 	vp := tmproto.Validator{
 		Address:          v.Address,
 		PubKey:           pk,
-		StakingPower:     v.StakingPower,
 		VotingPower:      v.VotingPower,
+		StakingPower:     v.StakingPower,
 		ProposerPriority: v.ProposerPriority,
 	}
 
@@ -174,8 +174,8 @@ func ValidatorFromProto(vp *tmproto.Validator) (*Validator, error) {
 	v := new(Validator)
 	v.Address = vp.GetAddress()
 	v.PubKey = pk
-	v.StakingPower = vp.GetStakingPower()
 	v.VotingPower = vp.GetVotingPower()
+	v.StakingPower = vp.GetStakingPower()
 	v.ProposerPriority = vp.GetProposerPriority()
 
 	return v, nil
@@ -192,14 +192,14 @@ func RandValidator(randPower bool, minPower int64) (*Validator, PrivValidator) {
 
 func RandValidatorForPrivKey(keyType PrivKeyType, randPower bool, minPower int64) (*Validator, PrivValidator) {
 	privVal := NewMockPV(keyType)
-	stakingPower := minPower
+	votingPower := minPower
 	if randPower {
-		stakingPower += int64(tmrand.Uint32())
+		votingPower += int64(tmrand.Uint32())
 	}
 	pubKey, err := privVal.GetPubKey()
 	if err != nil {
 		panic(fmt.Errorf("could not retrieve pubkey %w", err))
 	}
-	val := NewValidator(pubKey, stakingPower)
+	val := NewValidator(pubKey, votingPower)
 	return val, privVal
 }

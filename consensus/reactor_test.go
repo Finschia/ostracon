@@ -353,48 +353,48 @@ func TestReactorStakingPowerChange(t *testing.T) {
 	val1PubKeyABCI, err := cryptoenc.PubKeyToProto(val1PubKey)
 	require.NoError(t, err)
 	updateValidatorTx := kvstore.MakeValSetChangeTx(val1PubKeyABCI, 25)
-	previousTotalVotingPower := css[0].GetRoundState().LastVoters.TotalVotingPower()
+	previousTotalVotingPower := css[0].GetRoundState().LastVoters.TotalStakingPower()
 
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlockWithTx(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 
-	if css[0].GetRoundState().LastVoters.TotalVotingPower() == previousTotalVotingPower {
+	if css[0].GetRoundState().LastVoters.TotalStakingPower() == previousTotalVotingPower {
 		t.Fatalf(
-			"expected staking power to change (before: %d, after: %d)",
+			"expected voting power to change (before: %d, after: %d)",
 			previousTotalVotingPower,
-			css[0].GetRoundState().LastVoters.TotalVotingPower())
+			css[0].GetRoundState().LastVoters.TotalStakingPower())
 	}
 
 	updateValidatorTx = kvstore.MakeValSetChangeTx(val1PubKeyABCI, 2)
-	previousTotalVotingPower = css[0].GetRoundState().LastVoters.TotalVotingPower()
+	previousTotalVotingPower = css[0].GetRoundState().LastVoters.TotalStakingPower()
 
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlockWithTx(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 
-	if css[0].GetRoundState().LastVoters.TotalVotingPower() == previousTotalVotingPower {
+	if css[0].GetRoundState().LastVoters.TotalStakingPower() == previousTotalVotingPower {
 		t.Fatalf(
 			"expected voting power to change (before: %d, after: %d)",
 			previousTotalVotingPower,
-			css[0].GetRoundState().LastVoters.TotalVotingPower())
+			css[0].GetRoundState().LastVoters.TotalStakingPower())
 	}
 
 	updateValidatorTx = kvstore.MakeValSetChangeTx(val1PubKeyABCI, 26)
-	previousTotalVotingPower = css[0].GetRoundState().LastVoters.TotalVotingPower()
+	previousTotalVotingPower = css[0].GetRoundState().LastVoters.TotalStakingPower()
 
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlockWithTx(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 
-	if css[0].GetRoundState().LastVoters.TotalVotingPower() == previousTotalVotingPower {
+	if css[0].GetRoundState().LastVoters.TotalStakingPower() == previousTotalVotingPower {
 		t.Fatalf(
 			"expected voting power to change (before: %d, after: %d)",
 			previousTotalVotingPower,
-			css[0].GetRoundState().LastVoters.TotalVotingPower())
+			css[0].GetRoundState().LastVoters.TotalStakingPower())
 	}
 }
 
@@ -464,18 +464,18 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 	updatePubKey1ABCI, err := cryptoenc.PubKeyToProto(updateValidatorPubKey1)
 	require.NoError(t, err)
 	updateValidatorTx1 := kvstore.MakeValSetChangeTx(updatePubKey1ABCI, 25)
-	previousTotalVotingPower := css[nVals].GetRoundState().LastVoters.TotalVotingPower()
+	previousTotalVotingPower := css[nVals].GetRoundState().LastVoters.TotalStakingPower()
 
 	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css, updateValidatorTx1)
 	waitForAndValidateBlockWithTx(t, nPeers, activeVals, blocksSubs, css, updateValidatorTx1)
 	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css)
 	waitForBlockWithUpdatedValsAndValidateIt(t, nPeers, activeVals, blocksSubs, css)
 
-	if css[nVals].GetRoundState().LastVoters.TotalVotingPower() == previousTotalVotingPower {
+	if css[nVals].GetRoundState().LastVoters.TotalStakingPower() == previousTotalVotingPower {
 		t.Errorf(
-			"expected staking power to change (before: %d, after: %d)",
+			"expected voting power to change (before: %d, after: %d)",
 			previousTotalVotingPower,
-			css[nVals].GetRoundState().LastVoters.TotalVotingPower())
+			css[nVals].GetRoundState().LastVoters.TotalStakingPower())
 	}
 
 	//---------------------------------------------------------------------------
