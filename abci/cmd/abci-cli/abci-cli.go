@@ -56,7 +56,7 @@ var (
 	flagPersist string
 
 	// voting power for make validator_tx
-	flagVotingPower123456 int64
+	flagVotingPower int64
 )
 
 var RootCmd = &cobra.Command{
@@ -154,7 +154,7 @@ func addKVStoreFlags() {
 }
 
 func addPersistKVStoreMakeValSetChangeTxFlags() {
-	kvstoreCmd.PersistentFlags().Int64VarP(&flagVotingPower123456, "voting_power", "p", int64(10),
+	kvstoreCmd.PersistentFlags().Int64VarP(&flagVotingPower, "voting_power", "p", int64(10),
 		"voting power for ValSetChangeTx")
 }
 
@@ -731,7 +731,7 @@ func cmdPersistKVStoreMakeValSetChangeTx(cmd *cobra.Command, args []string) erro
 	if err != nil {
 		panic(err)
 	}
-	pubStr, tx := kvstore.MakeValSetChangeTxAndMore(publicKey, flagVotingPower123456)
+	pubStr, tx := kvstore.MakeValSetChangeTxAndMore(publicKey, flagVotingPower)
 	{
 		fmt.Printf("DeliverTxSync: data=%s, tx=%s\n", pubStr, tx)
 		res, err := client.DeliverTxSync(types.RequestDeliverTx{Tx: []byte(tx)})
