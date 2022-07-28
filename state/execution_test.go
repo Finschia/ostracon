@@ -136,7 +136,7 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 	defer proxyApp.Stop() //nolint:errcheck // ignore for tests
 
 	state, stateDB, privVals := makeState(2, 12)
-	state.Validators.Validators[0].StakingPower = 10
+	state.Validators.Validators[0].VotingWeight = 10
 	stateStore := sm.NewStore(stateDB)
 
 	defaultEvidenceTime := time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -162,7 +162,7 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 	// we don't need to worry about validating the evidence as long as they pass validate basic
 	dve := types.NewMockDuplicateVoteEvidenceWithValidator(3, defaultEvidenceTime, privVal, state.ChainID)
 	dve.ValidatorPower = 1000
-	dve.StakingPower = state.Validators.Validators[0].StakingPower
+	dve.VotingWeight = state.Validators.Validators[0].VotingWeight
 	lcae := &types.LightClientAttackEvidence{
 		ConflictingBlock: &types.LightBlock{
 			SignedHeader: &types.SignedHeader{

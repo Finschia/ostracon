@@ -121,7 +121,7 @@ func (pkz privKeys) signHeaderByRate(header *types.Header, voterSet *types.Voter
 	}
 
 	// Fill in the votes we want.
-	until := int64(float64(voterSet.TotalStakingPower()) * rate)
+	until := int64(float64(voterSet.TotalVotingWeight()) * rate)
 	sum := int64(0)
 	for i := 0; i < len(pkz); i++ {
 		_, voter := voterSet.GetByAddress(pkz[i].PubKey().Address())
@@ -131,7 +131,7 @@ func (pkz privKeys) signHeaderByRate(header *types.Header, voterSet *types.Voter
 		vote := makeVote(header, voterSet, pkz[i], blockID)
 		commitSigs[vote.ValidatorIndex] = vote.CommitSig()
 
-		sum += voter.StakingPower
+		sum += voter.VotingWeight
 		if sum > until {
 			break
 		}

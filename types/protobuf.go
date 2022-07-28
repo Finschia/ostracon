@@ -65,7 +65,7 @@ func (oc2pb) Validator(val *Validator) abci.Validator {
 	return abci.Validator{
 		Address:      val.PubKey.Address(),
 		Power:        val.VotingPower,
-		StakingPower: val.StakingPower,
+		VotingWeight: val.VotingWeight,
 	}
 }
 

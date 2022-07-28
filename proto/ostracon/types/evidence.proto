@@ -19,12 +19,12 @@ message Evidence {
 message DuplicateVoteEvidence {
   ostracon.types.Vote       vote_a             = 1;
   ostracon.types.Vote       vote_b             = 2;
-  int64                     total_voting_power = 3;
-  int64                     validator_power    = 4;
+  int64                     total_voting_power = 3; // total voting weight
+  int64                     validator_power    = 4; // voting power
   google.protobuf.Timestamp timestamp          = 5 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
 
   // *** Ostracon Extended Fields ***
-  int64 staking_power = 1000;
+  int64 voting_weight = 1000;
 }
 
 // LightClientAttackEvidence contains evidence of a set of validators attempting to mislead a light client.
@@ -32,7 +32,7 @@ message LightClientAttackEvidence {
   ostracon.types.LightBlock conflicting_block            = 1;
   int64                     common_height                = 2;
   repeated ostracon.types.Validator byzantine_validators = 3;
-  int64                             total_voting_power   = 4;
+  int64                             total_voting_power   = 4; // total voting weight
   google.protobuf.Timestamp         timestamp            = 5 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
 }
 

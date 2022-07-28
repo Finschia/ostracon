@@ -24,18 +24,18 @@ const (
 	// and leaves room for defensive purposes.
 	MaxTotalVotingPower = int64(math.MaxInt64) / 8
 
-	// MaxTotalStakingPower should be same to MaxTotalVotingPower theoretically,
+	// MaxTotalVotingWeight should be same to MaxTotalVotingPower theoretically,
 	// but the value can be higher when it is type-casted as float64
 	// because of the number of valid digits of float64.
 	// This phenomenon occurs in the following computations.
 	//
 	// `winner.SetWinPoint(int64(float64(totalPriority) * winPoints[i] / totalWinPoint))` lib/rand/sampling.go
 	//
-	// MaxTotalStakingPower can be as large as MaxTotalVotingPower+alpha
+	// MaxTotalVotingWeight can be as large as MaxTotalVotingPower+alpha
 	// but I don't know the exact alpha. 1000 seems to be enough by some examination.
 	// Please refer TestMaxVotingPowerTest for this.
 	// TODO: 1000 is temporary limit, we should remove float calculation and then we can fix this limit
-	MaxTotalStakingPower = MaxTotalVotingPower + 1000
+	MaxTotalVotingWeight = MaxTotalVotingPower + 1000
 
 	// PriorityWindowSizeFactor - is a constant that when multiplied with the
 	// total voting power gives the maximum allowed distance between validator

@@ -328,7 +328,7 @@ func mustBeSameVoterSet(t *testing.T, a, b *types.VoterSet) {
 		assert.True(t, bytes.Equal(v.PubKey.Bytes(), b.Voters[i].PubKey.Bytes()),
 			"voter public key is different")
 		assert.True(t, v.VotingPower == b.Voters[i].VotingPower, "voter voting power is different")
-		assert.True(t, v.StakingPower == b.Voters[i].StakingPower, "voter staking power is different")
+		assert.True(t, v.VotingWeight == b.Voters[i].VotingWeight, "voter voting weight is different")
 	}
 }
 
@@ -338,7 +338,7 @@ func mustBeSameValidatorSet(t *testing.T, a, b *types.ValidatorSet) {
 		assert.True(t, bytes.Equal(v.PubKey.Bytes(), b.Validators[i].PubKey.Bytes()),
 			"validator public key is different")
 		assert.True(t, v.VotingPower == b.Validators[i].VotingPower, "validator voting power is different")
-		assert.True(t, v.StakingPower == b.Validators[i].StakingPower, "validator staking power is different")
+		assert.True(t, v.VotingWeight == b.Validators[i].VotingWeight, "validator voting weight is different")
 	}
 }
 
@@ -1250,42 +1250,42 @@ func TestState_MakeHashMessage(t *testing.T) {
 func TestMedianTime(t *testing.T) {
 	now := tmtime.Now()
 	cases := []struct {
-		votingPowers []int64
-		times        []time.Time
-		expectedMid  time.Time
+		votingWeights []int64
+		times         []time.Time
+		expectedMid   time.Time
 	}{
 		{
-			votingPowers: []int64{10, 10, 10, 10, 10}, // mid = 50/2 = 25
-			times:        []time.Time{now, now.Add(1), now.Add(2), now.Add(3), now.Add(4)},
-			expectedMid:  now.Add(2),
+			votingWeights: []int64{10, 10, 10, 10, 10}, // mid = 50/2 = 25
+			times:         []time.Time{now, now.Add(1), now.Add(2), now.Add(3), now.Add(4)},
+			expectedMid:   now.Add(2),
 		},
 		{
-			votingPowers: []int64{10, 20, 30, 40, 50}, // mid = 150/2 = 75
-			times:        []time.Time{now, now.Add(1), now.Add(2), now.Add(3), now.Add(4)},
-			expectedMid:  now.Add(3),
+			votingWeights: []int64{10, 20, 30, 40, 50}, // mid = 150/2 = 75
+			times:         []time.Time{now, now.Add(1), now.Add(2), now.Add(3), now.Add(4)},
+			expectedMid:   now.Add(3),
 		},
 		{
-			votingPowers: []int64{10, 20, 30, 40, 1000}, // mid = 1100/2 = 550
-			times:        []time.Time{now, now.Add(1), now.Add(2), now.Add(3), now.Add(4)},
-			expectedMid:  now.Add(4),
+			votingWeights: []int64{10, 20, 30, 40, 1000}, // mid = 1100/2 = 550
+			times:         []time.Time{now, now.Add(1), now.Add(2), now.Add(3), now.Add(4)},
+			expectedMid:   now.Add(4),
 		},
 		{
-			votingPowers: []int64{10, 2000, 2001, 2002, 2003}, // mid = 8016/2 = 4008
-			times:        []time.Time{now, now.Add(1), now.Add(2), now.Add(3), now.Add(4)},
-			expectedMid:  now.Add(2),
+			votingWeights: []int64{10, 2000, 2001, 2002, 2003}, // mid = 8016/2 = 4008
+			times:         []time.Time{now, now.Add(1), now.Add(2), now.Add(3), now.Add(4)},
+			expectedMid:   now.Add(2),
 		},
 	}
 
 	for i, tc := range cases {
 		vals := make([]*types.Validator, len(tc.times))
 		commits := make([]types.CommitSig, len(tc.times))
-		for j := range tc.votingPowers {
+		for j := range tc.votingWeights {
 			vals[j] = types.NewValidator(ed25519.GenPrivKey().PubKey(), 10)
 		}
 		voters := types.ToVoterAll(vals)
-		for j, power := range tc.votingPowers {
-			// reset voting power with a value that is not staking power
-			voters.Voters[j].StakingPower = power
+		for j, votingWeight := range tc.votingWeights {
+			// reset voting weight
+			voters.Voters[j].VotingWeight = votingWeight
 			commits[j] = types.NewCommitSigForBlock(tmrand.Bytes(10), voters.Voters[j].Address, tc.times[j])
 		}
 		commit := types.NewCommit(10, 0, types.BlockID{Hash: []byte("0xDEADBEEF")}, commits)

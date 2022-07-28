@@ -141,7 +141,7 @@ func VerifyLightClientAttack(
 	}
 
 	// Assert the correct amount of voting power of the validator set
-	if evTotal, votersTotal := e.TotalVotingPower, commonVoters.TotalStakingPower(); evTotal != votersTotal {
+	if evTotal, votersTotal := e.TotalVotingPower, commonVoters.TotalVotingWeight(); evTotal != votersTotal {
 		return fmt.Errorf("total voting power from the evidence and our voter set does not match (%d != %d)",
 			evTotal, votersTotal)
 	}
@@ -211,9 +211,9 @@ func VerifyDuplicateVote(e *types.DuplicateVoteEvidence, chainID string, voterSe
 		return fmt.Errorf("validator power from evidence and our voter set does not match (%d != %d)",
 			e.ValidatorPower, val.VotingPower)
 	}
-	if voterSet.TotalStakingPower() != e.TotalVotingPower {
+	if voterSet.TotalVotingWeight() != e.TotalVotingPower {
 		return fmt.Errorf("total voting power from the evidence and our voter set does not match (%d != %d)",
-			e.TotalVotingPower, voterSet.TotalStakingPower())
+			e.TotalVotingPower, voterSet.TotalVotingWeight())
 	}
 
 	va := e.VoteA.ToProto()
@@ -265,15 +265,15 @@ func validateABCIEvidence(
 
 		if ev.ByzantineValidators[idx].VotingPower != val.VotingPower {
 			return fmt.Errorf(
-				"evidence contained unexpected byzantine validator staking power; expected %d, got %d",
+				"evidence contained unexpected byzantine validator voting power; expected %d, got %d",
 				val.VotingPower, ev.ByzantineValidators[idx].VotingPower,
 			)
 		}
 
-		if ev.ByzantineValidators[idx].StakingPower != val.StakingPower {
+		if ev.ByzantineValidators[idx].VotingWeight != val.VotingWeight {
 			return fmt.Errorf(
-				"evidence contained unexpected byzantine validator voting power; expected %d, got %d",
-				val.StakingPower, ev.ByzantineValidators[idx].StakingPower,
+				"evidence contained unexpected byzantine validator voting weight; expected %d, got %d",
+				val.VotingWeight, ev.ByzantineValidators[idx].VotingWeight,
 			)
 		}
 	}

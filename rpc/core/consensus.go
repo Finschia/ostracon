@@ -45,7 +45,7 @@ func Validators(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *in
 		idx, voter := voters.GetByAddress(v[i].Address)
 		if idx >= 0 {
 			votersIndices = append(votersIndices, int32(i))
-			v[i] = voter // replace to preserve its StakingPower
+			v[i] = voter // replace to preserve its VotingWeight
 		}
 	}
 

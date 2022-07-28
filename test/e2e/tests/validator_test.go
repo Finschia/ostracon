@@ -57,9 +57,9 @@ func TestValidator_Sets(t *testing.T) {
 					"incorrect PubKey of validator set at height %v", h)
 				require.Equal(t, expected.VotingPower, actual.VotingPower,
 					"incorrect VotingPower of validator set at height %v", h)
-				// StakingPower is set VotingPower
-				require.Equal(t, expected.VotingPower, actual.StakingPower,
-					"incorrect StakingPower of validator set at height %v", h)
+				// VotingWeight is set VotingPower
+				require.Equal(t, expected.VotingPower, actual.VotingWeight,
+					"incorrect VotingWeight of validator set at height %v", h)
 				if expected.ProposerPriority == 0 {
 					// ProposerPriority is not changed
 					// the other value can ignore since we don't use it

@@ -8,8 +8,8 @@ import "ostracon/crypto/keys.proto";
 
 message ValidatorSet {
   repeated Validator validators = 1;
-  // Validator          proposer           = 2;   // This field has been removed in Ostracon.
-  int64 total_voting_power = 3;
+  // Validator          proposer   = 2;   // This field has been removed in Ostracon.
+  int64 total_voting_power      = 3;
 }
 
 message Validator {
@@ -19,7 +19,7 @@ message Validator {
   int64                     proposer_priority = 4;
 
   // *** Ostracon Extended Fields ***
-  int64 staking_power = 1000;
+  int64 voting_weight = 1000;
 }
 
 message SimpleValidator {

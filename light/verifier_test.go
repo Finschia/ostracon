@@ -138,7 +138,7 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 			vals,
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
-			light.ErrInvalidHeader{Reason: types.ErrNotEnoughStakingPowerSigned{Got: 50, Needed: 93}},
+			light.ErrInvalidHeader{Reason: types.ErrNotEnoughVotingWeightSigned{Got: 50, Needed: 93}},
 			"",
 		},
 		// voters does not match with what we have -> error
@@ -327,7 +327,7 @@ func TestVerifyAdjacentHeadersWithVoterSampling(t *testing.T) {
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
 			nil,
-			"invalid commit -- insufficient staking power",
+			"invalid commit -- insufficient voting weight",
 		},
 		// vals does not match with what we have -> error
 		8: {
@@ -457,7 +457,7 @@ func TestVerifyNonAdjacentHeaders(t *testing.T) {
 			vals,
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
-			light.ErrInvalidHeader{types.ErrNotEnoughStakingPowerSigned{Got: 50, Needed: 93}},
+			light.ErrInvalidHeader{types.ErrNotEnoughVotingWeightSigned{Got: 50, Needed: 93}},
 			"",
 		},
 		// 3/3 new voters signed, 2/3 old voters present -> no error
@@ -493,7 +493,7 @@ func TestVerifyNonAdjacentHeaders(t *testing.T) {
 			lessThanOneThirdVals,
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
-			light.ErrNewValSetCantBeTrusted{types.ErrNotEnoughStakingPowerSigned{Got: 20, Needed: 46}},
+			light.ErrNewValSetCantBeTrusted{types.ErrNotEnoughVotingWeightSigned{Got: 20, Needed: 46}},
 			"",
 		},
 	}

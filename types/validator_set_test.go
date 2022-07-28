@@ -34,7 +34,7 @@ func TestMaxVotingPowerTest(t *testing.T) {
 		}
 	}
 	t.Logf("max difference=%d", maxDiff)
-	assert.True(t, MaxTotalVotingPower+maxDiff <= MaxTotalStakingPower)
+	assert.True(t, MaxTotalVotingPower+maxDiff <= MaxTotalVotingWeight)
 }
 
 func TestValidatorSetBasic(t *testing.T) {
@@ -402,12 +402,12 @@ func randValidator(totalVotingPower int64) *Validator {
 
 func randValidatorSet(numValidators int) *ValidatorSet {
 	validators := make([]*Validator, numValidators)
-	totalVotingPower := int64(numValidators) // to depend for total staking power to be over MaxTotalStakingPower
+	totalVotingPower := int64(numValidators) // to depend for total voting power to be over MaxTotalVotingWeight
 	for i := 0; i < numValidators; i++ {
 		validators[i] = randValidator(totalVotingPower)
 		totalVotingPower += validators[i].VotingPower
 		if totalVotingPower >= MaxTotalVotingPower {
-			// the remainder must have 1 of staking power
+			// the remainder must have 1 of voting power
 			totalVotingPower = MaxTotalVotingPower - 1
 		}
 	}
@@ -466,8 +466,8 @@ func (vals *ValidatorSet) fromBytes(b []byte) *ValidatorSet {
 
 //-------------------------------------------------------------------
 
-func TestValidatorSetTotalStakingPowerPanicsOnOverflow(t *testing.T) {
-	// NewValidatorSet calls IncrementProposerPriority which calls TotalStakingPower()
+func TestValidatorSetTotalVotingPowerPanicsOnOverflow(t *testing.T) {
+	// NewValidatorSet calls IncrementProposerPriority which calls TotalVotingPower()
 	// which should panic on overflows:
 	shouldPanic := func() {
 		NewValidatorSet([]*Validator{
@@ -557,7 +557,7 @@ func TestAveragingInIncrementProposerPriority(t *testing.T) {
 	}
 }
 
-func TestAveragingInIncrementProposerPriorityWithStakingPower(t *testing.T) {
+func TestAveragingInIncrementProposerPriorityWithVotingPower(t *testing.T) {
 	// Other than TestAveragingInIncrementProposerPriority this is a more complete test showing
 	// how each ProposerPriority changes in relation to the validator's voting power respectively.
 	// average is zero in each round:
@@ -614,7 +614,7 @@ func TestAveragingInIncrementProposerPriorityWithStakingPower(t *testing.T) {
 			vals.Copy(),
 			[]int64{
 				0 + 4*(vp0-total) + vp0, // 4 iters was mostest
-				0 + 5*vp1 - total,       // now this val is mostest for the 1st time (hence -12==totalStakingPower)
+				0 + 5*vp1 - total,       // now this val is mostest for the 1st time (hence -12==totalVotingPower)
 				0 + 5*vp2},
 			5,
 			vals.Validators[2]},

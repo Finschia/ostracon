@@ -318,12 +318,12 @@ func TestReactorRecordsVotesAndBlockParts(t *testing.T) {
 //-------------------------------------------------------------
 // ensure we can make blocks despite cycling a validator set
 
-func TestReactorStakingPowerChange(t *testing.T) {
+func TestReactorVotingWeightChange(t *testing.T) {
 	nVals := 4
 	logger := log.TestingLogger()
 	css, cleanup := randConsensusNet(
 		nVals,
-		"consensus_voting_power_changes_test",
+		"consensus_voting_weight_changes_test",
 		newMockTickerFunc(true),
 		newPersistentKVStore)
 	defer cleanup()
@@ -345,7 +345,7 @@ func TestReactorStakingPowerChange(t *testing.T) {
 	}, css)
 
 	//---------------------------------------------------------------------------
-	logger.Debug("---------------------------- Testing changing the voting power of one validator a few times")
+	logger.Debug("---------------------------- Testing changing the voting weight of one validator a few times")
 
 	val1PubKey, err := css[0].privValidator.GetPubKey()
 	require.NoError(t, err)
@@ -353,48 +353,48 @@ func TestReactorStakingPowerChange(t *testing.T) {
 	val1PubKeyABCI, err := cryptoenc.PubKeyToProto(val1PubKey)
 	require.NoError(t, err)
 	updateValidatorTx := kvstore.MakeValSetChangeTx(val1PubKeyABCI, 25)
-	previousTotalVotingPower := css[0].GetRoundState().LastVoters.TotalStakingPower()
+	previousTotalVotingWeight := css[0].GetRoundState().LastVoters.TotalVotingWeight()
 
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlockWithTx(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 
-	if css[0].GetRoundState().LastVoters.TotalStakingPower() == previousTotalVotingPower {
+	if css[0].GetRoundState().LastVoters.TotalVotingWeight() == previousTotalVotingWeight {
 		t.Fatalf(
-			"expected voting power to change (before: %d, after: %d)",
-			previousTotalVotingPower,
-			css[0].GetRoundState().LastVoters.TotalStakingPower())
+			"expected voting weight to change (before: %d, after: %d)",
+			previousTotalVotingWeight,
+			css[0].GetRoundState().LastVoters.TotalVotingWeight())
 	}
 
 	updateValidatorTx = kvstore.MakeValSetChangeTx(val1PubKeyABCI, 2)
-	previousTotalVotingPower = css[0].GetRoundState().LastVoters.TotalStakingPower()
+	previousTotalVotingWeight = css[0].GetRoundState().LastVoters.TotalVotingWeight()
 
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlockWithTx(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 
-	if css[0].GetRoundState().LastVoters.TotalStakingPower() == previousTotalVotingPower {
+	if css[0].GetRoundState().LastVoters.TotalVotingWeight() == previousTotalVotingWeight {
 		t.Fatalf(
-			"expected voting power to change (before: %d, after: %d)",
-			previousTotalVotingPower,
-			css[0].GetRoundState().LastVoters.TotalStakingPower())
+			"expected voting weight to change (before: %d, after: %d)",
+			previousTotalVotingWeight,
+			css[0].GetRoundState().LastVoters.TotalVotingWeight())
 	}
 
 	updateValidatorTx = kvstore.MakeValSetChangeTx(val1PubKeyABCI, 26)
-	previousTotalVotingPower = css[0].GetRoundState().LastVoters.TotalStakingPower()
+	previousTotalVotingWeight = css[0].GetRoundState().LastVoters.TotalVotingWeight()
 
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlockWithTx(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 
-	if css[0].GetRoundState().LastVoters.TotalStakingPower() == previousTotalVotingPower {
+	if css[0].GetRoundState().LastVoters.TotalVotingWeight() == previousTotalVotingWeight {
 		t.Fatalf(
-			"expected voting power to change (before: %d, after: %d)",
-			previousTotalVotingPower,
-			css[0].GetRoundState().LastVoters.TotalStakingPower())
+			"expected voting weight to change (before: %d, after: %d)",
+			previousTotalVotingWeight,
+			css[0].GetRoundState().LastVoters.TotalVotingWeight())
 	}
 }
 
@@ -464,18 +464,18 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 	updatePubKey1ABCI, err := cryptoenc.PubKeyToProto(updateValidatorPubKey1)
 	require.NoError(t, err)
 	updateValidatorTx1 := kvstore.MakeValSetChangeTx(updatePubKey1ABCI, 25)
-	previousTotalVotingPower := css[nVals].GetRoundState().LastVoters.TotalStakingPower()
+	previousTotalVotingWeight := css[nVals].GetRoundState().LastVoters.TotalVotingWeight()
 
 	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css, updateValidatorTx1)
 	waitForAndValidateBlockWithTx(t, nPeers, activeVals, blocksSubs, css, updateValidatorTx1)
 	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css)
 	waitForBlockWithUpdatedValsAndValidateIt(t, nPeers, activeVals, blocksSubs, css)
 
-	if css[nVals].GetRoundState().LastVoters.TotalStakingPower() == previousTotalVotingPower {
+	if css[nVals].GetRoundState().LastVoters.TotalVotingWeight() == previousTotalVotingWeight {
 		t.Errorf(
-			"expected voting power to change (before: %d, after: %d)",
-			previousTotalVotingPower,
-			css[nVals].GetRoundState().LastVoters.TotalStakingPower())
+			"expected voting weight to change (before: %d, after: %d)",
+			previousTotalVotingWeight,
+			css[nVals].GetRoundState().LastVoters.TotalVotingWeight())
 	}
 
 	//---------------------------------------------------------------------------

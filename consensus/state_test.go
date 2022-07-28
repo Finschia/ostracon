@@ -2110,13 +2110,13 @@ func makeVssMap(vss []*validatorStub) map[string]*validatorStub {
 }
 
 func votersPrivVals(voterSet *types.VoterSet, vssMap map[string]*validatorStub) []*validatorStub {
-	totalStakingPower := voterSet.TotalStakingPower()
-	stakingPower := int64(0)
+	totalVotingWeight := voterSet.TotalVotingWeight()
+	votingWeight := int64(0)
 	voters := 0
 	for i, v := range voterSet.Voters {
 		vssMap[v.PubKey.Address().String()].Index = int32(i) // NOTE: re-indexing for new voters
-		if stakingPower < totalStakingPower*2/3+1 {
-			stakingPower += v.StakingPower
+		if votingWeight < totalVotingWeight*2/3+1 {
+			votingWeight += v.VotingWeight
 			voters++
 		}
 	}
@@ -2233,7 +2233,7 @@ func ensureVotingPowerOfVoteSet(t *testing.T, voteSet *types.VoteSet, votingPowe
 func TestStateBadVoterWithSelectedVoter(t *testing.T) {
 	// if validators are 9, then selected voters are 4+
 	// if one of 4+ voters does not vote, the consensus state does not progress to next step
-	// making him having 1/3 + 1 staking power of total
+	// making him having 1/3 + 1 voting weight of total
 	cs, vss := randStateWithVoterParams(9, &types.VoterParams{
 		VoterElectionThreshold:          5,
 		MaxTolerableByzantinePercentage: 20})
@@ -2255,9 +2255,9 @@ func TestStateBadVoterWithSelectedVoter(t *testing.T) {
 		}
 	}
 
-	// make the invalid voter having staking power of 1/3+1 of total
-	cs.Voters.Voters[nonMyIndex].StakingPower =
-		(cs.Voters.TotalStakingPower()-cs.Voters.Voters[nonMyIndex].StakingPower)/2 + 1
+	// make the invalid voter having voting weight of 1/3+1 of total
+	cs.Voters.Voters[nonMyIndex].VotingWeight =
+		(cs.Voters.TotalVotingWeight()-cs.Voters.Voters[nonMyIndex].VotingWeight)/2 + 1
 
 	voters := cs.Voters.Copy()
 
@@ -2266,7 +2266,7 @@ func TestStateBadVoterWithSelectedVoter(t *testing.T) {
 		PubKey:       notVoter.PubKey,
 		Address:      notVoter.Address,
 		VotingPower:  cs.Voters.Voters[nonMyIndex].VotingPower,
-		StakingPower: cs.Voters.Voters[nonMyIndex].StakingPower,
+		VotingWeight: cs.Voters.Voters[nonMyIndex].VotingWeight,
 	}
 
 	vss[0].Height = 1 // this is needed because of `incrementHeight(vss[1:]...)` of randStateWithVoterParams()
@@ -2298,17 +2298,17 @@ func TestStateBadVoterWithSelectedVoter(t *testing.T) {
 	signAddVotes(cs, tmproto.PrevoteType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
 		voterPrivVals...)
 
-	sumStakingPower := int64(0)
+	sumVotingWeight := int64(0)
 	for i := range voterPrivVals { // one failed
 		if i == nonMyIndex {
 			continue
 		}
 		ensurePrevote(voteCh, height, round) // wait for prevote
-		sumStakingPower += voters.Voters[i].StakingPower
+		sumVotingWeight += voters.Voters[i].VotingWeight
 	}
 
 	// ensure we didn't get a vote for Voters[nonMyIndex]
-	ensureVotingPowerOfVoteSet(t, cs.Votes.Prevotes(round), sumStakingPower)
+	ensureVotingPowerOfVoteSet(t, cs.Votes.Prevotes(round), sumVotingWeight)
 	assert.False(t, cs.Votes.Prevotes(round).HasTwoThirdsMajority())
 
 	// add remain vote
