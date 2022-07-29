@@ -46,9 +46,9 @@ func Status(ctx *rpctypes.Context) (*ctypes.ResultStatus, error) {
 
 	// Return the very last voting power, not the voting power of this validator
 	// during the last block.
-	var stakingPower int64
+	var votingPower int64
 	if val := validatorAtHeight(latestUncommittedHeight()); val != nil {
-		stakingPower = val.StakingPower
+		votingPower = val.VotingPower
 	}
 
 	result := &ctypes.ResultStatus{
@@ -65,9 +65,9 @@ func Status(ctx *rpctypes.Context) (*ctypes.ResultStatus, error) {
 			CatchingUp:          env.ConsensusReactor.WaitSync(),
 		},
 		ValidatorInfo: ctypes.ValidatorInfo{
-			Address:      env.PubKey.Address(),
-			PubKey:       env.PubKey,
-			StakingPower: stakingPower,
+			Address:     env.PubKey.Address(),
+			PubKey:      env.PubKey,
+			VotingPower: votingPower,
 		},
 	}
 

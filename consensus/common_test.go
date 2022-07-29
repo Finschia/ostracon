@@ -984,7 +984,7 @@ func genesisDoc(
 		val, privVal = createTestValidator(minPower, types.PrivKeyComposite)
 		validators[i] = types.GenesisValidator{
 			PubKey: val.PubKey,
-			Power:  val.StakingPower,
+			Power:  val.VotingPower,
 		}
 		privValidators[i] = privVal
 	}
@@ -992,7 +992,7 @@ func genesisDoc(
 		val, privVal = createTestValidator(minPower, types.PrivKeyEd25519)
 		validators[i] = types.GenesisValidator{
 			PubKey: val.PubKey,
-			Power:  val.StakingPower,
+			Power:  val.VotingPower,
 		}
 		privValidators[i] = privVal
 	}
@@ -1018,7 +1018,7 @@ func randGenesisDoc(
 		val, privVal := types.RandValidator(randPower, minPower)
 		validators[i] = types.GenesisValidator{
 			PubKey: val.PubKey,
-			Power:  val.StakingPower,
+			Power:  val.VotingPower,
 		}
 		privValidators[i] = privVal
 	}
@@ -1123,13 +1123,13 @@ func signDataIsEqual(v1 *types.Vote, v2 *tmproto.Vote) bool {
 // Validator
 func createTestValidator(minPower int64, keytype types.PrivKeyType) (*types.Validator, types.PrivValidator) {
 	privVal := types.NewMockPV(keytype)
-	stakingPower := minPower
-	stakingPower += 100
+	votingPower := minPower
+	votingPower += 100
 
 	pubKey, err := privVal.GetPubKey()
 	if err != nil {
 		panic(fmt.Errorf("could not retrieve pubkey %w", err))
 	}
-	val := types.NewValidator(pubKey, stakingPower)
+	val := types.NewValidator(pubKey, votingPower)
 	return val, privVal
 }

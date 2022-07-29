@@ -24,6 +24,7 @@ func MaxEvidenceBytes(ev Evidence) int64 {
 			(1 + MaxVoteBytes(len(ev.VoteB.Signature)) + 2) + // VoteB
 			(1 + 9) + // TotalVotingPower
 			(1 + 9) + // ValidatorPower
+			//(1 + 9) + // VotingWeight is not include
 			(1 + 17 + 1) // Timestamp
 	case *LightClientAttackEvidence:
 		// FIXME 🏺 need this?
@@ -53,9 +54,9 @@ type DuplicateVoteEvidence struct {
 	VoteB *Vote `json:"vote_b"`
 
 	// abci specific information
-	TotalVotingPower int64 // VoterSet.totalVotingPower
-	VotingPower      int64 // Validator.VotingPower
-	ValidatorPower   int64 // Validator.StakingPower
+	TotalVotingPower int64 // VoterSet.TotalVotingWeight()
+	ValidatorPower   int64 // Validator.VotingPower
+	VotingWeight     int64 // Validator.VotingWeight
 	Timestamp        time.Time
 }
 
@@ -83,9 +84,9 @@ func NewDuplicateVoteEvidence(vote1, vote2 *Vote, blockTime time.Time, voterSet 
 	return &DuplicateVoteEvidence{
 		VoteA:            voteA,
 		VoteB:            voteB,
-		TotalVotingPower: voterSet.TotalVotingPower(),
-		VotingPower:      val.VotingPower,
-		ValidatorPower:   val.StakingPower,
+		TotalVotingPower: voterSet.TotalVotingWeight(),
+		ValidatorPower:   val.VotingPower,
+		VotingWeight:     val.VotingWeight,
 		Timestamp:        blockTime,
 	}
 }
@@ -95,9 +96,9 @@ func (dve *DuplicateVoteEvidence) ABCI() []abci.Evidence {
 	return []abci.Evidence{{
 		Type: abci.EvidenceType_DUPLICATE_VOTE,
 		Validator: abci.Validator{
-			Address:     dve.VoteA.ValidatorAddress,
-			Power:       dve.ValidatorPower,
-			VotingPower: dve.VotingPower,
+			Address:      dve.VoteA.ValidatorAddress,
+			Power:        dve.ValidatorPower,
+			VotingWeight: dve.VotingWeight,
 		},
 		Height:           dve.VoteA.Height,
 		Time:             dve.Timestamp,
@@ -166,8 +167,8 @@ func (dve *DuplicateVoteEvidence) ToProto() *tmproto.DuplicateVoteEvidence {
 		VoteA:            voteA,
 		VoteB:            voteB,
 		TotalVotingPower: dve.TotalVotingPower,
-		VotingPower:      dve.VotingPower,
 		ValidatorPower:   dve.ValidatorPower,
+		VotingWeight:     dve.VotingWeight,
 		Timestamp:        dve.Timestamp,
 	}
 	return &tp
@@ -193,8 +194,8 @@ func DuplicateVoteEvidenceFromProto(pb *tmproto.DuplicateVoteEvidence) (*Duplica
 		VoteA:            vA,
 		VoteB:            vB,
 		TotalVotingPower: pb.TotalVotingPower,
-		VotingPower:      pb.VotingPower,
 		ValidatorPower:   pb.ValidatorPower,
+		VotingWeight:     pb.VotingWeight,
 		Timestamp:        pb.Timestamp,
 	}
 
@@ -214,7 +215,7 @@ type LightClientAttackEvidence struct {
 
 	// abci specific information
 	ByzantineValidators []*Validator // validators in the validator set that misbehaved in creating the conflicting block
-	TotalVotingPower    int64        // total voting power of the voter set at the common height
+	TotalVotingPower    int64        // total voting weight of the voter set at the common height
 	Timestamp           time.Time    // timestamp of the block at the common height
 }
 

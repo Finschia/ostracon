@@ -59,7 +59,7 @@ func VerifyNonAdjacent(
 	err := trustedVoters.VerifyCommitLightTrusting(trustedHeader.ChainID, untrustedHeader.Commit, trustLevel)
 	if err != nil {
 		switch e := err.(type) {
-		case types.ErrNotEnoughVotingPowerSigned:
+		case types.ErrNotEnoughVotingWeightSigned:
 			return ErrNewValSetCantBeTrusted{e}
 		default:
 			return e

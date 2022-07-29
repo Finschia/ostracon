@@ -72,7 +72,7 @@ func TestVoterSet_VerifyCommit_All(t *testing.T) {
 			NewCommit(vote.Height, vote.Round, vote.BlockID,
 				[]CommitSig{vote.CommitSig(), {BlockIDFlag: BlockIDFlagAbsent}}), true},
 
-		{"insufficient voting power: got 0, needed more than 666", chainID, vote.BlockID, vote.Height,
+		{"insufficient voting weight: got 0, needed more than 666", chainID, vote.BlockID, vote.Height,
 			NewCommit(vote.Height, vote.Round, vote.BlockID, []CommitSig{{BlockIDFlag: BlockIDFlagAbsent}}), true},
 
 		{"wrong signature (#0)", chainID, vote.BlockID, vote.Height,
@@ -128,7 +128,7 @@ func TestVoterSet_VerifyCommit_CheckAllSignatures(t *testing.T) {
 	}
 }
 
-func TestVoterSet_VerifyCommitLight_ReturnsAsSoonAsMajorityOfVotingPowerSigned(t *testing.T) {
+func TestVoterSet_VerifyCommitLight_ReturnsAsSoonAsMajorityOfVotingWeightSigned(t *testing.T) {
 	var (
 		chainID = "test_chain_id"
 		h       = int64(3)
@@ -159,7 +159,7 @@ func TestVoterSet_VerifyCommitLight_ReturnsAsSoonAsMajorityOfVotingPowerSigned(t
 	assert.NoError(t, err)
 }
 
-func TestVoterSet_VerifyCommitLightTrusting_ReturnsAsSoonAsTrustLevelOfVotingPowerSigned(t *testing.T) {
+func TestVoterSet_VerifyCommitLightTrusting_ReturnsAsSoonAsTrustLevelOfVotingWeightSigned(t *testing.T) {
 	var (
 		chainID = "test_chain_id"
 		h       = int64(3)
@@ -234,7 +234,7 @@ func TestVoterSet_VerifyCommitLightTrusting(t *testing.T) {
 func TestVoterSet_VerifyCommitLightTrustingErrorsOnOverflow(t *testing.T) {
 	var (
 		blockID                    = makeBlockIDRandom()
-		voteSet, _, voterSet, vals = randVoteSet(1, 1, tmproto.PrecommitType, 1, MaxTotalStakingPower)
+		voteSet, _, voterSet, vals = randVoteSet(1, 1, tmproto.PrecommitType, 1, MaxTotalVotingPower)
 		commit, err                = MakeCommit(blockID, 1, 1, voteSet, vals, time.Now())
 	)
 	require.NoError(t, err)
@@ -246,10 +246,10 @@ func TestVoterSet_VerifyCommitLightTrustingErrorsOnOverflow(t *testing.T) {
 	}
 }
 
-func countZeroStakingPower(vals []*Validator) int {
+func countZeroVotingPower(vals []*Validator) int {
 	count := 0
 	for _, v := range vals {
-		if v.StakingPower == 0 {
+		if v.VotingPower == 0 {
 			count++
 		}
 	}
@@ -261,8 +261,8 @@ func verifyVoterSetSame(t *testing.T, vset1, vset2 *VoterSet) {
 	for i, v1 := range vset1.Voters {
 		v2 := vset2.Voters[i]
 		assert.True(t, v1.Address.String() == v2.Address.String())
+		assert.True(t, v1.VotingWeight == v2.VotingWeight)
 		assert.True(t, v1.VotingPower == v2.VotingPower)
-		assert.True(t, v1.StakingPower == v2.StakingPower)
 	}
 }
 
@@ -272,8 +272,8 @@ func verifyVoterSetDifferent(t *testing.T, vset1, vset2 *VoterSet) {
 		for i, v1 := range vset1.Voters {
 			v2 := vset2.Voters[i]
 			if v1.Address.String() != v2.Address.String() ||
-				v1.StakingPower != v2.StakingPower ||
-				v1.VotingPower != v2.VotingPower {
+				v1.VotingPower != v2.VotingPower ||
+				v1.VotingWeight != v2.VotingWeight {
 				result = true
 				break
 			}
@@ -284,9 +284,9 @@ func verifyVoterSetDifferent(t *testing.T, vset1, vset2 *VoterSet) {
 
 func TestSelectVoter(t *testing.T) {
 	valSet := newValidatorSet(30, func(i int) int64 { return int64(rand.Int()%10000 + 100) })
-	valSet.Validators[0].StakingPower = 0
+	valSet.Validators[0].VotingPower = 0
 
-	zeroVals := countZeroStakingPower(valSet.Validators)
+	zeroVals := countZeroVotingPower(valSet.Validators)
 	genDoc := &GenesisDoc{
 		GenesisTime: tmtime.Now(),
 		ChainID:     "ostracon-test",
@@ -305,8 +305,8 @@ func TestSelectVoter(t *testing.T) {
 	voterSet3 := SelectVoter(valSet, hash, genDoc.VoterParams)
 	verifyVoterSetDifferent(t, voterSet1, voterSet3)
 
-	// verifying zero-staking removed
-	assert.True(t, countZeroStakingPower(voterSet1.Voters) == 0)
+	// verifying zero-VotingPower removed
+	assert.True(t, countZeroVotingPower(voterSet1.Voters) == 0)
 
 	// case that all validators are voters
 	voterSet := SelectVoter(valSet, hash, &VoterParams{30, 1})
@@ -317,7 +317,7 @@ func TestSelectVoter(t *testing.T) {
 
 func zeroIncluded(valSet *ValidatorSet) bool {
 	for _, v := range valSet.Validators {
-		if v.StakingPower == 0 {
+		if v.VotingPower == 0 {
 			return true
 		}
 	}
@@ -335,7 +335,7 @@ func areSame(a *ValidatorSet, b *VoterSet) bool {
 		if v.Address.String() != b.Voters[i].Address.String() {
 			return false
 		}
-		if v.StakingPower != b.Voters[i].StakingPower {
+		if v.VotingPower != b.Voters[i].VotingPower {
 			return false
 		}
 	}
@@ -345,17 +345,17 @@ func areSame(a *ValidatorSet, b *VoterSet) bool {
 func TestToVoterAll(t *testing.T) {
 	valSet := randValidatorSet(30)
 	vals := valSet.Validators
-	vals[0].StakingPower = 0
-	vals[5].StakingPower = 0
-	vals[28].StakingPower = 0
+	vals[0].VotingPower = 0
+	vals[5].VotingPower = 0
+	vals[28].VotingPower = 0
 	zeroRemovedVoters := ToVoterAll(vals)
 	assert.True(t, zeroRemovedVoters.Size() == 27)
 
 	valSet = randValidatorSet(3)
 	vals = valSet.Validators
-	vals[0].StakingPower = 0
-	vals[1].StakingPower = 0
-	vals[2].StakingPower = 0
+	vals[0].VotingPower = 0
+	vals[1].VotingPower = 0
+	vals[2].VotingPower = 0
 	zeroRemovedVoters = ToVoterAll(vals)
 	assert.True(t, zeroRemovedVoters.Size() == 0)
 
@@ -372,7 +372,7 @@ func TestToVoterAll(t *testing.T) {
 func toGenesisValidators(vals []*Validator) []GenesisValidator {
 	genVals := make([]GenesisValidator, len(vals))
 	for i, val := range vals {
-		genVals[i] = GenesisValidator{Address: val.Address, PubKey: val.PubKey, Power: val.StakingPower, Name: "name"}
+		genVals[i] = GenesisValidator{Address: val.Address, PubKey: val.PubKey, Power: val.VotingPower, Name: "name"}
 	}
 	return genVals
 }
@@ -393,19 +393,19 @@ The result when we set LoopCount to 10000
   << min power=100, max power=100000000, actual average voters=29, max voters=29 >> largest gap: 0.147867
 
 for testing:
-go test -bench BenchmarkSelectVoterReasonableStakingPower github.com/line/ostracon/types -run ^$ -count 1 -benchmem -v
+go test -bench BenchmarkSelectVoterReasonableVotingPower github.com/line/ostracon/types -run ^$ -count 1 -benchmem -v
 */
-func BenchmarkSelectVoterReasonableStakingPower(b *testing.B) {
+func BenchmarkSelectVoterReasonableVotingPower(b *testing.B) {
 	// Raise LoopCount to get smaller gap over 10000. But large LoopCount takes a lot of time
 	const LoopCount = 100
 	for minMaxRate := 1; minMaxRate <= 1000000; minMaxRate *= 100 {
-		findLargestStakingPowerGap(b, LoopCount, minMaxRate, 10)
-		findLargestStakingPowerGap(b, LoopCount, minMaxRate, 20)
-		findLargestStakingPowerGap(b, LoopCount, minMaxRate, 29)
+		findLargestVotingPowerGap(b, LoopCount, minMaxRate, 10)
+		findLargestVotingPowerGap(b, LoopCount, minMaxRate, 20)
+		findLargestVotingPowerGap(b, LoopCount, minMaxRate, 29)
 	}
 }
 
-func findLargestStakingPowerGap(b *testing.B, loopCount int, minMaxRate int, maxVoters int) {
+func findLargestVotingPowerGap(b *testing.B, loopCount int, minMaxRate int, maxVoters int) {
 	valSet, privMap := randValidatorSetWithMinMax(PrivKeyEd25519, 30, 100, 100*int64(minMaxRate))
 	genDoc := &GenesisDoc{
 		GenesisTime: tmtime.Now(),
@@ -419,7 +419,7 @@ func findLargestStakingPowerGap(b *testing.B, loopCount int, minMaxRate int, max
 	for i := 0; i < loopCount; i++ {
 		voterSet := SelectVoter(valSet, hash, genDoc.VoterParams)
 		for _, voter := range voterSet.Voters {
-			accumulation[voter.Address.String()] += voter.StakingPower
+			accumulation[voter.Address.String()] += voter.VotingPower
 		}
 		proposer := valSet.SelectProposer(hash, int64(i), 0)
 		message := MakeRoundHash(hash, int64(i), 0)
@@ -431,8 +431,8 @@ func findLargestStakingPowerGap(b *testing.B, loopCount int, minMaxRate int, max
 	largestGap := float64(0)
 	for _, val := range valSet.Validators {
 		acc := accumulation[val.Address.String()] / int64(loopCount)
-		if math.Abs(float64(val.StakingPower-acc))/float64(val.StakingPower) > largestGap {
-			largestGap = math.Abs(float64(val.StakingPower-acc)) / float64(val.StakingPower)
+		if math.Abs(float64(val.VotingPower-acc))/float64(val.VotingPower) > largestGap {
+			largestGap = math.Abs(float64(val.VotingPower-acc)) / float64(val.VotingPower)
 		}
 	}
 	b.Logf("<< min power=100, max power=%d, actual average voters=%d, max voters=%d >> largest gap: %f",
@@ -502,7 +502,7 @@ func TestVoterSetProtoBuf(t *testing.T) {
 	}
 }
 
-func testVotingPower(t *testing.T, valSet *ValidatorSet) {
+func testVotingWeight(t *testing.T, valSet *ValidatorSet) {
 	voterParams := &VoterParams{
 		VoterElectionThreshold:          100,
 		MaxTolerableByzantinePercentage: 20,
@@ -510,7 +510,7 @@ func testVotingPower(t *testing.T, valSet *ValidatorSet) {
 
 	voterSetNoSampling := SelectVoter(valSet, []byte{0}, voterParams)
 	for _, v := range voterSetNoSampling.Voters {
-		assert.True(t, v.StakingPower == v.VotingPower)
+		assert.True(t, v.VotingPower == v.VotingWeight)
 	}
 
 	for i := 90; i > 50; i-- {
@@ -518,53 +518,50 @@ func testVotingPower(t *testing.T, valSet *ValidatorSet) {
 		voterSetSampling := SelectVoter(valSet, []byte{0}, voterParams)
 		allSame := true
 		for _, v := range voterSetSampling.Voters {
-			if v.StakingPower != v.VotingPower {
+			if v.VotingPower != v.VotingWeight {
 				allSame = false
 				break
 			}
 		}
 		assert.False(t, allSame)
-		assert.True(t, valSet.TotalStakingPower() > voterSetSampling.TotalVotingPower())
-		// total voting power can not be less than total staking power - precisionForSelection(1000)
-
-		//TODO: make test code for new voting power
-		// assert.True(t, valSet.TotalStakingPower()-voterSetSampling.TotalVotingPower() <= 1000)
+		assert.True(t, valSet.TotalVotingPower() > voterSetSampling.TotalVotingWeight())
+		assert.True(t, valSet.TotalVotingPower()-voterSetSampling.TotalVotingWeight() <= precisionForSelection)
 	}
 }
 
-func TestVotingPower(t *testing.T) {
+func TestVotingWeight(t *testing.T) {
 	vals := make([]*Validator, 100)
 	for i := 0; i < len(vals); i++ {
 		vals[i] = newValidator(rand.Bytes(32), 100)
 	}
-	testVotingPower(t, NewValidatorSet(vals))
+	testVotingWeight(t, NewValidatorSet(vals))
 	vals2 := make([]*Validator, 100)
 	for i := 0; i < len(vals2); i++ {
-		vals2[i] = newValidator(rand.Bytes(32), MaxTotalStakingPower/100)
+		vals2[i] = newValidator(rand.Bytes(32), MaxTotalVotingPower/100)
 	}
-	testVotingPower(t, NewValidatorSet(vals2))
+	testVotingWeight(t, NewValidatorSet(vals2))
 }
 
 func resetPoints(validators *ValidatorSet) {
 	for _, v := range validators.Validators {
-		v.VotingPower = 0
+		v.VotingWeight = 0
 	}
 }
 
 func isByzantineTolerable(validators []*Validator, tolerableByzantinePercentage int) bool {
-	totalStakingPower := int64(0)
 	totalVotingPower := int64(0)
+	totalVotingWeight := int64(0)
 	for _, v := range validators {
-		totalStakingPower += v.StakingPower
 		totalVotingPower += v.VotingPower
+		totalVotingWeight += v.VotingWeight
 	}
 	voters := make([]*voter, len(validators))
 	for i, v := range validators {
 		voters[i] = &voter{val: v}
 	}
-	tolerableByzantinePower := getTolerableByzantinePower(totalStakingPower, tolerableByzantinePercentage)
-	topFVotersVotingPower := getTopByzantineVotingPower(voters, tolerableByzantinePower)
-	return topFVotersVotingPower < totalVotingPower/3
+	tolerableByzantinePower := getTolerableByzantinePower(totalVotingPower, tolerableByzantinePercentage)
+	topFVotersVotingWeight := getTopByzantineVotingWeight(voters, tolerableByzantinePower)
+	return topFVotersVotingWeight < totalVotingWeight/3
 }
 
 func pickRandomVoter(voters []*Validator) (target *Validator, remain []*Validator) {
@@ -592,29 +589,29 @@ func TestElectVotersNonDupByzantineTolerable(t *testing.T) {
 	// this test has no mean if all validators are elected as voters.
 	// So limit the maximum to 15% not to elect all validators as voters
 	tolerableByzantinePercentage := int(rand.Uint() % 15)
-	tolerableByzantinePower := getTolerableByzantinePower(validatorSet.TotalStakingPower(), tolerableByzantinePercentage)
+	tolerableByzantinePower := getTolerableByzantinePower(validatorSet.TotalVotingPower(), tolerableByzantinePercentage)
 	voters := electVotersNonDup(validatorSet.Validators, rand.Uint64(), tolerableByzantinePercentage, int(rand.Uint()%100))
-	totalVoting := int64(0)
+	totalVotingWeight := int64(0)
 	for _, v := range voters {
-		totalVoting += v.VotingPower
+		totalVotingWeight += v.VotingWeight
 	}
 	for i := 0; i < 100; i++ {
 		copied := copyValidatorListShallow(voters)
-		sumStaking := int64(0)
-		sumVoting := int64(0)
+		sumVotingPower := int64(0)
+		sumVotingWeight := int64(0)
 		for {
 			var one *Validator
 			one, copied = pickRandomVoter(copied)
 			if one == nil {
 				break
 			}
-			sumStaking += one.StakingPower
-			sumVoting += one.VotingPower
-			if sumStaking >= tolerableByzantinePower {
+			sumVotingPower += one.VotingPower
+			sumVotingWeight += one.VotingWeight
+			if sumVotingPower >= tolerableByzantinePower {
 				break
 			}
 		}
-		assert.True(t, sumVoting < totalVoting/3)
+		assert.True(t, sumVotingWeight < totalVotingWeight/3)
 	}
 }
 
@@ -679,13 +676,14 @@ func TestElectVotersNonDupVoterCountHardCode(t *testing.T) {
 		assert.True(t, len(voters) == expected3[j-1])
 	}
 
-	staking := []int64{150000, 80000, 70000, 60000, 50000, 40000, 30000, 20000, 10000, 10000, 10000, 10000, 10000,
+	votingPowerFunc := []int64{
+		150000, 80000, 70000, 60000, 50000, 40000, 30000, 20000, 10000, 10000, 10000, 10000, 10000,
 		10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 5000,
 		5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000,
 		5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000,
 		5000, 5000, 5000, 4200, 4200, 4000, 3800, 3500, 3500, 3500, 3500, 3500, 3500, 3500, 3500, 3500, 3500, 3500,
 		3500, 3500, 3500, 3500, 3500, 3500, 3500, 3500, 3500, 3200, 3200, 3200, 3200, 400, 300, 200, 100}
-	validatorSet = newValidatorSet(100, func(i int) int64 { return staking[i] })
+	validatorSet = newValidatorSet(100, func(i int) int64 { return votingPowerFunc[i] })
 	expected4 := []int{9, 13, 17, 21, 26, 29, 34, 37, 40, 44, 46, 51, 55, 58, 61, 64, 70, 72, 76, 82, 87,
 		100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100}
 	for j := 1; j <= 33; j++ {
@@ -693,7 +691,8 @@ func TestElectVotersNonDupVoterCountHardCode(t *testing.T) {
 		assert.True(t, len(voters) == expected4[j-1])
 	}
 
-	cosmosStaking := []int64{1234042, 31110, 246201, 1831691, 1523490, 107361, 1236356, 161896, 19927, 938209, 3272742,
+	votingPowerFuncCosmos := []int64{
+		1234042, 31110, 246201, 1831691, 1523490, 107361, 1236356, 161896, 19927, 938209, 3272742,
 		100307, 12304849, 94597, 31575, 324626, 133737, 4312343, 2194691, 6972384, 692945, 1286209, 4798646, 1570259,
 		5898004, 386084, 429788, 178651, 3665192, 2552662, 532779, 445203, 109041, 5194266, 1093331, 35002, 1090943,
 		1134566, 10149041, 897491, 458723, 1382301, 112657, 661520, 181534, 4734863, 385250, 2680449, 298927, 110777,
@@ -703,7 +702,7 @@ func TestElectVotersNonDupVoterCountHardCode(t *testing.T) {
 		26882, 586028, 542899, 594937, 517893, 487137, 5962613, 781432, 20063, 763681, 665929, 194212, 439620, 3295816,
 		3738661, 520012, 185377, 520152, 801032, 162559, 785938, 250053, 608602, 245002, 300770, 117118, 595488, 111634,
 		1753346, 345997, 25211, 68514, 1004207, 11955082, 525223, 276736}
-	validatorSet = newValidatorSet(len(cosmosStaking), func(i int) int64 { return cosmosStaking[i] })
+	validatorSet = newValidatorSet(len(votingPowerFuncCosmos), func(i int) int64 { return votingPowerFuncCosmos[i] })
 	expected5 := []int{9, 14, 19, 23, 26, 31, 34, 38, 41, 43, 45, 48, 54, 55, 60, 61, 66, 73, 78, 78, 82, 90,
 		125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125}
 	for j := 1; j <= 33; j++ {
@@ -736,7 +735,7 @@ func TestElectVotersNonDupSamplingThreshold(t *testing.T) {
 func TestElectVotersNonDupDownscale(t *testing.T) {
 	candidates := newValidatorSet(10, func(i int) int64 {
 		if i == 0 {
-			return MaxTotalStakingPower >> 1
+			return MaxTotalVotingWeight >> 1
 		}
 		if i == 1 {
 			return 1 << 55
@@ -765,7 +764,7 @@ func TestElectVotersNonDupDeterministic(t *testing.T) {
 	}
 }
 
-func TestElectVotersNonDupIncludingZeroStakingPower(t *testing.T) {
+func TestElectVotersNonDupIncludingZeroVotingWeight(t *testing.T) {
 	// first candidate's priority is 0
 	candidates1 := newValidatorSet(100, func(i int) int64 { return int64(i) })
 	winners1 := electVotersNonDup(candidates1.Validators, 0, 20, 0)
@@ -784,8 +783,8 @@ func TestElectVotersNonDupIncludingZeroStakingPower(t *testing.T) {
 
 func TestElectVotersNonDupOverflow(t *testing.T) {
 	number := 98
-	candidates := newValidatorSet(number, func(i int) int64 { return MaxTotalStakingPower / int64(number+2) })
-	totalPriority := candidates.totalStakingPower
+	candidates := newValidatorSet(number, func(i int) int64 { return MaxTotalVotingPower / int64(number+2) })
+	totalPriority := candidates.totalVotingPower
 	assert.True(t, totalPriority < math.MaxInt64)
 	winners := electVotersNonDup(candidates.Validators, rand.Uint64(), 20, 0)
 	assert.True(t, isByzantineTolerable(winners, 20))
@@ -794,8 +793,8 @@ func TestElectVotersNonDupOverflow(t *testing.T) {
 func accumulateAndResetReward(voters []*Validator, acc map[string]int64) int64 {
 	total := int64(0)
 	for _, v := range voters {
-		acc[v.Address.String()] += v.VotingPower
-		total += v.VotingPower
+		acc[v.Address.String()] += v.VotingWeight
+		total += v.VotingWeight
 	}
 	return total
 }
@@ -818,8 +817,8 @@ func TestElectVotersNonDupReward(t *testing.T) {
 
 /**
 conditions for fair reward
-1. even staking power(less difference between min staking and max staking)
-2. large total staking(a small total staking power makes a large error when converting float into int)
+1. flat voting weight(less difference between min voting weight and max voting weight)
+2. large total voting weight(a small total voting weight makes a large error when converting float into int)
 3. many sampling count
 4. loop count
 
@@ -831,9 +830,9 @@ func BenchmarkElectVotersNonDupEquity(b *testing.B) {
 
 	// good condition
 	candidates := newValidatorSet(100, func(i int) int64 { return 1000000 + rand.Int64()&0xFFFFF })
-	totalStaking := int64(0)
+	totalVoting := int64(0)
 	for _, c := range candidates.Validators {
-		totalStaking += c.StakingPower
+		totalVoting += c.VotingPower
 	}
 
 	accumulatedRewards := make(map[string]int64, 100)
@@ -845,15 +844,15 @@ func BenchmarkElectVotersNonDupEquity(b *testing.B) {
 	for i := 0; i < 99; i++ {
 		rewardRate := float64(accumulatedRewards[candidates.Validators[i].Address.String()]) /
 			float64(totalAccumulateRewards)
-		stakingRate := float64(candidates.Validators[i].StakingPower) / float64(totalStaking)
-		rate := rewardRate / stakingRate
-		rewardPerStakingDiff := math.Abs(1 - rate)
-		b.Log("rewardPerStakingDiff", rewardPerStakingDiff)
+		votingRate := float64(candidates.Validators[i].VotingPower) / float64(totalVoting)
+		rate := rewardRate / votingRate
+		rewardPerVotingPowerDiff := math.Abs(1 - rate)
+		b.Log("rewardPerVotingPowerDiff", rewardPerVotingPowerDiff)
 		//
-		// rewardPerStakingDiff: guarantees the fairness of rewards
-		// if false, then we should consider `rewardPerStakingDiff` value
+		// rewardPerVotingPowerDiff: guarantees the fairness of rewards
+		// if false, then we should consider `rewardPerVotingPowerDiff` value
 		//
-		assert.True(b, rewardPerStakingDiff < 0.02)
+		assert.True(b, rewardPerVotingPowerDiff < 0.02)
 	}
 
 	// =======================================================================================================
@@ -867,16 +866,16 @@ func BenchmarkElectVotersNonDupEquity(b *testing.B) {
 		winners := electVotersNonDup(candidates.Validators, uint64(i), 20, 0)
 		accumulateAndResetReward(winners, accumulatedRewards)
 	}
-	maxRewardPerStakingDiff := float64(0)
+	maxRewardPerVotingPowerDiff := float64(0)
 	for i := 0; i < 99; i++ {
-		rewardPerStakingDiff :=
+		rewardPerVotingPowerDiff :=
 			math.Abs(float64(accumulatedRewards[candidates.Validators[i].Address.String()])/
-				float64(candidates.Validators[i].StakingPower)/float64(loopCount) - 1)
-		if maxRewardPerStakingDiff < rewardPerStakingDiff {
-			maxRewardPerStakingDiff = rewardPerStakingDiff
+				float64(candidates.Validators[i].VotingPower)/float64(loopCount) - 1)
+		if maxRewardPerVotingPowerDiff < rewardPerVotingPowerDiff {
+			maxRewardPerVotingPowerDiff = rewardPerVotingPowerDiff
 		}
 	}
-	b.Logf("[! condition 1] max reward per staking difference: %f", maxRewardPerStakingDiff)
+	b.Logf("[! condition 1] max reward per voting power difference: %f", maxRewardPerVotingPowerDiff)
 
 	// violation of condition 2
 	candidates = newValidatorSet(100, func(i int) int64 { return rand.Int64() & 0xFFFFF })
@@ -885,16 +884,16 @@ func BenchmarkElectVotersNonDupEquity(b *testing.B) {
 		winners := electVotersNonDup(candidates.Validators, uint64(i), 20, 0)
 		accumulateAndResetReward(winners, accumulatedRewards)
 	}
-	maxRewardPerStakingDiff = float64(0)
+	maxRewardPerVotingPowerDiff = float64(0)
 	for i := 0; i < 99; i++ {
-		rewardPerStakingDiff :=
+		rewardPerVotingPowerDiff :=
 			math.Abs(float64(accumulatedRewards[candidates.Validators[i].Address.String()])/
-				float64(candidates.Validators[i].StakingPower)/float64(loopCount) - 1)
-		if maxRewardPerStakingDiff < rewardPerStakingDiff {
-			maxRewardPerStakingDiff = rewardPerStakingDiff
+				float64(candidates.Validators[i].VotingPower)/float64(loopCount) - 1)
+		if maxRewardPerVotingPowerDiff < rewardPerVotingPowerDiff {
+			maxRewardPerVotingPowerDiff = rewardPerVotingPowerDiff
 		}
 	}
-	b.Logf("[! condition 2] max reward per staking difference: %f", maxRewardPerStakingDiff)
+	b.Logf("[! condition 2] max reward per voting power difference: %f", maxRewardPerVotingPowerDiff)
 
 	// violation of condition 3
 	candidates = newValidatorSet(100, func(i int) int64 { return 1000000 + rand.Int64()&0xFFFFF })
@@ -903,16 +902,16 @@ func BenchmarkElectVotersNonDupEquity(b *testing.B) {
 		winners := electVotersNonDup(candidates.Validators, uint64(i), 20, 0)
 		accumulateAndResetReward(winners, accumulatedRewards)
 	}
-	maxRewardPerStakingDiff = float64(0)
+	maxRewardPerVotingPowerDiff = float64(0)
 	for i := 0; i < 99; i++ {
-		rewardPerStakingDiff :=
+		rewardPerVotingPowerDiff :=
 			math.Abs(float64(accumulatedRewards[candidates.Validators[i].Address.String()])/
-				float64(candidates.Validators[i].StakingPower)/float64(loopCount) - 1)
-		if maxRewardPerStakingDiff < rewardPerStakingDiff {
-			maxRewardPerStakingDiff = rewardPerStakingDiff
+				float64(candidates.Validators[i].VotingPower)/float64(loopCount) - 1)
+		if maxRewardPerVotingPowerDiff < rewardPerVotingPowerDiff {
+			maxRewardPerVotingPowerDiff = rewardPerVotingPowerDiff
 		}
 	}
-	b.Logf("[! condition 3] max reward per staking difference: %f", maxRewardPerStakingDiff)
+	b.Logf("[! condition 3] max reward per voting power difference: %f", maxRewardPerVotingPowerDiff)
 
 	// violation of condition 4
 	loopCount = 100
@@ -922,34 +921,34 @@ func BenchmarkElectVotersNonDupEquity(b *testing.B) {
 		winners := electVotersNonDup(candidates.Validators, uint64(i), 33, 0)
 		accumulateAndResetReward(winners, accumulatedRewards)
 	}
-	maxRewardPerStakingDiff = float64(0)
+	maxRewardPerVotingPowerDiff = float64(0)
 	for i := 0; i < 99; i++ {
-		rewardPerStakingDiff :=
+		rewardPerVotingPowerDiff :=
 			math.Abs(float64(accumulatedRewards[candidates.Validators[i].Address.String()])/
-				float64(candidates.Validators[i].StakingPower)/float64(loopCount) - 1)
-		if maxRewardPerStakingDiff < rewardPerStakingDiff {
-			maxRewardPerStakingDiff = rewardPerStakingDiff
+				float64(candidates.Validators[i].VotingPower)/float64(loopCount) - 1)
+		if maxRewardPerVotingPowerDiff < rewardPerVotingPowerDiff {
+			maxRewardPerVotingPowerDiff = rewardPerVotingPowerDiff
 		}
 	}
-	b.Logf("[! condition 4] max reward per staking difference: %f", maxRewardPerStakingDiff)
+	b.Logf("[! condition 4] max reward per voting power difference: %f", maxRewardPerVotingPowerDiff)
 }
 
 func newValidatorSet(length int, prio func(int) int64) *ValidatorSet {
 	validators := make([]*Validator, length)
-	totalStakingPower := int64(0)
+	totalVotingPower := int64(0)
 	for i := 0; i < length; i++ {
-		stakingPower := prio(i)
+		votingPower := prio(i)
 		validators[i] = &Validator{
 			Address:      crypto.AddressHash([]byte(strconv.Itoa(i))),
-			StakingPower: stakingPower,
-			VotingPower:  0,
+			VotingPower:  votingPower,
+			VotingWeight: 0,
 		}
-		totalStakingPower += stakingPower
+		totalVotingPower += votingPower
 	}
 
 	return &ValidatorSet{
-		Validators:        validators,
-		totalStakingPower: totalStakingPower,
+		Validators:       validators,
+		totalVotingPower: totalVotingPower,
 	}
 }
 
@@ -967,10 +966,10 @@ func sameVoters(c1 []*Validator, c2 []*Validator) bool {
 		if bytes.Compare(c1[i].Address.Bytes(), c2[i].Address.Bytes()) == 1 {
 			return false
 		}
-		if c1[i].StakingPower != c2[i].StakingPower {
+		if c1[i].VotingPower != c2[i].VotingPower {
 			return false
 		}
-		if c1[i].VotingPower != c2[i].VotingPower {
+		if c1[i].VotingWeight != c2[i].VotingWeight {
 			return false
 		}
 	}
@@ -998,7 +997,7 @@ func BenchmarkElectVotersNonDup(b *testing.B) {
 
 		if !isByzantineTolerable(winners, 30) {
 			for i, v := range winners {
-				fmt.Printf("%d: voting power: %d, staking power: %d\n", i, v.VotingPower, v.StakingPower)
+				fmt.Printf("%d: voting weight: %d, voting power: %d\n", i, v.VotingWeight, v.VotingPower)
 			}
 			break
 		}
@@ -1006,9 +1005,9 @@ func BenchmarkElectVotersNonDup(b *testing.B) {
 	}
 }
 
-func TestElectVotersNonDupStaticVotingPower(t *testing.T) {
+func TestElectVotersNonDupStaticVotingWeight(t *testing.T) {
 	candidates := newValidatorSet(5, func(i int) int64 { return 10 })
-	expectedVotingPower := []int64{
+	expectedVotingWeight := []int64{
 		13,
 		11,
 		10,
@@ -1021,7 +1020,7 @@ func TestElectVotersNonDupStaticVotingPower(t *testing.T) {
 	assert.True(t, isByzantineTolerable(voters, byzantinePercent))
 
 	for i, voter := range voters {
-		assert.True(t, expectedVotingPower[i] == voter.VotingPower)
+		assert.True(t, expectedVotingWeight[i] == voter.VotingWeight)
 	}
 
 }
@@ -1030,7 +1029,7 @@ func TestElectVoter(t *testing.T) {
 	validators := newValidatorSet(10, func(i int) int64 { return int64(i + 1) })
 	total := int64(0)
 	for _, val := range validators.Validators {
-		total += val.StakingPower
+		total += val.VotingPower
 	}
 	seed := uint64(0)
 
@@ -1039,7 +1038,7 @@ func TestElectVoter(t *testing.T) {
 	// if fail to voting, panic
 	for i := range validators.Validators {
 		idx, winner := electVoter(&seed, candidates, i, total)
-		total -= winner.StakingPower
+		total -= winner.VotingPower
 		moveWinnerToLast(candidates, idx)
 	}
 }
@@ -1076,7 +1075,7 @@ func TestElectVotersNonDupValidatorsNotSorting(t *testing.T) {
 	assert.True(t, sameVoters(winners, shuffledWinners))
 }
 
-func TestElectVotersNonDupVotingPower(t *testing.T) {
+func TestElectVotersNonDupVotingWeight(t *testing.T) {
 	validators := newValidatorSet(100, func(i int) int64 {
 		return 1000
 	})
@@ -1088,7 +1087,7 @@ func TestElectVotersNonDupVotingPower(t *testing.T) {
 	totalWinPoint := new(big.Int)
 	for n := 0; n < len(winners); n++ {
 		for i := range winPoints {
-			winPoint := big.NewInt(validators.totalStakingPower - total + 1000)
+			winPoint := big.NewInt(validators.totalVotingPower - total + 1000)
 			winPoint.Div(big.NewInt(1000*precisionForSelection), winPoint)
 			totalWinPoint.Add(totalWinPoint, winPoint)
 			winPoints[i] = new(big.Int).Add(winPoints[i], winPoint)
@@ -1100,16 +1099,16 @@ func TestElectVotersNonDupVotingPower(t *testing.T) {
 
 	for i, w := range winners {
 		winPoint := new(big.Int).Mul(winPoints[i], big.NewInt(precisionForSelection))
-		votingPower := new(big.Int).Mul(winPoint, big.NewInt(validators.totalStakingPower))
+		votingPower := new(big.Int).Mul(winPoint, big.NewInt(validators.totalVotingPower))
 		votingPower.Div(votingPower, totalWinPoint)
 		votingPower.Div(votingPower, big.NewInt(precisionCorrectionForSelection))
 
-		assert.True(t, w.VotingPower == votingPower.Int64())
+		assert.True(t, w.VotingWeight == votingPower.Int64())
 	}
 }
 
 func TestElectVotersNonDupWithOverflow(t *testing.T) {
-	expectedPanic := "Total staking power should be guarded to not exceed"
+	expectedPanic := "Total voting power should be guarded to not exceed"
 	validators := newValidatorSet(101, func(i int) int64 {
 		return math.MaxInt64 / 100
 	})
@@ -1122,8 +1121,8 @@ func TestElectVotersNonDupWithOverflow(t *testing.T) {
 			t.Fatal("panic expected, but doesn't panic")
 		}
 	}()
-	validators.updateTotalStakingPower() // it will be panic
-	// electVotersNonDup does not call updateTotalStakingPower() any more
+	validators.updateTotalVotingPower() // it will be panic
+	// electVotersNonDup does not call updateTotalVotingWeight() any more
 	electVotersNonDup(validators.Validators, 0, 30, 0)
 }
 
@@ -1156,7 +1155,7 @@ func TestElectVoterPanic(t *testing.T) {
 	validators := newValidatorSet(10, func(i int) int64 { return int64(i + 1) })
 	total := int64(0)
 	for _, val := range validators.Validators {
-		total += val.StakingPower
+		total += val.VotingPower
 	}
 	seed := uint64(0)
 
@@ -1175,23 +1174,23 @@ func TestElectVoterPanic(t *testing.T) {
 	}()
 	for i := 0; i < 11; i++ {
 		idx, winner := electVoter(&seed, candidates, i, total)
-		total -= winner.StakingPower
+		total -= winner.VotingPower
 		moveWinnerToLast(candidates, idx)
 	}
 }
 
-func newVotersWithRandomVotingPowerDescending(seed, max, numerator, stakingPower int64) []*voter {
+func newVotersWithRandomVotingWeightDescending(seed, max, numerator, votingPower int64) []*voter {
 	voters := make([]*voter, 0)
 
 	// random voters descending
 	random := int64(0)
 	rand.Seed(seed)
-	for votingPower := max; votingPower > 0; votingPower -= random {
+	for votingWeight := max; votingWeight > 0; votingWeight -= random {
 		random = rand.Int63n(max/numerator) + 1
 		voters = append(voters, &voter{
 			val: &Validator{
-				StakingPower: stakingPower,
 				VotingPower:  votingPower,
+				VotingWeight: votingWeight,
 			},
 		})
 	}
@@ -1202,7 +1201,7 @@ func TestSortVoters(t *testing.T) {
 	for n := int64(0); n < 100; n++ {
 
 		// random voters descending
-		voters := newVotersWithRandomVotingPowerDescending(n, 100000, 100, 10)
+		voters := newVotersWithRandomVotingWeightDescending(n, 100000, 100, 10)
 
 		// shuffle the voters
 		shuffled := make([]*voter, len(voters))
@@ -1214,9 +1213,9 @@ func TestSortVoters(t *testing.T) {
 
 		sortVoters(shuffled)
 		for i := range shuffled {
-			assert.True(t, shuffled[i].val.VotingPower == voters[i].val.VotingPower)
+			assert.True(t, shuffled[i].val.VotingWeight == voters[i].val.VotingWeight)
 			if i > 0 {
-				assert.True(t, shuffled[i-1].val.VotingPower >= voters[i].val.VotingPower)
+				assert.True(t, shuffled[i-1].val.VotingWeight >= voters[i].val.VotingWeight)
 			}
 		}
 	}
@@ -1231,19 +1230,19 @@ func TestSortVotersWithSameValue(t *testing.T) {
 		random := int64(0)
 		rand.Seed(int64(n))
 		n := 0
-		for votingPower := int64(100000); votingPower > 0; votingPower -= random {
+		for votingWeight := int64(100000); votingWeight > 0; votingWeight -= random {
 			random = rand.Int63n(100000/100) + 1
 			voters = append(voters, &voter{
 				val: &Validator{
-					StakingPower: 10,
-					VotingPower:  votingPower,
+					VotingPower:  10,
+					VotingWeight: votingWeight,
 					Address:      []byte(strconv.Itoa(n)),
 				},
 			})
 			voters = append(voters, &voter{
 				val: &Validator{
-					StakingPower: 10,
-					VotingPower:  votingPower,
+					VotingPower:  10,
+					VotingWeight: votingWeight,
 					Address:      []byte(strconv.Itoa(n + 1)),
 				},
 			})
@@ -1263,7 +1262,7 @@ func TestSortVotersWithSameValue(t *testing.T) {
 			a := shuffled[i].val
 			b := voters[i].val
 			assert.True(t, bytes.Equal(a.Address, b.Address))
-			assert.True(t, a.VotingPower == b.VotingPower)
+			assert.True(t, a.VotingWeight == b.VotingWeight)
 		}
 	}
 }

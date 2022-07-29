@@ -306,7 +306,7 @@ func (state State) MakeBlock(
 // computed value.
 func MedianTime(commit *types.Commit, voters *types.VoterSet) time.Time {
 	weightedTimes := make([]*tmtime.WeightedTime, len(commit.Signatures))
-	totalVotingPower := int64(0)
+	totalVotingWeight := int64(0)
 
 	for i, commitSig := range commit.Signatures {
 		if commitSig.Absent() {
@@ -315,12 +315,12 @@ func MedianTime(commit *types.Commit, voters *types.VoterSet) time.Time {
 		_, validator := voters.GetByAddress(commitSig.ValidatorAddress)
 		// If there's no condition, TestValidateBlockCommit panics; not needed normally.
 		if validator != nil {
-			totalVotingPower += validator.VotingPower
-			weightedTimes[i] = tmtime.NewWeightedTime(commitSig.Timestamp, validator.VotingPower)
+			totalVotingWeight += validator.VotingWeight
+			weightedTimes[i] = tmtime.NewWeightedTime(commitSig.Timestamp, validator.VotingWeight)
 		}
 	}
 
-	return tmtime.WeightedMedian(weightedTimes, totalVotingPower)
+	return tmtime.WeightedMedian(weightedTimes, totalVotingWeight)
 }
 
 //------------------------------------------------------------------------

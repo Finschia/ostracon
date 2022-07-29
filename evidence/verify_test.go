@@ -130,17 +130,6 @@ func TestVerifyLightClientAttack_validateABCIEvidence(t *testing.T) {
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "evidence contained an unexpected byzantine validator address;")
 
-	// illegal byzantine validator staking power
-	phantomVoterSet = types.ToVoterAll(ev.ConflictingBlock.VoterSet.Voters)
-	phantomVoterSet.Voters[0].StakingPower = votingPower + 1
-	ev.ByzantineValidators = phantomVoterSet.Voters
-	err = evidence.VerifyLightClientAttack(ev, common.SignedHeader, trusted.SignedHeader,
-		common.ValidatorSet,
-		ev.ConflictingBlock.VoterSet, // Should use correct VoterSet for bls.VerifyAggregatedSignature
-		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour, types.DefaultVoterParams())
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "evidence contained unexpected byzantine validator staking power;")
-
 	// illegal byzantine validator voting power
 	phantomVoterSet = types.ToVoterAll(ev.ConflictingBlock.VoterSet.Voters)
 	phantomVoterSet.Voters[0].VotingPower = votingPower + 1
@@ -151,6 +140,17 @@ func TestVerifyLightClientAttack_validateABCIEvidence(t *testing.T) {
 		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour, types.DefaultVoterParams())
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "evidence contained unexpected byzantine validator voting power;")
+
+	// illegal byzantine validator voting weight
+	phantomVoterSet = types.ToVoterAll(ev.ConflictingBlock.VoterSet.Voters)
+	phantomVoterSet.Voters[0].VotingWeight = votingPower + 1
+	ev.ByzantineValidators = phantomVoterSet.Voters
+	err = evidence.VerifyLightClientAttack(ev, common.SignedHeader, trusted.SignedHeader,
+		common.ValidatorSet,
+		ev.ConflictingBlock.VoterSet, // Should use correct VoterSet for bls.VerifyAggregatedSignature
+		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour, types.DefaultVoterParams())
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "evidence contained unexpected byzantine validator voting weight;")
 }
 
 func TestVerify_LunaticAttackAgainstState(t *testing.T) {
@@ -222,7 +222,7 @@ func TestVerify_LunaticAttackAgainstState(t *testing.T) {
 	pool, err = evidence.NewPool(dbm.NewMemDB(), stateStore, blockStore)
 	require.NoError(t, err)
 	assert.Error(t, pool.AddEvidence(ev))
-	ev.TotalVotingPower = common.VoterSet.TotalVotingPower()
+	ev.TotalVotingPower = common.VoterSet.TotalVotingWeight()
 }
 
 func TestVerify_ForwardLunaticAttack(t *testing.T) {
@@ -643,7 +643,7 @@ func makeLunaticEvidence(
 			VoterSet:     conflictingVoters,
 		},
 		CommonHeight:        commonHeight,
-		TotalVotingPower:    commonVoterSet.TotalVotingPower(),
+		TotalVotingPower:    commonVoterSet.TotalVotingWeight(),
 		ByzantineValidators: byzantineValidators,
 		Timestamp:           commonTime,
 	}

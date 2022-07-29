@@ -21,7 +21,7 @@ func main() {
 	c.SetRoot(filepath.Join(userHome, config.DefaultOstraconDir))
 	keyFilePath := c.PrivValidatorKeyFile()
 	var flagKeyFilePath = flag.String("priv-key", keyFilePath, "priv val key file path")
-	var flagStakingPower = flag.Int64("staking", 10, "staking power for priv valedator")
+	var flagVotingPower = flag.Int64("voting", 10, "voting power for priv validator")
 	flag.Parse()
 	keyFile, err := kvstore.LoadPrivValidatorKeyFile(*flagKeyFilePath)
 	if err != nil {
@@ -31,7 +31,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	pubStr, tx := kvstore.MakeValSetChangeTxAndMore(publicKey, *flagStakingPower)
+	pubStr, tx := kvstore.MakeValSetChangeTxAndMore(publicKey, *flagVotingPower)
 	{
 		fmt.Println("\n# Send tx of ValSetChangeTx for persist_kvstore")
 		fmt.Println("# See: persist_kvstore.go#DeliveredTx")

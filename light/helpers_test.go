@@ -64,7 +64,7 @@ func (pkz privKeys) Extend(n int) privKeys {
 // 	return append(pkz, extra...)
 // }
 
-// ToValidators produces a voterset from the set of keys.
+// ToValidators produces a voter set from the set of keys.
 // The first key has weight `init` and it increases by `inc` every step
 // so we can have all the same weight, or a simple linear distribution
 // (should be enough for testing).
@@ -121,7 +121,7 @@ func (pkz privKeys) signHeaderByRate(header *types.Header, voterSet *types.Voter
 	}
 
 	// Fill in the votes we want.
-	until := int64(float64(voterSet.TotalVotingPower()) * rate)
+	until := int64(float64(voterSet.TotalVotingWeight()) * rate)
 	sum := int64(0)
 	for i := 0; i < len(pkz); i++ {
 		_, voter := voterSet.GetByAddress(pkz[i].PubKey().Address())
@@ -131,7 +131,7 @@ func (pkz privKeys) signHeaderByRate(header *types.Header, voterSet *types.Voter
 		vote := makeVote(header, voterSet, pkz[i], blockID)
 		commitSigs[vote.ValidatorIndex] = vote.CommitSig()
 
-		sum += voter.VotingPower
+		sum += voter.VotingWeight
 		if sum > until {
 			break
 		}

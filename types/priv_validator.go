@@ -136,12 +136,12 @@ func (pv MockPV) SignProposal(chainID string, proposal *tmproto.Proposal) error 
 	return nil
 }
 
-func (pv MockPV) ExtractIntoValidator(stakingPower int64) *Validator {
+func (pv MockPV) ExtractIntoValidator(votingPower int64) *Validator {
 	pubKey, _ := pv.GetPubKey()
 	return &Validator{
-		Address:      pubKey.Address(),
-		PubKey:       pubKey,
-		StakingPower: stakingPower,
+		Address:     pubKey.Address(),
+		PubKey:      pubKey,
+		VotingPower: votingPower,
 	}
 }
 

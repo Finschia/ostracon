@@ -1786,9 +1786,9 @@ func (cs *State) pruneBlocks(retainHeight int64) (uint64, error) {
 
 func (cs *State) recordMetrics(height int64, block *types.Block) {
 	cs.metrics.Validators.Set(float64(cs.Validators.Size()))
-	cs.metrics.ValidatorsPower.Set(float64(cs.Validators.TotalStakingPower()))
+	cs.metrics.ValidatorsPower.Set(float64(cs.Validators.TotalVotingPower()))
 	cs.metrics.Voters.Set(float64(cs.Voters.Size()))
-	cs.metrics.VotersPower.Set(float64(cs.Voters.TotalVotingPower()))
+	cs.metrics.VotersPower.Set(float64(cs.Voters.TotalVotingWeight()))
 
 	var (
 		missingVoters      int
@@ -1834,14 +1834,14 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 			commitSig := block.LastCommit.Signatures[i]
 			if commitSig.Absent() {
 				missingVoters++
-				missingVotersPower += val.VotingPower
+				missingVotersPower += val.VotingWeight
 			}
 
 			if bytes.Equal(val.Address, address) {
 				label := []string{
 					"validator_address", val.Address.String(),
 				}
-				cs.metrics.VoterPower.With(label...).Set(float64(val.VotingPower))
+				cs.metrics.VoterPower.With(label...).Set(float64(val.VotingWeight))
 				selectedAsVoter = true
 				if commitSig.ForBlock() {
 					cs.metrics.VoterLastSignedHeight.With(label...).Set(float64(height))
@@ -1877,7 +1877,7 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 		if dve, ok := ev.(*types.DuplicateVoteEvidence); ok {
 			if _, val := cs.Voters.GetByAddress(dve.VoteA.ValidatorAddress); val != nil {
 				byzantineVotersCount++
-				byzantineVotersPower += val.VotingPower
+				byzantineVotersPower += val.VotingWeight
 			}
 		}
 	}
@@ -2424,11 +2424,11 @@ func (cs *State) calculatePrevoteMessageDelayMetrics() {
 		return pl[i].Timestamp.Before(pl[j].Timestamp)
 	})
 
-	var votingPowerSeen int64
+	var totalVotingWeight int64
 	for _, v := range pl {
 		_, voter := cs.Voters.GetByAddress(v.ValidatorAddress)
-		votingPowerSeen += voter.VotingPower
-		if votingPowerSeen >= cs.Voters.TotalVotingPower()*2/3+1 {
+		totalVotingWeight += voter.VotingWeight
+		if totalVotingWeight >= cs.Voters.TotalVotingWeight()*2/3+1 {
 			cs.metrics.QuorumPrevoteMessageDelay.Set(v.Timestamp.Sub(cs.Proposal.Timestamp).Seconds())
 			break
 		}
