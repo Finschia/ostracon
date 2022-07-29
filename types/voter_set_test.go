@@ -911,7 +911,7 @@ func BenchmarkElectVotersNonDupEquity(b *testing.B) {
 			maxRewardPerVotingPowerDiff = rewardPerVotingPowerDiff
 		}
 	}
-	b.Logf("[! condition 3] max reward per voting weight difference: %f", maxRewardPerVotingPowerDiff)
+	b.Logf("[! condition 3] max reward per voting power difference: %f", maxRewardPerVotingPowerDiff)
 
 	// violation of condition 4
 	loopCount = 100
