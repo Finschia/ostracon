@@ -393,19 +393,19 @@ The result when we set LoopCount to 10000
   << min power=100, max power=100000000, actual average voters=29, max voters=29 >> largest gap: 0.147867
 
 for testing:
-go test -bench BenchmarkSelectVoterReasonableVotingWeight github.com/line/ostracon/types -run ^$ -count 1 -benchmem -v
+go test -bench BenchmarkSelectVoterReasonableVotingPower github.com/line/ostracon/types -run ^$ -count 1 -benchmem -v
 */
-func BenchmarkSelectVoterReasonableVotingWeight(b *testing.B) {
+func BenchmarkSelectVoterReasonableVotingPower(b *testing.B) {
 	// Raise LoopCount to get smaller gap over 10000. But large LoopCount takes a lot of time
 	const LoopCount = 100
 	for minMaxRate := 1; minMaxRate <= 1000000; minMaxRate *= 100 {
-		findLargestVotingWeightGap(b, LoopCount, minMaxRate, 10)
-		findLargestVotingWeightGap(b, LoopCount, minMaxRate, 20)
-		findLargestVotingWeightGap(b, LoopCount, minMaxRate, 29)
+		findLargestVotingPowerGap(b, LoopCount, minMaxRate, 10)
+		findLargestVotingPowerGap(b, LoopCount, minMaxRate, 20)
+		findLargestVotingPowerGap(b, LoopCount, minMaxRate, 29)
 	}
 }
 
-func findLargestVotingWeightGap(b *testing.B, loopCount int, minMaxRate int, maxVoters int) {
+func findLargestVotingPowerGap(b *testing.B, loopCount int, minMaxRate int, maxVoters int) {
 	valSet, privMap := randValidatorSetWithMinMax(PrivKeyEd25519, 30, 100, 100*int64(minMaxRate))
 	genDoc := &GenesisDoc{
 		GenesisTime: tmtime.Now(),
@@ -846,13 +846,13 @@ func BenchmarkElectVotersNonDupEquity(b *testing.B) {
 			float64(totalAccumulateRewards)
 		votingRate := float64(candidates.Validators[i].VotingPower) / float64(totalVoting)
 		rate := rewardRate / votingRate
-		rewardPerVotingWeightDiff := math.Abs(1 - rate)
-		b.Log("rewardPerVotingWeightDiff", rewardPerVotingWeightDiff)
+		rewardPerVotingPowerDiff := math.Abs(1 - rate)
+		b.Log("rewardPerVotingPowerDiff", rewardPerVotingPowerDiff)
 		//
-		// rewardPerVotingWeightDiff: guarantees the fairness of rewards
-		// if false, then we should consider `rewardPerVotingWeightDiff` value
+		// rewardPerVotingPowerDiff: guarantees the fairness of rewards
+		// if false, then we should consider `rewardPerVotingPowerDiff` value
 		//
-		assert.True(b, rewardPerVotingWeightDiff < 0.02)
+		assert.True(b, rewardPerVotingPowerDiff < 0.02)
 	}
 
 	// =======================================================================================================
@@ -866,16 +866,16 @@ func BenchmarkElectVotersNonDupEquity(b *testing.B) {
 		winners := electVotersNonDup(candidates.Validators, uint64(i), 20, 0)
 		accumulateAndResetReward(winners, accumulatedRewards)
 	}
-	maxRewardPerVotingWeightDiff := float64(0)
+	maxRewardPerVotingPowerDiff := float64(0)
 	for i := 0; i < 99; i++ {
-		rewardPerVotingWeightDiff :=
+		rewardPerVotingPowerDiff :=
 			math.Abs(float64(accumulatedRewards[candidates.Validators[i].Address.String()])/
 				float64(candidates.Validators[i].VotingPower)/float64(loopCount) - 1)
-		if maxRewardPerVotingWeightDiff < rewardPerVotingWeightDiff {
-			maxRewardPerVotingWeightDiff = rewardPerVotingWeightDiff
+		if maxRewardPerVotingPowerDiff < rewardPerVotingPowerDiff {
+			maxRewardPerVotingPowerDiff = rewardPerVotingPowerDiff
 		}
 	}
-	b.Logf("[! condition 1] max reward per voting weight difference: %f", maxRewardPerVotingWeightDiff)
+	b.Logf("[! condition 1] max reward per voting power difference: %f", maxRewardPerVotingPowerDiff)
 
 	// violation of condition 2
 	candidates = newValidatorSet(100, func(i int) int64 { return rand.Int64() & 0xFFFFF })
@@ -884,16 +884,16 @@ func BenchmarkElectVotersNonDupEquity(b *testing.B) {
 		winners := electVotersNonDup(candidates.Validators, uint64(i), 20, 0)
 		accumulateAndResetReward(winners, accumulatedRewards)
 	}
-	maxRewardPerVotingWeightDiff = float64(0)
+	maxRewardPerVotingPowerDiff = float64(0)
 	for i := 0; i < 99; i++ {
-		rewardPerVotingWeightDiff :=
+		rewardPerVotingPowerDiff :=
 			math.Abs(float64(accumulatedRewards[candidates.Validators[i].Address.String()])/
 				float64(candidates.Validators[i].VotingPower)/float64(loopCount) - 1)
-		if maxRewardPerVotingWeightDiff < rewardPerVotingWeightDiff {
-			maxRewardPerVotingWeightDiff = rewardPerVotingWeightDiff
+		if maxRewardPerVotingPowerDiff < rewardPerVotingPowerDiff {
+			maxRewardPerVotingPowerDiff = rewardPerVotingPowerDiff
 		}
 	}
-	b.Logf("[! condition 2] max reward per voting weight difference: %f", maxRewardPerVotingWeightDiff)
+	b.Logf("[! condition 2] max reward per voting power difference: %f", maxRewardPerVotingPowerDiff)
 
 	// violation of condition 3
 	candidates = newValidatorSet(100, func(i int) int64 { return 1000000 + rand.Int64()&0xFFFFF })
@@ -902,16 +902,16 @@ func BenchmarkElectVotersNonDupEquity(b *testing.B) {
 		winners := electVotersNonDup(candidates.Validators, uint64(i), 20, 0)
 		accumulateAndResetReward(winners, accumulatedRewards)
 	}
-	maxRewardPerVotingWeightDiff = float64(0)
+	maxRewardPerVotingPowerDiff = float64(0)
 	for i := 0; i < 99; i++ {
-		rewardPerVotingWeightDiff :=
+		rewardPerVotingPowerDiff :=
 			math.Abs(float64(accumulatedRewards[candidates.Validators[i].Address.String()])/
 				float64(candidates.Validators[i].VotingPower)/float64(loopCount) - 1)
-		if maxRewardPerVotingWeightDiff < rewardPerVotingWeightDiff {
-			maxRewardPerVotingWeightDiff = rewardPerVotingWeightDiff
+		if maxRewardPerVotingPowerDiff < rewardPerVotingPowerDiff {
+			maxRewardPerVotingPowerDiff = rewardPerVotingPowerDiff
 		}
 	}
-	b.Logf("[! condition 3] max reward per voting weight difference: %f", maxRewardPerVotingWeightDiff)
+	b.Logf("[! condition 3] max reward per voting weight difference: %f", maxRewardPerVotingPowerDiff)
 
 	// violation of condition 4
 	loopCount = 100
@@ -921,16 +921,16 @@ func BenchmarkElectVotersNonDupEquity(b *testing.B) {
 		winners := electVotersNonDup(candidates.Validators, uint64(i), 33, 0)
 		accumulateAndResetReward(winners, accumulatedRewards)
 	}
-	maxRewardPerVotingWeightDiff = float64(0)
+	maxRewardPerVotingPowerDiff = float64(0)
 	for i := 0; i < 99; i++ {
-		rewardPerVotingWeightDiff :=
+		rewardPerVotingPowerDiff :=
 			math.Abs(float64(accumulatedRewards[candidates.Validators[i].Address.String()])/
 				float64(candidates.Validators[i].VotingPower)/float64(loopCount) - 1)
-		if maxRewardPerVotingWeightDiff < rewardPerVotingWeightDiff {
-			maxRewardPerVotingWeightDiff = rewardPerVotingWeightDiff
+		if maxRewardPerVotingPowerDiff < rewardPerVotingPowerDiff {
+			maxRewardPerVotingPowerDiff = rewardPerVotingPowerDiff
 		}
 	}
-	b.Logf("[! condition 4] max reward per voting weight difference: %f", maxRewardPerVotingWeightDiff)
+	b.Logf("[! condition 4] max reward per voting power difference: %f", maxRewardPerVotingPowerDiff)
 }
 
 func newValidatorSet(length int, prio func(int) int64) *ValidatorSet {
