@@ -18,12 +18,18 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
       - name: Lint Code Base
-        uses: docker://github/super-linter:v4
+        uses: github/super-linter@v4
         env:
-          LINTER_RULES_PATH: .
-          VALIDATE_ALL_CODEBASE: true
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # https://github.com/github/super-linter#example-connecting-github-action-workflow
+          # Note: All the VALIDATE_[LANGUAGE] variables behave in a very specific way:
+          #
+          #  If none of them are passed, then they all default to true.
+          #  If any one of the variables are set to true, we default to leaving any unset variable to false (only validate those languages).
+          #  If any one of the variables are set to false, we default to leaving any unset variable to true (only exclude those languages).
+          #  If there are VALIDATE_[LANGUAGE] variables set to both true and false. It will fail.
+          VALIDATE_ALL_CODEBASE: true
           VALIDATE_MD: true
           VALIDATE_OPENAPI: true
           VALIDATE_YAML: true
