@@ -4,9 +4,20 @@
 FROM golang:1.18
 
 RUN apt-get -qq update -y && apt-get -qq upgrade -y >/dev/null
-RUN apt-get -qq install -y libleveldb-dev librocksdb-dev make libc-dev libtool >/dev/null
+RUN apt-get -qq install -y libleveldb-dev make libc-dev libtool >/dev/null
 
 ARG SRCDIR=/src/ostracon
+
+# RocksDB 6.24.2+ is required to build with tm-db 0.6.7 (but RocksDB 7.x is not yet supported).
+# librocksdb-dev installed by apt with golang:1.18 is still 6.11, so we have to build it from the latest 6.x sources.
+ARG ROCKSDB_VERSION=6.29.5
+ARG ROCKSDB_FILE=rocksdb-v${ROCKSDB_VERSION}.tar.gz
+ARG ROCKSDB_DIR=rocksdb-${ROCKSDB_VERSION}
+RUN wget -O ${ROCKSDB_FILE} https://github.com/facebook/rocksdb/archive/v${ROCKSDB_VERSION}.tar.gz
+RUN tar -zxvf ${ROCKSDB_FILE}
+RUN cd ${ROCKSDB_DIR} && make -j2 shared_lib && make install-shared
+RUN cp /usr/local/lib/librocksdb.so* /usr/lib
+RUN rm -rf ${ROCKSDB_FILE} ${ROCKSDB_DIR}
 
 # Build/Install libsodium separately (for layer caching)
 ARG VRF_ROOT=crypto/vrf/internal/vrf
