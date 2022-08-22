@@ -137,6 +137,10 @@ func TestTransportMultiplexConnFilterTimeout(t *testing.T) {
 	}
 }
 
+func TestMultiplexTransportResolver(t *testing.T) {
+	MultiplexTransportResolver(nil) // FIXME
+}
+
 func TestTransportMultiplexMaxIncomingConnections(t *testing.T) {
 	pv := ed25519.GenPrivKey()
 	id := PubKeyToID(pv.PubKey())
