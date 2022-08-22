@@ -118,6 +118,8 @@ type MConnection struct {
 	_maxPacketMsgSize int
 }
 
+var _ service.Service = (*MConnection)(nil)
+
 // MConnConfig is a MConnection configuration.
 type MConnConfig struct {
 	SendRate int64 `mapstructure:"send_rate"`

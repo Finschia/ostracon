@@ -124,6 +124,9 @@ type peer struct {
 	metricsTicker *time.Ticker
 }
 
+var _ Peer = (*peer)(nil)
+var _ service.Service = (*peer)(nil)
+
 type PeerOption func(*peer)
 
 func newPeer(
