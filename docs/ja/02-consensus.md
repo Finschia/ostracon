@@ -1,4 +1,9 @@
-# Extending Tendermint-BFT with VRF-based Election
+---
+id: consensus
+title: Consensus
+---
+
+Extending Tendermint-BFT with VRF-based Election
 
 ## Consensus Overview
 
@@ -19,7 +24,7 @@ Tendermint-BFT に基づく Ostracon のブロック生成メカニズムは以�
 正式に*承認*されます。反対に、定足数の賛成票が集まらなければ提案されたブロックは拒否され新しいラウンドで選挙または投票からやり直しとなります
 (Tendermint-BFT には拒否の理由によってショートカットする経路がいくつかあります)。
 
-![VRF-based Block Generation Round](vrf_based_round.png)
+![VRF-based Block Generation Round](/img/about-lbm/ostracon/consensus/vrf_based_round.png)
 
 ## VRF-based Consensus Group Election
 
@@ -31,7 +36,7 @@ $t$ は式 (2) を使って証明 $pi$ から生成することができます�
 基づいて生成されたものであることを検証するために、$S_k$ に対する公開鍵 $P_k$ と $m$, $\pi$ を式 (3) に適用して同一のハッシュ値 $t$ が
 生成されることを確認します。
 
-![VRF Expression](math_expression.png)
+![VRF Expression](/img/about-lbm/ostracon/consensus/math_expression.png)
 
 ```math
 \begin{eqnarray}
@@ -50,13 +55,13 @@ Ostracon では、あるブロックを作成した Proposer による*無作為
 疑似乱数」である VRF ハッシュ $t$ を算出し、その値に基づいてこのラウンドの Proposer と Voter を選択します。これは Stake 保有量に
 応じた選出確率に基づく (つまり PoS に基づく) シンプルで高速な加重ランダムサンプリングによって行われます。
 
-![VRF-based Proposer/Voter Election](vrf_election.png)
+![VRF-based Proposer/Voter Election](/img/about-lbm/ostracon/consensus/vrf_election.png)
 
 この判定によって選ばれた Proposer が自分自身であれば、そのノードは mempool から未承認のトランザクションを取り出して proposal ブロックを
 作成します (この時点ではまだブロックは確定していません)。このとき、自分を選択した VRF ハッシュ $t$ とブロックの高さ $h$、現在のラウンド
 $r$ に基づいて算出した新しい VRF Proof $\pi'$ をブロックに設定します。
 
-![VRF Prove](math_prove.png)
+![VRF Prove](/img/about-lbm/ostracon/consensus/math_prove.png)
 
 ```math
 \begin{eqnarray*}
@@ -69,12 +74,12 @@ t_h & = & {\rm vrf\_proof\_to\_hash}(\pi_h)
 VRF Proof $\pi$ を算出するためのメッセージ $m$ にはブロックそのもののハッシュ値は関与しないことに注意してください。ブロックのハッシュ値は
 ブロックを生成する Proposer が試行錯誤によって有利な値を導出できることから本質的に安全ではないと考えています。
 
-![VRF-based Block Generation](vrf_block_generation.png)
+![VRF-based Block Generation](/img/about-lbm/ostracon/consensus/vrf_block_generation.png)
 
 選出フェーズで自分自身が Voter に選ばれたノードは、受信した Proposal ブロックを検証して投票します。票は Tendermint-BFT により
 prevote, precommit, commit を経て複製され、定足数以上の有効票が集まればブロックが承認されます。
 
-![VRF-based Block Validation](vrf_block_validation.png)
+![VRF-based Block Validation](/img/about-lbm/ostracon/consensus/vrf_block_validation.png)
 
 検証フェーズではブロックの検証に加えて VRF に関連する以下の検証も行われます。
 
@@ -83,7 +88,7 @@ prevote, precommit, commit を経て複製され、定足数以上の有効票�
 2. ブロックに含まれている $\pi$ が本当にその Proposer の秘密鍵を使って生成された VRF Proof であること。VRF Proof $\pi$ から算出した
    $t$ と、vrf_verify() 関数を使って算出した $t$ が一致していれば $\pi$ が偽造されたものでないと判断できます。
 
-![VRF Verify](math_verify.png)
+![VRF Verify](/img/about-lbm/ostracon/consensus/math_verify.png)
 
 ```math
 {\rm vrf\_verify}(P_i, m_h, \pi_h) \overset{\text{?}}{=} {\rm vrf\_proof\_to\_hash}(\pi_h)
@@ -91,7 +96,7 @@ prevote, precommit, commit を経て複製され、定足数以上の有効票�
 
 この一連のラウンドを繰り返すことによって無作為なランダムサンプリングをすべてのブロック生成に渡って連鎖させることができます。
 
-![BFT-based Block Generation](bft_round.png)
+![BFT-based Block Generation](/img/about-lbm/ostracon/consensus/bft_round.png)
 
 ここで、ブロックを受信したノードは次の Proposer と Voter がどのノードなのかを決定論的に算出できることを思い出してください。あるラウンドで
 ブロックの生成や検証の責任を持つノードを明らかにすることによって、選出されながら実際にはその作業を行わなかったり、Eclipse 攻撃のような悪意の

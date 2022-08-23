@@ -1,4 +1,7 @@
-# BLS Signature Aggregation
+---
+id: signature-aggregation
+title: Signature Aggregation
+---
 
 ## Overview
 
@@ -12,7 +15,7 @@ BLS 署名は双線形写像を使用した署名集約が可能な署名アル�
 Ostracon でも BLS 署名によって収集した署名を単一の署名に集約することで 1) ブロックサイズの削減と 2) 検証回数の削減でパフォーマンスの向上を
 図っています。
 
-![BLS Signature Aggregation](bls_signature_aggregation.png)
+![BLS Signature Aggregation](/img/about-lbm/ostracon/signature-aggregation/bls_signature_aggregation.png)
 
 ## Public Key Abstraction
 
@@ -31,11 +34,11 @@ BFT 仮定に基づいて全 Voter 数の 2/3+1 個の投票の検証が成功�
 性能の観点では、単一の署名生成/検証においては BLS 署名よりも Ed25519 署名の方が高速という事実があります。その遅さをブロックサイズ削減や
 検証回数削減による改善が上回る分水嶺がどこなのかを注意深く調査しています。
 
-| アルゴリズム        | 秘密鍵 | 公開鍵 | 署名  | 署名作成 | 署名検証  |
-|:------------------|------:|------:|-----:|--------:|--------:|
-| ECDSA (secp256k1) |   96B |   64B |  64B | 92μs    |   124μs |
-| Ed25519           |   64B |   32B |  64B | 49μs    |   130μs |
-| BLS12-381         |   32B |   96B |  48B | 233μs   | 1,149μs |
+| アルゴリズム      | 秘密鍵 | 公開鍵 | 署名 | 署名作成 | 署名検証 |
+| :---------------- | -----: | -----: | ---: | -------: | -------: |
+| ECDSA (secp256k1) |    96B |    64B |  64B |     92μs |    124μs |
+| Ed25519           |    64B |    32B |  64B |     49μs |    130μs |
+| BLS12-381         |    32B |    96B |  48B |    233μs |  1,149μs |
 
 Table: 署名アルゴリズムの空間効率と処理時間効率。署名作成/検証のメッセージ長は 1024 バイト。
 

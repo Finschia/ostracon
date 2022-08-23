@@ -1,4 +1,9 @@
-# BLS Signature Aggregation
+---
+id: signature-aggregation
+title: Signature Aggregation
+---
+
+BLS Signature Aggregation
 
 ## Overview
 
@@ -6,7 +11,7 @@ Blockchains with a decentralized consensus mechanism need to collect a sufficien
 
 The first paper on BLS signatures was published as a digital signature that could be implemented in a very small size. This technique that was called "pairing" has led to several other interesting features, such as threshold signatures and blind signatures. Ostracon also aggregates the multiple signatures into a single one by BLS to improve performance by reducing block size and reducing the number of verifications.
 
-![BLS Signature Aggregation](bls_signature_aggregation.png)
+![BLS Signature Aggregation](/img/about-lbm/ostracon/signature-aggregation/bls_signature_aggregation.png)
 
 ## Public Key Abstraction
 
