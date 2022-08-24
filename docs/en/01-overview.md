@@ -1,6 +1,9 @@
-# Ostracon: A Fast, Secure Consensus Layer for The Blockchain of New Token Economy
+---
+id: overview
+title: Overview
+---
 
-Version 1.0 :: [日本語](README_ja.md)
+A Fast, Secure Consensus Layer for The Blockchain of New Token Economy
 
 ## Ostracon Overview
 
@@ -24,7 +27,7 @@ Another feature is the Boneh–Lynn–Shacham (BLS) signature. BLS signature sch
 
 Ostracon includes the Consensus and Networking layers of the three layers that construct a LINE BLockchain node: Application, Consensus, and Networking.
 
-![Layered Structure](layered_structure.png)
+![Layered Structure](/img/about-lbm/ostracon/layered_structure.png)
 
 Transactions that have not yet been incorporated into a block are shared among nodes by an anti-entropy mechanism (gossipping) in the Network layer called mempool. Here, the Network and Consensus layers consider transactions as simple binaries and don't care about the contents of the data.
 
@@ -50,8 +53,8 @@ Transactions that have not yet been incorporated into a block are shared among n
 
 ## Ostracon Features
 
-* [Extending Tendermint-BFT with VRF-based Election](consensus/README.md)
-* [BLS Signature Aggregation](signature-aggregation/README.md)
+* [Extending Tendermint-BFT with VRF-based Election](consensus)
+* [BLS Signature Aggregation](signature-aggregation)
 
 ## Consideration with Other Consensus Schemes
 
