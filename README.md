@@ -1,12 +1,16 @@
 # Ostracon
 
-[![codecov](https://codecov.io/gh/line/ostracon/branch/main/graph/badge.svg?token=JFFuUevpzJ)](https://codecov.io/gh/line/ostracon)
+![example workflow](https://github.com/line/ostracon/actions/workflows/build.yml/badge.svg)
+![example workflow](https://github.com/line/ostracon/actions/workflows/coverage.yml/badge.svg)
 
-Ostracon is forked from Tendermint Core at 2021-03-15.
+[Ostracon](docs/en/01-overview.md "Ostracon: A Fast, Secure Consensus Layer for The Blockchain of New Token Economy")
+is forked from Tendermint Core at 2021-03-15.
 
 **Node**: Requires [Go 1.18+](https://golang.org/dl/)
 
 **Warnings**: Initial development is in progress, but there has not yet been a stable.
+
+[](docs/en/01-overview.md)
 
 # Quick Start
 

@@ -1,5 +1,4 @@
 ---
-id: signature-aggregation
 title: Signature Aggregation
 ---
 
@@ -11,7 +10,7 @@ Blockchains with a decentralized consensus mechanism need to collect a sufficien
 
 The first paper on BLS signatures was published as a digital signature that could be implemented in a very small size. This technique that was called "pairing" has led to several other interesting features, such as threshold signatures and blind signatures. Ostracon also aggregates the multiple signatures into a single one by BLS to improve performance by reducing block size and reducing the number of verifications.
 
-![BLS Signature Aggregation](/img/about-lbm/ostracon/signature-aggregation/bls_signature_aggregation.png)
+![BLS Signature Aggregation](../static/signature-aggregation/bls_signature_aggregation.png)
 
 ## Public Key Abstraction
 
@@ -24,7 +23,7 @@ In introducing BLS, we have unfortunately found that the BLS signature aggregati
 In terms of performance, Ed25519 signatures are faster than BLS signatures for generating/verifying a single signature. We consider the point where the block size reduction and the verification frequency reduction outweigh the slowness as a watershed point and are carefully investigating to find it.
 
 | Algorithm         | Private Key | Public Key | Signature | Sig Generation | Sig Verification |
-| :---------------- | ----------: | ---------: | --------: | -------------: | ---------------: |
+|:------------------|------------:|-----------:|----------:|---------------:|-----------------:|
 | ECDSA (secp256k1) |         96B |        64B |       64B |           92μs |            124μs |
 | Ed25519           |         64B |        32B |       64B |           49μs |            130μs |
 | BLS12-381         |         32B |        96B |       48B |          233μs |          1,149μs |
