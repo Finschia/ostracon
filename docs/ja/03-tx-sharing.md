@@ -1,4 +1,6 @@
-# Transaction Sharing
+---
+title: Transaction Sharing
+---
 
 クライアントはブロックチェーンネットワークを構成している Ostracon ノードのいずれかにトランザクションを送信することができます。トランザクションは
 他の Ostracon ノードに伝搬し最終的にすべての Ostracon ノードで共有されます。

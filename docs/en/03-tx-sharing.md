@@ -1,4 +1,6 @@
-# Transaction Sharing
+---
+title: Transaction Sharing
+---
 
 A client can send a transaction to any of the Ostracon nodes that joining the blockchain network. The transaction propagates to other Ostracon nodes and is ultimately shared by all Ostracon nodes.
 
