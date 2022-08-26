@@ -1,5 +1,4 @@
 ---
-id: overview
 title: Overview
 ---
 
@@ -11,11 +10,11 @@ Ostracon is a core-component that provides a Byzantine fault-tolerant (BFT) cons
 
 LINE Blockchain sets out a number of principles to be archived in selecting the technology in order to make the consensus mechanism applicable not only to services on the internet, but also to finance and industry.
 
-**Security**: Completeness and soundness sufficient for practical use, based on cryptographic theory.
-**Consistency**: A consensus algorithm with strong integrity (finality).
-**Fault-Tolerance**: Safety and liveness against system failures, including Byzantine failures.
-**Performance and Scalability**: One block every two seconds with a capability of 1000 TPS or above.
-**Inter-chain Connectivity**: interoperability with other blockchains besides LINE Blockchain.
+1. **Security**: Completeness and soundness sufficient for practical use, based on cryptographic theory.
+2. **Consistency**: A consensus algorithm with strong integrity (finality).
+3. **Fault-Tolerance**: Safety and liveness against system failures, including Byzantine failures.
+4. **Performance and Scalability**: One block every two seconds with a capability of 1000 TPS or above.
+5. **Inter-chain Connectivity**: interoperability with other blockchains besides LINE Blockchain.
 
 P2P consensus algorithms based on BFT are more suitable than Bitcoin-like proof of work (PoW) in terms of functionality and performance. Among them, Tendermint-BFT, with its modern blockchain-optimized design, was the closest implementation in our direction (and even better, it can be connected to Cosmos Hub).
 
@@ -27,14 +26,14 @@ Another feature is the Boneh–Lynn–Shacham (BLS) signature. BLS signature sch
 
 Ostracon includes the Consensus and Networking layers of the three layers that construct a LINE BLockchain node: Application, Consensus, and Networking.
 
-![Layered Structure](/img/about-lbm/ostracon/layered_structure.png)
+![Layered Structure](../static/layered_structure.png)
 
 Transactions that have not yet been incorporated into a block are shared among nodes by an anti-entropy mechanism (gossipping) in the Network layer called mempool. Here, the Network and Consensus layers consider transactions as simple binaries and don't care about the contents of the data.
 
 ## Specifications and Technology Stack
 
 | Specifications        | Policy / Algorithms           | Methods / Implementations                                    |
-| :-------------------- | :---------------------------- | :----------------------------------------------------------- |
+|:----------------------|:------------------------------|:-------------------------------------------------------------|
 | Participation         | Permissioned                  | Consortium or Private                                        |
 | Election              | Proof of Stake                | VRF-based Weighted Sampling without Replacement + SplitMix64 |
 | Agreement             | Strong Consistency w/Finality | Tendermint-BFT                                               |
@@ -53,8 +52,8 @@ Transactions that have not yet been incorporated into a block are shared among n
 
 ## Ostracon Features
 
-* [Extending Tendermint-BFT with VRF-based Election](consensus)
-* [BLS Signature Aggregation](signature-aggregation)
+* [Extending Tendermint-BFT with VRF-based Election](02-consensus.md)
+* [BLS Signature Aggregation](03-signature-aggregation.md)
 
 ## Consideration with Other Consensus Schemes
 

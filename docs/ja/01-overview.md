@@ -1,5 +1,4 @@
 ---
-id: overview
 title: Overview
 ---
 
@@ -37,7 +36,7 @@ LINE Blockchain はインターネット上の電子サービスのみならず�
 LINE Blockchain ノードを構成する Application, Consensus および Networking の 3 つのレイヤーのうち、Ostracon には Consensus と
 Networking レイヤーが含まれています。
 
-![Layered Structure](/img/about-lbm/ostracon/layered_structure.png)
+![Layered Structure](../static/layered_structure.png)
 
 まだブロックに取り込まれていないトランザクションは mempool と呼ばれる Network レイヤーのアンチエントロピー機構 (ゴシッピング) によって
 各ノード間で共有されます。ここで、Network および Consensus レイヤーではトランザクションを単純なバイナリとして扱い、そのデータの内容には
@@ -46,7 +45,7 @@ Networking レイヤーが含まれています。
 ## Specifications and Technology Stack
 
 | Specifications        | Policy / Algorithms           | Methods / Implementations                                    |
-| :-------------------- | :---------------------------- | :----------------------------------------------------------- |
+|:----------------------|:------------------------------|:-------------------------------------------------------------|
 | Participation         | Permissioned                  | Consortium or Private                                        |
 | Election              | Proof of Stake                | VRF-based Weighted Sampling without Replacement + SplitMix64 |
 | Agreement             | Strong Consistency w/Finality | Tendermint-BFT                                               |
@@ -65,8 +64,8 @@ Networking レイヤーが含まれています。
 
 ## Ostracon Features
 
-* [Extending Tendermint-BFT with VRF-based Election](consensus)
-* [BLS Signature Aggregation](signature-aggregation)
+* [Extending Tendermint-BFT with VRF-based Election](02-consensus.md)
+* [BLS Signature Aggregation](03-signature-aggregation.md)
 
 ## Consideration with Other Consensus Schemes
 
