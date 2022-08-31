@@ -6,7 +6,7 @@ title: Transaction Sharing
 
 ## Mempool
 
-あるブロックが Ostracon のコンセンサス機構によって受理されたとき、そのブロックに含まれているトランザクションは *確定した* とみなされます。未確定のトランザクションは署名などの検証を経てブロックストレージとは別の **mempool** という領域に保存されます。
+あるブロックが Ostracon のコンセンサス機構によって受理されたとき、そのブロックに含まれているトランザクションは *確定した* とみなされます。未確定のトランザクションは署名などの検証を経てブロックストレージとは別の [**mempool**](https://github.com/tendermint/tendermint/blob/v0.34.x/spec/abci/apps.md#mempool-connection) と呼ばれる領域に保存されます。
 
 また特定の Ostracon ノードが mempool に保存した未確定のトランザクションは他の Ostracon ノードにもブロードキャストされます。ただし、既に受信済みであったり不正なトランザクションの場合には保存やブロードキャストは行われずに破棄されます。このような手法は *gossipping* (または flooding) と呼ばれ、 $N$ を Ostracon ネットワークのノード数として $O(\log N)$ ホップの速度ですべてのノードに到達します。
 
@@ -24,6 +24,6 @@ Ostracon は Tendermint の Reactor 実装にキューを追加してトラン�
 
 ## Tx Validation via ABCI
 
-ABCI (Application Blockchain Interface) はアプリケーションが Ostracon やその他のツールとリモート (gRPC, ABCI-Socket 経由) またはプロセス内 (in-process 経由) で通信するための仕様です。ABCI の詳細については [Tendermint のリポジトリ](https://github.com/tendermint/tendermint/tree/main/abci)を参照してください。
+ABCI (Application Blockchain Interface) はアプリケーションが Ostracon やその他のツールとリモート (gRPC, ABCI-Socket 経由) またはプロセス内 (in-process 経由) で通信するための仕様です。ABCI の詳細については [Tendermint 仕様](https://github.com/tendermint/tendermint/tree/main/spec/abci)を参照してください。
 
-未確定トランザクションの検証過程では ABCI を経由してアプリケーションレイヤーにも問い合わせを行います。この動作により (データの観点では正しいが) 本質的に不要なトランザクションをブロックに含めないようにアプリケーションが判断することができます。ここで Ostracon は Tendermint 実装を非同期API に置き換えることによって ABCI 側の検証結果を待つことなく次のトランザクションの検証処理を開始できるようになりました。この変更は別のサーバで動作するアプリケーションや、個別の CPU コアが割り当てられているアプリケーション環境でのパフォーマンスを向上させます。
+未確定トランザクションの検証過程では ABCI 経由でアプリケーションにも問い合わせを行います。この動作により (データの観点では正しいが) 本質的に不要なトランザクションをブロックに含めないようにアプリケーションが判断することができます。Ostracon ではこのための [CheckTx リクエスト](https://github.com/tendermint/tendermint/blob/main/spec/abci/abci.md#mempool-connection)を非同期化する変更を行い ABCI 側の検証結果を待つことなく次のトランザクションの検証処理を開始できるようにしています。この変更は別のサーバで動作するアプリケーションや、個別の CPU コアが割り当てられているアプリケーション環境でのノードのパフォーマンスを向上させます。

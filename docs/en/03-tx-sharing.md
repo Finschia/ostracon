@@ -6,7 +6,7 @@ A client can send a transaction to any of the Ostracon nodes that joining the bl
 
 ## Mempool
 
-Once a block is accepted by the Ostracon consensus mechanism, the transactions contained in that block are considered *confirmed*. The unconfirmed transactions are validated stored in an area called **mempool**, which is separate from the block storage, after validation such as signatures.
+Once a block is accepted by the Ostracon consensus mechanism, the transactions contained in that block are considered *confirmed*. The unconfirmed transactions are validated stored in an area called [**mempool**](https://github.com/tendermint/tendermint/blob/v0.34.x/spec/abci/apps.md#mempool-connection), which is separate from the block storage, after validation such as signatures.
 
 Unconfirmed transactions stored in the mempool by an Ostracon node are broadcast to other Ostracon nodes.  However, if the transaction has already been received or is invalid, it's neither saved nor broadcast, but discarded. Such a method is called *gossipping* (or flooding) and a transaction will reach all nodes at a rate of $O(\log N)$ hops, where $N$ is the number of nodes in the Ostracon network.
 
@@ -24,7 +24,7 @@ With this asynchronization of the mempool, multiple transactions will have a *va
 
 ## Tx Validation via ABCI
 
-ABCI (Application Blockchain Interface) is a specification for applications to communicate with Ostracon and other tools remotely (via gRPC, ABCI-Socket) or in-process (via in-process). For more information, see [Tendermint repository](https://github.com/tendermint/tendermint/tree/main/abci).
+ABCI (Application Blockchain Interface) is a specification for applications to communicate with Ostracon and other tools remotely (via gRPC, ABCI-Socket) or in-process (via in-process). For more information, see [Tendermint Specifications](https://github.com/tendermint/tendermint/tree/main/spec/abci).
 
-The process of validating unconfirmed transactions also queries the application layer via ABCI. This behavior allows the application to avoid including transactions in the block that are essentially unnecessary (although correct from a data point of view). Here, Ostracon replaces the Tendermint implementation with an asynchronous API that can start the validation process for the next transaction without waiting for ABCI-side validation results. This improvement improves performance in environments where applications are allocated separate CPU cores.
+The process of validating unconfirmed transactions also queries the application layer via ABCI. This behavior allows the application to avoid including transactions in the block that are essentially unnecessary (although correct from a data point of view). Here, Ostracon has modified the [CheckTx request](https://github.com/tendermint/tendermint/blob/main/spec/abci/abci.md#mempool-connection) to be asynchronous, so that the validation process for the next transaction can be started without waiting for the result of the ABCI-side validation. This improvement improves performance in environments where applications are allocated separate CPU cores.
 
