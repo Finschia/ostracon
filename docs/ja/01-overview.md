@@ -38,9 +38,13 @@ Networking レイヤーが含まれています。
 
 ![Layered Structure](../static/layered_structure.png)
 
-まだブロックに取り込まれていないトランザクションは mempool と呼ばれる Network レイヤーのアンチエントロピー機構 (ゴシッピング) によって
-各ノード間で共有されます。ここで、Network および Consensus レイヤーではトランザクションを単純なバイナリとして扱い、そのデータの内容には
-関与しません。
+まだブロックに取り込まれていないトランザクションは [mempool](03-tx-sharing.md) と呼ばれる Network レイヤーのアンチエントロピー機構
+(ゴシッピング) によって各ノード間で共有されます。ここで、Network および Consensus レイヤーではトランザクションを単純なバイナリとして扱い、
+そのデータの内容には関与しません。
+
+Ostracon のコンセンサスの状態は State DB に、生成されたブロックは Block DB にそれぞれ保存されます。これらのストレージはブロック高をキーと
+する高速なランダムアクセス性能が重視され、特に Block DB は追記が多用されることから Ostracon では LSMT (Log-Structured Merge Tree) に
+基づく Embedded Key-Value ストアを使用しています (実際に使用する KVS 実装はいくつかの選択肢からビルド時に決定できます)。
 
 ## Specifications and Technology Stack
 
@@ -51,7 +55,7 @@ Networking レイヤーが含まれています。
 | Agreement             | Strong Consistency w/Finality | Tendermint-BFT                                               |
 | Signature             | Elliptic Curve Cryptography   | Ed25519, *BLS12-381*<sup>*1</sup>                            |
 | Hash                  | SHA2                          | SHA-256, SHA-512                                             |
-| HSM                   | *N/A*                         | *No support for VRF or signature aggregation*                |
+| Key Management        | Local KeyStore, Remote KMS    | *HSM is not support due to VRF or BLS*                       |
 | Key Auth Protocol     | Station-to-Station            |                                                              |
 | Tx Sharing Protocol   | Gossiping                     | mempool                                                      |
 | Application Protocol  | ABCI                          |                                                              |
@@ -65,22 +69,23 @@ Networking レイヤーが含まれています。
 ## Ostracon Features
 
 * [Extending Tendermint-BFT with VRF-based Election](02-consensus.md)
-* [BLS Signature Aggregation](03-signature-aggregation.md)
+* [Transaction Sharing](03-tx-sharing.md)
+* [BLS Signature Aggregation](04-signature-aggregation.md)
 
 ## Consideration with Other Consensus Schemes
 
 他のブロックチェーンではどのようなコンセンサス機構を採用しているのでしょうか? Ostracon の方向性を決定するために多くの比較と検討を行いました。
 
-**Bitcoin** や **Ethereum** で採用している PoW は最も有名なブロックチェーン向けコンセンサス機構です。これらはパブリックチェーンとして
+*Bitcoin* や *Ethereum* で採用している PoW は最も有名なブロックチェーン向けコンセンサス機構です。これらはパブリックチェーンとして
 運用している実績がありますが、十分な時間が経過しないと結果が覆る可能性があるという機能的な制約を持ちます。これは、短期には lost update 問題を
 引き起こし、長期には必要なパフォーマンスが確保できないという問題が顕著に現れることから、PoW は検討初期の段階で選択肢から外れました。
 
-**Tendermint** が合意アルゴリズムに採用している Tendermint-BFT はブロックチェーン向けによく考慮された設計です。短時間でファイナリティを
+*Tendermint* が合意アルゴリズムに採用している Tendermint-BFT はブロックチェーン向けによく考慮された設計です。短時間でファイナリティを
 保証できる点も我々の方針に適していました。一方で、選出アルゴリズムに採用している加重ラウンドロビンは決定論的に動作するため、誰でも将来の
 Proposer を知り得ることから標的を見つけて攻撃を準備しやすい点があります。このため Ostracon では攻撃の可能性を軽減する目的で VRF を使って
 予測不可能なアルゴリズムに置き換えています。
 
-**Algorand** は我々とは大きく異なる方法で VRF を使用しています。Algorand では選挙が始まるとそれぞれのノードが VRF 乱数を生成して次の
+*Algorand* は我々とは大きく異なる方法で VRF を使用しています。Algorand では選挙が始まるとそれぞれのノードが VRF 乱数を生成して次の
 Validator に当選しているかをノード自身が判断します (すべてのノードが一斉にコイントスするのと似ています)。これは PoW のハッシュ計算で
 当選を引き当てる方法と比較して、大量の計算時間と電力消費を省略しつつ暗号論的な安全性を保証している優れた方法です。一方で、選出される
 Validator 数が決定的ではなく二項分布に従うランダムな振る舞い含むことや、当選ノード間の相互認識でプロトコルが複雑性が上がること、当選した

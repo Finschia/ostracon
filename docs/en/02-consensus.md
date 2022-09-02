@@ -85,6 +85,14 @@ In the Ostracon network, Validators mean candidate nodes that hold Stakes and ca
 
 Voter selections use a pseudo-random function $r$ to generate a sequence of random numbers in order to randomly select multiple nodes from a single VRF hash $t$. It's more important that $r$ is fast, simple to implement, has no variant by different interpretations, and saves memory since $t$ already has the properties of a cryptographic pseudo-random number. Ostracon uses a fast shift-register type pseudo-random number generation algorithm, called SplitMix64, for Voter selection.
 
-## Disciplinary Scheme for Failures
+## Failures
+
+### Disciplinary Scheme
 
 Although Ostracon's consensus scheme works correctly even if a few nodes fail, it's ideal that failed nodes aren't selected for the consensus group in order to avoid wasting network and CPU resources. In particular, for cases that aren't caused by general asynchronous messaging problems, such as intentional malpractice, evidence of the behavior (whether malicious or not) will be shared and action will be taken to eliminate the candidate from the selection process by forfeiting the Stake.
+
+### Write Ahead Log
+
+In a system with such a disciplinary rule, it's important to have a mechanism to prevent nodes from causing unintended behavior; Ostracon saves all received messages in its WAL (Write Ahead Log), and when it recovers from a node failure, it can correctly apply processing after the last message it applied.
+
+For more information on WAL, see [Tendermint | WAL](https://github.com/tendermint/tendermint/blob/v0.34.x/spec/consensus/wal.md).

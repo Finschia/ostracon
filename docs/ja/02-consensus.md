@@ -117,9 +117,18 @@ Voter 選出では、一つの VRF ハッシュ $t$ から複数のノードを�
 より重要です。Ostracon ではこの Voter 選出にシフトレジスタ型と呼ばれる非常に高速な疑似乱数生成アルゴリズムである
 SplitMix64 を使用しています。
 
-## Disciplinary Scheme for Failures
+## Failures
+
+### Disciplinary Scheme
 
 Ostracon の合意スキームは少数のノードが故障していても正しく機能しますが、ネットワークや CPU 資源を無駄に消費しないためには故障したノードが
 コンセンサスグループに選ばれないことが理想的です。とりわけ一般的な非同期メッセージングの問題が原因ではないケース、つまり意図的に行ったと
 思われる不正な行為に対しては (悪意の有無に関わらず) その挙動の evidence が共有されて Stake の没収によって選出候補から排除する措置が
 取られます。
+
+### Write Ahead Log
+
+このような懲戒制を伴うシステムではノードが意図しない動作を引き起こさないような機構を持つことが重要です。Ostracon は受信したメッセージをすべて
+WAL (Write Ahead Log) に記録し、ノード障害から復帰したときに最後に適用したメッセージより後の処理を正しく適用することができます。
+WAL に関する詳細は [Tendermint | WAL](https://github.com/tendermint/tendermint/blob/v0.34.x/spec/consensus/wal.md)
+を参照してください。
