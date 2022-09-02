@@ -1080,6 +1080,10 @@ func (ps *PeerState) SetHasProposalBlockPart(height int64, round int32, index in
 func (ps *PeerState) PickSendVote(votes types.VoteSetReader) bool {
 	if vote, ok := ps.PickVoteToSend(votes); ok {
 		msg := &VoteMessage{vote}
+		// Remove the logging `PeerState`
+		// See: https://github.com/line/ostracon/issues/457
+		// See: https://github.com/tendermint/tendermint/discussions/9353
+		// ps.logger.Debug("Sending vote message", "ps", ps, "vote", vote)
 		ps.logger.Debug("Sending vote message", "vote", vote)
 		if ps.peer.Send(VoteChannel, MustEncode(msg)) {
 			ps.SetHasVote(vote)
