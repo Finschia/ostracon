@@ -39,13 +39,19 @@ func Rollback(bs BlockStore, ss Store) (int64, []byte, error) {
 
 	// state store height is equal to blockstore height. We're good to proceed with rolling back state
 	rollbackHeight := invalidState.LastBlockHeight - 1
-	rollbackBlock := bs.LoadBlockMeta(rollbackHeight)
+	rollbackBlock, err := bs.LoadBlockMeta(rollbackHeight)
+	if err != nil {
+		return -1, nil, err
+	}
 	if rollbackBlock == nil {
 		return -1, nil, fmt.Errorf("block at RollbackHeight %d not found", rollbackHeight)
 	}
 	// We also need to retrieve the latest block because the app hash and last
 	// results hash is only agreed upon in the following block.
-	latestBlock := bs.LoadBlockMeta(invalidState.LastBlockHeight)
+	latestBlock, err := bs.LoadBlockMeta(invalidState.LastBlockHeight)
+	if err != nil {
+		return -1, nil, err
+	}
 	if latestBlock == nil {
 		return -1, nil, fmt.Errorf("block at LastBlockHeight %d not found", invalidState.LastBlockHeight)
 	}

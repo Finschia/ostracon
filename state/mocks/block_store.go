@@ -90,7 +90,7 @@ func (_m *BlockStore) LoadBlockByHash(hash []byte) *types.Block {
 }
 
 // LoadBlockCommit provides a mock function with given fields: height
-func (_m *BlockStore) LoadBlockCommit(height int64) *types.Commit {
+func (_m *BlockStore) LoadBlockCommit(height int64) (*types.Commit, error) {
 	ret := _m.Called(height)
 
 	var r0 *types.Commit
@@ -106,7 +106,7 @@ func (_m *BlockStore) LoadBlockCommit(height int64) *types.Commit {
 }
 
 // LoadBlockMeta provides a mock function with given fields: height
-func (_m *BlockStore) LoadBlockMeta(height int64) *types.BlockMeta {
+func (_m *BlockStore) LoadBlockMeta(height int64) (*types.Commit, error) {
 	ret := _m.Called(height)
 
 	var r0 *types.BlockMeta

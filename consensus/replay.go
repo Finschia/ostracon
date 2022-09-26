@@ -464,7 +464,10 @@ func (h *Handshaker) replayBlocks(
 	}
 	for i := firstBlock; i <= finalBlock; i++ {
 		h.logger.Info("Applying block", "height", i)
-		block := h.store.LoadBlock(i)
+		block, err := h.store.LoadBlock(i)
+		if err != nil {
+			return nil, err
+		}
 		// Extra check to ensure the app was not changed in a way it shouldn't have.
 		if len(appHash) > 0 {
 			assertAppHashEqualsOneFromBlock(appHash, block)
@@ -500,15 +503,20 @@ func (h *Handshaker) replayBlocks(
 
 // ApplyBlock on the proxyApp with the last block.
 func (h *Handshaker) replayBlock(state sm.State, height int64, proxyApp proxy.AppConnConsensus) (sm.State, error) {
-	block := h.store.LoadBlock(height)
-	meta := h.store.LoadBlockMeta(height)
+	block, err := h.store.LoadBlock(height)
+	if err != nil {
+		return sm.State{}, err
+	}
+	meta, err := h.store.LoadBlockMeta(height)
+	if err != nil {
+		return sm.State{}, err
+	}
 
 	// Use stubs for both mempool and evidence pool since no transactions nor
 	// evidence are needed here - block already exists.
 	blockExec := sm.NewBlockExecutor(h.stateStore, h.logger, proxyApp, emptyMempool{}, sm.EmptyEvidencePool{})
 	blockExec.SetEventBus(h.eventBus)
 
-	var err error
 	state, _, err = blockExec.ApplyBlock(state, meta.BlockID, block, nil)
 	if err != nil {
 		return sm.State{}, err

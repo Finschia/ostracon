@@ -25,7 +25,10 @@ func (evpool *Pool) verify(evidence types.Evidence) error {
 	)
 
 	// verify the time of the evidence
-	blockMeta := evpool.blockStore.LoadBlockMeta(evidence.Height())
+	blockMeta, err := evpool.blockStore.LoadBlockMeta(evidence.Height())
+	if err != nil {
+		return err
+	}
 	if blockMeta == nil {
 		return fmt.Errorf("don't have header #%d", evidence.Height())
 	}
@@ -282,11 +285,17 @@ func validateABCIEvidence(
 }
 
 func getSignedHeader(blockStore BlockStore, height int64) (*types.SignedHeader, error) {
-	blockMeta := blockStore.LoadBlockMeta(height)
+	blockMeta, err := blockStore.LoadBlockMeta(height)
+	if err != nil {
+		return nil, err
+	}
 	if blockMeta == nil {
 		return nil, fmt.Errorf("don't have header at height #%d", height)
 	}
-	commit := blockStore.LoadBlockCommit(height)
+	commit, err := blockStore.LoadBlockCommit(height)
+	if err != nil {
+		return nil, err
+	}
 	if commit == nil {
 		return nil, fmt.Errorf("don't have commit at height #%d", height)
 	}

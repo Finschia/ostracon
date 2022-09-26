@@ -481,7 +481,10 @@ func (evpool *Pool) processConsensusBuffer(state sm.State) {
 				)
 				continue
 			}
-			blockMeta := evpool.blockStore.LoadBlockMeta(voteSet.VoteA.Height)
+			blockMeta, err := evpool.blockStore.LoadBlockMeta(voteSet.VoteA.Height)
+			if err != nil {
+				panic(err)
+			}
 			if blockMeta == nil {
 				evpool.logger.Error("failed to load block time for conflicting votes", "height", voteSet.VoteA.Height)
 				continue

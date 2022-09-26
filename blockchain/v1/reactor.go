@@ -206,7 +206,10 @@ func (bcR *BlockchainReactor) AddPeer(peer p2p.Peer) {
 func (bcR *BlockchainReactor) sendBlockToPeer(msg *bcproto.BlockRequest,
 	src p2p.Peer) (queued bool) {
 
-	block := bcR.store.LoadBlock(msg.Height)
+	block, err := bcR.store.LoadBlock(msg.Height)
+	if err != nil {
+		panic(err)
+	}
 	if block != nil {
 		pbbi, err := block.ToProto()
 		if err != nil {

@@ -2,6 +2,8 @@ package store
 
 import (
 	"fmt"
+	"github.com/line/ostracon/evidence"
+	"github.com/line/ostracon/state"
 	"strconv"
 
 	"github.com/gogo/protobuf/proto"
@@ -43,6 +45,9 @@ type BlockStore struct {
 	height int64
 }
 
+var _ state.BlockStore = (*BlockStore)(nil)
+var _ evidence.BlockStore = (*BlockStore)(nil)
+
 // NewBlockStore returns a new BlockStore with the given DB,
 // initialized to the last height that was committed to the DB.
 func NewBlockStore(db dbm.DB) *BlockStore {
@@ -79,66 +84,72 @@ func (bs *BlockStore) Size() int64 {
 }
 
 // LoadBase atomically loads the base block meta, or returns nil if no base is found.
-func (bs *BlockStore) LoadBaseMeta() *types.BlockMeta {
+func (bs *BlockStore) LoadBaseMeta() (*types.BlockMeta, error) {
 	bs.mtx.RLock()
 	defer bs.mtx.RUnlock()
 	if bs.base == 0 {
-		return nil
+		return nil, nil
 	}
 	return bs.LoadBlockMeta(bs.base)
 }
 
 // LoadBlock returns the block with the given height.
 // If no block is found for that height, it returns nil.
-func (bs *BlockStore) LoadBlock(height int64) *types.Block {
-	var blockMeta = bs.LoadBlockMeta(height)
+func (bs *BlockStore) LoadBlock(height int64) (*types.Block, error) {
+	var blockMeta, err = bs.LoadBlockMeta(height)
+	if err != nil {
+		return nil, err
+	}
 	if blockMeta == nil {
-		return nil
+		return nil, nil
 	}
 
 	pbb := new(tmproto.Block)
 	buf := []byte{}
 	for i := 0; i < int(blockMeta.BlockID.PartSetHeader.Total); i++ {
-		part := bs.LoadBlockPart(height, i)
+		part, err := bs.LoadBlockPart(height, i)
+		if err != nil {
+			return nil, err
+		}
 		// If the part is missing (e.g. since it has been deleted after we
 		// loaded the block meta) we consider the whole block to be missing.
 		if part == nil {
-			return nil
+			return nil, nil
 		}
 		buf = append(buf, part.Bytes...)
 	}
-	err := proto.Unmarshal(buf, pbb)
+	err = proto.Unmarshal(buf, pbb)
 	if err != nil {
 		// NOTE: The existence of meta should imply the existence of the
 		// block. So, make sure meta is only saved after blocks are saved.
-		panic(fmt.Sprintf("Error reading block: %v", err))
+		return nil, fmt.Errorf("error reading block: %v", err)
 	}
 
 	block, err := types.BlockFromProto(pbb)
 	if err != nil {
-		panic(fmt.Errorf("error from proto block: %w", err))
+		return nil, fmt.Errorf("error from proto block: %w", err)
 	}
 
-	return block
+	return block, nil
 }
 
 // LoadBlockByHash returns the block with the given hash.
 // If no block is found for that hash, it returns nil.
 // Panics if it fails to parse height associated with the given hash.
-func (bs *BlockStore) LoadBlockByHash(hash []byte) *types.Block {
+func (bs *BlockStore) LoadBlockByHash(hash []byte) (*types.Block, error) {
 	bz, err := bs.db.Get(calcBlockHashKey(hash))
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	if len(bz) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	s := string(bz)
 	height, err := strconv.ParseInt(s, 10, 64)
 
 	if err != nil {
-		panic(fmt.Sprintf("failed to extract height from %s: %v", s, err))
+		return nil, fmt.Errorf("failed to extract height from %s: %v", s, err)
 	}
 	return bs.LoadBlock(height)
 }
@@ -146,102 +157,102 @@ func (bs *BlockStore) LoadBlockByHash(hash []byte) *types.Block {
 // LoadBlockPart returns the Part at the given index
 // from the block at the given height.
 // If no part is found for the given height and index, it returns nil.
-func (bs *BlockStore) LoadBlockPart(height int64, index int) *types.Part {
+func (bs *BlockStore) LoadBlockPart(height int64, index int) (*types.Part, error) {
 	var pbpart = new(tmproto.Part)
 
 	bz, err := bs.db.Get(calcBlockPartKey(height, index))
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	if len(bz) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	err = proto.Unmarshal(bz, pbpart)
 	if err != nil {
-		panic(fmt.Errorf("unmarshal to tmproto.Part failed: %w", err))
+		return nil, fmt.Errorf("unmarshal to tmproto.Part failed: %w", err)
 	}
 	part, err := types.PartFromProto(pbpart)
 	if err != nil {
-		panic(fmt.Sprintf("Error reading block part: %v", err))
+		return nil, fmt.Errorf("error from proto block part: %v", err)
 	}
 
-	return part
+	return part, nil
 }
 
 // LoadBlockMeta returns the BlockMeta for the given height.
 // If no block is found for the given height, it returns nil.
-func (bs *BlockStore) LoadBlockMeta(height int64) *types.BlockMeta {
+func (bs *BlockStore) LoadBlockMeta(height int64) (*types.BlockMeta, error) {
 	var pbbm = new(tmproto.BlockMeta)
 	bz, err := bs.db.Get(calcBlockMetaKey(height))
 
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	if len(bz) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	err = proto.Unmarshal(bz, pbbm)
 	if err != nil {
-		panic(fmt.Errorf("unmarshal to tmproto.BlockMeta: %w", err))
+		return nil, fmt.Errorf("unmarshal to tmproto.BlockMeta: %w", err)
 	}
 
 	blockMeta, err := types.BlockMetaFromProto(pbbm)
 	if err != nil {
-		panic(fmt.Errorf("error from proto blockMeta: %w", err))
+		return nil, fmt.Errorf("error from proto blockMeta: %w", err)
 	}
 
-	return blockMeta
+	return blockMeta, nil
 }
 
 // LoadBlockCommit returns the Commit for the given height.
 // This commit consists of the +2/3 and other Precommit-votes for block at `height`,
 // and it comes from the block.LastCommit for `height+1`.
 // If no commit is found for the given height, it returns nil.
-func (bs *BlockStore) LoadBlockCommit(height int64) *types.Commit {
+func (bs *BlockStore) LoadBlockCommit(height int64) (*types.Commit, error) {
 	var pbc = new(tmproto.Commit)
 	bz, err := bs.db.Get(calcBlockCommitKey(height))
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	if len(bz) == 0 {
-		return nil
+		return nil, nil
 	}
 	err = proto.Unmarshal(bz, pbc)
 	if err != nil {
-		panic(fmt.Errorf("error reading block commit: %w", err))
+		return nil, fmt.Errorf("error reading block commit: %w", err)
 	}
 	commit, err := types.CommitFromProto(pbc)
 	if err != nil {
-		panic(fmt.Sprintf("Error reading block commit: %v", err))
+		return nil, fmt.Errorf("error from proto commit: %w", err)
 	}
-	return commit
+	return commit, nil
 }
 
 // LoadSeenCommit returns the locally seen Commit for the given height.
 // This is useful when we've seen a commit, but there has not yet been
 // a new block at `height + 1` that includes this commit in its block.LastCommit.
-func (bs *BlockStore) LoadSeenCommit(height int64) *types.Commit {
+func (bs *BlockStore) LoadSeenCommit(height int64) (*types.Commit, error) {
 	var pbc = new(tmproto.Commit)
 	bz, err := bs.db.Get(calcSeenCommitKey(height))
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	if len(bz) == 0 {
-		return nil
+		return nil, nil
 	}
 	err = proto.Unmarshal(bz, pbc)
 	if err != nil {
-		panic(fmt.Sprintf("error reading block seen commit: %v", err))
+		return nil, fmt.Errorf("error reading block seen commit: %v", err)
 	}
 
 	commit, err := types.CommitFromProto(pbc)
 	if err != nil {
-		panic(fmt.Errorf("error from proto commit: %w", err))
+		return nil, fmt.Errorf("error from proto commit: %w", err)
 	}
-	return commit
+	return commit, nil
 }
 
 // PruneBlocks removes block up to (but not including) a height. It returns number of blocks pruned.
@@ -281,7 +292,10 @@ func (bs *BlockStore) PruneBlocks(height int64) (uint64, error) {
 	}
 
 	for h := base; h < height; h++ {
-		meta := bs.LoadBlockMeta(h)
+		meta, err := bs.LoadBlockMeta(h)
+		if err != nil {
+			return 0, err
+		}
 		if meta == nil { // assume already deleted
 			continue
 		}

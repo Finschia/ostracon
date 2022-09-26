@@ -1215,11 +1215,11 @@ func (bs *mockBlockStore) LoadBlockMeta(height int64) *types.BlockMeta {
 func (bs *mockBlockStore) LoadBlockPart(height int64, index int) *types.Part { return nil }
 func (bs *mockBlockStore) SaveBlock(block *types.Block, blockParts *types.PartSet, seenCommit *types.Commit) {
 }
-func (bs *mockBlockStore) LoadBlockCommit(height int64) *types.Commit {
-	return bs.commits[height-1]
+func (bs *mockBlockStore) LoadBlockCommit(height int64) (*types.Commit, error) {
+	return bs.commits[height-1], nil
 }
-func (bs *mockBlockStore) LoadSeenCommit(height int64) *types.Commit {
-	return bs.commits[height-1]
+func (bs *mockBlockStore) LoadSeenCommit(height int64) (*types.Commit, error) {
+	return bs.commits[height-1], nil
 }
 
 func (bs *mockBlockStore) PruneBlocks(height int64) (uint64, error) {

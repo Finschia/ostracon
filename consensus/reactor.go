@@ -552,7 +552,16 @@ OUTER_LOOP:
 
 			// if we never received the commit message from the peer, the block parts wont be initialized
 			if prs.ProposalBlockParts == nil {
-				blockMeta := conR.conS.blockStore.LoadBlockMeta(prs.Height)
+				blockMeta, err := conR.conS.blockStore.LoadBlockMeta(prs.Height)
+				if err != nil {
+					// BlockDB may be closed If the node is stopped during operation. For this reason, if the acquisition
+					// of seen commit fails and the reactor is stopped, we don't consider an error and terminate the
+					// operation.
+					if peer.IsRunning() && conR.IsRunning() {
+						logger.Error(fmt.Sprintf("Failed to retrieve block meta: %s", err), "height", prs.Height)
+					}
+					continue OUTER_LOOP
+				}
 				if blockMeta == nil {
 					heightLogger.Error("Failed to load block meta",
 						"blockstoreBase", blockStoreBase, "blockstoreHeight", conR.conS.blockStore.Height())
@@ -618,7 +627,16 @@ func (conR *Reactor) gossipDataForCatchup(logger log.Logger, rs *cstypes.RoundSt
 
 	if index, ok := prs.ProposalBlockParts.Not().PickRandom(); ok {
 		// Ensure that the peer's PartSetHeader is correct
-		blockMeta := conR.conS.blockStore.LoadBlockMeta(prs.Height)
+		blockMeta, err := conR.conS.blockStore.LoadBlockMeta(prs.Height)
+		if err != nil {
+			// BlockDB may be closed If the node is stopped during operation. For this reason, if the acquisition
+			// of seen commit fails and the reactor is stopped, we don't consider an error and terminate the
+			// operation.
+			if peer.IsRunning() && conR.IsRunning() {
+				logger.Error(fmt.Sprintf("Failed to retrieve block meta: %s", err), "height", prs.Height)
+			}
+			return
+		}
 		if blockMeta == nil {
 			logger.Error("Failed to load block meta", "ourHeight", rs.Height,
 				"blockstoreBase", conR.conS.blockStore.Base(), "blockstoreHeight", conR.conS.blockStore.Height())
@@ -631,7 +649,16 @@ func (conR *Reactor) gossipDataForCatchup(logger log.Logger, rs *cstypes.RoundSt
 			return
 		}
 		// Load the part
-		part := conR.conS.blockStore.LoadBlockPart(prs.Height, index)
+		part, err := conR.conS.blockStore.LoadBlockPart(prs.Height, index)
+		if err != nil {
+			// BlockDB may be closed If the node is stopped during operation. For this reason, if the acquisition
+			// of seen commit fails and the reactor is stopped, we don't consider an error and terminate the
+			// operation.
+			if peer.IsRunning() && conR.IsRunning() {
+				logger.Error(fmt.Sprintf("Failed to retrieve block part: %s", err), "height", prs.Height)
+			}
+			return
+		}
 		if part == nil {
 			logger.Error("Could not load part", "index", index,
 				"blockPartSetHeader", blockMeta.BlockID.PartSetHeader, "peerBlockPartSetHeader", prs.ProposalBlockPartSetHeader)
@@ -706,7 +733,17 @@ OUTER_LOOP:
 			// which contains precommit signatures for prs.Height.
 			// Originally the block commit was used, but with the addition of the BLS signature-aggregation,
 			// we use seen commit instead of the block commit because block commit has no individual signature.
-			if commit := conR.conS.blockStore.LoadSeenCommit(prs.Height); commit != nil {
+			commit, err := conR.conS.blockStore.LoadSeenCommit(prs.Height)
+			if err != nil {
+				// BlockDB may be closed If the node is stopped during operation. For this reason, if the acquisition
+				// of seen commit fails and the reactor is stopped, we don't consider an error and terminate the
+				// operation.
+				if peer.IsRunning() && conR.IsRunning() {
+					logger.Error(fmt.Sprintf("Failed to retrieve seen commit: %s", err), "height", prs.Height)
+				}
+				continue OUTER_LOOP
+			}
+			if commit != nil {
 				if ps.PickSendVote(commit) {
 					logger.Debug("Picked Catchup commit to send", "height", prs.Height)
 					continue OUTER_LOOP
@@ -792,6 +829,7 @@ func (conR *Reactor) gossipVotesForHeight(
 // NOTE: `queryMaj23Routine` has a simple crude design since it only comes
 // into play for liveness when there's a signature DDoS attack happening.
 func (conR *Reactor) queryMaj23Routine(peer p2p.Peer, ps *PeerState) {
+	logger := conR.Logger.With("peer", peer)
 
 OUTER_LOOP:
 	for {
@@ -859,7 +897,17 @@ OUTER_LOOP:
 			prs := ps.GetRoundState()
 			if prs.CatchupCommitRound != -1 && prs.Height > 0 && prs.Height <= conR.conS.blockStore.Height() &&
 				prs.Height >= conR.conS.blockStore.Base() {
-				if commit := conR.conS.LoadCommit(prs.Height); commit != nil {
+				commit, err := conR.conS.LoadCommit(prs.Height)
+				if err != nil {
+					// BlockDB may be closed If the node is stopped during operation. For this reason, if the acquisition
+					// of seen commit fails and the reactor is stopped, we don't consider an error and terminate the
+					// operation.
+					if peer.IsRunning() && conR.IsRunning() {
+						logger.Error(fmt.Sprintf("Failed to retrieve seen commit: %s", err), "height", prs.Height)
+					}
+					continue OUTER_LOOP
+				}
+				if commit != nil {
 					peer.TrySend(StateChannel, MustEncode(&VoteSetMaj23Message{
 						Height:  prs.Height,
 						Round:   commit.Round,
