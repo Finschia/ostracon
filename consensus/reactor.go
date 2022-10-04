@@ -729,11 +729,11 @@ OUTER_LOOP:
 		// If peer is lagging by more than 1, send Commit.
 		blockStoreBase := conR.conS.blockStore.Base()
 		if blockStoreBase > 0 && prs.Height != 0 && rs.Height >= prs.Height+2 && prs.Height >= blockStoreBase {
-			// Load the seen commit for prs.Height,
+			// Load the block commit for prs.Height,
 			// which contains precommit signatures for prs.Height.
 			// Originally the block commit was used, but with the addition of the BLS signature-aggregation,
 			// we use seen commit instead of the block commit because block commit has no individual signature.
-			commit, err := conR.conS.blockStore.LoadSeenCommit(prs.Height)
+			commit, err := conR.conS.blockStore.LoadBlockCommit(prs.Height)
 			if err != nil {
 				// BlockDB may be closed If the node is stopped during operation. For this reason, if the acquisition
 				// of seen commit fails and the reactor is stopped, we don't consider an error and terminate the

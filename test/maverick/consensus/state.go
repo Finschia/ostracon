@@ -562,7 +562,7 @@ func (cs *State) SetTimeoutTicker(timeoutTicker TimeoutTicker) {
 }
 
 // LoadCommit loads the commit for a given height.
-func (cs *State) LoadCommit(height int64) *types.Commit {
+func (cs *State) LoadCommit(height int64) (*types.Commit, error) {
 	cs.mtx.RLock()
 	defer cs.mtx.RUnlock()
 	if height == cs.blockStore.Height() {
@@ -807,7 +807,10 @@ func (cs *State) sendInternalMessage(mi msgInfo) {
 // Reconstruct LastCommit from SeenCommit, which we saved along with the block,
 // (which happens even before saving the state)
 func (cs *State) reconstructLastCommit(state sm.State) {
-	seenCommit := cs.blockStore.LoadSeenCommit(state.LastBlockHeight)
+	seenCommit, err := cs.blockStore.LoadSeenCommit(state.LastBlockHeight)
+	if err != nil {
+		panic(err)
+	}
 	if seenCommit == nil {
 		panic(fmt.Sprintf("Failed to reconstruct LastCommit: seen commit for height %v not found",
 			state.LastBlockHeight))
@@ -1169,7 +1172,10 @@ func (cs *State) needProofBlock(height int64) bool {
 		return true
 	}
 
-	lastBlockMeta := cs.blockStore.LoadBlockMeta(height - 1)
+	lastBlockMeta, err := cs.blockStore.LoadBlockMeta(height - 1)
+	if err != nil {
+		panic(err)
+	}
 	if lastBlockMeta == nil {
 		panic(fmt.Sprintf("needProofBlock: last block meta for height %d not found", height-1))
 	}
@@ -1645,7 +1651,10 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 	cs.metrics.ByzantineVotersPower.Set(float64(byzantineValidatorsPower))
 
 	if height > 1 {
-		lastBlockMeta := cs.blockStore.LoadBlockMeta(height - 1)
+		lastBlockMeta, err := cs.blockStore.LoadBlockMeta(height - 1)
+		if err != nil {
+			panic(err)
+		}
 		if lastBlockMeta != nil {
 			cs.metrics.BlockIntervalSeconds.Set(
 				block.Time.Sub(lastBlockMeta.Header.Time).Seconds(),
@@ -1899,7 +1908,10 @@ func (cs *State) checkDoubleSigningRisk(height int64) error {
 			doubleSignCheckHeight = height
 		}
 		for i := int64(1); i < doubleSignCheckHeight; i++ {
-			lastCommit := cs.blockStore.LoadSeenCommit(height - i)
+			lastCommit, err := cs.blockStore.LoadSeenCommit(height - i)
+			if err != nil {
+				panic(err)
+			}
 			if lastCommit != nil {
 				for sigIdx, s := range lastCommit.Signatures {
 					if s.BlockIDFlag == types.BlockIDFlagCommit && bytes.Equal(s.ValidatorAddress, valAddr) {

@@ -194,6 +194,7 @@ func TestReactorBroadcastEvidenceMemoryLeak(t *testing.T) {
 	blockStore := &mocks.BlockStore{}
 	blockStore.On("LoadBlockMeta", mock.AnythingOfType("int64")).Return(
 		&types.BlockMeta{Header: types.Header{Time: evidenceTime}},
+		nil,
 	)
 	val := types.NewMockPV(types.PrivKeyComposite) // TODO 🏺 need to test by all key types
 	stateStore := initializeValidatorState(val, 1)
@@ -251,6 +252,7 @@ func makeAndConnectReactorsAndPools(config *cfg.Config, stateStores []sm.Store) 
 		blockStore := &mocks.BlockStore{}
 		blockStore.On("LoadBlockMeta", mock.AnythingOfType("int64")).Return(
 			&types.BlockMeta{Header: types.Header{Time: evidenceTime}},
+			nil,
 		)
 		pool, err := evidence.NewPool(evidenceDB, stateStores[i], blockStore)
 		if err != nil {

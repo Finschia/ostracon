@@ -71,8 +71,8 @@ func TestRollback(t *testing.T) {
 			LastResultsHash: nextState.LastResultsHash,
 		},
 	}
-	blockStore.On("LoadBlockMeta", height).Return(block)
-	blockStore.On("LoadBlockMeta", nextHeight).Return(nextBlock)
+	blockStore.On("LoadBlockMeta", height).Return(block, nil)
+	blockStore.On("LoadBlockMeta", nextHeight).Return(nextBlock, nil)
 	blockStore.On("Height").Return(nextHeight)
 
 	// rollback the state
@@ -102,14 +102,14 @@ func TestRollbackNoBlocks(t *testing.T) {
 	stateStore := setupStateStore(t, height)
 	blockStore := &mocks.BlockStore{}
 	blockStore.On("Height").Return(height)
-	blockStore.On("LoadBlockMeta", height-1).Once().Return(nil)
+	blockStore.On("LoadBlockMeta", height-1).Once().Return(nil, nil)
 
 	_, _, err := state.Rollback(blockStore, stateStore)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "block at RollbackHeight 99 not found")
 
-	blockStore.On("LoadBlockMeta", height-1).Once().Return(&types.BlockMeta{})
-	blockStore.On("LoadBlockMeta", height).Return(nil)
+	blockStore.On("LoadBlockMeta", height-1).Once().Return(&types.BlockMeta{}, nil)
+	blockStore.On("LoadBlockMeta", height).Return(nil, nil)
 
 	_, _, err = state.Rollback(blockStore, stateStore)
 	require.Error(t, err)

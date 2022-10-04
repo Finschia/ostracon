@@ -53,7 +53,8 @@ func TestAggregateSignature(t *testing.T) {
 	)
 	css := startConsensusAndMakeBlocks(t, nPeers, nVals, nValsWithComposite)
 	for _, state := range css {
-		block := state.blockStore.LoadBlock(2)
+		block, err := state.blockStore.LoadBlock(2)
+		require.NoError(t, err)
 
 		// validators are ed25519 only
 		for _, comsig := range block.LastCommit.Signatures {
@@ -73,7 +74,8 @@ func TestAggregateSignatureWithComposite(t *testing.T) {
 	css := startConsensusAndMakeBlocks(t, nPeers, nVals, nValsWithComposite)
 
 	for _, state := range css {
-		block := state.blockStore.LoadBlock(2)
+		block, err := state.blockStore.LoadBlock(2)
+		require.NoError(t, err)
 		// validators are composite only
 		for _, comsig := range block.LastCommit.Signatures {
 			require.Nil(t, comsig.Signature)
@@ -93,7 +95,8 @@ func TestAggregateSignatureWithMix(t *testing.T) {
 	css := startConsensusAndMakeBlocks(t, nPeers, nVals, nValsWithComposite)
 
 	for _, state := range css {
-		block := state.blockStore.LoadBlock(2)
+		block, err := state.blockStore.LoadBlock(2)
+		require.NoError(t, err)
 		// composite and ed25519 validators
 		cnt := 0
 		for _, comsig := range block.LastCommit.Signatures {

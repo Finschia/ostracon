@@ -126,8 +126,14 @@ func newBlockchainReactor(
 	for blockHeight := int64(1); blockHeight <= maxBlockHeight; blockHeight++ {
 		lastCommit := types.NewCommit(blockHeight-1, 1, types.BlockID{}, nil)
 		if blockHeight > 1 {
-			lastBlockMeta := blockStore.LoadBlockMeta(blockHeight - 1)
-			lastBlock := blockStore.LoadBlock(blockHeight - 1)
+			lastBlockMeta, err := blockStore.LoadBlockMeta(blockHeight - 1)
+			if err != nil {
+				panic(err)
+			}
+			lastBlock, err := blockStore.LoadBlock(blockHeight - 1)
+			if err != nil {
+				panic(err)
+			}
 
 			vote := makeVote(t, &lastBlock.Header, lastBlockMeta.BlockID, state.Validators, privVals[0])
 			lastCommit = types.NewCommit(vote.Height, vote.Round, lastBlockMeta.BlockID, []types.CommitSig{vote.CommitSig()})
@@ -234,7 +240,8 @@ func TestFastSyncNoBlockResponse(t *testing.T) {
 	assert.Equal(t, maxBlockHeight, reactorPairs[0].bcR.store.Height())
 
 	for _, tt := range tests {
-		block := reactorPairs[1].bcR.store.LoadBlock(tt.height)
+		block, err := reactorPairs[1].bcR.store.LoadBlock(tt.height)
+		require.NoError(t, err)
 		if tt.existent {
 			assert.True(t, block != nil, "height=%d, existent=%t", tt.height, tt.existent)
 		} else {

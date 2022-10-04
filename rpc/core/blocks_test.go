@@ -325,16 +325,16 @@ type mockBlockStore struct {
 
 var _ sm.BlockStore = (*mockBlockStore)(nil)
 
-func (mockBlockStore) Base() int64                                         { return 1 }
-func (store mockBlockStore) Height() int64                                 { return store.height }
-func (store mockBlockStore) Size() int64                                   { return store.height }
-func (mockBlockStore) LoadBaseMeta() *types.BlockMeta                      { return nil }
-func (mockBlockStore) LoadBlockMeta(height int64) *types.BlockMeta         { return nil }
-func (mockBlockStore) LoadBlock(height int64) *types.Block                 { return nil }
-func (mockBlockStore) LoadBlockByHash(hash []byte) *types.Block            { return nil }
-func (mockBlockStore) LoadBlockPart(height int64, index int) *types.Part   { return nil }
-func (mockBlockStore) LoadBlockCommit(height int64) (*types.Commit, error) { return nil, nil }
-func (mockBlockStore) LoadSeenCommit(height int64) (*types.Commit, error)  { return nil, nil }
-func (mockBlockStore) PruneBlocks(height int64) (uint64, error)            { return 0, nil }
+func (mockBlockStore) Base() int64                                                { return 1 }
+func (store mockBlockStore) Height() int64                                        { return store.height }
+func (store mockBlockStore) Size() int64                                          { return store.height }
+func (mockBlockStore) LoadBaseMeta() (*types.BlockMeta, error)                    { return nil, nil }
+func (mockBlockStore) LoadBlockMeta(height int64) (*types.BlockMeta, error)       { return nil, nil }
+func (mockBlockStore) LoadBlock(height int64) (*types.Block, error)               { return nil, nil }
+func (mockBlockStore) LoadBlockByHash(hash []byte) (*types.Block, error)          { return nil, nil }
+func (mockBlockStore) LoadBlockPart(height int64, index int) (*types.Part, error) { return nil, nil }
+func (mockBlockStore) LoadBlockCommit(height int64) (*types.Commit, error)        { return nil, nil }
+func (mockBlockStore) LoadSeenCommit(height int64) (*types.Commit, error)         { return nil, nil }
+func (mockBlockStore) PruneBlocks(height int64) (uint64, error)                   { return 0, nil }
 func (mockBlockStore) SaveBlock(block *types.Block, blockParts *types.PartSet, seenCommit *types.Commit) {
 }

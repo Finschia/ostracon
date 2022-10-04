@@ -482,7 +482,7 @@ func (r *BlockchainReactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 	case *bcproto.BlockRequest:
 		block, err := r.store.LoadBlock(msg.Height)
 		if err != nil {
-
+			panic(err)
 		}
 		if block != nil {
 			if err = r.io.sendBlockToPeer(block, src.ID()); err != nil {

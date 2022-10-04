@@ -179,10 +179,10 @@ func TestVerify_LunaticAttackAgainstState(t *testing.T) {
 		common.ValidatorSet, ev.ConflictingBlock.VoterSet, state.VoterParams, state.LastProofHash, nil)
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
-	blockStore.On("LoadBlockMeta", commonHeight).Return(&types.BlockMeta{Header: *common.Header})
-	blockStore.On("LoadBlockMeta", height).Return(&types.BlockMeta{Header: *trusted.Header})
-	blockStore.On("LoadBlockCommit", commonHeight).Return(common.Commit)
-	blockStore.On("LoadBlockCommit", height).Return(trusted.Commit)
+	blockStore.On("LoadBlockMeta", commonHeight).Return(&types.BlockMeta{Header: *common.Header}, nil)
+	blockStore.On("LoadBlockMeta", height).Return(&types.BlockMeta{Header: *trusted.Header}, nil)
+	blockStore.On("LoadBlockCommit", commonHeight).Return(common.Commit, nil)
+	blockStore.On("LoadBlockCommit", height).Return(trusted.Commit, nil)
 	pool, err := evidence.NewPool(dbm.NewMemDB(), stateStore, blockStore)
 	require.NoError(t, err)
 	pool.SetLogger(log.TestingLogger())
@@ -258,11 +258,11 @@ func TestVerify_ForwardLunaticAttack(t *testing.T) {
 		common.ValidatorSet, ev.ConflictingBlock.VoterSet, state.VoterParams, state.LastProofHash, nil)
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
-	blockStore.On("LoadBlockMeta", commonHeight).Return(&types.BlockMeta{Header: *common.Header})
-	blockStore.On("LoadBlockMeta", nodeHeight).Return(&types.BlockMeta{Header: *trusted.Header})
-	blockStore.On("LoadBlockMeta", attackHeight).Return(nil)
-	blockStore.On("LoadBlockCommit", commonHeight).Return(common.Commit)
-	blockStore.On("LoadBlockCommit", nodeHeight).Return(trusted.Commit)
+	blockStore.On("LoadBlockMeta", commonHeight).Return(&types.BlockMeta{Header: *common.Header}, nil)
+	blockStore.On("LoadBlockMeta", nodeHeight).Return(&types.BlockMeta{Header: *trusted.Header}, nil)
+	blockStore.On("LoadBlockMeta", attackHeight).Return(nil, nil)
+	blockStore.On("LoadBlockCommit", commonHeight).Return(common.Commit, nil)
+	blockStore.On("LoadBlockCommit", nodeHeight).Return(trusted.Commit, nil)
 	blockStore.On("Height").Return(nodeHeight)
 	pool, err := evidence.NewPool(dbm.NewMemDB(), stateStore, blockStore)
 	require.NoError(t, err)
@@ -274,13 +274,17 @@ func TestVerify_ForwardLunaticAttack(t *testing.T) {
 	oldBlockStore := &mocks.BlockStore{}
 	oldHeader := trusted.Header
 	oldHeader.Time = defaultEvidenceTime
-	oldBlockStore.On("LoadBlockMeta", commonHeight).Return(&types.BlockMeta{Header: *common.Header})
-	oldBlockStore.On("LoadBlockMeta", nodeHeight).Return(&types.BlockMeta{Header: *oldHeader})
-	oldBlockStore.On("LoadBlockMeta", attackHeight).Return(nil)
-	oldBlockStore.On("LoadBlockCommit", commonHeight).Return(common.Commit)
-	oldBlockStore.On("LoadBlockCommit", nodeHeight).Return(trusted.Commit)
+	oldBlockStore.On("LoadBlockMeta", commonHeight).Return(&types.BlockMeta{Header: *common.Header}, nil)
+	oldBlockStore.On("LoadBlockMeta", nodeHeight).Return(&types.BlockMeta{Header: *oldHeader}, nil)
+	oldBlockStore.On("LoadBlockMeta", attackHeight).Return(nil, nil)
+	oldBlockStore.On("LoadBlockCommit", commonHeight).Return(common.Commit, nil)
+	oldBlockStore.On("LoadBlockCommit", nodeHeight).Return(trusted.Commit, nil)
 	oldBlockStore.On("Height").Return(nodeHeight)
-	require.Equal(t, defaultEvidenceTime, oldBlockStore.LoadBlockMeta(nodeHeight).Header.Time)
+	meta, err := oldBlockStore.LoadBlockMeta(nodeHeight)
+	if err != nil {
+		panic(err)
+	}
+	require.Equal(t, defaultEvidenceTime, meta.Header.Time)
 
 	pool, err = evidence.NewPool(dbm.NewMemDB(), stateStore, oldBlockStore)
 	require.NoError(t, err)
@@ -378,8 +382,8 @@ func TestVerifyLightClientAttack_Equivocation(t *testing.T) {
 		conflictingVals, conflictingVoters, state.VoterParams, state.LastProofHash, nil)
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
-	blockStore.On("LoadBlockMeta", int64(10)).Return(&types.BlockMeta{Header: *trustedHeader})
-	blockStore.On("LoadBlockCommit", int64(10)).Return(trustedCommit)
+	blockStore.On("LoadBlockMeta", int64(10)).Return(&types.BlockMeta{Header: *trustedHeader}, nil)
+	blockStore.On("LoadBlockCommit", int64(10)).Return(trustedCommit, nil)
 
 	pool, err := evidence.NewPool(dbm.NewMemDB(), stateStore, blockStore)
 	require.NoError(t, err)
@@ -474,8 +478,8 @@ func TestVerifyLightClientAttack_Amnesia(t *testing.T) {
 		conflictingVals, conflictingVoters, state.VoterParams, state.LastProofHash, nil)
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
-	blockStore.On("LoadBlockMeta", int64(10)).Return(&types.BlockMeta{Header: *trustedHeader})
-	blockStore.On("LoadBlockCommit", int64(10)).Return(trustedCommit)
+	blockStore.On("LoadBlockMeta", int64(10)).Return(&types.BlockMeta{Header: *trustedHeader}, nil)
+	blockStore.On("LoadBlockCommit", int64(10)).Return(trustedCommit, nil)
 
 	pool, err := evidence.NewPool(dbm.NewMemDB(), stateStore, blockStore)
 	require.NoError(t, err)
@@ -572,7 +576,10 @@ func TestVerifyDuplicateVoteEvidence(t *testing.T) {
 		valSet, voterSet, state.VoterParams, state.LastProofHash, nil)
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
-	blockStore.On("LoadBlockMeta", int64(10)).Return(&types.BlockMeta{Header: types.Header{Time: defaultEvidenceTime}})
+	blockStore.On("LoadBlockMeta", int64(10)).Return(
+		&types.BlockMeta{Header: types.Header{Time: defaultEvidenceTime}},
+		nil,
+	)
 
 	pool, err := evidence.NewPool(dbm.NewMemDB(), stateStore, blockStore)
 	require.NoError(t, err)

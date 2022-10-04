@@ -54,6 +54,7 @@ func TestEvidencePoolBasic(t *testing.T) {
 
 	blockStore.On("LoadBlockMeta", mock.AnythingOfType("int64")).Return(
 		&types.BlockMeta{Header: types.Header{Time: defaultEvidenceTime}},
+		nil,
 	)
 	stateStore.On("LoadValidators", mock.AnythingOfType("int64")).Return(valSet, nil)
 	stateStore.On("LoadVoters", mock.AnythingOfType("int64"), state.VoterParams).Return(
@@ -129,7 +130,7 @@ func TestAddExpiredEvidence(t *testing.T) {
 			return &types.BlockMeta{Header: types.Header{Time: defaultEvidenceTime}}
 		}
 		return &types.BlockMeta{Header: types.Header{Time: expiredEvidenceTime}}
-	})
+	}, nil)
 
 	pool, err := evidence.NewPool(evidenceDB, stateStore, blockStore)
 	require.NoError(t, err)
@@ -280,10 +281,10 @@ func TestLightClientAttackEvidenceLifecycle(t *testing.T) {
 		trusted.ValidatorSet, ev.ConflictingBlock.VoterSet, state.VoterParams, state.LastProofHash, nil)
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
-	blockStore.On("LoadBlockMeta", height).Return(&types.BlockMeta{Header: *trusted.Header})
-	blockStore.On("LoadBlockMeta", commonHeight).Return(&types.BlockMeta{Header: *common.Header})
-	blockStore.On("LoadBlockCommit", height).Return(trusted.Commit)
-	blockStore.On("LoadBlockCommit", commonHeight).Return(common.Commit)
+	blockStore.On("LoadBlockMeta", height).Return(&types.BlockMeta{Header: *trusted.Header}, nil)
+	blockStore.On("LoadBlockMeta", commonHeight).Return(&types.BlockMeta{Header: *common.Header}, nil)
+	blockStore.On("LoadBlockCommit", height).Return(trusted.Commit, nil)
+	blockStore.On("LoadBlockCommit", commonHeight).Return(common.Commit, nil)
 
 	pool, err := evidence.NewPool(dbm.NewMemDB(), stateStore, blockStore)
 	require.NoError(t, err)

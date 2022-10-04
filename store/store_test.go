@@ -167,7 +167,9 @@ func TestBlockStoreSaveLoadBlock(t *testing.T) {
 	// check there are no blocks at various heights
 	noBlockHeights := []int64{0, -1, 100, 1000, 2}
 	for i, height := range noBlockHeights {
-		if g := bs.LoadBlock(height); g != nil {
+		g, err := bs.LoadBlock(height)
+		require.NoError(t, err)
+		if g != nil {
 			t.Errorf("#%d: height(%d) got a block; want nil", i, height)
 		}
 	}
@@ -245,14 +247,12 @@ func TestBlockStoreSaveLoadBlock(t *testing.T) {
 			parts:             validPartSet,
 			seenCommit:        seenCommit1,
 			corruptCommitInDB: true, // Corrupt the DB's commit entry
-			wantPanic:         "error reading block commit",
 		},
 
 		{
 			block:            newBlock(header1, commitAtH10),
 			parts:            validPartSet,
 			seenCommit:       seenCommit1,
-			wantPanic:        "unmarshal to tmproto.BlockMeta",
 			corruptBlockInDB: true, // Corrupt the DB's block entry
 		},
 
@@ -271,7 +271,6 @@ func TestBlockStoreSaveLoadBlock(t *testing.T) {
 			seenCommit: seenCommit1,
 
 			corruptSeenCommitInDB: true,
-			wantPanic:             "error reading block seen commit",
 		},
 
 		{
@@ -306,8 +305,18 @@ func TestBlockStoreSaveLoadBlock(t *testing.T) {
 				err := db.Set(calcBlockMetaKey(tuple.block.Height), []byte("block-bogus"))
 				require.NoError(t, err)
 			}
-			bBlock := bs.LoadBlock(tuple.block.Height)
-			bBlockMeta := bs.LoadBlockMeta(tuple.block.Height)
+			bBlock, err := bs.LoadBlock(tuple.block.Height)
+			if tuple.corruptBlockInDB {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+			bBlockMeta, err := bs.LoadBlockMeta(tuple.block.Height)
+			if tuple.corruptBlockInDB {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
 
 			if tuple.eraseSeenCommitInDB {
 				err := db.Delete(calcSeenCommitKey(tuple.block.Height))
@@ -317,7 +326,12 @@ func TestBlockStoreSaveLoadBlock(t *testing.T) {
 				err := db.Set(calcSeenCommitKey(tuple.block.Height), []byte("bogus-seen-commit"))
 				require.NoError(t, err)
 			}
-			bSeenCommit := bs.LoadSeenCommit(tuple.block.Height)
+			bSeenCommit, err := bs.LoadSeenCommit(tuple.block.Height)
+			if tuple.corruptSeenCommitInDB {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
 
 			commitHeight := tuple.block.Height - 1
 			if tuple.eraseCommitInDB {
@@ -328,7 +342,12 @@ func TestBlockStoreSaveLoadBlock(t *testing.T) {
 				err := db.Set(calcBlockCommitKey(commitHeight), []byte("foo-bogus"))
 				require.NoError(t, err)
 			}
-			bCommit := bs.LoadBlockCommit(commitHeight)
+			bCommit, err := bs.LoadBlockCommit(commitHeight)
+			if tuple.corruptCommitInDB {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
 			return &quad{block: bBlock, seenCommit: bSeenCommit, commit: bCommit,
 				meta: bBlockMeta}, nil
 		})
@@ -385,7 +404,8 @@ func TestLoadBaseMeta(t *testing.T) {
 	_, err = bs.PruneBlocks(4)
 	require.NoError(t, err)
 
-	baseBlock := bs.LoadBaseMeta()
+	baseBlock, err := bs.LoadBaseMeta()
+	require.NoError(t, err)
 	assert.EqualValues(t, 4, baseBlock.Header.Height)
 	assert.EqualValues(t, 4, bs.Base())
 }
@@ -394,8 +414,8 @@ func TestLoadBlockPart(t *testing.T) {
 	bs, db := freshBlockStore()
 	height, index := int64(10), 1
 	loadPart := func() (interface{}, error) {
-		part := bs.LoadBlockPart(height, index)
-		return part, nil
+		part, err := bs.LoadBlockPart(height, index)
+		return part, err
 	}
 
 	// Initially no contents.
@@ -407,9 +427,9 @@ func TestLoadBlockPart(t *testing.T) {
 	// 2. Next save a corrupted block then try to load it
 	err := db.Set(calcBlockPartKey(height, index), []byte("Ostracon"))
 	require.NoError(t, err)
-	res, _, panicErr = doFn(loadPart)
-	require.NotNil(t, panicErr, "expecting a non-nil panic")
-	require.Contains(t, panicErr.Error(), "unmarshal to tmproto.Part failed")
+	res, err, _ = doFn(loadPart)
+	require.NotNil(t, err, "expecting a non-nil panic")
+	require.Contains(t, err.Error(), "unmarshal to tmproto.Part failed")
 
 	// 3. A good block serialized and saved to the DB should be retrievable
 	pb1, err := part1.ToProto()
@@ -454,7 +474,8 @@ func TestPruneBlocks(t *testing.T) {
 	assert.EqualValues(t, 1500, bs.Height())
 	assert.EqualValues(t, 1500, bs.Size())
 
-	prunedBlock := bs.LoadBlock(1199)
+	prunedBlock, err := bs.LoadBlock(1199)
+	require.NoError(t, err)
 
 	// Check that basic pruning works
 	pruned, err := bs.PruneBlocks(1200)
@@ -468,18 +489,34 @@ func TestPruneBlocks(t *testing.T) {
 		Height: 1500,
 	}, LoadBlockStoreState(db))
 
-	require.NotNil(t, bs.LoadBlock(1200))
-	require.Nil(t, bs.LoadBlock(1199))
-	require.Nil(t, bs.LoadBlockByHash(prunedBlock.Hash()))
-	require.Nil(t, bs.LoadBlockCommit(1199))
-	require.Nil(t, bs.LoadBlockMeta(1199))
-	require.Nil(t, bs.LoadBlockPart(1199, 1))
+	block, err = bs.LoadBlock(1200)
+	require.NoError(t, err)
+	require.NotNil(t, block)
+	block, err = bs.LoadBlock(1199)
+	require.NoError(t, err)
+	require.Nil(t, block)
+	block, err = bs.LoadBlockByHash(prunedBlock.Hash())
+	require.NoError(t, err)
+	require.Nil(t, block)
+	commit, err := bs.LoadBlockCommit(1199)
+	require.NoError(t, err)
+	require.Nil(t, commit)
+	meta, err := bs.LoadBlockMeta(1199)
+	require.NoError(t, err)
+	require.Nil(t, meta)
+	part, err := bs.LoadBlockPart(1199, 1)
+	require.NoError(t, err)
+	require.Nil(t, part)
 
 	for i := int64(1); i < 1200; i++ {
-		require.Nil(t, bs.LoadBlock(i))
+		block, err = bs.LoadBlock(i)
+		require.NoError(t, err)
+		require.Nil(t, block)
 	}
 	for i := int64(1200); i <= 1500; i++ {
-		require.NotNil(t, bs.LoadBlock(i))
+		block, err = bs.LoadBlock(i)
+		require.NoError(t, err)
+		require.NotNil(t, block)
 	}
 
 	// Pruning below the current base should error
@@ -505,17 +542,23 @@ func TestPruneBlocks(t *testing.T) {
 	pruned, err = bs.PruneBlocks(1500)
 	require.NoError(t, err)
 	assert.EqualValues(t, 200, pruned)
-	assert.Nil(t, bs.LoadBlock(1499))
-	assert.NotNil(t, bs.LoadBlock(1500))
-	assert.Nil(t, bs.LoadBlock(1501))
+	block, err = bs.LoadBlock(1499)
+	require.NoError(t, err)
+	assert.Nil(t, block)
+	block, err = bs.LoadBlock(1500)
+	require.NoError(t, err)
+	assert.NotNil(t, block)
+	block, err = bs.LoadBlock(1501)
+	require.NoError(t, err)
+	assert.Nil(t, block)
 }
 
 func TestLoadBlockMeta(t *testing.T) {
 	bs, db := freshBlockStore()
 	height := int64(10)
 	loadMeta := func() (interface{}, error) {
-		meta := bs.LoadBlockMeta(height)
-		return meta, nil
+		meta, err := bs.LoadBlockMeta(height)
+		return meta, err
 	}
 
 	// Initially no contents.
@@ -527,9 +570,9 @@ func TestLoadBlockMeta(t *testing.T) {
 	// 2. Next save a corrupted blockMeta then try to load it
 	err := db.Set(calcBlockMetaKey(height), []byte("Ostracon-Meta"))
 	require.NoError(t, err)
-	res, _, panicErr = doFn(loadMeta)
-	require.NotNil(t, panicErr, "expecting a non-nil panic")
-	require.Contains(t, panicErr.Error(), "unmarshal to tmproto.BlockMeta")
+	res, err, _ = doFn(loadMeta)
+	require.NotNil(t, err, "expecting a non-nil panic")
+	require.Contains(t, err.Error(), "unmarshal to tmproto.BlockMeta")
 
 	// 3. A good blockMeta serialized and saved to the DB should be retrievable
 	meta := &types.BlockMeta{Header: types.Header{
@@ -560,7 +603,8 @@ func TestBlockFetchAtHeight(t *testing.T) {
 	bs.SaveBlock(block, partSet, seenCommit)
 	require.Equal(t, bs.Height(), block.Header.Height, "expecting the new height to be changed")
 
-	blockAtHeight := bs.LoadBlock(bs.Height())
+	blockAtHeight, err := bs.LoadBlock(bs.Height())
+	require.NoError(t, err)
 	b1, err := block.ToProto()
 	require.NoError(t, err)
 	b2, err := blockAtHeight.ToProto()
@@ -571,9 +615,11 @@ func TestBlockFetchAtHeight(t *testing.T) {
 	require.Equal(t, block.Hash(), blockAtHeight.Hash(),
 		"expecting a successful load of the last saved block")
 
-	blockAtHeightPlus1 := bs.LoadBlock(bs.Height() + 1)
+	blockAtHeightPlus1, err := bs.LoadBlock(bs.Height() + 1)
+	require.NoError(t, err)
 	require.Nil(t, blockAtHeightPlus1, "expecting an unsuccessful load of Height()+1")
-	blockAtHeightPlus2 := bs.LoadBlock(bs.Height() + 2)
+	blockAtHeightPlus2, err := bs.LoadBlock(bs.Height() + 2)
+	require.NoError(t, err)
 	require.Nil(t, blockAtHeightPlus2, "expecting an unsuccessful load of Height()+2")
 }
 

@@ -2,16 +2,16 @@ package store
 
 import (
 	"fmt"
-	"github.com/line/ostracon/evidence"
-	"github.com/line/ostracon/state"
 	"strconv"
 
 	"github.com/gogo/protobuf/proto"
 	dbm "github.com/tendermint/tm-db"
 
+	"github.com/line/ostracon/evidence"
 	tmsync "github.com/line/ostracon/libs/sync"
 	tmstore "github.com/line/ostracon/proto/ostracon/store"
 	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	tmstate "github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"
 )
 
@@ -45,7 +45,7 @@ type BlockStore struct {
 	height int64
 }
 
-var _ state.BlockStore = (*BlockStore)(nil)
+var _ tmstate.BlockStore = (*BlockStore)(nil)
 var _ evidence.BlockStore = (*BlockStore)(nil)
 
 // NewBlockStore returns a new BlockStore with the given DB,
