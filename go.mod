@@ -34,7 +34,7 @@ require (
 	github.com/rs/cors v1.8.2
 	github.com/sasha-s/go-deadlock v0.2.1-0.20190427202633-1595213edefa
 	github.com/snikch/goodman v0.0.0-20171125024755-10e37e294daa
-	github.com/spf13/cobra v1.5.0
+	github.com/spf13/cobra v1.6.0
 	github.com/spf13/viper v1.13.0
 	github.com/stretchr/testify v1.8.0
 	github.com/tendermint/go-amino v0.16.0
@@ -71,7 +71,7 @@ require (
 	github.com/google/btree v1.0.0 // indirect
 	github.com/gtank/ristretto255 v0.1.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
