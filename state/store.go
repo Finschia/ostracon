@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	tmsync "github.com/line/ostracon/libs/sync"
+
 	"github.com/gogo/protobuf/proto"
 	dbm "github.com/tendermint/tm-db"
 
@@ -84,14 +86,15 @@ type Store interface {
 
 // dbStore wraps a db (github.com/tendermint/tm-db)
 type dbStore struct {
-	db dbm.DB
+	db  dbm.DB
+	mtx tmsync.RWMutex
 }
 
 var _ Store = (*dbStore)(nil)
 
 // NewStore creates the dbStore of the state pkg.
 func NewStore(db dbm.DB) Store {
-	return dbStore{db}
+	return dbStore{db: db}
 }
 
 // LoadStateFromDBOrGenesisFile loads the most recent state from the database,
@@ -170,6 +173,8 @@ func (store dbStore) Save(state State) error {
 
 func (store dbStore) save(state State, key []byte) error {
 	nextHeight := state.LastBlockHeight + 1
+	store.mtx.RLock()
+	defer store.mtx.RUnlock()
 	// If first block, save validators for the block.
 	if nextHeight == 1 {
 		nextHeight = state.InitialHeight
@@ -184,7 +189,7 @@ func (store dbStore) save(state State, key []byte) error {
 		return err
 	}
 
-	// Save next consensus params.
+	// Save current consensus params.
 	if err := store.saveConsensusParamsInfo(nextHeight,
 		state.LastHeightConsensusParamsChanged, state.ConsensusParams); err != nil {
 		return err
@@ -214,6 +219,8 @@ func (store dbStore) Bootstrap(state State) error {
 		height = state.InitialHeight
 	}
 
+	store.mtx.RLock()
+	defer store.mtx.RUnlock()
 	if err := store.saveValidatorsInfo(height, height, state.Validators); err != nil {
 		return err
 	}
@@ -475,18 +482,20 @@ func (store dbStore) LoadValidators(height int64) (*types.ValidatorSet, error) {
 		valInfo = valInfo2
 	}
 
-	valSet, err := types.ValidatorSetFromProto(valInfo.ValidatorSet)
+	vip, err := types.ValidatorSetFromProto(valInfo.ValidatorSet)
 	if err != nil {
 		return nil, err
 	}
-	return valSet, nil
+
+	return vip, nil
 }
 
 // LoadVoters loads the VoterSet for a given height.
 // Returns ErrNoValSetForHeight if the validator set can't be found for this height.
+// Returns ErrNoVoterParamsForHeight if the voter params can't be found for this height.
 // Returns ErrNoProofHashForHeight if the proof hash can't be found for this height.
-// We cannot get the voters for latest height, because we save next validators for latest height+1 and
-// proof hash for latest height
+// We cannot get the voters for latest height, because we save next validators for latest height+1 and,
+// the voter params and the proof hash for latest height
 func (store dbStore) LoadVoters(height int64, voterParams *types.VoterParams) (
 	*types.ValidatorSet, *types.VoterSet, *types.VoterParams, []byte, error) {
 	if height == 0 {
