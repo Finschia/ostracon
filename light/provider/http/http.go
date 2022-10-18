@@ -83,7 +83,7 @@ func (p *http) LightBlock(ctx context.Context, height int64) (*types.LightBlock,
 		}
 	}
 
-	valSet, voterSet, err := p.voterSet(ctx, &sh.Height)
+	valSet, voterSet, err := p.validatorSetAndVoterSet(ctx, &sh.Height)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +108,7 @@ func (p *http) ReportEvidence(ctx context.Context, ev types.Evidence) error {
 	return err
 }
 
-func (p *http) voterSet(ctx context.Context, height *int64) (*types.ValidatorSet, *types.VoterSet, error) {
+func (p *http) validatorSetAndVoterSet(ctx context.Context, height *int64) (*types.ValidatorSet, *types.VoterSet, error) {
 	// Since the malicious node could report a massive number of pages, making us
 	// spend a considerable time iterating, we restrict the number of pages here.
 	// => 10000 validators max

@@ -48,7 +48,7 @@ func SaveValidatorsInfo(
 	proofHash []byte,
 	valSet *types.ValidatorSet,
 ) error {
-	stateStore := dbStore{db}
+	stateStore := dbStore{db: db}
 	if err := db.Set(calcProofHashKey(height-1), proofHash); err != nil {
 		return err
 	}
@@ -56,11 +56,11 @@ func SaveValidatorsInfo(
 }
 
 func SaveVoterParams(db dbm.DB, height int64, params *types.VoterParams) error {
-	stateStore := dbStore{db}
+	stateStore := dbStore{db: db}
 	return stateStore.saveVoterParams(height, params)
 }
 
 func SaveProofHash(db dbm.DB, height int64, proofHash []byte) error {
-	stateStore := dbStore{db}
+	stateStore := dbStore{db: db}
 	return stateStore.saveProofHash(height, proofHash)
 }
