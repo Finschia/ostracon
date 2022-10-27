@@ -1,5 +1,29 @@
 # Changelog
 
+## v1.0.7
+
+*Oct 27, 2022*
+
+* Revert some to original Tendermint
+* Improve docs
+
+### BREAKING CHANGE
+- [dependency] [\#446](https://github.com/line/ostracon/pull/446) Use tendermint/tm-db
+- [amino] [\#447](https://github.com/line/ostracon/pull/447) Change PubKey/PrivKey prefixes
+- [validator] [\#449](https://github.com/line/ostracon/pull/449) Swap StakingPower and VotingPower, and modify from StakingPower to VotingWeight
+- [build] [\#450](https://github.com/line/ostracon/pull/450) Upgrade to Golang-1.18
+
+### FEATURES
+- Nothing
+
+### IMPROVEMENTS
+- [docs] [\#453](https://github.com/line/ostracon/pull/453) Apply docusaurus 2.0 directory structure
+- [docs] [\#455](https://github.com/line/ostracon/pull/455) Change doc links to the collect ones within this site
+- [docs] [\#456](https://github.com/line/ostracon/pull/456) Add topics for mepool, async behavior, ABCI, KVS, WAL to document
+
+### BUG FIXES
+- [state] [\#458](https://github.com/line/ostracon/pull/458) Fix the thread-unsafe of PeerState logging
+
 ## v1.0.6
 
 *Jun 17, 2022*
