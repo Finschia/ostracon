@@ -11,8 +11,6 @@ import (
 	"strings"
 	"time"
 
-	rpchttp "github.com/line/ostracon/rpc/client/http"
-
 	"github.com/spf13/cobra"
 
 	dbm "github.com/tendermint/tm-db"
@@ -174,21 +172,6 @@ func runProxy(cmd *cobra.Command, args []string) error {
 		options = append(options, light.SkippingVerification(trustLevel))
 	}
 
-	rpcClient, err := rpchttp.New(primaryAddr, "/websocket")
-	if err != nil {
-		return fmt.Errorf("http client for %s: %w", primaryAddr, err)
-	}
-
-	// start rpcClient to get genesis
-	if err = rpcClient.Start(); err != nil {
-		return err
-	}
-	genDocResult, err := rpcClient.Genesis(context.Background())
-	if err != nil {
-		return err
-	}
-	voterParams := genDocResult.Genesis.VoterParams
-
 	var c *light.Client
 	if trustedHeight > 0 && len(trustedHash) > 0 { // fresh installation
 		c, err = light.NewHTTPClient(
@@ -202,7 +185,6 @@ func runProxy(cmd *cobra.Command, args []string) error {
 			primaryAddr,
 			witnessesAddrs,
 			dbs.New(db, chainID),
-			voterParams,
 			options...,
 		)
 	} else { // continue from latest state
@@ -212,7 +194,6 @@ func runProxy(cmd *cobra.Command, args []string) error {
 			primaryAddr,
 			witnessesAddrs,
 			dbs.New(db, chainID),
-			voterParams,
 			options...,
 		)
 	}

@@ -83,7 +83,7 @@ func NewLightClientStateProvider(
 	}
 
 	lc, err := light.NewClient(ctx, chainID, trustOptions, providers[0], providers[1:],
-		lightdb.New(dbm.NewMemDB(), ""), voterParams, light.Logger(logger), light.MaxRetryAttempts(5))
+		lightdb.New(dbm.NewMemDB(), ""), light.Logger(logger), light.MaxRetryAttempts(5))
 	if err != nil {
 		return nil, err
 	}
