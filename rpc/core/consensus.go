@@ -59,14 +59,14 @@ func Validators(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *in
 
 // Voters gets the voters set at the given block height.
 //
-// If no height is provided, it will fetch the latest validator set. Note the
+// If no height is provided, it will fetch the last voter set. Note the
 // voters are sorted by their voting power - this is the canonical order
 // for the voters in the set as used in computing their Merkle root.
 //
 // More: https://docs.tendermint.com/master/rpc/#/Info/validators
 func Voters(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *int) (*ctypes.ResultVoters, error) {
-	// The latest validator that we know is the NextValidator of the last block.
-	height, err := getHeight(latestUncommittedHeight(), heightPtr)
+	// The last voter that we know is the Voters of the last block.
+	height, err := getHeight(env.BlockStore.Height(), heightPtr)
 	if err != nil {
 		return nil, err
 	}
