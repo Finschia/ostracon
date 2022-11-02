@@ -193,7 +193,7 @@ func TestVerify_LunaticAttackAgainstState(t *testing.T) {
 
 	// as it was not originally in the pending bucket, it should now have been added
 	pendingEvs, _ := pool.PendingEvidence(state.ConsensusParams.Evidence.MaxBytes)
-	require.Equal(t, 1, len(pendingEvs))
+	assert.Equal(t, 1, len(pendingEvs))
 	assert.Equal(t, ev, pendingEvs[0])
 
 	// if we submit evidence only against a single byzantine validator when we see there are more validators then this
@@ -292,9 +292,11 @@ func TestVerifyLightClientAttack_Equivocation(t *testing.T) {
 	trustedHeader := makeHeaderRandom(10)
 
 	conflictingHeader := makeHeaderRandom(10)
+	conflictingHeader.ValidatorsHash = conflictingVals.Hash()
 	conflictingHeader.VotersHash = conflictingVoters.Hash()
 
 	trustedHeader.VotersHash = conflictingHeader.VotersHash
+	trustedHeader.ValidatorsHash = conflictingHeader.ValidatorsHash
 	trustedHeader.NextValidatorsHash = conflictingHeader.NextValidatorsHash
 	trustedHeader.ConsensusHash = conflictingHeader.ConsensusHash
 	trustedHeader.AppHash = conflictingHeader.AppHash
@@ -398,8 +400,10 @@ func TestVerifyLightClientAttack_Amnesia(t *testing.T) {
 
 	conflictingHeader := makeHeaderRandom(10)
 	conflictingHeader.VotersHash = conflictingVoters.Hash()
+	conflictingHeader.ValidatorsHash = conflictingVals.Hash()
 	trustedHeader := makeHeaderRandom(10)
 	trustedHeader.VotersHash = conflictingHeader.VotersHash
+	trustedHeader.ValidatorsHash = conflictingHeader.ValidatorsHash
 	trustedHeader.NextValidatorsHash = conflictingHeader.NextValidatorsHash
 	trustedHeader.AppHash = conflictingHeader.AppHash
 	trustedHeader.ConsensusHash = conflictingHeader.ConsensusHash
@@ -648,6 +652,19 @@ func makeLunaticEvidence(
 		Timestamp:           commonTime,
 	}
 
+	commonHeader := makeHeaderRandom(commonHeight)
+	commonHeader.Proof = proof
+	commonHeader.Time = commonTime
+	common = &types.LightBlock{
+		SignedHeader: &types.SignedHeader{
+			Header: commonHeader,
+			// we can leave this empty because we shouldn't be checking this
+			Commit: &types.Commit{},
+		},
+		ValidatorSet: commonValSet,
+		VoterSet:     commonVoterSet,
+	}
+
 	trustedHeader := makeHeaderRandom(height)
 	trustedHeader.Proof = proof
 	trustedBlockID := makeBlockID(trustedHeader.Hash(), 1000, []byte("partshash"))
@@ -669,20 +686,6 @@ func makeLunaticEvidence(
 		ValidatorSet: trustedVals,
 		VoterSet:     trustedVoters,
 	}
-
-	commonHeader := makeHeaderRandom(commonHeight)
-	commonHeader.Proof = proof
-	commonHeader.Time = commonTime
-	common = &types.LightBlock{
-		SignedHeader: &types.SignedHeader{
-			Header: commonHeader,
-			// we can leave this empty because we shouldn't be checking this
-			Commit: &types.Commit{},
-		},
-		ValidatorSet: commonValSet,
-		VoterSet:     commonVoterSet,
-	}
-
 	return ev, trusted, common
 }
 
@@ -729,6 +732,7 @@ func makeHeaderRandom(height int64) *types.Header {
 		LastCommitHash:     crypto.CRandBytes(tmhash.Size),
 		DataHash:           crypto.CRandBytes(tmhash.Size),
 		VotersHash:         crypto.CRandBytes(tmhash.Size),
+		ValidatorsHash:     crypto.CRandBytes(tmhash.Size),
 		NextValidatorsHash: crypto.CRandBytes(tmhash.Size),
 		ConsensusHash:      crypto.CRandBytes(tmhash.Size),
 		AppHash:            crypto.CRandBytes(tmhash.Size),

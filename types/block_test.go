@@ -80,7 +80,14 @@ func TestBlockValidateBasic(t *testing.T) {
 		{"Make Block w/ proposer Addr", func(blk *Block) {
 			blk.ProposerAddress = valSet.SelectProposer([]byte{}, blk.Height, 0).Address
 		}, false},
+		{"Tampered ProposerAddress", func(blk *Block) {
+			blk.ProposerAddress = []byte("something else")
+		}, true},
+		{"Incorrect chain id", func(blk *Block) {
+			blk.ChainID = "123456789012345678901234567890123456789012345678901"
+		}, true},
 		{"Negative Height", func(blk *Block) { blk.Height = -1 }, true},
+		{"Height is zero", func(blk *Block) { blk.Height = 0 }, true},
 		{"Remove 1/2 the commits", func(blk *Block) {
 			blk.LastCommit.Signatures = commit.Signatures[:commit.Size()/2]
 			blk.LastCommit.hash = nil // clear hash or change wont be noticed
@@ -93,11 +100,32 @@ func TestBlockValidateBasic(t *testing.T) {
 		{"Tampered DataHash", func(blk *Block) {
 			blk.DataHash = tmrand.Bytes(len(blk.DataHash))
 		}, true},
+		{"Tampered DataHash", func(blk *Block) {
+			blk.DataHash = []byte("something else")
+		}, true},
 		{"Tampered EvidenceHash", func(blk *Block) {
 			blk.EvidenceHash = []byte("something else")
 		}, true},
 		{"Incorrect block protocol version", func(blk *Block) {
 			blk.Version.Block = 1
+		}, true},
+		{"Tampered ValidatorsHash", func(blk *Block) {
+			blk.ValidatorsHash = []byte("something else")
+		}, true},
+		{"Tampered NextValidatorsHash", func(blk *Block) {
+			blk.NextValidatorsHash = []byte("something else")
+		}, true},
+		{"Tampered ConsensusHash", func(blk *Block) {
+			blk.ConsensusHash = []byte("something else")
+		}, true},
+		{"Tampered LastResultsHash", func(blk *Block) {
+			blk.LastResultsHash = []byte("something else")
+		}, true},
+		{"Tampered VotersHash", func(blk *Block) {
+			blk.VotersHash = []byte("something else")
+		}, true},
+		{"Tampered LastBlockID", func(blk *Block) {
+			blk.LastBlockID = BlockID{Hash: []byte("something else")}
 		}, true},
 	}
 	for i, tc := range testCases {
@@ -155,7 +183,7 @@ func TestBlockHashesTo(t *testing.T) {
 
 	lastID := makeBlockIDRandom()
 	h := int64(3)
-	voteSet, _, voterSet, vals := randVoteSet(h-1, 1, tmproto.PrecommitType, 10, 1)
+	voteSet, valSet, voterSet, vals := randVoteSet(h-1, 1, tmproto.PrecommitType, 10, 1)
 	commit, err := MakeCommit(lastID, h-1, 1, voteSet, vals, time.Now())
 	require.NoError(t, err)
 
@@ -163,6 +191,7 @@ func TestBlockHashesTo(t *testing.T) {
 	evList := []Evidence{ev}
 
 	block := MakeBlock(h, []Tx{Tx("Hello World")}, commit, evList)
+	block.ValidatorsHash = valSet.Hash()
 	block.VotersHash = voterSet.Hash()
 	assert.False(t, block.HashesTo([]byte{}))
 	assert.False(t, block.HashesTo([]byte("something else")))
@@ -509,8 +538,8 @@ func TestHeaderHash(t *testing.T) {
 			LastBlockID:        makeBlockID(make([]byte, tmhash.Size), 6, make([]byte, tmhash.Size)),
 			LastCommitHash:     tmhash.Sum([]byte("last_commit_hash")),
 			DataHash:           tmhash.Sum([]byte("data_hash")),
-			ValidatorsHash:     tmhash.Sum([]byte("validators_hash")),
 			VotersHash:         tmhash.Sum([]byte("voters_hash")),
+			ValidatorsHash:     tmhash.Sum([]byte("validators_hash")),
 			NextValidatorsHash: tmhash.Sum([]byte("next_validators_hash")),
 			ConsensusHash:      tmhash.Sum([]byte("consensus_hash")),
 			AppHash:            tmhash.Sum([]byte("app_hash")),
@@ -521,6 +550,25 @@ func TestHeaderHash(t *testing.T) {
 			Proof:              tmhash.Sum([]byte("proof")),
 		}, hexBytesFromString("0368E6F15B6B7BC9DC5B10F36F37D6F867E132A22333F083A11290324274E183")},
 		{"nil header yields nil", nil, nil},
+		{"nil ValidatorsHash yields nil", &Header{
+			Version:            tmversion.Consensus{Block: 1, App: 2},
+			ChainID:            "chainId",
+			Height:             3,
+			Time:               time.Date(2019, 10, 13, 16, 14, 44, 0, time.UTC),
+			LastBlockID:        makeBlockID(make([]byte, tmhash.Size), 6, make([]byte, tmhash.Size)),
+			LastCommitHash:     tmhash.Sum([]byte("last_commit_hash")),
+			DataHash:           tmhash.Sum([]byte("data_hash")),
+			VotersHash:         tmhash.Sum([]byte("voters_hash")),
+			ValidatorsHash:     nil,
+			NextValidatorsHash: tmhash.Sum([]byte("next_validators_hash")),
+			ConsensusHash:      tmhash.Sum([]byte("consensus_hash")),
+			AppHash:            tmhash.Sum([]byte("app_hash")),
+			LastResultsHash:    tmhash.Sum([]byte("last_results_hash")),
+			EvidenceHash:       tmhash.Sum([]byte("evidence_hash")),
+			ProposerAddress:    crypto.AddressHash([]byte("proposer_address")),
+			Round:              1,
+			Proof:              tmhash.Sum([]byte("proof")),
+		}, nil},
 		{"nil VotersHash yields nil", &Header{
 			Version:            tmversion.Consensus{Block: 1, App: 2},
 			ChainID:            "chainId",
@@ -530,6 +578,7 @@ func TestHeaderHash(t *testing.T) {
 			LastCommitHash:     tmhash.Sum([]byte("last_commit_hash")),
 			DataHash:           tmhash.Sum([]byte("data_hash")),
 			VotersHash:         nil,
+			ValidatorsHash:     tmhash.Sum([]byte("validators_hash")),
 			NextValidatorsHash: tmhash.Sum([]byte("next_validators_hash")),
 			ConsensusHash:      tmhash.Sum([]byte("consensus_hash")),
 			AppHash:            tmhash.Sum([]byte("app_hash")),
@@ -606,8 +655,8 @@ func TestMaxHeaderBytes(t *testing.T) {
 		LastBlockID:        makeBlockID(make([]byte, tmhash.Size), math.MaxInt32, make([]byte, tmhash.Size)),
 		LastCommitHash:     tmhash.Sum([]byte("last_commit_hash")),
 		DataHash:           tmhash.Sum([]byte("data_hash")),
-		ValidatorsHash:     tmhash.Sum([]byte("validators_hash")),
 		VotersHash:         tmhash.Sum([]byte("voters_hash")),
+		ValidatorsHash:     tmhash.Sum([]byte("validators_hash")),
 		NextValidatorsHash: tmhash.Sum([]byte("next_validators_hash")),
 		ConsensusHash:      tmhash.Sum([]byte("consensus_hash")),
 		AppHash:            tmhash.Sum([]byte("app_hash")),
@@ -1143,7 +1192,7 @@ func TestDataProtoBuf(t *testing.T) {
 
 // TestEvidenceDataProtoBuf ensures parity in converting to and from proto.
 func TestEvidenceDataProtoBuf(t *testing.T) {
-	const chainID = "mychain6"
+	const chainID = "mychain"
 	ev := NewMockDuplicateVoteEvidence(math.MaxInt64, time.Now(), chainID)
 	data := &EvidenceData{Evidence: EvidenceList{ev}}
 	_ = data.ByteSize()
@@ -1192,6 +1241,7 @@ func makeRandHeader() Header {
 		LastCommitHash:     randBytes,
 		DataHash:           randBytes,
 		VotersHash:         randBytes,
+		ValidatorsHash:     randBytes,
 		NextValidatorsHash: randBytes,
 		ConsensusHash:      randBytes,
 		AppHash:            randBytes,

@@ -12,7 +12,7 @@ import (
 // It is the basis of the light client
 type LightBlock struct {
 	*SignedHeader `json:"signed_header"`
-	ValidatorSet  *ValidatorSet `json:"validator_set"` // XXX Should we remove?
+	ValidatorSet  *ValidatorSet `json:"validator_set"`
 	VoterSet      *VoterSet     `json:"voter_set"`
 }
 
@@ -23,6 +23,9 @@ func (lb LightBlock) ValidateBasic(chainID string) error {
 	if lb.SignedHeader == nil {
 		return errors.New("missing signed header")
 	}
+	if lb.ValidatorSet == nil {
+		return errors.New("missing validator set")
+	}
 	if lb.VoterSet == nil {
 		return errors.New("missing voter set")
 	}
@@ -30,11 +33,19 @@ func (lb LightBlock) ValidateBasic(chainID string) error {
 	if err := lb.SignedHeader.ValidateBasic(chainID); err != nil {
 		return fmt.Errorf("invalid signed header: %w", err)
 	}
+	if err := lb.ValidatorSet.ValidateBasic(); err != nil {
+		return fmt.Errorf("invalid validator set: %w", err)
+	}
 	if err := lb.VoterSet.ValidateBasic(); err != nil {
 		return fmt.Errorf("invalid voter set: %w", err)
 	}
 
 	// make sure the validator set is consistent with the header
+	if validatorSetHash := lb.ValidatorSet.Hash(); !bytes.Equal(lb.SignedHeader.ValidatorsHash, validatorSetHash) {
+		return fmt.Errorf("expected validator hash of header to match validator set hash (%X != %X)",
+			lb.SignedHeader.ValidatorsHash, validatorSetHash,
+		)
+	}
 	if voterSetHash := lb.VoterSet.Hash(); !bytes.Equal(lb.SignedHeader.VotersHash, voterSetHash) {
 		return fmt.Errorf("expected voter hash of header to match voter set hash (%X != %X)",
 			lb.SignedHeader.VotersHash, voterSetHash,

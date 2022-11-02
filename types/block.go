@@ -436,10 +436,9 @@ func (h Header) ValidateBasic() error {
 
 	// Basic validation of hashes related to application data.
 	// Will validate fully against state in state#ValidateBlock.
-	if err := ValidateHash(h.VotersHash); err != nil {
+	if err := ValidateHash(h.ValidatorsHash); err != nil {
 		return fmt.Errorf("wrong ValidatorsHash: %v", err)
 	}
-	// TODO When we add `Header.ValidatorsHash` in a future commit, we have to add a similar check here.
 	if err := ValidateHash(h.NextValidatorsHash); err != nil {
 		return fmt.Errorf("wrong NextValidatorsHash: %v", err)
 	}
@@ -449,6 +448,11 @@ func (h Header) ValidateBasic() error {
 	// NOTE: AppHash is arbitrary length
 	if err := ValidateHash(h.LastResultsHash); err != nil {
 		return fmt.Errorf("wrong LastResultsHash: %v", err)
+	}
+
+	// Add checking for Ostracon fields
+	if err := ValidateHash(h.VotersHash); err != nil {
+		return fmt.Errorf("wrong VotersHash: %v", err)
 	}
 
 	return nil
@@ -461,7 +465,7 @@ func (h Header) ValidateBasic() error {
 // since a Header is not valid unless there is
 // a ValidatorsHash (corresponding to the validator set).
 func (h *Header) Hash() tmbytes.HexBytes {
-	if h == nil || len(h.VotersHash) == 0 {
+	if h == nil || len(h.ValidatorsHash) == 0 || len(h.VotersHash) == 0 {
 		return nil
 	}
 	hbz, err := h.Version.Marshal()
