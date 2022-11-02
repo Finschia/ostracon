@@ -75,8 +75,8 @@ var (
 		// last header (3/3 signed)
 		3: h3,
 	}
-	l1       = &types.LightBlock{SignedHeader: h1, VoterSet: voterSet[1]}
-	l2       = &types.LightBlock{SignedHeader: h2, VoterSet: voterSet[2]}
+	l1       = &types.LightBlock{SignedHeader: h1, ValidatorSet: vals, VoterSet: voterSet[1]}
+	l2       = &types.LightBlock{SignedHeader: h2, ValidatorSet: vals, VoterSet: voterSet[2]}
 	fullNode = mockp.New(
 		chainID,
 		headerSet,
@@ -191,12 +191,26 @@ func TestClient_SequentialVerification(t *testing.T) {
 			true,
 		},
 		{
-			"bad: different first voter set",
+			"bad: different first validator set",
 			map[int64]*types.SignedHeader{
 				1: h1,
 			},
 			map[int64]*types.ValidatorSet{
 				1: differentVals,
+			},
+			map[int64]*types.VoterSet{
+				1: voterSet[1],
+			},
+			true,
+			true,
+		},
+		{
+			"bad: different first voter set",
+			map[int64]*types.SignedHeader{
+				1: h1,
+			},
+			map[int64]*types.ValidatorSet{
+				1: vals,
 			},
 			map[int64]*types.VoterSet{
 				1: differentVoters,
@@ -243,12 +257,28 @@ func TestClient_SequentialVerification(t *testing.T) {
 			true,
 		},
 		{
-			"bad: different voter set at height 3",
+			"bad: different validator set at height 3",
 			headerSet,
 			map[int64]*types.ValidatorSet{
 				1: vals,
 				2: vals,
 				3: newVals,
+			},
+			map[int64]*types.VoterSet{
+				1: voterSet[1],
+				2: voterSet[2],
+				3: voterSet[3],
+			},
+			false,
+			true,
+		},
+		{
+			"bad: different voter set at height 3",
+			headerSet,
+			map[int64]*types.ValidatorSet{
+				1: vals,
+				2: vals,
+				3: vals,
 			},
 			map[int64]*types.VoterSet{
 				1: voterSet[1],
