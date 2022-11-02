@@ -30,6 +30,7 @@ var Routes = map[string]*rpc.RPCFunc{
 	"block_search":         rpc.NewRPCFunc(BlockSearch, "query,page,per_page,order_by"),
 	"validators":           rpc.NewRPCFunc(Validators, "height,page,per_page"),
 	"voters":               rpc.NewRPCFunc(Voters, "height,page,per_page"),
+	"validators_voters":    rpc.NewRPCFunc(ValidatorsWithVoters, "height,page,per_page"),
 	"dump_consensus_state": rpc.NewRPCFunc(DumpConsensusState, ""),
 	"consensus_state":      rpc.NewRPCFunc(ConsensusState, ""),
 	"consensus_params":     rpc.NewRPCFunc(ConsensusParams, "height"),

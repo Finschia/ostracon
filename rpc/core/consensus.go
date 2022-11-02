@@ -45,7 +45,7 @@ func Validators(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *in
 		idx, voter := voters.GetByAddress(v[i].Address)
 		if idx >= 0 {
 			votersIndices = append(votersIndices, int32(i))
-			v[i] = voter // replace to preserve its VotingWeight
+			v[i] = voter // replace to override its VotingWeight
 		}
 	}
 
@@ -65,7 +65,6 @@ func Validators(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *in
 //
 // More: https://docs.tendermint.com/master/rpc/#/Info/validators
 func Voters(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *int) (*ctypes.ResultVoters, error) {
-
 	// The latest validator that we know is the NextValidator of the last block.
 	height, err := getHeight(latestUncommittedHeight(), heightPtr)
 	if err != nil {
@@ -93,6 +92,49 @@ func Voters(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *int) (
 		Voters:      v,
 		Count:       len(v),
 		Total:       totalCount}, nil
+}
+
+func ValidatorsWithVoters(
+	ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *int) (*ctypes.ResultValidatorsWithVoters, error) {
+	// The last validator/voter that we know is the Validators/Voters of the last block.
+	height, err := getHeight(env.BlockStore.Height(), heightPtr)
+	if err != nil {
+		return nil, err
+	}
+
+	validators, voters, _, _, err := env.StateStore.LoadVoters(height, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	totalCount := len(validators.Validators)
+	perPage := validatePerPage(perPagePtr)
+	page, err := validatePage(pagePtr, perPage, totalCount)
+	if err != nil {
+		return nil, err
+	}
+
+	skipCount := validateSkipCount(page, perPage)
+
+	v := validators.Validators[skipCount : skipCount+tmmath.MinInt(perPage, totalCount-skipCount)]
+
+	// Retrieve to the indices where selected as Voters in Validators.
+	votersIndices := make([]int32, 0, len(v))
+	for i := range v {
+		idx, voter := voters.GetByAddress(v[i].Address)
+		if idx >= 0 {
+			votersIndices = append(votersIndices, int32(i))
+			v[i] = voter // replace to override its VotingWeight since Validator.VotingWeight is zero
+		}
+	}
+
+	return &ctypes.ResultValidatorsWithVoters{
+		BlockHeight:  height,
+		Validators:   v,
+		Count:        len(v),
+		Total:        totalCount,
+		VoterIndices: votersIndices,
+	}, nil
 }
 
 // DumpConsensusState dumps consensus state.
