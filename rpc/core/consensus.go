@@ -8,27 +8,26 @@ import (
 	"github.com/line/ostracon/types"
 )
 
-// Validators gets the validators set at the given block height.
+// Validators gets the validator set at the given block height.
 //
 // If no height is provided, it will fetch the latest validator set. Note the
-// voters are sorted by their voting power - this is the canonical order
-// for the voters in the set as used in computing their Merkle root.
+// validators are sorted by their voting power - this is the canonical order
+// for the validators in the set as used in computing their Merkle root.
 //
 // More: https://docs.tendermint.com/master/rpc/#/Info/validators
 func Validators(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *int) (*ctypes.ResultValidators, error) {
-
 	// The latest validator that we know is the NextValidator of the last block.
 	height, err := getHeight(latestUncommittedHeight(), heightPtr)
 	if err != nil {
 		return nil, err
 	}
 
-	vals, voters, _, _, err := env.StateStore.LoadVoters(height, nil)
+	validators, err := env.StateStore.LoadValidators(height)
 	if err != nil {
 		return nil, err
 	}
 
-	totalCount := len(vals.Validators)
+	totalCount := len(validators.Validators)
 	perPage := validatePerPage(perPagePtr)
 	page, err := validatePage(pagePtr, perPage, totalCount)
 	if err != nil {
@@ -37,27 +36,16 @@ func Validators(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *in
 
 	skipCount := validateSkipCount(page, perPage)
 
-	v := vals.Validators[skipCount : skipCount+tmmath.MinInt(perPage, totalCount-skipCount)]
-
-	// Retrieve to the indices where selected as Voters in Validators.
-	votersIndices := make([]int32, 0, len(v))
-	for i := range v {
-		idx, voter := voters.GetByAddress(v[i].Address)
-		if idx >= 0 {
-			votersIndices = append(votersIndices, int32(i))
-			v[i] = voter // replace to override its VotingWeight
-		}
-	}
+	v := validators.Validators[skipCount : skipCount+tmmath.MinInt(perPage, totalCount-skipCount)]
 
 	return &ctypes.ResultValidators{
-		BlockHeight:  height,
-		Validators:   v,
-		VoterIndices: votersIndices,
-		Count:        len(v),
-		Total:        totalCount}, nil
+		BlockHeight: height,
+		Validators:  v,
+		Count:       len(v),
+		Total:       totalCount}, nil
 }
 
-// Voters gets the voters set at the given block height.
+// Voters gets the voter set at the given block height.
 //
 // If no height is provided, it will fetch the last voter set. Note the
 // voters are sorted by their voting power - this is the canonical order

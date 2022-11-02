@@ -72,6 +72,40 @@ func makeTestStateStore(t *testing.T) (sm.State, func()) {
 	return state, func() { os.RemoveAll(config.RootDir) }
 }
 
+func TestValidators(t *testing.T) {
+	state, cleanup := makeTestStateStore(t)
+	defer cleanup()
+
+	normalResult := &ctypes.ResultValidators{
+		Validators:  state.Validators.Validators,
+		BlockHeight: height,
+		Total:       len(state.Validators.Validators),
+		Count:       len(state.Validators.Validators),
+	}
+
+	tests := []struct {
+		name    string
+		args    args
+		wantErr assert.ErrorAssertionFunc
+		want    *ctypes.ResultValidators
+	}{
+		{"success", normalArgs, noErrorFunc, normalResult},
+		{"invalid page", invalidPageArgs, errorFunc, nil},
+		{"invalid height", invalidHeightArgs, errorFunc, nil},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Validators(tt.args.ctx, tt.args.heightPtr, tt.args.pagePtr, tt.args.perPagePtr)
+			if !tt.wantErr(t, err, fmt.Sprintf("Validators(%v, %v, %v, %v)",
+				tt.args.ctx, tt.args.heightPtr, tt.args.pagePtr, tt.args.perPagePtr)) {
+				return
+			}
+			assert.Equalf(t, tt.want, got, "Validators(%v, %v, %v, %v)",
+				tt.args.ctx, tt.args.heightPtr, tt.args.pagePtr, tt.args.perPagePtr)
+		})
+	}
+}
+
 func TestVoters(t *testing.T) {
 	state, cleanup := makeTestStateStore(t)
 	defer cleanup()

@@ -134,9 +134,8 @@ type Peer struct {
 
 // ResultValidators for a height
 type ResultValidators struct {
-	BlockHeight  int64              `json:"block_height"`
-	Validators   []*types.Validator `json:"validators"`
-	VoterIndices []int32            `json:"voter_indices"`
+	BlockHeight int64              `json:"block_height"`
+	Validators  []*types.Validator `json:"validators"`
 	// Count of actual validators in this result
 	Count int `json:"count"`
 	// Total number of validators
