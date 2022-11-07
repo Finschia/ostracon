@@ -229,8 +229,12 @@ func (a *addrBook) RemoveAddress(addr *p2p.NetAddress) {
 func (a *addrBook) IsGood(addr *p2p.NetAddress) bool {
 	a.mtx.Lock()
 	defer a.mtx.Unlock()
+	ka, ok := a.addrLookup[addr.ID]
+	if !ok || ka == nil {
+		return false
+	}
 
-	return a.addrLookup[addr.ID].isOld()
+	return ka.isOld()
 }
 
 // IsBanned returns true if the peer is currently banned
