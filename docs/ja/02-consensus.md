@@ -35,8 +35,6 @@ $t$ は式 `2.` を使って証明 $pi$ から生成することができます�
 基づいて生成されたものであることを検証するために、$S_k$ に対する公開鍵 $P_k$ と $m$, $\pi$ を式 `3.` に適用して同一のハッシュ値 $t$ が
 生成されることを確認します。
 
-![VRF Expression](../static/consensus/math_expression.png)
-
 1. $\pi = {\rm vrf\\_prove}(S_k, m)$
 2. $t = {\rm vrf\\_proof\\_to\\_hash}(\pi)$
 3. ${\rm vrf\\_proof\\_to\\_hash}(\pi) \overset{\text{?}}{=} {\rm vrf\\_verify}(P_k, m, \pi)$
@@ -53,8 +51,6 @@ Ostracon では、あるブロックを作成した Proposer による*無作為
 この判定によって選ばれた Proposer が自分自身であれば、そのノードは mempool から未承認のトランザクションを取り出して proposal ブロックを
 作成します (この時点ではまだブロックは確定していません)。このとき、自分を選択した VRF ハッシュ $t$ とブロックの高さ $h$、現在のラウンド
 $r$ に基づいて算出した新しい VRF Proof $\pi'$ をブロックに設定します。
-
-![VRF Prove](../static/consensus/math_prove.png)
 
 ```math
 \begin{eqnarray*}
@@ -80,8 +76,6 @@ prevote, precommit, commit を経て複製され、定足数以上の有効票�
    使って加重ランダムサンプリングで Proposer を選んでブロックを生成したノードと一致しているかで判断できます。
 2. ブロックに含まれている $\pi$ が本当にその Proposer の秘密鍵を使って生成された VRF Proof であること。VRF Proof $\pi$ から算出した
    $t$ と、vrf_verify() 関数を使って算出した $t$ が一致していれば $\pi$ が偽造されたものでないと判断できます。
-
-![VRF Verify](../static/consensus/math_verify.png)
 
 ```math
 {\rm vrf\_verify}(P_i, m_h, \pi_h) \overset{\text{?}}{=} {\rm vrf\_proof\_to\_hash}(\pi_h)
