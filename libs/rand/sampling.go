@@ -93,16 +93,3 @@ func nextRandom(rand *uint64) uint64 {
 	z = (z ^ (z >> 27)) * 0x94d049bb133111eb
 	return z ^ (z >> 31)
 }
-
-// sort candidates in descending priority and ascending nature order
-func sort(candidates []Candidate) []Candidate {
-	temp := make([]Candidate, len(candidates))
-	copy(temp, candidates)
-	s.Slice(temp, func(i, j int) bool {
-		if temp[i].Priority() != temp[j].Priority() {
-			return temp[i].Priority() > temp[j].Priority()
-		}
-		return temp[i].LessThan(temp[j])
-	})
-	return temp
-}
