@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestVrfEd25519r2ishiguro_ProofToHash(t *testing.T) {
+func TestVrfEd25519R2ishiguro_ProofToHash(t *testing.T) {
 	secret := [SEEDBYTES]byte{}
 	privateKey := ed25519.NewKeyFromSeed(secret[:])
 	message := []byte("hello, world")
