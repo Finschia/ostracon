@@ -17,7 +17,7 @@ type Candidate interface {
 //
 // Inputs:
 // seed - 64bit integer used for random selection.
-// candidates - A set of candidates. The order is disregarded.
+// candidates - A set of candidates. You get different results depending on the order.
 // sampleSize - The number of candidates to select at random.
 // totalPriority - The exact sum of the priorities of each candidate.
 //
@@ -34,9 +34,6 @@ func RandomSamplingWithPriority(
 		thresholds[i] = RandomThreshold(&seed, totalPriority)
 	}
 	s.Slice(thresholds, func(i, j int) bool { return thresholds[i] < thresholds[j] })
-
-	// generates a copy of the set to keep the given array order
-	candidates = sort(candidates)
 
 	// extract candidates with a cumulative priority threshold
 	samples = make([]Candidate, sampleSize)
