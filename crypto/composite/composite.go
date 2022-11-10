@@ -46,7 +46,7 @@ func PubKeyFromBytes(bz []byte) PubKey {
 	return PubKey{SignKey: sign, VrfKey: vrf}
 }
 
-func (pk *PubKey) Identity() crypto.PubKey {
+func (pk PubKey) Identity() crypto.PubKey {
 	return pk.VrfKey
 }
 
