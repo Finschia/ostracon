@@ -24,8 +24,15 @@ type Candidate interface {
 // Returns:
 // samples - A randomly selected candidate from a set of candidates. NOTE that the same candidate may have been
 // selected in duplicate.
+// TODO: Change to a function that returns an error, as it is not desirable for the function to end with a panic.
 func RandomSamplingWithPriority(
 	seed uint64, candidates []Candidate, sampleSize int, totalPriority uint64) (samples []Candidate) {
+
+	// This step is performed if and only if the parameter is invalid. The reasons are as stated in the message:
+	err := checkInvalidPriority(candidates, totalPriority)
+	if err != nil {
+		panic(err)
+	}
 
 	// generates a random selection threshold for candidates' cumulative priority
 	thresholds := make([]uint64, sampleSize)
@@ -53,15 +60,10 @@ func RandomSamplingWithPriority(
 		cumulativePriority += candidate.Priority()
 	}
 
-	// This step is performed if and only if the parameter is invalid. The reasons are as stated in the message:
-	actualTotalPriority := uint64(0)
-	for i := 0; i < len(candidates); i++ {
-		actualTotalPriority += candidates[i].Priority()
-	}
-	panic(fmt.Sprintf("Either the given candidate is an empty set, the actual cumulative priority is zero,"+
-		" or the total priority is less than the actual one; totalPriority=%d, actualTotalPriority=%d,"+
-		" seed=%d, sampleSize=%d, undrawn=%d, threshold[%d]=%d, len(candidates)=%d",
-		totalPriority, actualTotalPriority, seed, sampleSize, undrawn, undrawn, thresholds[undrawn], len(candidates)))
+	// We're assuming you never get to this code
+	panic(fmt.Sprintf("An unexpected error occurred while selecting samples; "+
+		"totalPriority=%d, seed=%d, sampleSize=%d, undrawn=%d, threshold[%d]=%d, len(candidates)=%d",
+		totalPriority, seed, sampleSize, undrawn, undrawn, thresholds[undrawn], len(candidates)))
 }
 
 const uint64Mask = uint64(0x7FFFFFFFFFFFFFFF)
@@ -108,4 +110,29 @@ func sort(candidates []Candidate) []Candidate {
 		return temp[i].LessThan(temp[j])
 	})
 	return temp
+}
+
+func checkInvalidPriority(candidates []Candidate, totalPriority uint64) error {
+	actualTotalPriority := uint64(0)
+	for i := 0; i < len(candidates); i++ {
+		actualTotalPriority += candidates[i].Priority()
+	}
+
+	if len(candidates) == 0 {
+		return fmt.Errorf("the specified candidate is an empty set; "+
+			"totalPriority=%d, actualTotalPriority=%d, len(candidates)=%d",
+			totalPriority, actualTotalPriority, len(candidates))
+
+	} else if totalPriority == 0 || actualTotalPriority == 0 {
+		return fmt.Errorf("actual cumulative priority is zero; "+
+			"totalPriority=%d, actualTotalPriority=%d, len(candidates)=%d",
+			totalPriority, actualTotalPriority, len(candidates))
+
+	} else if actualTotalPriority != totalPriority {
+		return fmt.Errorf("total priority not equal to actual priority; "+
+			"totalPriority=%d, actualTotalPriority=%d, len(candidates)=%d",
+			totalPriority, actualTotalPriority, len(candidates))
+
+	}
+	return nil
 }
