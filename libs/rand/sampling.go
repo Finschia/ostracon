@@ -24,7 +24,6 @@ type Candidate interface {
 // Returns:
 // samples - A randomly selected candidate from a set of candidates. NOTE that the same candidate may have been
 // selected in duplicate.
-// TODO: Change to a function that returns an error, as it is not desirable for the function to end with a panic.
 func RandomSamplingWithPriority(
 	seed uint64, candidates []Candidate, sampleSize int, totalPriority uint64) (samples []Candidate) {
 
