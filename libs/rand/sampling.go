@@ -58,7 +58,7 @@ func RandomSamplingWithPriority(
 	}
 
 	// We're assuming you never get to this code
-	panic(fmt.Sprintf("An unexpected error occurred while selecting samples; "+
+	panic(fmt.Sprintf("Cannot select samples; "+
 		"totalPriority=%d, seed=%d, sampleSize=%d, undrawn=%d, threshold[%d]=%d, len(candidates)=%d",
 		totalPriority, seed, sampleSize, undrawn, undrawn, thresholds[undrawn], len(candidates)))
 }
@@ -103,12 +103,12 @@ func checkInvalidPriority(candidates []Candidate, totalPriority uint64) error {
 	}
 
 	if len(candidates) == 0 {
-		return fmt.Errorf("the specified candidate is an empty set; "+
+		return fmt.Errorf("candidates is empty; "+
 			"totalPriority=%d, actualTotalPriority=%d, len(candidates)=%d",
 			totalPriority, actualTotalPriority, len(candidates))
 
 	} else if totalPriority == 0 || actualTotalPriority == 0 {
-		return fmt.Errorf("actual cumulative priority is zero; "+
+		return fmt.Errorf("either total priority or actual priority is zero; "+
 			"totalPriority=%d, actualTotalPriority=%d, len(candidates)=%d",
 			totalPriority, actualTotalPriority, len(candidates))
 
