@@ -630,7 +630,7 @@ func TestTransportAddChannel(t *testing.T) {
 	)
 	testChannel := byte(0x01)
 
-	mt.AddChannel(testChannel)
+	mt.AddChannel(testChannel) //nolint:errcheck
 	if !mt.nodeInfo.(DefaultNodeInfo).HasChannel(testChannel) {
 		t.Errorf("missing added channel %v. Got %v", testChannel, mt.nodeInfo.(DefaultNodeInfo).Channels)
 	}
