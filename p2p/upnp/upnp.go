@@ -285,7 +285,7 @@ func soapRequest(url, function, message, domain string) (r *http.Response, err e
 	    defer r.Body.Close()
 	}*/
 
-	if r.StatusCode >= 400 {
+	if r.StatusCode != http.StatusOK {
 		// log.Stderr(function, r.StatusCode)
 		err = errors.New("error " + strconv.Itoa(r.StatusCode) + " for " + function)
 		r = nil
