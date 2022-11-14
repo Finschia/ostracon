@@ -23,7 +23,6 @@
 
 ### BUG FIXES
 - [state] [\#458](https://github.com/line/ostracon/pull/458) Fix the thread-unsafe of PeerState logging
-- [indexer] [#498](https://github.com/tendermint/tendermint/pull/498) Fix overriding tx index of duplicated txs
 
 ## v1.0.6
 
