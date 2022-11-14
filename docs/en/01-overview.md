@@ -56,7 +56,7 @@ Ostracon's consensus state and generated blocks are stored in the State DB and B
 
 * [Extending Tendermint-BFT with VRF-based Election](02-consensus.md)
 * [Transaction Sharing](03-tx-sharing.md)
-* [BLS Signature Aggregation](03-signature-aggregation.md)
+* [BLS Signature Aggregation](04-signature-aggregation.md)
 
 ## Consideration with Other Consensus Schemes
 
