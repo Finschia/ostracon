@@ -110,7 +110,9 @@ type addrBook struct {
 
 func newHashKey() []byte {
 	result := make([]byte, highwayhash.Size)
-	crand.Read(result) //nolint:errcheck // ignore error
+	if _, err := crand.Read(result); err != nil {
+		panic("failed to create hash key") // codecov:ignore:this
+	}
 	return result
 }
 
