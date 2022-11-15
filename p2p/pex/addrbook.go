@@ -5,7 +5,6 @@
 package pex
 
 import (
-	crand "crypto/rand"
 	"encoding/binary"
 	"fmt"
 	"math"
@@ -20,6 +19,7 @@ import (
 	tmmath "github.com/line/ostracon/libs/math"
 	tmrand "github.com/line/ostracon/libs/rand"
 	"github.com/line/ostracon/libs/service"
+	stdCryptoRand "github.com/line/ostracon/libs/std/crypto/rand"
 	tmsync "github.com/line/ostracon/libs/sync"
 	"github.com/line/ostracon/p2p"
 )
@@ -110,9 +110,7 @@ type addrBook struct {
 
 func newHashKey() []byte {
 	result := make([]byte, highwayhash.Size)
-	if _, err := crand.Read(result); err != nil {
-		panic("failed to create hash key") // codecov:ignore:this
-	}
+	stdCryptoRand.Read(result)
 	return result
 }
 

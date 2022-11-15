@@ -26,3 +26,4 @@ ignore:
   - "scripts"
   - "**/*.pb.go"
   - "libs/pubsub/query/query.peg.go"
+  - "libs/std/**/*.go"
