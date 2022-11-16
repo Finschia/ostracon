@@ -198,10 +198,7 @@ func CustomReactors(reactors map[string]p2p.Reactor) Option {
 				for _, chDesc := range reactor.GetChannels() {
 					if !ni.HasChannel(chDesc.ID) {
 						ni.Channels = append(ni.Channels, chDesc.ID)
-						err := n.transport.AddChannel(chDesc.ID)
-						if err != nil {
-							n.Logger.Debug("AddChannel failed", "err", err)
-						}
+						n.transport.AddChannel(chDesc.ID)
 					}
 				}
 				n.nodeInfo = ni
