@@ -12,6 +12,8 @@ import (
 	"github.com/line/ostracon/version"
 )
 
+//go:generate mockery --case underscore --name NodeInfo
+
 const (
 	maxNodeInfoSize = 10240 // 10KB
 	maxNumChannels  = 16    // plenty of room for upgrades, for now
