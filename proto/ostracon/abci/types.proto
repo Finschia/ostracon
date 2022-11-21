@@ -224,6 +224,9 @@ message ResponseCheckTx {
   repeated Event events     = 7
       [(gogoproto.nullable) = false, (gogoproto.jsontag) = "events,omitempty"];
   string codespace = 8;
+  string         sender        = 9;  // MEMO: not used, just reservation for mempool_error
+  int64          priority      = 10; // MEMO: not used, just reservation for mempool_error
+  string         mempool_error = 11;
 }
 
 message ResponseDeliverTx {
