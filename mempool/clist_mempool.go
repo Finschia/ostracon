@@ -56,6 +56,8 @@ type CListMempool struct {
 
 	chReqCheckTx chan *requestCheckTxAsync
 
+	postCheck PostCheckFunc
+
 	wal          *auto.AutoFile // a log of mempool txs
 	txs          *clist.CList   // concurrent linked-list of good txs
 	proxyAppConn proxy.AppConnMempool
@@ -129,6 +131,13 @@ func (mem *CListMempool) SetLogger(l log.Logger) {
 // After that, Update overwrites the existing value.
 func WithPreCheck(f PreCheckFunc) CListMempoolOption {
 	return func(mem *CListMempool) { mem.preCheck = f }
+}
+
+// WithPostCheck sets a filter for the mempool to reject a tx if f(tx) returns
+// false. This is ran after CheckTx. Only applies to the first created block.
+// After that, Update overwrites the existing value.
+func WithPostCheck(f PostCheckFunc) CListMempoolOption {
+	return func(mem *CListMempool) { mem.postCheck = f }
 }
 
 // WithMetrics sets the metrics.
@@ -543,7 +552,25 @@ func (mem *CListMempool) resCbRecheck(req *abci.Request, res *abci.Response) {
 	switch r := res.Value.(type) {
 	case *abci.Response_CheckTx:
 		if r.CheckTx.Code == abci.CodeTypeOK {
-			// Good, nothing to do.
+			tx := req.GetCheckTx().Tx
+			txHash := TxKey(tx)
+			e, ok := mem.txsMap.Load(txHash)
+			if !ok {
+				panic(fmt.Sprintf("Unexpected tx response from proxy during recheck\ntxHash=%s, tx=%X", txHash, tx))
+			}
+			celem := e.(*clist.CElement)
+			var postCheckErr error
+			if mem.postCheck != nil {
+				postCheckErr = mem.postCheck(tx, r.CheckTx)
+			}
+			if (r.CheckTx.Code == abci.CodeTypeOK) && postCheckErr == nil {
+				// Good, nothing to do.
+			} else {
+				// Tx became invalidated due to newly committed block.
+				mem.logger.Debug("tx is no longer valid", "tx", txID(tx), "res", r, "err", postCheckErr)
+				// NOTE: we remove tx from the cache because it might be good later
+				mem.removeTx(tx, celem, !mem.config.KeepInvalidTxsInCache)
+			}
 		} else {
 			tx := req.GetCheckTx().Tx
 			txHash := TxKey(tx)
@@ -678,6 +705,7 @@ func (mem *CListMempool) Update(
 	block *types.Block,
 	deliverTxResponses []*abci.ResponseDeliverTx,
 	preCheck PreCheckFunc,
+	postCheck PostCheckFunc,
 ) (err error) {
 	// Set height
 	mem.height = block.Height
@@ -685,6 +713,9 @@ func (mem *CListMempool) Update(
 
 	if preCheck != nil {
 		mem.preCheck = preCheck
+	}
+	if postCheck != nil {
+		mem.postCheck = postCheck
 	}
 
 	for i, tx := range block.Txs {
