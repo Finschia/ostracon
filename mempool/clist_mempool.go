@@ -570,6 +570,10 @@ func (mem *CListMempool) resCbRecheck(req *abci.Request, res *abci.Response) {
 				mem.logger.Debug("tx is no longer valid", "tx", txID(tx), "res", r, "err", postCheckErr)
 				// NOTE: we remove tx from the cache because it might be good later
 				mem.removeTx(tx, celem, !mem.config.KeepInvalidTxsInCache)
+
+				if postCheckErr != nil {
+					r.CheckTx.MempoolError = postCheckErr.Error()
+				}
 			}
 		} else {
 			tx := req.GetCheckTx().Tx
