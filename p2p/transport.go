@@ -265,13 +265,16 @@ func (mt *MultiplexTransport) Listen(addr NetAddress) error {
 // NOTE: NodeInfo must be of type DefaultNodeInfo else channels won't be updated
 // This is a bit messy at the moment but is cleaned up in the following version
 // when NodeInfo changes from an interface to a concrete type
-func (mt *MultiplexTransport) AddChannel(chID byte) {
-	if ni, ok := mt.nodeInfo.(DefaultNodeInfo); ok {
-		if !ni.HasChannel(chID) {
-			ni.Channels = append(ni.Channels, chID)
-		}
-		mt.nodeInfo = ni
+func (mt *MultiplexTransport) AddChannel(chID byte) error {
+	ni, ok := mt.nodeInfo.(DefaultNodeInfo)
+	if !ok {
+		return fmt.Errorf("nodeInfo type: %T is not supported", mt.nodeInfo)
 	}
+	if !ni.HasChannel(chID) {
+		ni.Channels = append(ni.Channels, chID)
+	}
+	mt.nodeInfo = ni
+	return nil
 }
 
 func (mt *MultiplexTransport) acceptPeers() {
