@@ -551,45 +551,40 @@ func (mem *CListMempool) resCbFirstTime(
 func (mem *CListMempool) resCbRecheck(req *abci.Request, res *abci.Response) {
 	switch r := res.Value.(type) {
 	case *abci.Response_CheckTx:
+		tx := req.GetCheckTx().Tx
+		txHash := TxKey(tx)
+		e, ok := mem.txsMap.Load(txHash)
+
 		if r.CheckTx.Code == abci.CodeTypeOK {
-			tx := req.GetCheckTx().Tx
-			txHash := TxKey(tx)
-			e, ok := mem.txsMap.Load(txHash)
 			if !ok {
 				panic(fmt.Sprintf("Unexpected tx response from proxy during recheck\ntxHash=%s, tx=%X", txHash, tx))
 			}
+			if mem.postCheck == nil {
+				return
+			}
+			postCheckErr := mem.postCheck(tx, r.CheckTx)
+			if postCheckErr == nil {
+				return
+			}
 			celem := e.(*clist.CElement)
-			var postCheckErr error
-			if mem.postCheck != nil {
-				postCheckErr = mem.postCheck(tx, r.CheckTx)
-			}
-			if (r.CheckTx.Code == abci.CodeTypeOK) && postCheckErr == nil {
-				// Good, nothing to do.
-			} else {
-				// Tx became invalidated due to newly committed block.
-				mem.logger.Debug("tx is no longer valid", "tx", txID(tx), "res", r, "err", postCheckErr)
-				// NOTE: we remove tx from the cache because it might be good later
-				mem.removeTx(tx, celem, !mem.config.KeepInvalidTxsInCache)
-
-				if postCheckErr != nil {
-					r.CheckTx.MempoolError = postCheckErr.Error()
-				}
-			}
+			// Tx became invalidated due to newly committed block.
+			mem.logger.Debug("tx is no longer valid", "tx", txID(tx), "res", r, "err", postCheckErr)
+			// NOTE: we remove tx from the cache because it might be good later
+			mem.removeTx(tx, celem, !mem.config.KeepInvalidTxsInCache)
+			r.CheckTx.MempoolError = postCheckErr.Error()
 		} else {
-			tx := req.GetCheckTx().Tx
-			txHash := TxKey(tx)
-			if e, ok := mem.txsMap.Load(txHash); ok {
-				celem := e.(*clist.CElement)
-				// Tx became invalidated due to newly committed block.
-				mem.logger.Debug("tx is no longer valid", "tx", txID(tx), "res", r)
-				// NOTE: we remove tx from the cache because it might be good later
-				mem.removeTx(tx, celem, true)
-			} else {
+			if !ok {
 				mem.logger.Debug(
 					"re-CheckTx transaction does not exist",
 					"expected", types.Tx(tx),
 				)
+				return
 			}
+			celem := e.(*clist.CElement)
+			// Tx became invalidated due to newly committed block.
+			mem.logger.Debug("tx is no longer valid", "tx", txID(tx), "res", r)
+			// NOTE: we remove tx from the cache because it might be good later
+			mem.removeTx(tx, celem, true)
 		}
 	default:
 		// ignore other messages
