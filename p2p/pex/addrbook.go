@@ -5,7 +5,6 @@
 package pex
 
 import (
-	crand "crypto/rand"
 	"encoding/binary"
 	"fmt"
 	"math"
@@ -109,9 +108,7 @@ type addrBook struct {
 }
 
 func newHashKey() []byte {
-	result := make([]byte, highwayhash.Size)
-	crand.Read(result) //nolint:errcheck // ignore error
-	return result
+	return crypto.CRandBytes(highwayhash.Size)
 }
 
 // NewAddrBook creates a new address book.
