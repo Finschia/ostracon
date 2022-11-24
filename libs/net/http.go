@@ -8,7 +8,7 @@ import (
 
 // HttpGet sends a GET request to the specified url with timeout and return the response.
 func HttpGet(url string, timeout time.Duration) (*http.Response, error) {
-	request, err := http.NewRequestWithContext(context.Background(), "GET", url, nil)
+	request, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}

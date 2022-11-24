@@ -47,3 +47,8 @@ func TestHttpGetWithTimeout(t *testing.T) {
 	require.InDeltaf(t, timeout.Seconds(), delta, accuracy,
 		"response time of %.3f sec exceeded +%d%% of the expected timeout of %.3f sec", delta, uint(accuracy*100), timeout.Seconds())
 }
+
+func TestHttpGetWithInvalidURL(t *testing.T) {
+	_, err := HttpGet("\n", 0*time.Second)
+	require.Error(t, err)
+}
