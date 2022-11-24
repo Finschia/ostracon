@@ -19,7 +19,7 @@ import (
 	tmmath "github.com/line/ostracon/libs/math"
 	tmrand "github.com/line/ostracon/libs/rand"
 	"github.com/line/ostracon/libs/service"
-	stdCryptoRand "github.com/line/ostracon/libs/std/crypto/rand"
+	stdcrand "github.com/line/ostracon/libs/std/crypto/rand"
 	tmsync "github.com/line/ostracon/libs/sync"
 	"github.com/line/ostracon/p2p"
 )
@@ -110,7 +110,7 @@ type addrBook struct {
 
 func newHashKey() []byte {
 	result := make([]byte, highwayhash.Size)
-	stdCryptoRand.Read(result)
+	stdcrand.Read(result)
 	return result
 }
 
