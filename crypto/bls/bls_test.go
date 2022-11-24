@@ -185,7 +185,7 @@ func generatePubKeysAndSigns(t *testing.T, size int) ([]bls.PubKey, [][]byte, []
 		msgs[i] = []byte(fmt.Sprintf("hello, workd #%d", i))
 		sigs[i], err = privKey.Sign(msgs[i])
 		if err != nil {
-			t.Fatal(fmt.Sprintf("fail to sign: %s", err))
+			t.Fatalf("fail to sign: %s", err)
 		}
 		if !pubKeys[i].VerifySignature(msgs[i], sigs[i]) {
 			t.Fatal("fail to verify signature")
@@ -203,7 +203,7 @@ func blsPublicKey(t *testing.T, pubKey crypto.PubKey) bls.PubKey {
 		} else {
 			keyType = t.Name()
 		}
-		t.Fatal(fmt.Sprintf("specified public key is not for BLS: %s", keyType))
+		t.Fatalf("specified public key is not for BLS: %s", keyType)
 	}
 	return blsPubKey
 }
