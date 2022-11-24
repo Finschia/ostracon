@@ -38,7 +38,7 @@ func (e *Element) VotingPower() uint64 { return e.votingPower }
 func TestRandomSamplingWithPriority(t *testing.T) {
 	candidates := newCandidates(100, func(i int) uint64 { return uint64(i) })
 
-	elected := RandomSamplingWithPriority(0, candidates, 10, uint64(len(candidates)))
+	elected := RandomSamplingWithPriority(0, candidates, 10, calculateTotalPriority(candidates))
 	if len(elected) != 10 {
 		t.Errorf(fmt.Sprintf("unexpected sample size: %d", len(elected)))
 	}
@@ -46,7 +46,7 @@ func TestRandomSamplingWithPriority(t *testing.T) {
 	// ----
 	// The same result can be obtained for the same input.
 	others := newCandidates(100, func(i int) uint64 { return uint64(i) })
-	secondTimeElected := RandomSamplingWithPriority(0, others, 10, uint64(len(others)))
+	secondTimeElected := RandomSamplingWithPriority(0, others, 10, calculateTotalPriority(others))
 	if len(elected) != len(secondTimeElected) || !sameCandidates(elected, secondTimeElected) {
 		t.Errorf(fmt.Sprintf("undeterministic: %+v != %+v", elected, others))
 	}
@@ -56,7 +56,7 @@ func TestRandomSamplingWithPriority(t *testing.T) {
 	candidates = newCandidates(100, func(i int) uint64 { return 1 })
 	counts := make([]int, len(candidates))
 	for i := 0; i < 100000; i++ {
-		elected = RandomSamplingWithPriority(uint64(i), candidates, 10, uint64(len(candidates)))
+		elected = RandomSamplingWithPriority(uint64(i), candidates, 10, calculateTotalPriority(candidates))
 		for _, e := range elected {
 			counts[e.(*Element).id]++
 		}
@@ -198,4 +198,12 @@ func calculateMeanAndVariance(values []float64) (mean float64, variance float64)
 	}
 	variance = sum2 / float64(len(values))
 	return
+}
+
+func calculateTotalPriority(candidates []Candidate) uint64 {
+	totalPriority := uint64(0)
+	for _, candidate := range candidates {
+		totalPriority += candidate.Priority()
+	}
+	return totalPriority
 }

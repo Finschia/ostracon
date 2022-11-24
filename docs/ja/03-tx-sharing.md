@@ -24,8 +24,8 @@ Ostracon は Tendermint の Reactor 実装にキューを追加してトラン�
 
 ## Tx Validation via ABCI
 
-ABCI (Application Blockchain Interface) はアプリケーションが Ostracon やその他のツールとリモート (gRPC, ABCI-Socket 経由) またはプロセス内 (in-process 経由) で通信するための仕様です。ABCI の詳細については [Tendermint 仕様](https://github.com/tendermint/tendermint/tree/main/spec/abci)を参照してください。
+ABCI (Application Blockchain Interface) はアプリケーションが Ostracon やその他のツールとリモート (gRPC, ABCI-Socket 経由) またはプロセス内 (in-process 経由) で通信するための仕様です。ABCI の詳細については [Tendermint 仕様](https://github.com/tendermint/tendermint/blob/v0.34.x/spec/abci)を参照してください。
 
-未確定トランザクションの検証過程では ABCI 経由でアプリケーションにも問い合わせを行います。この動作により (データの観点では正しいが) 本質的に不要なトランザクションをブロックに含めないようにアプリケーションが判断することができます。Ostracon ではこのための [CheckTx リクエスト](https://github.com/tendermint/tendermint/blob/main/spec/abci/abci.md#mempool-connection)を非同期化する変更を行い ABCI 側の検証結果を待つことなく次のトランザクションの検証処理を開始できるようにしています。この変更は別のサーバで動作するアプリケーションや、個別の CPU コアが割り当てられているアプリケーション環境でのノードのパフォーマンスを向上させます。
+未確定トランザクションの検証過程では ABCI 経由でアプリケーションにも問い合わせを行います。この動作により (データの観点では正しいが) 本質的に不要なトランザクションをブロックに含めないようにアプリケーションが判断することができます。Ostracon ではこのための [CheckTx リクエスト](https://github.com/tendermint/tendermint/blob/v0.34.x/spec/abci/abci.md#mempool-connection)を非同期化する変更を行い ABCI 側の検証結果を待つことなく次のトランザクションの検証処理を開始できるようにしています。この変更は別のサーバで動作するアプリケーションや、個別の CPU コアが割り当てられているアプリケーション環境でのノードのパフォーマンスを向上させます。
 
 一方この非同期化の副作用として、アプリケーションがある ABCI リクエストの処理を行っている最中に別の CheckTx リクエストを受け付けることになります。例えば LBM SDK の ABCI アプリケーションインターフェース ([BaseApp](https://github.com/line/lbm-sdk/blob/main/baseapp/baseapp.go)) が内部的に保持しているチェック状態はこの並行実行を適切に排他制御する必要があります。このようなロックスコープをアプリケーションレイヤーで適切に設定できるように Ostracon の ABCI は RecheckTx の開始と終了時を通知する API を追加しています。

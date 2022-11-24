@@ -230,6 +230,30 @@ func TestAddrBookRemoveAddress(t *testing.T) {
 	assert.Equal(t, 0, book.Size())
 }
 
+func TestAddrBookIsGood(t *testing.T) {
+	fname := createTempFileName("addrbook_test")
+	defer deleteTempFile(fname)
+
+	book := NewAddrBook(fname, true).(*addrBook)
+	book.SetLogger(log.TestingLogger())
+	assert.Zero(t, book.Size())
+
+	randAddrGood := netAddressPair{addr: randIPv4Address(t), src: randIPv4Address(t)}
+	err := book.AddAddress(randAddrGood.addr, randAddrGood.src)
+	require.NoError(t, err)
+	book.MarkGood(randAddrGood.addr.ID)
+
+	randAddrNew := netAddressPair{addr: randIPv4Address(t), src: randIPv4Address(t)}
+	err = book.AddAddress(randAddrNew.addr, randAddrNew.src)
+	require.NoError(t, err)
+
+	randAddrUnknown := netAddressPair{addr: randIPv4Address(t), src: randIPv4Address(t)}
+
+	assert.Equal(t, true, book.IsGood(randAddrGood.addr))
+	assert.Equal(t, false, book.IsGood(randAddrNew.addr))
+	assert.Equal(t, false, book.IsGood(randAddrUnknown.addr))
+}
+
 func TestAddrBookGetSelectionWithOneMarkedGood(t *testing.T) {
 	// create a book with 10 addresses, 1 good/old and 9 new
 	book, fname := createAddrBookWithMOldAndNNewAddrs(t, 1, 9)

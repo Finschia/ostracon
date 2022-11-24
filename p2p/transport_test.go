@@ -14,6 +14,7 @@ import (
 	"github.com/line/ostracon/libs/protoio"
 	"github.com/line/ostracon/p2p/conn"
 	tmp2p "github.com/line/ostracon/proto/ostracon/p2p"
+	"github.com/stretchr/testify/require"
 )
 
 var defaultNodeName = "host_peer"
@@ -630,7 +631,8 @@ func TestTransportAddChannel(t *testing.T) {
 	)
 	testChannel := byte(0x01)
 
-	mt.AddChannel(testChannel)
+	err := mt.AddChannel(testChannel)
+	require.NoError(t, err)
 	if !mt.nodeInfo.(DefaultNodeInfo).HasChannel(testChannel) {
 		t.Errorf("missing added channel %v. Got %v", testChannel, mt.nodeInfo.(DefaultNodeInfo).Channels)
 	}
