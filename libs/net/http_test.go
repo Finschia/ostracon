@@ -5,7 +5,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"sync"
 	"testing"
 	"time"
 )
@@ -30,17 +29,15 @@ func TestHttpGet(t *testing.T) {
 }
 
 func TestHttpGetWithTimeout(t *testing.T) {
-	var mtx sync.Mutex
+	shutdown := make(chan string)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		mtx.Lock()
-		mtx.Unlock()
+		var _ = <-shutdown
 	}))
 	defer server.Close()
 
 	accuracy := 0.05
 	timeout := 10 * time.Second
-	mtx.Lock()
-	defer mtx.Unlock()
+	defer func() { shutdown <- "shutdown" }()
 	t0 := time.Now()
 	_, err := HttpGet(server.URL, timeout)
 	t1 := time.Now()
