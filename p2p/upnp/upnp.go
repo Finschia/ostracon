@@ -10,13 +10,14 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	net2 "github.com/line/ostracon/libs/net"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	net2 "github.com/line/ostracon/libs/net"
 )
 
 const HttpRequestTimeout = 30 * time.Second
