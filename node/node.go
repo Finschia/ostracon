@@ -212,15 +212,6 @@ func CustomReactors(reactors map[string]p2p.Reactor) Option {
 	}
 }
 
-// StateProvider overrides the state provider used by state sync to retrieve trusted app hashes and
-// build a State object for bootstrapping the node.
-// WARNING: this interface is considered unstable and subject to change.
-func StateProvider(stateProvider statesync.StateProvider) Option {
-	return func(n *Node) {
-		n.stateSyncProvider = stateProvider
-	}
-}
-
 //------------------------------------------------------------------------------
 
 // Node is the highest level interface to a full Ostracon node.
