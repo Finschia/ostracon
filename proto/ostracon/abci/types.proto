@@ -226,6 +226,9 @@ message ResponseCheckTx {
   string codespace = 8;
   string         sender        = 9;  // MEMO: not used, just reservation to implement https://github.com/tendermint/tendermint/pull/6740 first
   int64          priority      = 10; // MEMO: not used, just reservation to implement https://github.com/tendermint/tendermint/pull/6740 first
+  
+  // mempool_error is set by Ostracon.
+  // ABCI applictions creating a ResponseCheckTX should not set mempool_error.
   string         mempool_error = 11;
 }
 
