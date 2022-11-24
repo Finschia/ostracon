@@ -159,23 +159,31 @@ func TestMempoolFilters(t *testing.T) {
 	emptyTxArr := []types.Tx{[]byte{}}
 
 	nopPreFilter := func(tx types.Tx) error { return nil }
+	nopPostFilter := func(tx types.Tx, res *abci.ResponseCheckTx) error { return nil }
 
 	// each table driven test creates numTxsToCreate txs with checkTx, and at the end clears all remaining txs.
 	// each tx has 20 bytes
 	tests := []struct {
 		numTxsToCreate int
 		preFilter      PreCheckFunc
+		postFilter     PostCheckFunc
 		expectedNumTxs int
 	}{
-		{10, nopPreFilter, 10},
-		{10, PreCheckMaxBytes(10), 0},
-		{10, PreCheckMaxBytes(20), 0},
-		{10, PreCheckMaxBytes(22), 10},
-		{10, PreCheckMaxBytes(30), 10},
+		{10, nopPreFilter, nopPostFilter, 10},
+		{10, PreCheckMaxBytes(10), nopPostFilter, 0},
+		{10, PreCheckMaxBytes(22), nopPostFilter, 10},
+		{10, nopPreFilter, PostCheckMaxGas(-1), 10},
+		{10, nopPreFilter, PostCheckMaxGas(0), 10},
+		{10, nopPreFilter, PostCheckMaxGas(1), 10},
+		{10, nopPreFilter, PostCheckMaxGas(3000), 10},
+		{10, PreCheckMaxBytes(10), PostCheckMaxGas(20), 0},
+		{10, PreCheckMaxBytes(30), PostCheckMaxGas(20), 10},
+		{10, PreCheckMaxBytes(22), PostCheckMaxGas(1), 10},
+		{10, PreCheckMaxBytes(22), PostCheckMaxGas(0), 10},
 	}
 	for tcIndex, tt := range tests {
 		err := mempool.Update(newTestBlock(1, emptyTxArr),
-			abciResponses(len(emptyTxArr), abci.CodeTypeOK), tt.preFilter, nil)
+			abciResponses(len(emptyTxArr), abci.CodeTypeOK), tt.preFilter, tt.postFilter)
 		require.NoError(t, err)
 		checkTxs(t, mempool, tt.numTxsToCreate, UnknownPeerID)
 		require.Equal(t, tt.expectedNumTxs, mempool.Size(), "mempool had the incorrect size, on test case %d", tcIndex)
