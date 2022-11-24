@@ -724,10 +724,9 @@ func TestTxMempoolPostCheckError(t *testing.T) {
 			mempool, cleanup := newMempoolWithApp(cc)
 			defer cleanup()
 
-			postCheckFn := func(_ types.Tx, _ *abci.ResponseCheckTx) error {
+			mempool.postCheck = func(_ types.Tx, _ *abci.ResponseCheckTx) error {
 				return testCase.err
 			}
-			mempool.postCheck = postCheckFn
 
 			tx := types.Tx{1}
 			_, err := mempool.CheckTxSync(tx, TxInfo{})
@@ -753,7 +752,6 @@ func TestTxMempoolPostCheckError(t *testing.T) {
 				expectedErrString = testCase.err.Error()
 			}
 			require.Equal(t, expectedErrString, checkTxRes.CheckTx.MempoolError)
-			require.NoError(t, err)
 		})
 	}
 }
