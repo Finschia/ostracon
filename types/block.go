@@ -456,7 +456,7 @@ func (h Header) ValidateBasic() error {
 	// Basic validation of hashes related to application data.
 	// Will validate fully against state in state#ValidateBlock.
 	if err := ValidateHash(h.VotersHash); err != nil {
-		return fmt.Errorf("wrong ValidatorsHash: %v", err)
+		return fmt.Errorf("wrong VotersHash: %v", err)
 	}
 	// TODO When we add `Header.ValidatorsHash` in a future commit, we have to add a similar check here.
 	if err := ValidateHash(h.NextValidatorsHash); err != nil {
