@@ -4,11 +4,13 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	mrand "math/rand"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -698,4 +700,60 @@ func abciResponses(n int, code uint32) []*abci.ResponseDeliverTx {
 		responses = append(responses, &abci.ResponseDeliverTx{Code: code})
 	}
 	return responses
+}
+
+func TestTxMempoolPostCheckError(t *testing.T) {
+	cases := []struct {
+		name string
+		err  error
+	}{
+		{
+			name: "error",
+			err:  errors.New("test error"),
+		},
+		{
+			name: "no error",
+			err:  nil,
+		},
+	}
+	for _, tc := range cases {
+		testCase := tc
+		t.Run(testCase.name, func(t *testing.T) {
+			app := kvstore.NewApplication()
+			cc := proxy.NewLocalClientCreator(app)
+			mempool, cleanup := newMempoolWithApp(cc)
+			defer cleanup()
+
+			postCheckFn := func(_ types.Tx, _ *abci.ResponseCheckTx) error {
+				return testCase.err
+			}
+			mempool.postCheck = postCheckFn
+
+			tx := types.Tx{1}
+			_, err := mempool.CheckTxSync(tx, TxInfo{})
+			require.NoError(t, err)
+
+			req := abci.RequestCheckTx{
+				Tx:   tx,
+				Type: abci.CheckTxType_Recheck,
+			}
+			res := &abci.Response{}
+
+			m := sync.Mutex{}
+			m.Lock()
+			mempool.proxyAppConn.CheckTxAsync(req, func(r *abci.Response) {
+				res = r
+				m.Unlock()
+			})
+
+			checkTxRes, ok := res.Value.(*abci.Response_CheckTx)
+			require.True(t, ok)
+			expectedErrString := ""
+			if testCase.err != nil {
+				expectedErrString = testCase.err.Error()
+			}
+			require.Equal(t, expectedErrString, checkTxRes.CheckTx.MempoolError)
+			require.NoError(t, err)
+		})
+	}
 }
