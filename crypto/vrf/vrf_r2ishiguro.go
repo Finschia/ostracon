@@ -19,6 +19,8 @@ func init() {
 	}
 }
 
+const R2ishiguroProofLength = 81
+
 func newVrfEd25519r2ishiguro() vrfEd25519r2ishiguro {
 	return vrfEd25519r2ishiguro{}
 }
@@ -30,6 +32,10 @@ func (base vrfEd25519r2ishiguro) Prove(privateKey []byte, message []byte) (Proof
 
 func (base vrfEd25519r2ishiguro) Verify(publicKey []byte, proof Proof, message []byte) (bool, error) {
 	return r2ishiguro.ECVRF_verify(publicKey, proof, message)
+}
+
+func (base vrfEd25519r2ishiguro) ProofLength() int {
+	return R2ishiguroProofLength
 }
 
 func (base vrfEd25519r2ishiguro) ProofToHash(proof Proof) (Output, error) {

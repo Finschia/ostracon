@@ -18,6 +18,8 @@ func init() {
 	defaultVrf = newVrfEd25519libsodium()
 }
 
+const LibsodiumProofLength = 80
+
 func newVrfEd25519libsodium() vrfEd25519libsodium {
 	return vrfEd25519libsodium{}
 }
@@ -44,6 +46,10 @@ func (base vrfEd25519libsodium) Verify(publicKey []byte, proof Proof, message []
 		return false, err
 	}
 	return bytes.Compare(op[:], hash) == 0, nil
+}
+
+func (base vrfEd25519libsodium) ProofLength() int {
+	return LibsodiumProofLength
 }
 
 func (base vrfEd25519libsodium) ProofToHash(proof Proof) (Output, error) {

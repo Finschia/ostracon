@@ -12,6 +12,7 @@ VRF implementation is set by `func init()` with `build` option
 type vrfEd25519 interface {
 	Prove(privateKey []byte, message []byte) (Proof, error)
 	Verify(publicKey []byte, proof Proof, message []byte) (bool, error)
+	ProofLength() int
 	ProofToHash(proof Proof) (Output, error)
 ```
 
