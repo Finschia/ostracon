@@ -423,6 +423,9 @@ func (h Header) ValidateBasic() error {
 	if len(h.ChainID) > MaxChainIDLen {
 		return fmt.Errorf("chainID is too long; got: %d, max: %d", len(h.ChainID), MaxChainIDLen)
 	}
+	if h.Round < 0 {
+		return errors.New("negative Round")
+	}
 
 	if h.Height < 0 {
 		return errors.New("negative Height")
@@ -453,8 +456,15 @@ func (h Header) ValidateBasic() error {
 		)
 	}
 
+	if err := ValidateProof(h.Proof); err != nil {
+		return fmt.Errorf("wrong Proof: %v", err)
+	}
+
 	// Basic validation of hashes related to application data.
 	// Will validate fully against state in state#ValidateBlock.
+	if err := ValidateHash(h.ValidatorsHash); err != nil {
+		return fmt.Errorf("wrong ValidatorsHash: %v", err)
+	}
 	if err := ValidateHash(h.VotersHash); err != nil {
 		return fmt.Errorf("wrong VotersHash: %v", err)
 	}
