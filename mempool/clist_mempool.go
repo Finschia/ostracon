@@ -555,10 +555,7 @@ func (mem *CListMempool) resCbRecheck(req *abci.Request, res *abci.Response) {
 		txHash := TxKey(tx)
 		e, ok := mem.txsMap.Load(txHash)
 		if !ok {
-			mem.logger.Debug(
-				"re-CheckTx transaction does not exist",
-				"expected", types.Tx(tx),
-			)
+			mem.logger.Debug("re-CheckTx transaction does not exist", "expected", types.Tx(tx))
 			return
 		}
 		var postCheckErr error
