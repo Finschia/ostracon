@@ -554,11 +554,15 @@ func (mem *CListMempool) resCbRecheck(req *abci.Request, res *abci.Response) {
 		tx := req.GetCheckTx().Tx
 		txHash := TxKey(tx)
 		e, ok := mem.txsMap.Load(txHash)
+		if !ok {
+			mem.logger.Debug(
+				"re-CheckTx transaction does not exist",
+				"expected", types.Tx(tx),
+			)
+			return
+		}
 
 		if r.CheckTx.Code == abci.CodeTypeOK {
-			if !ok {
-				panic(fmt.Sprintf("Unexpected tx response from proxy during recheck\ntxHash=%s, tx=%X", txHash, tx))
-			}
 			if mem.postCheck == nil {
 				return
 			}
@@ -573,13 +577,6 @@ func (mem *CListMempool) resCbRecheck(req *abci.Request, res *abci.Response) {
 			mem.removeTx(tx, celem, !mem.config.KeepInvalidTxsInCache)
 			r.CheckTx.MempoolError = postCheckErr.Error()
 		} else {
-			if !ok {
-				mem.logger.Debug(
-					"re-CheckTx transaction does not exist",
-					"expected", types.Tx(tx),
-				)
-				return
-			}
 			celem := e.(*clist.CElement)
 			// Tx became invalidated due to newly committed block.
 			mem.logger.Debug("tx is no longer valid", "tx", txID(tx), "res", r)
