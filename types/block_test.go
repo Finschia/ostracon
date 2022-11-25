@@ -1277,6 +1277,7 @@ func makeRandHeader() Header {
 	height := tmrand.Int63()
 	randBytes := tmrand.Bytes(tmhash.Size)
 	randAddress := tmrand.Bytes(crypto.AddressSize)
+	randProof := tmrand.Bytes(vrf.ProofLength())
 	h := Header{
 		Version:            tmversion.Consensus{Block: version.BlockProtocol, App: 1},
 		ChainID:            chainID,
@@ -1294,6 +1295,7 @@ func makeRandHeader() Header {
 
 		EvidenceHash:    randBytes,
 		ProposerAddress: randAddress,
+		Proof:           randProof,
 	}
 
 	return h
