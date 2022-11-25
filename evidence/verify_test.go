@@ -8,8 +8,6 @@ import (
 
 	"github.com/line/ostracon/light"
 
-	"github.com/coniks-sys/coniks-go/crypto/vrf"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -17,6 +15,7 @@ import (
 
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/tmhash"
+	"github.com/line/ostracon/crypto/vrf"
 	"github.com/line/ostracon/evidence"
 	"github.com/line/ostracon/evidence/mocks"
 	"github.com/line/ostracon/libs/log"
@@ -735,7 +734,7 @@ func makeHeaderRandom(height int64) *types.Header {
 		LastResultsHash:    crypto.CRandBytes(tmhash.Size),
 		EvidenceHash:       crypto.CRandBytes(tmhash.Size),
 		ProposerAddress:    crypto.CRandBytes(crypto.AddressSize),
-		Proof:              crypto.CRandBytes(vrf.ProofSize),
+		Proof:              crypto.CRandBytes(vrf.ProofLength()),
 	}
 }
 

@@ -495,6 +495,8 @@ func TestCommitHash(t *testing.T) {
 	})
 }
 
+// The Proof defined here does not depend on the vrf ProofLength,
+// but it is a fixed value for the purpose of calculating the Hash value.
 func TestHeaderHash(t *testing.T) {
 	testCases := []struct {
 		desc       string
