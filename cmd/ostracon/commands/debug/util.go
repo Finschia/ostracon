@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path"
 	"path/filepath"
+	"time"
 
 	cfg "github.com/line/ostracon/config"
+	"github.com/line/ostracon/libs/net"
 	rpchttp "github.com/line/ostracon/rpc/client/http"
 )
 
@@ -67,7 +68,7 @@ func copyConfig(home, dir string) error {
 func dumpProfile(dir, addr, profile string, debug int) error {
 	endpoint := fmt.Sprintf("%s/debug/pprof/%s?debug=%d", addr, profile, debug)
 
-	resp, err := http.Get(endpoint) // nolint: gosec
+	resp, err := net.HttpGet(endpoint, time.Duration(frequency)*time.Second)
 	if err != nil {
 		return fmt.Errorf("failed to query for %s profile: %w", profile, err)
 	}

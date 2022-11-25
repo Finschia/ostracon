@@ -12,6 +12,7 @@ func HTTPClientForTest(remoteAddr string) (*http.Client, error) {
 	dialFn, _ := makeHTTPDialer(remoteAddr)
 
 	client := &http.Client{
+		Timeout: 60 * time.Second,
 		Transport: &http.Transport{
 			// Set to true to prevent GZIP-bomb DoS attacks
 			DisableCompression:    true,
