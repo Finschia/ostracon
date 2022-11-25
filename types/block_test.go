@@ -638,6 +638,15 @@ func TestHeaderValidateBasic(t *testing.T) {
 		{"Invalid Results Hash", func(header *Header) {
 			header.LastResultsHash = []byte(strings.Repeat("h", invalidHashLength))
 		}, true},
+		{"Negative Round", func(header *Header) {
+			header.Round = -1
+		}, true},
+		{"Invalid Proof", func(header *Header) {
+			header.Proof = make([]byte, vrf.ProofLength()-1)
+		}, true},
+		{"Invalid Validators Hash", func(header *Header) {
+			header.ValidatorsHash = []byte(strings.Repeat("h", invalidHashLength))
+		}, true},
 	}
 	for i, tc := range testCases {
 		tc := tc
@@ -660,7 +669,7 @@ func TestHeaderValidateBasic(t *testing.T) {
 				EvidenceHash:       tmhash.Sum([]byte("evidence_hash")),
 				ProposerAddress:    crypto.AddressHash([]byte("proposer_address")),
 				Round:              1,
-				Proof:              tmhash.Sum([]byte("proof")),
+				Proof:              make([]byte, vrf.ProofLength()),
 			}
 			tc.malleateHeader(header)
 			err := header.ValidateBasic()
