@@ -561,28 +561,22 @@ func (mem *CListMempool) resCbRecheck(req *abci.Request, res *abci.Response) {
 			)
 			return
 		}
-
+		var postCheckErr error
 		if r.CheckTx.Code == abci.CodeTypeOK {
 			if mem.postCheck == nil {
 				return
 			}
-			postCheckErr := mem.postCheck(tx, r.CheckTx)
+			postCheckErr = mem.postCheck(tx, r.CheckTx)
 			if postCheckErr == nil {
 				return
 			}
-			celem := e.(*clist.CElement)
-			// Tx became invalidated due to newly committed block.
-			mem.logger.Debug("tx is no longer valid", "tx", txID(tx), "res", r, "err", postCheckErr)
-			// NOTE: we remove tx from the cache because it might be good later
-			mem.removeTx(tx, celem, !mem.config.KeepInvalidTxsInCache)
 			r.CheckTx.MempoolError = postCheckErr.Error()
-		} else {
-			celem := e.(*clist.CElement)
-			// Tx became invalidated due to newly committed block.
-			mem.logger.Debug("tx is no longer valid", "tx", txID(tx), "res", r)
-			// NOTE: we remove tx from the cache because it might be good later
-			mem.removeTx(tx, celem, true)
 		}
+		celem := e.(*clist.CElement)
+		// Tx became invalidated due to newly committed block.
+		mem.logger.Debug("tx is no longer valid", "tx", txID(tx), "res", r, "err", postCheckErr)
+		// NOTE: we remove tx from the cache because it might be good later
+		mem.removeTx(tx, celem, !mem.config.KeepInvalidTxsInCache)
 	default:
 		// ignore other messages
 	}
