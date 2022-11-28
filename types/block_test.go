@@ -495,8 +495,6 @@ func TestCommitHash(t *testing.T) {
 	})
 }
 
-// The Proof defined here does not depend on the vrf ProofLength,
-// but it is a fixed value for the purpose of calculating the Hash value.
 func TestHeaderHash(t *testing.T) {
 	testCases := []struct {
 		desc       string
@@ -520,7 +518,9 @@ func TestHeaderHash(t *testing.T) {
 			EvidenceHash:       tmhash.Sum([]byte("evidence_hash")),
 			ProposerAddress:    crypto.AddressHash([]byte("proposer_address")),
 			Round:              1,
-			Proof:              tmhash.Sum([]byte("proof")),
+			// The Proof defined here does not depend on the vrf ProofLength,
+			// but it is a fixed value for the purpose of calculating the Hash value.
+			Proof: tmhash.Sum([]byte("proof")),
 		}, hexBytesFromString("0368E6F15B6B7BC9DC5B10F36F37D6F867E132A22333F083A11290324274E183")},
 		{"nil header yields nil", nil, nil},
 		{"nil VotersHash yields nil", &Header{
@@ -539,7 +539,9 @@ func TestHeaderHash(t *testing.T) {
 			EvidenceHash:       tmhash.Sum([]byte("evidence_hash")),
 			ProposerAddress:    crypto.AddressHash([]byte("proposer_address")),
 			Round:              1,
-			Proof:              tmhash.Sum([]byte("proof")),
+			// The Proof defined here does not depend on the vrf ProofLength,
+			// but it is a fixed value for the purpose of calculating the Hash value.
+			Proof: tmhash.Sum([]byte("proof")),
 		}, nil},
 	}
 	for _, tc := range testCases {
