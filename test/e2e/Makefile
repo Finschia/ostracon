@@ -15,9 +15,9 @@ maverick:
 	go build -o build/maverick -tags libsodium,badgerdb,boltdb,cleveldb,rocksdb ../maverick
 
 generator:
-	go build -o build/generator ./generator
+	go build -o build/generator -tags libsodium ./generator
 
 runner:
-	go build -o build/runner ./runner
+	go build -o build/runner -tags libsodium ./runner
 
 .PHONY: all node docker generator maverick runner
