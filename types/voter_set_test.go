@@ -620,7 +620,7 @@ func TestElectVotersNonDupMinVoters(t *testing.T) {
 	rand.Seed(seed)
 	t.Logf("used seed=%d", seed)
 	validatorSet := newValidatorSet(100, func(i int) int64 { return int64(rand.Uint32()%10000 + 100) })
-	tolerableByzantinePercentage := int(rand.Uint() % 33)
+	tolerableByzantinePercentage := int(rand.Uint() % BftMaxTolerableByzantinePercentage)
 	for i := 0; i <= 100; i++ {
 		voters := electVotersNonDup(validatorSet.Validators, rand.Uint64(), tolerableByzantinePercentage, i)
 		assert.True(t, len(voters) >= i, "%d < %d", len(voters), i)
@@ -654,7 +654,7 @@ func TestElectVotersNonDupVoterCountHardCode(t *testing.T) {
 			100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100},
 	}
 	for i := 0; i <= 100; i += 10 {
-		for j := 1; j <= 33; j++ {
+		for j := 1; j < BftMaxTolerableByzantinePercentage; j++ {
 			voters := electVotersNonDup(validatorSet.Validators, 0, j, i)
 			assert.True(t, len(voters) == expected[i/10][j-1])
 		}
@@ -663,7 +663,7 @@ func TestElectVotersNonDupVoterCountHardCode(t *testing.T) {
 	validatorSet = newValidatorSet(100, func(i int) int64 { return int64(100) })
 	expected2 := []int{4, 7, 10, 13, 16, 20, 23, 27, 30, 34, 37, 41, 45, 49, 53, 57, 61, 66, 70, 74, 78, 82, 86, 90,
 		93, 96, 99, 100, 100, 100, 100, 100, 100}
-	for j := 1; j <= 33; j++ {
+	for j := 1; j < BftMaxTolerableByzantinePercentage; j++ {
 		voters := electVotersNonDup(validatorSet.Validators, 0, j, 0)
 		assert.True(t, len(voters) == expected2[j-1])
 	}
@@ -671,7 +671,7 @@ func TestElectVotersNonDupVoterCountHardCode(t *testing.T) {
 	validatorSet = newValidatorSet(100, func(i int) int64 { return int64((i + 1) * (i + 1)) })
 	expected3 := []int{6, 9, 15, 17, 20, 25, 27, 30, 34, 34, 39, 41, 44, 44, 51, 53, 56, 56, 62, 65, 65, 68, 69, 73,
 		100, 100, 100, 100, 100, 100, 100, 100, 100}
-	for j := 1; j <= 33; j++ {
+	for j := 1; j < BftMaxTolerableByzantinePercentage; j++ {
 		voters := electVotersNonDup(validatorSet.Validators, 0, j, 0)
 		assert.True(t, len(voters) == expected3[j-1])
 	}
@@ -686,7 +686,7 @@ func TestElectVotersNonDupVoterCountHardCode(t *testing.T) {
 	validatorSet = newValidatorSet(100, func(i int) int64 { return votingPowerFunc[i] })
 	expected4 := []int{9, 13, 17, 21, 26, 29, 34, 37, 40, 44, 46, 51, 55, 58, 61, 64, 70, 72, 76, 82, 87,
 		100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100}
-	for j := 1; j <= 33; j++ {
+	for j := 1; j < BftMaxTolerableByzantinePercentage; j++ {
 		voters := electVotersNonDup(validatorSet.Validators, 0, j, 0)
 		assert.True(t, len(voters) == expected4[j-1])
 	}
@@ -705,7 +705,7 @@ func TestElectVotersNonDupVoterCountHardCode(t *testing.T) {
 	validatorSet = newValidatorSet(len(votingPowerFuncCosmos), func(i int) int64 { return votingPowerFuncCosmos[i] })
 	expected5 := []int{9, 14, 19, 23, 26, 31, 34, 38, 41, 43, 45, 48, 54, 55, 60, 61, 66, 73, 78, 78, 82, 90,
 		125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125}
-	for j := 1; j <= 33; j++ {
+	for j := 1; j < BftMaxTolerableByzantinePercentage; j++ {
 		voters := electVotersNonDup(validatorSet.Validators, 0, j, 0)
 		assert.True(t, len(voters) == expected5[j-1])
 	}
@@ -722,7 +722,7 @@ func TestElectVotersNonDupCandidate(t *testing.T) {
 func TestElectVotersNonDupSamplingThreshold(t *testing.T) {
 	candidates := newValidatorSet(100, func(i int) int64 { return int64(1000 * (i + 1)) })
 
-	for i := 1; i <= 33; i++ {
+	for i := 1; i < BftMaxTolerableByzantinePercentage; i++ {
 		winners := electVotersNonDup(candidates.Validators, 0, i, 0)
 		if len(winners) < 100 {
 			assert.True(t, isByzantineTolerable(winners, i))
@@ -918,7 +918,7 @@ func BenchmarkElectVotersNonDupEquity(b *testing.B) {
 	candidates = newValidatorSet(100, func(i int) int64 { return 1000000 + rand.Int64()&0xFFFFF })
 	accumulatedRewards = make(map[string]int64, 100)
 	for i := 0; i < loopCount; i++ {
-		winners := electVotersNonDup(candidates.Validators, uint64(i), 33, 0)
+		winners := electVotersNonDup(candidates.Validators, uint64(i), BftMaxTolerableByzantinePercentage-1, 0)
 		accumulateAndResetReward(winners, accumulatedRewards)
 	}
 	maxRewardPerVotingPowerDiff = float64(0)
