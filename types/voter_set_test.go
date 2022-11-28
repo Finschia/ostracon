@@ -1150,6 +1150,24 @@ func BenchmarkElectVotersNonDupDistribution(b *testing.B) {
 	}
 }
 
+func TestElectVoterNonDupPanic(t *testing.T) {
+	validatorSet := newValidatorSet(1, func(i int) int64 { return 1 })
+
+	tolerableByzantinePercent := BftMaxTolerableByzantinePercentage + 1
+	expectedResult := fmt.Sprintf("tolerableByzantinePercent cannot be %d or more: %d",
+		BftMaxTolerableByzantinePercentage, tolerableByzantinePercent)
+	defer func() {
+		pnc := recover()
+		if pncStr, ok := pnc.(string); ok {
+			assert.True(t, strings.HasPrefix(pncStr, expectedResult))
+		} else {
+			t.Fatal("panic expected, but doesn't panic")
+		}
+	}()
+	// expected panic
+	electVotersNonDup(validatorSet.Validators, 0, tolerableByzantinePercent, 0)
+}
+
 func TestElectVoterPanic(t *testing.T) {
 
 	validators := newValidatorSet(10, func(i int) int64 { return int64(i + 1) })
