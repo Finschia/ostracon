@@ -62,15 +62,7 @@ func (app *Application) DeliverTx(req types.RequestDeliverTx) types.ResponseDeli
 	return types.ResponseDeliverTx{Code: code.CodeTypeOK}
 }
 
-func (app *Application) CheckTxSync(req types.RequestCheckTx) types.ResponseCheckTx {
-	return app.checkTx(req)
-}
-
-func (app *Application) CheckTxAsync(req types.RequestCheckTx, callback types.CheckTxCallback) {
-	callback(app.checkTx(req))
-}
-
-func (app *Application) checkTx(req types.RequestCheckTx) types.ResponseCheckTx {
+func (app *Application) CheckTx(req types.RequestCheckTx) types.ResponseCheckTx {
 	if app.serial {
 		if len(req.Tx) > 8 {
 			return types.ResponseCheckTx{

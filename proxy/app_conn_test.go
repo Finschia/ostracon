@@ -16,8 +16,8 @@ import (
 //----------------------------------------
 
 type AppConnTest interface {
-	FlushSync() (*types.ResponseFlush, error)
-	EchoAsync(string, abcicli.ResponseCallback) *abcicli.ReqRes
+	EchoAsync(string) *abcicli.ReqRes
+	FlushSync() error
 	InfoSync(types.RequestInfo) (*types.ResponseInfo, error)
 }
 
@@ -29,11 +29,11 @@ func NewAppConnTest(appConn abcicli.Client) AppConnTest {
 	return &appConnTest{appConn}
 }
 
-func (app *appConnTest) EchoAsync(msg string, cb abcicli.ResponseCallback) *abcicli.ReqRes {
-	return app.appConn.EchoAsync(msg, cb)
+func (app *appConnTest) EchoAsync(msg string) *abcicli.ReqRes {
+	return app.appConn.EchoAsync(msg)
 }
 
-func (app *appConnTest) FlushSync() (*types.ResponseFlush, error) {
+func (app *appConnTest) FlushSync() error {
 	return app.appConn.FlushSync()
 }
 
@@ -75,11 +75,10 @@ func TestEcho(t *testing.T) {
 	t.Log("Connected")
 
 	for i := 0; i < 1000; i++ {
-		proxy.EchoAsync(fmt.Sprintf("echo-%v", i), nil)
+		proxy.EchoAsync(fmt.Sprintf("echo-%v", i))
 	}
-	_, err2 := proxy.FlushSync()
-	if err2 != nil {
-		t.Error(err2)
+	if err := proxy.FlushSync(); err != nil {
+		t.Error(err)
 	}
 }
 
@@ -116,11 +115,10 @@ func BenchmarkEcho(b *testing.B) {
 	b.StartTimer() // Start benchmarking tests
 
 	for i := 0; i < b.N; i++ {
-		proxy.EchoAsync(echoString, nil)
+		proxy.EchoAsync(echoString)
 	}
-	_, err2 := proxy.FlushSync()
-	if err2 != nil {
-		b.Error(err2)
+	if err := proxy.FlushSync(); err != nil {
+		b.Error(err)
 	}
 
 	b.StopTimer()

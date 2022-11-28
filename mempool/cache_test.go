@@ -59,7 +59,7 @@ func TestCacheAfterUpdate(t *testing.T) {
 	for tcIndex, tc := range tests {
 		for i := 0; i < tc.numTxsToCreate; i++ {
 			tx := types.Tx{byte(i)}
-			_, err := mempool.CheckTxSync(tx, TxInfo{})
+			err := mempool.CheckTx(tx, nil, TxInfo{})
 			require.NoError(t, err)
 		}
 
@@ -68,13 +68,12 @@ func TestCacheAfterUpdate(t *testing.T) {
 			tx := types.Tx{byte(v)}
 			updateTxs = append(updateTxs, tx)
 		}
-		err := mempool.Update(newTestBlock(int64(tcIndex), updateTxs),
-			abciResponses(len(updateTxs), abci.CodeTypeOK), nil)
+		err := mempool.Update(int64(tcIndex), updateTxs, abciResponses(len(updateTxs), abci.CodeTypeOK), nil, nil)
 		require.NoError(t, err)
 
 		for _, v := range tc.reAddIndices {
 			tx := types.Tx{byte(v)}
-			_, _ = mempool.CheckTxSync(tx, TxInfo{})
+			_ = mempool.CheckTx(tx, nil, TxInfo{})
 		}
 
 		cache := mempool.cache.(*mapTxCache)

@@ -60,53 +60,6 @@ func (ti *timeoutInfo) String() string {
 	return fmt.Sprintf("%v ; %d/%d %v", ti.Duration, ti.Height, ti.Round, ti.Step)
 }
 
-type StepTimes struct {
-	Proposal  types.StepDuration
-	Prevote   types.StepDuration
-	Precommit types.StepDuration
-	sm.CommitStepTimes
-	WaitingForNewRound types.StepDuration
-}
-
-func (st *StepTimes) StartNewRound() time.Time {
-	now := tmtime.Now()
-	if st.Current == &st.WaitingForNewRound {
-		st.Current.End = now
-	}
-	st.Current = &st.Proposal
-	st.Current.Start = now
-	return now
-}
-
-func (st *StepTimes) ToPrevoteStep() time.Time {
-	return st.ToNextStep(&st.Proposal, &st.Prevote)
-}
-
-func (st *StepTimes) ToPrecommitStep() time.Time {
-	return st.ToNextStep(&st.Prevote, &st.Precommit)
-}
-
-func (st *StepTimes) ToCommitExecuting() time.Time {
-	return st.ToNextStep(&st.Precommit, &st.CommitExecuting)
-}
-
-func (st *StepTimes) EndRound() time.Time {
-	now := tmtime.Now()
-	if st.Current == &st.CommitRechecking {
-		st.Current.End = now
-		st.Current = &st.WaitingForNewRound
-	}
-	return now
-}
-
-func (st *StepTimes) StartWaiting() time.Time {
-	now := tmtime.Now()
-	if st.Current == &st.WaitingForNewRound {
-		st.Current.Start = now
-	}
-	return now
-}
-
 // interface to the mempool
 type txNotifier interface {
 	TxsAvailable() <-chan struct{}
@@ -187,9 +140,6 @@ type State struct {
 
 	// for reporting metrics
 	metrics *Metrics
-
-	// times of each step
-	stepTimes *StepTimes
 }
 
 // StateOption sets an optional parameter on the State.
@@ -220,7 +170,6 @@ func NewState(
 		evpool:           evpool,
 		evsw:             tmevents.NewEventSwitch(),
 		metrics:          NopMetrics(),
-		stepTimes:        &StepTimes{},
 	}
 
 	// set function defaults (may be overwritten before calling Start)
@@ -817,8 +766,12 @@ func (cs *State) receiveRoutine(maxSteps int) {
 			cs.handleMsg(mi)
 
 		case mi = <-cs.internalMsgQueue:
-			if err := cs.wal.Write(mi); err != nil {
-				cs.Logger.Error("failed writing to WAL", "err", err)
+			err := cs.wal.WriteSync(mi) // NOTE: fsync
+			if err != nil {
+				panic(fmt.Sprintf(
+					"failed to write %v msg to consensus WAL due to %v; check your file system and restart the node",
+					mi, err,
+				))
 			}
 
 			if _, ok := mi.Msg.(*VoteMessage); ok {
@@ -1020,7 +973,9 @@ func (cs *State) handleTxsAvailable() {
 // Used internally by handleTimeout and handleMsg to make state transitions
 
 // Enter: `timeoutNewHeight` by startTime (commitTime+timeoutCommit),
-// 	or, if SkipTimeoutCommit==true, after receiving all precommits from (height,round-1)
+//
+//	or, if SkipTimeoutCommit==true, after receiving all precommits from (height,round-1)
+//
 // Enter: `timeoutPrecommits` after any +2/3 precommits from (height,round-1)
 // Enter: +2/3 precommits for nil at (height,round-1)
 // Enter: +2/3 prevotes any or +2/3 precommits for block or any from (height, round)
@@ -1036,8 +991,7 @@ func (cs *State) enterNewRound(height int64, round int32) {
 		return
 	}
 
-	now := cs.stepTimes.StartNewRound()
-	if cs.StartTime.After(now) {
+	if now := tmtime.Now(); cs.StartTime.After(now) {
 		logger.Debug("need to set a buffer and log message here for sanity", "start_time", cs.StartTime, "now", now)
 	}
 
@@ -1101,7 +1055,9 @@ func (cs *State) needProofBlock(height int64) bool {
 
 // Enter (CreateEmptyBlocks): from enterNewRound(height,round)
 // Enter (CreateEmptyBlocks, CreateEmptyBlocksInterval > 0 ):
-// 		after enterNewRound(height,round), after timeout of CreateEmptyBlocksInterval
+//
+//	after enterNewRound(height,round), after timeout of CreateEmptyBlocksInterval
+//
 // Enter (!CreateEmptyBlocks) : after enterNewRound(height,round), once txs are in the mempool
 func (cs *State) enterPropose(height int64, round int32) {
 	logger := cs.Logger.With("height", height, "round", round)
@@ -1301,7 +1257,6 @@ func (cs *State) enterPrevote(height int64, round int32) {
 	logger.Debug("entering prevote step", "current", fmt.Sprintf("%v/%v/%v", cs.Height, cs.Round, cs.Step))
 
 	// Sign and broadcast vote as necessary
-	cs.stepTimes.ToPrevoteStep()
 	cs.doPrevote(height, round)
 
 	// Once `addVote` hits any +2/3 prevotes, we will go to PrevoteWait
@@ -1399,8 +1354,6 @@ func (cs *State) enterPrecommit(height int64, round int32) {
 		cs.updateRoundStep(round, cstypes.RoundStepPrecommit)
 		cs.newStep()
 	}()
-
-	cs.stepTimes.ToPrecommitStep()
 
 	// check for a polka
 	blockID, ok := cs.Votes.Prevotes(round).TwoThirdsMajority()
@@ -1715,7 +1668,6 @@ func (cs *State) finalizeCommit(height int64) {
 		retainHeight int64
 	)
 
-	cs.stepTimes.ToCommitExecuting()
 	stateCopy, retainHeight, err = cs.blockExec.ApplyBlock(
 		stateCopy,
 		types.BlockID{
@@ -1723,7 +1675,6 @@ func (cs *State) finalizeCommit(height int64) {
 			PartSetHeader: blockParts.Header(),
 		},
 		block,
-		&cs.stepTimes.CommitStepTimes,
 	)
 	if err != nil {
 		logger.Error("failed to apply block", "err", err)
@@ -1742,13 +1693,12 @@ func (cs *State) finalizeCommit(height int64) {
 		}
 	}
 
-	cs.stepTimes.EndRound()
-
 	// must be called before we update state
 	cs.recordMetrics(height, block)
 
 	// NewHeightStep!
 	cs.updateToState(stateCopy)
+
 	fail.Fail() // XXX
 
 	// Private validator might have changed it's key pair => refetch pubkey.
@@ -1764,8 +1714,6 @@ func (cs *State) finalizeCommit(height int64) {
 	// * cs.Height has been increment to height+1
 	// * cs.Step is now cstypes.RoundStepNewHeight
 	// * cs.StartTime is set to when we will start round0.
-
-	cs.stepTimes.StartWaiting()
 }
 
 func (cs *State) pruneBlocks(retainHeight int64) (uint64, error) {
@@ -1899,21 +1847,6 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 	cs.metrics.CommittedHeight.Set(float64(block.Height))
 
 	cs.metrics.RoundFailures.Observe(float64(cs.Round))
-	cs.metrics.DurationProposal.Observe(cs.stepTimes.Proposal.GetDuration())
-	cs.metrics.DurationPrevote.Observe(cs.stepTimes.Prevote.GetDuration())
-	cs.metrics.DurationPrecommit.Observe(cs.stepTimes.Precommit.GetDuration())
-	cs.metrics.DurationCommitExecuting.Observe(cs.stepTimes.CommitExecuting.GetDuration())
-	cs.metrics.DurationCommitCommitting.Observe(cs.stepTimes.CommitCommitting.GetDuration())
-	cs.metrics.DurationCommitRechecking.Observe(cs.stepTimes.CommitRechecking.GetDuration())
-	cs.metrics.DurationWaitingForNewRound.Observe(cs.stepTimes.WaitingForNewRound.GetDuration())
-
-	cs.metrics.DurationGaugeProposal.Set(cs.stepTimes.Proposal.GetDuration())
-	cs.metrics.DurationGaugePrevote.Set(cs.stepTimes.Prevote.GetDuration())
-	cs.metrics.DurationGaugePrecommit.Set(cs.stepTimes.Precommit.GetDuration())
-	cs.metrics.DurationGaugeCommitExecuting.Set(cs.stepTimes.CommitExecuting.GetDuration())
-	cs.metrics.DurationGaugeCommitCommitting.Set(cs.stepTimes.CommitCommitting.GetDuration())
-	cs.metrics.DurationGaugeCommitRechecking.Set(cs.stepTimes.CommitRechecking.GetDuration())
-	cs.metrics.DurationGaugeWaitingForNewRound.Set(cs.stepTimes.WaitingForNewRound.GetDuration())
 }
 
 //-----------------------------------------------------------------------------
@@ -2177,7 +2110,6 @@ func (cs *State) addVote(vote *types.Vote, peerID p2p.ID) (added bool, err error
 
 		// If +2/3 prevotes for a block or nil for *any* round:
 		if blockID, ok := prevotes.TwoThirdsMajority(); ok {
-
 			// There was a polka!
 			// If we're locked but this is a recent polka, unlock.
 			// If it matches our ProposalBlock, update the ValidBlock

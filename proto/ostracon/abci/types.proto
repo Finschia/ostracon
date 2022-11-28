@@ -36,8 +36,6 @@ message Request {
     RequestOfferSnapshot      offer_snapshot       = 13;
     RequestLoadSnapshotChunk  load_snapshot_chunk  = 14;
     RequestApplySnapshotChunk apply_snapshot_chunk = 15;
-    RequestBeginRecheckTx     begin_recheck_tx     = 1000; // 16~99 are reserved for merging original tendermint
-    RequestEndRecheckTx       end_recheck_tx       = 1001;
   }
 }
 
@@ -127,14 +125,6 @@ message RequestApplySnapshotChunk {
   string sender = 3;
 }
 
-message RequestBeginRecheckTx {
-  ostracon.types.Header header = 1 [(gogoproto.nullable) = false];
-}
-
-message RequestEndRecheckTx {
-  int64 height = 1;
-}
-
 //----------------------------------------
 // Response types
 
@@ -156,8 +146,6 @@ message Response {
     ResponseOfferSnapshot      offer_snapshot       = 14;
     ResponseLoadSnapshotChunk  load_snapshot_chunk  = 15;
     ResponseApplySnapshotChunk apply_snapshot_chunk = 16;
-    ResponseBeginRecheckTx     begin_recheck_tx     = 1000; // 17~99 are reserved for merging original tendermint
-    ResponseEndRecheckTx       end_recheck_tx       = 1001;
   }
 }
 
@@ -286,14 +274,6 @@ message ResponseApplySnapshotChunk {
     RETRY_SNAPSHOT  = 4;  // Retry snapshot (combine with refetch and reject)
     REJECT_SNAPSHOT = 5;  // Reject this snapshot, try others
   }
-}
-
-message ResponseBeginRecheckTx {
-  uint32 code = 1;
-}
-
-message ResponseEndRecheckTx {
-  uint32 code = 1;
 }
 
 //----------------------------------------
@@ -427,6 +407,4 @@ service ABCIApplication {
   rpc OfferSnapshot(RequestOfferSnapshot) returns (ResponseOfferSnapshot);
   rpc LoadSnapshotChunk(RequestLoadSnapshotChunk) returns (ResponseLoadSnapshotChunk);
   rpc ApplySnapshotChunk(RequestApplySnapshotChunk) returns (ResponseApplySnapshotChunk);
-  rpc BeginRecheckTx(RequestBeginRecheckTx) returns (ResponseBeginRecheckTx);
-  rpc EndRecheckTx(RequestEndRecheckTx) returns (ResponseEndRecheckTx);
 }

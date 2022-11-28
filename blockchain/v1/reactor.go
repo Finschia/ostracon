@@ -488,7 +488,7 @@ func (bcR *BlockchainReactor) processBlock() error {
 
 	bcR.store.SaveBlock(first, firstParts, second.LastCommit)
 
-	bcR.state, _, err = bcR.blockExec.ApplyBlock(bcR.state, firstID, first, nil)
+	bcR.state, _, err = bcR.blockExec.ApplyBlock(bcR.state, firstID, first)
 	if err != nil {
 		panic(fmt.Sprintf("failed to process committed block (%d:%X): %v", first.Height, first.Hash(), err))
 	}
@@ -541,8 +541,8 @@ func (bcR *BlockchainReactor) switchToConsensus() {
 // Called by FSM and pool:
 // - pool calls when it detects slow peer or when peer times out
 // - FSM calls when:
-//    - adding a block (addBlock) fails
-//    - reactor processing of a block reports failure and FSM sends back the peers of first and second blocks
+//   - adding a block (addBlock) fails
+//   - reactor processing of a block reports failure and FSM sends back the peers of first and second blocks
 func (bcR *BlockchainReactor) sendPeerError(err error, peerID p2p.ID) {
 	bcR.Logger.Info("sendPeerError:", "peer", peerID, "error", err)
 	msgData := bcFsmMessage{

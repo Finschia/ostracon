@@ -25,7 +25,7 @@ func init() {
 }
 
 func Fuzz(data []byte) int {
-	_, err := mempool.CheckTxSync(data, mempl.TxInfo{})
+	err := mempool.CheckTx(data, nil, mempl.TxInfo{})
 	if err != nil {
 		return 0
 	}

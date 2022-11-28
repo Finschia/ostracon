@@ -221,7 +221,7 @@ func TestReactorCreatesBlockWhenEmptyBlocksFalse(t *testing.T) {
 	defer stopConsensusNet(log.TestingLogger(), reactors, eventBuses)
 
 	// send a tx
-	if _, err := assertMempool(css[3].txNotifier).CheckTxSync([]byte{1, 2, 3}, mempl.TxInfo{}); err != nil {
+	if err := assertMempool(css[3].txNotifier).CheckTx([]byte{1, 2, 3}, nil, mempl.TxInfo{}); err != nil {
 		t.Error(err)
 	}
 
@@ -549,7 +549,7 @@ func waitForAndValidateBlock(
 		err := validateBlock(newBlock, activeVals)
 		assert.Nil(t, err)
 		for _, tx := range txs {
-			_, err := assertMempool(css[j].txNotifier).CheckTxSync(tx, mempl.TxInfo{})
+			err := assertMempool(css[j].txNotifier).CheckTx(tx, nil, mempl.TxInfo{})
 			assert.Nil(t, err)
 		}
 	}, css)

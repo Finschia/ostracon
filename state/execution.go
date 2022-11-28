@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/line/ostracon/crypto"
-	canonictime "github.com/line/ostracon/types/time"
 
 	abci "github.com/line/ostracon/abci/types"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
@@ -44,30 +43,6 @@ type BlockExecutor struct {
 	logger log.Logger
 
 	metrics *Metrics
-}
-
-type CommitStepTimes struct {
-	CommitExecuting  types.StepDuration
-	CommitCommitting types.StepDuration
-	CommitRechecking types.StepDuration
-	Current          *types.StepDuration
-}
-
-func (st *CommitStepTimes) ToNextStep(from, next *types.StepDuration) time.Time {
-	now := canonictime.Now()
-	if st.Current == from {
-		from.End, next.Start = now, now
-		st.Current = next
-	}
-	return now
-}
-
-func (st *CommitStepTimes) ToCommitCommitting() time.Time {
-	return st.ToNextStep(&st.CommitExecuting, &st.CommitCommitting)
-}
-
-func (st *CommitStepTimes) ToCommitRechecking() time.Time {
-	return st.ToNextStep(&st.CommitCommitting, &st.CommitRechecking)
 }
 
 type BlockExecutorOption func(executor *BlockExecutor)
@@ -156,7 +131,7 @@ func (blockExec *BlockExecutor) ValidateBlock(state State, round int32, block *t
 // from outside this package to process and commit an entire block.
 // It takes a blockID to avoid recomputing the parts hash.
 func (blockExec *BlockExecutor) ApplyBlock(
-	state State, blockID types.BlockID, block *types.Block, stepTimes *CommitStepTimes,
+	state State, blockID types.BlockID, block *types.Block,
 ) (State, int64, error) {
 
 	// When doing ApplyBlock, we don't need to check whether the block.Round is same to current round,
@@ -165,16 +140,12 @@ func (blockExec *BlockExecutor) ApplyBlock(
 		return state, 0, ErrInvalidBlock(err)
 	}
 
-	execStartTime := time.Now().UnixNano()
+	startTime := time.Now().UnixNano()
 	abciResponses, err := execBlockOnProxyApp(
 		blockExec.logger, blockExec.proxyApp, block, blockExec.store, state.InitialHeight, state.VoterParams,
 	)
-	execEndTime := time.Now().UnixNano()
-
-	execTimeMs := float64(execEndTime-execStartTime) / 1000000
-	blockExec.metrics.BlockProcessingTime.Observe(execTimeMs)
-	blockExec.metrics.BlockExecutionTime.Set(execTimeMs)
-
+	endTime := time.Now().UnixNano()
+	blockExec.metrics.BlockProcessingTime.Observe(float64(endTime-startTime) / 1000000)
 	if err != nil {
 		return state, 0, ErrProxyAppConn(err)
 	}
@@ -209,18 +180,8 @@ func (blockExec *BlockExecutor) ApplyBlock(
 		return state, 0, fmt.Errorf("commit failed for application: %v", err)
 	}
 
-	if stepTimes != nil {
-		stepTimes.ToCommitCommitting()
-	}
-
 	// Lock mempool, commit app state, update mempoool.
-	commitStartTime := time.Now().UnixNano()
-	appHash, retainHeight, err := blockExec.Commit(state, block, abciResponses.DeliverTxs, stepTimes)
-	commitEndTime := time.Now().UnixNano()
-
-	commitTimeMs := float64(commitEndTime-commitStartTime) / 1000000
-	blockExec.metrics.BlockCommitTime.Set(commitTimeMs)
-
+	appHash, retainHeight, err := blockExec.Commit(state, block, abciResponses.DeliverTxs)
 	if err != nil {
 		return state, 0, fmt.Errorf("commit failed for application: %v", err)
 	}
@@ -237,21 +198,6 @@ func (blockExec *BlockExecutor) ApplyBlock(
 	}
 
 	fail.Fail() // XXX
-
-	// Can't use stepTimes at this point as it gets wrapped up by the caller of this function
-	blockGenerationTimeMs := float64((time.Now().UnixNano() - execStartTime) / 1000000.0)
-	numTxs := len(block.Txs)
-	tps := 0
-	if blockGenerationTimeMs > 0 {
-		tps = int(float64(numTxs) / blockGenerationTimeMs * 1000.0)
-	}
-	blockExec.logger.Info(
-		"block generated",
-		"height", block.Height,
-		"num_txs", numTxs,
-		"generation_time", blockGenerationTimeMs/1000.0,
-		"tps", tps,
-	)
 
 	// Events are fired after everything else.
 	// NOTE: if we crash between Commit and Save, events wont be fired during replay
@@ -270,7 +216,6 @@ func (blockExec *BlockExecutor) Commit(
 	state State,
 	block *types.Block,
 	deliverTxResponses []*abci.ResponseDeliverTx,
-	stepTimes *CommitStepTimes,
 ) ([]byte, int64, error) {
 	blockExec.mempool.Lock()
 	defer blockExec.mempool.Unlock()
@@ -284,43 +229,27 @@ func (blockExec *BlockExecutor) Commit(
 	}
 
 	// Commit block, get hash back
-	appCommitStartTime := time.Now().UnixNano()
 	res, err := blockExec.proxyApp.CommitSync()
-	appCommitEndTime := time.Now().UnixNano()
-
-	appCommitTimeMs := float64(appCommitEndTime-appCommitStartTime) / 1000000
-	blockExec.metrics.BlockAppCommitTime.Set(appCommitTimeMs)
-
 	if err != nil {
 		blockExec.logger.Error("client error during proxyAppConn.CommitSync", "err", err)
 		return nil, 0, err
 	}
 
 	// ResponseCommit has no error code - just data
-
-	if stepTimes != nil {
-		stepTimes.ToCommitRechecking()
-	}
-
-	// Update mempool.
-	updateMempoolStartTime := time.Now().UnixNano()
-	err = blockExec.mempool.Update(
-		block,
-		deliverTxResponses,
-		TxPreCheck(state),
-	)
-	updateMempoolEndTime := time.Now().UnixNano()
-
-	updateMempoolTimeMs := float64(updateMempoolEndTime-updateMempoolStartTime) / 1000000
-	blockExec.metrics.BlockUpdateMempoolTime.Set(updateMempoolTimeMs)
-
 	blockExec.logger.Info(
 		"committed state",
 		"height", block.Height,
 		"num_txs", len(block.Txs),
 		"app_hash", fmt.Sprintf("%X", res.Data),
-		"commit_time", float64(int(appCommitTimeMs))/1000.0,
-		"update_mempool_time", float64(int(updateMempoolTimeMs))/1000.0,
+	)
+
+	// Update mempool.
+	err = blockExec.mempool.Update(
+		block.Height,
+		block.Txs,
+		deliverTxResponses,
+		TxPreCheck(state),
+		TxPostCheck(state),
 	)
 
 	return res.Data, res.RetainHeight, err
@@ -364,7 +293,7 @@ func execBlockOnProxyApp(
 			txIndex++
 		}
 	}
-	proxyAppConn.SetGlobalCallback(proxyCb)
+	proxyAppConn.SetResponseCallback(proxyCb)
 
 	commitInfo := getBeginBlockValidatorInfo(block, store, initialHeight, voterParams)
 
@@ -391,16 +320,13 @@ func execBlockOnProxyApp(
 		return nil, err
 	}
 
-	startTime := time.Now()
 	// run txs of block
 	for _, tx := range block.Txs {
-		proxyAppConn.DeliverTxAsync(abci.RequestDeliverTx{Tx: tx}, nil)
+		proxyAppConn.DeliverTxAsync(abci.RequestDeliverTx{Tx: tx})
 		if err := proxyAppConn.Error(); err != nil {
 			return nil, err
 		}
 	}
-	endTime := time.Now()
-	execTime := endTime.Sub(startTime)
 
 	// End block.
 	abciResponses.EndBlock, err = proxyAppConn.EndBlockSync(abci.RequestEndBlock{Height: block.Height})
@@ -409,12 +335,7 @@ func execBlockOnProxyApp(
 		return nil, err
 	}
 
-	tps := 0
-	if execTime.Milliseconds() > 0 {
-		tps = int(float64(validTxs+invalidTxs) / float64(execTime.Milliseconds()) * 1000.0)
-	}
-	logger.Info("executed block", "height", block.Height, "num_valid_txs", validTxs,
-		"num_invalid_txs", invalidTxs, "exec_time", float64(execTime.Milliseconds())/1000.0, "tps", tps)
+	logger.Info("executed block", "height", block.Height, "num_valid_txs", validTxs, "num_invalid_txs", invalidTxs)
 	return abciResponses, nil
 }
 

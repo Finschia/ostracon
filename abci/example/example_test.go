@@ -76,7 +76,7 @@ func testStream(t *testing.T, app types.Application) {
 
 	done := make(chan struct{})
 	counter := 0
-	client.SetGlobalCallback(func(req *types.Request, res *types.Response) {
+	client.SetResponseCallback(func(req *types.Request, res *types.Response) {
 		// Process response
 		switch r := res.Value.(type) {
 		case *types.Response_DeliverTx:
@@ -104,19 +104,19 @@ func testStream(t *testing.T, app types.Application) {
 	// Write requests
 	for counter := 0; counter < numDeliverTxs; counter++ {
 		// Send request
-		reqRes := client.DeliverTxAsync(types.RequestDeliverTx{Tx: []byte("test")}, nil)
+		reqRes := client.DeliverTxAsync(types.RequestDeliverTx{Tx: []byte("test")})
 		_ = reqRes
 		// check err ?
 
 		// Sometimes send flush messages
 		if counter%123 == 0 {
-			client.FlushAsync(nil)
+			client.FlushAsync()
 			// check err ?
 		}
 	}
 
 	// Send final flush message
-	client.FlushAsync(nil)
+	client.FlushAsync()
 
 	<-done
 }

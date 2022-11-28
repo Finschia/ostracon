@@ -207,7 +207,7 @@ func (s *SocketServer) handleRequest(req *types.Request, responses chan<- *types
 		res := s.app.DeliverTx(*r.DeliverTx)
 		responses <- types.ToResponseDeliverTx(res)
 	case *types.Request_CheckTx:
-		res := s.app.CheckTxSync(*r.CheckTx)
+		res := s.app.CheckTx(*r.CheckTx)
 		responses <- types.ToResponseCheckTx(res)
 	case *types.Request_Commit:
 		res := s.app.Commit()
@@ -224,12 +224,6 @@ func (s *SocketServer) handleRequest(req *types.Request, responses chan<- *types
 	case *types.Request_EndBlock:
 		res := s.app.EndBlock(*r.EndBlock)
 		responses <- types.ToResponseEndBlock(res)
-	case *types.Request_BeginRecheckTx:
-		res := s.app.BeginRecheckTx(*r.BeginRecheckTx)
-		responses <- types.ToResponseBeginRecheckTx(res)
-	case *types.Request_EndRecheckTx:
-		res := s.app.EndRecheckTx(*r.EndRecheckTx)
-		responses <- types.ToResponseEndRecheckTx(res)
 	case *types.Request_ListSnapshots:
 		res := s.app.ListSnapshots(*r.ListSnapshots)
 		responses <- types.ToResponseListSnapshots(res)

@@ -135,18 +135,6 @@ func ToRequestEndBlock(req RequestEndBlock) *Request {
 	}
 }
 
-func ToRequestBeginRecheckTx(req RequestBeginRecheckTx) *Request {
-	return &Request{
-		Value: &Request_BeginRecheckTx{&req},
-	}
-}
-
-func ToRequestEndRecheckTx(req RequestEndRecheckTx) *Request {
-	return &Request{
-		Value: &Request_EndRecheckTx{&req},
-	}
-}
-
 func ToRequestListSnapshots(req RequestListSnapshots) *Request {
 	return &Request{
 		Value: &Request_ListSnapshots{&req},
@@ -242,18 +230,6 @@ func ToResponseBeginBlock(res ResponseBeginBlock) *Response {
 func ToResponseEndBlock(res ResponseEndBlock) *Response {
 	return &Response{
 		Value: &Response_EndBlock{&res},
-	}
-}
-
-func ToResponseBeginRecheckTx(res ResponseBeginRecheckTx) *Response {
-	return &Response{
-		Value: &Response_BeginRecheckTx{&res},
-	}
-}
-
-func ToResponseEndRecheckTx(res ResponseEndRecheckTx) *Response {
-	return &Response{
-		Value: &Response_EndRecheckTx{&res},
 	}
 }
 

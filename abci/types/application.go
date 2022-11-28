@@ -6,8 +6,6 @@ import (
 
 //go:generate mockery --case underscore --name Application
 
-type CheckTxCallback func(ResponseCheckTx)
-
 // Application is an interface that enables any finite, deterministic state machine
 // to be driven by a blockchain-based replication engine via the ABCI.
 // All methods take a RequestXxx argument and return a ResponseXxx argument,
@@ -19,10 +17,7 @@ type Application interface {
 	Query(RequestQuery) ResponseQuery             // Query for state
 
 	// Mempool Connection
-	CheckTxSync(RequestCheckTx) ResponseCheckTx                  // Validate a tx for the mempool
-	CheckTxAsync(RequestCheckTx, CheckTxCallback)                // Asynchronously validate a tx for the mempool
-	BeginRecheckTx(RequestBeginRecheckTx) ResponseBeginRecheckTx // Signals the beginning of rechecking
-	EndRecheckTx(RequestEndRecheckTx) ResponseEndRecheckTx       // Signals the end of rechecking
+	CheckTx(RequestCheckTx) ResponseCheckTx // Validate a tx for the mempool
 
 	// Consensus Connection
 	InitChain(RequestInitChain) ResponseInitChain    // Initialize blockchain w validators/other info from OstraconCore
@@ -62,20 +57,8 @@ func (BaseApplication) DeliverTx(req RequestDeliverTx) ResponseDeliverTx {
 	return ResponseDeliverTx{Code: CodeTypeOK}
 }
 
-func (BaseApplication) CheckTxSync(req RequestCheckTx) ResponseCheckTx {
+func (BaseApplication) CheckTx(req RequestCheckTx) ResponseCheckTx {
 	return ResponseCheckTx{Code: CodeTypeOK}
-}
-
-func (BaseApplication) CheckTxAsync(req RequestCheckTx, callback CheckTxCallback) {
-	callback(ResponseCheckTx{Code: CodeTypeOK})
-}
-
-func (BaseApplication) BeginRecheckTx(req RequestBeginRecheckTx) ResponseBeginRecheckTx {
-	return ResponseBeginRecheckTx{Code: CodeTypeOK}
-}
-
-func (BaseApplication) EndRecheckTx(req RequestEndRecheckTx) ResponseEndRecheckTx {
-	return ResponseEndRecheckTx{Code: CodeTypeOK}
 }
 
 func (BaseApplication) Commit() ResponseCommit {
@@ -149,18 +132,7 @@ func (app *GRPCApplication) DeliverTx(ctx context.Context, req *RequestDeliverTx
 }
 
 func (app *GRPCApplication) CheckTx(ctx context.Context, req *RequestCheckTx) (*ResponseCheckTx, error) {
-	res := app.app.CheckTxSync(*req)
-	return &res, nil
-}
-
-func (app *GRPCApplication) BeginRecheckTx(ctx context.Context, req *RequestBeginRecheckTx) (
-	*ResponseBeginRecheckTx, error) {
-	res := app.app.BeginRecheckTx(*req)
-	return &res, nil
-}
-
-func (app *GRPCApplication) EndRecheckTx(ctx context.Context, req *RequestEndRecheckTx) (*ResponseEndRecheckTx, error) {
-	res := app.app.EndRecheckTx(*req)
+	res := app.app.CheckTx(*req)
 	return &res, nil
 }
 

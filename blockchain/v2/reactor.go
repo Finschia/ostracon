@@ -53,7 +53,7 @@ type blockVerifier interface {
 }
 
 type blockApplier interface {
-	ApplyBlock(state state.State, blockID types.BlockID, block *types.Block, times *state.CommitStepTimes) (state.State,
+	ApplyBlock(state state.State, blockID types.BlockID, block *types.Block) (state.State,
 		int64, error)
 }
 

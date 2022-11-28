@@ -118,7 +118,7 @@ func sendTxs(ctx context.Context, cs *State) {
 			return
 		default:
 			tx := []byte{byte(i)}
-			if _, err := assertMempool(cs.txNotifier).CheckTxSync(tx, mempl.TxInfo{}); err != nil {
+			if err := assertMempool(cs.txNotifier).CheckTx(tx, nil, mempl.TxInfo{}); err != nil {
 				panic(err)
 			}
 			i++
@@ -324,7 +324,7 @@ func (w *crashingWAL) Start() error { return w.next.Start() }
 func (w *crashingWAL) Stop() error  { return w.next.Stop() }
 func (w *crashingWAL) Wait()        { w.next.Wait() }
 
-//------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------
 type testSim struct {
 	GenesisState sm.State
 	Config       *cfg.Config
@@ -467,7 +467,7 @@ func TestSimulateValidatorsChange(t *testing.T) {
 		valPubKey1ABCI, err := cryptoenc.PubKeyToProto(newValidatorPubKey1)
 		assert.Nil(t, err)
 		newValidatorTx1 := kvstore.MakeValSetChangeTx(valPubKey1ABCI, testMinPower)
-		_, err = assertMempool(css[0].txNotifier).CheckTxSync(newValidatorTx1, mempl.TxInfo{})
+		err = assertMempool(css[0].txNotifier).CheckTx(newValidatorTx1, nil, mempl.TxInfo{})
 		assert.Nil(t, err)
 	})
 
@@ -481,7 +481,7 @@ func TestSimulateValidatorsChange(t *testing.T) {
 		updatePubKey1ABCI, err := cryptoenc.PubKeyToProto(updateValidatorPubKey1)
 		require.NoError(t, err)
 		updateValidatorTx1 := kvstore.MakeValSetChangeTx(updatePubKey1ABCI, 25)
-		_, err = assertMempool(css[0].txNotifier).CheckTxSync(updateValidatorTx1, mempl.TxInfo{})
+		err = assertMempool(css[0].txNotifier).CheckTx(updateValidatorTx1, nil, mempl.TxInfo{})
 		assert.Nil(t, err)
 	})
 
@@ -498,14 +498,14 @@ func TestSimulateValidatorsChange(t *testing.T) {
 		newVal2ABCI, err := cryptoenc.PubKeyToProto(newValidatorPubKey2)
 		require.NoError(t, err)
 		newValidatorTx2 := kvstore.MakeValSetChangeTx(newVal2ABCI, testMinPower)
-		_, err = assertMempool(css[0].txNotifier).CheckTxSync(newValidatorTx2, mempl.TxInfo{})
+		err = assertMempool(css[0].txNotifier).CheckTx(newValidatorTx2, nil, mempl.TxInfo{})
 		assert.Nil(t, err)
 		newValidatorPubKey3, err := css[nVals+2].privValidator.GetPubKey()
 		require.NoError(t, err)
 		newVal3ABCI, err := cryptoenc.PubKeyToProto(newValidatorPubKey3)
 		require.NoError(t, err)
 		newValidatorTx3 := kvstore.MakeValSetChangeTx(newVal3ABCI, testMinPower)
-		_, err = assertMempool(css[0].txNotifier).CheckTxSync(newValidatorTx3, mempl.TxInfo{})
+		err = assertMempool(css[0].txNotifier).CheckTx(newValidatorTx3, nil, mempl.TxInfo{})
 		assert.Nil(t, err)
 	})
 
@@ -545,7 +545,7 @@ func TestSimulateValidatorsChange(t *testing.T) {
 		newVal3ABCI, err := cryptoenc.PubKeyToProto(newValidatorPubKey3)
 		require.NoError(t, err)
 		removeValidatorTx3 := kvstore.MakeValSetChangeTx(newVal3ABCI, 0)
-		_, err = assertMempool(css[0].txNotifier).CheckTxSync(removeValidatorTx3, mempl.TxInfo{})
+		err = assertMempool(css[0].txNotifier).CheckTx(removeValidatorTx3, nil, mempl.TxInfo{})
 		assert.Nil(t, err)
 	})
 
@@ -639,10 +639,10 @@ func TestMockProxyApp(t *testing.T) {
 				txIndex++
 			}
 		}
-		mock.SetGlobalCallback(proxyCb)
+		mock.SetResponseCallback(proxyCb)
 
 		someTx := []byte("tx")
-		mock.DeliverTxAsync(abci.RequestDeliverTx{Tx: someTx}, nil)
+		mock.DeliverTxAsync(abci.RequestDeliverTx{Tx: someTx})
 	})
 	assert.True(t, validTxs == 1)
 	assert.True(t, invalidTxs == 0)
@@ -800,7 +800,7 @@ func applyBlock(stateStore sm.Store, st sm.State, blk *types.Block, proxyApp pro
 	blockExec := sm.NewBlockExecutor(stateStore, log.TestingLogger(), proxyApp.Consensus(), mempool, evpool)
 
 	blkID := types.BlockID{Hash: blk.Hash(), PartSetHeader: blk.MakePartSet(testPartSize).Header()}
-	newState, _, err := blockExec.ApplyBlock(st, blkID, blk, nil)
+	newState, _, err := blockExec.ApplyBlock(st, blkID, blk)
 	if err != nil {
 		panic(err)
 	}

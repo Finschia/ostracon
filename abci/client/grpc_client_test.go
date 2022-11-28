@@ -22,33 +22,31 @@ func TestGrpcClientCalls(t *testing.T) {
 	require.NoError(t, err0)
 
 	c := NewGRPCClient(addr, true)
-	c.SetGlobalCallback(func(*types.Request, *types.Response) {
+	c.SetResponseCallback(func(*types.Request, *types.Response) {
 	})
 	err0 = c.Start()
 	require.NoError(t, err0)
 
-	c.EchoAsync("msg", getResponseCallback(t))
-	c.FlushAsync(getResponseCallback(t))
-	c.InfoAsync(types.RequestInfo{}, getResponseCallback(t))
-	c.SetOptionAsync(types.RequestSetOption{}, getResponseCallback(t))
-	c.DeliverTxAsync(types.RequestDeliverTx{}, getResponseCallback(t))
-	c.CheckTxAsync(types.RequestCheckTx{}, getResponseCallback(t))
-	c.QueryAsync(types.RequestQuery{}, getResponseCallback(t))
-	c.CommitAsync(getResponseCallback(t))
-	c.InitChainAsync(types.RequestInitChain{}, getResponseCallback(t))
-	c.BeginBlockAsync(types.RequestBeginBlock{}, getResponseCallback(t))
-	c.EndBlockAsync(types.RequestEndBlock{}, getResponseCallback(t))
-	c.BeginRecheckTxAsync(types.RequestBeginRecheckTx{}, getResponseCallback(t))
-	c.EndRecheckTxAsync(types.RequestEndRecheckTx{}, getResponseCallback(t))
-	c.ListSnapshotsAsync(types.RequestListSnapshots{}, getResponseCallback(t))
-	c.OfferSnapshotAsync(types.RequestOfferSnapshot{}, getResponseCallback(t))
-	c.LoadSnapshotChunkAsync(types.RequestLoadSnapshotChunk{}, getResponseCallback(t))
-	c.ApplySnapshotChunkAsync(types.RequestApplySnapshotChunk{}, getResponseCallback(t))
+	c.EchoAsync("msg")
+	c.FlushAsync()
+	c.InfoAsync(types.RequestInfo{})
+	c.SetOptionAsync(types.RequestSetOption{})
+	c.DeliverTxAsync(types.RequestDeliverTx{})
+	c.CheckTxAsync(types.RequestCheckTx{})
+	c.QueryAsync(types.RequestQuery{})
+	c.CommitAsync()
+	c.InitChainAsync(types.RequestInitChain{})
+	c.BeginBlockAsync(types.RequestBeginBlock{})
+	c.EndBlockAsync(types.RequestEndBlock{})
+	c.ListSnapshotsAsync(types.RequestListSnapshots{})
+	c.OfferSnapshotAsync(types.RequestOfferSnapshot{})
+	c.LoadSnapshotChunkAsync(types.RequestLoadSnapshotChunk{})
+	c.ApplySnapshotChunkAsync(types.RequestApplySnapshotChunk{})
 
 	_, err := c.EchoSync("msg")
 	require.NoError(t, err)
 
-	_, err = c.FlushSync()
+	err = c.FlushSync()
 	require.NoError(t, err)
 
 	_, err = c.InfoSync(types.RequestInfo{})
@@ -76,12 +74,6 @@ func TestGrpcClientCalls(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = c.EndBlockSync(types.RequestEndBlock{})
-	require.NoError(t, err)
-
-	_, err = c.BeginRecheckTxSync(types.RequestBeginRecheckTx{})
-	require.NoError(t, err)
-
-	_, err = c.EndRecheckTxSync(types.RequestEndRecheckTx{})
 	require.NoError(t, err)
 
 	_, err = c.ListSnapshotsSync(types.RequestListSnapshots{})

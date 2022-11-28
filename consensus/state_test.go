@@ -2371,7 +2371,7 @@ func addValidator(cs *State, vssMap map[string]*validatorStub, height int64) {
 		panic("failed to convert newVal to protobuf")
 	}
 	newValidatorTx := kvstore.MakeValSetChangeTx(val.PubKey, 10)
-	_, _ = assertMempool(cs.txNotifier).CheckTxSync(newValidatorTx, mempl.TxInfo{})
+	_ = assertMempool(cs.txNotifier).CheckTx(newValidatorTx, nil, mempl.TxInfo{})
 	vssMap[newVal.PubKey.Address().String()] = newValidatorStub(privVal, int32(len(vssMap)+1))
 	vssMap[newVal.PubKey.Address().String()].Height = height
 }
@@ -2478,8 +2478,6 @@ func TestPruneBlocks(t *testing.T) {
 	mockApp := &mocks.Application{}
 	mockApp.On("BeginBlock", mock.Anything).Return(abci.ResponseBeginBlock{})
 	mockApp.On("EndBlock", mock.Anything).Return(abci.ResponseEndBlock{})
-	mockApp.On("BeginRecheckTx", mock.Anything).Return(abci.ResponseBeginRecheckTx{Code: abci.CodeTypeOK})
-	mockApp.On("EndRecheckTx", mock.Anything).Return(abci.ResponseEndRecheckTx{Code: abci.CodeTypeOK})
 	// Mocking behaviour to response `RetainHeight` for pruneBlocks
 	mockApp.On("Commit", mock.Anything, mock.Anything).Return(abci.ResponseCommit{RetainHeight: 1})
 

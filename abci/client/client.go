@@ -17,36 +17,33 @@ const (
 
 // Client defines an interface for an ABCI client.
 // All `Async` methods return a `ReqRes` object.
-// All `Sync` methods return the appropriate protobuf ResponseXxx struct and an error.
+// All `Sync` methods return the appropriate protobuf ResponseXxx struct and an erroreqRes.
 // Note these are client errors, eg. ABCI socket connectivity issues.
 // Application-related errors are reflected in response via ABCI error codes and logs.
 type Client interface {
 	service.Service
 
-	SetGlobalCallback(GlobalCallback)
-	GetGlobalCallback() GlobalCallback
+	SetResponseCallback(Callback)
 	Error() error
 
-	FlushAsync(ResponseCallback) *ReqRes
-	EchoAsync(string, ResponseCallback) *ReqRes
-	InfoAsync(types.RequestInfo, ResponseCallback) *ReqRes
-	SetOptionAsync(types.RequestSetOption, ResponseCallback) *ReqRes
-	DeliverTxAsync(types.RequestDeliverTx, ResponseCallback) *ReqRes
-	CheckTxAsync(types.RequestCheckTx, ResponseCallback) *ReqRes
-	QueryAsync(types.RequestQuery, ResponseCallback) *ReqRes
-	CommitAsync(ResponseCallback) *ReqRes
-	InitChainAsync(types.RequestInitChain, ResponseCallback) *ReqRes
-	BeginBlockAsync(types.RequestBeginBlock, ResponseCallback) *ReqRes
-	EndBlockAsync(types.RequestEndBlock, ResponseCallback) *ReqRes
-	BeginRecheckTxAsync(types.RequestBeginRecheckTx, ResponseCallback) *ReqRes
-	EndRecheckTxAsync(types.RequestEndRecheckTx, ResponseCallback) *ReqRes
-	ListSnapshotsAsync(types.RequestListSnapshots, ResponseCallback) *ReqRes
-	OfferSnapshotAsync(types.RequestOfferSnapshot, ResponseCallback) *ReqRes
-	LoadSnapshotChunkAsync(types.RequestLoadSnapshotChunk, ResponseCallback) *ReqRes
-	ApplySnapshotChunkAsync(types.RequestApplySnapshotChunk, ResponseCallback) *ReqRes
+	FlushAsync() *ReqRes
+	EchoAsync(msg string) *ReqRes
+	InfoAsync(types.RequestInfo) *ReqRes
+	SetOptionAsync(types.RequestSetOption) *ReqRes
+	DeliverTxAsync(types.RequestDeliverTx) *ReqRes
+	CheckTxAsync(types.RequestCheckTx) *ReqRes
+	QueryAsync(types.RequestQuery) *ReqRes
+	CommitAsync() *ReqRes
+	InitChainAsync(types.RequestInitChain) *ReqRes
+	BeginBlockAsync(types.RequestBeginBlock) *ReqRes
+	EndBlockAsync(types.RequestEndBlock) *ReqRes
+	ListSnapshotsAsync(types.RequestListSnapshots) *ReqRes
+	OfferSnapshotAsync(types.RequestOfferSnapshot) *ReqRes
+	LoadSnapshotChunkAsync(types.RequestLoadSnapshotChunk) *ReqRes
+	ApplySnapshotChunkAsync(types.RequestApplySnapshotChunk) *ReqRes
 
-	FlushSync() (*types.ResponseFlush, error)
-	EchoSync(string) (*types.ResponseEcho, error)
+	FlushSync() error
+	EchoSync(msg string) (*types.ResponseEcho, error)
 	InfoSync(types.RequestInfo) (*types.ResponseInfo, error)
 	SetOptionSync(types.RequestSetOption) (*types.ResponseSetOption, error)
 	DeliverTxSync(types.RequestDeliverTx) (*types.ResponseDeliverTx, error)
@@ -56,8 +53,6 @@ type Client interface {
 	InitChainSync(types.RequestInitChain) (*types.ResponseInitChain, error)
 	BeginBlockSync(types.RequestBeginBlock) (*types.ResponseBeginBlock, error)
 	EndBlockSync(types.RequestEndBlock) (*types.ResponseEndBlock, error)
-	BeginRecheckTxSync(types.RequestBeginRecheckTx) (*types.ResponseBeginRecheckTx, error)
-	EndRecheckTxSync(types.RequestEndRecheckTx) (*types.ResponseEndRecheckTx, error)
 	ListSnapshotsSync(types.RequestListSnapshots) (*types.ResponseListSnapshots, error)
 	OfferSnapshotSync(types.RequestOfferSnapshot) (*types.ResponseOfferSnapshot, error)
 	LoadSnapshotChunkSync(types.RequestLoadSnapshotChunk) (*types.ResponseLoadSnapshotChunk, error)
@@ -80,28 +75,43 @@ func NewClient(addr, transport string, mustConnect bool) (client Client, err err
 	return
 }
 
-type GlobalCallback func(*types.Request, *types.Response)
-type ResponseCallback func(*types.Response)
+type Callback func(*types.Request, *types.Response)
 
 type ReqRes struct {
 	*types.Request
+	*sync.WaitGroup
 	*types.Response // Not set atomically, so be sure to use WaitGroup.
 
 	mtx  tmsync.Mutex
-	wg   *sync.WaitGroup
-	done bool             // Gets set to true once *after* WaitGroup.Done().
-	cb   ResponseCallback // A single callback that may be set.
+	done bool                  // Gets set to true once *after* WaitGroup.Done().
+	cb   func(*types.Response) // A single callback that may be set.
 }
 
-func NewReqRes(req *types.Request, cb ResponseCallback) *ReqRes {
+func NewReqRes(req *types.Request) *ReqRes {
 	return &ReqRes{
-		Request:  req,
-		Response: nil,
+		Request:   req,
+		WaitGroup: waitGroup1(),
+		Response:  nil,
 
-		wg:   waitGroup1(),
 		done: false,
-		cb:   cb,
+		cb:   nil,
 	}
+}
+
+// Sets sets the callback. If reqRes is already done, it will call the cb
+// immediately. Note, reqRes.cb should not change if reqRes.done and only one
+// callback is supported.
+func (reqRes *ReqRes) SetCallback(cb func(res *types.Response)) {
+	reqRes.mtx.Lock()
+
+	if reqRes.done {
+		reqRes.mtx.Unlock()
+		cb(reqRes.Response)
+		return
+	}
+
+	reqRes.cb = cb
+	reqRes.mtx.Unlock()
 }
 
 // InvokeCallback invokes a thread-safe execution of the configured callback
@@ -115,27 +125,23 @@ func (reqRes *ReqRes) InvokeCallback() {
 	}
 }
 
-func (reqRes *ReqRes) SetDone(res *types.Response) (set bool) {
+// GetCallback returns the configured callback of the ReqRes object which may be
+// nil. Note, it is not safe to concurrently call this in cases where it is
+// marked done and SetCallback is called before calling GetCallback as that
+// will invoke the callback twice and create a potential race condition.
+//
+// ref: https://github.com/tendermint/tendermint/issues/5439
+func (reqRes *ReqRes) GetCallback() func(*types.Response) {
 	reqRes.mtx.Lock()
-	// TODO should we panic if it's already done?
-	set = !reqRes.done
-	if set {
-		reqRes.Response = res
-		reqRes.done = true
-		reqRes.wg.Done()
-	}
-	reqRes.mtx.Unlock()
-
-	// NOTE `reqRes.cb` is immutable so we're safe to access it at here without `mtx`
-	if set && reqRes.cb != nil {
-		reqRes.cb(res)
-	}
-
-	return set
+	defer reqRes.mtx.Unlock()
+	return reqRes.cb
 }
 
-func (reqRes *ReqRes) Wait() {
-	reqRes.wg.Wait()
+// SetDone marks the ReqRes object as done.
+func (reqRes *ReqRes) SetDone() {
+	reqRes.mtx.Lock()
+	reqRes.done = true
+	reqRes.mtx.Unlock()
 }
 
 func waitGroup1() (wg *sync.WaitGroup) {

@@ -18,18 +18,18 @@ var _ mempl.Mempool = emptyMempool{}
 func (emptyMempool) Lock()     {}
 func (emptyMempool) Unlock()   {}
 func (emptyMempool) Size() int { return 0 }
-func (emptyMempool) CheckTxSync(_ types.Tx, _ mempl.TxInfo) (*abci.Response, error) {
-	return nil, nil
-}
-func (emptyMempool) CheckTxAsync(_ types.Tx, _ mempl.TxInfo, _ func(error), _ func(*abci.Response)) {
+func (emptyMempool) CheckTx(_ types.Tx, _ func(*abci.Response), _ mempl.TxInfo) error {
+	return nil
 }
 func (emptyMempool) ReapMaxBytesMaxGas(_, _ int64) types.Txs          { return types.Txs{} }
 func (emptyMempool) ReapMaxBytesMaxGasMaxTxs(_, _, _ int64) types.Txs { return types.Txs{} }
 func (emptyMempool) ReapMaxTxs(n int) types.Txs                       { return types.Txs{} }
 func (emptyMempool) Update(
-	_ *types.Block,
+	_ int64,
+	_ types.Txs,
 	_ []*abci.ResponseDeliverTx,
 	_ mempl.PreCheckFunc,
+	_ mempl.PostCheckFunc,
 ) error {
 	return nil
 }
