@@ -12,7 +12,6 @@ VRF implementation is set by `func init()` with `build` option
 type vrfEd25519 interface {
 	Prove(privateKey []byte, message []byte) (Proof, error)
 	Verify(publicKey []byte, proof Proof, message []byte) (bool, error)
-	ProofLength() int
 	ProofToHash(proof Proof) (Output, error)
 ```
 
@@ -26,17 +25,20 @@ Use `func init()` with `build` option
       * `//go:build libsodium`
       * `// +build !libsodium,!coniks`
       * `func init() { defaultVrf = newVrfEd25519r2ishiguro() }`
+      * `const ProofSize = 81`
       * vrf_r2ishiguro.go
     * (coniks)
       * `//go:build coniks`
       * `// +build coniks`
       * `func init() { defaultVrf = newVrfEd25519coniks() }`
+      * `const ProofSize = 96`
       * vrf_coniks.go
       * vrf_coniks_test.go
     * (libsodium)
       * `//go:build libsodium`
       * `// +build libsodium`
       * `func init() { defaultVrf = newVrfEd25519libsodium() }`
+      * `const ProofSize = int(libsodium.PROOFBYTES)`
       * vrf_libsodium.go
       * vrf_libsodium_test.go
 

@@ -41,11 +41,11 @@ func ValidateHash(h []byte) error {
 }
 
 // ValidateProof returns an error if the proof is not empty, but its
-// size != vrf.ProofLength().
+// size != vrf.ProofSize.
 func ValidateProof(h []byte) error {
-	if len(h) > 0 && len(h) != vrf.ProofLength() {
+	if len(h) > 0 && len(h) != vrf.ProofSize {
 		return fmt.Errorf("expected size to be %d bytes, got %d bytes",
-			vrf.ProofLength(),
+			vrf.ProofSize,
 			len(h),
 		)
 	}

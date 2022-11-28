@@ -16,7 +16,6 @@ type Output []byte
 type vrfEd25519 interface {
 	Prove(privateKey []byte, message []byte) (Proof, error)
 	Verify(publicKey []byte, proof Proof, message []byte) (bool, error)
-	ProofLength() int
 	ProofToHash(proof Proof) (Output, error)
 }
 
@@ -32,10 +31,6 @@ func Prove(privateKey []byte, message []byte) (Proof, error) {
 
 func Verify(publicKey []byte, proof Proof, message []byte) (bool, error) {
 	return defaultVrf.Verify(publicKey, proof, message)
-}
-
-func ProofLength() int {
-	return defaultVrf.ProofLength()
 }
 
 func ProofToHash(proof Proof) (Output, error) {

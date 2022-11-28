@@ -19,7 +19,7 @@ func init() {
 	defaultVrf = newVrfEd25519coniks()
 }
 
-const ConiksProofLength = 96
+const ProofSize = 96
 
 func newVrfEd25519coniks() *vrfEd25519coniks {
 	return &vrfEd25519coniks{nil, nil}
@@ -54,10 +54,6 @@ func (base *vrfEd25519coniks) Verify(publicKey []byte, proof Proof, message []by
 	coniksPubKey := coniks.PublicKey(make([]byte, coniks.PublicKeySize))
 	copy(coniksPubKey, publicKey)
 	return coniksPubKey.Verify(message, base.generatedHash, proof), nil
-}
-
-func (base *vrfEd25519coniks) ProofLength() int {
-	return ConiksProofLength
 }
 
 func (base *vrfEd25519coniks) ProofToHash(proof Proof) (Output, error) {

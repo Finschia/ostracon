@@ -734,7 +734,7 @@ func makeHeaderRandom(height int64) *types.Header {
 		LastResultsHash:    crypto.CRandBytes(tmhash.Size),
 		EvidenceHash:       crypto.CRandBytes(tmhash.Size),
 		ProposerAddress:    crypto.CRandBytes(crypto.AddressSize),
-		Proof:              crypto.CRandBytes(vrf.ProofLength()),
+		Proof:              crypto.CRandBytes(vrf.ProofSize),
 	}
 }
 
