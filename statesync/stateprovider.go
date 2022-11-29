@@ -56,6 +56,7 @@ func NewLightClientStateProvider(
 	trustOptions light.TrustOptions,
 	logger log.Logger,
 ) (StateProvider, error) {
+	servers = uniqServers(servers)
 	if len(servers) < 2 {
 		return nil, fmt.Errorf("at least 2 RPC servers are required, got %v", len(servers))
 	}
@@ -94,6 +95,18 @@ func NewLightClientStateProvider(
 		providers:     providerRemotes,
 		voterParams:   voterParams,
 	}, nil
+}
+
+func uniqServers(servers []string) []string {
+	serversSet := make(map[string]struct{})
+	for _, server := range servers {
+		serversSet[server] = struct{}{}
+	}
+	servers = []string{}
+	for server := range serversSet {
+		servers = append(servers, server)
+	}
+	return servers
 }
 
 // AppHash implements StateProvider.
