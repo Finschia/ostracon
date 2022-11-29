@@ -666,7 +666,6 @@ func (cs *State) updateToState(state sm.State) {
 	}
 
 	// Reset fields based on state.
-	validators := state.Validators
 	voters := state.Voters
 
 	switch {
