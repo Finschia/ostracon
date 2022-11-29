@@ -122,6 +122,13 @@ jobs:
           docker load -i ${{ needs.e2e-build.outputs.CACHE_FILE }}
         if: "env.GIT_DIFF != ''"
 
+      - name: Build libsodium
+      - run: make libsodium
+      - uses: actions/upload-artifact@v3
+        with:
+          name: libsodium
+          path: crypto/vrf/internal/vrf/sodium
+
       - name: Build e2e runner
         working-directory: test/e2e
         run: make runner
