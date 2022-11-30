@@ -98,15 +98,19 @@ func NewLightClientStateProvider(
 }
 
 func uniqServers(servers []string) []string {
-	serversSet := make(map[string]struct{})
+	size := len(servers)
+	if size < 2 {
+		return servers
+	}
+	serversSet := make(map[string]struct{}, size)
+	uniqServers := make([]string, 0, size)
 	for _, server := range servers {
-		serversSet[server] = struct{}{}
+		if _, ok := serversSet[server]; !ok {
+			serversSet[server] = struct{}{}
+			uniqServers = append(uniqServers, server)
+		}
 	}
-	servers = []string{}
-	for server := range serversSet {
-		servers = append(servers, server)
-	}
-	return servers
+	return uniqServers
 }
 
 // AppHash implements StateProvider.
