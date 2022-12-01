@@ -518,7 +518,9 @@ func TestHeaderHash(t *testing.T) {
 			EvidenceHash:       tmhash.Sum([]byte("evidence_hash")),
 			ProposerAddress:    crypto.AddressHash([]byte("proposer_address")),
 			Round:              1,
-			Proof:              tmhash.Sum([]byte("proof")),
+			// The Proof defined here does not depend on the vrf ProofLength,
+			// but it is a fixed value for the purpose of calculating the Hash value.
+			Proof: tmhash.Sum([]byte("proof")),
 		}, hexBytesFromString("0368E6F15B6B7BC9DC5B10F36F37D6F867E132A22333F083A11290324274E183")},
 		{"nil header yields nil", nil, nil},
 		{"nil VotersHash yields nil", &Header{
@@ -537,7 +539,9 @@ func TestHeaderHash(t *testing.T) {
 			EvidenceHash:       tmhash.Sum([]byte("evidence_hash")),
 			ProposerAddress:    crypto.AddressHash([]byte("proposer_address")),
 			Round:              1,
-			Proof:              tmhash.Sum([]byte("proof")),
+			// The Proof defined here does not depend on the vrf ProofLength,
+			// but it is a fixed value for the purpose of calculating the Hash value.
+			Proof: tmhash.Sum([]byte("proof")),
 		}, nil},
 	}
 	for _, tc := range testCases {
@@ -638,6 +642,15 @@ func TestHeaderValidateBasic(t *testing.T) {
 		{"Invalid Results Hash", func(header *Header) {
 			header.LastResultsHash = []byte(strings.Repeat("h", invalidHashLength))
 		}, true},
+		{"Negative Round", func(header *Header) {
+			header.Round = -1
+		}, true},
+		{"Invalid Proof", func(header *Header) {
+			header.Proof = make([]byte, vrf.ProofSize-1)
+		}, true},
+		{"Invalid Validators Hash", func(header *Header) {
+			header.ValidatorsHash = []byte(strings.Repeat("h", invalidHashLength))
+		}, true},
 	}
 	for i, tc := range testCases {
 		tc := tc
@@ -660,7 +673,7 @@ func TestHeaderValidateBasic(t *testing.T) {
 				EvidenceHash:       tmhash.Sum([]byte("evidence_hash")),
 				ProposerAddress:    crypto.AddressHash([]byte("proposer_address")),
 				Round:              1,
-				Proof:              tmhash.Sum([]byte("proof")),
+				Proof:              make([]byte, vrf.ProofSize),
 			}
 			tc.malleateHeader(header)
 			err := header.ValidateBasic()
@@ -1268,6 +1281,7 @@ func makeRandHeader() Header {
 	height := tmrand.Int63()
 	randBytes := tmrand.Bytes(tmhash.Size)
 	randAddress := tmrand.Bytes(crypto.AddressSize)
+	randProof := tmrand.Bytes(vrf.ProofSize)
 	h := Header{
 		Version:            tmversion.Consensus{Block: version.BlockProtocol, App: 1},
 		ChainID:            chainID,
@@ -1285,6 +1299,7 @@ func makeRandHeader() Header {
 
 		EvidenceHash:    randBytes,
 		ProposerAddress: randAddress,
+		Proof:           randProof,
 	}
 
 	return h

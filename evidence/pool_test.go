@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/bls"
 	"github.com/line/ostracon/crypto/composite"
 	"github.com/line/ostracon/crypto/ed25519"
@@ -325,12 +326,11 @@ func TestLightClientAttackEvidenceLifecycle(t *testing.T) {
 func TestRecoverPendingEvidence(t *testing.T) {
 	height := int64(10)
 	val := types.NewMockPV(types.PrivKeyComposite) // TODO 🏺 need to test by all key types
-	valAddress := val.PrivKey.PubKey().Address()
 	evidenceDB := dbm.NewMemDB()
 	stateStore := initializeValidatorState(val, height)
 	state, err := stateStore.Load()
 	require.NoError(t, err)
-	blockStore := initializeBlockStore(dbm.NewMemDB(), state, valAddress)
+	blockStore := initializeBlockStore(dbm.NewMemDB(), state, val.PrivKey)
 	// create previous pool and populate it
 	pool, err := evidence.NewPool(evidenceDB, stateStore, blockStore)
 	require.NoError(t, err)
@@ -424,13 +424,15 @@ func initializeValidatorState(privVal types.PrivValidator, height int64) sm.Stor
 
 // initializeBlockStore creates a block storage and populates it w/ a dummy
 // block at +height+.
-func initializeBlockStore(db dbm.DB, state sm.State, valAddr []byte) *store.BlockStore {
+func initializeBlockStore(db dbm.DB, state sm.State, valPrivkey crypto.PrivKey) *store.BlockStore {
 	blockStore := store.NewBlockStore(db)
+	valAddr := valPrivkey.PubKey().Address()
 
 	for i := int64(1); i <= state.LastBlockHeight; i++ {
 		round := int32(0)
 		lastCommit := makeCommit(i-1, valAddr)
-		proof := state.MakeHashMessage(round)
+		message := state.MakeHashMessage(round)
+		proof, _ := valPrivkey.VRFProve(message)
 		block, _ := state.MakeBlock(i, []types.Tx{}, lastCommit, nil,
 			state.Validators.SelectProposer(proof, i, round).Address, round, proof)
 		block.Header.Time = defaultEvidenceTime.Add(time.Duration(i) * time.Minute)
@@ -457,11 +459,10 @@ func makeCommit(height int64, valAddr []byte) *types.Commit {
 
 func defaultTestPool(height int64) (*evidence.Pool, types.MockPV) {
 	val := types.NewMockPV(types.PrivKeyComposite) // TODO 🏺 need to test by all key types
-	valAddress := val.PrivKey.PubKey().Address()
 	evidenceDB := dbm.NewMemDB()
 	stateStore := initializeValidatorState(val, height)
 	state, _ := stateStore.Load()
-	blockStore := initializeBlockStore(dbm.NewMemDB(), state, valAddress)
+	blockStore := initializeBlockStore(dbm.NewMemDB(), state, val.PrivKey)
 	pool, err := evidence.NewPool(evidenceDB, stateStore, blockStore)
 	if err != nil {
 		panic("test evidence pool could not be created")

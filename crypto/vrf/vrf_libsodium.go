@@ -18,6 +18,8 @@ func init() {
 	defaultVrf = newVrfEd25519libsodium()
 }
 
+const ProofSize = int(libsodium.PROOFBYTES)
+
 func newVrfEd25519libsodium() vrfEd25519libsodium {
 	return vrfEd25519libsodium{}
 }

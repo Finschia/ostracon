@@ -491,7 +491,7 @@ func (voters *VoterSet) StringIndented(indent string) string {
 
 func SelectVoter(validators *ValidatorSet, proofHash []byte, voterParams *VoterParams) *VoterSet {
 	if len(proofHash) == 0 || validators.Size() <= int(voterParams.VoterElectionThreshold) ||
-		voterParams.MaxTolerableByzantinePercentage > BftMaxTolerableByzantinePercentage {
+		voterParams.MaxTolerableByzantinePercentage >= BftMaxTolerableByzantinePercentage {
 		return ToVoterAll(validators.Validators)
 	}
 	seed := hashToSeed(proofHash)
@@ -595,9 +595,9 @@ type voter struct {
 }
 
 func electVotersNonDup(validators []*Validator, seed uint64, tolerableByzantinePercent, minVoters int) []*Validator {
-	// validators is read-only
-	if tolerableByzantinePercent > BftMaxTolerableByzantinePercentage {
-		panic(fmt.Sprintf("tolerableByzantinePercent cannot exceed 33: %d", tolerableByzantinePercent))
+	if tolerableByzantinePercent >= BftMaxTolerableByzantinePercentage {
+		panic(fmt.Sprintf("tolerableByzantinePercent cannot be %d or more: %d",
+			BftMaxTolerableByzantinePercentage, tolerableByzantinePercent))
 	}
 
 	candidates := validatorListCopy(validators)
