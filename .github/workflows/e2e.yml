@@ -46,7 +46,7 @@ jobs:
           VARIANT=$(TZ=UTC-9 date '+%Y%m')${HASH_GHE:0:7}
           NAME_TAR="${VARIANT}.tar"
           CACHE_FILE=${{ env.CACHE_DIR }}"/${NAME_TAR}"
-          echo "{CACHE_FILE}={${CACHE_FILE}}" >> $GITHUB_OUTPUT
+          echo "CACHE_FILE=${CACHE_FILE}" >> $GITHUB_OUTPUT
         if: "env.GIT_DIFF != ''"
 
       - name: Get Docker Image File from cache
