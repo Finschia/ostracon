@@ -19,6 +19,8 @@ func init() {
 	defaultVrf = newVrfEd25519coniks()
 }
 
+const ProofSize = coniks.ProofSize
+
 func newVrfEd25519coniks() *vrfEd25519coniks {
 	return &vrfEd25519coniks{nil, nil}
 }

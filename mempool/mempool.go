@@ -46,6 +46,7 @@ type Mempool interface {
 		block *types.Block,
 		deliverTxResponses []*abci.ResponseDeliverTx,
 		newPreFn PreCheckFunc,
+		newPostFn PostCheckFunc,
 	) error
 
 	// FlushAppConn flushes the mempool connection to ensure async reqResCb calls are
@@ -87,6 +88,11 @@ type Mempool interface {
 // transaction doesn't exceeded the block size.
 type PreCheckFunc func(types.Tx) error
 
+// PostCheckFunc is an optional filter executed after CheckTx and rejects
+// transaction if false is returned. An example would be to ensure a
+// transaction doesn't require more gas than available for the block.
+type PostCheckFunc func(types.Tx, *abci.ResponseCheckTx) error
+
 // TxInfo are parameters that get passed when attempting to add a tx to the
 // mempool.
 type TxInfo struct {
@@ -107,6 +113,25 @@ func PreCheckMaxBytes(maxBytes int64) PreCheckFunc {
 		if txSize > maxBytes {
 			return fmt.Errorf("tx size is too big: %d, max: %d",
 				txSize, maxBytes)
+		}
+		return nil
+	}
+}
+
+// PostCheckMaxGas checks that the wanted gas is smaller or equal to the passed
+// maxGas. Returns nil if maxGas is -1.
+func PostCheckMaxGas(maxGas int64) PostCheckFunc {
+	return func(tx types.Tx, res *abci.ResponseCheckTx) error {
+		if maxGas == -1 {
+			return nil
+		}
+		if res.GasWanted < 0 {
+			return fmt.Errorf("gas wanted %d is negative",
+				res.GasWanted)
+		}
+		if res.GasWanted > maxGas {
+			return fmt.Errorf("gas wanted %d is greater than max gas %d",
+				res.GasWanted, maxGas)
 		}
 		return nil
 	}

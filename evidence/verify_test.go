@@ -8,8 +8,6 @@ import (
 
 	"github.com/line/ostracon/light"
 
-	"github.com/coniks-sys/coniks-go/crypto/vrf"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -17,6 +15,7 @@ import (
 
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/tmhash"
+	"github.com/line/ostracon/crypto/vrf"
 	"github.com/line/ostracon/evidence"
 	"github.com/line/ostracon/evidence/mocks"
 	"github.com/line/ostracon/libs/log"
@@ -399,6 +398,7 @@ func TestVerifyLightClientAttack_Amnesia(t *testing.T) {
 	conflictingVals, conflictingVoters, conflictingPrivVals := types.RandVoterSet(5, 10)
 
 	conflictingHeader := makeHeaderRandom(10)
+	conflictingHeader.ValidatorsHash = conflictingVals.Hash()
 	conflictingHeader.VotersHash = conflictingVoters.Hash()
 	conflictingHeader.ValidatorsHash = conflictingVals.Hash()
 	trustedHeader := makeHeaderRandom(10)
@@ -686,7 +686,8 @@ func makeLunaticEvidence(
 		ValidatorSet: trustedVals,
 		VoterSet:     trustedVoters,
 	}
-	return ev, trusted, common
+
+  return ev, trusted, common
 }
 
 // func makeEquivocationEvidence() *types.LightClientAttackEvidence {

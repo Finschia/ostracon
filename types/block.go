@@ -474,6 +474,14 @@ func (h Header) ValidateBasic() error {
 		return fmt.Errorf("wrong VotersHash: %v", err)
 	}
 
+	if h.Round < 0 {
+		return errors.New("negative Round")
+	}
+
+	if err := ValidateProof(h.Proof); err != nil {
+		return fmt.Errorf("wrong Proof: %v", err)
+	}
+
 	return nil
 }
 

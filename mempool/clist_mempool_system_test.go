@@ -108,7 +108,7 @@ func commitBlock(ctx context.Context, t *testing.T,
 	mem *CListMempool, block *types.Block, deliverTxResponses []*abci.ResponseDeliverTx) {
 	mem.Lock()
 	defer mem.Unlock()
-	err := mem.Update(block, deliverTxResponses, nil)
+	err := mem.Update(block, deliverTxResponses, nil, nil)
 	require.NoError(t, err)
 }
 

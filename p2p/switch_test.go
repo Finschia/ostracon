@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
-	"net/http"
 	"net/http/httptest"
 	"regexp"
 	"strconv"
@@ -21,6 +20,7 @@ import (
 	"github.com/line/ostracon/config"
 	"github.com/line/ostracon/crypto/ed25519"
 	"github.com/line/ostracon/libs/log"
+	net2 "github.com/line/ostracon/libs/net"
 	tmsync "github.com/line/ostracon/libs/sync"
 	"github.com/line/ostracon/p2p/conn"
 )
@@ -397,7 +397,7 @@ func TestSwitchStopPeerForError(t *testing.T) {
 	defer s.Close()
 
 	scrapeMetrics := func() string {
-		resp, err := http.Get(s.URL)
+		resp, err := net2.HttpGet(s.URL, 60*time.Second)
 		require.NoError(t, err)
 		defer resp.Body.Close()
 		buf, _ := ioutil.ReadAll(resp.Body)

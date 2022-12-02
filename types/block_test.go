@@ -547,7 +547,9 @@ func TestHeaderHash(t *testing.T) {
 			EvidenceHash:       tmhash.Sum([]byte("evidence_hash")),
 			ProposerAddress:    crypto.AddressHash([]byte("proposer_address")),
 			Round:              1,
-			Proof:              tmhash.Sum([]byte("proof")),
+			// The Proof defined here does not depend on the vrf ProofLength,
+			// but it is a fixed value for the purpose of calculating the Hash value.
+			Proof: tmhash.Sum([]byte("proof")),
 		}, hexBytesFromString("0368E6F15B6B7BC9DC5B10F36F37D6F867E132A22333F083A11290324274E183")},
 		{"nil header yields nil", nil, nil},
 		{"nil ValidatorsHash yields nil", &Header{
@@ -586,7 +588,9 @@ func TestHeaderHash(t *testing.T) {
 			EvidenceHash:       tmhash.Sum([]byte("evidence_hash")),
 			ProposerAddress:    crypto.AddressHash([]byte("proposer_address")),
 			Round:              1,
-			Proof:              tmhash.Sum([]byte("proof")),
+			// The Proof defined here does not depend on the vrf ProofLength,
+			// but it is a fixed value for the purpose of calculating the Hash value.
+			Proof: tmhash.Sum([]byte("proof")),
 		}, nil},
 	}
 	for _, tc := range testCases {
@@ -629,6 +633,100 @@ func TestHeaderHash(t *testing.T) {
 				assert.Equal(t,
 					bytes.HexBytes(merkle.HashFromByteSlices(byteSlices)), tc.header.Hash())
 			}
+		})
+	}
+}
+
+func TestHeaderValidateBasic(t *testing.T) {
+	invalidHashLength := tmhash.Size - 1
+
+	testCases := []struct {
+		testName       string
+		malleateHeader func(*Header)
+		expErr         bool
+	}{
+		{"Make Header", func(header *Header) {}, false},
+		{"Incorrect block protocol version", func(header *Header) {
+			header.Version.Block = uint64(1)
+		}, true},
+		{"Too long chainID", func(header *Header) {
+			header.ChainID = "long chainID" + strings.Repeat("-", MaxChainIDLen)
+		}, true},
+		{"Negative Height", func(header *Header) {
+			header.Height = -1
+		}, true},
+		{"Zero Height", func(header *Header) {
+			header.Height = 0
+		}, true},
+		{"Invalid Last Block ID", func(header *Header) {
+			header.LastBlockID = BlockID{
+				Hash: make([]byte, invalidHashLength),
+				PartSetHeader: PartSetHeader{
+					Total: 6,
+					Hash:  make([]byte, invalidHashLength),
+				},
+			}
+		}, true},
+		{"Invalid Last Commit Hash", func(header *Header) {
+			header.LastCommitHash = []byte(strings.Repeat("h", invalidHashLength))
+		}, true},
+		{"Invalid Data Hash", func(header *Header) {
+			header.DataHash = []byte(strings.Repeat("h", invalidHashLength))
+		}, true},
+		{"Invalid Evidence Hash", func(header *Header) {
+			header.EvidenceHash = []byte(strings.Repeat("h", invalidHashLength))
+		}, true},
+		{"Invalid Proposer Address length", func(header *Header) {
+			header.ProposerAddress = make([]byte, crypto.AddressSize-1)
+		}, true},
+		{"Invalid Voters Hash", func(header *Header) {
+			header.VotersHash = []byte(strings.Repeat("h", invalidHashLength))
+		}, true},
+		{"Invalid Next Validators Hash", func(header *Header) {
+			header.NextValidatorsHash = []byte(strings.Repeat("h", invalidHashLength))
+		}, true},
+		{"Invalid Consensus Hash", func(header *Header) {
+			header.ConsensusHash = []byte(strings.Repeat("h", invalidHashLength))
+		}, true},
+		{"Invalid Results Hash", func(header *Header) {
+			header.LastResultsHash = []byte(strings.Repeat("h", invalidHashLength))
+		}, true},
+		{"Negative Round", func(header *Header) {
+			header.Round = -1
+		}, true},
+		{"Invalid Proof", func(header *Header) {
+			header.Proof = make([]byte, vrf.ProofSize-1)
+		}, true},
+		{"Invalid Validators Hash", func(header *Header) {
+			header.ValidatorsHash = []byte(strings.Repeat("h", invalidHashLength))
+		}, true},
+	}
+	for i, tc := range testCases {
+		tc := tc
+		i := i
+		t.Run(tc.testName, func(t *testing.T) {
+			header := &Header{
+				Version:            tmversion.Consensus{Block: version.BlockProtocol, App: 2},
+				ChainID:            "chainId",
+				Height:             3,
+				Time:               time.Date(2019, 10, 13, 16, 14, 44, 0, time.UTC),
+				LastBlockID:        makeBlockID(make([]byte, tmhash.Size), 6, make([]byte, tmhash.Size)),
+				LastCommitHash:     tmhash.Sum([]byte("last_commit_hash")),
+				DataHash:           tmhash.Sum([]byte("data_hash")),
+				ValidatorsHash:     tmhash.Sum([]byte("validators_hash")),
+				VotersHash:         tmhash.Sum([]byte("voters_hash")),
+				NextValidatorsHash: tmhash.Sum([]byte("next_validators_hash")),
+				ConsensusHash:      tmhash.Sum([]byte("consensus_hash")),
+				AppHash:            tmhash.Sum([]byte("app_hash")),
+				LastResultsHash:    tmhash.Sum([]byte("last_results_hash")),
+				EvidenceHash:       tmhash.Sum([]byte("evidence_hash")),
+				ProposerAddress:    crypto.AddressHash([]byte("proposer_address")),
+				Round:              1,
+				Proof:              make([]byte, vrf.ProofSize),
+			}
+			tc.malleateHeader(header)
+			err := header.ValidateBasic()
+			assert.Equal(t, tc.expErr, err != nil, "#%d: %v", i, err)
 		})
 	}
 }
@@ -1232,6 +1330,7 @@ func makeRandHeader() Header {
 	height := tmrand.Int63()
 	randBytes := tmrand.Bytes(tmhash.Size)
 	randAddress := tmrand.Bytes(crypto.AddressSize)
+	randProof := tmrand.Bytes(vrf.ProofSize)
 	h := Header{
 		Version:            tmversion.Consensus{Block: version.BlockProtocol, App: 1},
 		ChainID:            chainID,
@@ -1250,6 +1349,7 @@ func makeRandHeader() Header {
 
 		EvidenceHash:    randBytes,
 		ProposerAddress: randAddress,
+		Proof:           randProof,
 	}
 
 	return h

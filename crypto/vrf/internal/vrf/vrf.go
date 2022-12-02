@@ -8,6 +8,8 @@ package vrf
 #cgo CFLAGS: -Wall -std=c99
 #cgo darwin,amd64 CFLAGS: -I./sodium/darwin_amd64/include/
 #cgo darwin,amd64 LDFLAGS: -L./sodium/darwin_amd64/lib -lsodium
+#cgo darwin,arm64 CFLAGS: -I./sodium/darwin_arm64/include/
+#cgo darwin,arm64 LDFLAGS: -L./sodium/darwin_arm64/lib -lsodium
 #cgo linux,amd64 CFLAGS: -I./sodium/linux_amd64/include
 #cgo linux,amd64 LDFLAGS: -L./sodium/linux_amd64/lib -lsodium
 #cgo linux,arm64 CFLAGS: -I./sodium/linux_arm64/include
