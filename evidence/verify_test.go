@@ -687,7 +687,7 @@ func makeLunaticEvidence(
 		VoterSet:     trustedVoters,
 	}
 
-  return ev, trusted, common
+	return ev, trusted, common
 }
 
 // func makeEquivocationEvidence() *types.LightClientAttackEvidence {
