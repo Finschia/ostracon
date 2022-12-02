@@ -77,6 +77,8 @@ func TestVoterSet_VerifyCommit_All(t *testing.T) {
 
 		{"wrong signature (#0)", chainID, vote.BlockID, vote.Height,
 			NewCommit(vote.Height, vote.Round, vote.BlockID, []CommitSig{vote2.CommitSig()}), true},
+		{"invalid nil voters or commit:", chainID, vote.BlockID, vote.Height,
+			nil, true},
 	}
 
 	for _, tc := range testCases {

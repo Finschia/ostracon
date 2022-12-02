@@ -154,6 +154,10 @@ func (voters *VoterSet) Hash() []byte {
 // with a bonus for including more than +2/3 of the signatures.
 func (voters *VoterSet) VerifyCommit(chainID string, blockID BlockID, height int64, commit *Commit) error {
 
+	if voters == nil || commit == nil {
+		return fmt.Errorf("invalid nil voters or commit:[%v] or [%v]", voters, commit)
+	}
+
 	if voters.Size() != len(commit.Signatures) {
 		return NewErrInvalidCommitSignatures(voters.Size(), len(commit.Signatures))
 	}
@@ -220,6 +224,10 @@ func (voters *VoterSet) VerifyCommit(chainID string, blockID BlockID, height int
 // signatures.
 func (voters *VoterSet) VerifyCommitLight(chainID string, blockID BlockID,
 	height int64, commit *Commit) error {
+
+	if voters == nil || commit == nil {
+		return fmt.Errorf("invalid nil voters or commit:[%v] or [%v]", voters, commit)
+	}
 
 	if voters.Size() != len(commit.Signatures) {
 		return NewErrInvalidCommitSignatures(voters.Size(), len(commit.Signatures))
