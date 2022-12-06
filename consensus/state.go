@@ -3,7 +3,7 @@ package consensus
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"runtime/debug"
 	"sort"
@@ -1997,7 +1997,7 @@ func (cs *State) addProposalBlockPart(msg *BlockPartMessage, peerID p2p.ID) (add
 		)
 	}
 	if added && cs.ProposalBlockParts.IsComplete() {
-		bz, err := ioutil.ReadAll(cs.ProposalBlockParts.GetReader())
+		bz, err := io.ReadAll(cs.ProposalBlockParts.GetReader())
 		if err != nil {
 			return added, err
 		}
