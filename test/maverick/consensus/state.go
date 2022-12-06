@@ -1570,18 +1570,20 @@ func (cs *State) pruneBlocks(retainHeight int64) (uint64, error) {
 }
 
 func (cs *State) recordMetrics(height int64, block *types.Block) {
-	cs.metrics.Voters.Set(float64(cs.Validators.Size()))
-	cs.metrics.VotersPower.Set(float64(cs.Validators.TotalVotingPower()))
+	cs.metrics.Validators.Set(float64(cs.Validators.Size()))
+	cs.metrics.ValidatorsPower.Set(float64(cs.Validators.TotalVotingPower()))
+	cs.metrics.Voters.Set(float64(cs.Voters.Size()))
+	cs.metrics.VotersPower.Set(float64(cs.Voters.TotalVotingWeight()))
 
 	var (
-		missingValidators      int
-		missingValidatorsPower int64
+		missingVoters      int
+		missingVotersPower int64
 	)
-	// height=0 -> MissingValidators and MissingValidatorsPower are both 0.
+	// height=0 -> MissingVoters and MissingVotersPower are both 0.
 	// Remember that the first LastCommit is intentionally empty, so it's not
-	// fair to increment missing validators number.
+	// fair to increment missing voters number.
 	if height > cs.state.InitialHeight {
-		// Sanity check that commit size matches validator set size - only applies
+		// Sanity check that commit size matches voter set size - only applies
 		// after first block.
 		var (
 			commitSize = block.LastCommit.Size()
@@ -1602,18 +1604,30 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 			}
 		}
 
+		selectedAsVoter := false
+		if cs.privValidator != nil {
+			pubkey, err := cs.privValidator.GetPubKey()
+			if err != nil {
+				// Metrics won't be updated, but it's not critical.
+				cs.Logger.Error("Error on retrieval of pubkey", "err", err)
+			} else {
+				address = pubkey.Address()
+			}
+		}
+
 		for i, val := range cs.LastVoters.Voters {
 			commitSig := block.LastCommit.Signatures[i]
 			if commitSig.Absent() {
-				missingValidators++
-				missingValidatorsPower += val.VotingPower
+				missingVoters++
+				missingVotersPower += val.VotingWeight
 			}
 
 			if bytes.Equal(val.Address, address) {
 				label := []string{
 					"validator_address", val.Address.String(),
 				}
-				cs.metrics.VoterPower.With(label...).Set(float64(val.VotingPower))
+				cs.metrics.VoterPower.With(label...).Set(float64(val.VotingWeight))
+				selectedAsVoter = true
 				if commitSig.ForBlock() {
 					cs.metrics.VoterLastSignedHeight.With(label...).Set(float64(height))
 				} else {
@@ -1622,25 +1636,38 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 			}
 
 		}
+		if !selectedAsVoter {
+			address := ""
+			if cs.privValidator != nil {
+				pubKey, err := cs.privValidator.GetPubKey()
+				if err == nil && cs.Validators != nil && cs.Validators.HasAddress(pubKey.Address().Bytes()) {
+					address = pubKey.Address().String()
+				}
+			}
+			label := []string{
+				"validator_address", address,
+			}
+			cs.metrics.VoterPower.With(label...).Set(float64(0))
+		}
 	}
-	cs.metrics.MissingVoters.Set(float64(missingValidators))
-	cs.metrics.MissingVotersPower.Set(float64(missingValidatorsPower))
+	cs.metrics.MissingVoters.Set(float64(missingVoters))
+	cs.metrics.MissingVotersPower.Set(float64(missingVotersPower))
 
-	// NOTE: byzantine validators power and count is only for consensus evidence i.e. duplicate vote
+	// NOTE: byzantine voters power and count is only for consensus evidence i.e. duplicate vote
 	var (
-		byzantineValidatorsPower = int64(0)
-		byzantineValidatorsCount = int64(0)
+		byzantineVotersPower = int64(0)
+		byzantineVotersCount = int64(0)
 	)
 	for _, ev := range block.Evidence.Evidence {
 		if dve, ok := ev.(*types.DuplicateVoteEvidence); ok {
-			if _, val := cs.Validators.GetByAddress(dve.VoteA.ValidatorAddress); val != nil {
-				byzantineValidatorsCount++
-				byzantineValidatorsPower += val.VotingPower
+			if _, val := cs.Voters.GetByAddress(dve.VoteA.ValidatorAddress); val != nil {
+				byzantineVotersCount++
+				byzantineVotersPower += val.VotingWeight
 			}
 		}
 	}
-	cs.metrics.ByzantineVoters.Set(float64(byzantineValidatorsCount))
-	cs.metrics.ByzantineVotersPower.Set(float64(byzantineValidatorsPower))
+	cs.metrics.ByzantineVoters.Set(float64(byzantineVotersCount))
+	cs.metrics.ByzantineVotersPower.Set(float64(byzantineVotersPower))
 
 	if height > 1 {
 		lastBlockMeta := cs.blockStore.LoadBlockMeta(height - 1)
