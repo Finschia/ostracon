@@ -2,7 +2,7 @@ package kvstore
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto"
@@ -18,7 +18,7 @@ func LoadPrivValidatorKeyFile(keyFilePath string) (*privval.FilePVKey, error) {
 	if !tmos.FileExists(keyFilePath) {
 		return nil, fmt.Errorf("private validator file %s does not exist", keyFilePath)
 	}
-	keyJSONBytes, _ := ioutil.ReadFile(keyFilePath)
+	keyJSONBytes, _ := os.ReadFile(keyFilePath)
 	pvKey := privval.FilePVKey{}
 	err := tmjson.Unmarshal(keyJSONBytes, &pvKey)
 	if err != nil {

@@ -10,7 +10,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"strconv"
@@ -316,7 +316,7 @@ func (n *upnpNAT) getExternalIPAddress() (info statusInfo, err error) {
 		return
 	}
 	var envelope Envelope
-	data, err := ioutil.ReadAll(response.Body)
+	data, err := io.ReadAll(response.Body)
 	if err != nil {
 		return
 	}
