@@ -540,7 +540,7 @@ func (c *Client) Voters(ctx context.Context, height *int64, pagePtr, perPagePtr 
 		return nil, err
 	}
 
-	totalCount := len(l.ValidatorSet.Validators)
+	totalCount := len(l.VoterSet.Voters)
 	perPage := validatePerPage(perPagePtr)
 	page, err := validatePage(pagePtr, perPage, totalCount)
 	if err != nil {
