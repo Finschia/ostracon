@@ -50,22 +50,6 @@ func (sc *SignerClient) WaitForConnection(maxWait time.Duration) error {
 //--------------------------------------------------------
 // Implement PrivValidator
 
-// Ping sends a ping request to the remote signer
-func (sc *SignerClient) Ping() error {
-	response, err := sc.endpoint.SendRequest(mustWrapMsg(&privvalproto.PingRequest{}))
-	if err != nil {
-		sc.endpoint.Logger.Error("SignerClient::Ping", "err", err)
-		return nil
-	}
-
-	pb := response.GetPingResponse()
-	if pb == nil {
-		return err
-	}
-
-	return nil
-}
-
 // GetPubKey retrieves a public key from a remote signer
 // returns an error if client is not able to provide the key
 func (sc *SignerClient) GetPubKey() (crypto.PubKey, error) {

@@ -40,10 +40,6 @@ func (sc *RetrySignerClient) WaitForConnection(maxWait time.Duration) error {
 //--------------------------------------------------------
 // Implement PrivValidator
 
-func (sc *RetrySignerClient) Ping() error {
-	return sc.next.Ping()
-}
-
 func (sc *RetrySignerClient) GetPubKey() (crypto.PubKey, error) {
 	var (
 		pk  crypto.PubKey

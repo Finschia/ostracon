@@ -42,17 +42,6 @@ func BenchmarkKMS(b *testing.B) {
 	client, err := privval.NewSignerClient(endpoint, chainID)
 	require.NoError(b, err)
 
-	// ensure connection and warm up
-	b.Run("Ping", func(b *testing.B) {
-		var err error
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			err = client.Ping()
-		}
-		b.StopTimer()
-		require.NoError(b, err)
-	})
-
 	benchmarkPrivValidator(b, client)
 }
 
