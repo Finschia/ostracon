@@ -12,7 +12,7 @@ import (
 // It is the basis of the light client
 type LightBlock struct {
 	*SignedHeader `json:"signed_header"`
-	ValidatorSet  *ValidatorSet `json:"validator_set"` // XXX Should we remove?
+	ValidatorSet  *ValidatorSet `json:"validator_set"`
 	VoterSet      *VoterSet     `json:"voter_set"`
 }
 
@@ -43,7 +43,7 @@ func (lb LightBlock) ValidateBasic(chainID string) error {
 	// make sure the validator set is consistent with the header
 	if validatorSetHash := lb.ValidatorSet.Hash(); !bytes.Equal(lb.SignedHeader.ValidatorsHash, validatorSetHash) {
 		return fmt.Errorf("expected validator hash of header to match validator set hash (%X != %X)",
-			lb.SignedHeader.VotersHash, validatorSetHash,
+			lb.SignedHeader.ValidatorsHash, validatorSetHash,
 		)
 	}
 	if voterSetHash := lb.VoterSet.Hash(); !bytes.Equal(lb.SignedHeader.VotersHash, voterSetHash) {

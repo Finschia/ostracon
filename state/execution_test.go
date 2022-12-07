@@ -150,7 +150,7 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 		LastBlockID:        blockID,
 		LastCommitHash:     crypto.CRandBytes(tmhash.Size),
 		DataHash:           crypto.CRandBytes(tmhash.Size),
-		VotersHash:         state.Validators.Hash(),
+		VotersHash:         state.Voters.Hash(),
 		ValidatorsHash:     state.Validators.Hash(),
 		NextValidatorsHash: state.Validators.Hash(),
 		ConsensusHash:      crypto.CRandBytes(tmhash.Size),

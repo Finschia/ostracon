@@ -134,9 +134,8 @@ type Peer struct {
 
 // ResultValidators for a height
 type ResultValidators struct {
-	BlockHeight  int64              `json:"block_height"`
-	Validators   []*types.Validator `json:"validators"`
-	VoterIndices []int32            `json:"voter_indices"`
+	BlockHeight int64              `json:"block_height"`
+	Validators  []*types.Validator `json:"validators"`
 	// Count of actual validators in this result
 	Count int `json:"count"`
 	// Total number of validators
@@ -151,6 +150,18 @@ type ResultVoters struct {
 	Count int `json:"count"`
 	// Total number of voters
 	Total int `json:"total"`
+}
+
+// ResultValidatorsWithVoters for a height
+type ResultValidatorsWithVoters struct {
+	BlockHeight int64              `json:"block_height"`
+	Validators  []*types.Validator `json:"validators"`
+	// Count of actual validators in this result
+	Count int `json:"count"`
+	// Total number of validators
+	Total int `json:"total"`
+	// VoterIndices
+	VoterIndices []int32 `json:"voter_indices"`
 }
 
 // ConsensusParams for given height

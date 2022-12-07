@@ -242,9 +242,9 @@ func serveTestRPCServers(t *testing.T, config *config.Config, num int,
 }
 
 var routes = map[string]*rpcserver.RPCFunc{
-	"genesis":    rpcserver.NewRPCFunc(genesisFunc, ""),
-	"commit":     rpcserver.NewRPCFunc(commitFunc, "height"),
-	"validators": rpcserver.NewRPCFunc(validatorsFunc, "height,page,per_page"),
+	"genesis":           rpcserver.NewRPCFunc(genesisFunc, ""),
+	"commit":            rpcserver.NewRPCFunc(commitFunc, "height"),
+	"validators_voters": rpcserver.NewRPCFunc(validatorsFunc, "height,page,per_page"),
 }
 
 func genesisFunc(ctx *rpctypes.Context) (*ctypes.ResultGenesis, error) {
@@ -256,8 +256,8 @@ func commitFunc(ctx *rpctypes.Context, heightPtr *int64) (*ctypes.ResultCommit, 
 }
 
 func validatorsFunc(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *int,
-) (*ctypes.ResultValidators, error) {
-	return &ctypes.ResultValidators{
+) (*ctypes.ResultValidatorsWithVoters, error) {
+	return &ctypes.ResultValidatorsWithVoters{
 		BlockHeight:  height,
 		Validators:   vals,
 		VoterIndices: votersIndices,

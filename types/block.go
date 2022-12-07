@@ -469,6 +469,7 @@ func (h Header) ValidateBasic() error {
 		return fmt.Errorf("wrong LastResultsHash: %v", err)
 	}
 
+	// Add checking for Ostracon fields
 	if err := ValidateHash(h.VotersHash); err != nil {
 		return fmt.Errorf("wrong VotersHash: %v", err)
 	}
@@ -491,7 +492,7 @@ func (h Header) ValidateBasic() error {
 // since a Header is not valid unless there is
 // a ValidatorsHash (corresponding to the validator set).
 func (h *Header) Hash() tmbytes.HexBytes {
-	if h == nil || len(h.VotersHash) == 0 {
+	if h == nil || len(h.ValidatorsHash) == 0 || len(h.VotersHash) == 0 {
 		return nil
 	}
 	hbz, err := h.Version.Marshal()

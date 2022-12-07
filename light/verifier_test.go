@@ -189,6 +189,7 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 			err = light.VerifyAdjacent(
 				header,
 				tc.newHeader,
+				tc.newVals,
 				voters,
 				tc.trustingPeriod,
 				tc.now,
@@ -372,7 +373,7 @@ func TestVerifyAdjacentHeadersWithVoterSampling(t *testing.T) {
 				assert.NoError(t, err)
 			}
 			voters := types.SelectVoter(tc.newVals, proofHash, voterParamsHalf)
-			err = light.VerifyAdjacent(header, tc.newHeader, voters, tc.trustingPeriod, tc.now, maxClockDrift)
+			err = light.VerifyAdjacent(header, tc.newHeader, tc.newVals, voters, tc.trustingPeriod, tc.now, maxClockDrift)
 			switch {
 			case tc.expErr != nil && assert.Error(t, err):
 				assert.Equal(t, tc.expErr, err)
@@ -511,7 +512,7 @@ func TestVerifyNonAdjacentHeaders(t *testing.T) {
 				assert.NoError(t, err)
 			}
 			voters := types.SelectVoter(tc.newVals, proofHash, types.DefaultVoterParams())
-			err = light.VerifyNonAdjacent(header, trustedVoters, tc.newHeader, voters, tc.trustingPeriod, tc.now,
+			err = light.VerifyNonAdjacent(header, vals, trustedVoters, tc.newHeader, tc.newVals, voters, tc.trustingPeriod, tc.now,
 				maxClockDrift, light.DefaultTrustLevel)
 
 			switch {
@@ -536,6 +537,7 @@ func TestVerifyReturnsErrorIfTrustLevelIsInvalid(t *testing.T) {
 		keys = genPrivKeys(4)
 		// 20, 30, 40, 50 - the first 3 don't have 2/3, the last 3 do!
 		vals     = keys.ToValidators(20, 10)
+		voters   = types.ToVoterAll(vals.Validators)
 		bTime, _ = time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
 		header   = keys.GenSignedHeader(chainID, lastHeight, bTime, nil,
 			vals, vals,
@@ -543,8 +545,8 @@ func TestVerifyReturnsErrorIfTrustLevelIsInvalid(t *testing.T) {
 			types.DefaultVoterParams())
 	)
 
-	err := light.Verify(header, vals, header, vals, 2*time.Hour, time.Now(), maxClockDrift,
-		tmmath.Fraction{Numerator: 2, Denominator: 1}, types.DefaultVoterParams())
+	err := light.Verify(header, vals, voters, header, vals, voters, 2*time.Hour, time.Now(), maxClockDrift,
+		tmmath.Fraction{Numerator: 2, Denominator: 1})
 	assert.Error(t, err)
 }
 

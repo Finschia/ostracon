@@ -107,7 +107,7 @@ func TestProviderWithErrors(t *testing.T) {
 	p := makeTestProvider(t, c, height)
 
 	// via provider.LightBlock.voterSet
-	c.On("Validators", mock.Anything, &height, mock.Anything, mock.Anything).Once().Return(
+	c.On("ValidatorsWithVoters", mock.Anything, &height, mock.Anything, mock.Anything).Once().Return(
 		nil, fmt.Errorf("mock: no match errors"))
 
 	lb, err := p.LightBlock(context.Background(), height)
@@ -116,7 +116,7 @@ func TestProviderWithErrors(t *testing.T) {
 	require.Nil(t, lb)
 
 	// via provider.LightBlock.voterSet
-	c.On("Validators", mock.Anything, &height, mock.Anything, mock.Anything).Once().Return(
+	c.On("ValidatorsWithVoters", mock.Anything, &height, mock.Anything, mock.Anything).Once().Return(
 		nil, fmt.Errorf("mock: is not available"))
 
 	lb, err = p.LightBlock(context.Background(), height)
@@ -125,7 +125,7 @@ func TestProviderWithErrors(t *testing.T) {
 	require.Nil(t, lb)
 
 	// via provider.LightBlock.voterSet
-	c.On("Validators", mock.Anything, &height, mock.Anything, mock.Anything).Once().Return(
+	c.On("ValidatorsWithVoters", mock.Anything, &height, mock.Anything, mock.Anything).Once().Return(
 		nil, fmt.Errorf("mock: must be less than or equal to"))
 
 	lb, err = p.LightBlock(context.Background(), height)
@@ -134,7 +134,7 @@ func TestProviderWithErrors(t *testing.T) {
 	require.Nil(t, lb)
 
 	// via provider.LightBlock.voterSet
-	c.On("Validators", mock.Anything, &height, mock.Anything, mock.Anything).Times(5).Return(
+	c.On("ValidatorsWithVoters", mock.Anything, &height, mock.Anything, mock.Anything).Times(5).Return(
 		nil, fmt.Errorf("mock: Timeout exceeded"))
 
 	lb, err = p.LightBlock(context.Background(), height)
@@ -144,8 +144,8 @@ func TestProviderWithErrors(t *testing.T) {
 
 	// via provider.LightBlock.voterSet
 	var validators []*types.Validator
-	c.On("Validators", mock.Anything, &height, mock.Anything, mock.Anything).Once().Return(
-		&coretypes.ResultValidators{Validators: validators}, nil)
+	c.On("ValidatorsWithVoters", mock.Anything, &height, mock.Anything, mock.Anything).Once().Return(
+		&coretypes.ResultValidatorsWithVoters{Validators: validators}, nil)
 
 	lb, err = p.LightBlock(context.Background(), height)
 	require.Error(t, err)
@@ -155,8 +155,8 @@ func TestProviderWithErrors(t *testing.T) {
 	// via provider.LightBlock.voterSet
 	validatorSet, _, _ := types.RandVoterSet(4, 10)
 	validators = validatorSet.Validators
-	c.On("Validators", mock.Anything, &height, mock.Anything, mock.Anything).Once().Return(
-		&coretypes.ResultValidators{Validators: validators, Total: 0}, nil)
+	c.On("ValidatorsWithVoters", mock.Anything, &height, mock.Anything, mock.Anything).Once().Return(
+		&coretypes.ResultValidatorsWithVoters{Validators: validators, Total: 0}, nil)
 
 	lb, err = p.LightBlock(context.Background(), height)
 	require.Error(t, err)

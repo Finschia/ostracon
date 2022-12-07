@@ -77,7 +77,6 @@ func TestLightClientAttackEvidence_Lunatic(t *testing.T) {
 		primary,
 		[]provider.Provider{witness},
 		dbs.New(dbm.NewMemDB(), chainID),
-		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 		light.MaxRetryAttempts(1),
 	)
@@ -169,7 +168,6 @@ func TestLightClientAttackEvidence_Equivocation(t *testing.T) {
 			primary,
 			[]provider.Provider{witness},
 			dbs.New(dbm.NewMemDB(), chainID),
-			types.DefaultVoterParams(),
 			light.Logger(log.TestingLogger()),
 			light.MaxRetryAttempts(1),
 			verificationOption,
@@ -276,7 +274,6 @@ func TestLightClientAttackEvidence_ForwardLunatic(t *testing.T) {
 		primary,
 		[]provider.Provider{witness, accomplice},
 		dbs.New(dbm.NewMemDB(), chainID),
-		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 		light.MaxClockDrift(1*time.Second),
 		light.MaxBlockLag(1*time.Second),
@@ -340,7 +337,6 @@ func TestLightClientAttackEvidence_ForwardLunatic(t *testing.T) {
 		primary,
 		[]provider.Provider{laggingWitness, accomplice},
 		dbs.New(dbm.NewMemDB(), chainID),
-		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 		light.MaxClockDrift(1*time.Second),
 		light.MaxBlockLag(1*time.Second),
@@ -372,7 +368,6 @@ func TestClientDivergentTraces1(t *testing.T) {
 		primary,
 		[]provider.Provider{witness},
 		dbs.New(dbm.NewMemDB(), chainID),
-		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 		light.MaxRetryAttempts(1),
 	)
@@ -397,7 +392,6 @@ func TestClientDivergentTraces2(t *testing.T) {
 		primary,
 		[]provider.Provider{deadNode, deadNode, primary},
 		dbs.New(dbm.NewMemDB(), chainID),
-		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 		light.MaxRetryAttempts(1),
 	)
@@ -434,7 +428,6 @@ func TestClientDivergentTraces3(t *testing.T) {
 		primary,
 		[]provider.Provider{witness},
 		dbs.New(dbm.NewMemDB(), chainID),
-		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 		light.MaxRetryAttempts(1),
 	)
@@ -473,7 +466,6 @@ func TestClientDivergentTraces4(t *testing.T) {
 		primary,
 		[]provider.Provider{witness},
 		dbs.New(dbm.NewMemDB(), chainID),
-		types.DefaultVoterParams(),
 		light.Logger(log.TestingLogger()),
 	)
 	require.NoError(t, err)

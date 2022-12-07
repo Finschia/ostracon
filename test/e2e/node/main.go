@@ -11,8 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/line/ostracon/types"
-
 	"github.com/spf13/viper"
 
 	"github.com/line/ostracon/abci/server"
@@ -180,7 +178,6 @@ func startLightClient(cfg *Config) error {
 		providers[0],
 		providers[1:],
 		dbs.New(lightDB, "light"),
-		types.DefaultVoterParams(),
 		light.Logger(nodeLogger),
 	)
 	if err != nil {

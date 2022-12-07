@@ -400,6 +400,7 @@ func TestVerifyLightClientAttack_Amnesia(t *testing.T) {
 	conflictingHeader := makeHeaderRandom(10)
 	conflictingHeader.ValidatorsHash = conflictingVals.Hash()
 	conflictingHeader.VotersHash = conflictingVoters.Hash()
+	conflictingHeader.ValidatorsHash = conflictingVals.Hash()
 	trustedHeader := makeHeaderRandom(10)
 	trustedHeader.VotersHash = conflictingHeader.VotersHash
 	trustedHeader.ValidatorsHash = conflictingHeader.ValidatorsHash
@@ -732,6 +733,7 @@ func makeHeaderRandom(height int64) *types.Header {
 		LastCommitHash:     crypto.CRandBytes(tmhash.Size),
 		DataHash:           crypto.CRandBytes(tmhash.Size),
 		VotersHash:         crypto.CRandBytes(tmhash.Size),
+		ValidatorsHash:     crypto.CRandBytes(tmhash.Size),
 		NextValidatorsHash: crypto.CRandBytes(tmhash.Size),
 		ConsensusHash:      crypto.CRandBytes(tmhash.Size),
 		AppHash:            crypto.CRandBytes(tmhash.Size),
