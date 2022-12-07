@@ -19,6 +19,7 @@ import (
 	tmnet "github.com/line/ostracon/libs/net"
 	"github.com/line/ostracon/node"
 	"github.com/line/ostracon/privval"
+	privvalproto "github.com/line/ostracon/proto/ostracon/privval"
 	types2 "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/types"
 	"github.com/stretchr/testify/require"
@@ -41,6 +42,15 @@ func BenchmarkKMS(b *testing.B) {
 	endpoint := privval.NewSignerListenerEndpoint(logger, listener)
 	client, err := privval.NewSignerClient(endpoint, chainID)
 	require.NoError(b, err)
+
+	// ensure connection and warm up
+	b.Run("Ping", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			ping(endpoint)
+		}
+		b.StopTimer()
+	})
 
 	benchmarkPrivValidator(b, client)
 }
@@ -147,7 +157,7 @@ func benchmarkSignProposal(b *testing.B, pv types.PrivValidator, pubKey crypto.P
 
 	// evaluate execution results
 	require.NoError(b, err)
-	require.Equalf(b, len(pb.Signature), ed25519.SignatureSize, "ignProposal: signature size = %d != %d",
+	require.Equalf(b, len(pb.Signature), ed25519.SignatureSize, "SignProposal: signature size = %d != %d",
 		len(pb.Signature), ed25519.SignatureSize)
 	bytes := types.ProposalSignBytes(chainID, pb)
 	require.Truef(b, pubKey.VerifySignature(bytes, pb.Signature), "SignProposal: signature verification")
@@ -171,4 +181,16 @@ func benchmarkVRFProof(b *testing.B, pv types.PrivValidator, pubKey crypto.PubKe
 	output, err := pubKey.VRFVerify(proof, message)
 	require.NoError(b, err)
 	require.Equalf(b, len(output), VrfOutputSize, "VRFProof: output size = %d != %d", len(output), VrfOutputSize)
+}
+
+func ping(sl *privval.SignerListenerEndpoint) {
+	msg := privvalproto.Message{
+		Sum: &privvalproto.Message_PingRequest{
+			PingRequest: &privvalproto.PingRequest{},
+		},
+	}
+	_, err := sl.SendRequest(msg)
+	if err != nil {
+		sl.Logger.Error("Benchmark::ping", "err", err)
+	}
 }
