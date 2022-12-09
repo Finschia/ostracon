@@ -365,6 +365,7 @@ func (store dbStore) PruneStates(from int64, to int64) error {
 			}
 			batch.Close()
 			batch = store.db.NewBatch()
+			defer batch.Close()
 		}
 	}
 
