@@ -311,6 +311,14 @@ func (store dbStore) PruneStates(from int64, to int64) error {
 			if err != nil {
 				return err
 			}
+			err = batch.Delete(calcVoterParamsKey(h))
+			if err != nil {
+				return err
+			}
+			err = batch.Delete(calcProofHashKey(h))
+			if err != nil {
+				return err
+			}
 		}
 
 		if keepParams[h] {
@@ -341,16 +349,6 @@ func (store dbStore) PruneStates(from int64, to int64) error {
 			if err != nil {
 				return err
 			}
-		}
-
-		err = batch.Delete(calcVoterParamsKey(h))
-		if err != nil {
-			return err
-		}
-
-		err = batch.Delete(calcProofHashKey(h))
-		if err != nil {
-			return err
 		}
 
 		err = batch.Delete(calcABCIResponsesKey(h))

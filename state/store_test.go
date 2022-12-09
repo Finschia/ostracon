@@ -299,6 +299,15 @@ func TestPruneStates(t *testing.T) {
 					require.Error(t, err, "abci height %v", h)
 					require.Equal(t, sm.ErrNoABCIResponsesForHeight{Height: h}, err)
 				}
+				_, voters, voterParams, proof, err := stateStore.LoadVoters(h, nil)
+				if expectVals[h] {
+					require.NotNil(t, voters)
+					require.NotNil(t, voterParams)
+					require.NotNil(t, proof)
+				} else {
+					require.Error(t, err, "validators height %v", h)
+					require.Equal(t, sm.ErrNoValSetForHeight{Height: h}, err)
+				}
 			}
 		})
 	}
