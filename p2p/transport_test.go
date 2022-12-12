@@ -1,11 +1,13 @@
 package p2p
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"net"
 	"reflect"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -14,6 +16,7 @@ import (
 	"github.com/line/ostracon/libs/protoio"
 	"github.com/line/ostracon/p2p/conn"
 	tmp2p "github.com/line/ostracon/proto/ostracon/p2p"
+	"github.com/miekg/dns"
 	"github.com/stretchr/testify/require"
 )
 
@@ -638,6 +641,22 @@ func TestTransportAddChannel(t *testing.T) {
 	}
 }
 
+func TestTransportResolveIPs(t *testing.T) {
+	go startFakeDNS()
+
+	r := &net.Resolver{
+		PreferGo: true,
+		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+			d := net.Dialer{
+				Timeout: time.Millisecond * time.Duration(500),
+			}
+			return d.DialContext(ctx, network, "127.0.0.1:5355")
+		},
+	}
+	_, err := resolveIPs(r, &testTransportConn{})
+	require.Contains(t, err.Error(), "lookup test.local: i/o timeout")
+}
+
 // create listener
 func testSetupMultiplexTransport(t *testing.T) *MultiplexTransport {
 	var (
@@ -705,4 +724,48 @@ func (c *testTransportConn) SetWriteDeadline(_ time.Time) error {
 
 func (c *testTransportConn) Write(_ []byte) (int, error) {
 	return -1, fmt.Errorf("write() not implemented")
+}
+
+// fake dns server
+var records = map[string]string{
+	"test.local.": "192.168.0.2",
+}
+
+func parseQuery(m *dns.Msg) {
+	time.Sleep(5 * time.Minute)
+	for _, q := range m.Question {
+		switch q.Qtype {
+		case dns.TypeA:
+			ip := records[q.Name]
+			if ip != "" {
+				rr, err := dns.NewRR(fmt.Sprintf("%s A %s", q.Name, ip))
+				if err == nil {
+					m.Answer = append(m.Answer, rr)
+				}
+			}
+		}
+	}
+}
+
+func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
+	m := new(dns.Msg)
+	m.SetReply(r)
+	m.Compress = false
+	switch r.Opcode {
+	case dns.OpcodeQuery:
+		parseQuery(m)
+	}
+	_ = w.WriteMsg(m)
+}
+
+func startFakeDNS() {
+	// attach request handler func
+	dns.HandleFunc("local.", handleDnsRequest)
+
+	// start server
+	port := 5355
+	server := &dns.Server{Addr: ":" + strconv.Itoa(port), Net: "udp"}
+	err := server.ListenAndServe()
+	defer server.Shutdown()
+	panic(err.Error())
 }

@@ -595,7 +595,10 @@ func resolveIPs(resolver IPResolver, c net.Conn) ([]net.IP, error) {
 		return nil, err
 	}
 
-	addrs, err := resolver.LookupIPAddr(context.Background(), host)
+	timeoutCtx, cancelFunc := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancelFunc()
+
+	addrs, err := resolver.LookupIPAddr(timeoutCtx, host)
 	if err != nil {
 		return nil, err
 	}

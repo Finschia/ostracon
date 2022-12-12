@@ -48,6 +48,8 @@ require (
 	gotest.tools v2.2.0+incompatible // indirect
 )
 
+require github.com/miekg/dns v1.1.43
+
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/DataDog/zstd v1.4.1 // indirect
