@@ -15,6 +15,7 @@ import (
 	"github.com/line/ostracon/config"
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/ed25519"
+	"github.com/line/ostracon/crypto/vrf"
 	"github.com/line/ostracon/libs/log"
 	tmnet "github.com/line/ostracon/libs/net"
 	"github.com/line/ostracon/node"
@@ -29,9 +30,6 @@ var logger = log.NewOCLogger(log.NewSyncWriter(os.Stdout))
 
 const chainID = "test-chain"
 const listenAddr = "tcp://0.0.0.0:45666"
-
-const VrfProofSize = 80
-const VrfOutputSize = 64
 
 func BenchmarkKMS(b *testing.B) {
 	chainID := "test-chain"
@@ -177,10 +175,10 @@ func benchmarkVRFProof(b *testing.B, pv types.PrivValidator, pubKey crypto.PubKe
 
 	// evaluate execution results
 	require.NoError(b, err)
-	require.Equalf(b, len(proof), VrfProofSize, "VRFProof: proof size = %d != %d", len(proof), VrfProofSize)
+	require.Equalf(b, vrf.ProofSize, len(proof), "VRFProof: proof size = %d != %d", len(proof), vrf.ProofSize)
 	output, err := pubKey.VRFVerify(proof, message)
 	require.NoError(b, err)
-	require.Equalf(b, len(output), VrfOutputSize, "VRFProof: output size = %d != %d", len(output), VrfOutputSize)
+	require.Equalf(b, vrf.OutputSize, len(output), "VRFProof: output size = %d != %d", len(output), vrf.OutputSize)
 }
 
 func ping(sl *privval.SignerListenerEndpoint) {
