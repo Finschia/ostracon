@@ -50,7 +50,7 @@ func (oc2pb) Header(header *Header) tmproto.Header {
 		LastCommitHash: header.LastCommitHash,
 		DataHash:       header.DataHash,
 
-		VotersHash:         header.VotersHash,
+		ValidatorsHash:     header.ValidatorsHash,
 		NextValidatorsHash: header.NextValidatorsHash,
 		ConsensusHash:      header.ConsensusHash,
 		AppHash:            header.AppHash,
@@ -58,6 +58,11 @@ func (oc2pb) Header(header *Header) tmproto.Header {
 
 		EvidenceHash:    header.EvidenceHash,
 		ProposerAddress: header.ProposerAddress,
+
+		// Ostracon fields
+		Round:      header.Round,
+		Proof:      header.Proof,
+		VotersHash: header.VotersHash,
 	}
 }
 
