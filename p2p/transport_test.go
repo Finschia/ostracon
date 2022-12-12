@@ -766,6 +766,6 @@ func startFakeDNS() {
 	port := 5355
 	server := &dns.Server{Addr: ":" + strconv.Itoa(port), Net: "udp"}
 	err := server.ListenAndServe()
-	defer server.Shutdown()
+	defer server.Shutdown() // nolint: errcheck
 	panic(err.Error())
 }
