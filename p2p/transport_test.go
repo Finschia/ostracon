@@ -642,7 +642,7 @@ func TestTransportAddChannel(t *testing.T) {
 }
 
 func TestTransportResolveIPs(t *testing.T) {
-	go startFakeDNS()
+	server := startFakeDNS()
 
 	r := &net.Resolver{
 		PreferGo: true,
@@ -655,6 +655,9 @@ func TestTransportResolveIPs(t *testing.T) {
 	}
 	_, err := resolveIPs(r, &testTransportConn{})
 	require.Contains(t, err.Error(), "lookup test.local: i/o timeout")
+
+	err = server.Shutdown()
+	require.NoError(t, err)
 }
 
 // create listener
@@ -732,7 +735,7 @@ var records = map[string]string{
 }
 
 func parseQuery(m *dns.Msg) {
-	time.Sleep(5 * time.Minute)
+	time.Sleep(5 * time.Second)
 	for _, q := range m.Question {
 		switch q.Qtype {
 		case dns.TypeA:
@@ -758,16 +761,18 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 	_ = w.WriteMsg(m)
 }
 
-func startFakeDNS() {
+func startFakeDNS() *dns.Server {
 	// attach request handler func
 	dns.HandleFunc("local.", handleDnsRequest)
 
 	// start server
 	port := 5355
 	server := &dns.Server{Addr: ":" + strconv.Itoa(port), Net: "udp"}
-	err := server.ListenAndServe()
-	defer server.Shutdown() // nolint: errcheck
-	if err != nil {
-		panic(err.Error())
-	}
+	go func() {
+		err := server.ListenAndServe()
+		if err != nil {
+			panic(err.Error())
+		}
+	}()
+	return server
 }
