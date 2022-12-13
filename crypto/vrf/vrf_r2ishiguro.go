@@ -19,7 +19,10 @@ func init() {
 	}
 }
 
-const ProofSize = 81
+const (
+	ProofSize  = 81
+	OutputSize = 32
+)
 
 func newVrfEd25519r2ishiguro() vrfEd25519r2ishiguro {
 	return vrfEd25519r2ishiguro{}
