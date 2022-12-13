@@ -595,10 +595,17 @@ func resolveIPs(resolver IPResolver, c net.Conn) ([]net.IP, error) {
 		return nil, err
 	}
 
-	timeoutCtx, cancelFunc := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancelFunc()
-
-	addrs, err := resolver.LookupIPAddr(timeoutCtx, host)
+	// implement with reference to https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/dns-client-resolution-timeouts#what-is-the-default-behavior-of-a-dns-client-when-a-single-dns-server-is-configured-on-the-nic
+	timeouts := []time.Duration{1, 1, 2, 4, 2}
+	addrs := []net.IPAddr{}
+	for _, to := range timeouts {
+		timeoutCtx, cancelFunc := context.WithTimeout(context.Background(), to*time.Second)
+		defer cancelFunc()
+		addrs, err = resolver.LookupIPAddr(timeoutCtx, host)
+		if err == nil {
+			break
+		}
+	}
 	if err != nil {
 		return nil, err
 	}
