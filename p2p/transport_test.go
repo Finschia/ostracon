@@ -643,6 +643,10 @@ func TestTransportAddChannel(t *testing.T) {
 
 func TestTransportResolveIPs(t *testing.T) {
 	server := startFakeDNS()
+	defer func() {
+		err := server.Shutdown()
+		require.NoError(t, err)
+	}()
 
 	r := &net.Resolver{
 		PreferGo: true,
@@ -655,9 +659,6 @@ func TestTransportResolveIPs(t *testing.T) {
 	}
 	_, err := resolveIPs(r, &testTransportConn{})
 	require.Contains(t, err.Error(), "lookup test.local: i/o timeout")
-
-	err = server.Shutdown()
-	require.NoError(t, err)
 }
 
 // create listener
