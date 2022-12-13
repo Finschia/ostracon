@@ -1,3 +1,0 @@
-flag needs an argument: -count
-usage: go test [build/test flags] [packages] [build/test flags & test binary flags]
-Run 'go help test' and 'go help testflag' for details.
