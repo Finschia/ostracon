@@ -20,8 +20,8 @@ func init() {
 }
 
 const (
-	ProofSize  = 81
-	OutputSize = 32
+	ProofSize  int = 81
+	OutputSize int = 32
 )
 
 func newVrfEd25519r2ishiguro() vrfEd25519r2ishiguro {

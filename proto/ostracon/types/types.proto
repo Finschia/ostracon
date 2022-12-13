@@ -82,6 +82,7 @@ message Header {
   bytes proposer_address = 14;  // original proposer of the block
 
   // *** Ostracon Extended Fields ***
+  // Note that MaxHeaderSize must be modified when adding/removing fields.
 
   // vrf info
   int32 round       = 1000;

@@ -745,6 +745,11 @@ func TestMaxHeaderBytes(t *testing.T) {
 	// year int, month Month, day, hour, min, sec, nsec int, loc *Location
 	timestamp := time.Date(math.MaxInt64, 0, 0, 0, 0, 0, math.MaxInt64, time.UTC)
 
+	proof := make([]byte, vrf.ProofSize)
+	for i := 0; i < len(proof); i++ {
+		proof[i] = 0xFF
+	}
+
 	h := Header{
 		Version:            tmversion.Consensus{Block: math.MaxInt64, App: math.MaxInt64},
 		ChainID:            maxChainID,
@@ -761,6 +766,8 @@ func TestMaxHeaderBytes(t *testing.T) {
 		LastResultsHash:    tmhash.Sum([]byte("last_results_hash")),
 		EvidenceHash:       tmhash.Sum([]byte("evidence_hash")),
 		ProposerAddress:    crypto.AddressHash([]byte("proposer_address")),
+		Round:              math.MaxInt32,
+		Proof:              proof,
 	}
 
 	bz, err := h.ToProto().Marshal()
@@ -995,9 +1002,9 @@ func TestBlockMaxDataBytes(t *testing.T) {
 	}{
 		0: {-10, commit, []Evidence{dupEv}, true, 0},
 		1: {10, commit, []Evidence{dupEv}, true, 0},
-		2: {1600, commit, []Evidence{dupEv}, true, 0},
-		3: {1692, commit, []Evidence{dupEv}, false, 0},
-		4: {1693, commit, []Evidence{dupEv}, false, 1},
+		2: {1701 + int64(vrf.ProofSize), commit, []Evidence{dupEv}, true, 0},
+		3: {1702 + int64(vrf.ProofSize), commit, []Evidence{dupEv}, false, 0},
+		4: {1703 + int64(vrf.ProofSize), commit, []Evidence{dupEv}, false, 1},
 	}
 
 	for i, tc := range testCases {
@@ -1027,9 +1034,9 @@ func TestBlockMaxDataBytesNoEvidence(t *testing.T) {
 	}{
 		0: {-10, 1, true, 0},
 		1: {10, 1, true, 0},
-		2: {909, 1, true, 0},
-		3: {910, 1, false, 0},
-		4: {911, 1, false, 1},
+		2: {919 + int64(vrf.ProofSize), 1, true, 0},
+		3: {920 + int64(vrf.ProofSize), 1, false, 0},
+		4: {921 + int64(vrf.ProofSize), 1, false, 1},
 	}
 
 	for i, tc := range testCases {
