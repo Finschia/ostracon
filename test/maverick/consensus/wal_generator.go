@@ -42,7 +42,8 @@ func WALGenerateNBlocks(t *testing.T, wr io.Writer, numBlocks int) (err error) {
 	// NOTE: we don't do handshake so need to set state.Version.Consensus.App directly.
 	privValidatorKeyFile := config.PrivValidatorKeyFile()
 	privValidatorStateFile := config.PrivValidatorStateFile()
-	privValidator, err := privval.LoadOrGenFilePV(privValidatorKeyFile, privValidatorStateFile, privval.PrivKeyTypeEd25519)
+	privKeyType := config.PrivValidatorKeyType()
+	privValidator, err := privval.LoadOrGenFilePV(privValidatorKeyFile, privValidatorStateFile, privKeyType)
 	if err != nil {
 		return fmt.Errorf("failed to load FilePV: %w", err)
 	}
@@ -57,6 +58,7 @@ func WALGenerateNBlocks(t *testing.T, wr io.Writer, numBlocks int) (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to make genesis state: %w", err)
 	}
+	state.ConsensusParams.Version.AppVersion = kvstore.ProtocolVersion
 	state.Version.Consensus.App = kvstore.ProtocolVersion
 	if err = stateStore.Save(state); err != nil {
 		t.Error(err)

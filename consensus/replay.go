@@ -261,6 +261,7 @@ func (h *Handshaker) Handshake(proxyApp proxy.AppConns) error {
 
 	// Only set the version if there is no existing state.
 	if h.initialState.LastBlockHeight == 0 {
+		h.initialState.ConsensusParams.Version.AppVersion = res.AppVersion
 		h.initialState.Version.Consensus.App = res.AppVersion
 	}
 
@@ -487,6 +488,7 @@ func (h *Handshaker) replayBlocks(
 
 	if mutateState {
 		// sync the final block
+		h.logger.Info("Replaying final block using real app", "height", storeBlockHeight)
 		state, err = h.replayBlock(state, storeBlockHeight, proxyApp.Consensus())
 		if err != nil {
 			return nil, err
@@ -502,13 +504,19 @@ func (h *Handshaker) replayBlocks(
 func (h *Handshaker) replayBlock(state sm.State, height int64, proxyApp proxy.AppConnConsensus) (sm.State, error) {
 	block := h.store.LoadBlock(height)
 	meta := h.store.LoadBlockMeta(height)
+	var err error
+	consensusParams, err := h.stateStore.LoadConsensusParams(height)
+	if err != nil {
+		return sm.State{}, err
+	}
+	state.ConsensusParams = consensusParams
+	state.Version.Consensus.App = consensusParams.Version.AppVersion
 
 	// Use stubs for both mempool and evidence pool since no transactions nor
 	// evidence are needed here - block already exists.
 	blockExec := sm.NewBlockExecutor(h.stateStore, h.logger, proxyApp, emptyMempool{}, sm.EmptyEvidencePool{})
 	blockExec.SetEventBus(h.eventBus)
 
-	var err error
 	state, _, err = blockExec.ApplyBlock(state, meta.BlockID, block, nil)
 	if err != nil {
 		return sm.State{}, err

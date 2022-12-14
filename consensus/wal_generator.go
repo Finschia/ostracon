@@ -20,7 +20,6 @@ import (
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/store"
 	"github.com/line/ostracon/types"
-	"github.com/pkg/errors"
 )
 
 // WALGenerateNBlocks generates a consensus WAL. It does this by spinning up a
@@ -44,7 +43,7 @@ func WALGenerateNBlocks(t *testing.T, wr io.Writer, numBlocks int) (err error) {
 	privKeyType := config.PrivValidatorKeyType()
 	privValidator, err := privval.LoadOrGenFilePV(privValidatorKeyFile, privValidatorStateFile, privKeyType)
 	if err != nil {
-		return errors.Wrap(err, "failed to create a private key")
+		return fmt.Errorf("failed to load FilePV: %w", err)
 	}
 	genDoc, err := types.GenesisDocFromFile(config.GenesisFile())
 	if err != nil {
@@ -57,6 +56,7 @@ func WALGenerateNBlocks(t *testing.T, wr io.Writer, numBlocks int) (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to make genesis state: %w", err)
 	}
+	state.ConsensusParams.Version.AppVersion = kvstore.ProtocolVersion
 	state.Version.Consensus.App = kvstore.ProtocolVersion
 	if err = stateStore.Save(state); err != nil {
 		t.Error(err)
