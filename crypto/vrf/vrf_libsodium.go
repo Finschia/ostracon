@@ -19,8 +19,8 @@ func init() {
 }
 
 const (
-	ProofSize  = int(libsodium.PROOFBYTES)
-	OutputSize = int(libsodium.OUTPUTBYTES)
+	ProofSize  int = int(libsodium.PROOFBYTES)
+	OutputSize int = int(libsodium.OUTPUTBYTES)
 )
 
 func newVrfEd25519libsodium() vrfEd25519libsodium {

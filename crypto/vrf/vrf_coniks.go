@@ -20,8 +20,8 @@ func init() {
 }
 
 const (
-	ProofSize  = coniks.ProofSize
-	OutputSize = coniks.Size
+	ProofSize  int = coniks.ProofSize
+	OutputSize int = coniks.Size
 )
 
 func newVrfEd25519coniks() *vrfEd25519coniks {

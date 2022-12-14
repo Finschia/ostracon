@@ -17,6 +17,7 @@ import (
 	"github.com/line/ostracon/crypto/composite"
 	"github.com/line/ostracon/crypto/merkle"
 	"github.com/line/ostracon/crypto/tmhash"
+	"github.com/line/ostracon/crypto/vrf"
 	"github.com/line/ostracon/libs/bits"
 	tmbytes "github.com/line/ostracon/libs/bytes"
 	tmmath "github.com/line/ostracon/libs/math"
@@ -30,7 +31,12 @@ const (
 	// MaxHeaderBytes is a maximum header size.
 	// NOTE: Because app hash can be of arbitrary size, the header is therefore not
 	// capped in size and thus this number should be seen as a soft max
-	MaxHeaderBytes int64 = 661
+	// 🏺 Note that this value is the encoded size of the ProtocolBuffer. See TestMaxHeaderBytes() for how Tendermint
+	//  calculates this value. Add/remove Ostracon-specific field sizes to/from this heuristically determined constant.
+	MaxHeaderBytes int64 = 626 +
+		(2 + 32 + 1) + // +VotersHash
+		(2 + 5) + // +Round
+		(2 + int64(vrf.ProofSize) + 1) // +Proof
 
 	// MaxOverheadForBlock - maximum overhead to encode a block (up to
 	// MaxBlockSizeBytes in size) not including it's parts except Data.

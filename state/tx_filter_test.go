@@ -9,6 +9,7 @@ import (
 
 	dbm "github.com/tendermint/tm-db"
 
+	"github.com/line/ostracon/crypto/vrf"
 	tmrand "github.com/line/ostracon/libs/rand"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"
@@ -25,8 +26,8 @@ func TestTxFilter(t *testing.T) {
 		tx    types.Tx
 		isErr bool
 	}{
-		{types.Tx(tmrand.Bytes(2122)), false},
-		{types.Tx(tmrand.Bytes(2123)), true},
+		{types.Tx(tmrand.Bytes(2112 - vrf.ProofSize)), false},
+		{types.Tx(tmrand.Bytes(2113 - vrf.ProofSize)), true},
 		{types.Tx(tmrand.Bytes(3000)), true},
 	}
 
