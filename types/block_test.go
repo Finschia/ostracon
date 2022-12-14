@@ -706,7 +706,7 @@ func TestHeaderValidateBasic(t *testing.T) {
 		i := i
 		t.Run(tc.testName, func(t *testing.T) {
 			header := &Header{
-				Version:            tmversion.Consensus{Block: version.BlockProtocol, App: 2},
+				Version:            tmversion.Consensus{Block: version.BlockProtocol, App: version.AppProtocol},
 				ChainID:            "chainId",
 				Height:             3,
 				Time:               time.Date(2019, 10, 13, 16, 14, 44, 0, time.UTC),
@@ -1339,7 +1339,7 @@ func makeRandHeader() Header {
 	randAddress := tmrand.Bytes(crypto.AddressSize)
 	randProof := tmrand.Bytes(vrf.ProofSize)
 	h := Header{
-		Version:            tmversion.Consensus{Block: version.BlockProtocol, App: 1},
+		Version:            tmversion.Consensus{Block: version.BlockProtocol, App: version.AppProtocol},
 		ChainID:            chainID,
 		Height:             height,
 		Time:               t,

@@ -65,7 +65,7 @@ type Block struct {
 func MakeBlock(height int64, txs []Tx, lastCommit *Commit, evidence []Evidence) *Block {
 	block := &Block{
 		Header: Header{
-			Version: tmversion.Consensus{Block: version.BlockProtocol, App: 0},
+			Version: tmversion.Consensus{Block: version.BlockProtocol, App: version.AppProtocol},
 			Height:  height,
 		},
 		Data: Data{

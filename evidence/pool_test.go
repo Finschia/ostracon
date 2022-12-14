@@ -6,17 +6,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/bls"
-	"github.com/line/ostracon/crypto/composite"
-	"github.com/line/ostracon/crypto/ed25519"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	dbm "github.com/tendermint/tm-db"
 
+	"github.com/line/ostracon/crypto"
+	"github.com/line/ostracon/crypto/bls"
+	"github.com/line/ostracon/crypto/composite"
+	"github.com/line/ostracon/crypto/ed25519"
 	"github.com/line/ostracon/evidence"
 	"github.com/line/ostracon/evidence/mocks"
 	"github.com/line/ostracon/libs/log"
@@ -436,7 +435,7 @@ func initializeBlockStore(db dbm.DB, state sm.State, valPrivkey crypto.PrivKey) 
 		block, _ := state.MakeBlock(i, []types.Tx{}, lastCommit, nil,
 			state.Validators.SelectProposer(proof, i, round).Address, round, proof)
 		block.Header.Time = defaultEvidenceTime.Add(time.Duration(i) * time.Minute)
-		block.Header.Version = tmversion.Consensus{Block: version.BlockProtocol, App: 1}
+		block.Header.Version = tmversion.Consensus{Block: version.BlockProtocol, App: version.AppProtocol}
 		const parts = 1
 		partSet := block.MakePartSet(parts)
 

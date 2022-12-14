@@ -8,6 +8,7 @@ import (
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto/tmhash"
 	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	"github.com/line/ostracon/version"
 )
 
 const (
@@ -69,7 +70,7 @@ func DefaultValidatorParams() tmproto.ValidatorParams {
 
 func DefaultVersionParams() tmproto.VersionParams {
 	return tmproto.VersionParams{
-		AppVersion: 0,
+		AppVersion: version.AppProtocol,
 	}
 }
 
