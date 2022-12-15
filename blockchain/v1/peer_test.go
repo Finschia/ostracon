@@ -11,6 +11,7 @@ import (
 	"github.com/line/ostracon/libs/log"
 	tmrand "github.com/line/ostracon/libs/rand"
 	"github.com/line/ostracon/p2p"
+	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"
 )
 
@@ -276,5 +277,5 @@ func checkByStoppingPeerTimer(t *testing.T, peer *BpPeer, running bool) {
 }
 
 func makeSmallBlock(height int) *types.Block {
-	return types.MakeBlock(int64(height), []types.Tx{types.Tx("foo")}, nil, nil)
+	return types.MakeBlock(int64(height), []types.Tx{types.Tx("foo")}, nil, nil, sm.InitStateVersion.Consensus)
 }

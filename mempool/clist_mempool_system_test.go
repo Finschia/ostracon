@@ -18,8 +18,10 @@ import (
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/config"
 	"github.com/line/ostracon/libs/log"
+	tmversion "github.com/line/ostracon/proto/ostracon/version"
 	"github.com/line/ostracon/proxy"
 	"github.com/line/ostracon/types"
+	"github.com/line/ostracon/version"
 	"github.com/stretchr/testify/require"
 )
 
@@ -93,7 +95,10 @@ func createProposalBlockAndDeliverTxs(
 	mem *CListMempool, height int64) (*types.Block, []*abci.ResponseDeliverTx) {
 	// mempool.lock/unlock in ReapMaxBytesMaxGasMaxTxs
 	txs := mem.ReapMaxBytesMaxGasMaxTxs(mem.config.MaxTxsBytes, 0, int64(mem.config.Size))
-	block := types.MakeBlock(height, txs, nil, nil)
+	block := types.MakeBlock(height, txs, nil, nil, tmversion.Consensus{
+		Block: version.BlockProtocol,
+		App:   version.AppProtocol,
+	})
 	deliverTxResponses := make([]*abci.ResponseDeliverTx, len(block.Txs))
 	for i, tx := range block.Txs {
 		deliverTxResponses[i] = &abci.ResponseDeliverTx{

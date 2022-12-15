@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcproto "github.com/line/ostracon/proto/ostracon/blockchain"
+	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"
 )
 
@@ -80,7 +81,7 @@ func TestBcStatusResponseMessageValidateBasic(t *testing.T) {
 
 // nolint:lll // ignore line length in tests
 func TestBlockchainMessageVectors(t *testing.T) {
-	block := types.MakeBlock(int64(3), []types.Tx{types.Tx("Hello World")}, nil, nil)
+	block := types.MakeBlock(int64(3), []types.Tx{types.Tx("Hello World")}, nil, nil, sm.InitStateVersion.Consensus)
 	block.Version.Block = 11 // overwrite updated protocol version
 	block.Version.App = 11   // overwrite updated protocol version
 
