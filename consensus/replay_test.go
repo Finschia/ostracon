@@ -352,7 +352,8 @@ var (
 // 1 - saved block but app and state are behind
 // 2 - save block and committed but state is behind
 // 3 - save block and committed with truncated block store and state behind
-var modes = []uint{0, 1, 2, 3}
+// 4 - save block and committed with rollback state and state behind
+var modes = []uint{0, 1, 2, 3, 4}
 
 func getProposerIdx(state *State, height int64, round int32) (int32, *types.Validator) {
 	proposer := state.Validators.SelectProposer(state.state.LastProofHash, height, round)
@@ -749,10 +750,17 @@ func testHandshakeReplay(t *testing.T, config *cfg.Config, nBlocks int, mode uin
 		require.EqualValues(t, 1, pruned)
 		expectError = int64(nBlocks) < 2
 	}
+	if mode == 4 {
+		rollbackHeight, rollbackAppHash, err := sm.Rollback(store, stateStore)
+		require.NoError(t, err)
+		require.EqualValues(t, state.LastBlockHeight, rollbackHeight)
+		require.EqualValues(t, state.AppHash, rollbackAppHash)
+	}
 
-	// now start the app using the handshake - it should sync
+	t.Log("####: now start the app using the handshake - it should sync")
 	genDoc, _ := sm.MakeGenesisDocFromFile(config.GenesisFile())
 	handshaker := NewHandshaker(stateStore, state, store, genDoc)
+	handshaker.SetLogger(log.TestingLogger())
 	proxyApp := proxy.NewAppConns(clientCreator2)
 	if err := proxyApp.Start(); err != nil {
 		t.Fatalf("Error starting proxy app connections: %v", err)
@@ -835,13 +843,13 @@ func buildAppStateFromChain(proxyApp proxy.AppConns, stateStore sm.Store,
 			block := chain[i]
 			state = applyBlock(stateStore, state, block, proxyApp)
 		}
-	case 1, 2, 3:
+	case 1, 2, 3, 4:
 		for i := 0; i < nBlocks-1; i++ {
 			block := chain[i]
 			state = applyBlock(stateStore, state, block, proxyApp)
 		}
 
-		if mode == 2 || mode == 3 {
+		if mode == 2 || mode == 3 || mode == 4 {
 			// update the kvstore height and apphash
 			// as if we ran commit but not
 			state = applyBlock(stateStore, state, chain[nBlocks-1], proxyApp)
@@ -887,7 +895,7 @@ func buildOCStateFromChain(
 			state = applyBlock(stateStore, state, block, proxyApp)
 		}
 
-	case 1, 2, 3:
+	case 1, 2, 3, 4:
 		// sync up to the penultimate as if we stored the block.
 		// whether we commit or not depends on the appHash
 		for _, block := range chain[:len(chain)-1] {
