@@ -147,7 +147,7 @@ func TestRPCNotification(t *testing.T) {
 	blob, err := ioutil.ReadAll(res.Body)
 	res.Body.Close()
 	require.Nil(t, err, "reading from the body should not give back an error")
-	require.Equal(t, len(blob), 0, "a notification SHOULD NOT be responded to by the server")
+	require.Equal(t, 0, len(blob), "a notification SHOULD NOT be responded to by the server")
 }
 
 func TestRPCNotificationInBatch(t *testing.T) {

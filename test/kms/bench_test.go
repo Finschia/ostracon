@@ -85,8 +85,8 @@ func benchmarkGetPubKey(b *testing.B, pv types.PrivValidator) crypto.PubKey {
 
 	// evaluate execution results
 	require.NoError(b, err)
-	require.Equalf(b, len(pubKey.Bytes()), ed25519.PubKeySize, "PubKey: public key size = %d != %d",
-		len(pubKey.Bytes()), ed25519.PubKeySize)
+	require.Equalf(b, ed25519.PubKeySize, len(pubKey.Bytes()), "PubKey: public key size = %d != %d",
+		ed25519.PubKeySize, len(pubKey.Bytes()))
 	return pubKey
 }
 
@@ -120,8 +120,8 @@ func benchmarkSignVote(b *testing.B, pv types.PrivValidator, pubKey crypto.PubKe
 
 	// evaluate execution results
 	require.NoError(b, err)
-	require.Equalf(b, len(pb.Signature), ed25519.SignatureSize, "SignVote: signature size = %d != %d",
-		len(pb.Signature), ed25519.SignatureSize)
+	require.Equalf(b, ed25519.SignatureSize, len(pb.Signature), "SignVote: signature size = %d != %d",
+		ed25519.SignatureSize, len(pb.Signature))
 	bytes := types.VoteSignBytes(chainID, pb)
 	require.Truef(b, pubKey.VerifySignature(bytes, pb.Signature), "SignVote: signature verification")
 }
@@ -155,8 +155,8 @@ func benchmarkSignProposal(b *testing.B, pv types.PrivValidator, pubKey crypto.P
 
 	// evaluate execution results
 	require.NoError(b, err)
-	require.Equalf(b, len(pb.Signature), ed25519.SignatureSize, "SignProposal: signature size = %d != %d",
-		len(pb.Signature), ed25519.SignatureSize)
+	require.Equalf(b, ed25519.SignatureSize, len(pb.Signature), "SignProposal: signature size = %d != %d",
+		ed25519.SignatureSize, len(pb.Signature))
 	bytes := types.ProposalSignBytes(chainID, pb)
 	require.Truef(b, pubKey.VerifySignature(bytes, pb.Signature), "SignProposal: signature verification")
 }
