@@ -12,7 +12,6 @@ import (
 	"github.com/line/ostracon/cmd/ostracon/commands/debug"
 	cfg "github.com/line/ostracon/config"
 	"github.com/line/ostracon/libs/cli"
-	tmflags "github.com/line/ostracon/libs/cli/flags"
 	"github.com/line/ostracon/libs/log"
 	tmos "github.com/line/ostracon/libs/os"
 	tmrand "github.com/line/ostracon/libs/rand"
@@ -70,7 +69,7 @@ var RootCmd = &cobra.Command{
 			logger = log.NewOCJSONLogger(log.NewSyncWriter(os.Stdout))
 		}
 
-		logger, err = tmflags.ParseLogLevel(config.LogLevel, logger, cfg.DefaultLogLevel)
+		logger, err = log.ParseLogLevel(config.LogLevel, logger, cfg.DefaultPackageLogLevels())
 		if err != nil {
 			return err
 		}

@@ -18,7 +18,6 @@ import (
 	"github.com/line/ostracon/abci/server"
 	"github.com/line/ostracon/config"
 	"github.com/line/ostracon/crypto/ed25519"
-	tmflags "github.com/line/ostracon/libs/cli/flags"
 	"github.com/line/ostracon/libs/log"
 	tmnet "github.com/line/ostracon/libs/net"
 	"github.com/line/ostracon/light"
@@ -308,7 +307,7 @@ func setupNode() (*config.Config, log.Logger, *p2p.NodeKey, error) {
 		logger = log.NewOCJSONLogger(log.NewSyncWriter(os.Stdout))
 	}
 
-	nodeLogger, err := tmflags.ParseLogLevel(tmcfg.LogLevel, logger, config.DefaultLogLevel)
+	nodeLogger, err := log.ParseLogLevel(tmcfg.LogLevel, logger, config.DefaultPackageLogLevels())
 	if err != nil {
 		return nil, nil, nil, err
 	}

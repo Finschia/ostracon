@@ -23,9 +23,6 @@ const (
 	// LogFormatJSON is a format for json output
 	LogFormatJSON = "json"
 
-	// DefaultLogLevel defines a default log level as INFO.
-	DefaultLogLevel = "info"
-
 	DefaultDBBackend = "goleveldb"
 )
 
@@ -201,6 +198,27 @@ type BaseConfig struct { //nolint: maligned
 	// Output format: 'plain' (colored text) or 'json'
 	LogFormat string `mapstructure:"log_format"`
 
+	// LogPath is the file to write logs to(log dir + log filename)
+	// ex) /Users/user/.app/logs/app.log
+	// If left as an empty string, log file writing is disabled.
+	LogPath string `mapstructure:"log_path"`
+
+	// LogMaxAge is the maximum number of days to retain old log files based on the
+	// timestamp encoded in their filename.  Note that a day is defined as 24
+	// hours and may not exactly correspond to calendar days due to daylight
+	// savings, leap seconds, etc. The default is not to remove old log files
+	// based on age.
+	LogMaxAge int `mapstructure:"log_max_age"`
+
+	// LogMaxSize is the maximum size in megabytes of the log file before it gets
+	// rotated. It defaults to 100 megabytes.
+	LogMaxSize int `mapstructure:"log_max_size"`
+
+	// LogMaxBackups is the maximum number of old log files to retain. The default
+	// is to retain all old log files (though MaxAge may still cause them to get
+	// deleted.)
+	LogMaxBackups int `mapstructure:"log_max_backups"`
+
 	// Path to the JSON file containing the initial validator set and other meta data
 	Genesis string `mapstructure:"genesis_file"`
 
@@ -238,8 +256,12 @@ func DefaultBaseConfig() BaseConfig {
 		Moniker:            defaultMoniker,
 		ProxyApp:           "tcp://127.0.0.1:26658",
 		ABCI:               "socket",
-		LogLevel:           DefaultLogLevel,
+		LogLevel:           DefaultPackageLogLevels(),
 		LogFormat:          LogFormatPlain,
+		LogPath:            "",
+		LogMaxAge:          0,
+		LogMaxSize:         100,
+		LogMaxBackups:      0,
 		FastSyncMode:       true,
 		FilterPeers:        false,
 		DBBackend:          DefaultDBBackend,
@@ -300,6 +322,17 @@ func (cfg BaseConfig) ValidateBasic() error {
 		return errors.New("unknown log_format (must be 'plain' or 'json')")
 	}
 	return nil
+}
+
+// DefaultLogLevel returns a default log level of "error"
+func DefaultLogLevel() string {
+	return "error"
+}
+
+// DefaultPackageLogLevels returns a default log level setting so all packages
+// log at "error", while the `state` and `main` packages log at "info"
+func DefaultPackageLogLevels() string {
+	return fmt.Sprintf("main:info,state:info,statesync:info,*:%s", DefaultLogLevel())
 }
 
 //-----------------------------------------------------------------------------
@@ -1108,12 +1141,14 @@ func (cfg *ConsensusConfig) ValidateBasic() error {
 	return nil
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 // TxIndexConfig
 // Remember that Event has the following structure:
 // type: [
-//  key: value,
-//  ...
+//
+//	key: value,
+//	...
+//
 // ]
 //
 // CompositeKeys are constructed by `type.key`
