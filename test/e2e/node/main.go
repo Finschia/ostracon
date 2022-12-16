@@ -307,7 +307,7 @@ func setupNode() (*config.Config, log.Logger, *p2p.NodeKey, error) {
 		logger = log.NewOCJSONLogger(log.NewSyncWriter(os.Stdout))
 	}
 
-	nodeLogger, err := log.ParseLogLevel(tmcfg.LogLevel, logger, config.DefaultPackageLogLevels())
+	nodeLogger, err := log.ParseLogLevel(tmcfg.LogLevel, logger, config.DefaultLogLevel)
 	if err != nil {
 		return nil, nil, nil, err
 	}

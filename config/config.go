@@ -23,6 +23,9 @@ const (
 	// LogFormatJSON is a format for json output
 	LogFormatJSON = "json"
 
+	// DefaultLogLevel defines a default log level as INFO.
+	DefaultLogLevel = "info"
+
 	DefaultDBBackend = "goleveldb"
 )
 
@@ -324,15 +327,10 @@ func (cfg BaseConfig) ValidateBasic() error {
 	return nil
 }
 
-// DefaultLogLevel returns a default log level of "error"
-func DefaultLogLevel() string {
-	return "error"
-}
-
 // DefaultPackageLogLevels returns a default log level setting so all packages
 // log at "error", while the `state` and `main` packages log at "info"
 func DefaultPackageLogLevels() string {
-	return fmt.Sprintf("main:info,state:info,statesync:info,*:%s", DefaultLogLevel())
+	return fmt.Sprintf("main:info,state:info,statesync:info,*:%s", DefaultLogLevel)
 }
 
 //-----------------------------------------------------------------------------

@@ -69,7 +69,7 @@ var RootCmd = &cobra.Command{
 			logger = log.NewOCJSONLogger(log.NewSyncWriter(os.Stdout))
 		}
 
-		logger, err = log.ParseLogLevel(config.LogLevel, logger, cfg.DefaultPackageLogLevels())
+		logger, err = log.ParseLogLevel(config.LogLevel, logger, cfg.DefaultLogLevel)
 		if err != nil {
 			return err
 		}

@@ -75,7 +75,7 @@ func NewZeroLogLogger(cfg ZeroLogConfig, consoleWriter io.Writer) (Logger, error
 		zeroLogLogger = zerolog.New(logWriter).With().Timestamp().Logger()
 	}
 
-	leveledZeroLogLogger, err := ParseLogLevel(cfg.LogLevel, ZeroLogWrapper{zeroLogLogger}, "")
+	leveledZeroLogLogger, err := ParseLogLevel(cfg.LogLevel, ZeroLogWrapper{zeroLogLogger}, "info")
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse log level (%s): %w", cfg.LogLevel, err)
 	}
