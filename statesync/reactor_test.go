@@ -242,7 +242,7 @@ func makeMockAppConnSnapshot(appHash string, snapshot *snapshot, chunks []*chunk
 func makeMockAppConnQuery(appHash string, height int64) *proxymocks.AppConnQuery {
 	connQuery := &proxymocks.AppConnQuery{}
 	connQuery.On("InfoSync", proxy.RequestInfo).Return(&abci.ResponseInfo{
-		AppVersion:       9,
+		AppVersion:       testAppVersion,
 		LastBlockHeight:  height,
 		LastBlockAppHash: []byte(appHash),
 	}, nil)
@@ -257,7 +257,7 @@ func makeTestStateAndCommit(appHash string, height int64) (sm.State, *types.Comm
 		Version: tmstate.Version{
 			Consensus: tmversion.Consensus{
 				Block: version.BlockProtocol,
-				App:   9,
+				App:   testAppVersion,
 			},
 
 			Software: version.OCCoreSemVer,
@@ -278,6 +278,7 @@ func makeTestStateAndCommit(appHash string, height int64) (sm.State, *types.Comm
 		ConsensusParams:                  *types.DefaultConsensusParams(),
 		LastHeightConsensusParamsChanged: 1,
 	}
+	state.ConsensusParams.Version.AppVersion = testAppVersion
 
 	commit := &types.Commit{BlockID: types.BlockID{Hash: []byte(blockHash)}}
 

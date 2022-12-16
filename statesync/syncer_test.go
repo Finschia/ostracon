@@ -2,6 +2,7 @@ package statesync
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -621,7 +622,8 @@ func TestSyncer_applyChunks_RejectSenders(t *testing.T) {
 func TestSyncer_verifyApp(t *testing.T) {
 	boom := errors.New("boom")
 	const appVersion = 9
-	appVersionMismatchErr := errors.New("app version mismatch. Expected: 9, got: 2")
+	const invalidAppVersion = appVersion + 1
+	appVersionMismatchErr := fmt.Errorf("app version mismatch. Expected: %d, got: %d", appVersion, invalidAppVersion)
 	s := &snapshot{Height: 3, Format: 1, Chunks: 5, Hash: []byte{1, 2, 3}, trustedAppHash: []byte("app_hash")}
 
 	testcases := map[string]struct {
@@ -637,7 +639,7 @@ func TestSyncer_verifyApp(t *testing.T) {
 		"invalid app version": {&abci.ResponseInfo{
 			LastBlockHeight:  3,
 			LastBlockAppHash: []byte("app_hash"),
-			AppVersion:       2,
+			AppVersion:       invalidAppVersion,
 		}, nil, appVersionMismatchErr},
 		"invalid height": {&abci.ResponseInfo{
 			LastBlockHeight:  5,
