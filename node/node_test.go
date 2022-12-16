@@ -39,7 +39,7 @@ import (
 func TestNewOstraconNode(t *testing.T) {
 	config := cfg.ResetTestRootWithChainID("TestNewOstraconNode", "new_ostracon_node")
 	defer os.RemoveAll(config.RootDir)
-	require.Equal(t, config.PrivValidatorListenAddr, "")
+	require.Equal(t, "", config.PrivValidatorListenAddr)
 	node, err := NewOstraconNode(config, log.TestingLogger())
 	require.NoError(t, err)
 	pubKey, err := node.PrivValidator().GetPubKey()
