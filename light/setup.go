@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/line/ostracon/types"
-
 	"github.com/line/ostracon/light/provider"
 	"github.com/line/ostracon/light/provider/http"
 	"github.com/line/ostracon/light/store"
@@ -24,7 +22,6 @@ func NewHTTPClient(
 	primaryAddress string,
 	witnessesAddresses []string,
 	trustedStore store.Store,
-	voterParams *types.VoterParams,
 	options ...Option) (*Client, error) {
 
 	providers, err := providersFromAddresses(append(witnessesAddresses, primaryAddress), chainID)
@@ -39,7 +36,6 @@ func NewHTTPClient(
 		providers[len(providers)-1],
 		providers[:len(providers)-1],
 		trustedStore,
-		voterParams,
 		options...)
 }
 
@@ -55,7 +51,6 @@ func NewHTTPClientFromTrustedStore(
 	primaryAddress string,
 	witnessesAddresses []string,
 	trustedStore store.Store,
-	voterParams *types.VoterParams,
 	options ...Option) (*Client, error) {
 
 	providers, err := providersFromAddresses(append(witnessesAddresses, primaryAddress), chainID)
@@ -69,7 +64,6 @@ func NewHTTPClientFromTrustedStore(
 		providers[len(providers)-1],
 		providers[:len(providers)-1],
 		trustedStore,
-		voterParams,
 		options...)
 }
 

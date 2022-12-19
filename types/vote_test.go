@@ -236,14 +236,13 @@ func TestMaxVoteBytes(t *testing.T) {
 	// time is varint encoded so need to pick the max.
 	// year int, month Month, day, hour, min, sec, nsec int, loc *Location
 	timestamp := time.Date(math.MaxInt64, 0, 0, 0, 0, 0, math.MaxInt64, time.UTC)
-
 	vote := &Vote{
 		ValidatorAddress: crypto.AddressHash([]byte("validator_address")),
 		ValidatorIndex:   math.MaxInt32,
 		Height:           math.MaxInt64,
 		Round:            math.MaxInt32,
 		Timestamp:        timestamp,
-		Type:             tmproto.PrevoteType,
+		Type:             tmproto.ProposalType,
 		BlockID: BlockID{
 			Hash: tmhash.Sum([]byte("blockID_hash")),
 			PartSetHeader: PartSetHeader{

@@ -3,7 +3,7 @@ package consensus
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"runtime/debug"
 	"sort"
@@ -666,7 +666,6 @@ func (cs *State) updateToState(state sm.State) {
 	}
 
 	// Reset fields based on state.
-	validators := state.Validators
 	voters := state.Voters
 
 	switch {
@@ -727,7 +726,6 @@ func (cs *State) updateToState(state sm.State) {
 	cs.CommitRound = -1
 	cs.LastVoters = state.LastVoters
 	cs.TriggeredTimeoutPrecommit = false
-	cs.Proposer = validators.SelectProposer(state.LastProofHash, cs.Height, cs.Round)
 
 	cs.state = state
 
@@ -1999,7 +1997,7 @@ func (cs *State) addProposalBlockPart(msg *BlockPartMessage, peerID p2p.ID) (add
 		)
 	}
 	if added && cs.ProposalBlockParts.IsComplete() {
-		bz, err := ioutil.ReadAll(cs.ProposalBlockParts.GetReader())
+		bz, err := io.ReadAll(cs.ProposalBlockParts.GetReader())
 		if err != nil {
 			return added, err
 		}

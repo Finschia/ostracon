@@ -71,25 +71,6 @@ func TestSignerClose(t *testing.T) {
 	}
 }
 
-func TestSignerPing(t *testing.T) {
-	for _, tc := range getSignerTestCases(t, nil, true) {
-		tc := tc
-		t.Cleanup(func() {
-			if err := tc.signerServer.Stop(); err != nil {
-				t.Error(err)
-			}
-		})
-		t.Cleanup(func() {
-			if err := tc.signerClient.Close(); err != nil {
-				t.Error(err)
-			}
-		})
-
-		err := tc.signerClient.Ping()
-		assert.NoError(t, err)
-	}
-}
-
 func TestSignerGetPubKey(t *testing.T) {
 	for _, tc := range getSignerTestCases(t, nil, true) {
 		tc := tc

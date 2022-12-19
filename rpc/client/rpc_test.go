@@ -18,6 +18,7 @@ import (
 	tmjson "github.com/line/ostracon/libs/json"
 	"github.com/line/ostracon/libs/log"
 	tmmath "github.com/line/ostracon/libs/math"
+	"github.com/line/ostracon/libs/net"
 	mempl "github.com/line/ostracon/mempool"
 	"github.com/line/ostracon/rpc/client"
 	rpchttp "github.com/line/ostracon/rpc/client/http"
@@ -75,7 +76,7 @@ func TestNilCustomHTTPClient(t *testing.T) {
 
 func TestCustomHTTPClient(t *testing.T) {
 	remote := rpctest.GetConfig().RPC.ListenAddress
-	c, err := rpchttp.NewWithClient(remote, "/websocket", http.DefaultClient)
+	c, err := rpchttp.NewWithClient(remote, "/websocket", &http.Client{Timeout: 60 * time.Second})
 	require.Nil(t, err)
 	status, err := c.Status(context.Background())
 	require.NoError(t, err)
@@ -89,8 +90,7 @@ func TestCorsEnabled(t *testing.T) {
 	req, err := http.NewRequest("GET", remote, nil)
 	require.Nil(t, err, "%+v", err)
 	req.Header.Set("Origin", origin)
-	c := &http.Client{}
-	resp, err := c.Do(req)
+	resp, err := net.HttpRequest(req, 60*time.Second)
 	require.Nil(t, err, "%+v", err)
 	defer resp.Body.Close()
 

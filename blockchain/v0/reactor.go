@@ -373,8 +373,14 @@ FOR_LOOP:
 			// NOTE: we can probably make this more efficient, but note that calling
 			// first.Hash() doesn't verify the tx contents, so MakePartSet() is
 			// currently necessary.
-			err := state.Voters.VerifyCommitLight(
-				chainID, firstID, first.Height, second.LastCommit)
+			err := state.Voters.VerifyCommitLight(chainID, firstID, first.Height, second.LastCommit)
+			if err == nil {
+				// validate the block before we persist it
+				err = bcR.blockExec.ValidateBlock(state, first.Round, first)
+			}
+
+			// If either of the checks failed we log the error and request for a new block
+			// at that height
 			if err != nil {
 				bcR.Logger.Error("Error in validation", "err", err)
 				peerID := bcR.pool.RedoRequest(first.Height)

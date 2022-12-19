@@ -15,10 +15,12 @@ import (
 	"github.com/line/ostracon/config"
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/ed25519"
+	"github.com/line/ostracon/crypto/vrf"
 	"github.com/line/ostracon/libs/log"
 	tmnet "github.com/line/ostracon/libs/net"
 	"github.com/line/ostracon/node"
 	"github.com/line/ostracon/privval"
+	privvalproto "github.com/line/ostracon/proto/ostracon/privval"
 	types2 "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/types"
 	"github.com/stretchr/testify/require"
@@ -28,9 +30,6 @@ var logger = log.NewOCLogger(log.NewSyncWriter(os.Stdout))
 
 const chainID = "test-chain"
 const listenAddr = "tcp://0.0.0.0:45666"
-
-const VrfProofSize = 80
-const VrfOutputSize = 64
 
 func BenchmarkKMS(b *testing.B) {
 	chainID := "test-chain"
@@ -44,13 +43,11 @@ func BenchmarkKMS(b *testing.B) {
 
 	// ensure connection and warm up
 	b.Run("Ping", func(b *testing.B) {
-		var err error
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			err = client.Ping()
+			ping(endpoint)
 		}
 		b.StopTimer()
-		require.NoError(b, err)
 	})
 
 	benchmarkPrivValidator(b, client)
@@ -88,8 +85,8 @@ func benchmarkGetPubKey(b *testing.B, pv types.PrivValidator) crypto.PubKey {
 
 	// evaluate execution results
 	require.NoError(b, err)
-	require.Equalf(b, len(pubKey.Bytes()), ed25519.PubKeySize, "PubKey: public key size = %d != %d",
-		len(pubKey.Bytes()), ed25519.PubKeySize)
+	require.Equalf(b, ed25519.PubKeySize, len(pubKey.Bytes()), "PubKey: public key size = %d != %d",
+		ed25519.PubKeySize, len(pubKey.Bytes()))
 	return pubKey
 }
 
@@ -123,8 +120,8 @@ func benchmarkSignVote(b *testing.B, pv types.PrivValidator, pubKey crypto.PubKe
 
 	// evaluate execution results
 	require.NoError(b, err)
-	require.Equalf(b, len(pb.Signature), ed25519.SignatureSize, "SignVote: signature size = %d != %d",
-		len(pb.Signature), ed25519.SignatureSize)
+	require.Equalf(b, ed25519.SignatureSize, len(pb.Signature), "SignVote: signature size = %d != %d",
+		ed25519.SignatureSize, len(pb.Signature))
 	bytes := types.VoteSignBytes(chainID, pb)
 	require.Truef(b, pubKey.VerifySignature(bytes, pb.Signature), "SignVote: signature verification")
 }
@@ -158,8 +155,8 @@ func benchmarkSignProposal(b *testing.B, pv types.PrivValidator, pubKey crypto.P
 
 	// evaluate execution results
 	require.NoError(b, err)
-	require.Equalf(b, len(pb.Signature), ed25519.SignatureSize, "ignProposal: signature size = %d != %d",
-		len(pb.Signature), ed25519.SignatureSize)
+	require.Equalf(b, ed25519.SignatureSize, len(pb.Signature), "SignProposal: signature size = %d != %d",
+		ed25519.SignatureSize, len(pb.Signature))
 	bytes := types.ProposalSignBytes(chainID, pb)
 	require.Truef(b, pubKey.VerifySignature(bytes, pb.Signature), "SignProposal: signature verification")
 }
@@ -178,8 +175,20 @@ func benchmarkVRFProof(b *testing.B, pv types.PrivValidator, pubKey crypto.PubKe
 
 	// evaluate execution results
 	require.NoError(b, err)
-	require.Equalf(b, len(proof), VrfProofSize, "VRFProof: proof size = %d != %d", len(proof), VrfProofSize)
+	require.Equalf(b, vrf.ProofSize, len(proof), "VRFProof: proof size = %d != %d", len(proof), vrf.ProofSize)
 	output, err := pubKey.VRFVerify(proof, message)
 	require.NoError(b, err)
-	require.Equalf(b, len(output), VrfOutputSize, "VRFProof: output size = %d != %d", len(output), VrfOutputSize)
+	require.Equalf(b, vrf.OutputSize, len(output), "VRFProof: output size = %d != %d", len(output), vrf.OutputSize)
+}
+
+func ping(sl *privval.SignerListenerEndpoint) {
+	msg := privvalproto.Message{
+		Sum: &privvalproto.Message_PingRequest{
+			PingRequest: &privvalproto.PingRequest{},
+		},
+	}
+	_, err := sl.SendRequest(msg)
+	if err != nil {
+		sl.Logger.Error("Benchmark::ping", "err", err)
+	}
 }

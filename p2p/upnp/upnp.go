@@ -10,13 +10,17 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	net2 "github.com/line/ostracon/libs/net"
 )
+
+const HttpRequestTimeout = 30 * time.Second
 
 type upnpNAT struct {
 	serviceURL string
@@ -202,7 +206,7 @@ func localIPv4() (net.IP, error) {
 }
 
 func getServiceURL(rootURL string) (url, urnDomain string, err error) {
-	r, err := http.Get(rootURL) // nolint: gosec
+	r, err := net2.HttpGet(rootURL, HttpRequestTimeout)
 	if err != nil {
 		return
 	}
@@ -277,7 +281,7 @@ func soapRequest(url, function, message, domain string) (r *http.Response, err e
 
 	// log.Stderr("soapRequest ", req)
 
-	r, err = http.DefaultClient.Do(req)
+	r, err = net2.HttpRequest(req, HttpRequestTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -285,7 +289,7 @@ func soapRequest(url, function, message, domain string) (r *http.Response, err e
 	    defer r.Body.Close()
 	}*/
 
-	if r.StatusCode >= 400 {
+	if r.StatusCode != http.StatusOK {
 		// log.Stderr(function, r.StatusCode)
 		err = errors.New("error " + strconv.Itoa(r.StatusCode) + " for " + function)
 		r = nil
@@ -312,7 +316,7 @@ func (n *upnpNAT) getExternalIPAddress() (info statusInfo, err error) {
 		return
 	}
 	var envelope Envelope
-	data, err := ioutil.ReadAll(response.Body)
+	data, err := io.ReadAll(response.Body)
 	if err != nil {
 		return
 	}

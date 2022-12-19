@@ -4,11 +4,13 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	mrand "math/rand"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -173,7 +175,7 @@ func TestMempoolFilters(t *testing.T) {
 	}
 	for tcIndex, tt := range tests {
 		err := mempool.Update(newTestBlock(1, emptyTxArr),
-			abciResponses(len(emptyTxArr), abci.CodeTypeOK), tt.preFilter)
+			abciResponses(len(emptyTxArr), abci.CodeTypeOK), tt.preFilter, nil)
 		require.NoError(t, err)
 		checkTxs(t, mempool, tt.numTxsToCreate, UnknownPeerID)
 		require.Equal(t, tt.expectedNumTxs, mempool.Size(), "mempool had the incorrect size, on test case %d", tcIndex)
@@ -190,7 +192,7 @@ func TestMempoolUpdate(t *testing.T) {
 	// 1. Adds valid txs to the cache
 	{
 		err := mempool.Update(newTestBlock(1, []types.Tx{[]byte{0x01}}),
-			abciResponses(1, abci.CodeTypeOK), nil)
+			abciResponses(1, abci.CodeTypeOK), nil, nil)
 		require.NoError(t, err)
 		_, err = mempool.CheckTxSync([]byte{0x01}, TxInfo{})
 		if assert.Error(t, err) {
@@ -202,7 +204,7 @@ func TestMempoolUpdate(t *testing.T) {
 	{
 		_, err := mempool.CheckTxSync([]byte{0x02}, TxInfo{})
 		require.NoError(t, err)
-		err = mempool.Update(newTestBlock(1, []types.Tx{[]byte{0x02}}), abciResponses(1, abci.CodeTypeOK), nil)
+		err = mempool.Update(newTestBlock(1, []types.Tx{[]byte{0x02}}), abciResponses(1, abci.CodeTypeOK), nil, nil)
 		require.NoError(t, err)
 		assert.Zero(t, mempool.Size())
 	}
@@ -211,7 +213,7 @@ func TestMempoolUpdate(t *testing.T) {
 	{
 		_, err := mempool.CheckTxSync([]byte{0x03}, TxInfo{})
 		require.NoError(t, err)
-		err = mempool.Update(newTestBlock(1, []types.Tx{[]byte{0x03}}), abciResponses(1, 1), nil)
+		err = mempool.Update(newTestBlock(1, []types.Tx{[]byte{0x03}}), abciResponses(1, 1), nil, nil)
 		require.NoError(t, err)
 		assert.Zero(t, mempool.Size())
 
@@ -243,7 +245,7 @@ func TestMempool_KeepInvalidTxsInCache(t *testing.T) {
 		_ = app.DeliverTx(abci.RequestDeliverTx{Tx: a})
 		_ = app.DeliverTx(abci.RequestDeliverTx{Tx: b})
 		err = mempool.Update(newTestBlock(1, []types.Tx{a, b}),
-			[]*abci.ResponseDeliverTx{{Code: abci.CodeTypeOK}, {Code: 2}}, nil)
+			[]*abci.ResponseDeliverTx{{Code: abci.CodeTypeOK}, {Code: 2}}, nil, nil)
 		require.NoError(t, err)
 
 		// a must be added to the cache
@@ -299,7 +301,7 @@ func TestTxsAvailable(t *testing.T) {
 	// since there are still txs left
 	committedTxs, txs := txs[:50], txs[50:]
 	if err := mempool.Update(newTestBlock(1, committedTxs),
-		abciResponses(len(committedTxs), abci.CodeTypeOK), nil); err != nil {
+		abciResponses(len(committedTxs), abci.CodeTypeOK), nil, nil); err != nil {
 		t.Error(err)
 	}
 	ensureFire(t, mempool.TxsAvailable(), timeoutMS)
@@ -312,7 +314,7 @@ func TestTxsAvailable(t *testing.T) {
 	// now call update with all the txs. it should not fire as there are no txs left
 	committedTxs = append(txs, moreTxs...) // nolint: gocritic
 	if err := mempool.Update(newTestBlock(2, committedTxs),
-		abciResponses(len(committedTxs), abci.CodeTypeOK), nil); err != nil {
+		abciResponses(len(committedTxs), abci.CodeTypeOK), nil, nil); err != nil {
 		t.Error(err)
 	}
 	ensureNoFire(t, mempool.TxsAvailable(), timeoutMS)
@@ -372,7 +374,7 @@ func TestSerialReap(t *testing.T) {
 			txs = append(txs, txBytes)
 		}
 		if err := mempool.Update(newTestBlock(0, txs),
-			abciResponses(len(txs), abci.CodeTypeOK), nil); err != nil {
+			abciResponses(len(txs), abci.CodeTypeOK), nil, nil); err != nil {
 			t.Error(err)
 		}
 	}
@@ -544,7 +546,7 @@ func TestMempoolTxsBytes(t *testing.T) {
 
 	// 3. zero again after tx is removed by Update
 	err = mempool.Update(newTestBlock(1, []types.Tx{[]byte{0x01}}),
-		abciResponses(1, abci.CodeTypeOK), nil)
+		abciResponses(1, abci.CodeTypeOK), nil, nil)
 	require.NoError(t, err)
 	assert.EqualValues(t, 0, mempool.TxsBytes())
 
@@ -594,7 +596,7 @@ func TestMempoolTxsBytes(t *testing.T) {
 	require.NotEmpty(t, res2.Data)
 
 	// Pretend like we committed nothing so txBytes gets rechecked and removed.
-	err = mempool.Update(newTestBlock(1, []types.Tx{}), abciResponses(0, abci.CodeTypeOK), nil)
+	err = mempool.Update(newTestBlock(1, []types.Tx{}), abciResponses(0, abci.CodeTypeOK), nil, nil)
 	require.NoError(t, err)
 	assert.EqualValues(t, 0, mempool.TxsBytes())
 
@@ -698,4 +700,58 @@ func abciResponses(n int, code uint32) []*abci.ResponseDeliverTx {
 		responses = append(responses, &abci.ResponseDeliverTx{Code: code})
 	}
 	return responses
+}
+
+func TestTxMempoolPostCheckError(t *testing.T) {
+	cases := []struct {
+		name string
+		err  error
+	}{
+		{
+			name: "error",
+			err:  errors.New("test error"),
+		},
+		{
+			name: "no error",
+			err:  nil,
+		},
+	}
+	for _, tc := range cases {
+		testCase := tc
+		t.Run(testCase.name, func(t *testing.T) {
+			app := kvstore.NewApplication()
+			cc := proxy.NewLocalClientCreator(app)
+			mempool, cleanup := newMempoolWithApp(cc)
+			defer cleanup()
+
+			mempool.postCheck = func(_ types.Tx, _ *abci.ResponseCheckTx) error {
+				return testCase.err
+			}
+
+			tx := types.Tx{1}
+			_, err := mempool.CheckTxSync(tx, TxInfo{})
+			require.NoError(t, err)
+
+			req := abci.RequestCheckTx{
+				Tx:   tx,
+				Type: abci.CheckTxType_Recheck,
+			}
+			res := &abci.Response{}
+
+			m := sync.Mutex{}
+			m.Lock()
+			mempool.proxyAppConn.CheckTxAsync(req, func(r *abci.Response) {
+				res = r
+				m.Unlock()
+			})
+
+			checkTxRes, ok := res.Value.(*abci.Response_CheckTx)
+			require.True(t, ok)
+			expectedErrString := ""
+			if testCase.err != nil {
+				expectedErrString = testCase.err.Error()
+			}
+			require.Equal(t, expectedErrString, checkTxRes.CheckTx.MempoolError)
+		})
+	}
 }

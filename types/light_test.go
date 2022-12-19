@@ -15,14 +15,17 @@ import (
 func TestLightBlockValidateBasic(t *testing.T) {
 	header := makeRandHeader()
 	commit := randCommit(time.Now())
-	_, voters, _ := RandVoterSet(5, 1)
+	vals, voters, _ := RandVoterSet(5, 1)
 	header.Height = commit.Height
 	header.LastBlockID = commit.BlockID
+	header.ValidatorsHash = vals.Hash()
 	header.VotersHash = voters.Hash()
 	header.Version.Block = version.BlockProtocol
-	_, voters2, _ := RandVoterSet(3, 1)
+	vals2, voters2, _ := RandVoterSet(3, 1)
+	vals3 := vals.Copy()
+	vals3.Validators[2] = &Validator{}
 	voters3 := voters.Copy()
-	voters3.Voters[2] = &Validator{} // TODO: It should be `voters3.Proposer = &Validator{}`
+	voters3.Voters[2] = &Validator{}
 	commit.BlockID.Hash = header.Hash()
 
 	sh := &SignedHeader{
@@ -33,18 +36,25 @@ func TestLightBlockValidateBasic(t *testing.T) {
 	testCases := []struct {
 		name      string
 		sh        *SignedHeader
+		vals      *ValidatorSet
 		voters    *VoterSet
 		expectErr bool
 	}{
-		{"valid light block", sh, voters, false},
-		{"hashes don't match", sh, voters2, true},
-		{"invalid validator set", sh, voters3, true},
-		{"invalid signed header", &SignedHeader{Header: &header, Commit: randCommit(time.Now())}, voters, true},
+		{"valid light block", sh, vals, voters, false},
+		{"validators hashes don't match", sh, vals2, voters, true},
+		{"voters hashes don't match", sh, vals, voters2, true},
+		{"invalid validator set", sh, vals3, voters, true},
+		{"invalid voter set", sh, vals, voters3, true},
+		{"invalid signed header", &SignedHeader{Header: &header, Commit: randCommit(time.Now())}, vals, voters, true},
+		{"empty signed header", nil, vals, voters, true},
+		{"empty validator set", sh, nil, voters, true},
+		{"empty validator set", sh, vals, nil, true},
 	}
 
 	for _, tc := range testCases {
 		lightBlock := LightBlock{
 			SignedHeader: tc.sh,
+			ValidatorSet: tc.vals,
 			VoterSet:     tc.voters,
 		}
 		err := lightBlock.ValidateBasic(header.ChainID)
@@ -60,10 +70,11 @@ func TestLightBlockValidateBasic(t *testing.T) {
 func TestLightBlockProtobuf(t *testing.T) {
 	header := makeRandHeader()
 	commit := randCommit(time.Now())
-	_, voters, _ := RandVoterSet(5, 1)
+	vals, voters, _ := RandVoterSet(5, 1)
 	header.Height = commit.Height
 	header.LastBlockID = commit.BlockID
 	header.Version.Block = version.BlockProtocol
+	header.ValidatorsHash = vals.Hash()
 	header.VotersHash = voters.Hash()
 	commit.BlockID.Hash = header.Hash()
 
@@ -75,20 +86,22 @@ func TestLightBlockProtobuf(t *testing.T) {
 	testCases := []struct {
 		name       string
 		sh         *SignedHeader
+		vals       *ValidatorSet
 		voters     *VoterSet
 		toProtoErr bool
 		toBlockErr bool
 	}{
-		{"valid light block", sh, voters, false, false},
-		{"empty signed header", &SignedHeader{}, voters, false, false},
-		{"empty voter set", sh, &VoterSet{}, false, true},
-		{"empty light block", &SignedHeader{}, &VoterSet{}, false, true},
+		{"valid light block", sh, vals, voters, false, false},
+		{"empty signed header", &SignedHeader{}, vals, voters, false, false},
+		{"empty validator set", sh, &ValidatorSet{}, voters, false, true},
+		{"empty voter set", sh, vals, &VoterSet{}, false, true},
+		{"empty light block", &SignedHeader{}, &ValidatorSet{}, &VoterSet{}, false, true},
 	}
 
 	for _, tc := range testCases {
 		lightBlock := &LightBlock{
 			SignedHeader: tc.sh,
-			ValidatorSet: NewValidatorSet(tc.voters.Voters),
+			ValidatorSet: tc.vals,
 			VoterSet:     tc.voters,
 		}
 		lbp, err := lightBlock.ToProto()
@@ -122,6 +135,7 @@ func TestSignedHeaderValidateBasic(t *testing.T) {
 		LastCommitHash:     commit.Hash(),
 		DataHash:           commit.Hash(),
 		VotersHash:         commit.Hash(),
+		ValidatorsHash:     commit.Hash(),
 		NextValidatorsHash: commit.Hash(),
 		ConsensusHash:      commit.Hash(),
 		AppHash:            commit.Hash(),

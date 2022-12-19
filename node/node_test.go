@@ -27,6 +27,7 @@ import (
 	"github.com/line/ostracon/p2p"
 	"github.com/line/ostracon/p2p/conn"
 	p2pmock "github.com/line/ostracon/p2p/mock"
+	p2pmocks "github.com/line/ostracon/p2p/mocks"
 	"github.com/line/ostracon/privval"
 	"github.com/line/ostracon/proxy"
 	sm "github.com/line/ostracon/state"
@@ -38,7 +39,7 @@ import (
 func TestNewOstraconNode(t *testing.T) {
 	config := cfg.ResetTestRootWithChainID("TestNewOstraconNode", "new_ostracon_node")
 	defer os.RemoveAll(config.RootDir)
-	require.Equal(t, config.PrivValidatorListenAddr, "")
+	require.Equal(t, "", config.PrivValidatorListenAddr)
 	node, err := NewOstraconNode(config, log.TestingLogger())
 	require.NoError(t, err)
 	pubKey, err := node.PrivValidator().GetPubKey()
@@ -271,6 +272,7 @@ func TestCreateProposalBlock(t *testing.T) {
 		state.LastBlockHeight,
 		mempl.WithMetrics(memplMetrics),
 		mempl.WithPreCheck(sm.TxPreCheck(state)),
+		mempl.WithPostCheck(sm.TxPostCheck(state)),
 	)
 	mempool.SetLogger(logger)
 
@@ -367,6 +369,7 @@ func TestMaxProposalBlockSize(t *testing.T) {
 		state.LastBlockHeight,
 		mempl.WithMetrics(memplMetrics),
 		mempl.WithPreCheck(sm.TxPreCheck(state)),
+		mempl.WithPostCheck(sm.TxPostCheck(state)),
 	)
 	mempool.SetLogger(logger)
 
@@ -577,4 +580,69 @@ func state(nVals int, height int64) (sm.State, dbm.DB, []types.PrivValidator) {
 		}
 	}
 	return s, stateDB, privVals
+}
+
+func TestNodeInvalidNodeInfoCustomReactors(t *testing.T) {
+	config := cfg.ResetTestRoot("node_new_node_custom_reactors_test")
+	defer os.RemoveAll(config.RootDir)
+
+	cr := p2pmock.NewReactor()
+	cr.Channels = []*conn.ChannelDescriptor{
+		{
+			ID:                  byte(0x31),
+			Priority:            5,
+			SendQueueCapacity:   100,
+			RecvMessageCapacity: 100,
+		},
+	}
+	customBlockchainReactor := p2pmock.NewReactor()
+
+	nodeKey, err := p2p.LoadOrGenNodeKey(config.NodeKeyFile())
+	require.NoError(t, err)
+
+	pvKey, _ := privval.LoadOrGenFilePV(config.PrivValidatorKeyFile(), config.PrivValidatorStateFile(),
+		config.PrivValidatorKeyType())
+	_, err = NewInvalidNode(config,
+		pvKey,
+		nodeKey,
+		proxy.DefaultClientCreator(config.ProxyApp, config.ABCI, config.DBDir()),
+		DefaultGenesisDocProviderFunc(config),
+		DefaultDBProvider,
+		DefaultMetricsProvider(config.Instrumentation),
+		log.TestingLogger(),
+		CustomReactors(map[string]p2p.Reactor{"FOO": cr, "BLOCKCHAIN": customBlockchainReactor}),
+	)
+	require.NoError(t, err)
+}
+
+func NewInvalidNode(config *cfg.Config,
+	privValidator types.PrivValidator,
+	nodeKey *p2p.NodeKey,
+	clientCreator proxy.ClientCreator,
+	genesisDocProvider GenesisDocProvider,
+	dbProvider DBProvider,
+	metricsProvider MetricsProvider,
+	logger log.Logger,
+	options ...Option) (*Node, error) {
+	n, err := NewNode(config,
+		privValidator,
+		nodeKey,
+		clientCreator,
+		genesisDocProvider,
+		dbProvider,
+		metricsProvider,
+		logger,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	transport, _ := createTransport(config, &p2pmocks.NodeInfo{}, nodeKey, n.proxyApp)
+	n.transport = transport
+
+	for _, option := range options {
+		option(n)
+	}
+
+	return n, nil
 }

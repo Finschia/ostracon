@@ -265,13 +265,16 @@ func (mt *MultiplexTransport) Listen(addr NetAddress) error {
 // NOTE: NodeInfo must be of type DefaultNodeInfo else channels won't be updated
 // This is a bit messy at the moment but is cleaned up in the following version
 // when NodeInfo changes from an interface to a concrete type
-func (mt *MultiplexTransport) AddChannel(chID byte) {
-	if ni, ok := mt.nodeInfo.(DefaultNodeInfo); ok {
-		if !ni.HasChannel(chID) {
-			ni.Channels = append(ni.Channels, chID)
-		}
-		mt.nodeInfo = ni
+func (mt *MultiplexTransport) AddChannel(chID byte) error {
+	ni, ok := mt.nodeInfo.(DefaultNodeInfo)
+	if !ok {
+		return fmt.Errorf("nodeInfo type: %T is not supported", mt.nodeInfo)
 	}
+	if !ni.HasChannel(chID) {
+		ni.Channels = append(ni.Channels, chID)
+	}
+	mt.nodeInfo = ni
+	return nil
 }
 
 func (mt *MultiplexTransport) acceptPeers() {
@@ -592,7 +595,17 @@ func resolveIPs(resolver IPResolver, c net.Conn) ([]net.IP, error) {
 		return nil, err
 	}
 
-	addrs, err := resolver.LookupIPAddr(context.Background(), host)
+	// implement with reference to https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/dns-client-resolution-timeouts#what-is-the-default-behavior-of-a-dns-client-when-a-single-dns-server-is-configured-on-the-nic
+	timeouts := []time.Duration{1, 1, 2, 4, 2}
+	addrs := []net.IPAddr{}
+	for _, to := range timeouts {
+		timeoutCtx, cancelFunc := context.WithTimeout(context.Background(), to*time.Second)
+		defer cancelFunc()
+		addrs, err = resolver.LookupIPAddr(timeoutCtx, host)
+		if err == nil {
+			break
+		}
+	}
 	if err != nil {
 		return nil, err
 	}

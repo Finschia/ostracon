@@ -1,11 +1,13 @@
 package p2p
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"net"
 	"reflect"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -14,6 +16,8 @@ import (
 	"github.com/line/ostracon/libs/protoio"
 	"github.com/line/ostracon/p2p/conn"
 	tmp2p "github.com/line/ostracon/proto/ostracon/p2p"
+	"github.com/miekg/dns"
+	"github.com/stretchr/testify/require"
 )
 
 var defaultNodeName = "host_peer"
@@ -79,9 +83,9 @@ func TestTransportMultiplexConnFilter(t *testing.T) {
 	}
 
 	_, err = mt.Accept(peerConfig{})
-	if err, ok := err.(ErrRejected); ok {
-		if !err.IsFiltered() {
-			t.Errorf("expected peer to be filtered, got %v", err)
+	if e, ok := err.(ErrRejected); ok {
+		if !e.IsFiltered() {
+			t.Errorf("expected peer to be filtered, got %v", e)
 		}
 	} else {
 		t.Errorf("expected ErrRejected, got %v", err)
@@ -386,9 +390,9 @@ func TestTransportMultiplexValidateNodeInfo(t *testing.T) {
 	}
 
 	_, err := mt.Accept(peerConfig{})
-	if err, ok := err.(ErrRejected); ok {
-		if !err.IsNodeInfoInvalid() {
-			t.Errorf("expected NodeInfo to be invalid, got %v", err)
+	if e, ok := err.(ErrRejected); ok {
+		if !e.IsNodeInfoInvalid() {
+			t.Errorf("expected NodeInfo to be invalid, got %v", e)
 		}
 	} else {
 		t.Errorf("expected ErrRejected, got %v", err)
@@ -425,9 +429,9 @@ func TestTransportMultiplexRejectMissmatchID(t *testing.T) {
 	}
 
 	_, err := mt.Accept(peerConfig{})
-	if err, ok := err.(ErrRejected); ok {
-		if !err.IsAuthFailure() {
-			t.Errorf("expected auth failure, got %v", err)
+	if e, ok := err.(ErrRejected); ok {
+		if !e.IsAuthFailure() {
+			t.Errorf("expected auth failure, got %v", e)
 		}
 	} else {
 		t.Errorf("expected ErrRejected, got %v", err)
@@ -453,8 +457,8 @@ func TestTransportMultiplexDialRejectWrongID(t *testing.T) {
 	_, err := dialer.Dial(*addr, peerConfig{})
 	if err != nil {
 		t.Logf("connection failed: %v", err)
-		if err, ok := err.(ErrRejected); ok {
-			if !err.IsAuthFailure() {
+		if e, ok := err.(ErrRejected); ok {
+			if !e.IsAuthFailure() {
 				t.Errorf("expected auth failure, got %v", err)
 			}
 		} else {
@@ -490,9 +494,9 @@ func TestTransportMultiplexRejectIncompatible(t *testing.T) {
 	}()
 
 	_, err := mt.Accept(peerConfig{})
-	if err, ok := err.(ErrRejected); ok {
-		if !err.IsIncompatible() {
-			t.Errorf("expected to reject incompatible, got %v", err)
+	if e, ok := err.(ErrRejected); ok {
+		if !e.IsIncompatible() {
+			t.Errorf("expected to reject incompatible, got %v", e)
 		}
 	} else {
 		t.Errorf("expected ErrRejected, got %v", err)
@@ -517,9 +521,9 @@ func TestTransportMultiplexRejectSelf(t *testing.T) {
 	}()
 
 	if err := <-errc; err != nil {
-		if err, ok := err.(ErrRejected); ok {
-			if !err.IsSelf() {
-				t.Errorf("expected to reject self, got: %v", err)
+		if e, ok := err.(ErrRejected); ok {
+			if !e.IsSelf() {
+				t.Errorf("expected to reject self, got: %v", e)
 			}
 		} else {
 			t.Errorf("expected ErrRejected, got %v", err)
@@ -529,12 +533,12 @@ func TestTransportMultiplexRejectSelf(t *testing.T) {
 	}
 
 	_, err := mt.Accept(peerConfig{})
-	if err, ok := err.(ErrRejected); ok {
-		if !err.IsSelf() {
-			t.Errorf("expected to reject self, got: %v", err)
+	if e, ok := err.(ErrRejected); ok {
+		if !e.IsSelf() {
+			t.Errorf("expected to reject self, got: %v", e)
 		}
 	} else {
-		t.Errorf("expected ErrRejected, got %v", nil)
+		t.Errorf("expected ErrRejected, got %v", err)
 	}
 }
 
@@ -630,10 +634,31 @@ func TestTransportAddChannel(t *testing.T) {
 	)
 	testChannel := byte(0x01)
 
-	mt.AddChannel(testChannel)
+	err := mt.AddChannel(testChannel)
+	require.NoError(t, err)
 	if !mt.nodeInfo.(DefaultNodeInfo).HasChannel(testChannel) {
 		t.Errorf("missing added channel %v. Got %v", testChannel, mt.nodeInfo.(DefaultNodeInfo).Channels)
 	}
+}
+
+func TestTransportResolveIPs(t *testing.T) {
+	server := startFakeDNS()
+	defer func() {
+		err := server.Shutdown()
+		require.NoError(t, err)
+	}()
+
+	r := &net.Resolver{
+		PreferGo: true,
+		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+			d := net.Dialer{
+				Timeout: time.Millisecond * time.Duration(500),
+			}
+			return d.DialContext(ctx, network, "127.0.0.1:5355")
+		},
+	}
+	_, err := resolveIPs(r, &testTransportConn{})
+	require.Contains(t, err.Error(), "lookup test.local: i/o timeout")
 }
 
 // create listener
@@ -703,4 +728,52 @@ func (c *testTransportConn) SetWriteDeadline(_ time.Time) error {
 
 func (c *testTransportConn) Write(_ []byte) (int, error) {
 	return -1, fmt.Errorf("write() not implemented")
+}
+
+// fake dns server
+var records = map[string]string{
+	"test.local.": "192.168.0.2",
+}
+
+func parseQuery(m *dns.Msg) {
+	time.Sleep(5 * time.Second)
+	for _, q := range m.Question {
+		switch q.Qtype {
+		case dns.TypeA:
+			ip := records[q.Name]
+			if ip != "" {
+				rr, err := dns.NewRR(fmt.Sprintf("%s A %s", q.Name, ip))
+				if err == nil {
+					m.Answer = append(m.Answer, rr)
+				}
+			}
+		}
+	}
+}
+
+func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
+	m := new(dns.Msg)
+	m.SetReply(r)
+	m.Compress = false
+	switch r.Opcode {
+	case dns.OpcodeQuery:
+		parseQuery(m)
+	}
+	_ = w.WriteMsg(m)
+}
+
+func startFakeDNS() *dns.Server {
+	// attach request handler func
+	dns.HandleFunc("local.", handleDnsRequest)
+
+	// start server
+	port := 5355
+	server := &dns.Server{Addr: ":" + strconv.Itoa(port), Net: "udp"}
+	go func() {
+		err := server.ListenAndServe()
+		if err != nil {
+			panic(err.Error())
+		}
+	}()
+	return server
 }

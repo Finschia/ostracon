@@ -17,6 +17,7 @@ import (
 	"github.com/line/ostracon/crypto/composite"
 	"github.com/line/ostracon/crypto/merkle"
 	"github.com/line/ostracon/crypto/tmhash"
+	"github.com/line/ostracon/crypto/vrf"
 	"github.com/line/ostracon/libs/bits"
 	tmbytes "github.com/line/ostracon/libs/bytes"
 	tmmath "github.com/line/ostracon/libs/math"
@@ -30,7 +31,12 @@ const (
 	// MaxHeaderBytes is a maximum header size.
 	// NOTE: Because app hash can be of arbitrary size, the header is therefore not
 	// capped in size and thus this number should be seen as a soft max
-	MaxHeaderBytes int64 = 661
+	// 🏺 Note that this value is the encoded size of the ProtocolBuffer. See TestMaxHeaderBytes() for how Tendermint
+	//  calculates this value. Add/remove Ostracon-specific field sizes to/from this heuristically determined constant.
+	MaxHeaderBytes int64 = 626 +
+		(2 + 32 + 1) + // +VotersHash
+		(2 + 5) + // +Round
+		(2 + int64(vrf.ProofSize) + 1) // +Proof
 
 	// MaxOverheadForBlock - maximum overhead to encode a block (up to
 	// MaxBlockSizeBytes in size) not including it's parts except Data.
@@ -51,6 +57,25 @@ type Block struct {
 	Data       `json:"data"`
 	Evidence   EvidenceData `json:"evidence"`
 	LastCommit *Commit      `json:"last_commit"`
+}
+
+// MakeBlock returns a new block with an empty header, except what can be
+// computed from itself.
+// It populates the same set of fields validated by ValidateBasic.
+func MakeBlock(height int64, txs []Tx, lastCommit *Commit, evidence []Evidence) *Block {
+	block := &Block{
+		Header: Header{
+			Version: tmversion.Consensus{Block: version.BlockProtocol, App: 0},
+			Height:  height,
+		},
+		Data: Data{
+			Txs: txs,
+		},
+		Evidence:   EvidenceData{Evidence: evidence},
+		LastCommit: lastCommit,
+	}
+	block.fillHeader()
+	return block
 }
 
 // ValidateBasic performs basic validation that doesn't involve state data.
@@ -436,10 +461,9 @@ func (h Header) ValidateBasic() error {
 
 	// Basic validation of hashes related to application data.
 	// Will validate fully against state in state#ValidateBlock.
-	if err := ValidateHash(h.VotersHash); err != nil {
+	if err := ValidateHash(h.ValidatorsHash); err != nil {
 		return fmt.Errorf("wrong ValidatorsHash: %v", err)
 	}
-	// TODO When we add `Header.ValidatorsHash` in a future commit, we have to add a similar check here.
 	if err := ValidateHash(h.NextValidatorsHash); err != nil {
 		return fmt.Errorf("wrong NextValidatorsHash: %v", err)
 	}
@@ -449,6 +473,19 @@ func (h Header) ValidateBasic() error {
 	// NOTE: AppHash is arbitrary length
 	if err := ValidateHash(h.LastResultsHash); err != nil {
 		return fmt.Errorf("wrong LastResultsHash: %v", err)
+	}
+
+	// Add checking for Ostracon fields
+	if err := ValidateHash(h.VotersHash); err != nil {
+		return fmt.Errorf("wrong VotersHash: %v", err)
+	}
+
+	if h.Round < 0 {
+		return errors.New("negative Round")
+	}
+
+	if err := ValidateProof(h.Proof); err != nil {
+		return fmt.Errorf("wrong Proof: %v", err)
 	}
 
 	return nil
@@ -461,7 +498,7 @@ func (h Header) ValidateBasic() error {
 // since a Header is not valid unless there is
 // a ValidatorsHash (corresponding to the validator set).
 func (h *Header) Hash() tmbytes.HexBytes {
-	if h == nil || len(h.VotersHash) == 0 {
+	if h == nil || len(h.ValidatorsHash) == 0 || len(h.VotersHash) == 0 {
 		return nil
 	}
 	hbz, err := h.Version.Marshal()

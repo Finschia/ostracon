@@ -531,8 +531,12 @@ func (c *Client) Validators(
 }
 
 // Voters fetches and verifies validators.
-func (c *Client) Voters(ctx context.Context, height *int64, pagePtr, perPagePtr *int) (*ctypes.ResultVoters,
-	error) {
+func (c *Client) Voters(
+	ctx context.Context,
+	height *int64,
+	pagePtr, perPagePtr *int,
+) (*ctypes.ResultVoters, error) {
+
 	// Update the light client if we're behind and retrieve the light block at the requested height
 	// or at the latest height if no height is provided.
 	l, err := c.updateLightClientIfNeededTo(ctx, height)
@@ -540,7 +544,7 @@ func (c *Client) Voters(ctx context.Context, height *int64, pagePtr, perPagePtr 
 		return nil, err
 	}
 
-	totalCount := len(l.ValidatorSet.Validators)
+	totalCount := len(l.VoterSet.Voters)
 	perPage := validatePerPage(perPagePtr)
 	page, err := validatePage(pagePtr, perPage, totalCount)
 	if err != nil {
@@ -556,6 +560,48 @@ func (c *Client) Voters(ctx context.Context, height *int64, pagePtr, perPagePtr 
 		Voters:      v,
 		Count:       len(v),
 		Total:       totalCount}, nil
+}
+
+func (c *Client) ValidatorsWithVoters(
+	ctx context.Context,
+	height *int64,
+	pagePtr, perPagePtr *int,
+) (*ctypes.ResultValidatorsWithVoters, error) {
+
+	// Update the light client if we're behind and retrieve the light block at the
+	// requested height or at the latest height if no height is provided.
+	l, err := c.updateLightClientIfNeededTo(ctx, height)
+	if err != nil {
+		return nil, err
+	}
+
+	totalCount := len(l.ValidatorSet.Validators)
+	perPage := validatePerPage(perPagePtr)
+	page, err := validatePage(pagePtr, perPage, totalCount)
+	if err != nil {
+		return nil, err
+	}
+
+	skipCount := validateSkipCount(page, perPage)
+	v := l.ValidatorSet.Validators[skipCount : skipCount+tmmath.MinInt(perPage, totalCount-skipCount)]
+
+	// Retrieve to the indices where selected as Voters in Validators.
+	votersIndices := make([]int32, 0, len(v))
+	for i := range v {
+		idx, voter := l.VoterSet.GetByAddress(v[i].Address)
+		if idx >= 0 {
+			votersIndices = append(votersIndices, int32(i))
+			v[i] = voter // replace to override its VotingWeight since Validator.VotingWeight is zero
+		}
+	}
+
+	return &ctypes.ResultValidatorsWithVoters{
+		BlockHeight:  l.Height,
+		Validators:   v,
+		Count:        len(v),
+		Total:        totalCount,
+		VoterIndices: votersIndices,
+	}, nil
 }
 
 func (c *Client) BroadcastEvidence(ctx context.Context, ev types.Evidence) (*ctypes.ResultBroadcastEvidence, error) {

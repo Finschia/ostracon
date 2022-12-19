@@ -75,8 +75,8 @@ var (
 		// last header (3/3 signed)
 		3: h3,
 	}
-	l1       = &types.LightBlock{SignedHeader: h1, VoterSet: voterSet[1]}
-	l2       = &types.LightBlock{SignedHeader: h2, VoterSet: voterSet[2]}
+	l1       = &types.LightBlock{SignedHeader: h1, ValidatorSet: vals, VoterSet: voterSet[1]}
+	l2       = &types.LightBlock{SignedHeader: h2, ValidatorSet: vals, VoterSet: voterSet[2]}
 	fullNode = mockp.New(
 		chainID,
 		headerSet,
@@ -191,12 +191,26 @@ func TestClient_SequentialVerification(t *testing.T) {
 			true,
 		},
 		{
-			"bad: different first voter set",
+			"bad: different first validator set",
 			map[int64]*types.SignedHeader{
 				1: h1,
 			},
 			map[int64]*types.ValidatorSet{
 				1: differentVals,
+			},
+			map[int64]*types.VoterSet{
+				1: voterSet[1],
+			},
+			true,
+			true,
+		},
+		{
+			"bad: different first voter set",
+			map[int64]*types.SignedHeader{
+				1: h1,
+			},
+			map[int64]*types.ValidatorSet{
+				1: vals,
 			},
 			map[int64]*types.VoterSet{
 				1: differentVoters,
@@ -243,12 +257,28 @@ func TestClient_SequentialVerification(t *testing.T) {
 			true,
 		},
 		{
-			"bad: different voter set at height 3",
+			"bad: different validator set at height 3",
 			headerSet,
 			map[int64]*types.ValidatorSet{
 				1: vals,
 				2: vals,
 				3: newVals,
+			},
+			map[int64]*types.VoterSet{
+				1: voterSet[1],
+				2: voterSet[2],
+				3: voterSet[3],
+			},
+			false,
+			true,
+		},
+		{
+			"bad: different voter set at height 3",
+			headerSet,
+			map[int64]*types.ValidatorSet{
+				1: vals,
+				2: vals,
+				3: vals,
 			},
 			map[int64]*types.VoterSet{
 				1: voterSet[1],
@@ -299,7 +329,6 @@ func TestClient_SequentialVerification(t *testing.T) {
 					tc.voters,
 				)},
 				dbs.New(dbm.NewMemDB(), chainID),
-				voterParam,
 				light.SequentialVerification(),
 				light.Logger(log.TestingLogger()),
 			)
@@ -475,7 +504,6 @@ func TestClient_SkippingVerification(t *testing.T) {
 					tc.voters,
 				)},
 				dbs.New(dbm.NewMemDB(), chainID),
-				voterParam,
 				light.SkippingVerification(light.DefaultTrustLevel),
 				light.Logger(log.TestingLogger()),
 			)
@@ -514,7 +542,6 @@ func TestClientLargeBisectionVerification(t *testing.T) {
 		veryLargeFullNode,
 		[]provider.Provider{veryLargeFullNode},
 		dbs.New(dbm.NewMemDB(), chainID),
-		voterParam,
 		light.SequentialVerification(),
 	)
 	require.NoError(t, err)
@@ -537,7 +564,6 @@ func TestClientBisectionBetweenTrustedHeaders(t *testing.T) {
 		fullNode,
 		[]provider.Provider{fullNode},
 		dbs.New(dbm.NewMemDB(), chainID),
-		voterParam,
 		light.SequentialVerification(),
 	)
 	require.NoError(t, err)
@@ -562,7 +588,6 @@ func TestClient_Cleanup(t *testing.T) {
 		fullNode,
 		[]provider.Provider{fullNode},
 		dbs.New(dbm.NewMemDB(), chainID),
-		voterParam,
 		light.Logger(log.TestingLogger()),
 	)
 	require.NoError(t, err)
@@ -593,7 +618,6 @@ func TestClientRestoresTrustedHeaderAfterStartup1(t *testing.T) {
 			fullNode,
 			[]provider.Provider{fullNode},
 			trustedStore,
-			voterParam,
 			light.Logger(log.TestingLogger()),
 		)
 		require.NoError(t, err)
@@ -639,7 +663,6 @@ func TestClientRestoresTrustedHeaderAfterStartup1(t *testing.T) {
 			primary,
 			[]provider.Provider{primary},
 			trustedStore,
-			voterParam,
 			light.Logger(log.TestingLogger()),
 		)
 		require.NoError(t, err)
@@ -672,7 +695,6 @@ func TestClientRestoresTrustedHeaderAfterStartup2(t *testing.T) {
 			fullNode,
 			[]provider.Provider{fullNode},
 			trustedStore,
-			voterParam,
 			light.Logger(log.TestingLogger()),
 		)
 		require.NoError(t, err)
@@ -725,7 +747,6 @@ func TestClientRestoresTrustedHeaderAfterStartup2(t *testing.T) {
 			primary,
 			[]provider.Provider{primary},
 			trustedStore,
-			voterParam,
 			light.Logger(log.TestingLogger()),
 		)
 		require.NoError(t, err)
@@ -756,7 +777,6 @@ func TestClientRestoresTrustedHeaderAfterStartup3(t *testing.T) {
 			fullNode,
 			[]provider.Provider{fullNode},
 			trustedStore,
-			voterParam,
 			light.Logger(log.TestingLogger()),
 		)
 		require.NoError(t, err)
@@ -819,7 +839,6 @@ func TestClientRestoresTrustedHeaderAfterStartup3(t *testing.T) {
 			primary,
 			[]provider.Provider{primary},
 			trustedStore,
-			voterParam,
 			light.Logger(log.TestingLogger()),
 		)
 		require.NoError(t, err)
@@ -846,7 +865,6 @@ func TestClient_Update(t *testing.T) {
 		fullNode,
 		[]provider.Provider{fullNode},
 		dbs.New(dbm.NewMemDB(), chainID),
-		voterParam,
 		light.Logger(log.TestingLogger()),
 	)
 	require.NoError(t, err)
@@ -868,7 +886,6 @@ func TestClient_Concurrency(t *testing.T) {
 		fullNode,
 		[]provider.Provider{fullNode},
 		dbs.New(dbm.NewMemDB(), chainID),
-		voterParam,
 		light.Logger(log.TestingLogger()),
 	)
 	require.NoError(t, err)
@@ -910,7 +927,6 @@ func TestClientReplacesPrimaryWithWitnessIfPrimaryIsUnavailable(t *testing.T) {
 		deadNode,
 		[]provider.Provider{fullNode, fullNode},
 		dbs.New(dbm.NewMemDB(), chainID),
-		voterParam,
 		light.Logger(log.TestingLogger()),
 		light.MaxRetryAttempts(1),
 	)
@@ -938,7 +954,6 @@ func TestClient_BackwardsVerification(t *testing.T) {
 			largeFullNode,
 			[]provider.Provider{largeFullNode},
 			dbs.New(dbm.NewMemDB(), chainID),
-			voterParam,
 			light.Logger(log.TestingLogger()),
 		)
 		require.NoError(t, err)
@@ -1025,7 +1040,6 @@ func TestClient_BackwardsVerification(t *testing.T) {
 				tc.provider,
 				[]provider.Provider{tc.provider},
 				dbs.New(dbm.NewMemDB(), chainID),
-				voterParam,
 				light.Logger(log.TestingLogger()),
 			)
 			require.NoError(t, err, idx)
@@ -1048,7 +1062,6 @@ func TestClient_NewClientFromTrustedStore(t *testing.T) {
 		deadNode,
 		[]provider.Provider{deadNode},
 		db,
-		voterParam,
 	)
 	require.NoError(t, err)
 
@@ -1107,7 +1120,6 @@ func TestClientRemovesWitnessIfItSendsUsIncorrectHeader(t *testing.T) {
 		fullNode,
 		[]provider.Provider{badProvider1, badProvider2},
 		dbs.New(dbm.NewMemDB(), chainID),
-		voterParam,
 		light.Logger(log.TestingLogger()),
 		light.MaxRetryAttempts(1),
 	)
@@ -1163,7 +1175,6 @@ func TestClient_TrustedValidatorSet(t *testing.T) {
 		fullNode,
 		[]provider.Provider{badVoterSetNode, fullNode},
 		dbs.New(dbm.NewMemDB(), chainID),
-		voterParam,
 		light.Logger(log.TestingLogger()),
 	)
 	require.NoError(t, err)
@@ -1182,7 +1193,6 @@ func TestClientPrunesHeadersAndValidatorSets(t *testing.T) {
 		fullNode,
 		[]provider.Provider{fullNode},
 		dbs.New(dbm.NewMemDB(), chainID),
-		voterParam,
 		light.Logger(log.TestingLogger()),
 		light.PruningSize(1),
 	)
@@ -1272,7 +1282,6 @@ func TestClientEnsureValidHeadersAndValSets(t *testing.T) {
 			badNode,
 			[]provider.Provider{badNode, badNode},
 			dbs.New(dbm.NewMemDB(), chainID),
-			voterParam,
 			light.MaxRetryAttempts(1),
 		)
 		require.NoError(t, err)
@@ -1306,7 +1315,6 @@ func TestClientHandlesContexts(t *testing.T) {
 		p,
 		[]provider.Provider{p, p},
 		dbs.New(dbm.NewMemDB(), chainID),
-		voterParam,
 	)
 	require.Error(t, ctxTimeOut.Err())
 	require.Error(t, err)
@@ -1324,7 +1332,6 @@ func TestClientHandlesContexts(t *testing.T) {
 		p,
 		[]provider.Provider{p, p},
 		dbs.New(dbm.NewMemDB(), chainID),
-		voterParam,
 	)
 	require.NoError(t, err)
 

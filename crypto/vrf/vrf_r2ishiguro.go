@@ -19,6 +19,11 @@ func init() {
 	}
 }
 
+const (
+	ProofSize  int = 81
+	OutputSize int = 32
+)
+
 func newVrfEd25519r2ishiguro() vrfEd25519r2ishiguro {
 	return vrfEd25519r2ishiguro{}
 }
@@ -33,5 +38,10 @@ func (base vrfEd25519r2ishiguro) Verify(publicKey []byte, proof Proof, message [
 }
 
 func (base vrfEd25519r2ishiguro) ProofToHash(proof Proof) (Output, error) {
+	// validate proof with ECVRF_decode_proof
+	_, _, _, err := r2ishiguro.ECVRF_decode_proof(proof)
+	if err != nil {
+		return nil, err
+	}
 	return r2ishiguro.ECVRF_proof2hash(proof), nil
 }
