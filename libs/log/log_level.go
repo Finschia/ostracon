@@ -1,11 +1,9 @@
-package flags
+package log
 
 import (
 	"errors"
 	"fmt"
 	"strings"
-
-	"github.com/line/ostracon/libs/log"
 )
 
 const (
@@ -17,8 +15,9 @@ const (
 // all other modules).
 //
 // Example:
-//		ParseLogLevel("consensus:debug,mempool:debug,*:error", log.NewOCLogger(os.Stdout), "info")
-func ParseLogLevel(lvl string, logger log.Logger, defaultLogLevelValue string) (log.Logger, error) {
+//
+//	ParseLogLevel("consensus:debug,mempool:debug,*:error", NewOCLogger(os.Stdout), "info")
+func ParseLogLevel(lvl string, logger Logger, defaultLogLevelValue string) (Logger, error) {
 	if lvl == "" {
 		return nil, errors.New("empty log level")
 	}
@@ -30,10 +29,10 @@ func ParseLogLevel(lvl string, logger log.Logger, defaultLogLevelValue string) (
 		l = defaultLogLevelKey + ":" + l
 	}
 
-	options := make([]log.Option, 0)
+	options := make([]Option, 0)
 
 	isDefaultLogLevelSet := false
-	var option log.Option
+	var option Option
 	var err error
 
 	list := strings.Split(l, ",")
@@ -48,7 +47,7 @@ func ParseLogLevel(lvl string, logger log.Logger, defaultLogLevelValue string) (
 		level := moduleAndLevel[1]
 
 		if module == defaultLogLevelKey {
-			option, err = log.AllowLevel(level)
+			option, err = AllowLevel(level)
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse default log level (pair %s, list %s): %w", item, l, err)
 			}
@@ -57,13 +56,13 @@ func ParseLogLevel(lvl string, logger log.Logger, defaultLogLevelValue string) (
 		} else {
 			switch level {
 			case "debug":
-				option = log.AllowDebugWith("module", module)
+				option = AllowDebugWith("module", module)
 			case "info":
-				option = log.AllowInfoWith("module", module)
+				option = AllowInfoWith("module", module)
 			case "error":
-				option = log.AllowErrorWith("module", module)
+				option = AllowErrorWith("module", module)
 			case "none":
-				option = log.AllowNoneWith("module", module)
+				option = AllowNoneWith("module", module)
 			default:
 				return nil,
 					fmt.Errorf("expected either \"info\", \"debug\", \"error\" or \"none\" log level, given %s (pair %s, list %s)",
@@ -78,12 +77,12 @@ func ParseLogLevel(lvl string, logger log.Logger, defaultLogLevelValue string) (
 
 	// if "*" is not provided, set default global level
 	if !isDefaultLogLevelSet {
-		option, err = log.AllowLevel(defaultLogLevelValue)
+		option, err = AllowLevel(defaultLogLevelValue)
 		if err != nil {
 			return nil, err
 		}
 		options = append(options, option)
 	}
 
-	return log.NewFilter(logger, options...), nil
+	return NewFilter(logger, options...), nil
 }

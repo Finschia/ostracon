@@ -122,6 +122,27 @@ log_level = "{{ .BaseConfig.LogLevel }}"
 # Output format: 'plain' (colored text) or 'json'
 log_format = "{{ .BaseConfig.LogFormat }}"
 
+# LogPath is the file to write logs to(log dir + log filename)
+# ex) /Users/user/.app/logs/app.log
+# If left as an empty string, log file writing is disabled.
+log_path = "{{ .BaseConfig.LogPath }}"
+
+# LogMaxAge is the maximum number of days to retain old log files based on the
+# timestamp encoded in their filename.  Note that a day is defined as 24
+# hours and may not exactly correspond to calendar days due to daylight
+# savings, leap seconds, etc. The default is not to remove old log files
+# based on age.
+log_max_age = "{{ .BaseConfig.LogMaxAge }}"
+
+# LogMaxSize is the maximum size in megabytes of the log file before it gets
+# rotated. It defaults to 100 megabytes.
+log_max_size = "{{ .BaseConfig.LogMaxSize }}"
+
+# LogMaxBackups is the maximum number of old log files to retain. The default
+# is to retain all old log files (though MaxAge may still cause them to get
+# deleted.)
+log_max_backups = "{{ .BaseConfig.LogMaxBackups }}"
+
 ##### additional base config options #####
 
 # Path to the JSON file containing the initial validator set and other meta data
