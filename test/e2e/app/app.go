@@ -8,13 +8,13 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-
-	cryptoenc "github.com/line/ostracon/crypto/encoding"
-	"github.com/line/ostracon/proto/ostracon/crypto"
+	"time"
 
 	"github.com/line/ostracon/abci/example/code"
 	abci "github.com/line/ostracon/abci/types"
+	cryptoenc "github.com/line/ostracon/crypto/encoding"
 	"github.com/line/ostracon/libs/log"
+	"github.com/line/ostracon/proto/ostracon/crypto"
 	"github.com/line/ostracon/version"
 )
 
@@ -73,6 +73,13 @@ type Config struct {
 	//
 	// height <-> pubkey <-> voting power
 	ValidatorUpdates map[string]map[string]uint8 `toml:"validator_update"`
+
+	// Add artificial delays to each of the main ABCI calls to mimic computation time
+	// of the application
+	PrepareProposalDelay time.Duration `toml:"prepare_proposal_delay"`
+	ProcessProposalDelay time.Duration `toml:"process_proposal_delay"`
+	CheckTxDelay         time.Duration `toml:"check_tx_delay"`
+	// TODO: add vote extension and finalize block delays once completed (@cmwaters)
 }
 
 func DefaultConfig(dir string) *Config {
@@ -139,6 +146,11 @@ func (app *Application) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 			Log:  err.Error(),
 		}
 	}
+
+	if app.cfg.CheckTxDelay != 0 {
+		time.Sleep(app.cfg.CheckTxDelay)
+	}
+
 	return abci.ResponseCheckTx{Code: code.CodeTypeOK, GasWanted: 1}
 }
 

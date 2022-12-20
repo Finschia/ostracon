@@ -8,6 +8,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/line/ostracon/libs/log"
 	rpchttp "github.com/line/ostracon/rpc/client/http"
 	e2e "github.com/line/ostracon/test/e2e/pkg"
 	"github.com/line/ostracon/types"
@@ -58,7 +59,7 @@ func Load(ctx context.Context, testnet *e2e.Testnet, multiplier int) error {
 			if success == 0 {
 				return errors.New("failed to submit any transactions")
 			}
-			logger.Info(fmt.Sprintf("Ending transaction load after %v txs (%.1f tx/s)...",
+			logger.Info("load", "msg", log.NewLazySprintf("Ending transaction load after %v txs (%.1f tx/s)...",
 				success, float64(success)/time.Since(started).Seconds()))
 			return nil
 		}

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/line/ostracon/libs/log"
 	e2e "github.com/line/ostracon/test/e2e/pkg"
 )
 
@@ -59,7 +60,7 @@ func cleanupDir(dir string) error {
 		return err
 	}
 
-	logger.Info(fmt.Sprintf("Removing testnet directory %q", dir))
+	logger.Info("cleanup dir", "msg", log.NewLazySprintf("Removing testnet directory %q", dir))
 
 	// On Linux, some local files in the volume will be owned by root since Ostracon
 	// runs as root inside the container, so we need to clean them up from within a

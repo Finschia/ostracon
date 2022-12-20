@@ -3,7 +3,7 @@ package log_test
 import (
 	"bytes"
 	"errors"
-	"io/ioutil"
+	"io"
 	"math"
 	"regexp"
 	"testing"
@@ -61,17 +61,17 @@ func TestOCFmtLogger(t *testing.T) {
 	assert.Regexp(t, regexp.MustCompile(`N\[.+\] unknown \s+ hash=74657374206D65\n$`), buf.String())
 }
 
-func BenchmarkOCFmtLoggerSimple(b *testing.B) {
-	benchmarkRunnerKitlog(b, log.NewOCFmtLogger(ioutil.Discard), baseMessage)
+func BenchmarkTMFmtLoggerSimple(b *testing.B) {
+	benchmarkRunnerKitlog(b, log.NewOCFmtLogger(io.Discard), baseMessage)
 }
 
-func BenchmarkOCFmtLoggerContextual(b *testing.B) {
-	benchmarkRunnerKitlog(b, log.NewOCFmtLogger(ioutil.Discard), withMessage)
+func BenchmarkTMFmtLoggerContextual(b *testing.B) {
+	benchmarkRunnerKitlog(b, log.NewOCFmtLogger(io.Discard), withMessage)
 }
 
 func TestOCFmtLoggerConcurrency(t *testing.T) {
 	t.Parallel()
-	testConcurrency(t, log.NewOCFmtLogger(ioutil.Discard), 10000)
+	testConcurrency(t, log.NewOCFmtLogger(io.Discard), 10000)
 }
 
 func benchmarkRunnerKitlog(b *testing.B, logger kitlog.Logger, f func(kitlog.Logger)) {
@@ -83,10 +83,9 @@ func benchmarkRunnerKitlog(b *testing.B, logger kitlog.Logger, f func(kitlog.Log
 	}
 }
 
-//nolint: errcheck // ignore errors
 var (
-	baseMessage = func(logger kitlog.Logger) { logger.Log("foo_key", "foo_value") }
-	withMessage = func(logger kitlog.Logger) { kitlog.With(logger, "a", "b").Log("d", "f") }
+	baseMessage = func(logger kitlog.Logger) { logger.Log("foo_key", "foo_value") }          //nolint:errcheck
+	withMessage = func(logger kitlog.Logger) { kitlog.With(logger, "a", "b").Log("d", "f") } //nolint:errcheck
 )
 
 // These test are designed to be run with the race detector.

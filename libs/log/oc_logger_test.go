@@ -2,7 +2,7 @@ package log_test
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"strings"
 	"testing"
 
@@ -90,11 +90,11 @@ func TestError(t *testing.T) {
 }
 
 func BenchmarkOCLoggerSimple(b *testing.B) {
-	benchmarkRunner(b, log.NewOCLogger(ioutil.Discard), baseInfoMessage)
+	benchmarkRunner(b, log.NewOCLogger(io.Discard), baseInfoMessage)
 }
 
 func BenchmarkOCLoggerContextual(b *testing.B) {
-	benchmarkRunner(b, log.NewOCLogger(ioutil.Discard), withInfoMessage)
+	benchmarkRunner(b, log.NewOCLogger(io.Discard), withInfoMessage)
 }
 
 func benchmarkRunner(b *testing.B, logger log.Logger, f func(log.Logger)) {

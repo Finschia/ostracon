@@ -43,7 +43,6 @@ RUN cd ${SRCDIR} && go mod download
 COPY . ${SRCDIR}
 COPY test/e2e/docker/entrypoint* /usr/bin/
 RUN cd ${SRCDIR} && make build && cp build/ostracon /usr/bin/ostracon
-RUN cd ${SRCDIR}/test/e2e && make maverick && cp build/maverick /usr/bin/maverick
 RUN cd ${SRCDIR}/test/e2e && make node && cp build/node /usr/bin/app
 
 # Set up runtime directory. We don't use a separate runtime image since we need
