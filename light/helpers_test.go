@@ -176,7 +176,7 @@ func genHeader(chainID string, height int64, bTime time.Time, txs types.Txs,
 	proof tmbytes.HexBytes) *types.Header {
 
 	return &types.Header{
-		Version: tmversion.Consensus{Block: version.BlockProtocol, App: 0},
+		Version: tmversion.Consensus{Block: version.BlockProtocol, App: version.AppProtocol},
 		ChainID: chainID,
 		Height:  height,
 		Time:    bTime,

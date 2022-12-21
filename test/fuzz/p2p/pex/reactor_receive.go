@@ -61,7 +61,7 @@ var defaultNodeInfo = p2p.DefaultNodeInfo{
 	ProtocolVersion: p2p.NewProtocolVersion(
 		version.P2PProtocol,
 		version.BlockProtocol,
-		0,
+		version.AppProtocol,
 	),
 	DefaultNodeID: nodeID,
 	ListenAddr:    "0.0.0.0:98992",

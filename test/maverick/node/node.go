@@ -356,6 +356,8 @@ func logNodeStartupInfo(state sm.State, pubKey crypto.PubKey, logger, consensusL
 	// Log the version info.
 	logger.Info("Version info",
 		"software", version.OCCoreSemVer,
+		"abci", version.ABCIVersion,
+		"app", version.AppProtocol,
 		"block", version.BlockProtocol,
 		"p2p", version.P2PProtocol,
 	)

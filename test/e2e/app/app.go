@@ -18,7 +18,7 @@ import (
 	"github.com/line/ostracon/version"
 )
 
-const appVersion = 1
+const E2EAppVersion = 999
 
 // Application is an ABCI application for use by end-to-end tests. It is a
 // simple key/value store for strings, storing data in memory and persisting
@@ -105,7 +105,7 @@ func NewApplication(cfg *Config) (*Application, error) {
 func (app *Application) Info(req abci.RequestInfo) abci.ResponseInfo {
 	return abci.ResponseInfo{
 		Version:          version.ABCIVersion,
-		AppVersion:       appVersion,
+		AppVersion:       E2EAppVersion,
 		LastBlockHeight:  int64(app.state.Height),
 		LastBlockAppHash: app.state.Hash,
 	}

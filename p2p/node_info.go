@@ -59,7 +59,7 @@ type ProtocolVersion struct {
 var defaultProtocolVersion = NewProtocolVersion(
 	version.P2PProtocol,
 	version.BlockProtocol,
-	0,
+	version.AppProtocol,
 )
 
 // NewProtocolVersion returns a fully populated ProtocolVersion.

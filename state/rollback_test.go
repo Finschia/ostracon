@@ -18,9 +18,8 @@ import (
 )
 
 var (
-	appVersion  uint64 = 10
-	proofHash          = []byte{0}
-	voterParams        = types.DefaultVoterParams()
+	proofHash   = []byte{0}
+	voterParams = types.DefaultVoterParams()
 )
 
 func TestRollback(t *testing.T) {
@@ -139,13 +138,13 @@ func setupStateStore(t *testing.T, height int64) state.Store {
 	nextValSet := initialValSet.CopyIncrementProposerPriority(1)
 
 	params := types.DefaultConsensusParams()
-	params.Version.AppVersion = appVersion
+	params.Version.AppVersion = 10
 
 	initialState := state.State{
 		Version: tmstate.Version{
 			Consensus: tmversion.Consensus{
 				Block: version.BlockProtocol,
-				App:   appVersion,
+				App:   10,
 			},
 			Software: version.OCCoreSemVer,
 		},

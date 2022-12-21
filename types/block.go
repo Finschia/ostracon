@@ -62,10 +62,10 @@ type Block struct {
 // MakeBlock returns a new block with an empty header, except what can be
 // computed from itself.
 // It populates the same set of fields validated by ValidateBasic.
-func MakeBlock(height int64, txs []Tx, lastCommit *Commit, evidence []Evidence) *Block {
+func MakeBlock(height int64, txs []Tx, lastCommit *Commit, evidence []Evidence, version tmversion.Consensus) *Block {
 	block := &Block{
 		Header: Header{
-			Version: tmversion.Consensus{Block: version.BlockProtocol, App: 0},
+			Version: version,
 			Height:  height,
 		},
 		Data: Data{

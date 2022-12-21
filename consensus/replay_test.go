@@ -33,6 +33,7 @@ import (
 	"github.com/line/ostracon/proxy"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"
+	"github.com/line/ostracon/version"
 )
 
 func TestMain(m *testing.M) {
@@ -351,7 +352,8 @@ var (
 // 1 - saved block but app and state are behind
 // 2 - save block and committed but state is behind
 // 3 - save block and committed with truncated block store and state behind
-var modes = []uint{0, 1, 2, 3}
+// 4 - save block and committed with rollback state and state behind
+var modes = []uint{0, 1, 2, 3, 4}
 
 func getProposerIdx(state *State, height int64, round int32) (int32, *types.Validator) {
 	proposer := state.Validators.SelectProposer(state.state.LastProofHash, height, round)
@@ -682,6 +684,8 @@ func testHandshakeReplay(t *testing.T, config *cfg.Config, nBlocks int, mode uin
 			TestSimulateValidatorsChange(t)
 		}
 		genesisState = sim.GenesisState
+		genesisState.ConsensusParams.Version.AppVersion = kvstore.ProtocolVersion
+		genesisState.Version.Consensus.App = kvstore.ProtocolVersion
 		config = sim.Config
 		chain = append([]*types.Block{}, sim.Chain...) // copy chain
 		commits = sim.Commits
@@ -746,10 +750,17 @@ func testHandshakeReplay(t *testing.T, config *cfg.Config, nBlocks int, mode uin
 		require.EqualValues(t, 1, pruned)
 		expectError = int64(nBlocks) < 2
 	}
+	if mode == 4 {
+		rollbackHeight, rollbackAppHash, err := sm.Rollback(store, stateStore)
+		require.NoError(t, err)
+		require.EqualValues(t, state.LastBlockHeight, rollbackHeight)
+		require.EqualValues(t, state.AppHash, rollbackAppHash)
+	}
 
-	// now start the app using the handshake - it should sync
+	t.Log("####: now start the app using the handshake - it should sync")
 	genDoc, _ := sm.MakeGenesisDocFromFile(config.GenesisFile())
 	handshaker := NewHandshaker(stateStore, state, store, genDoc)
+	handshaker.SetLogger(log.TestingLogger())
 	proxyApp := proxy.NewAppConns(clientCreator2)
 	if err := proxyApp.Start(); err != nil {
 		t.Fatalf("Error starting proxy app connections: %v", err)
@@ -815,7 +826,8 @@ func buildAppStateFromChain(proxyApp proxy.AppConns, stateStore sm.Store,
 	}
 	defer proxyApp.Stop() //nolint:errcheck // ignore
 
-	state.Version.Consensus.App = kvstore.ProtocolVersion // simulate handshake, receive app version
+	state.ConsensusParams.Version.AppVersion = kvstore.ProtocolVersion // simulate handshake, receive app version
+	state.Version.Consensus.App = kvstore.ProtocolVersion              // simulate handshake, receive app version
 	validators := types.OC2PB.ValidatorUpdates(state.Validators)
 	if _, err := proxyApp.Consensus().InitChainSync(abci.RequestInitChain{
 		Validators: validators,
@@ -831,13 +843,13 @@ func buildAppStateFromChain(proxyApp proxy.AppConns, stateStore sm.Store,
 			block := chain[i]
 			state = applyBlock(stateStore, state, block, proxyApp)
 		}
-	case 1, 2, 3:
+	case 1, 2, 3, 4:
 		for i := 0; i < nBlocks-1; i++ {
 			block := chain[i]
 			state = applyBlock(stateStore, state, block, proxyApp)
 		}
 
-		if mode == 2 || mode == 3 {
+		if mode == 2 || mode == 3 || mode == 4 {
 			// update the kvstore height and apphash
 			// as if we ran commit but not
 			state = applyBlock(stateStore, state, chain[nBlocks-1], proxyApp)
@@ -865,7 +877,8 @@ func buildOCStateFromChain(
 	}
 	defer proxyApp.Stop() //nolint:errcheck
 
-	state.Version.Consensus.App = kvstore.ProtocolVersion // simulate handshake, receive app version
+	state.ConsensusParams.Version.AppVersion = kvstore.ProtocolVersion // simulate handshake, receive app version
+	state.Version.Consensus.App = kvstore.ProtocolVersion              // simulate handshake, receive app version
 	validators := types.OC2PB.ValidatorUpdates(state.Validators)
 	if _, err := proxyApp.Consensus().InitChainSync(abci.RequestInitChain{
 		Validators: validators,
@@ -882,7 +895,7 @@ func buildOCStateFromChain(
 			state = applyBlock(stateStore, state, block, proxyApp)
 		}
 
-	case 1, 2, 3:
+	case 1, 2, 3, 4:
 		// sync up to the penultimate as if we stored the block.
 		// whether we commit or not depends on the appHash
 		for _, block := range chain[:len(chain)-1] {
@@ -907,10 +920,9 @@ func TestHandshakePanicsIfAppReturnsWrongAppHash(t *testing.T) {
 	config := ResetConfig("handshake_test_")
 	defer os.RemoveAll(config.RootDir)
 	privVal := privval.LoadFilePV(config.PrivValidatorKeyFile(), config.PrivValidatorStateFile())
-	const appVersion = 0x0
 	pubKey, err := privVal.GetPubKey()
 	require.NoError(t, err)
-	stateDB, state, store := stateAndStore(config, pubKey, appVersion)
+	stateDB, state, store := stateAndStore(config, pubKey, version.AppProtocol)
 	stateStore := sm.NewStore(stateDB)
 	genDoc, _ := sm.MakeGenesisDocFromFile(config.GenesisFile())
 	state.LastVoters = state.Voters.Copy()
@@ -1173,6 +1185,7 @@ func stateAndStore(
 	stateDB := dbm.NewMemDB()
 	stateStore := sm.NewStore(stateDB)
 	state, _ := sm.MakeGenesisStateFromFile(config.GenesisFile())
+	state.ConsensusParams.Version.AppVersion = appVersion
 	state.Version.Consensus.App = appVersion
 	store := newMockBlockStore(config, state.ConsensusParams)
 	if err := stateStore.Save(state); err != nil {
@@ -1247,7 +1260,7 @@ func TestHandshakeUpdatesValidators(t *testing.T) {
 	privVal := privval.LoadFilePV(config.PrivValidatorKeyFile(), config.PrivValidatorStateFile())
 	pubKey, err := privVal.GetPubKey()
 	require.NoError(t, err)
-	stateDB, state, store := stateAndStore(config, pubKey, 0x0)
+	stateDB, state, store := stateAndStore(config, pubKey, version.AppProtocol)
 	stateStore := sm.NewStore(stateDB)
 
 	oldValAddr := state.Validators.Validators[0].Address

@@ -175,7 +175,7 @@ func randLightBlock(height int64) *types.LightBlock {
 	return &types.LightBlock{
 		SignedHeader: &types.SignedHeader{
 			Header: &types.Header{
-				Version:            tmversion.Consensus{Block: version.BlockProtocol, App: 0},
+				Version:            tmversion.Consensus{Block: version.BlockProtocol, App: version.AppProtocol},
 				ChainID:            tmrand.Str(12),
 				Height:             height,
 				Time:               time.Now(),

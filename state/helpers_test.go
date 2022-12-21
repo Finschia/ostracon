@@ -257,6 +257,7 @@ type testApp struct {
 }
 
 var _ abci.Application = (*testApp)(nil)
+var TestAppVersion uint64 = 66
 
 func (app *testApp) Info(req abci.RequestInfo) (resInfo abci.ResponseInfo) {
 	return abci.ResponseInfo{}
@@ -273,7 +274,7 @@ func (app *testApp) EndBlock(req abci.RequestEndBlock) abci.ResponseEndBlock {
 		ValidatorUpdates: app.ValidatorUpdates,
 		ConsensusParamUpdates: &abci.ConsensusParams{
 			Version: &tmproto.VersionParams{
-				AppVersion: 1}}}
+				AppVersion: TestAppVersion}}}
 }
 
 func (app *testApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {

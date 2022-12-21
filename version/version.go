@@ -21,4 +21,7 @@ var (
 	// BlockProtocol versions all block data structures and processing.
 	// This includes validity of blocks and state updates.
 	BlockProtocol uint64 = 11
+
+	// AppProtocol versions ABCI application.
+	AppProtocol uint64 = 0
 )

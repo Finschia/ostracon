@@ -6,8 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/line/ostracon/light"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -19,6 +17,7 @@ import (
 	"github.com/line/ostracon/evidence"
 	"github.com/line/ostracon/evidence/mocks"
 	"github.com/line/ostracon/libs/log"
+	"github.com/line/ostracon/light"
 	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	tmversion "github.com/line/ostracon/proto/ostracon/version"
 	sm "github.com/line/ostracon/state"
@@ -725,7 +724,7 @@ func makeVote(
 
 func makeHeaderRandom(height int64) *types.Header {
 	return &types.Header{
-		Version:            tmversion.Consensus{Block: version.BlockProtocol, App: 1},
+		Version:            tmversion.Consensus{Block: version.BlockProtocol, App: version.AppProtocol},
 		ChainID:            evidenceChainID,
 		Height:             height,
 		Time:               defaultEvidenceTime,

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/line/ostracon/crypto"
-
 	tmstate "github.com/line/ostracon/proto/ostracon/state"
 	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	tmversion "github.com/line/ostracon/proto/ostracon/version"
@@ -31,7 +30,7 @@ var (
 var InitStateVersion = tmstate.Version{
 	Consensus: tmversion.Consensus{
 		Block: version.BlockProtocol,
-		App:   0,
+		App:   version.AppProtocol,
 	},
 	Software: version.OCCoreSemVer,
 }
@@ -276,7 +275,7 @@ func (state State) MakeBlock(
 ) (*types.Block, *types.PartSet) {
 
 	// Build base block with block data.
-	block := types.MakeBlock(height, txs, commit, evidence)
+	block := types.MakeBlock(height, txs, commit, evidence, state.Version.Consensus)
 
 	// Set time.
 	var timestamp time.Time

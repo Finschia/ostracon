@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/line/ostracon/libs/bytes"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -16,6 +14,7 @@ import (
 	"github.com/line/ostracon/crypto/ed25519"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
 	"github.com/line/ostracon/crypto/tmhash"
+	"github.com/line/ostracon/libs/bytes"
 	"github.com/line/ostracon/libs/log"
 	mmock "github.com/line/ostracon/mempool/mock"
 	tmproto "github.com/line/ostracon/proto/ostracon/types"
@@ -56,7 +55,7 @@ func TestApplyBlock(t *testing.T) {
 	assert.EqualValues(t, retainHeight, 1)
 
 	// TODO check state and mempool
-	assert.EqualValues(t, 1, state.Version.Consensus.App, "App version wasn't updated")
+	assert.EqualValues(t, TestAppVersion, state.Version.Consensus.App, "App version wasn't updated")
 }
 
 // TestBeginBlockValidators ensures we send absent validators list.
@@ -143,7 +142,7 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 	privVal := privVals[state.Validators.Validators[0].Address.String()]
 	blockID := makeBlockID([]byte("headerhash"), 1000, []byte("partshash"))
 	header := &types.Header{
-		Version:            tmversion.Consensus{Block: version.BlockProtocol, App: 1},
+		Version:            tmversion.Consensus{Block: version.BlockProtocol, App: version.AppProtocol},
 		ChainID:            state.ChainID,
 		Height:             10,
 		Time:               defaultEvidenceTime,
