@@ -16,7 +16,7 @@ func Cleanup(testnet *e2e.Testnet) error {
 	if err != nil {
 		return err
 	}
-	err = cleanupDir(testnet.Dir)
+	err = cleanupDir(testnet.Dir, testnet.Nodes[0].Version)
 	if err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func cleanupDocker() error {
 }
 
 // cleanupDir cleans up a testnet directory
-func cleanupDir(dir string) error {
+func cleanupDir(dir, version string) error {
 	if dir == "" {
 		return errors.New("no directory set")
 	}
@@ -70,7 +70,7 @@ func cleanupDir(dir string) error {
 		return err
 	}
 	err = execDocker("run", "--rm", "--entrypoint", "", "-v", fmt.Sprintf("%v:/network", absDir),
-		"ostracon/e2e-node", "sh", "-c", "rm -rf /network/*/")
+		fmt.Sprintf("ostracon/e2e-node:%s", version), "sh", "-c", "rm -rf /network/*/")
 	if err != nil {
 		return err
 	}

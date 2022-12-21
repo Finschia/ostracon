@@ -1,7 +1,12 @@
 all: docker generator runner
 
 docker:
-	docker build --progress=plain --tag ostracon/e2e-node --tag ostracon/e2e-node:local-version -f docker/Dockerfile ../..
+	# See the default version on test/e2e/pkg/testnet.go:LoadTestnet
+	# Relate the "docker-compose.yml" on test/e2e/pkg/infra/docker/docker.go:dockerComposeBytes
+	# Relate the "cleanup" on test/e2e/runner/cleanup.go:cleanupDir
+	docker build --progress=plain \
+		--tag ostracon/e2e-node:local-version \
+		-f docker/Dockerfile ../..
 
 # We need to build support for database backends into the app in
 # order to build a binary with an Ostracon node in it (for built-in
