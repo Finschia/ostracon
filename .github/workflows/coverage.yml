@@ -69,6 +69,7 @@ jobs:
             **/**.go
             go.mod
             go.sum
+            Makefile
       - uses: actions/download-artifact@v3
         with:
           name: "${{ github.sha }}-${{ matrix.part }}"
@@ -97,6 +98,7 @@ jobs:
             **/**.go
             go.mod
             go.sum
+            Makefile
       - uses: actions/download-artifact@v3
         with:
           name: "${{ github.sha }}-00-coverage"

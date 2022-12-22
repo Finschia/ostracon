@@ -9,7 +9,7 @@ on:
       - release/**
 
 env:
-  TAG: ostracon/e2e-node
+  TAG: ostracon/e2e-node:local-version # See test/e2e/Makefile:docker
   CACHE_DIR: /tmp/ostracon/e2etest
 
 jobs:

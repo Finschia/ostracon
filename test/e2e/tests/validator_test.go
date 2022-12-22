@@ -4,10 +4,9 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/line/ostracon/crypto/vrf"
-
 	"github.com/stretchr/testify/require"
 
+	"github.com/line/ostracon/crypto/vrf"
 	e2e "github.com/line/ostracon/test/e2e/pkg"
 	"github.com/line/ostracon/types"
 )
@@ -58,14 +57,13 @@ func TestValidator_Sets(t *testing.T) {
 				require.Equal(t, expected.VotingPower, actual.VotingPower,
 					"incorrect VotingPower of validator set at height %v", h)
 				if node.Name == "full02" {
-					// VotingWeight is set VotingPower
 					// `full02` sync to use `light.Block.ValidatorSet`
 					// It's made by `client.ValidatorsAndVoters` (It's not `client.Validators`)
 					// See: Validators and ValidatorsAndVoters in `rpc.core.consensus.go`
-					require.Equal(t, expected.VotingPower, actual.VotingWeight,
-						"incorrect VotingWeight of validator set at height %v", h)
+					// VotingWeight is set VotingPower until sync finished
+					// After syncing, VotingWeight is set zero
+					// It's difficult to check the VotingWeight in this test, so skipping
 				} else {
-					// VotingWeight is set zero
 					require.Equal(t, int64(0), actual.VotingWeight,
 						"incorrect VotingWeight of validator set at height %v", h)
 				}

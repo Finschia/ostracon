@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	e2e "github.com/line/ostracon/test/e2e/pkg"
 	"github.com/line/ostracon/types"
 )
@@ -15,7 +13,6 @@ import (
 func TestEvidence_Misbehavior(t *testing.T) {
 	blocks := fetchBlockChain(t)
 	testNode(t, func(t *testing.T, node e2e.Node) {
-		seenEvidence := make(map[int64]struct{})
 		for _, block := range blocks {
 			// Find any evidence blaming this node in this block
 			var nodeEvidence types.Evidence
@@ -32,26 +29,6 @@ func TestEvidence_Misbehavior(t *testing.T) {
 			if nodeEvidence == nil {
 				continue // no evidence for the node at this height
 			}
-
-			// Check that evidence was as expected
-			misbehavior, ok := node.Misbehaviors[nodeEvidence.Height()]
-			require.True(t, ok, "found unexpected evidence %v in height %v",
-				nodeEvidence, block.Height)
-
-			switch misbehavior {
-			case "double-prevote":
-				require.IsType(t, &types.DuplicateVoteEvidence{}, nodeEvidence, "unexpected evidence type")
-			default:
-				t.Fatalf("unknown misbehavior %v", misbehavior)
-			}
-
-			seenEvidence[nodeEvidence.Height()] = struct{}{}
-		}
-		// see if there is any evidence that we were expecting but didn't see
-		for height, misbehavior := range node.Misbehaviors {
-			_, ok := seenEvidence[height]
-			require.True(t, ok, "expected evidence for %v misbehavior at height %v by node but was never found",
-				misbehavior, height)
 		}
 	})
 }

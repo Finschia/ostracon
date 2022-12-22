@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -29,8 +28,6 @@ import (
 	rpcserver "github.com/line/ostracon/rpc/jsonrpc/server"
 	"github.com/line/ostracon/test/e2e/app"
 	e2e "github.com/line/ostracon/test/e2e/pkg"
-	mcs "github.com/line/ostracon/test/maverick/consensus"
-	maverick "github.com/line/ostracon/test/maverick/node"
 )
 
 var logger = log.NewOCLogger(log.NewSyncWriter(os.Stdout))
@@ -74,14 +71,10 @@ func run(configFile string) error {
 	case "socket", "grpc":
 		err = startApp(cfg)
 	case "builtin":
-		if len(cfg.Misbehaviors) == 0 {
-			if cfg.Mode == string(e2e.ModeLight) {
-				err = startLightClient(cfg)
-			} else {
-				err = startNode(cfg)
-			}
+		if cfg.Mode == string(e2e.ModeLight) {
+			err = startLightClient(cfg)
 		} else {
-			err = startMaverick(cfg)
+			err = startNode(cfg)
 		}
 	default:
 		err = fmt.Errorf("invalid protocol %q", cfg.Protocol)
@@ -110,7 +103,7 @@ func startApp(cfg *Config) error {
 	if err != nil {
 		return err
 	}
-	logger.Info(fmt.Sprintf("Server listening on %v (%v protocol)", cfg.Listen, cfg.Protocol))
+	logger.Info("start app", "msg", log.NewLazySprintf("Server listening on %v (%v protocol)", cfg.Listen, cfg.Protocol))
 	return nil
 }
 
@@ -209,44 +202,6 @@ func startLightClient(cfg *Config) error {
 	return nil
 }
 
-// FIXME: Temporarily disconnected maverick until it is redesigned
-// startMaverick starts a Maverick node that runs the application directly. It assumes the Ostracon
-// configuration is in $OCHOME/config/ostracon.toml.
-func startMaverick(cfg *Config) error {
-	app, err := app.NewApplication(cfg.App())
-	if err != nil {
-		return err
-	}
-
-	tmcfg, logger, nodeKey, err := setupNode()
-	if err != nil {
-		return fmt.Errorf("failed to setup config: %w", err)
-	}
-
-	misbehaviors := make(map[int64]mcs.Misbehavior, len(cfg.Misbehaviors))
-	for heightString, misbehaviorString := range cfg.Misbehaviors {
-		height, _ := strconv.ParseInt(heightString, 10, 64)
-		misbehaviors[height] = mcs.MisbehaviorList[misbehaviorString]
-	}
-
-	privKey, _ := maverick.LoadOrGenFilePV(tmcfg.PrivValidatorKeyFile(), tmcfg.PrivValidatorStateFile(), tmcfg.PrivKeyType)
-	n, err := maverick.NewNode(tmcfg,
-		privKey,
-		nodeKey,
-		proxy.NewLocalClientCreator(app),
-		maverick.DefaultGenesisDocProviderFunc(tmcfg),
-		maverick.DefaultDBProvider,
-		maverick.DefaultMetricsProvider(tmcfg.Instrumentation),
-		logger,
-		misbehaviors,
-	)
-	if err != nil {
-		return err
-	}
-
-	return n.Start()
-}
-
 // startSigner starts a signer server connecting to the given endpoint.
 func startSigner(cfg *Config) error {
 	filePV := privval.LoadFilePV(cfg.PrivValKey, cfg.PrivValState)
@@ -269,7 +224,7 @@ func startSigner(cfg *Config) error {
 	if err != nil {
 		return err
 	}
-	logger.Info(fmt.Sprintf("Remote signer connecting to %v", cfg.PrivValServer))
+	logger.Info("start signer", "msg", log.NewLazySprintf("Remote signer connecting to %v", cfg.PrivValServer))
 	return nil
 }
 
