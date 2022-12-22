@@ -8,7 +8,7 @@ import (
 )
 
 func TestNewCLI(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "runner")
+	tempDir, err := ioutil.TempDir("", "generator")
 	require.NoError(t, err)
 	defer os.RemoveAll(tempDir) //nolint:staticcheck
 	cmd := NewCLI()
