@@ -65,7 +65,7 @@ func BenchmarkOCFmtLoggerSimple(b *testing.B) {
 	benchmarkRunnerKitlog(b, log.NewOCFmtLogger(io.Discard), baseMessage)
 }
 
-func BenchmarkTMFmtLoggerContextual(b *testing.B) {
+func BenchmarkOCFmtLoggerContextual(b *testing.B) {
 	benchmarkRunnerKitlog(b, log.NewOCFmtLogger(io.Discard), withMessage)
 }
 
