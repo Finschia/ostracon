@@ -61,7 +61,7 @@ func TestOCFmtLogger(t *testing.T) {
 	assert.Regexp(t, regexp.MustCompile(`N\[.+\] unknown \s+ hash=74657374206D65\n$`), buf.String())
 }
 
-func BenchmarkTMFmtLoggerSimple(b *testing.B) {
+func BenchmarkOCFmtLoggerSimple(b *testing.B) {
 	benchmarkRunnerKitlog(b, log.NewOCFmtLogger(io.Discard), baseMessage)
 }
 
