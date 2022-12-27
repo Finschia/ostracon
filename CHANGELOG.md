@@ -34,6 +34,7 @@
 - [p2p/pex] [\#484](https://github.com/line/ostracon/pull/484) Avoid panic when addr does not exist in book
 - [p2p/pex] [\#487](https://github.com/line/ostracon/pull/487) Add test of IsGood()
 - [p2p/pex] [\#509](https://github.com/line/ostracon/pull/509) Fix code duplication
+- [p2p/upnp] [\#497](https://github.com/line/ostracon/pull/497) fix: Update the http status code handling on upnp
 - [p2p] [\#500](https://github.com/line/ostracon/pull/500) fix: return error when AddChannel fails
 - [p2p] [\#527](https://github.com/line/ostracon/pull/527) fix: add support for dns timeout
 - [privval] [\#523](https://github.com/line/ostracon/pull/523) fix: remove strange `Ping`
