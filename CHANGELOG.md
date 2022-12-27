@@ -1,5 +1,66 @@
 # Changelog
 
+## v1.0.8
+*Dec 27, 2022*
+
+* Update the default value of DefaultMaxTolerableByzantinePercentage
+* Fix Validators of RPC implementation in Ostracon
+* Add zerolog based rolling log system
+* Improve many components
+  * `blockchain`, `crypto`, `dependency`, `docs`, `libs`, `lint`, `mempool`, `node`, `p2p`, `privval`, `state`, `statesync`, `test`, `types`
+* Fix many bugs
+  * `consensus`, `crypto`, `state`, `test`, `types`
+
+### BREAKING CHANGE
+- [rpc] [\#478](https://github.com/line/ostracon/pull/478) Fix Validators of RPC implementation in Ostracon
+- [types] [\#511](https://github.com/line/ostracon/pull/511) Update the default value of DefaultMaxTolerableByzantinePercentage
+
+### FEATURES
+- [libs] [\#535](https://github.com/line/ostracon/pull/535) feat: zerolog based rolling log system
+
+### IMPROVEMENTS
+- [blockchain] [\#517](https://github.com/line/ostracon/pull/517) Add `ValidateBlock`
+- [crypto] [\#492](https://github.com/line/ostracon/pull/492) Use the value receiver instead of the pointer receiver in Pubkey.Identity()
+- [crypto] [\#528](https://github.com/line/ostracon/pull/528) Fix to change expected of test according to build tag
+- [dependency] [\#521](https://github.com/line/ostracon/pull/521) fix: replace deprecated package `io/ioutil` with `os`
+- [docs] [\#491](https://github.com/line/ostracon/pull/491) fix: Update the dead links
+- [libs] [\#494](https://github.com/line/ostracon/pull/494) Remove sort from proposer's selection algorithm
+- [libs] [\#496](https://github.com/line/ostracon/pull/496) Add validation at the beginning of func:RandomSamplingWithPriority
+- [libs] [\#506](https://github.com/line/ostracon/pull/506) Fix so that HTTP request don't wait for responses indefinitely
+- [lint] [\#505](https://github.com/line/ostracon/pull/505) Upgrade golangci-lint to v1.50.1
+- [mempool] [\#507](https://github.com/line/ostracon/pull/507) fix: return postCheck error to abci client
+- [node] [\#508](https://github.com/line/ostracon/pull/508) Remove unsed the functioin `StateProvider`
+- [p2p/conn] [\#485](https://github.com/line/ostracon/pull/485) Optimization of function signChallenge()
+- [p2p/pex] [\#484](https://github.com/line/ostracon/pull/484) Avoid panic when addr does not exist in book
+- [p2p/pex] [\#487](https://github.com/line/ostracon/pull/487) Add test of IsGood()
+- [p2p/pex] [\#509](https://github.com/line/ostracon/pull/509) Fix code duplication
+- [p2p/upnp] [\#497](https://github.com/line/ostracon/pull/497) fix: Update the http status code handling on upnp
+- [p2p] [\#500](https://github.com/line/ostracon/pull/500) fix: return error when AddChannel fails
+- [p2p] [\#527](https://github.com/line/ostracon/pull/527) fix: add support for dns timeout
+- [privval] [\#523](https://github.com/line/ostracon/pull/523) fix: remove strange `Ping`
+- [state] [\#502](https://github.com/line/ostracon/pull/502) Fix to also remove VoterParams and LastProofHash in PruneStates
+- [state] [\#525](https://github.com/line/ostracon/pull/525) Align with ValidatorSet on `PruneStates()`
+- [statesync] [\#515](https://github.com/line/ostracon/pull/515) Add unique handling of servers
+- [test] [\#512](https://github.com/line/ostracon/pull/512) Update using `GITHUB_OUTPUT` environment
+- [test] [\#518](https://github.com/line/ostracon/pull/518) fix: fix to input value to GITHUB_OUTPUT correctly
+- [test] [\#522](https://github.com/line/ostracon/pull/522) fix: fix inconsistencies between the validators and voters
+- [type] [\#490](https://github.com/line/ostracon/pull/490) fix: Move `types/test_util.go:MakeBlock` into `types/block.go`
+- [types] [\#504](https://github.com/line/ostracon/pull/504) Fix typo of the function ValidateBasic
+- [types] [\#510](https://github.com/line/ostracon/pull/510) Add validation of the ValidatorsHash, Round and Proof
+- [types] [\#530](https://github.com/line/ostracon/pull/530) fix the MaxHeaderSize
+
+### BUG FIXES
+- [consensus] [\#514](https://github.com/line/ostracon/pull/514) fix: enable to join existing network with State Sync
+- [consensus] [\#520](https://github.com/line/ostracon/pull/520) fix: fix total voters count
+- [crypto] [\#493](https://github.com/line/ostracon/pull/493) Validate proof with ECVRF_decode_proof in vrfEd25519r2ishiguro.ProofToHash()
+- [state] [\#498](https://github.com/line/ostracon/pull/498) fix: fix overriding tx index of duplicated txs
+- [state] [\#526](https://github.com/line/ostracon/pull/526) Fix the bug of Ostracon's changes of [#194](https://github.com/line/ostracon/pull/194)
+- [state] [\#533](https://github.com/line/ostracon/pull/533) Fix the mismatch between "State.Version.Consensus.App" and "State.ConsensusParams.Version.AppVersion"
+- [test] [\#534](https://github.com/line/ostracon/pull/534) Fix the order of paremeters in require.Equalf()
+- [test] [\#536](https://github.com/line/ostracon/pull/536) Backport e2e-test of the latest tendermint main branch
+- [types] [\#513](https://github.com/line/ostracon/pull/513) Fix the validation and verification
+- [types] [\#531](https://github.com/line/ostracon/pull/531) fix: Set maximum value for SignedMsgType
+
 ## v1.0.7
 
 *Oct 27, 2022*
