@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	tmbcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
+
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/behaviour"
 	bc "github.com/line/ostracon/blockchain"
@@ -18,7 +20,6 @@ import (
 	"github.com/line/ostracon/mempool/mock"
 	"github.com/line/ostracon/p2p"
 	"github.com/line/ostracon/p2p/conn"
-	bcproto "github.com/line/ostracon/proto/ostracon/blockchain"
 	"github.com/line/ostracon/proxy"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/store"
@@ -380,10 +381,10 @@ func TestReactorHelperMode(t *testing.T) {
 			name:   "status request",
 			params: params,
 			msgs: []testEvent{
-				{"P1", bcproto.StatusRequest{}},
-				{"P1", bcproto.BlockRequest{Height: 13}},
-				{"P1", bcproto.BlockRequest{Height: 20}},
-				{"P1", bcproto.BlockRequest{Height: 22}},
+				{"P1", tmbcproto.StatusRequest{}},
+				{"P1", tmbcproto.BlockRequest{Height: 13}},
+				{"P1", tmbcproto.BlockRequest{Height: 20}},
+				{"P1", tmbcproto.BlockRequest{Height: 22}},
 			},
 		},
 	}
@@ -400,13 +401,13 @@ func TestReactorHelperMode(t *testing.T) {
 			for i := 0; i < len(tt.msgs); i++ {
 				step := tt.msgs[i]
 				switch ev := step.event.(type) {
-				case bcproto.StatusRequest:
+				case tmbcproto.StatusRequest:
 					old := mockSwitch.numStatusResponse
 					msg, err := bc.EncodeMsg(&ev)
 					assert.NoError(t, err)
 					reactor.Receive(channelID, mockPeer{id: p2p.ID(step.peer)}, msg)
 					assert.Equal(t, old+1, mockSwitch.numStatusResponse)
-				case bcproto.BlockRequest:
+				case tmbcproto.BlockRequest:
 					if ev.Height > params.startHeight {
 						old := mockSwitch.numNoBlockResponse
 						msg, err := bc.EncodeMsg(&ev)

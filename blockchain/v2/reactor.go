@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	tmbcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
+
 	"github.com/line/ostracon/behaviour"
 	bc "github.com/line/ostracon/blockchain"
 	"github.com/line/ostracon/libs/log"
@@ -474,12 +476,12 @@ func (r *BlockchainReactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 	r.logger.Debug("Receive", "src", src.ID(), "chID", chID, "msg", msg)
 
 	switch msg := msg.(type) {
-	case *bcproto.StatusRequest:
+	case *tmbcproto.StatusRequest:
 		if err := r.io.sendStatusResponse(r.store.Base(), r.store.Height(), src.ID()); err != nil {
 			r.logger.Error("Could not send status message to peer", "src", src)
 		}
 
-	case *bcproto.BlockRequest:
+	case *tmbcproto.BlockRequest:
 		block := r.store.LoadBlock(msg.Height)
 		if block != nil {
 			if err = r.io.sendBlockToPeer(block, src.ID()); err != nil {
@@ -493,7 +495,7 @@ func (r *BlockchainReactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 			}
 		}
 
-	case *bcproto.StatusResponse:
+	case *tmbcproto.StatusResponse:
 		r.mtx.RLock()
 		if r.events != nil {
 			r.events <- bcStatusResponse{peerID: src.ID(), base: msg.Base, height: msg.Height}
@@ -517,7 +519,7 @@ func (r *BlockchainReactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 		}
 		r.mtx.RUnlock()
 
-	case *bcproto.NoBlockResponse:
+	case *tmbcproto.NoBlockResponse:
 		r.mtx.RLock()
 		if r.events != nil {
 			r.events <- bcNoBlockResponse{peerID: src.ID(), height: msg.Height, time: time.Now()}

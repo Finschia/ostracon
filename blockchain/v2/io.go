@@ -3,6 +3,8 @@ package v2
 import (
 	"fmt"
 
+	tmbcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
+
 	bc "github.com/line/ostracon/blockchain"
 	"github.com/line/ostracon/p2p"
 	bcproto "github.com/line/ostracon/proto/ostracon/blockchain"
@@ -47,7 +49,7 @@ func (sio *switchIO) sendBlockRequest(peerID p2p.ID, height int64) error {
 	if peer == nil {
 		return fmt.Errorf("peer not found")
 	}
-	msgBytes, err := bc.EncodeMsg(&bcproto.BlockRequest{Height: height})
+	msgBytes, err := bc.EncodeMsg(&tmbcproto.BlockRequest{Height: height})
 	if err != nil {
 		return err
 	}
@@ -65,7 +67,7 @@ func (sio *switchIO) sendStatusResponse(base int64, height int64, peerID p2p.ID)
 		return fmt.Errorf("peer not found")
 	}
 
-	msgBytes, err := bc.EncodeMsg(&bcproto.StatusResponse{Height: height, Base: base})
+	msgBytes, err := bc.EncodeMsg(&tmbcproto.StatusResponse{Height: height, Base: base})
 	if err != nil {
 		return err
 	}
@@ -107,7 +109,7 @@ func (sio *switchIO) sendBlockNotFound(height int64, peerID p2p.ID) error {
 	if peer == nil {
 		return fmt.Errorf("peer not found")
 	}
-	msgBytes, err := bc.EncodeMsg(&bcproto.NoBlockResponse{Height: height})
+	msgBytes, err := bc.EncodeMsg(&tmbcproto.NoBlockResponse{Height: height})
 	if err != nil {
 		return err
 	}
@@ -128,7 +130,7 @@ func (sio *switchIO) trySwitchToConsensus(state state.State, skipWAL bool) bool 
 }
 
 func (sio *switchIO) broadcastStatusRequest() error {
-	msgBytes, err := bc.EncodeMsg(&bcproto.StatusRequest{})
+	msgBytes, err := bc.EncodeMsg(&tmbcproto.StatusRequest{})
 	if err != nil {
 		return err
 	}

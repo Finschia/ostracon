@@ -11,12 +11,13 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 
+	tmcons "github.com/tendermint/tendermint/proto/tendermint/consensus"
+
 	auto "github.com/line/ostracon/libs/autofile"
 	tmjson "github.com/line/ostracon/libs/json"
 	"github.com/line/ostracon/libs/log"
 	tmos "github.com/line/ostracon/libs/os"
 	"github.com/line/ostracon/libs/service"
-	tmcons "github.com/line/ostracon/proto/ostracon/consensus"
 	tmtime "github.com/line/ostracon/types/time"
 )
 
