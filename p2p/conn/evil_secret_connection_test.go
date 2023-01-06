@@ -15,7 +15,7 @@ import (
 	"github.com/line/ostracon/crypto/ed25519"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
 	"github.com/line/ostracon/libs/protoio"
-	tmp2p "github.com/line/ostracon/proto/ostracon/p2p"
+	ocp2p "github.com/line/ostracon/proto/ostracon/p2p"
 )
 
 type buffer struct {
@@ -117,7 +117,7 @@ func (c *evilConn) Read(data []byte) (n int, err error) {
 			if err != nil {
 				panic(err)
 			}
-			bz, err := protoio.MarshalDelimited(&tmp2p.AuthSigMessage{PubKey: pkpb, Sig: signature})
+			bz, err := protoio.MarshalDelimited(&ocp2p.AuthSigMessage{PubKey: pkpb, Sig: signature})
 			if err != nil {
 				panic(err)
 			}

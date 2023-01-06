@@ -27,7 +27,7 @@ import (
 	"github.com/line/ostracon/libs/async"
 	"github.com/line/ostracon/libs/protoio"
 	tmsync "github.com/line/ostracon/libs/sync"
-	tmp2p "github.com/line/ostracon/proto/ostracon/p2p"
+	ocp2p "github.com/line/ostracon/proto/ostracon/p2p"
 )
 
 // 4 + 1024 == 1028 total frame size
@@ -406,14 +406,14 @@ func shareAuthSignature(sc io.ReadWriter, pubKey crypto.PubKey, signature []byte
 			if err != nil {
 				return nil, true, err
 			}
-			_, err = protoio.NewDelimitedWriter(sc).WriteMsg(&tmp2p.AuthSigMessage{PubKey: pbpk, Sig: signature})
+			_, err = protoio.NewDelimitedWriter(sc).WriteMsg(&ocp2p.AuthSigMessage{PubKey: pbpk, Sig: signature})
 			if err != nil {
 				return nil, true, err // abort
 			}
 			return nil, false, nil
 		},
 		func(_ int) (val interface{}, abort bool, err error) {
-			var pba tmp2p.AuthSigMessage
+			var pba ocp2p.AuthSigMessage
 			_, err = protoio.NewDelimitedReader(sc, 1024*1024).ReadMsg(&pba)
 			if err != nil {
 				return nil, true, err // abort

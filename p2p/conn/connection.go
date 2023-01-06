@@ -14,6 +14,8 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 
+	tmp2p "github.com/tendermint/tendermint/proto/tendermint/p2p"
+
 	flow "github.com/line/ostracon/libs/flowrate"
 	"github.com/line/ostracon/libs/log"
 	tmmath "github.com/line/ostracon/libs/math"
@@ -21,7 +23,6 @@ import (
 	"github.com/line/ostracon/libs/service"
 	tmsync "github.com/line/ostracon/libs/sync"
 	"github.com/line/ostracon/libs/timer"
-	tmp2p "github.com/line/ostracon/proto/ostracon/p2p"
 )
 
 const (
@@ -888,7 +889,7 @@ func (ch *Channel) updateStats() {
 //----------------------------------------
 // Packet
 
-// mustWrapPacket takes a packet kind (oneof) and wraps it in a tmp2p.Packet message.
+// mustWrapPacket takes a packet kind (oneof) and wraps it in a ocp2p.Packet message.
 func mustWrapPacket(pb proto.Message) *tmp2p.Packet {
 	var msg tmp2p.Packet
 

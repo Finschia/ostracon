@@ -6,23 +6,23 @@ option go_package = "github.com/line/ostracon/proto/ostracon/p2p";
 import "gogoproto/gogo.proto";
 import "ostracon/crypto/keys.proto";
 
-message PacketPing {}
+//message PacketPing {}
 
-message PacketPong {}
+//message PacketPong {}
 
-message PacketMsg {
-  int32 channel_id = 1 [(gogoproto.customname) = "ChannelID"];
-  bool  eof        = 2 [(gogoproto.customname) = "EOF"];
-  bytes data       = 3;
-}
+//message PacketMsg {
+//  int32 channel_id = 1 [(gogoproto.customname) = "ChannelID"];
+//  bool  eof        = 2 [(gogoproto.customname) = "EOF"];
+//  bytes data       = 3;
+//}
 
-message Packet {
-  oneof sum {
-    PacketPing packet_ping = 1;
-    PacketPong packet_pong = 2;
-    PacketMsg  packet_msg  = 3;
-  }
-}
+//message Packet {
+//  oneof sum {
+//    PacketPing packet_ping = 1;
+//    PacketPong packet_pong = 2;
+//    PacketMsg  packet_msg  = 3;
+//  }
+//}
 
 message AuthSigMessage {
   ostracon.crypto.PublicKey pub_key = 1 [(gogoproto.nullable) = false];
