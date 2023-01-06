@@ -5,7 +5,7 @@ option go_package = "github.com/line/ostracon/proto/ostracon/consensus";
 
 import "gogoproto/gogo.proto";
 import "ostracon/types/types.proto";
-import "ostracon/libs/bits/types.proto";
+import "tendermint/libs/bits/types.proto";
 
 // NewRoundStep is sent for every step taken in the ConsensusState.
 // For every height/round/step transition
@@ -24,7 +24,7 @@ message NewValidBlock {
   int64                        height                = 1;
   int32                        round                 = 2;
   ostracon.types.PartSetHeader block_part_set_header = 3 [(gogoproto.nullable) = false];
-  ostracon.libs.bits.BitArray  block_parts           = 4;
+  tendermint.libs.bits.BitArray  block_parts           = 4;
   bool                         is_commit             = 5;
 }
 
@@ -37,7 +37,7 @@ message Proposal {
 message ProposalPOL {
   int64                       height             = 1;
   int32                       proposal_pol_round = 2;
-  ostracon.libs.bits.BitArray proposal_pol       = 3 [(gogoproto.nullable) = false];
+  tendermint.libs.bits.BitArray proposal_pol       = 3 [(gogoproto.nullable) = false];
 }
 
 // BlockPart is sent when gossipping a piece of the proposed block.
@@ -74,7 +74,7 @@ message VoteSetBits {
   int32                        round    = 2;
   ostracon.types.SignedMsgType type     = 3;
   ostracon.types.BlockID       block_id = 4 [(gogoproto.customname) = "BlockID", (gogoproto.nullable) = false];
-  ostracon.libs.bits.BitArray  votes    = 5 [(gogoproto.nullable) = false];
+  tendermint.libs.bits.BitArray  votes    = 5 [(gogoproto.nullable) = false];
 }
 
 message Message {
