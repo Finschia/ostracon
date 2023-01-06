@@ -14,7 +14,7 @@ import (
 	"github.com/line/ostracon/libs/fail"
 	"github.com/line/ostracon/libs/log"
 	mempl "github.com/line/ostracon/mempool"
-	tmstate "github.com/line/ostracon/proto/ostracon/state"
+	ocstate "github.com/line/ostracon/proto/ostracon/state"
 	"github.com/line/ostracon/proxy"
 	"github.com/line/ostracon/types"
 	canonictime "github.com/line/ostracon/types/time"
@@ -342,11 +342,11 @@ func execBlockOnProxyApp(
 	block *types.Block,
 	store Store,
 	initialHeight int64,
-) (*tmstate.ABCIResponses, error) {
+) (*ocstate.ABCIResponses, error) {
 	var validTxs, invalidTxs = 0, 0
 
 	txIndex := 0
-	abciResponses := new(tmstate.ABCIResponses)
+	abciResponses := new(ocstate.ABCIResponses)
 	dtxs := make([]*abci.ResponseDeliverTx, len(block.Txs))
 	abciResponses.DeliverTxs = dtxs
 
@@ -492,7 +492,7 @@ func updateState(
 	state State,
 	blockID types.BlockID,
 	header *types.Header,
-	abciResponses *tmstate.ABCIResponses,
+	abciResponses *ocstate.ABCIResponses,
 	validatorUpdates []*types.Validator,
 ) (State, error) {
 
@@ -567,7 +567,7 @@ func fireEvents(
 	logger log.Logger,
 	eventBus types.BlockEventPublisher,
 	block *types.Block,
-	abciResponses *tmstate.ABCIResponses,
+	abciResponses *ocstate.ABCIResponses,
 	validatorUpdates []*types.Validator,
 ) {
 	if err := eventBus.PublishEventNewBlock(types.EventDataNewBlock{

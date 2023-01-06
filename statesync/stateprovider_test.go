@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 
@@ -19,7 +20,6 @@ import (
 	"github.com/line/ostracon/libs/log"
 	tmrand "github.com/line/ostracon/libs/rand"
 	"github.com/line/ostracon/light"
-	"github.com/line/ostracon/proto/ostracon/state"
 	ctypes "github.com/line/ostracon/rpc/core/types"
 	rpcserver "github.com/line/ostracon/rpc/jsonrpc/server"
 	rpctypes "github.com/line/ostracon/rpc/jsonrpc/types"
@@ -38,7 +38,7 @@ func TestNewLightClientStateProvider(t *testing.T) {
 	type args struct {
 		ctx           context.Context
 		chainID       string
-		version       state.Version
+		version       tmstate.Version
 		initialHeight int64
 		servers       []string
 		trustOptions  light.TrustOptions

@@ -29,7 +29,7 @@ import (
 	tmrand "github.com/line/ostracon/libs/rand"
 	mempl "github.com/line/ostracon/mempool"
 	"github.com/line/ostracon/privval"
-	tmstate "github.com/line/ostracon/proto/ostracon/state"
+	ocstate "github.com/line/ostracon/proto/ostracon/state"
 	ocproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/proxy"
 	sm "github.com/line/ostracon/state"
@@ -608,14 +608,14 @@ func TestMockProxyApp(t *testing.T) {
 	txIndex := 0
 
 	assert.NotPanics(t, func() {
-		abciResWithEmptyDeliverTx := new(tmstate.ABCIResponses)
+		abciResWithEmptyDeliverTx := new(ocstate.ABCIResponses)
 		abciResWithEmptyDeliverTx.DeliverTxs = make([]*abci.ResponseDeliverTx, 0)
 		abciResWithEmptyDeliverTx.DeliverTxs = append(abciResWithEmptyDeliverTx.DeliverTxs, &abci.ResponseDeliverTx{})
 
 		// called when saveABCIResponses:
 		bytes, err := proto.Marshal(abciResWithEmptyDeliverTx)
 		require.NoError(t, err)
-		loadedAbciRes := new(tmstate.ABCIResponses)
+		loadedAbciRes := new(ocstate.ABCIResponses)
 
 		// this also happens sm.LoadABCIResponses
 		err = proto.Unmarshal(bytes, loadedAbciRes)
@@ -623,7 +623,7 @@ func TestMockProxyApp(t *testing.T) {
 
 		mock := newMockProxyApp([]byte("mock_hash"), loadedAbciRes)
 
-		abciRes := new(tmstate.ABCIResponses)
+		abciRes := new(ocstate.ABCIResponses)
 		abciRes.DeliverTxs = make([]*abci.ResponseDeliverTx, len(loadedAbciRes.DeliverTxs))
 		// Execute transactions and get hash.
 		proxyCb := func(req *abci.Request, res *abci.Response) {

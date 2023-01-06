@@ -22,7 +22,7 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	abci "github.com/line/ostracon/abci/types"
-	tmstate "github.com/line/ostracon/proto/ostracon/state"
+	ocstate "github.com/line/ostracon/proto/ostracon/state"
 	ctypes "github.com/line/ostracon/rpc/core/types"
 	rpctypes "github.com/line/ostracon/rpc/jsonrpc/types"
 	sm "github.com/line/ostracon/state"
@@ -82,7 +82,7 @@ func TestBlockchainInfo(t *testing.T) {
 }
 
 func TestBlockResults(t *testing.T) {
-	results := &tmstate.ABCIResponses{
+	results := &ocstate.ABCIResponses{
 		DeliverTxs: []*abci.ResponseDeliverTx{
 			{Code: 0, Data: []byte{0x01}, Log: "ok"},
 			{Code: 0, Data: []byte{0x02}, Log: "ok"},

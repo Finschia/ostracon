@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
@@ -17,7 +18,7 @@ import (
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/ed25519"
 	tmrand "github.com/line/ostracon/libs/rand"
-	tmstate "github.com/line/ostracon/proto/ostracon/state"
+	ocstate "github.com/line/ostracon/proto/ostracon/state"
 	sm "github.com/line/ostracon/state"
 	statemocks "github.com/line/ostracon/state/mocks"
 	"github.com/line/ostracon/types"
@@ -177,7 +178,7 @@ func TestPruneStates(t *testing.T) {
 				require.NoError(t, err)
 
 				currentHeight := state.LastBlockHeight + int64(1)
-				err = stateStore.SaveABCIResponses(currentHeight, &tmstate.ABCIResponses{
+				err = stateStore.SaveABCIResponses(currentHeight, &ocstate.ABCIResponses{
 					DeliverTxs: []*abci.ResponseDeliverTx{
 						{Data: []byte{1}},
 						{Data: []byte{2}},
@@ -287,7 +288,7 @@ func TestPruneStatesDeleteErrHandle(t *testing.T) {
 }
 
 func TestABCIResponsesResultsHash(t *testing.T) {
-	responses := &tmstate.ABCIResponses{
+	responses := &ocstate.ABCIResponses{
 		BeginBlock: &abci.ResponseBeginBlock{},
 		DeliverTxs: []*abci.ResponseDeliverTx{
 			{Code: 32, Data: []byte("Hello"), Log: "Huh?"},
@@ -317,7 +318,7 @@ func sliceToMap(s []int64) map[int64]bool {
 }
 
 func validatorsInfoToByte(height, lastHeightChanged int64, valSet *types.ValidatorSet) ([]byte, error) {
-	valInfo := &tmstate.ValidatorsInfo{
+	valInfo := &ocstate.ValidatorsInfo{
 		LastHeightChanged: lastHeightChanged,
 	}
 	if height == lastHeightChanged || height%valSetCheckpointInterval == 0 {

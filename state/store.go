@@ -5,13 +5,14 @@ import (
 	"fmt"
 
 	"github.com/gogo/protobuf/proto"
+	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
 	abci "github.com/line/ostracon/abci/types"
 	tmmath "github.com/line/ostracon/libs/math"
 	tmos "github.com/line/ostracon/libs/os"
-	tmstate "github.com/line/ostracon/proto/ostracon/state"
+	ocstate "github.com/line/ostracon/proto/ostracon/state"
 	"github.com/line/ostracon/types"
 )
 
@@ -63,13 +64,13 @@ type Store interface {
 	// LoadProofHash loads the proof hash at a given height
 	LoadProofHash(int64) ([]byte, error)
 	// LoadABCIResponses loads the abciResponse for a given height
-	LoadABCIResponses(int64) (*tmstate.ABCIResponses, error)
+	LoadABCIResponses(int64) (*ocstate.ABCIResponses, error)
 	// LoadConsensusParams loads the consensus params for a given height
 	LoadConsensusParams(int64) (tmproto.ConsensusParams, error)
 	// Save overwrites the previous state with the updated one
 	Save(State) error
 	// SaveABCIResponses saves ABCIResponses for a given height
-	SaveABCIResponses(int64, *tmstate.ABCIResponses) error
+	SaveABCIResponses(int64, *ocstate.ABCIResponses) error
 	// Bootstrap is used for bootstrapping state when not starting from a initial height.
 	Bootstrap(State) error
 	// PruneStates takes the height from which to start prning and which height stop at
@@ -141,7 +142,7 @@ func (store dbStore) loadState(key []byte) (state State, err error) {
 		return state, nil
 	}
 
-	sp := new(tmstate.State)
+	sp := new(ocstate.State)
 
 	err = proto.Unmarshal(buf, sp)
 	if err != nil {
@@ -366,7 +367,7 @@ func (store dbStore) PruneStates(from int64, to int64) error {
 // ResponseDeliverTx responses (see ABCIResults.Hash)
 //
 // See merkle.SimpleHashFromByteSlices
-func ABCIResponsesResultsHash(ar *tmstate.ABCIResponses) []byte {
+func ABCIResponsesResultsHash(ar *ocstate.ABCIResponses) []byte {
 	return types.NewResults(ar.DeliverTxs).Hash()
 }
 
@@ -376,7 +377,7 @@ func ABCIResponsesResultsHash(ar *tmstate.ABCIResponses) []byte {
 // This is useful for recovering from crashes where we called app.Commit and
 // before we called s.Save(). It can also be used to produce Merkle proofs of
 // the result of txs.
-func (store dbStore) LoadABCIResponses(height int64) (*tmstate.ABCIResponses, error) {
+func (store dbStore) LoadABCIResponses(height int64) (*ocstate.ABCIResponses, error) {
 	buf, err := store.db.Get(calcABCIResponsesKey(height))
 	if err != nil {
 		return nil, err
@@ -386,7 +387,7 @@ func (store dbStore) LoadABCIResponses(height int64) (*tmstate.ABCIResponses, er
 		return nil, ErrNoABCIResponsesForHeight{height}
 	}
 
-	abciResponses := new(tmstate.ABCIResponses)
+	abciResponses := new(ocstate.ABCIResponses)
 	err = abciResponses.Unmarshal(buf)
 	if err != nil {
 		// DATA HAS BEEN CORRUPTED OR THE SPEC HAS CHANGED
@@ -404,7 +405,7 @@ func (store dbStore) LoadABCIResponses(height int64) (*tmstate.ABCIResponses, er
 // Merkle proofs.
 //
 // Exposed for testing.
-func (store dbStore) SaveABCIResponses(height int64, abciResponses *tmstate.ABCIResponses) error {
+func (store dbStore) SaveABCIResponses(height int64, abciResponses *ocstate.ABCIResponses) error {
 	var dtxs []*abci.ResponseDeliverTx
 	// strip nil values,
 	for _, tx := range abciResponses.DeliverTxs {
@@ -492,7 +493,7 @@ func lastStoredHeightFor(height, lastHeightChanged int64) int64 {
 }
 
 // CONTRACT: Returned ValidatorsInfo can be mutated.
-func loadValidatorsInfo(db dbm.DB, height int64) (*tmstate.ValidatorsInfo, error) {
+func loadValidatorsInfo(db dbm.DB, height int64) (*ocstate.ValidatorsInfo, error) {
 	buf, err := db.Get(calcValidatorsKey(height))
 	if err != nil {
 		return nil, err
@@ -502,7 +503,7 @@ func loadValidatorsInfo(db dbm.DB, height int64) (*tmstate.ValidatorsInfo, error
 		return nil, errors.New("loadValidatorsInfo: value retrieved from db is empty")
 	}
 
-	v := new(tmstate.ValidatorsInfo)
+	v := new(ocstate.ValidatorsInfo)
 	err = v.Unmarshal(buf)
 	if err != nil {
 		// DATA HAS BEEN CORRUPTED OR THE SPEC HAS CHANGED
@@ -523,7 +524,7 @@ func (store dbStore) saveValidatorsInfo(height, lastHeightChanged int64, valSet 
 	if lastHeightChanged > height {
 		return errors.New("lastHeightChanged cannot be greater than ValidatorsInfo height")
 	}
-	valInfo := &tmstate.ValidatorsInfo{
+	valInfo := &ocstate.ValidatorsInfo{
 		LastHeightChanged: lastHeightChanged,
 	}
 	// Only persist validator set if it was updated or checkpoint height (see

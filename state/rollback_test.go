@@ -5,12 +5,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/tmhash"
-	tmstate "github.com/line/ostracon/proto/ostracon/state"
 	"github.com/line/ostracon/state"
 	"github.com/line/ostracon/state/mocks"
 	"github.com/line/ostracon/types"
