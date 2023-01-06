@@ -7,8 +7,9 @@ import (
 	"github.com/gogo/protobuf/proto"
 	dbm "github.com/tendermint/tm-db"
 
+	tmstore "github.com/tendermint/tendermint/proto/tendermint/store"
+
 	tmsync "github.com/line/ostracon/libs/sync"
-	tmstore "github.com/line/ostracon/proto/ostracon/store"
 	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/types"
 )
