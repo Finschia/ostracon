@@ -9,21 +9,23 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
+
 	"github.com/line/ostracon/config"
 	"github.com/line/ostracon/libs/log"
 	tmrand "github.com/line/ostracon/libs/rand"
 	"github.com/line/ostracon/light"
 	"github.com/line/ostracon/proto/ostracon/state"
 	tmproto "github.com/line/ostracon/proto/ostracon/types"
-	tmversion "github.com/line/ostracon/proto/ostracon/version"
 	ctypes "github.com/line/ostracon/rpc/core/types"
 	rpcserver "github.com/line/ostracon/rpc/jsonrpc/server"
 	rpctypes "github.com/line/ostracon/rpc/jsonrpc/types"
 	"github.com/line/ostracon/types"
 	tmtime "github.com/line/ostracon/types/time"
 	"github.com/line/ostracon/version"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestNewLightClientStateProvider(t *testing.T) {

@@ -8,7 +8,7 @@ import "ostracon/abci/types.proto";
 import "ostracon/types/types.proto";
 import "ostracon/types/validator.proto";
 import "ostracon/types/params.proto";
-import "ostracon/version/types.proto";
+import "tendermint/version/types.proto";
 import "google/protobuf/timestamp.proto";
 
 // ABCIResponses retains the responses
@@ -33,7 +33,7 @@ message ConsensusParamsInfo {
 }
 
 message Version {
-  ostracon.version.Consensus consensus = 1 [(gogoproto.nullable) = false];
+  tendermint.version.Consensus consensus = 1 [(gogoproto.nullable) = false];
   string                     software  = 2;
 }
 

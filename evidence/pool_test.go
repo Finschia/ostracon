@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/line/ostracon/crypto"
@@ -16,7 +17,6 @@ import (
 	"github.com/line/ostracon/evidence/mocks"
 	"github.com/line/ostracon/libs/log"
 	tmproto "github.com/line/ostracon/proto/ostracon/types"
-	tmversion "github.com/line/ostracon/proto/ostracon/version"
 	sm "github.com/line/ostracon/state"
 	smmocks "github.com/line/ostracon/state/mocks"
 	"github.com/line/ostracon/store"

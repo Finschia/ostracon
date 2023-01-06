@@ -4,8 +4,9 @@ import (
 	"errors"
 	"fmt"
 
+	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
+
 	tmstate "github.com/line/ostracon/proto/ostracon/state"
-	tmversion "github.com/line/ostracon/proto/ostracon/version"
 	"github.com/line/ostracon/version"
 )
 

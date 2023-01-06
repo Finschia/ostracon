@@ -6,7 +6,7 @@ option go_package = "github.com/line/ostracon/proto/ostracon/types";
 import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 import "tendermint/crypto/proof.proto";
-import "ostracon/version/types.proto";
+import "tendermint/version/types.proto";
 import "ostracon/types/validator.proto";
 
 // BlockIdFlag indicates which BlcokID the signature is for
@@ -57,7 +57,7 @@ message BlockID {
 // Header defines the structure of an Ostracon block header.
 message Header {
   // basic block info
-  ostracon.version.Consensus version  = 1 [(gogoproto.nullable) = false];
+  tendermint.version.Consensus version  = 1 [(gogoproto.nullable) = false];
   string                     chain_id = 2 [(gogoproto.customname) = "ChainID"];
   int64                      height   = 3;
   google.protobuf.Timestamp  time     = 4 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];

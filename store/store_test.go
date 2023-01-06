@@ -15,12 +15,12 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	tmstore "github.com/tendermint/tendermint/proto/tendermint/store"
+	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 
 	cfg "github.com/line/ostracon/config"
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/libs/log"
 	tmrand "github.com/line/ostracon/libs/rand"
-	tmversion "github.com/line/ostracon/proto/ostracon/version"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"
 	tmtime "github.com/line/ostracon/types/time"

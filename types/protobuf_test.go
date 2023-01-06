@@ -3,19 +3,17 @@ package types
 import (
 	"testing"
 
-	"github.com/line/ostracon/crypto/secp256k1"
-
 	"github.com/golang/protobuf/proto" // nolint: staticcheck // still used by gogoproto
-	"github.com/tendermint/go-amino"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tendermint/go-amino"
+	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/ed25519"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
-	"github.com/line/ostracon/proto/ostracon/version"
+	"github.com/line/ostracon/crypto/secp256k1"
 	"github.com/line/ostracon/types/time"
 )
 
@@ -85,7 +83,7 @@ func TestABCIHeader(t *testing.T) {
 	// build a full header
 	var height int64 = 5
 	header := newHeader(height, []byte("lastCommitHash"), []byte("dataHash"), []byte("evidenceHash"))
-	protocolVersion := version.Consensus{Block: 7, App: 8}
+	protocolVersion := tmversion.Consensus{Block: 7, App: 8}
 	timestamp := time.Now()
 	lastBlockID := BlockID{
 		Hash: []byte("hash"),

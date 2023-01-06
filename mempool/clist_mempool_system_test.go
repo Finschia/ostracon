@@ -14,11 +14,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
+
 	"github.com/line/ostracon/abci/example/counter"
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/config"
 	"github.com/line/ostracon/libs/log"
-	tmversion "github.com/line/ostracon/proto/ostracon/version"
 	"github.com/line/ostracon/proxy"
 	"github.com/line/ostracon/types"
 	"github.com/line/ostracon/version"
