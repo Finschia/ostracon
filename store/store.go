@@ -8,9 +8,10 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	tmstore "github.com/tendermint/tendermint/proto/tendermint/store"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	tmsync "github.com/line/ostracon/libs/sync"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	ocproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/types"
 )
 
@@ -97,7 +98,7 @@ func (bs *BlockStore) LoadBlock(height int64) *types.Block {
 		return nil
 	}
 
-	pbb := new(tmproto.Block)
+	pbb := new(ocproto.Block)
 	buf := []byte{}
 	for i := 0; i < int(blockMeta.BlockID.PartSetHeader.Total); i++ {
 		part := bs.LoadBlockPart(height, i)
@@ -173,7 +174,7 @@ func (bs *BlockStore) LoadBlockPart(height int64, index int) *types.Part {
 // LoadBlockMeta returns the BlockMeta for the given height.
 // If no block is found for the given height, it returns nil.
 func (bs *BlockStore) LoadBlockMeta(height int64) *types.BlockMeta {
-	var pbbm = new(tmproto.BlockMeta)
+	var pbbm = new(ocproto.BlockMeta)
 	bz, err := bs.db.Get(calcBlockMetaKey(height))
 
 	if err != nil {
@@ -202,7 +203,7 @@ func (bs *BlockStore) LoadBlockMeta(height int64) *types.BlockMeta {
 // and it comes from the block.LastCommit for `height+1`.
 // If no commit is found for the given height, it returns nil.
 func (bs *BlockStore) LoadBlockCommit(height int64) *types.Commit {
-	var pbc = new(tmproto.Commit)
+	var pbc = new(ocproto.Commit)
 	bz, err := bs.db.Get(calcBlockCommitKey(height))
 	if err != nil {
 		panic(err)
@@ -225,7 +226,7 @@ func (bs *BlockStore) LoadBlockCommit(height int64) *types.Commit {
 // This is useful when we've seen a commit, but there has not yet been
 // a new block at `height + 1` that includes this commit in its block.LastCommit.
 func (bs *BlockStore) LoadSeenCommit(height int64) *types.Commit {
-	var pbc = new(tmproto.Commit)
+	var pbc = new(ocproto.Commit)
 	bz, err := bs.db.Get(calcSeenCommitKey(height))
 	if err != nil {
 		panic(err)

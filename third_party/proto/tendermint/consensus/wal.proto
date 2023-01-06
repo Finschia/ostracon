@@ -1,10 +1,10 @@
 syntax = "proto3";
-package ostracon.consensus;
+package tendermint.consensus;
 
-option go_package = "github.com/line/ostracon/proto/ostracon/consensus";
+option go_package = "github.com/tendermint/tendermint/proto/tendermint/consensus";
 
 import "gogoproto/gogo.proto";
-import "ostracon/consensus/types.proto";
+import "tendermint/consensus/types.proto";
 import "tendermint/types/events.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
@@ -33,9 +33,9 @@ message EndHeight {
 message WALMessage {
   oneof sum {
     tendermint.types.EventDataRoundState event_data_round_state = 1;
-    MsgInfo                            msg_info               = 2;
-    TimeoutInfo                        timeout_info           = 3;
-    EndHeight                          end_height             = 4;
+    MsgInfo                              msg_info               = 2;
+    TimeoutInfo                          timeout_info           = 3;
+    EndHeight                            end_height             = 4;
   }
 }
 

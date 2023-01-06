@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/ed25519"
@@ -16,7 +17,6 @@ import (
 	tmos "github.com/line/ostracon/libs/os"
 	"github.com/line/ostracon/libs/protoio"
 	"github.com/line/ostracon/libs/tempfile"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/types"
 	tmtime "github.com/line/ostracon/types/time"
 )

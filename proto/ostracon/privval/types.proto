@@ -2,8 +2,8 @@ syntax = "proto3";
 package ostracon.privval;
 
 import "ostracon/crypto/keys.proto";
-import "ostracon/types/types.proto";
 import "gogoproto/gogo.proto";
+import "tendermint/types/types.proto";
 
 option go_package = "github.com/line/ostracon/proto/ostracon/privval";
 
@@ -34,25 +34,25 @@ message PubKeyResponse {
 
 // SignVoteRequest is a request to sign a vote
 message SignVoteRequest {
-  ostracon.types.Vote vote     = 1;
+  tendermint.types.Vote vote     = 1;
   string              chain_id = 2;
 }
 
 // SignedVoteResponse is a response containing a signed vote or an error
 message SignedVoteResponse {
-  ostracon.types.Vote vote  = 1 [(gogoproto.nullable) = false];
+  tendermint.types.Vote vote  = 1 [(gogoproto.nullable) = false];
   RemoteSignerError   error = 2;
 }
 
 // SignProposalRequest is a request to sign a proposal
 message SignProposalRequest {
-  ostracon.types.Proposal proposal = 1;
+  tendermint.types.Proposal proposal = 1;
   string                  chain_id = 2;
 }
 
 // SignedProposalResponse is response containing a signed proposal or an error
 message SignedProposalResponse {
-  ostracon.types.Proposal proposal = 1 [(gogoproto.nullable) = false];
+  tendermint.types.Proposal proposal = 1 [(gogoproto.nullable) = false];
   RemoteSignerError       error    = 2;
 }
 

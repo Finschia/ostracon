@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 
 	"github.com/line/ostracon/crypto"
@@ -12,7 +13,6 @@ import (
 	"github.com/line/ostracon/crypto/tmhash"
 	tmbytes "github.com/line/ostracon/libs/bytes"
 	"github.com/line/ostracon/libs/rand"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/types"
 	tmtime "github.com/line/ostracon/types/time"
 	"github.com/line/ostracon/version"

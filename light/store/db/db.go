@@ -10,7 +10,7 @@ import (
 
 	tmsync "github.com/line/ostracon/libs/sync"
 	"github.com/line/ostracon/light/store"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	ocproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/types"
 )
 
@@ -120,7 +120,7 @@ func (s *dbs) LightBlock(height int64) (*types.LightBlock, error) {
 		return nil, store.ErrLightBlockNotFound
 	}
 
-	var lbpb tmproto.LightBlock
+	var lbpb ocproto.LightBlock
 	err = lbpb.Unmarshal(bz)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshal error: %w", err)

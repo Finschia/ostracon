@@ -9,12 +9,14 @@ import (
 	"strings"
 	"time"
 
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto/merkle"
 	"github.com/line/ostracon/crypto/tmhash"
 	tmjson "github.com/line/ostracon/libs/json"
 	tmrand "github.com/line/ostracon/libs/rand"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	ocproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 func MaxEvidenceBytes(ev Evidence) int64 {
@@ -156,10 +158,10 @@ func (dve *DuplicateVoteEvidence) ValidateBasic() error {
 }
 
 // ToProto encodes DuplicateVoteEvidence to protobuf
-func (dve *DuplicateVoteEvidence) ToProto() *tmproto.DuplicateVoteEvidence {
+func (dve *DuplicateVoteEvidence) ToProto() *ocproto.DuplicateVoteEvidence {
 	voteB := dve.VoteB.ToProto()
 	voteA := dve.VoteA.ToProto()
-	tp := tmproto.DuplicateVoteEvidence{
+	tp := ocproto.DuplicateVoteEvidence{
 		VoteA:            voteA,
 		VoteB:            voteB,
 		TotalVotingPower: dve.TotalVotingPower,
@@ -170,7 +172,7 @@ func (dve *DuplicateVoteEvidence) ToProto() *tmproto.DuplicateVoteEvidence {
 }
 
 // DuplicateVoteEvidenceFromProto decodes protobuf into DuplicateVoteEvidence
-func DuplicateVoteEvidenceFromProto(pb *tmproto.DuplicateVoteEvidence) (*DuplicateVoteEvidence, error) {
+func DuplicateVoteEvidenceFromProto(pb *ocproto.DuplicateVoteEvidence) (*DuplicateVoteEvidence, error) {
 	if pb == nil {
 		return nil, errors.New("nil duplicate vote evidence")
 	}
@@ -382,13 +384,13 @@ func (l *LightClientAttackEvidence) ValidateBasic() error {
 }
 
 // ToProto encodes LightClientAttackEvidence to protobuf
-func (l *LightClientAttackEvidence) ToProto() (*tmproto.LightClientAttackEvidence, error) {
+func (l *LightClientAttackEvidence) ToProto() (*ocproto.LightClientAttackEvidence, error) {
 	conflictingBlock, err := l.ConflictingBlock.ToProto()
 	if err != nil {
 		return nil, err
 	}
 
-	byzVals := make([]*tmproto.Validator, len(l.ByzantineValidators))
+	byzVals := make([]*ocproto.Validator, len(l.ByzantineValidators))
 	for idx, val := range l.ByzantineValidators {
 		valpb, err := val.ToProto()
 		if err != nil {
@@ -397,7 +399,7 @@ func (l *LightClientAttackEvidence) ToProto() (*tmproto.LightClientAttackEvidenc
 		byzVals[idx] = valpb
 	}
 
-	return &tmproto.LightClientAttackEvidence{
+	return &ocproto.LightClientAttackEvidence{
 		ConflictingBlock:    conflictingBlock,
 		CommonHeight:        l.CommonHeight,
 		ByzantineValidators: byzVals,
@@ -407,7 +409,7 @@ func (l *LightClientAttackEvidence) ToProto() (*tmproto.LightClientAttackEvidenc
 }
 
 // LightClientAttackEvidenceFromProto decodes protobuf
-func LightClientAttackEvidenceFromProto(lpb *tmproto.LightClientAttackEvidence) (*LightClientAttackEvidence, error) {
+func LightClientAttackEvidenceFromProto(lpb *ocproto.LightClientAttackEvidence) (*LightClientAttackEvidence, error) {
 	if lpb == nil {
 		return nil, errors.New("empty light client attack evidence")
 	}
@@ -478,7 +480,7 @@ func (evl EvidenceList) Has(evidence Evidence) bool {
 
 // EvidenceToProto is a generalized function for encoding evidence that conforms to the
 // evidence interface to protobuf
-func EvidenceToProto(evidence Evidence) (*tmproto.Evidence, error) {
+func EvidenceToProto(evidence Evidence) (*ocproto.Evidence, error) {
 	if evidence == nil {
 		return nil, errors.New("nil evidence")
 	}
@@ -486,8 +488,8 @@ func EvidenceToProto(evidence Evidence) (*tmproto.Evidence, error) {
 	switch evi := evidence.(type) {
 	case *DuplicateVoteEvidence:
 		pbev := evi.ToProto()
-		return &tmproto.Evidence{
-			Sum: &tmproto.Evidence_DuplicateVoteEvidence{
+		return &ocproto.Evidence{
+			Sum: &ocproto.Evidence_DuplicateVoteEvidence{
 				DuplicateVoteEvidence: pbev,
 			},
 		}, nil
@@ -497,8 +499,8 @@ func EvidenceToProto(evidence Evidence) (*tmproto.Evidence, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &tmproto.Evidence{
-			Sum: &tmproto.Evidence_LightClientAttackEvidence{
+		return &ocproto.Evidence{
+			Sum: &ocproto.Evidence_LightClientAttackEvidence{
 				LightClientAttackEvidence: pbev,
 			},
 		}, nil
@@ -510,15 +512,15 @@ func EvidenceToProto(evidence Evidence) (*tmproto.Evidence, error) {
 
 // EvidenceFromProto is a generalized function for decoding protobuf into the
 // evidence interface
-func EvidenceFromProto(evidence *tmproto.Evidence) (Evidence, error) {
+func EvidenceFromProto(evidence *ocproto.Evidence) (Evidence, error) {
 	if evidence == nil {
 		return nil, errors.New("nil evidence")
 	}
 
 	switch evi := evidence.Sum.(type) {
-	case *tmproto.Evidence_DuplicateVoteEvidence:
+	case *ocproto.Evidence_DuplicateVoteEvidence:
 		return DuplicateVoteEvidenceFromProto(evi.DuplicateVoteEvidence)
-	case *tmproto.Evidence_LightClientAttackEvidence:
+	case *ocproto.Evidence_LightClientAttackEvidence:
 		return LightClientAttackEvidenceFromProto(evi.LightClientAttackEvidence)
 	default:
 		return nil, errors.New("evidence is not recognized")

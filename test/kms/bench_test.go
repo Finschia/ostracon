@@ -12,6 +12,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	"github.com/line/ostracon/config"
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/ed25519"
@@ -21,9 +25,7 @@ import (
 	"github.com/line/ostracon/node"
 	"github.com/line/ostracon/privval"
 	privvalproto "github.com/line/ostracon/proto/ostracon/privval"
-	types2 "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/types"
-	"github.com/stretchr/testify/require"
 )
 
 var logger = log.NewOCLogger(log.NewSyncWriter(os.Stdout))
@@ -99,7 +101,7 @@ func benchmarkSignVote(b *testing.B, pv types.PrivValidator, pubKey crypto.PubKe
 		},
 	}
 	vote := types.Vote{
-		Type:             types2.PrevoteType,
+		Type:             tmproto.PrevoteType,
 		Height:           1,
 		Round:            0,
 		BlockID:          blockID,
@@ -135,7 +137,7 @@ func benchmarkSignProposal(b *testing.B, pv types.PrivValidator, pubKey crypto.P
 		},
 	}
 	proposal := types.Proposal{
-		Type:      types2.ProposalType,
+		Type:      tmproto.ProposalType,
 		Height:    2,
 		Round:     0,
 		POLRound:  -1,

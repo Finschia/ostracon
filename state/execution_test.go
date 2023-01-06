@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 
 	abci "github.com/line/ostracon/abci/types"
@@ -19,7 +20,6 @@ import (
 	"github.com/line/ostracon/libs/bytes"
 	"github.com/line/ostracon/libs/log"
 	mmock "github.com/line/ostracon/mempool/mock"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/proxy"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/state/mocks"

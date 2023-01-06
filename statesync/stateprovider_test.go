@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 
 	"github.com/line/ostracon/config"
@@ -19,7 +20,6 @@ import (
 	tmrand "github.com/line/ostracon/libs/rand"
 	"github.com/line/ostracon/light"
 	"github.com/line/ostracon/proto/ostracon/state"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	ctypes "github.com/line/ostracon/rpc/core/types"
 	rpcserver "github.com/line/ostracon/rpc/jsonrpc/server"
 	rpctypes "github.com/line/ostracon/rpc/jsonrpc/types"

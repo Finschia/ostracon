@@ -6,12 +6,13 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	cstypes "github.com/line/ostracon/consensus/types"
 	"github.com/line/ostracon/libs/bits"
 	tmmath "github.com/line/ostracon/libs/math"
 	"github.com/line/ostracon/p2p"
 	tmcons "github.com/line/ostracon/proto/ostracon/consensus"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/types"
 )
 

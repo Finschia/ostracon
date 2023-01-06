@@ -8,6 +8,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	abci "github.com/line/ostracon/abci/types"
 	cfg "github.com/line/ostracon/config"
 	auto "github.com/line/ostracon/libs/autofile"
@@ -17,7 +19,6 @@ import (
 	tmos "github.com/line/ostracon/libs/os"
 	tmsync "github.com/line/ostracon/libs/sync"
 	"github.com/line/ostracon/p2p"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/proxy"
 	"github.com/line/ostracon/types"
 )

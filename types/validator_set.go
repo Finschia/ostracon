@@ -14,7 +14,7 @@ import (
 	"github.com/line/ostracon/crypto/tmhash"
 	tmmath "github.com/line/ostracon/libs/math"
 	tmrand "github.com/line/ostracon/libs/rand"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	ocproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 const (
@@ -909,13 +909,13 @@ func (valz ValidatorsByAddress) Swap(i, j int) {
 }
 
 // ToProto converts ValidatorSet to protobuf
-func (vals *ValidatorSet) ToProto() (*tmproto.ValidatorSet, error) {
+func (vals *ValidatorSet) ToProto() (*ocproto.ValidatorSet, error) {
 	if vals.IsNilOrEmpty() {
-		return &tmproto.ValidatorSet{}, nil // validator set should never be nil
+		return &ocproto.ValidatorSet{}, nil // validator set should never be nil
 	}
 
-	vp := new(tmproto.ValidatorSet)
-	valsProto := make([]*tmproto.Validator, len(vals.Validators))
+	vp := new(ocproto.ValidatorSet)
+	valsProto := make([]*ocproto.Validator, len(vals.Validators))
 	for i := 0; i < len(vals.Validators); i++ {
 		valp, err := vals.Validators[i].ToProto()
 		if err != nil {
@@ -933,7 +933,7 @@ func (vals *ValidatorSet) ToProto() (*tmproto.ValidatorSet, error) {
 // ValidatorSetFromProto sets a protobuf ValidatorSet to the given pointer.
 // It returns an error if any of the validators from the set or the proposer
 // is invalid
-func ValidatorSetFromProto(vp *tmproto.ValidatorSet) (*ValidatorSet, error) {
+func ValidatorSetFromProto(vp *ocproto.ValidatorSet) (*ValidatorSet, error) {
 	if vp == nil {
 		return nil, errors.New("nil validator set") // validator set should never be nil, bigger issues are at play if empty
 	}

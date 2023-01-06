@@ -7,17 +7,15 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
 	"github.com/stretchr/testify/require"
-
-	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/libs/service"
 
 	abcicli "github.com/line/ostracon/abci/client"
 	"github.com/line/ostracon/abci/example/code"
 	abciserver "github.com/line/ostracon/abci/server"
 	"github.com/line/ostracon/abci/types"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	"github.com/line/ostracon/libs/log"
+	"github.com/line/ostracon/libs/service"
+	ocproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 const (
@@ -105,7 +103,7 @@ func TestPersistentKVStoreInfo(t *testing.T) {
 	// make and apply block
 	height = int64(1)
 	hash := []byte("foo")
-	header := tmproto.Header{
+	header := ocproto.Header{
 		Height: height,
 	}
 	kvstore.BeginBlock(types.RequestBeginBlock{Hash: hash, Header: header})
@@ -198,7 +196,7 @@ func makeApplyBlock(
 	// make and apply block
 	height := int64(heightInt)
 	hash := []byte("foo")
-	header := tmproto.Header{
+	header := ocproto.Header{
 		Height: height,
 	}
 

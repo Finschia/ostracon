@@ -12,19 +12,18 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
-
-	config2 "github.com/line/ostracon/config"
 
 	abcicli "github.com/line/ostracon/abci/client"
 	abci "github.com/line/ostracon/abci/types"
+	config2 "github.com/line/ostracon/config"
 	"github.com/line/ostracon/evidence"
 	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/libs/service"
 	tmsync "github.com/line/ostracon/libs/sync"
 	mempl "github.com/line/ostracon/mempool"
 	"github.com/line/ostracon/p2p"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/store"
 	"github.com/line/ostracon/types"

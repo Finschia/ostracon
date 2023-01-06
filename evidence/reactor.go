@@ -7,7 +7,7 @@ import (
 	clist "github.com/line/ostracon/libs/clist"
 	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/p2p"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	ocproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/types"
 )
 
@@ -211,7 +211,7 @@ type PeerState interface {
 // encodemsg takes a array of evidence
 // returns the byte encoding of the List Message
 func encodeMsg(evis []types.Evidence) ([]byte, error) {
-	evi := make([]tmproto.Evidence, len(evis))
+	evi := make([]ocproto.Evidence, len(evis))
 	for i := 0; i < len(evis); i++ {
 		ev, err := types.EvidenceToProto(evis[i])
 		if err != nil {
@@ -219,7 +219,7 @@ func encodeMsg(evis []types.Evidence) ([]byte, error) {
 		}
 		evi[i] = *ev
 	}
-	epl := tmproto.EvidenceList{
+	epl := ocproto.EvidenceList{
 		Evidence: evi,
 	}
 
@@ -229,7 +229,7 @@ func encodeMsg(evis []types.Evidence) ([]byte, error) {
 // decodemsg takes an array of bytes
 // returns an array of evidence
 func decodeMsg(bz []byte) (evis []types.Evidence, err error) {
-	lm := tmproto.EvidenceList{}
+	lm := ocproto.EvidenceList{}
 	if err := lm.Unmarshal(bz); err != nil {
 		return nil, err
 	}

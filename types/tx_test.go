@@ -7,9 +7,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	tmrand "github.com/line/ostracon/libs/rand"
 	ctest "github.com/line/ostracon/libs/test"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 func makeTxs(cnt, size int) Txs {

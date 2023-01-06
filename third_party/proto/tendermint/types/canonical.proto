@@ -1,10 +1,10 @@
 syntax = "proto3";
-package ostracon.types;
+package tendermint.types;
 
-option go_package = "github.com/line/ostracon/proto/ostracon/types";
+option go_package = "github.com/tendermint/tendermint/proto/tendermint/types";
 
 import "gogoproto/gogo.proto";
-import "ostracon/types/types.proto";
+import "tendermint/types/types.proto";
 import "google/protobuf/timestamp.proto";
 
 message CanonicalBlockID {

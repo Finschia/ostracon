@@ -7,21 +7,21 @@ import (
 	"testing"
 	"time"
 
-	abci "github.com/line/ostracon/abci/types"
-	"github.com/line/ostracon/abci/types/mocks"
-	"github.com/stretchr/testify/mock"
-
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	"github.com/line/ostracon/abci/example/counter"
+	abci "github.com/line/ostracon/abci/types"
+	"github.com/line/ostracon/abci/types/mocks"
 	cstypes "github.com/line/ostracon/consensus/types"
 	"github.com/line/ostracon/crypto/tmhash"
 	"github.com/line/ostracon/libs/log"
 	tmpubsub "github.com/line/ostracon/libs/pubsub"
 	tmrand "github.com/line/ostracon/libs/rand"
 	p2pmock "github.com/line/ostracon/p2p/mock"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/types"
 )
 

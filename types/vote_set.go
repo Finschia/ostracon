@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"strings"
 
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/libs/bits"
 	tmjson "github.com/line/ostracon/libs/json"
 	tmsync "github.com/line/ostracon/libs/sync"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 const (
