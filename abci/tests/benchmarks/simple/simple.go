@@ -7,7 +7,7 @@ import (
 	"log"
 	"reflect"
 
-	"github.com/line/ostracon/abci/types"
+	types "github.com/line/ostracon/abci/types"
 	tmnet "github.com/line/ostracon/libs/net"
 )
 

@@ -3,6 +3,8 @@ package mock
 import (
 	"context"
 
+	tmabci "github.com/tendermint/tendermint/abci/types"
+
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/bytes"
 	"github.com/line/ostracon/proxy"
@@ -37,7 +39,7 @@ func (a ABCIApp) ABCIQueryWithOptions(
 	path string,
 	data bytes.HexBytes,
 	opts client.ABCIQueryOptions) (*ctypes.ResultABCIQuery, error) {
-	q := a.App.Query(abci.RequestQuery{
+	q := a.App.Query(tmabci.RequestQuery{
 		Data:   data,
 		Path:   path,
 		Height: opts.Height,
@@ -51,23 +53,23 @@ func (a ABCIApp) ABCIQueryWithOptions(
 // TODO: Make it wait for a commit and set res.Height appropriately.
 func (a ABCIApp) BroadcastTxCommit(ctx context.Context, tx types.Tx) (*ctypes.ResultBroadcastTxCommit, error) {
 	res := ctypes.ResultBroadcastTxCommit{}
-	res.CheckTx = a.App.CheckTxSync(abci.RequestCheckTx{Tx: tx})
+	res.CheckTx = a.App.CheckTxSync(tmabci.RequestCheckTx{Tx: tx})
 	if res.CheckTx.IsErr() {
 		return &res, nil
 	}
-	res.DeliverTx = a.App.DeliverTx(abci.RequestDeliverTx{Tx: tx})
+	res.DeliverTx = a.App.DeliverTx(tmabci.RequestDeliverTx{Tx: tx})
 	res.Height = -1 // TODO
 	return &res, nil
 }
 
 func (a ABCIApp) BroadcastTxAsync(ctx context.Context, tx types.Tx) (*ctypes.ResultBroadcastTx, error) {
 	chRes := make(chan abci.ResponseCheckTx, 1)
-	a.App.CheckTxAsync(abci.RequestCheckTx{Tx: tx}, func(res abci.ResponseCheckTx) {
+	a.App.CheckTxAsync(tmabci.RequestCheckTx{Tx: tx}, func(res abci.ResponseCheckTx) {
 		chRes <- res
 	})
 	c := <-chRes
 	// and this gets written in a background thread...
-	go func() { a.App.DeliverTx(abci.RequestDeliverTx{Tx: tx}) }()
+	go func() { a.App.DeliverTx(tmabci.RequestDeliverTx{Tx: tx}) }()
 	return &ctypes.ResultBroadcastTx{
 		Code:      c.Code,
 		Data:      c.Data,
@@ -78,10 +80,10 @@ func (a ABCIApp) BroadcastTxAsync(ctx context.Context, tx types.Tx) (*ctypes.Res
 }
 
 func (a ABCIApp) BroadcastTxSync(ctx context.Context, tx types.Tx) (*ctypes.ResultBroadcastTx, error) {
-	c := a.App.CheckTxSync(abci.RequestCheckTx{Tx: tx})
+	c := a.App.CheckTxSync(tmabci.RequestCheckTx{Tx: tx})
 	// and this gets written in a background thread...
 	if !c.IsErr() {
-		go func() { a.App.DeliverTx(abci.RequestDeliverTx{Tx: tx}) }()
+		go func() { a.App.DeliverTx(tmabci.RequestDeliverTx{Tx: tx}) }()
 	}
 	return &ctypes.ResultBroadcastTx{
 		Code:      c.Code,
@@ -107,7 +109,7 @@ func (m ABCIMock) ABCIInfo(ctx context.Context) (*ctypes.ResultABCIInfo, error) 
 	if err != nil {
 		return nil, err
 	}
-	return &ctypes.ResultABCIInfo{Response: res.(abci.ResponseInfo)}, nil
+	return &ctypes.ResultABCIInfo{Response: res.(tmabci.ResponseInfo)}, nil
 }
 
 func (m ABCIMock) ABCIQuery(ctx context.Context, path string, data bytes.HexBytes) (*ctypes.ResultABCIQuery, error) {
@@ -123,7 +125,7 @@ func (m ABCIMock) ABCIQueryWithOptions(
 	if err != nil {
 		return nil, err
 	}
-	resQuery := res.(abci.ResponseQuery)
+	resQuery := res.(tmabci.ResponseQuery)
 	return &ctypes.ResultABCIQuery{Response: resQuery}, nil
 }
 

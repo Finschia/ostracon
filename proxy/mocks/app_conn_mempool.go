@@ -3,9 +3,10 @@
 package mocks
 
 import (
-	abcicli "github.com/line/ostracon/abci/client"
 	mock "github.com/stretchr/testify/mock"
+	tmabci "github.com/tendermint/tendermint/abci/types"
 
+	abcicli "github.com/line/ostracon/abci/client"
 	types "github.com/line/ostracon/abci/types"
 )
 
@@ -38,11 +39,11 @@ func (_m *AppConnMempool) BeginRecheckTxSync(_a0 types.RequestBeginRecheckTx) (*
 }
 
 // CheckTxAsync provides a mock function with given fields: _a0, _a1
-func (_m *AppConnMempool) CheckTxAsync(_a0 types.RequestCheckTx, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
+func (_m *AppConnMempool) CheckTxAsync(_a0 tmabci.RequestCheckTx, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 *abcicli.ReqRes
-	if rf, ok := ret.Get(0).(func(types.RequestCheckTx, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
+	if rf, ok := ret.Get(0).(func(tmabci.RequestCheckTx, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
@@ -54,11 +55,11 @@ func (_m *AppConnMempool) CheckTxAsync(_a0 types.RequestCheckTx, _a1 abcicli.Res
 }
 
 // CheckTxSync provides a mock function with given fields: _a0
-func (_m *AppConnMempool) CheckTxSync(_a0 types.RequestCheckTx) (*types.ResponseCheckTx, error) {
+func (_m *AppConnMempool) CheckTxSync(_a0 tmabci.RequestCheckTx) (*types.ResponseCheckTx, error) {
 	ret := _m.Called(_a0)
 
 	var r0 *types.ResponseCheckTx
-	if rf, ok := ret.Get(0).(func(types.RequestCheckTx) *types.ResponseCheckTx); ok {
+	if rf, ok := ret.Get(0).(func(tmabci.RequestCheckTx) *types.ResponseCheckTx); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
@@ -67,7 +68,7 @@ func (_m *AppConnMempool) CheckTxSync(_a0 types.RequestCheckTx) (*types.Response
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(types.RequestCheckTx) error); ok {
+	if rf, ok := ret.Get(1).(func(tmabci.RequestCheckTx) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
@@ -130,15 +131,15 @@ func (_m *AppConnMempool) FlushAsync(_a0 abcicli.ResponseCallback) *abcicli.ReqR
 }
 
 // FlushSync provides a mock function with given fields:
-func (_m *AppConnMempool) FlushSync() (*types.ResponseFlush, error) {
+func (_m *AppConnMempool) FlushSync() (*tmabci.ResponseFlush, error) {
 	ret := _m.Called()
 
-	var r0 *types.ResponseFlush
-	if rf, ok := ret.Get(0).(func() *types.ResponseFlush); ok {
+	var r0 *tmabci.ResponseFlush
+	if rf, ok := ret.Get(0).(func() *tmabci.ResponseFlush); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*types.ResponseFlush)
+			r0 = ret.Get(0).(*tmabci.ResponseFlush)
 		}
 	}
 

@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"time"
 
+	tmabci "github.com/tendermint/tendermint/abci/types"
+
 	"github.com/line/ostracon/abci/example/code"
 	abci "github.com/line/ostracon/abci/types"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
@@ -30,7 +32,7 @@ type Application struct {
 	state           *State
 	snapshots       *SnapshotStore
 	cfg             *Config
-	restoreSnapshot *abci.Snapshot
+	restoreSnapshot *tmabci.Snapshot
 	restoreChunks   [][]byte
 }
 
@@ -109,8 +111,8 @@ func NewApplication(cfg *Config) (*Application, error) {
 }
 
 // Info implements ABCI.
-func (app *Application) Info(req abci.RequestInfo) abci.ResponseInfo {
-	return abci.ResponseInfo{
+func (app *Application) Info(req tmabci.RequestInfo) tmabci.ResponseInfo {
+	return tmabci.ResponseInfo{
 		Version:          version.ABCIVersion,
 		AppVersion:       E2EAppVersion,
 		LastBlockHeight:  int64(app.state.Height),
@@ -138,7 +140,7 @@ func (app *Application) InitChain(req abci.RequestInitChain) abci.ResponseInitCh
 }
 
 // CheckTx implements ABCI.
-func (app *Application) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
+func (app *Application) CheckTx(req tmabci.RequestCheckTx) abci.ResponseCheckTx {
 	_, _, err := parseTx(req.Tx)
 	if err != nil {
 		return abci.ResponseCheckTx{
@@ -155,17 +157,17 @@ func (app *Application) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 }
 
 // DeliverTx implements ABCI.
-func (app *Application) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
+func (app *Application) DeliverTx(req tmabci.RequestDeliverTx) tmabci.ResponseDeliverTx {
 	key, value, err := parseTx(req.Tx)
 	if err != nil {
 		panic(err) // shouldn't happen since we verified it in CheckTx
 	}
 	app.state.Set(key, value)
-	return abci.ResponseDeliverTx{Code: code.CodeTypeOK}
+	return tmabci.ResponseDeliverTx{Code: code.CodeTypeOK}
 }
 
 // EndBlock implements ABCI.
-func (app *Application) EndBlock(req abci.RequestEndBlock) abci.ResponseEndBlock {
+func (app *Application) EndBlock(req tmabci.RequestEndBlock) abci.ResponseEndBlock {
 	valUpdates, err := app.validatorUpdates(uint64(req.Height))
 	if err != nil {
 		panic(err)
@@ -173,10 +175,10 @@ func (app *Application) EndBlock(req abci.RequestEndBlock) abci.ResponseEndBlock
 
 	return abci.ResponseEndBlock{
 		ValidatorUpdates: valUpdates,
-		Events: []abci.Event{
+		Events: []tmabci.Event{
 			{
 				Type: "val_updates",
-				Attributes: []abci.EventAttribute{
+				Attributes: []tmabci.EventAttribute{
 					{
 						Key:   []byte("size"),
 						Value: []byte(strconv.Itoa(valUpdates.Len())),
@@ -192,7 +194,7 @@ func (app *Application) EndBlock(req abci.RequestEndBlock) abci.ResponseEndBlock
 }
 
 // Commit implements ABCI.
-func (app *Application) Commit() abci.ResponseCommit {
+func (app *Application) Commit() tmabci.ResponseCommit {
 	height, hash, err := app.state.Commit()
 	if err != nil {
 		panic(err)
@@ -208,15 +210,15 @@ func (app *Application) Commit() abci.ResponseCommit {
 	if app.cfg.RetainBlocks > 0 {
 		retainHeight = int64(height - app.cfg.RetainBlocks + 1)
 	}
-	return abci.ResponseCommit{
+	return tmabci.ResponseCommit{
 		Data:         hash,
 		RetainHeight: retainHeight,
 	}
 }
 
 // Query implements ABCI.
-func (app *Application) Query(req abci.RequestQuery) abci.ResponseQuery {
-	return abci.ResponseQuery{
+func (app *Application) Query(req tmabci.RequestQuery) tmabci.ResponseQuery {
+	return tmabci.ResponseQuery{
 		Height: int64(app.state.Height),
 		Key:    req.Data,
 		Value:  []byte(app.state.Get(string(req.Data))),
@@ -224,35 +226,35 @@ func (app *Application) Query(req abci.RequestQuery) abci.ResponseQuery {
 }
 
 // ListSnapshots implements ABCI.
-func (app *Application) ListSnapshots(req abci.RequestListSnapshots) abci.ResponseListSnapshots {
+func (app *Application) ListSnapshots(req tmabci.RequestListSnapshots) tmabci.ResponseListSnapshots {
 	snapshots, err := app.snapshots.List()
 	if err != nil {
 		panic(err)
 	}
-	return abci.ResponseListSnapshots{Snapshots: snapshots}
+	return tmabci.ResponseListSnapshots{Snapshots: snapshots}
 }
 
 // LoadSnapshotChunk implements ABCI.
-func (app *Application) LoadSnapshotChunk(req abci.RequestLoadSnapshotChunk) abci.ResponseLoadSnapshotChunk {
+func (app *Application) LoadSnapshotChunk(req tmabci.RequestLoadSnapshotChunk) tmabci.ResponseLoadSnapshotChunk {
 	chunk, err := app.snapshots.LoadChunk(req.Height, req.Format, req.Chunk)
 	if err != nil {
 		panic(err)
 	}
-	return abci.ResponseLoadSnapshotChunk{Chunk: chunk}
+	return tmabci.ResponseLoadSnapshotChunk{Chunk: chunk}
 }
 
 // OfferSnapshot implements ABCI.
-func (app *Application) OfferSnapshot(req abci.RequestOfferSnapshot) abci.ResponseOfferSnapshot {
+func (app *Application) OfferSnapshot(req tmabci.RequestOfferSnapshot) tmabci.ResponseOfferSnapshot {
 	if app.restoreSnapshot != nil {
 		panic("A snapshot is already being restored")
 	}
 	app.restoreSnapshot = req.Snapshot
 	app.restoreChunks = [][]byte{}
-	return abci.ResponseOfferSnapshot{Result: abci.ResponseOfferSnapshot_ACCEPT}
+	return tmabci.ResponseOfferSnapshot{Result: tmabci.ResponseOfferSnapshot_ACCEPT}
 }
 
 // ApplySnapshotChunk implements ABCI.
-func (app *Application) ApplySnapshotChunk(req abci.RequestApplySnapshotChunk) abci.ResponseApplySnapshotChunk {
+func (app *Application) ApplySnapshotChunk(req tmabci.RequestApplySnapshotChunk) tmabci.ResponseApplySnapshotChunk {
 	if app.restoreSnapshot == nil {
 		panic("No restore in progress")
 	}
@@ -269,7 +271,7 @@ func (app *Application) ApplySnapshotChunk(req abci.RequestApplySnapshotChunk) a
 		app.restoreSnapshot = nil
 		app.restoreChunks = nil
 	}
-	return abci.ResponseApplySnapshotChunk{Result: abci.ResponseApplySnapshotChunk_ACCEPT}
+	return tmabci.ResponseApplySnapshotChunk{Result: tmabci.ResponseApplySnapshotChunk_ACCEPT}
 }
 
 func (app *Application) Rollback() error {

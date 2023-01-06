@@ -14,6 +14,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	tmabci "github.com/tendermint/tendermint/abci/types"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 
 	"github.com/line/ostracon/abci/example/counter"
@@ -93,16 +94,16 @@ func sizeOfSyncMap(m *sync.Map) int {
 }
 
 func createProposalBlockAndDeliverTxs(
-	mem *CListMempool, height int64) (*types.Block, []*abci.ResponseDeliverTx) {
+	mem *CListMempool, height int64) (*types.Block, []*tmabci.ResponseDeliverTx) {
 	// mempool.lock/unlock in ReapMaxBytesMaxGasMaxTxs
 	txs := mem.ReapMaxBytesMaxGasMaxTxs(mem.config.MaxTxsBytes, 0, int64(mem.config.Size))
 	block := types.MakeBlock(height, txs, nil, nil, tmversion.Consensus{
 		Block: version.BlockProtocol,
 		App:   version.AppProtocol,
 	})
-	deliverTxResponses := make([]*abci.ResponseDeliverTx, len(block.Txs))
+	deliverTxResponses := make([]*tmabci.ResponseDeliverTx, len(block.Txs))
 	for i, tx := range block.Txs {
-		deliverTxResponses[i] = &abci.ResponseDeliverTx{
+		deliverTxResponses[i] = &tmabci.ResponseDeliverTx{
 			Code: abci.CodeTypeOK,
 			Data: tx,
 		}
@@ -111,7 +112,7 @@ func createProposalBlockAndDeliverTxs(
 }
 
 func commitBlock(ctx context.Context, t *testing.T,
-	mem *CListMempool, block *types.Block, deliverTxResponses []*abci.ResponseDeliverTx) {
+	mem *CListMempool, block *types.Block, deliverTxResponses []*tmabci.ResponseDeliverTx) {
 	mem.Lock()
 	defer mem.Unlock()
 	err := mem.Update(block, deliverTxResponses, nil, nil)

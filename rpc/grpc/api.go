@@ -3,6 +3,8 @@ package coregrpc
 import (
 	"context"
 
+	tmabci "github.com/tendermint/tendermint/abci/types"
+
 	abci "github.com/line/ostracon/abci/types"
 	core "github.com/line/ostracon/rpc/core"
 	rpctypes "github.com/line/ostracon/rpc/jsonrpc/types"
@@ -30,7 +32,7 @@ func (bapi *broadcastAPI) BroadcastTx(ctx context.Context, req *RequestBroadcast
 			Data: res.CheckTx.Data,
 			Log:  res.CheckTx.Log,
 		},
-		DeliverTx: &abci.ResponseDeliverTx{
+		DeliverTx: &tmabci.ResponseDeliverTx{
 			Code: res.DeliverTx.Code,
 			Data: res.DeliverTx.Data,
 			Log:  res.DeliverTx.Log,

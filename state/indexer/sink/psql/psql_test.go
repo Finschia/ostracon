@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	tmabci "github.com/tendermint/tendermint/abci/types"
+
 	"github.com/adlio/schema"
 	"github.com/gogo/protobuf/proto"
 	abci "github.com/line/ostracon/abci/types"
@@ -159,12 +161,12 @@ func TestIndexing(t *testing.T) {
 	t.Run("IndexTxEvents", func(t *testing.T) {
 		indexer := &EventSink{store: testDB(), chainID: chainID}
 
-		txResult := txResultWithEvents([]abci.Event{
+		txResult := txResultWithEvents([]tmabci.Event{
 			makeIndexedEvent("account.number", "1"),
 			makeIndexedEvent("account.owner", "Ivan"),
 			makeIndexedEvent("account.owner", "Yulieta"),
 
-			{Type: "", Attributes: []abci.EventAttribute{
+			{Type: "", Attributes: []tmabci.EventAttribute{
 				{
 					Key:   []byte("not_allowed"),
 					Value: []byte("Vlad"),
@@ -172,7 +174,7 @@ func TestIndexing(t *testing.T) {
 				},
 			}},
 		})
-		require.NoError(t, indexer.IndexTxEvents([]*abci.TxResult{txResult}))
+		require.NoError(t, indexer.IndexTxEvents([]*tmabci.TxResult{txResult}))
 
 		txr, err := loadTxResult(types.Tx(txResult.Tx).Hash())
 		require.NoError(t, err)
@@ -191,7 +193,7 @@ func TestIndexing(t *testing.T) {
 		})
 
 		// try to insert the duplicate tx events.
-		err = indexer.IndexTxEvents([]*abci.TxResult{txResult})
+		err = indexer.IndexTxEvents([]*tmabci.TxResult{txResult})
 		require.NoError(t, err)
 	})
 }
@@ -206,14 +208,14 @@ func TestStop(t *testing.T) {
 func newTestBlockHeader() types.EventDataNewBlockHeader {
 	return types.EventDataNewBlockHeader{
 		Header: types.Header{Height: 1},
-		ResultBeginBlock: abci.ResponseBeginBlock{
-			Events: []abci.Event{
+		ResultBeginBlock: tmabci.ResponseBeginBlock{
+			Events: []tmabci.Event{
 				makeIndexedEvent("begin_event.proposer", "FCAA001"),
 				makeIndexedEvent("thingy.whatzit", "O.O"),
 			},
 		},
 		ResultEndBlock: abci.ResponseEndBlock{
-			Events: []abci.Event{
+			Events: []tmabci.Event{
 				makeIndexedEvent("end_event.foo", "100"),
 				makeIndexedEvent("thingy.whatzit", "-.O"),
 			},
@@ -250,12 +252,12 @@ func resetDatabase(db *sql.DB) error {
 
 // txResultWithEvents constructs a fresh transaction result with fixed values
 // for testing, that includes the specified events.
-func txResultWithEvents(events []abci.Event) *abci.TxResult {
-	return &abci.TxResult{
+func txResultWithEvents(events []tmabci.Event) *tmabci.TxResult {
+	return &tmabci.TxResult{
 		Height: 1,
 		Index:  0,
 		Tx:     types.Tx("HELLO WORLD"),
-		Result: abci.ResponseDeliverTx{
+		Result: tmabci.ResponseDeliverTx{
 			Data:   []byte{0},
 			Code:   abci.CodeTypeOK,
 			Log:    "",
@@ -264,7 +266,7 @@ func txResultWithEvents(events []abci.Event) *abci.TxResult {
 	}
 }
 
-func loadTxResult(hash []byte) (*abci.TxResult, error) {
+func loadTxResult(hash []byte) (*tmabci.TxResult, error) {
 	hashString := fmt.Sprintf("%X", hash)
 	var resultData []byte
 	if err := testDB().QueryRow(`
@@ -273,7 +275,7 @@ SELECT tx_result FROM `+tableTxResults+` WHERE tx_hash = $1;
 		return nil, fmt.Errorf("lookup transaction for hash %q failed: %v", hashString, err)
 	}
 
-	txr := new(abci.TxResult)
+	txr := new(tmabci.TxResult)
 	if err := proto.Unmarshal(resultData, txr); err != nil {
 		return nil, fmt.Errorf("unmarshaling txr: %v", err)
 	}

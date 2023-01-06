@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	abci "github.com/line/ostracon/abci/types"
+	tmabci "github.com/tendermint/tendermint/abci/types"
 )
 
 const (
@@ -22,7 +22,7 @@ const (
 type SnapshotStore struct {
 	sync.RWMutex
 	dir      string
-	metadata []abci.Snapshot
+	metadata []tmabci.Snapshot
 }
 
 // NewSnapshotStore creates a new snapshot store.
@@ -41,7 +41,7 @@ func NewSnapshotStore(dir string) (*SnapshotStore, error) {
 // called internally on construction.
 func (s *SnapshotStore) loadMetadata() error {
 	file := filepath.Join(s.dir, "metadata.json")
-	metadata := []abci.Snapshot{}
+	metadata := []tmabci.Snapshot{}
 
 	bz, err := os.ReadFile(file)
 	switch {
@@ -78,14 +78,14 @@ func (s *SnapshotStore) saveMetadata() error {
 }
 
 // Create creates a snapshot of the given application state's key/value pairs.
-func (s *SnapshotStore) Create(state *State) (abci.Snapshot, error) {
+func (s *SnapshotStore) Create(state *State) (tmabci.Snapshot, error) {
 	s.Lock()
 	defer s.Unlock()
 	bz, err := state.Export()
 	if err != nil {
-		return abci.Snapshot{}, err
+		return tmabci.Snapshot{}, err
 	}
-	snapshot := abci.Snapshot{
+	snapshot := tmabci.Snapshot{
 		Height: state.Height,
 		Format: 1,
 		Hash:   hashItems(state.Values),
@@ -93,21 +93,21 @@ func (s *SnapshotStore) Create(state *State) (abci.Snapshot, error) {
 	}
 	err = os.WriteFile(filepath.Join(s.dir, fmt.Sprintf("%v.json", state.Height)), bz, 0o644) //nolint:gosec
 	if err != nil {
-		return abci.Snapshot{}, err
+		return tmabci.Snapshot{}, err
 	}
 	s.metadata = append(s.metadata, snapshot)
 	err = s.saveMetadata()
 	if err != nil {
-		return abci.Snapshot{}, err
+		return tmabci.Snapshot{}, err
 	}
 	return snapshot, nil
 }
 
 // List lists available snapshots.
-func (s *SnapshotStore) List() ([]*abci.Snapshot, error) {
+func (s *SnapshotStore) List() ([]*tmabci.Snapshot, error) {
 	s.RLock()
 	defer s.RUnlock()
-	snapshots := make([]*abci.Snapshot, len(s.metadata))
+	snapshots := make([]*tmabci.Snapshot, len(s.metadata))
 	for idx := range s.metadata {
 		snapshots[idx] = &s.metadata[idx]
 	}

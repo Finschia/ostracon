@@ -3,6 +3,7 @@ package ostracon.rpc.grpc;
 option  go_package = "github.com/line/ostracon/rpc/grpc;coregrpc";
 
 import "ostracon/abci/types.proto";
+import "tendermint/abci/types.proto";
 
 //----------------------------------------
 // Request types
@@ -20,7 +21,7 @@ message ResponsePing {}
 
 message ResponseBroadcastTx {
   ostracon.abci.ResponseCheckTx   check_tx   = 1;
-  ostracon.abci.ResponseDeliverTx deliver_tx = 2;
+  tendermint.abci.ResponseDeliverTx deliver_tx = 2;
 }
 
 //----------------------------------------

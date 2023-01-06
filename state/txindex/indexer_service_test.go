@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	tmabci "github.com/tendermint/tendermint/abci/types"
 	db "github.com/tendermint/tm-db"
 
 	abci "github.com/line/ostracon/abci/types"
@@ -48,19 +49,19 @@ func TestIndexerServiceIndexesBlocks(t *testing.T) {
 		NumTxs: int64(2),
 	})
 	require.NoError(t, err)
-	txResult1 := &abci.TxResult{
+	txResult1 := &tmabci.TxResult{
 		Height: 1,
 		Index:  uint32(0),
 		Tx:     types.Tx("foo"),
-		Result: abci.ResponseDeliverTx{Code: 0},
+		Result: tmabci.ResponseDeliverTx{Code: 0},
 	}
 	err = eventBus.PublishEventTx(types.EventDataTx{TxResult: *txResult1})
 	require.NoError(t, err)
-	txResult2 := &abci.TxResult{
+	txResult2 := &tmabci.TxResult{
 		Height: 1,
 		Index:  uint32(1),
 		Tx:     types.Tx("bar"),
-		Result: abci.ResponseDeliverTx{Code: 0},
+		Result: tmabci.ResponseDeliverTx{Code: 0},
 	}
 	err = eventBus.PublishEventTx(types.EventDataTx{TxResult: *txResult2})
 	require.NoError(t, err)
@@ -85,119 +86,119 @@ func TestTxIndexDuplicatePreviouslySuccessful(t *testing.T) {
 
 	testCases := []struct {
 		name    string
-		tx1     abci.TxResult
-		tx2     abci.TxResult
+		tx1     tmabci.TxResult
+		tx2     tmabci.TxResult
 		expSkip bool // do we expect the second tx to be skipped by tx indexer
 	}{
 		{"skip, previously successful",
-			abci.TxResult{
+			tmabci.TxResult{
 				Height: 1,
 				Index:  0,
 				Tx:     mockTx,
-				Result: abci.ResponseDeliverTx{
+				Result: tmabci.ResponseDeliverTx{
 					Code: abci.CodeTypeOK,
 				},
 			},
-			abci.TxResult{
+			tmabci.TxResult{
 				Height: 2,
 				Index:  0,
 				Tx:     mockTx,
-				Result: abci.ResponseDeliverTx{
+				Result: tmabci.ResponseDeliverTx{
 					Code: abci.CodeTypeOK + 1,
 				},
 			},
 			true,
 		},
 		{"not skip, previously unsuccessful",
-			abci.TxResult{
+			tmabci.TxResult{
 				Height: 1,
 				Index:  0,
 				Tx:     mockTx,
-				Result: abci.ResponseDeliverTx{
+				Result: tmabci.ResponseDeliverTx{
 					Code: abci.CodeTypeOK + 1,
 				},
 			},
-			abci.TxResult{
+			tmabci.TxResult{
 				Height: 2,
 				Index:  0,
 				Tx:     mockTx,
-				Result: abci.ResponseDeliverTx{
+				Result: tmabci.ResponseDeliverTx{
 					Code: abci.CodeTypeOK + 1,
 				},
 			},
 			false,
 		},
 		{"not skip, both successful",
-			abci.TxResult{
+			tmabci.TxResult{
 				Height: 1,
 				Index:  0,
 				Tx:     mockTx,
-				Result: abci.ResponseDeliverTx{
+				Result: tmabci.ResponseDeliverTx{
 					Code: abci.CodeTypeOK,
 				},
 			},
-			abci.TxResult{
+			tmabci.TxResult{
 				Height: 2,
 				Index:  0,
 				Tx:     mockTx,
-				Result: abci.ResponseDeliverTx{
+				Result: tmabci.ResponseDeliverTx{
 					Code: abci.CodeTypeOK,
 				},
 			},
 			false,
 		},
 		{"not skip, both unsuccessful",
-			abci.TxResult{
+			tmabci.TxResult{
 				Height: 1,
 				Index:  0,
 				Tx:     mockTx,
-				Result: abci.ResponseDeliverTx{
+				Result: tmabci.ResponseDeliverTx{
 					Code: abci.CodeTypeOK + 1,
 				},
 			},
-			abci.TxResult{
+			tmabci.TxResult{
 				Height: 2,
 				Index:  0,
 				Tx:     mockTx,
-				Result: abci.ResponseDeliverTx{
+				Result: tmabci.ResponseDeliverTx{
 					Code: abci.CodeTypeOK + 1,
 				},
 			},
 			false,
 		},
 		{"skip, same block, previously successful",
-			abci.TxResult{
+			tmabci.TxResult{
 				Height: 1,
 				Index:  0,
 				Tx:     mockTx,
-				Result: abci.ResponseDeliverTx{
+				Result: tmabci.ResponseDeliverTx{
 					Code: abci.CodeTypeOK,
 				},
 			},
-			abci.TxResult{
+			tmabci.TxResult{
 				Height: 1,
 				Index:  0,
 				Tx:     mockTx,
-				Result: abci.ResponseDeliverTx{
+				Result: tmabci.ResponseDeliverTx{
 					Code: abci.CodeTypeOK + 1,
 				},
 			},
 			true,
 		},
 		{"not skip, same block, previously unsuccessful",
-			abci.TxResult{
+			tmabci.TxResult{
 				Height: 1,
 				Index:  0,
 				Tx:     mockTx,
-				Result: abci.ResponseDeliverTx{
+				Result: tmabci.ResponseDeliverTx{
 					Code: abci.CodeTypeOK + 1,
 				},
 			},
-			abci.TxResult{
+			tmabci.TxResult{
 				Height: 1,
 				Index:  0,
 				Tx:     mockTx,
-				Result: abci.ResponseDeliverTx{
+				Result: tmabci.ResponseDeliverTx{
 					Code: abci.CodeTypeOK,
 				},
 			},
@@ -212,29 +213,29 @@ func TestTxIndexDuplicatePreviouslySuccessful(t *testing.T) {
 			if tc.tx1.Height != tc.tx2.Height {
 				// index the first tx
 				err := indexer.AddBatch(&txindex.Batch{
-					Ops: []*abci.TxResult{&tc.tx1},
+					Ops: []*tmabci.TxResult{&tc.tx1},
 				})
 				require.NoError(t, err)
 
 				// check if the second one should be skipped.
-				ops, err := txindex.DeduplicateBatch([]*abci.TxResult{&tc.tx2}, indexer)
+				ops, err := txindex.DeduplicateBatch([]*tmabci.TxResult{&tc.tx2}, indexer)
 				require.NoError(t, err)
 
 				if tc.expSkip {
 					require.Empty(t, ops)
 				} else {
-					require.Equal(t, []*abci.TxResult{&tc.tx2}, ops)
+					require.Equal(t, []*tmabci.TxResult{&tc.tx2}, ops)
 				}
 			} else {
 				// same block
-				ops := []*abci.TxResult{&tc.tx1, &tc.tx2}
+				ops := []*tmabci.TxResult{&tc.tx1, &tc.tx2}
 				ops, err := txindex.DeduplicateBatch(ops, indexer)
 				require.NoError(t, err)
 				if tc.expSkip {
 					// the second one is skipped
-					require.Equal(t, []*abci.TxResult{&tc.tx1}, ops)
+					require.Equal(t, []*tmabci.TxResult{&tc.tx1}, ops)
 				} else {
-					require.Equal(t, []*abci.TxResult{&tc.tx1, &tc.tx2}, ops)
+					require.Equal(t, []*tmabci.TxResult{&tc.tx1, &tc.tx2}, ops)
 				}
 			}
 		})

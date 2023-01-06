@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	tmabci "github.com/tendermint/tendermint/abci/types"
 	db "github.com/tendermint/tm-db"
 
 	abci "github.com/line/ostracon/abci/types"
@@ -19,11 +20,11 @@ func TestBlockIndexer(t *testing.T) {
 	indexer := blockidxkv.New(store)
 	require.NoError(t, indexer.Index(types.EventDataNewBlockHeader{
 		Header: types.Header{Height: 1},
-		ResultBeginBlock: abci.ResponseBeginBlock{
-			Events: []abci.Event{
+		ResultBeginBlock: tmabci.ResponseBeginBlock{
+			Events: []tmabci.Event{
 				{
 					Type: "begin_event",
-					Attributes: []abci.EventAttribute{
+					Attributes: []tmabci.EventAttribute{
 						{
 							Key:   []byte("proposer"),
 							Value: []byte("FCAA001"),
@@ -34,10 +35,10 @@ func TestBlockIndexer(t *testing.T) {
 			},
 		},
 		ResultEndBlock: abci.ResponseEndBlock{
-			Events: []abci.Event{
+			Events: []tmabci.Event{
 				{
 					Type: "end_event",
-					Attributes: []abci.EventAttribute{
+					Attributes: []tmabci.EventAttribute{
 						{
 							Key:   []byte("foo"),
 							Value: []byte("100"),
@@ -57,11 +58,11 @@ func TestBlockIndexer(t *testing.T) {
 
 		require.NoError(t, indexer.Index(types.EventDataNewBlockHeader{
 			Header: types.Header{Height: int64(i)},
-			ResultBeginBlock: abci.ResponseBeginBlock{
-				Events: []abci.Event{
+			ResultBeginBlock: tmabci.ResponseBeginBlock{
+				Events: []tmabci.Event{
 					{
 						Type: "begin_event",
-						Attributes: []abci.EventAttribute{
+						Attributes: []tmabci.EventAttribute{
 							{
 								Key:   []byte("proposer"),
 								Value: []byte("FCAA001"),
@@ -72,10 +73,10 @@ func TestBlockIndexer(t *testing.T) {
 				},
 			},
 			ResultEndBlock: abci.ResponseEndBlock{
-				Events: []abci.Event{
+				Events: []tmabci.Event{
 					{
 						Type: "end_event",
-						Attributes: []abci.EventAttribute{
+						Attributes: []tmabci.EventAttribute{
 							{
 								Key:   []byte("foo"),
 								Value: []byte(fmt.Sprintf("%d", i)),

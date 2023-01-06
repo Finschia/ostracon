@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"testing"
 
+	tmabci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tm-db"
 
 	abci "github.com/line/ostracon/abci/types"
@@ -28,10 +29,10 @@ func BenchmarkTxSearch(b *testing.B) {
 	indexer := NewTxIndex(db)
 
 	for i := 0; i < 35000; i++ {
-		events := []abci.Event{
+		events := []tmabci.Event{
 			{
 				Type: "transfer",
-				Attributes: []abci.EventAttribute{
+				Attributes: []tmabci.EventAttribute{
 					{Key: []byte("address"), Value: []byte(fmt.Sprintf("address_%d", i%100)), Index: true},
 					{Key: []byte("amount"), Value: []byte("50"), Index: true},
 				},
@@ -43,11 +44,11 @@ func BenchmarkTxSearch(b *testing.B) {
 			b.Errorf("failed produce random bytes: %s", err)
 		}
 
-		txResult := &abci.TxResult{
+		txResult := &tmabci.TxResult{
 			Height: int64(i),
 			Index:  0,
 			Tx:     types.Tx(string(txBz)),
-			Result: abci.ResponseDeliverTx{
+			Result: tmabci.ResponseDeliverTx{
 				Data:   []byte{0},
 				Code:   abci.CodeTypeOK,
 				Log:    "",

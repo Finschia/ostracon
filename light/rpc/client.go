@@ -10,6 +10,8 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 
+	tmabci "github.com/tendermint/tendermint/abci/types"
+
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto/merkle"
 	tmbytes "github.com/line/ostracon/libs/bytes"
@@ -410,7 +412,7 @@ func (c *Client) BlockResults(ctx context.Context, height *int64) (*ctypes.Resul
 	}
 
 	// proto-encode BeginBlock events
-	bbeBytes, err := proto.Marshal(&abci.ResponseBeginBlock{
+	bbeBytes, err := proto.Marshal(&tmabci.ResponseBeginBlock{
 		Events: res.BeginBlockEvents,
 	})
 	if err != nil {

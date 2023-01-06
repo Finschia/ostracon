@@ -5,10 +5,11 @@ import (
 	"strings"
 	"testing"
 
+	tmabci "github.com/tendermint/tendermint/abci/types"
+
 	abcicli "github.com/line/ostracon/abci/client"
 	"github.com/line/ostracon/abci/example/kvstore"
 	"github.com/line/ostracon/abci/server"
-	"github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/log"
 	tmrand "github.com/line/ostracon/libs/rand"
 )
@@ -16,9 +17,9 @@ import (
 //----------------------------------------
 
 type AppConnTest interface {
-	FlushSync() (*types.ResponseFlush, error)
+	FlushSync() (*tmabci.ResponseFlush, error)
 	EchoAsync(string, abcicli.ResponseCallback) *abcicli.ReqRes
-	InfoSync(types.RequestInfo) (*types.ResponseInfo, error)
+	InfoSync(tmabci.RequestInfo) (*tmabci.ResponseInfo, error)
 }
 
 type appConnTest struct {
@@ -33,11 +34,11 @@ func (app *appConnTest) EchoAsync(msg string, cb abcicli.ResponseCallback) *abci
 	return app.appConn.EchoAsync(msg, cb)
 }
 
-func (app *appConnTest) FlushSync() (*types.ResponseFlush, error) {
+func (app *appConnTest) FlushSync() (*tmabci.ResponseFlush, error) {
 	return app.appConn.FlushSync()
 }
 
-func (app *appConnTest) InfoSync(req types.RequestInfo) (*types.ResponseInfo, error) {
+func (app *appConnTest) InfoSync(req tmabci.RequestInfo) (*tmabci.ResponseInfo, error) {
 	return app.appConn.InfoSync(req)
 }
 
@@ -124,7 +125,7 @@ func BenchmarkEcho(b *testing.B) {
 	}
 
 	b.StopTimer()
-	// info := proxy.InfoSync(types.RequestInfo{""})
+	// info := proxy.InfoSync(tmabci.RequestInfo{""})
 	// b.Log("N: ", b.N, info)
 }
 

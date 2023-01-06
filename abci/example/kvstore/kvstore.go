@@ -6,10 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 
+	tmabci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/line/ostracon/abci/example/code"
-	"github.com/line/ostracon/abci/types"
+	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/version"
 )
 
@@ -61,10 +62,10 @@ func prefixKey(key []byte) []byte {
 
 //---------------------------------------------------
 
-var _ types.Application = (*Application)(nil)
+var _ abci.Application = (*Application)(nil)
 
 type Application struct {
-	types.BaseApplication
+	abci.BaseApplication
 
 	state        State
 	RetainBlocks int64 // blocks to retain after commit (via ResponseCommit.RetainHeight)
@@ -75,8 +76,8 @@ func NewApplication() *Application {
 	return &Application{state: state}
 }
 
-func (app *Application) Info(req types.RequestInfo) (resInfo types.ResponseInfo) {
-	return types.ResponseInfo{
+func (app *Application) Info(req tmabci.RequestInfo) (resInfo tmabci.ResponseInfo) {
+	return tmabci.ResponseInfo{
 		Data:             fmt.Sprintf("{\"size\":%v}", app.state.Size),
 		Version:          version.ABCIVersion,
 		AppVersion:       ProtocolVersion,
@@ -86,7 +87,7 @@ func (app *Application) Info(req types.RequestInfo) (resInfo types.ResponseInfo)
 }
 
 // tx is either "key=value" or just arbitrary bytes
-func (app *Application) DeliverTx(req types.RequestDeliverTx) types.ResponseDeliverTx {
+func (app *Application) DeliverTx(req tmabci.RequestDeliverTx) tmabci.ResponseDeliverTx {
 	var key, value []byte
 	parts := bytes.Split(req.Tx, []byte("="))
 	if len(parts) == 2 {
@@ -101,10 +102,10 @@ func (app *Application) DeliverTx(req types.RequestDeliverTx) types.ResponseDeli
 	}
 	app.state.Size++
 
-	events := []types.Event{
+	events := []tmabci.Event{
 		{
 			Type: "app",
-			Attributes: []types.EventAttribute{
+			Attributes: []tmabci.EventAttribute{
 				{Key: []byte("creator"), Value: []byte("Cosmoshi Netowoko"), Index: true},
 				{Key: []byte("key"), Value: key, Index: true},
 				{Key: []byte("index_key"), Value: []byte("index is working"), Index: true},
@@ -113,22 +114,22 @@ func (app *Application) DeliverTx(req types.RequestDeliverTx) types.ResponseDeli
 		},
 	}
 
-	return types.ResponseDeliverTx{Code: code.CodeTypeOK, Events: events}
+	return tmabci.ResponseDeliverTx{Code: code.CodeTypeOK, Events: events}
 }
 
-func (app *Application) CheckTxSync(req types.RequestCheckTx) types.ResponseCheckTx {
+func (app *Application) CheckTxSync(req tmabci.RequestCheckTx) abci.ResponseCheckTx {
 	return app.checkTx(req)
 }
 
-func (app *Application) CheckTxAsync(req types.RequestCheckTx, callback types.CheckTxCallback) {
+func (app *Application) CheckTxAsync(req tmabci.RequestCheckTx, callback abci.CheckTxCallback) {
 	callback(app.checkTx(req))
 }
 
-func (app *Application) checkTx(req types.RequestCheckTx) types.ResponseCheckTx {
-	return types.ResponseCheckTx{Code: code.CodeTypeOK, GasWanted: 1}
+func (app *Application) checkTx(req tmabci.RequestCheckTx) abci.ResponseCheckTx {
+	return abci.ResponseCheckTx{Code: code.CodeTypeOK, GasWanted: 1}
 }
 
-func (app *Application) Commit() types.ResponseCommit {
+func (app *Application) Commit() tmabci.ResponseCommit {
 	// Using a memdb - just return the big endian size of the db
 	appHash := make([]byte, 8)
 	binary.PutVarint(appHash, app.state.Size)
@@ -136,7 +137,7 @@ func (app *Application) Commit() types.ResponseCommit {
 	app.state.Height++
 	saveState(app.state)
 
-	resp := types.ResponseCommit{Data: appHash}
+	resp := tmabci.ResponseCommit{Data: appHash}
 	if app.RetainBlocks > 0 && app.state.Height >= app.RetainBlocks {
 		resp.RetainHeight = app.state.Height - app.RetainBlocks + 1
 	}
@@ -144,7 +145,7 @@ func (app *Application) Commit() types.ResponseCommit {
 }
 
 // Returns an associated value or nil if missing.
-func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.ResponseQuery) {
+func (app *Application) Query(reqQuery tmabci.RequestQuery) (resQuery tmabci.ResponseQuery) {
 	if reqQuery.Prove {
 		value, err := app.state.db.Get(prefixKey(reqQuery.Data))
 		if err != nil {

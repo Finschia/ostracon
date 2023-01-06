@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	tmabci "github.com/tendermint/tendermint/abci/types"
 
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
@@ -2097,12 +2098,12 @@ func subscribeUnBuffered(eventBus *types.EventBus, q tmpubsub.Query) <-chan tmpu
 func TestPruneBlocks(t *testing.T) {
 	// Based behaviour is counter.Application
 	mockApp := &mocks.Application{}
-	mockApp.On("BeginBlock", mock.Anything).Return(abci.ResponseBeginBlock{})
+	mockApp.On("BeginBlock", mock.Anything).Return(tmabci.ResponseBeginBlock{})
 	mockApp.On("EndBlock", mock.Anything).Return(abci.ResponseEndBlock{})
 	mockApp.On("BeginRecheckTx", mock.Anything).Return(abci.ResponseBeginRecheckTx{Code: abci.CodeTypeOK})
 	mockApp.On("EndRecheckTx", mock.Anything).Return(abci.ResponseEndRecheckTx{Code: abci.CodeTypeOK})
 	// Mocking behaviour to response `RetainHeight` for pruneBlocks
-	mockApp.On("Commit", mock.Anything, mock.Anything).Return(abci.ResponseCommit{RetainHeight: 1})
+	mockApp.On("Commit", mock.Anything, mock.Anything).Return(tmabci.ResponseCommit{RetainHeight: 1})
 
 	cs1, vss := randStateWithApp(4, mockApp)
 	height, round := cs1.Height, cs1.Round

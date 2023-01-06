@@ -17,7 +17,8 @@ import (
 	"context"
 	"errors"
 
-	abci "github.com/line/ostracon/abci/types"
+	tmabci "github.com/tendermint/tendermint/abci/types"
+
 	"github.com/line/ostracon/libs/pubsub/query"
 	"github.com/line/ostracon/state/txindex"
 	"github.com/line/ostracon/types"
@@ -43,19 +44,19 @@ func (b BackportTxIndexer) AddBatch(batch *txindex.Batch) error {
 }
 
 // Index indexes a single transaction result in Postgres, as part of TxIndexer.
-func (b BackportTxIndexer) Index(txr *abci.TxResult) error {
-	return b.psql.IndexTxEvents([]*abci.TxResult{txr})
+func (b BackportTxIndexer) Index(txr *tmabci.TxResult) error {
+	return b.psql.IndexTxEvents([]*tmabci.TxResult{txr})
 }
 
 // Get is implemented to satisfy the TxIndexer interface, but is not supported
 // by the psql event sink and reports an error for all inputs.
-func (BackportTxIndexer) Get([]byte) (*abci.TxResult, error) {
+func (BackportTxIndexer) Get([]byte) (*tmabci.TxResult, error) {
 	return nil, errors.New("the TxIndexer.Get method is not supported")
 }
 
 // Search is implemented to satisfy the TxIndexer interface, but it is not
 // supported by the psql event sink and reports an error for all inputs.
-func (BackportTxIndexer) Search(context.Context, *query.Query) ([]*abci.TxResult, error) {
+func (BackportTxIndexer) Search(context.Context, *query.Query) ([]*tmabci.TxResult, error) {
 	return nil, errors.New("the TxIndexer.Search method is not supported")
 }
 

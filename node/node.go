@@ -13,9 +13,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
+	tmabci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tm-db"
 
-	abci "github.com/line/ostracon/abci/types"
 	bcv0 "github.com/line/ostracon/blockchain/v0"
 	bcv1 "github.com/line/ostracon/blockchain/v1"
 	bcv2 "github.com/line/ostracon/blockchain/v2"
@@ -507,7 +507,7 @@ func createTransport(
 			connFilters,
 			// ABCI query for address filtering.
 			func(_ p2p.ConnSet, c net.Conn, _ []net.IP) error {
-				res, err := proxyApp.Query().QuerySync(abci.RequestQuery{
+				res, err := proxyApp.Query().QuerySync(tmabci.RequestQuery{
 					Path: fmt.Sprintf("/p2p/filter/addr/%s", c.RemoteAddr().String()),
 				})
 				if err != nil {
@@ -525,7 +525,7 @@ func createTransport(
 			peerFilters,
 			// ABCI query for ID filtering.
 			func(_ p2p.IPeerSet, p p2p.Peer) error {
-				res, err := proxyApp.Query().QuerySync(abci.RequestQuery{
+				res, err := proxyApp.Query().QuerySync(tmabci.RequestQuery{
 					Path: fmt.Sprintf("/p2p/filter/id/%s", p.ID()),
 				})
 				if err != nil {

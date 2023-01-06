@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	tmabci "github.com/tendermint/tendermint/abci/types"
+
 	"github.com/line/ostracon/abci/example/kvstore"
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/bytes"
@@ -28,7 +30,7 @@ func TestABCIMock(t *testing.T) {
 
 	m := mock.ABCIMock{
 		Info: mock.Call{Error: errors.New("foobar")},
-		Query: mock.Call{Response: abci.ResponseQuery{
+		Query: mock.Call{Response: tmabci.ResponseQuery{
 			Key:    key,
 			Value:  value,
 			Height: height,
@@ -38,7 +40,7 @@ func TestABCIMock(t *testing.T) {
 			Args: goodTx,
 			Response: &ctypes.ResultBroadcastTxCommit{
 				CheckTx:   abci.ResponseCheckTx{Data: bytes.HexBytes("stand")},
-				DeliverTx: abci.ResponseDeliverTx{Data: bytes.HexBytes("deliver")},
+				DeliverTx: tmabci.ResponseDeliverTx{Data: bytes.HexBytes("deliver")},
 			},
 			Error: errors.New("bad tx"),
 		},
@@ -83,7 +85,7 @@ func TestABCIRecorder(t *testing.T) {
 
 	// This mock returns errors on everything but Query
 	m := mock.ABCIMock{
-		Info: mock.Call{Response: abci.ResponseInfo{
+		Info: mock.Call{Response: tmabci.ResponseInfo{
 			Data:    "data",
 			Version: "v0.9.9",
 		}},

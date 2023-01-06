@@ -13,14 +13,15 @@ import "tendermint/version/types.proto";
 import "google/protobuf/timestamp.proto";
 import "tendermint/types/types.proto";
 import "tendermint/state/types.proto";
+import "tendermint/abci/types.proto";
 
 // ABCIResponses retains the responses
 // of the various ABCI calls during block processing.
 // It is persisted to disk for each height before calling Commit.
 message ABCIResponses {
-  repeated ostracon.abci.ResponseDeliverTx deliver_txs = 1;
+  repeated tendermint.abci.ResponseDeliverTx deliver_txs = 1;
   ostracon.abci.ResponseEndBlock           end_block   = 2;
-  ostracon.abci.ResponseBeginBlock         begin_block = 3;
+  tendermint.abci.ResponseBeginBlock         begin_block = 3;
 }
 
 // ValidatorsInfo represents the latest validator set, or the last height it changed

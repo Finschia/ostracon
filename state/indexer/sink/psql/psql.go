@@ -9,8 +9,9 @@ import (
 	"strings"
 	"time"
 
+	tmabci "github.com/tendermint/tendermint/abci/types"
+
 	"github.com/gogo/protobuf/proto"
-	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/pubsub/query"
 	"github.com/line/ostracon/types"
 )
@@ -82,7 +83,7 @@ func queryWithID(tx *sql.Tx, query string, args ...interface{}) (uint32, error) 
 //
 // If txID > 0, the event is attributed to the Tendermint transaction with that
 // ID; otherwise it is recorded as a block event.
-func insertEvents(dbtx *sql.Tx, blockID, txID uint32, evts []abci.Event) error {
+func insertEvents(dbtx *sql.Tx, blockID, txID uint32, evts []tmabci.Event) error {
 	// Populate the transaction ID field iff one is defined (> 0).
 	var txIDArg interface{}
 	if txID > 0 {
@@ -126,12 +127,12 @@ INSERT INTO `+tableAttributes+` (event_id, key, composite_key, value)
 // value. If the key has the form "type.name", the event will have a single
 // attribute with that name and the value; otherwise the event will have only
 // a type and no attributes.
-func makeIndexedEvent(compositeKey, value string) abci.Event {
+func makeIndexedEvent(compositeKey, value string) tmabci.Event {
 	i := strings.Index(compositeKey, ".")
 	if i < 0 {
-		return abci.Event{Type: compositeKey}
+		return tmabci.Event{Type: compositeKey}
 	}
-	return abci.Event{Type: compositeKey[:i], Attributes: []abci.EventAttribute{
+	return tmabci.Event{Type: compositeKey[:i], Attributes: []tmabci.EventAttribute{
 		{Key: []byte(compositeKey[i+1:]), Value: []byte(value), Index: true},
 	}}
 }
@@ -157,7 +158,7 @@ INSERT INTO `+tableBlocks+` (height, chain_id, created_at)
 		}
 
 		// Insert the special block meta-event for height.
-		if err := insertEvents(dbtx, blockID, 0, []abci.Event{
+		if err := insertEvents(dbtx, blockID, 0, []tmabci.Event{
 			makeIndexedEvent(types.BlockHeightKey, fmt.Sprint(h.Header.Height)),
 		}); err != nil {
 			return fmt.Errorf("block meta-events: %w", err)
@@ -173,7 +174,7 @@ INSERT INTO `+tableBlocks+` (height, chain_id, created_at)
 	})
 }
 
-func (es *EventSink) IndexTxEvents(txrs []*abci.TxResult) error {
+func (es *EventSink) IndexTxEvents(txrs []*tmabci.TxResult) error {
 	ts := time.Now().UTC()
 
 	for _, txr := range txrs {
@@ -210,7 +211,7 @@ INSERT INTO `+tableTxResults+` (block_id, index, created_at, tx_hash, tx_result)
 			}
 
 			// Insert the special transaction meta-events for hash and height.
-			if err := insertEvents(dbtx, blockID, txID, []abci.Event{
+			if err := insertEvents(dbtx, blockID, txID, []tmabci.Event{
 				makeIndexedEvent(types.TxHashKey, txHash),
 				makeIndexedEvent(types.TxHeightKey, fmt.Sprint(txr.Height)),
 			}); err != nil {
@@ -235,12 +236,12 @@ func (es *EventSink) SearchBlockEvents(ctx context.Context, q *query.Query) ([]i
 }
 
 // SearchTxEvents is not implemented by this sink, and reports an error for all queries.
-func (es *EventSink) SearchTxEvents(ctx context.Context, q *query.Query) ([]*abci.TxResult, error) {
+func (es *EventSink) SearchTxEvents(ctx context.Context, q *query.Query) ([]*tmabci.TxResult, error) {
 	return nil, errors.New("tx search is not supported via the postgres event sink")
 }
 
 // GetTxByHash is not implemented by this sink, and reports an error for all queries.
-func (es *EventSink) GetTxByHash(hash []byte) (*abci.TxResult, error) {
+func (es *EventSink) GetTxByHash(hash []byte) (*tmabci.TxResult, error) {
 	return nil, errors.New("getTxByHash is not supported via the postgres event sink")
 }
 

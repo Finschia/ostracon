@@ -3,6 +3,8 @@ package mempool
 import (
 	"fmt"
 
+	tmabci "github.com/tendermint/tendermint/abci/types"
+
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/p2p"
 	"github.com/line/ostracon/types"
@@ -44,7 +46,7 @@ type Mempool interface {
 	// NOTE: Lock/Unlock must be managed by caller
 	Update(
 		block *types.Block,
-		deliverTxResponses []*abci.ResponseDeliverTx,
+		deliverTxResponses []*tmabci.ResponseDeliverTx,
 		newPreFn PreCheckFunc,
 		newPostFn PostCheckFunc,
 	) error

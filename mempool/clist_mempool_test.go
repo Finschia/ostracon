@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	tmabci "github.com/tendermint/tendermint/abci/types"
+
 	"github.com/gogo/protobuf/proto"
 	gogotypes "github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/assert"
@@ -103,7 +105,7 @@ func TestReapMaxBytesMaxGas(t *testing.T) {
 	tx0 := mempool.TxsFront().Value.(*mempoolTx)
 	// assert that kv store has gas wanted = 1.
 	require.Equal(t,
-		app.CheckTxSync(abci.RequestCheckTx{Tx: tx0.tx}).GasWanted, int64(1), "KVStore had a gas value neq to 1")
+		app.CheckTxSync(tmabci.RequestCheckTx{Tx: tx0.tx}).GasWanted, int64(1), "KVStore had a gas value neq to 1")
 	require.Equal(t, tx0.gasWanted, int64(1), "transactions gas was set incorrectly")
 	// ensure each tx is 20 bytes long
 	require.Equal(t, len(tx0.tx), 20, "Tx is longer than 20 bytes")
@@ -242,10 +244,10 @@ func TestMempool_KeepInvalidTxsInCache(t *testing.T) {
 		require.NoError(t, err)
 
 		// simulate new block
-		_ = app.DeliverTx(abci.RequestDeliverTx{Tx: a})
-		_ = app.DeliverTx(abci.RequestDeliverTx{Tx: b})
+		_ = app.DeliverTx(tmabci.RequestDeliverTx{Tx: a})
+		_ = app.DeliverTx(tmabci.RequestDeliverTx{Tx: b})
 		err = mempool.Update(newTestBlock(1, []types.Tx{a, b}),
-			[]*abci.ResponseDeliverTx{{Code: abci.CodeTypeOK}, {Code: 2}}, nil, nil)
+			[]*tmabci.ResponseDeliverTx{{Code: abci.CodeTypeOK}, {Code: 2}}, nil, nil)
 		require.NoError(t, err)
 
 		// a must be added to the cache
@@ -327,7 +329,7 @@ func TestTxsAvailable(t *testing.T) {
 
 func TestSerialReap(t *testing.T) {
 	app := counter.NewApplication(true)
-	app.SetOption(abci.RequestSetOption{Key: "serial", Value: "on"})
+	app.SetOption(tmabci.RequestSetOption{Key: "serial", Value: "on"})
 	cc := proxy.NewLocalClientCreator(app)
 
 	mempool, cleanup := newMempoolWithApp(cc)
@@ -384,7 +386,7 @@ func TestSerialReap(t *testing.T) {
 		for i := start; i < end; i++ {
 			txBytes := make([]byte, 8)
 			binary.BigEndian.PutUint64(txBytes, uint64(i))
-			res, err := appConnCon.DeliverTxSync(abci.RequestDeliverTx{Tx: txBytes})
+			res, err := appConnCon.DeliverTxSync(tmabci.RequestDeliverTx{Tx: txBytes})
 			if err != nil {
 				t.Errorf("client error committing tx: %v", err)
 			}
@@ -588,7 +590,7 @@ func TestMempoolTxsBytes(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	res, err := appConnCon.DeliverTxSync(abci.RequestDeliverTx{Tx: txBytes})
+	res, err := appConnCon.DeliverTxSync(tmabci.RequestDeliverTx{Tx: txBytes})
 	require.NoError(t, err)
 	require.EqualValues(t, 0, res.Code)
 	res2, err := appConnCon.CommitSync()
@@ -694,10 +696,10 @@ func checksumFile(p string, t *testing.T) string {
 	return checksumIt(data)
 }
 
-func abciResponses(n int, code uint32) []*abci.ResponseDeliverTx {
-	responses := make([]*abci.ResponseDeliverTx, 0, n)
+func abciResponses(n int, code uint32) []*tmabci.ResponseDeliverTx {
+	responses := make([]*tmabci.ResponseDeliverTx, 0, n)
 	for i := 0; i < n; i++ {
-		responses = append(responses, &abci.ResponseDeliverTx{Code: code})
+		responses = append(responses, &tmabci.ResponseDeliverTx{Code: code})
 	}
 	return responses
 }
@@ -732,9 +734,9 @@ func TestTxMempoolPostCheckError(t *testing.T) {
 			_, err := mempool.CheckTxSync(tx, TxInfo{})
 			require.NoError(t, err)
 
-			req := abci.RequestCheckTx{
+			req := tmabci.RequestCheckTx{
 				Tx:   tx,
-				Type: abci.CheckTxType_Recheck,
+				Type: tmabci.CheckTxType_Recheck,
 			}
 			res := &abci.Response{}
 

@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	tmabci "github.com/tendermint/tendermint/abci/types"
+
 	abcicli "github.com/line/ostracon/abci/client"
 	"github.com/line/ostracon/abci/example/code"
 	abciserver "github.com/line/ostracon/abci/server"
@@ -24,7 +26,7 @@ const (
 )
 
 func testKVStore(t *testing.T, app types.Application, tx []byte, key, value string) {
-	req := types.RequestDeliverTx{Tx: tx}
+	req := tmabci.RequestDeliverTx{Tx: tx}
 	ar := app.DeliverTx(req)
 	require.False(t, ar.IsErr(), ar)
 	// repeating tx doesn't raise error
@@ -33,11 +35,11 @@ func testKVStore(t *testing.T, app types.Application, tx []byte, key, value stri
 	// commit
 	app.Commit()
 
-	info := app.Info(types.RequestInfo{})
+	info := app.Info(tmabci.RequestInfo{})
 	require.NotZero(t, info.LastBlockHeight)
 
 	// make sure query is fine
-	resQuery := app.Query(types.RequestQuery{
+	resQuery := app.Query(tmabci.RequestQuery{
 		Path: "/store",
 		Data: []byte(key),
 	})
@@ -47,7 +49,7 @@ func testKVStore(t *testing.T, app types.Application, tx []byte, key, value stri
 	require.EqualValues(t, info.LastBlockHeight, resQuery.Height)
 
 	// make sure proof is fine
-	resQuery = app.Query(types.RequestQuery{
+	resQuery = app.Query(tmabci.RequestQuery{
 		Path:  "/store",
 		Data:  []byte(key),
 		Prove: true,
@@ -95,7 +97,7 @@ func TestPersistentKVStoreInfo(t *testing.T) {
 	InitKVStore(kvstore)
 	height := int64(0)
 
-	resInfo := kvstore.Info(types.RequestInfo{})
+	resInfo := kvstore.Info(tmabci.RequestInfo{})
 	if resInfo.LastBlockHeight != height {
 		t.Fatalf("expected height of %d, got %d", height, resInfo.LastBlockHeight)
 	}
@@ -107,10 +109,10 @@ func TestPersistentKVStoreInfo(t *testing.T) {
 		Height: height,
 	}
 	kvstore.BeginBlock(types.RequestBeginBlock{Hash: hash, Header: header})
-	kvstore.EndBlock(types.RequestEndBlock{Height: header.Height})
+	kvstore.EndBlock(tmabci.RequestEndBlock{Height: header.Height})
 	kvstore.Commit()
 
-	resInfo = kvstore.Info(types.RequestInfo{})
+	resInfo = kvstore.Info(tmabci.RequestInfo{})
 	if resInfo.LastBlockHeight != height {
 		t.Fatalf("expected height of %d, got %d", height, resInfo.LastBlockHeight)
 	}
@@ -202,11 +204,11 @@ func makeApplyBlock(
 
 	kvstore.BeginBlock(types.RequestBeginBlock{Hash: hash, Header: header})
 	for _, tx := range txs {
-		if r := kvstore.DeliverTx(types.RequestDeliverTx{Tx: tx}); r.IsErr() {
+		if r := kvstore.DeliverTx(tmabci.RequestDeliverTx{Tx: tx}); r.IsErr() {
 			t.Fatal(r)
 		}
 	}
-	resEndBlock := kvstore.EndBlock(types.RequestEndBlock{Height: header.Height})
+	resEndBlock := kvstore.EndBlock(tmabci.RequestEndBlock{Height: header.Height})
 	kvstore.Commit()
 
 	valsEqual(t, diff, resEndBlock.ValidatorUpdates)
@@ -216,19 +218,19 @@ func makeApplyBlock(
 func existInPersistStore(t *testing.T, kvstore types.Application, v types.ValidatorUpdate) {
 	// success
 	pubkeyStr, _ := MakeValSetChangeTxAndMore(v.PubKey, v.Power)
-	resQuery := kvstore.Query(types.RequestQuery{Path: "/val", Data: []byte(pubkeyStr)})
+	resQuery := kvstore.Query(tmabci.RequestQuery{Path: "/val", Data: []byte(pubkeyStr)})
 	assert.False(t, resQuery.IsErr(), resQuery)
 	assert.Equal(t, "", resQuery.Log)
 	// failures
 	{
 		// default Query: does not exist
-		r := kvstore.Query(types.RequestQuery{Path: "/val_", Data: []byte(pubkeyStr)})
+		r := kvstore.Query(tmabci.RequestQuery{Path: "/val_", Data: []byte(pubkeyStr)})
 		assert.False(t, r.IsErr(), r)
 		assert.Contains(t, r.Log, "does not exist")
 	}
 	{
 		// Query: does not exist
-		r := kvstore.Query(types.RequestQuery{Path: "/val", Data: []byte{}})
+		r := kvstore.Query(tmabci.RequestQuery{Path: "/val", Data: []byte{}})
 		assert.False(t, r.IsErr(), r)
 		assert.Equal(t, "", resQuery.Log)
 	}
@@ -347,23 +349,23 @@ func runClientTests(t *testing.T, client abcicli.Client) {
 }
 
 func testClient(t *testing.T, app abcicli.Client, tx []byte, key, value string) {
-	ar, err := app.DeliverTxSync(types.RequestDeliverTx{Tx: tx})
+	ar, err := app.DeliverTxSync(tmabci.RequestDeliverTx{Tx: tx})
 	require.NoError(t, err)
 	require.False(t, ar.IsErr(), ar)
 	// repeating tx doesn't raise error
-	ar, err = app.DeliverTxSync(types.RequestDeliverTx{Tx: tx})
+	ar, err = app.DeliverTxSync(tmabci.RequestDeliverTx{Tx: tx})
 	require.NoError(t, err)
 	require.False(t, ar.IsErr(), ar)
 	// commit
 	_, err = app.CommitSync()
 	require.NoError(t, err)
 
-	info, err := app.InfoSync(types.RequestInfo{})
+	info, err := app.InfoSync(tmabci.RequestInfo{})
 	require.NoError(t, err)
 	require.NotZero(t, info.LastBlockHeight)
 
 	// make sure query is fine
-	resQuery, err := app.QuerySync(types.RequestQuery{
+	resQuery, err := app.QuerySync(tmabci.RequestQuery{
 		Path: "/store",
 		Data: []byte(key),
 	})
@@ -374,7 +376,7 @@ func testClient(t *testing.T, app abcicli.Client, tx []byte, key, value string) 
 	require.EqualValues(t, info.LastBlockHeight, resQuery.Height)
 
 	// make sure proof is fine
-	resQuery, err = app.QuerySync(types.RequestQuery{
+	resQuery, err = app.QuerySync(tmabci.RequestQuery{
 		Path:  "/store",
 		Data:  []byte(key),
 		Prove: true,

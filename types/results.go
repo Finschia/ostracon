@@ -1,16 +1,17 @@
 package types
 
 import (
-	abci "github.com/line/ostracon/abci/types"
+	tmabci "github.com/tendermint/tendermint/abci/types"
+
 	"github.com/line/ostracon/crypto/merkle"
 )
 
 // ABCIResults wraps the deliver tx results to return a proof.
-type ABCIResults []*abci.ResponseDeliverTx
+type ABCIResults []*tmabci.ResponseDeliverTx
 
 // NewResults strips non-deterministic fields from ResponseDeliverTx responses
 // and returns ABCIResults.
-func NewResults(responses []*abci.ResponseDeliverTx) ABCIResults {
+func NewResults(responses []*tmabci.ResponseDeliverTx) ABCIResults {
 	res := make(ABCIResults, len(responses))
 	for i, d := range responses {
 		res[i] = deterministicResponseDeliverTx(d)
@@ -44,8 +45,8 @@ func (a ABCIResults) toByteSlices() [][]byte {
 
 // deterministicResponseDeliverTx strips non-deterministic fields from
 // ResponseDeliverTx and returns another ResponseDeliverTx.
-func deterministicResponseDeliverTx(response *abci.ResponseDeliverTx) *abci.ResponseDeliverTx {
-	return &abci.ResponseDeliverTx{
+func deterministicResponseDeliverTx(response *tmabci.ResponseDeliverTx) *tmabci.ResponseDeliverTx {
+	return &tmabci.ResponseDeliverTx{
 		Code:      response.Code,
 		Data:      response.Data,
 		GasWanted: response.GasWanted,

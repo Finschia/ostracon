@@ -3,6 +3,8 @@ package txindex
 import (
 	"context"
 
+	tmabci "github.com/tendermint/tendermint/abci/types"
+
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/service"
 	"github.com/line/ostracon/state/indexer"
@@ -109,8 +111,8 @@ func (is *IndexerService) OnStop() {
 // if the current one under investigation is NOT OK, then we need to check
 // whether there's a previously indexed tx.
 // SKIP the current tx if the previously indexed record is found and successful.
-func DeduplicateBatch(ops []*abci.TxResult, txIdxr TxIndexer) ([]*abci.TxResult, error) {
-	result := make([]*abci.TxResult, 0, len(ops))
+func DeduplicateBatch(ops []*tmabci.TxResult, txIdxr TxIndexer) ([]*tmabci.TxResult, error) {
+	result := make([]*tmabci.TxResult, 0, len(ops))
 
 	// keep track of successful txs in this block in order to suppress latter ones being indexed.
 	var successfulTxsInThisBlock = make(map[string]struct{})

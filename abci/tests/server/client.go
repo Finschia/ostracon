@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 
+	tmabci "github.com/tendermint/tendermint/abci/types"
+
 	abcicli "github.com/line/ostracon/abci/client"
 	"github.com/line/ostracon/abci/example/kvstore"
-	"github.com/line/ostracon/abci/types"
+	types "github.com/line/ostracon/abci/types"
 	tmrand "github.com/line/ostracon/libs/rand"
 )
 
@@ -31,7 +33,7 @@ func InitChain(client abcicli.Client) error {
 }
 
 func SetOption(client abcicli.Client, key, value string) error {
-	_, err := client.SetOptionSync(types.RequestSetOption{Key: key, Value: value})
+	_, err := client.SetOptionSync(tmabci.RequestSetOption{Key: key, Value: value})
 	if err != nil {
 		fmt.Println("Failed test: SetOption")
 		fmt.Printf("error while setting %v=%v: \nerror: %v\n", key, value, err)
@@ -59,7 +61,7 @@ func Commit(client abcicli.Client, hashExp []byte) error {
 }
 
 func DeliverTx(client abcicli.Client, txBytes []byte, codeExp uint32, dataExp []byte) error {
-	res, _ := client.DeliverTxSync(types.RequestDeliverTx{Tx: txBytes})
+	res, _ := client.DeliverTxSync(tmabci.RequestDeliverTx{Tx: txBytes})
 	code, data, log := res.Code, res.Data, res.Log
 	if code != codeExp {
 		fmt.Println("Failed test: DeliverTx")
@@ -78,7 +80,7 @@ func DeliverTx(client abcicli.Client, txBytes []byte, codeExp uint32, dataExp []
 }
 
 func CheckTx(client abcicli.Client, txBytes []byte, codeExp uint32, dataExp []byte) error {
-	res, _ := client.CheckTxSync(types.RequestCheckTx{Tx: txBytes})
+	res, _ := client.CheckTxSync(tmabci.RequestCheckTx{Tx: txBytes})
 	code, data, log := res.Code, res.Data, res.Log
 	if code != codeExp {
 		fmt.Println("Failed test: CheckTx")

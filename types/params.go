@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	tmabci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto/tmhash"
 	"github.com/line/ostracon/version"
 )
@@ -158,7 +158,7 @@ func HashConsensusParams(params tmproto.ConsensusParams) []byte {
 
 // Update returns a copy of the params with updates from the non-zero fields of p2.
 // NOTE: note: must not modify the original
-func UpdateConsensusParams(params tmproto.ConsensusParams, params2 *abci.ConsensusParams) tmproto.ConsensusParams {
+func UpdateConsensusParams(params tmproto.ConsensusParams, params2 *tmabci.ConsensusParams) tmproto.ConsensusParams {
 	res := params // explicit copy
 
 	if params2 == nil {

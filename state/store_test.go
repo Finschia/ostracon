@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	tmabci "github.com/tendermint/tendermint/abci/types"
 	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
@@ -179,7 +180,7 @@ func TestPruneStates(t *testing.T) {
 
 				currentHeight := state.LastBlockHeight + int64(1)
 				err = stateStore.SaveABCIResponses(currentHeight, &ocstate.ABCIResponses{
-					DeliverTxs: []*abci.ResponseDeliverTx{
+					DeliverTxs: []*tmabci.ResponseDeliverTx{
 						{Data: []byte{1}},
 						{Data: []byte{2}},
 						{Data: []byte{3}},
@@ -289,8 +290,8 @@ func TestPruneStatesDeleteErrHandle(t *testing.T) {
 
 func TestABCIResponsesResultsHash(t *testing.T) {
 	responses := &ocstate.ABCIResponses{
-		BeginBlock: &abci.ResponseBeginBlock{},
-		DeliverTxs: []*abci.ResponseDeliverTx{
+		BeginBlock: &tmabci.ResponseBeginBlock{},
+		DeliverTxs: []*tmabci.ResponseDeliverTx{
 			{Code: 32, Data: []byte("Hello"), Log: "Huh?"},
 		},
 		EndBlock: &abci.ResponseEndBlock{},

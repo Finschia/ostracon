@@ -2,6 +2,8 @@ package kvstore
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/ed25519"
@@ -9,7 +11,6 @@ import (
 	tmos "github.com/line/ostracon/libs/os"
 	tmrand "github.com/line/ostracon/libs/rand"
 	"github.com/line/ostracon/privval"
-	"os"
 )
 
 // LoadPrivValidatorKeyFile Load private key for use in an example or test.

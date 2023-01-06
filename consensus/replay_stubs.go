@@ -1,6 +1,8 @@
 package consensus
 
 import (
+	tmabci "github.com/tendermint/tendermint/abci/types"
+
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/clist"
 	mempl "github.com/line/ostracon/mempool"
@@ -28,7 +30,7 @@ func (emptyMempool) ReapMaxBytesMaxGasMaxTxs(_, _, _ int64) types.Txs { return t
 func (emptyMempool) ReapMaxTxs(n int) types.Txs                       { return types.Txs{} }
 func (emptyMempool) Update(
 	_ *types.Block,
-	_ []*abci.ResponseDeliverTx,
+	_ []*tmabci.ResponseDeliverTx,
 	_ mempl.PreCheckFunc,
 	_ mempl.PostCheckFunc,
 ) error {
@@ -73,20 +75,20 @@ type mockProxyApp struct {
 	abciResponses *ocstate.ABCIResponses
 }
 
-func (mock *mockProxyApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
+func (mock *mockProxyApp) DeliverTx(req tmabci.RequestDeliverTx) tmabci.ResponseDeliverTx {
 	r := mock.abciResponses.DeliverTxs[mock.txCount]
 	mock.txCount++
 	if r == nil {
-		return abci.ResponseDeliverTx{}
+		return tmabci.ResponseDeliverTx{}
 	}
 	return *r
 }
 
-func (mock *mockProxyApp) EndBlock(req abci.RequestEndBlock) abci.ResponseEndBlock {
+func (mock *mockProxyApp) EndBlock(req tmabci.RequestEndBlock) abci.ResponseEndBlock {
 	mock.txCount = 0
 	return *mock.abciResponses.EndBlock
 }
 
-func (mock *mockProxyApp) Commit() abci.ResponseCommit {
-	return abci.ResponseCommit{Data: mock.appHash}
+func (mock *mockProxyApp) Commit() tmabci.ResponseCommit {
+	return tmabci.ResponseCommit{Data: mock.appHash}
 }

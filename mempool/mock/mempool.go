@@ -1,6 +1,8 @@
 package mock
 
 import (
+	tmabci "github.com/tendermint/tendermint/abci/types"
+
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/clist"
 	mempl "github.com/line/ostracon/mempool"
@@ -25,7 +27,7 @@ func (Mempool) ReapMaxBytesMaxGasMaxTxs(_, _, _ int64) types.Txs { return types.
 func (Mempool) ReapMaxTxs(n int) types.Txs                       { return types.Txs{} }
 func (Mempool) Update(
 	_ *types.Block,
-	_ []*abci.ResponseDeliverTx,
+	_ []*tmabci.ResponseDeliverTx,
 	_ mempl.PreCheckFunc,
 	_ mempl.PostCheckFunc,
 ) error {

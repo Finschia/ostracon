@@ -1,6 +1,7 @@
 package types
 
 import (
+	tmabci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	abci "github.com/line/ostracon/abci/types"
@@ -103,9 +104,9 @@ func (oc2pb) ValidatorUpdates(vals *ValidatorSet) []abci.ValidatorUpdate {
 	return validators
 }
 
-func (oc2pb) ConsensusParams(params *tmproto.ConsensusParams) *abci.ConsensusParams {
-	return &abci.ConsensusParams{
-		Block: &abci.BlockParams{
+func (oc2pb) ConsensusParams(params *tmproto.ConsensusParams) *tmabci.ConsensusParams {
+	return &tmabci.ConsensusParams{
+		Block: &tmabci.BlockParams{
 			MaxBytes: params.Block.MaxBytes,
 			MaxGas:   params.Block.MaxGas,
 		},

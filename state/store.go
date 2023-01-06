@@ -5,11 +5,11 @@ import (
 	"fmt"
 
 	"github.com/gogo/protobuf/proto"
+	tmabci "github.com/tendermint/tendermint/abci/types"
 	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	abci "github.com/line/ostracon/abci/types"
 	tmmath "github.com/line/ostracon/libs/math"
 	tmos "github.com/line/ostracon/libs/os"
 	ocstate "github.com/line/ostracon/proto/ostracon/state"
@@ -406,7 +406,7 @@ func (store dbStore) LoadABCIResponses(height int64) (*ocstate.ABCIResponses, er
 //
 // Exposed for testing.
 func (store dbStore) SaveABCIResponses(height int64, abciResponses *ocstate.ABCIResponses) error {
-	var dtxs []*abci.ResponseDeliverTx
+	var dtxs []*tmabci.ResponseDeliverTx
 	// strip nil values,
 	for _, tx := range abciResponses.DeliverTxs {
 		if tx != nil {

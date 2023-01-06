@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	tmabci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	abci "github.com/line/ostracon/abci/types"
@@ -93,7 +94,7 @@ func NewDuplicateVoteEvidence(vote1, vote2 *Vote, blockTime time.Time, valSet *V
 // ABCI returns the application relevant representation of the evidence
 func (dve *DuplicateVoteEvidence) ABCI() []abci.Evidence {
 	return []abci.Evidence{{
-		Type: abci.EvidenceType_DUPLICATE_VOTE,
+		Type: tmabci.EvidenceType_DUPLICATE_VOTE,
 		Validator: abci.Validator{
 			Address: dve.VoteA.ValidatorAddress,
 			Power:   dve.ValidatorPower,
@@ -222,7 +223,7 @@ func (l *LightClientAttackEvidence) ABCI() []abci.Evidence {
 	abciEv := make([]abci.Evidence, len(l.ByzantineValidators))
 	for idx, val := range l.ByzantineValidators {
 		abciEv[idx] = abci.Evidence{
-			Type:             abci.EvidenceType_LIGHT_CLIENT_ATTACK,
+			Type:             tmabci.EvidenceType_LIGHT_CLIENT_ATTACK,
 			Validator:        OC2PB.Validator(val),
 			Height:           l.Height(),
 			Time:             l.Timestamp,

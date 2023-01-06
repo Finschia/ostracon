@@ -5,9 +5,9 @@ import (
 	"sort"
 	"time"
 
+	tmabci "github.com/tendermint/tendermint/abci/types"
 	ssproto "github.com/tendermint/tendermint/proto/tendermint/statesync"
 
-	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/config"
 	tmsync "github.com/line/ostracon/libs/sync"
 	"github.com/line/ostracon/p2p"
@@ -177,7 +177,7 @@ func (r *Reactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 		case *ssproto.ChunkRequest:
 			r.Logger.Debug("Received chunk request", "height", msg.Height, "format", msg.Format,
 				"chunk", msg.Index, "peer", src.ID())
-			resp, err := r.conn.LoadSnapshotChunkSync(abci.RequestLoadSnapshotChunk{
+			resp, err := r.conn.LoadSnapshotChunkSync(tmabci.RequestLoadSnapshotChunk{
 				Height: msg.Height,
 				Format: msg.Format,
 				Chunk:  msg.Index,
@@ -230,7 +230,7 @@ func (r *Reactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 
 // recentSnapshots fetches the n most recent snapshots from the app
 func (r *Reactor) recentSnapshots(n uint32) ([]*snapshot, error) {
-	resp, err := r.conn.ListSnapshotsSync(abci.RequestListSnapshots{})
+	resp, err := r.conn.ListSnapshotsSync(tmabci.RequestListSnapshots{})
 	if err != nil {
 		return nil, err
 	}

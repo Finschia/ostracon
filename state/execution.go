@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	tmabci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	abci "github.com/line/ostracon/abci/types"
@@ -273,7 +274,7 @@ func (blockExec *BlockExecutor) ApplyBlock(
 func (blockExec *BlockExecutor) Commit(
 	state State,
 	block *types.Block,
-	deliverTxResponses []*abci.ResponseDeliverTx,
+	deliverTxResponses []*tmabci.ResponseDeliverTx,
 	stepTimes *CommitStepTimes,
 ) ([]byte, int64, error) {
 	blockExec.mempool.Lock()
@@ -347,7 +348,7 @@ func execBlockOnProxyApp(
 
 	txIndex := 0
 	abciResponses := new(ocstate.ABCIResponses)
-	dtxs := make([]*abci.ResponseDeliverTx, len(block.Txs))
+	dtxs := make([]*tmabci.ResponseDeliverTx, len(block.Txs))
 	abciResponses.DeliverTxs = dtxs
 
 	// Execute transactions and get hash.
@@ -398,7 +399,7 @@ func execBlockOnProxyApp(
 	startTime := time.Now()
 	// run txs of block
 	for _, tx := range block.Txs {
-		proxyAppConn.DeliverTxAsync(abci.RequestDeliverTx{Tx: tx}, nil)
+		proxyAppConn.DeliverTxAsync(tmabci.RequestDeliverTx{Tx: tx}, nil)
 		if err := proxyAppConn.Error(); err != nil {
 			return nil, err
 		}
@@ -407,7 +408,7 @@ func execBlockOnProxyApp(
 	execTime := endTime.Sub(startTime)
 
 	// End block.
-	abciResponses.EndBlock, err = proxyAppConn.EndBlockSync(abci.RequestEndBlock{Height: block.Height})
+	abciResponses.EndBlock, err = proxyAppConn.EndBlockSync(tmabci.RequestEndBlock{Height: block.Height})
 	if err != nil {
 		logger.Error("error in proxyAppConn.EndBlock", "err", err)
 		return nil, err
@@ -599,7 +600,7 @@ func fireEvents(
 	}
 
 	for i, tx := range block.Data.Txs {
-		if err := eventBus.PublishEventTx(types.EventDataTx{TxResult: abci.TxResult{
+		if err := eventBus.PublishEventTx(types.EventDataTx{TxResult: tmabci.TxResult{
 			Height: block.Height,
 			Index:  uint32(i),
 			Tx:     tx,

@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/line/ostracon/abci/types"
+	tmabci "github.com/tendermint/tendermint/abci/types"
+
+	types "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/service"
 	tmsync "github.com/line/ostracon/libs/sync"
 )
@@ -29,39 +31,39 @@ type Client interface {
 
 	FlushAsync(ResponseCallback) *ReqRes
 	EchoAsync(string, ResponseCallback) *ReqRes
-	InfoAsync(types.RequestInfo, ResponseCallback) *ReqRes
-	SetOptionAsync(types.RequestSetOption, ResponseCallback) *ReqRes
-	DeliverTxAsync(types.RequestDeliverTx, ResponseCallback) *ReqRes
-	CheckTxAsync(types.RequestCheckTx, ResponseCallback) *ReqRes
-	QueryAsync(types.RequestQuery, ResponseCallback) *ReqRes
+	InfoAsync(tmabci.RequestInfo, ResponseCallback) *ReqRes
+	SetOptionAsync(tmabci.RequestSetOption, ResponseCallback) *ReqRes
+	DeliverTxAsync(tmabci.RequestDeliverTx, ResponseCallback) *ReqRes
+	CheckTxAsync(tmabci.RequestCheckTx, ResponseCallback) *ReqRes
+	QueryAsync(tmabci.RequestQuery, ResponseCallback) *ReqRes
 	CommitAsync(ResponseCallback) *ReqRes
 	InitChainAsync(types.RequestInitChain, ResponseCallback) *ReqRes
 	BeginBlockAsync(types.RequestBeginBlock, ResponseCallback) *ReqRes
-	EndBlockAsync(types.RequestEndBlock, ResponseCallback) *ReqRes
+	EndBlockAsync(tmabci.RequestEndBlock, ResponseCallback) *ReqRes
 	BeginRecheckTxAsync(types.RequestBeginRecheckTx, ResponseCallback) *ReqRes
 	EndRecheckTxAsync(types.RequestEndRecheckTx, ResponseCallback) *ReqRes
-	ListSnapshotsAsync(types.RequestListSnapshots, ResponseCallback) *ReqRes
-	OfferSnapshotAsync(types.RequestOfferSnapshot, ResponseCallback) *ReqRes
-	LoadSnapshotChunkAsync(types.RequestLoadSnapshotChunk, ResponseCallback) *ReqRes
-	ApplySnapshotChunkAsync(types.RequestApplySnapshotChunk, ResponseCallback) *ReqRes
+	ListSnapshotsAsync(tmabci.RequestListSnapshots, ResponseCallback) *ReqRes
+	OfferSnapshotAsync(tmabci.RequestOfferSnapshot, ResponseCallback) *ReqRes
+	LoadSnapshotChunkAsync(tmabci.RequestLoadSnapshotChunk, ResponseCallback) *ReqRes
+	ApplySnapshotChunkAsync(tmabci.RequestApplySnapshotChunk, ResponseCallback) *ReqRes
 
-	FlushSync() (*types.ResponseFlush, error)
-	EchoSync(string) (*types.ResponseEcho, error)
-	InfoSync(types.RequestInfo) (*types.ResponseInfo, error)
-	SetOptionSync(types.RequestSetOption) (*types.ResponseSetOption, error)
-	DeliverTxSync(types.RequestDeliverTx) (*types.ResponseDeliverTx, error)
-	CheckTxSync(types.RequestCheckTx) (*types.ResponseCheckTx, error)
-	QuerySync(types.RequestQuery) (*types.ResponseQuery, error)
-	CommitSync() (*types.ResponseCommit, error)
+	FlushSync() (*tmabci.ResponseFlush, error)
+	EchoSync(string) (*tmabci.ResponseEcho, error)
+	InfoSync(tmabci.RequestInfo) (*tmabci.ResponseInfo, error)
+	SetOptionSync(tmabci.RequestSetOption) (*tmabci.ResponseSetOption, error)
+	DeliverTxSync(tmabci.RequestDeliverTx) (*tmabci.ResponseDeliverTx, error)
+	CheckTxSync(tmabci.RequestCheckTx) (*types.ResponseCheckTx, error)
+	QuerySync(tmabci.RequestQuery) (*tmabci.ResponseQuery, error)
+	CommitSync() (*tmabci.ResponseCommit, error)
 	InitChainSync(types.RequestInitChain) (*types.ResponseInitChain, error)
-	BeginBlockSync(types.RequestBeginBlock) (*types.ResponseBeginBlock, error)
-	EndBlockSync(types.RequestEndBlock) (*types.ResponseEndBlock, error)
+	BeginBlockSync(types.RequestBeginBlock) (*tmabci.ResponseBeginBlock, error)
+	EndBlockSync(tmabci.RequestEndBlock) (*types.ResponseEndBlock, error)
 	BeginRecheckTxSync(types.RequestBeginRecheckTx) (*types.ResponseBeginRecheckTx, error)
 	EndRecheckTxSync(types.RequestEndRecheckTx) (*types.ResponseEndRecheckTx, error)
-	ListSnapshotsSync(types.RequestListSnapshots) (*types.ResponseListSnapshots, error)
-	OfferSnapshotSync(types.RequestOfferSnapshot) (*types.ResponseOfferSnapshot, error)
-	LoadSnapshotChunkSync(types.RequestLoadSnapshotChunk) (*types.ResponseLoadSnapshotChunk, error)
-	ApplySnapshotChunkSync(types.RequestApplySnapshotChunk) (*types.ResponseApplySnapshotChunk, error)
+	ListSnapshotsSync(tmabci.RequestListSnapshots) (*tmabci.ResponseListSnapshots, error)
+	OfferSnapshotSync(tmabci.RequestOfferSnapshot) (*tmabci.ResponseOfferSnapshot, error)
+	LoadSnapshotChunkSync(tmabci.RequestLoadSnapshotChunk) (*tmabci.ResponseLoadSnapshotChunk, error)
+	ApplySnapshotChunkSync(tmabci.RequestApplySnapshotChunk) (*tmabci.ResponseApplySnapshotChunk, error)
 }
 
 //----------------------------------------

@@ -16,6 +16,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	tmabci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
@@ -609,8 +610,8 @@ func TestMockProxyApp(t *testing.T) {
 
 	assert.NotPanics(t, func() {
 		abciResWithEmptyDeliverTx := new(ocstate.ABCIResponses)
-		abciResWithEmptyDeliverTx.DeliverTxs = make([]*abci.ResponseDeliverTx, 0)
-		abciResWithEmptyDeliverTx.DeliverTxs = append(abciResWithEmptyDeliverTx.DeliverTxs, &abci.ResponseDeliverTx{})
+		abciResWithEmptyDeliverTx.DeliverTxs = make([]*tmabci.ResponseDeliverTx, 0)
+		abciResWithEmptyDeliverTx.DeliverTxs = append(abciResWithEmptyDeliverTx.DeliverTxs, &tmabci.ResponseDeliverTx{})
 
 		// called when saveABCIResponses:
 		bytes, err := proto.Marshal(abciResWithEmptyDeliverTx)
@@ -624,7 +625,7 @@ func TestMockProxyApp(t *testing.T) {
 		mock := newMockProxyApp([]byte("mock_hash"), loadedAbciRes)
 
 		abciRes := new(ocstate.ABCIResponses)
-		abciRes.DeliverTxs = make([]*abci.ResponseDeliverTx, len(loadedAbciRes.DeliverTxs))
+		abciRes.DeliverTxs = make([]*tmabci.ResponseDeliverTx, len(loadedAbciRes.DeliverTxs))
 		// Execute transactions and get hash.
 		proxyCb := func(req *abci.Request, res *abci.Response) {
 			if r, ok := res.Value.(*abci.Response_DeliverTx); ok {
@@ -645,7 +646,7 @@ func TestMockProxyApp(t *testing.T) {
 		mock.SetGlobalCallback(proxyCb)
 
 		someTx := []byte("tx")
-		mock.DeliverTxAsync(abci.RequestDeliverTx{Tx: someTx}, nil)
+		mock.DeliverTxAsync(tmabci.RequestDeliverTx{Tx: someTx}, nil)
 	})
 	assert.True(t, validTxs == 1)
 	assert.True(t, invalidTxs == 0)
@@ -782,7 +783,7 @@ func testHandshakeReplay(t *testing.T, config *cfg.Config, nBlocks int, mode uin
 	}
 
 	// get the latest app hash from the app
-	res, err := proxyApp.Query().InfoSync(abci.RequestInfo{Version: ""})
+	res, err := proxyApp.Query().InfoSync(tmabci.RequestInfo{Version: ""})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1037,15 +1038,15 @@ type badApp struct {
 	onlyLastHashIsWrong bool
 }
 
-func (app *badApp) Commit() abci.ResponseCommit {
+func (app *badApp) Commit() tmabci.ResponseCommit {
 	app.height++
 	if app.onlyLastHashIsWrong {
 		if app.height == app.numBlocks {
-			return abci.ResponseCommit{Data: tmrand.Bytes(8)}
+			return tmabci.ResponseCommit{Data: tmrand.Bytes(8)}
 		}
-		return abci.ResponseCommit{Data: []byte{app.height}}
+		return tmabci.ResponseCommit{Data: []byte{app.height}}
 	} else if app.allHashesAreWrong {
-		return abci.ResponseCommit{Data: tmrand.Bytes(8)}
+		return tmabci.ResponseCommit{Data: tmrand.Bytes(8)}
 	}
 
 	panic("either allHashesAreWrong or onlyLastHashIsWrong must be set")
