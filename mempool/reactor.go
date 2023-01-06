@@ -6,12 +6,13 @@ import (
 	"math"
 	"time"
 
+	protomem "github.com/tendermint/tendermint/proto/tendermint/mempool"
+
 	cfg "github.com/line/ostracon/config"
 	"github.com/line/ostracon/libs/clist"
 	"github.com/line/ostracon/libs/log"
 	tmsync "github.com/line/ostracon/libs/sync"
 	"github.com/line/ostracon/p2p"
-	protomem "github.com/line/ostracon/proto/ostracon/mempool"
 	"github.com/line/ostracon/types"
 )
 

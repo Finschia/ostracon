@@ -5,7 +5,7 @@ option go_package = "github.com/line/ostracon/proto/ostracon/types";
 
 import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
-import "ostracon/crypto/proof.proto";
+import "tendermint/crypto/proof.proto";
 import "ostracon/version/types.proto";
 import "ostracon/types/validator.proto";
 
@@ -43,7 +43,7 @@ message PartSetHeader {
 message Part {
   uint32                index = 1;
   bytes                 bytes = 2;
-  ostracon.crypto.Proof proof = 3 [(gogoproto.nullable) = false];
+  tendermint.crypto.Proof proof = 3 [(gogoproto.nullable) = false];
 }
 
 // BlockID
@@ -160,5 +160,5 @@ message BlockMeta {
 message TxProof {
   bytes                 root_hash = 1;
   bytes                 data      = 2;
-  ostracon.crypto.Proof proof     = 3;
+  tendermint.crypto.Proof proof     = 3;
 }

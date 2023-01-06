@@ -7,13 +7,14 @@ import (
 	"fmt"
 	"time"
 
+	ssproto "github.com/tendermint/tendermint/proto/tendermint/statesync"
+
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/config"
 	"github.com/line/ostracon/libs/log"
 	tmsync "github.com/line/ostracon/libs/sync"
 	"github.com/line/ostracon/light"
 	"github.com/line/ostracon/p2p"
-	ssproto "github.com/line/ostracon/proto/ostracon/statesync"
 	"github.com/line/ostracon/proxy"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"

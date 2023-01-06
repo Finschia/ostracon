@@ -13,6 +13,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	memproto "github.com/tendermint/tendermint/proto/tendermint/mempool"
+
 	"github.com/line/ostracon/abci/example/kvstore"
 	abci "github.com/line/ostracon/abci/types"
 	cfg "github.com/line/ostracon/config"
@@ -20,7 +22,6 @@ import (
 	tmrand "github.com/line/ostracon/libs/rand"
 	"github.com/line/ostracon/p2p"
 	"github.com/line/ostracon/p2p/mock"
-	memproto "github.com/line/ostracon/proto/ostracon/mempool"
 	"github.com/line/ostracon/proxy"
 	"github.com/line/ostracon/types"
 )

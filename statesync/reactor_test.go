@@ -18,10 +18,11 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	ssproto "github.com/tendermint/tendermint/proto/tendermint/statesync"
+
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/p2p"
 	p2pmocks "github.com/line/ostracon/p2p/mocks"
-	ssproto "github.com/line/ostracon/proto/ostracon/statesync"
 	proxymocks "github.com/line/ostracon/proxy/mocks"
 )
 

@@ -7,7 +7,8 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/require"
 
-	ssproto "github.com/line/ostracon/proto/ostracon/statesync"
+	ssproto "github.com/tendermint/tendermint/proto/tendermint/statesync"
+
 	tmproto "github.com/line/ostracon/proto/ostracon/types"
 )
 

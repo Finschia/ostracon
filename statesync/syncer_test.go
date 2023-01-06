@@ -12,6 +12,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	ssproto "github.com/tendermint/tendermint/proto/tendermint/statesync"
+
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/config"
 	"github.com/line/ostracon/libs/log"
@@ -19,7 +21,6 @@ import (
 	"github.com/line/ostracon/p2p"
 	p2pmocks "github.com/line/ostracon/p2p/mocks"
 	tmstate "github.com/line/ostracon/proto/ostracon/state"
-	ssproto "github.com/line/ostracon/proto/ostracon/statesync"
 	tmversion "github.com/line/ostracon/proto/ostracon/version"
 	"github.com/line/ostracon/proxy"
 	proxymocks "github.com/line/ostracon/proxy/mocks"

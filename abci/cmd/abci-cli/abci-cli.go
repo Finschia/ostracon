@@ -11,12 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/line/ostracon/config"
-
 	"github.com/spf13/cobra"
-
-	"github.com/line/ostracon/libs/log"
-	tmos "github.com/line/ostracon/libs/os"
+	tmcrypto "github.com/tendermint/tendermint/proto/tendermint/crypto"
 
 	abcicli "github.com/line/ostracon/abci/client"
 	"github.com/line/ostracon/abci/example/code"
@@ -26,8 +22,10 @@ import (
 	servertest "github.com/line/ostracon/abci/tests/server"
 	"github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/abci/version"
+	"github.com/line/ostracon/config"
 	"github.com/line/ostracon/crypto/encoding"
-	"github.com/line/ostracon/proto/ostracon/crypto"
+	"github.com/line/ostracon/libs/log"
+	tmos "github.com/line/ostracon/libs/os"
 )
 
 // client is a global variable so it can be reused by the console
@@ -109,7 +107,7 @@ type queryResponse struct {
 	Key      []byte
 	Value    []byte
 	Height   int64
-	ProofOps *crypto.ProofOps
+	ProofOps *tmcrypto.ProofOps
 }
 
 func Execute() error {
