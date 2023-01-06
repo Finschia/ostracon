@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	tmprivvalproto "github.com/tendermint/tendermint/proto/tendermint/privval"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/line/ostracon/crypto"
@@ -54,7 +55,7 @@ func (sc *SignerClient) WaitForConnection(maxWait time.Duration) error {
 // GetPubKey retrieves a public key from a remote signer
 // returns an error if client is not able to provide the key
 func (sc *SignerClient) GetPubKey() (crypto.PubKey, error) {
-	response, err := sc.endpoint.SendRequest(mustWrapMsg(&privvalproto.PubKeyRequest{ChainId: sc.chainID}))
+	response, err := sc.endpoint.SendRequest(mustWrapMsg(&tmprivvalproto.PubKeyRequest{ChainId: sc.chainID}))
 	if err != nil {
 		return nil, fmt.Errorf("send: %w", err)
 	}
@@ -77,7 +78,7 @@ func (sc *SignerClient) GetPubKey() (crypto.PubKey, error) {
 
 // SignVote requests a remote signer to sign a vote
 func (sc *SignerClient) SignVote(chainID string, vote *tmproto.Vote) error {
-	response, err := sc.endpoint.SendRequest(mustWrapMsg(&privvalproto.SignVoteRequest{Vote: vote, ChainId: chainID}))
+	response, err := sc.endpoint.SendRequest(mustWrapMsg(&tmprivvalproto.SignVoteRequest{Vote: vote, ChainId: chainID}))
 	if err != nil {
 		return err
 	}
@@ -98,7 +99,7 @@ func (sc *SignerClient) SignVote(chainID string, vote *tmproto.Vote) error {
 // SignProposal requests a remote signer to sign a proposal
 func (sc *SignerClient) SignProposal(chainID string, proposal *tmproto.Proposal) error {
 	response, err := sc.endpoint.SendRequest(mustWrapMsg(
-		&privvalproto.SignProposalRequest{Proposal: proposal, ChainId: chainID},
+		&tmprivvalproto.SignProposalRequest{Proposal: proposal, ChainId: chainID},
 	))
 	if err != nil {
 		return err

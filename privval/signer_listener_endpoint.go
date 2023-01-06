@@ -5,6 +5,8 @@ import (
 	"net"
 	"time"
 
+	tmprivvalproto "github.com/tendermint/tendermint/proto/tendermint/privval"
+
 	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/libs/service"
 	tmsync "github.com/line/ostracon/libs/sync"
@@ -210,7 +212,7 @@ func (sl *SignerListenerEndpoint) pingLoop() {
 		select {
 		case <-sl.pingTimer.C:
 			{
-				_, err := sl.SendRequest(mustWrapMsg(&privvalproto.PingRequest{}))
+				_, err := sl.SendRequest(mustWrapMsg(&tmprivvalproto.PingRequest{}))
 				if err != nil {
 					sl.Logger.Error("SignerListener: Ping timeout")
 					sl.triggerReconnect()

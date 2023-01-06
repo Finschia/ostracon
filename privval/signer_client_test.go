@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	tmprivvalproto "github.com/tendermint/tendermint/proto/tendermint/privval"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/line/ostracon/crypto"
@@ -422,7 +423,7 @@ func brokenHandler(privVal types.PrivValidator, request privvalproto.Message,
 	case *privvalproto.Message_SignProposalRequest:
 		res = mustWrapMsg(&privvalproto.PubKeyResponse{PubKey: cryptoproto.PublicKey{}, Error: nil})
 	case *privvalproto.Message_PingRequest:
-		err, res = nil, mustWrapMsg(&privvalproto.PingResponse{})
+		err, res = nil, mustWrapMsg(&tmprivvalproto.PingResponse{})
 	default:
 		err = fmt.Errorf("unknown msg: %v", r)
 	}
