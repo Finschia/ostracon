@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
 	ssproto "github.com/tendermint/tendermint/proto/tendermint/statesync"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
@@ -51,11 +51,11 @@ func TestReactor_Receive_ChunkRequest(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			// Mock ABCI connection to return local snapshots
 			conn := &proxymocks.AppConnSnapshot{}
-			conn.On("LoadSnapshotChunkSync", tmabci.RequestLoadSnapshotChunk{
+			conn.On("LoadSnapshotChunkSync", abci.RequestLoadSnapshotChunk{
 				Height: tc.request.Height,
 				Format: tc.request.Format,
 				Chunk:  tc.request.Index,
-			}).Return(&tmabci.ResponseLoadSnapshotChunk{Chunk: tc.chunk}, nil)
+			}).Return(&abci.ResponseLoadSnapshotChunk{Chunk: tc.chunk}, nil)
 
 			// Mock peer to store response, if found
 			peer := &p2pmocks.Peer{}
@@ -92,12 +92,12 @@ func TestReactor_Receive_ChunkRequest(t *testing.T) {
 
 func TestReactor_Receive_SnapshotsRequest(t *testing.T) {
 	testcases := map[string]struct {
-		snapshots       []*tmabci.Snapshot
+		snapshots       []*abci.Snapshot
 		expectResponses []*ssproto.SnapshotsResponse
 	}{
 		"no snapshots": {nil, []*ssproto.SnapshotsResponse{}},
 		">10 unordered snapshots": {
-			[]*tmabci.Snapshot{
+			[]*abci.Snapshot{
 				{Height: 1, Format: 2, Chunks: 7, Hash: []byte{1, 2}, Metadata: []byte{1}},
 				{Height: 2, Format: 2, Chunks: 7, Hash: []byte{2, 2}, Metadata: []byte{2}},
 				{Height: 3, Format: 2, Chunks: 7, Hash: []byte{3, 2}, Metadata: []byte{3}},
@@ -131,7 +131,7 @@ func TestReactor_Receive_SnapshotsRequest(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			// Mock ABCI connection to return local snapshots
 			conn := &proxymocks.AppConnSnapshot{}
-			conn.On("ListSnapshotsSync", tmabci.RequestListSnapshots{}).Return(&tmabci.ResponseListSnapshots{
+			conn.On("ListSnapshotsSync", abci.RequestListSnapshots{}).Return(&abci.ResponseListSnapshots{
 				Snapshots: tc.snapshots,
 			}, nil)
 
@@ -207,18 +207,18 @@ func makeTestStateSyncReactor(
 func makeMockAppConnSnapshot(appHash string, snapshot *snapshot, chunks []*chunk) *proxymocks.AppConnSnapshot {
 	connSnapshot := &proxymocks.AppConnSnapshot{}
 
-	connSnapshot.On("OfferSnapshotSync", tmabci.RequestOfferSnapshot{
-		Snapshot: &tmabci.Snapshot{
+	connSnapshot.On("OfferSnapshotSync", abci.RequestOfferSnapshot{
+		Snapshot: &abci.Snapshot{
 			Height: snapshot.Height,
 			Format: snapshot.Format,
 			Chunks: snapshot.Chunks,
 			Hash:   snapshot.Hash,
 		},
 		AppHash: []byte(appHash),
-	}).Return(&tmabci.ResponseOfferSnapshot{Result: tmabci.ResponseOfferSnapshot_ACCEPT}, nil)
+	}).Return(&abci.ResponseOfferSnapshot{Result: abci.ResponseOfferSnapshot_ACCEPT}, nil)
 
-	connSnapshot.On("ListSnapshotsSync", tmabci.RequestListSnapshots{}).Return(&tmabci.ResponseListSnapshots{
-		Snapshots: []*tmabci.Snapshot{{
+	connSnapshot.On("ListSnapshotsSync", abci.RequestListSnapshots{}).Return(&abci.ResponseListSnapshots{
+		Snapshots: []*abci.Snapshot{{
 			Height:   snapshot.Height,
 			Format:   snapshot.Format,
 			Chunks:   snapshot.Chunks,
@@ -230,10 +230,10 @@ func makeMockAppConnSnapshot(appHash string, snapshot *snapshot, chunks []*chunk
 	index := len(chunks)
 	for i := 0; i < index; i++ {
 		connSnapshot.On("ApplySnapshotChunkSync",
-			mock.Anything).Return(&tmabci.ResponseApplySnapshotChunk{Result: tmabci.ResponseApplySnapshotChunk_ACCEPT}, nil)
-		connSnapshot.On("LoadSnapshotChunkSync", tmabci.RequestLoadSnapshotChunk{
+			mock.Anything).Return(&abci.ResponseApplySnapshotChunk{Result: abci.ResponseApplySnapshotChunk_ACCEPT}, nil)
+		connSnapshot.On("LoadSnapshotChunkSync", abci.RequestLoadSnapshotChunk{
 			Height: chunks[i].Height, Format: chunks[i].Format, Chunk: chunks[i].Index,
-		}).Return(&tmabci.ResponseLoadSnapshotChunk{Chunk: chunks[i].Chunk}, nil)
+		}).Return(&abci.ResponseLoadSnapshotChunk{Chunk: chunks[i].Chunk}, nil)
 	}
 
 	return connSnapshot
@@ -241,7 +241,7 @@ func makeMockAppConnSnapshot(appHash string, snapshot *snapshot, chunks []*chunk
 
 func makeMockAppConnQuery(appHash string, height int64) *proxymocks.AppConnQuery {
 	connQuery := &proxymocks.AppConnQuery{}
-	connQuery.On("InfoSync", proxy.RequestInfo).Return(&tmabci.ResponseInfo{
+	connQuery.On("InfoSync", proxy.RequestInfo).Return(&abci.ResponseInfo{
 		AppVersion:       testAppVersion,
 		LastBlockHeight:  height,
 		LastBlockAppHash: []byte(appHash),

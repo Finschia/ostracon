@@ -7,11 +7,11 @@ import (
 	"strconv"
 	"strings"
 
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/line/ostracon/abci/example/code"
-	"github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
 	"github.com/line/ostracon/libs/log"
 	pc "github.com/line/ostracon/proto/ostracon/crypto"
@@ -23,13 +23,13 @@ const (
 
 //-----------------------------------------
 
-var _ types.Application = (*PersistentKVStoreApplication)(nil)
+var _ ocabci.Application = (*PersistentKVStoreApplication)(nil)
 
 type PersistentKVStoreApplication struct {
 	app *Application
 
 	// validator set
-	ValUpdates []types.ValidatorUpdate
+	ValUpdates []ocabci.ValidatorUpdate
 
 	valAddrToPubKeyMap map[string]pc.PublicKey
 
@@ -56,19 +56,19 @@ func (app *PersistentKVStoreApplication) SetLogger(l log.Logger) {
 	app.logger = l
 }
 
-func (app *PersistentKVStoreApplication) Info(req tmabci.RequestInfo) tmabci.ResponseInfo {
+func (app *PersistentKVStoreApplication) Info(req abci.RequestInfo) abci.ResponseInfo {
 	res := app.app.Info(req)
 	res.LastBlockHeight = app.app.state.Height
 	res.LastBlockAppHash = app.app.state.AppHash
 	return res
 }
 
-func (app *PersistentKVStoreApplication) SetOption(req tmabci.RequestSetOption) tmabci.ResponseSetOption {
+func (app *PersistentKVStoreApplication) SetOption(req abci.RequestSetOption) abci.ResponseSetOption {
 	return app.app.SetOption(req)
 }
 
 // tx is either "val:pubkey!power" or "key=value" or just arbitrary bytes
-func (app *PersistentKVStoreApplication) DeliverTx(req tmabci.RequestDeliverTx) tmabci.ResponseDeliverTx {
+func (app *PersistentKVStoreApplication) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
 	// if it starts with "val:", update the validator set
 	// format is "val:pubkey!power"
 	if isValidatorTx(req.Tx) {
@@ -81,30 +81,30 @@ func (app *PersistentKVStoreApplication) DeliverTx(req tmabci.RequestDeliverTx) 
 	return app.app.DeliverTx(req)
 }
 
-func (app *PersistentKVStoreApplication) CheckTxSync(req tmabci.RequestCheckTx) types.ResponseCheckTx {
+func (app *PersistentKVStoreApplication) CheckTxSync(req abci.RequestCheckTx) ocabci.ResponseCheckTx {
 	return app.app.CheckTxSync(req)
 }
 
-func (app *PersistentKVStoreApplication) CheckTxAsync(req tmabci.RequestCheckTx, callback types.CheckTxCallback) {
+func (app *PersistentKVStoreApplication) CheckTxAsync(req abci.RequestCheckTx, callback ocabci.CheckTxCallback) {
 	app.app.CheckTxAsync(req, callback)
 }
 
-func (app *PersistentKVStoreApplication) BeginRecheckTx(req types.RequestBeginRecheckTx) types.ResponseBeginRecheckTx {
+func (app *PersistentKVStoreApplication) BeginRecheckTx(req ocabci.RequestBeginRecheckTx) ocabci.ResponseBeginRecheckTx {
 	return app.app.BeginRecheckTx(req)
 }
 
-func (app *PersistentKVStoreApplication) EndRecheckTx(req types.RequestEndRecheckTx) types.ResponseEndRecheckTx {
+func (app *PersistentKVStoreApplication) EndRecheckTx(req ocabci.RequestEndRecheckTx) ocabci.ResponseEndRecheckTx {
 	return app.app.EndRecheckTx(req)
 }
 
 // Commit will panic if InitChain was not called
-func (app *PersistentKVStoreApplication) Commit() tmabci.ResponseCommit {
+func (app *PersistentKVStoreApplication) Commit() abci.ResponseCommit {
 	return app.app.Commit()
 }
 
-// When path=/val and data={validator address}, returns the validator update (types.ValidatorUpdate) varint encoded.
+// When path=/val and data={validator address}, returns the validator update (abci.ValidatorUpdate) varint encoded.
 // For any other path, returns an associated value or nil if missing.
-func (app *PersistentKVStoreApplication) Query(reqQuery tmabci.RequestQuery) (resQuery tmabci.ResponseQuery) {
+func (app *PersistentKVStoreApplication) Query(reqQuery abci.RequestQuery) (resQuery abci.ResponseQuery) {
 	switch reqQuery.Path {
 	case "/val":
 		key := []byte("val:" + string(reqQuery.Data))
@@ -122,27 +122,27 @@ func (app *PersistentKVStoreApplication) Query(reqQuery tmabci.RequestQuery) (re
 }
 
 // Save the validators in the merkle tree
-func (app *PersistentKVStoreApplication) InitChain(req types.RequestInitChain) types.ResponseInitChain {
+func (app *PersistentKVStoreApplication) InitChain(req ocabci.RequestInitChain) ocabci.ResponseInitChain {
 	for _, v := range req.Validators {
 		r := app.updateValidator(v)
 		if r.IsErr() {
 			app.logger.Error("Error updating validators", "r", r)
 		}
 	}
-	return types.ResponseInitChain{}
+	return ocabci.ResponseInitChain{}
 }
 
 // Track the block hash and header information
-func (app *PersistentKVStoreApplication) BeginBlock(req types.RequestBeginBlock) tmabci.ResponseBeginBlock {
+func (app *PersistentKVStoreApplication) BeginBlock(req ocabci.RequestBeginBlock) abci.ResponseBeginBlock {
 	// reset valset changes
-	app.ValUpdates = make([]types.ValidatorUpdate, 0)
+	app.ValUpdates = make([]ocabci.ValidatorUpdate, 0)
 
 	// Punish validators who committed equivocation.
 	for _, ev := range req.ByzantineValidators {
-		if ev.Type == tmabci.EvidenceType_DUPLICATE_VOTE {
+		if ev.Type == abci.EvidenceType_DUPLICATE_VOTE {
 			addr := string(ev.Validator.Address)
 			if pubKey, ok := app.valAddrToPubKeyMap[addr]; ok {
-				app.updateValidator(types.ValidatorUpdate{
+				app.updateValidator(ocabci.ValidatorUpdate{
 					PubKey: pubKey,
 					Power:  ev.Validator.Power - 1,
 				})
@@ -155,46 +155,46 @@ func (app *PersistentKVStoreApplication) BeginBlock(req types.RequestBeginBlock)
 		}
 	}
 
-	return tmabci.ResponseBeginBlock{}
+	return abci.ResponseBeginBlock{}
 }
 
 // Update the validator set
-func (app *PersistentKVStoreApplication) EndBlock(req tmabci.RequestEndBlock) types.ResponseEndBlock {
-	return types.ResponseEndBlock{ValidatorUpdates: app.ValUpdates}
+func (app *PersistentKVStoreApplication) EndBlock(req abci.RequestEndBlock) ocabci.ResponseEndBlock {
+	return ocabci.ResponseEndBlock{ValidatorUpdates: app.ValUpdates}
 }
 
 func (app *PersistentKVStoreApplication) ListSnapshots(
-	req tmabci.RequestListSnapshots) tmabci.ResponseListSnapshots {
-	return tmabci.ResponseListSnapshots{}
+	req abci.RequestListSnapshots) abci.ResponseListSnapshots {
+	return abci.ResponseListSnapshots{}
 }
 
 func (app *PersistentKVStoreApplication) LoadSnapshotChunk(
-	req tmabci.RequestLoadSnapshotChunk) tmabci.ResponseLoadSnapshotChunk {
-	return tmabci.ResponseLoadSnapshotChunk{}
+	req abci.RequestLoadSnapshotChunk) abci.ResponseLoadSnapshotChunk {
+	return abci.ResponseLoadSnapshotChunk{}
 }
 
 func (app *PersistentKVStoreApplication) OfferSnapshot(
-	req tmabci.RequestOfferSnapshot) tmabci.ResponseOfferSnapshot {
-	return tmabci.ResponseOfferSnapshot{Result: tmabci.ResponseOfferSnapshot_ABORT}
+	req abci.RequestOfferSnapshot) abci.ResponseOfferSnapshot {
+	return abci.ResponseOfferSnapshot{Result: abci.ResponseOfferSnapshot_ABORT}
 }
 
 func (app *PersistentKVStoreApplication) ApplySnapshotChunk(
-	req tmabci.RequestApplySnapshotChunk) tmabci.ResponseApplySnapshotChunk {
-	return tmabci.ResponseApplySnapshotChunk{Result: tmabci.ResponseApplySnapshotChunk_ABORT}
+	req abci.RequestApplySnapshotChunk) abci.ResponseApplySnapshotChunk {
+	return abci.ResponseApplySnapshotChunk{Result: abci.ResponseApplySnapshotChunk_ABORT}
 }
 
 //---------------------------------------------
 // update validators
 
-func (app *PersistentKVStoreApplication) Validators() (validators []types.ValidatorUpdate) {
+func (app *PersistentKVStoreApplication) Validators() (validators []ocabci.ValidatorUpdate) {
 	itr, err := app.app.state.db.Iterator(nil, nil)
 	if err != nil {
 		panic(err)
 	}
 	for ; itr.Valid(); itr.Next() {
 		if isValidatorTx(itr.Key()) {
-			validator := new(types.ValidatorUpdate)
-			err := types.ReadMessage(bytes.NewBuffer(itr.Value()), validator)
+			validator := new(ocabci.ValidatorUpdate)
+			err := ocabci.ReadMessage(bytes.NewBuffer(itr.Value()), validator)
 			if err != nil {
 				panic(err)
 			}
@@ -228,13 +228,13 @@ func isValidatorTx(tx []byte) bool {
 // format is "val:pubkey!power"
 // pubkey is a base64-encoded proto.ostracon.crypto.PublicKey bytes
 // See MakeValSetChangeTx
-func (app *PersistentKVStoreApplication) execValidatorTx(tx []byte) tmabci.ResponseDeliverTx {
+func (app *PersistentKVStoreApplication) execValidatorTx(tx []byte) abci.ResponseDeliverTx {
 	tx = tx[len(ValidatorSetChangePrefix):]
 
 	// get the pubkey and power
 	pubKeyAndPower := strings.Split(string(tx), "!")
 	if len(pubKeyAndPower) != 2 {
-		return tmabci.ResponseDeliverTx{
+		return abci.ResponseDeliverTx{
 			Code: code.CodeTypeEncodingError,
 			Log:  fmt.Sprintf("Expected 'pubkey!power'. Got %v", pubKeyAndPower)}
 	}
@@ -243,20 +243,20 @@ func (app *PersistentKVStoreApplication) execValidatorTx(tx []byte) tmabci.Respo
 	// decode the pubkey
 	pkBytes, err := base64.StdEncoding.DecodeString(pubkeyS)
 	if err != nil {
-		return tmabci.ResponseDeliverTx{
+		return abci.ResponseDeliverTx{
 			Code: code.CodeTypeEncodingError,
 			Log:  fmt.Sprintf("pubkeyS (%s) is invalid base64", pubkeyS)}
 	}
 	var pkProto pc.PublicKey
 	err = pkProto.Unmarshal(pkBytes)
 	if err != nil {
-		return tmabci.ResponseDeliverTx{
+		return abci.ResponseDeliverTx{
 			Code: code.CodeTypeEncodingError,
 			Log:  fmt.Sprintf("pkBytes (%x) is invalid binary", pkBytes)}
 	}
 	pubkey, err := cryptoenc.PubKeyFromProto(&pkProto)
 	if err != nil {
-		return tmabci.ResponseDeliverTx{
+		return abci.ResponseDeliverTx{
 			Code: code.CodeTypeEncodingError,
 			Log:  fmt.Sprintf("pkProto (%s) is invalid binary", pkProto)}
 	}
@@ -264,21 +264,21 @@ func (app *PersistentKVStoreApplication) execValidatorTx(tx []byte) tmabci.Respo
 	// decode the power
 	power, err := strconv.ParseInt(powerS, 10, 64)
 	if err != nil {
-		return tmabci.ResponseDeliverTx{
+		return abci.ResponseDeliverTx{
 			Code: code.CodeTypeEncodingError,
 			Log:  fmt.Sprintf("Power (%s) is not an int", powerS)}
 	}
 
 	// update
-	return app.updateValidator(types.NewValidatorUpdate(pubkey, power))
+	return app.updateValidator(ocabci.NewValidatorUpdate(pubkey, power))
 }
 
 // add, update, or remove a validator
 // See MakeValSetChangeTx
-func (app *PersistentKVStoreApplication) updateValidator(v types.ValidatorUpdate) tmabci.ResponseDeliverTx {
+func (app *PersistentKVStoreApplication) updateValidator(v ocabci.ValidatorUpdate) abci.ResponseDeliverTx {
 	pubkey, err := cryptoenc.PubKeyFromProto(&v.PubKey)
 	if err != nil {
-		return tmabci.ResponseDeliverTx{
+		return abci.ResponseDeliverTx{
 			Code: code.CodeTypeEncodingError,
 			Log:  fmt.Sprintf("Error encoding Public Key: %s", err)}
 	}
@@ -292,7 +292,7 @@ func (app *PersistentKVStoreApplication) updateValidator(v types.ValidatorUpdate
 			panic(err)
 		}
 		if !hasKey {
-			return tmabci.ResponseDeliverTx{
+			return abci.ResponseDeliverTx{
 				Code: code.CodeTypeUnauthorized,
 				Log:  fmt.Sprintf("Cannot remove non-existent validator %s", pubStr)}
 		}
@@ -303,8 +303,8 @@ func (app *PersistentKVStoreApplication) updateValidator(v types.ValidatorUpdate
 	} else {
 		// add or update validator
 		value := bytes.NewBuffer(make([]byte, 0))
-		if err := tmabci.WriteMessage(&v, value); err != nil {
-			return tmabci.ResponseDeliverTx{
+		if err := abci.WriteMessage(&v, value); err != nil {
+			return abci.ResponseDeliverTx{
 				Code: code.CodeTypeEncodingError,
 				Log:  fmt.Sprintf("Error encoding validator: %v", err)}
 		}
@@ -317,5 +317,5 @@ func (app *PersistentKVStoreApplication) updateValidator(v types.ValidatorUpdate
 	// we only update the changes array if we successfully updated the tree
 	app.ValUpdates = append(app.ValUpdates, v)
 
-	return tmabci.ResponseDeliverTx{Code: code.CodeTypeOK}
+	return abci.ResponseDeliverTx{Code: code.CodeTypeOK}
 }

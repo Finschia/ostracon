@@ -4,18 +4,18 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	ocabci "github.com/line/ostracon/abci/types"
 	"testing"
 	"time"
+
+	abci "github.com/tendermint/tendermint/abci/types"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	tmabci "github.com/tendermint/tendermint/abci/types"
-
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/line/ostracon/abci/example/counter"
-	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/abci/types/mocks"
 	cstypes "github.com/line/ostracon/consensus/types"
 	"github.com/line/ostracon/crypto/tmhash"
@@ -2098,12 +2098,12 @@ func subscribeUnBuffered(eventBus *types.EventBus, q tmpubsub.Query) <-chan tmpu
 func TestPruneBlocks(t *testing.T) {
 	// Based behaviour is counter.Application
 	mockApp := &mocks.Application{}
-	mockApp.On("BeginBlock", mock.Anything).Return(tmabci.ResponseBeginBlock{})
-	mockApp.On("EndBlock", mock.Anything).Return(abci.ResponseEndBlock{})
-	mockApp.On("BeginRecheckTx", mock.Anything).Return(abci.ResponseBeginRecheckTx{Code: abci.CodeTypeOK})
-	mockApp.On("EndRecheckTx", mock.Anything).Return(abci.ResponseEndRecheckTx{Code: abci.CodeTypeOK})
+	mockApp.On("BeginBlock", mock.Anything).Return(abci.ResponseBeginBlock{})
+	mockApp.On("EndBlock", mock.Anything).Return(ocabci.ResponseEndBlock{})
+	mockApp.On("BeginRecheckTx", mock.Anything).Return(ocabci.ResponseBeginRecheckTx{Code: ocabci.CodeTypeOK})
+	mockApp.On("EndRecheckTx", mock.Anything).Return(ocabci.ResponseEndRecheckTx{Code: ocabci.CodeTypeOK})
 	// Mocking behaviour to response `RetainHeight` for pruneBlocks
-	mockApp.On("Commit", mock.Anything, mock.Anything).Return(tmabci.ResponseCommit{RetainHeight: 1})
+	mockApp.On("Commit", mock.Anything, mock.Anything).Return(abci.ResponseCommit{RetainHeight: 1})
 
 	cs1, vss := randStateWithApp(4, mockApp)
 	height, round := cs1.Height, cs1.Round

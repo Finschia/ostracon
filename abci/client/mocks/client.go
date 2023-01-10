@@ -5,10 +5,10 @@ package mocks
 import (
 	mock "github.com/stretchr/testify/mock"
 
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 
 	abcicli "github.com/line/ostracon/abci/client"
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	log "github.com/line/ostracon/libs/log"
 )
 
@@ -18,11 +18,11 @@ type Client struct {
 }
 
 // ApplySnapshotChunkAsync provides a mock function with given fields: _a0, _a1
-func (_m *Client) ApplySnapshotChunkAsync(_a0 tmabci.RequestApplySnapshotChunk, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
+func (_m *Client) ApplySnapshotChunkAsync(_a0 abci.RequestApplySnapshotChunk, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 *abcicli.ReqRes
-	if rf, ok := ret.Get(0).(func(tmabci.RequestApplySnapshotChunk, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
+	if rf, ok := ret.Get(0).(func(abci.RequestApplySnapshotChunk, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
@@ -34,20 +34,20 @@ func (_m *Client) ApplySnapshotChunkAsync(_a0 tmabci.RequestApplySnapshotChunk, 
 }
 
 // ApplySnapshotChunkSync provides a mock function with given fields: _a0
-func (_m *Client) ApplySnapshotChunkSync(_a0 tmabci.RequestApplySnapshotChunk) (*tmabci.ResponseApplySnapshotChunk, error) {
+func (_m *Client) ApplySnapshotChunkSync(_a0 abci.RequestApplySnapshotChunk) (*abci.ResponseApplySnapshotChunk, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *tmabci.ResponseApplySnapshotChunk
-	if rf, ok := ret.Get(0).(func(tmabci.RequestApplySnapshotChunk) *tmabci.ResponseApplySnapshotChunk); ok {
+	var r0 *abci.ResponseApplySnapshotChunk
+	if rf, ok := ret.Get(0).(func(abci.RequestApplySnapshotChunk) *abci.ResponseApplySnapshotChunk); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*tmabci.ResponseApplySnapshotChunk)
+			r0 = ret.Get(0).(*abci.ResponseApplySnapshotChunk)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(tmabci.RequestApplySnapshotChunk) error); ok {
+	if rf, ok := ret.Get(1).(func(abci.RequestApplySnapshotChunk) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
@@ -57,11 +57,11 @@ func (_m *Client) ApplySnapshotChunkSync(_a0 tmabci.RequestApplySnapshotChunk) (
 }
 
 // BeginBlockAsync provides a mock function with given fields: _a0, _a1
-func (_m *Client) BeginBlockAsync(_a0 abci.RequestBeginBlock, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
+func (_m *Client) BeginBlockAsync(_a0 ocabci.RequestBeginBlock, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 *abcicli.ReqRes
-	if rf, ok := ret.Get(0).(func(abci.RequestBeginBlock, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
+	if rf, ok := ret.Get(0).(func(ocabci.RequestBeginBlock, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
@@ -73,20 +73,20 @@ func (_m *Client) BeginBlockAsync(_a0 abci.RequestBeginBlock, _a1 abcicli.Respon
 }
 
 // BeginBlockSync provides a mock function with given fields: _a0
-func (_m *Client) BeginBlockSync(_a0 abci.RequestBeginBlock) (*tmabci.ResponseBeginBlock, error) {
+func (_m *Client) BeginBlockSync(_a0 ocabci.RequestBeginBlock) (*abci.ResponseBeginBlock, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *tmabci.ResponseBeginBlock
-	if rf, ok := ret.Get(0).(func(abci.RequestBeginBlock) *tmabci.ResponseBeginBlock); ok {
+	var r0 *abci.ResponseBeginBlock
+	if rf, ok := ret.Get(0).(func(ocabci.RequestBeginBlock) *abci.ResponseBeginBlock); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*tmabci.ResponseBeginBlock)
+			r0 = ret.Get(0).(*abci.ResponseBeginBlock)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(abci.RequestBeginBlock) error); ok {
+	if rf, ok := ret.Get(1).(func(ocabci.RequestBeginBlock) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
@@ -96,11 +96,11 @@ func (_m *Client) BeginBlockSync(_a0 abci.RequestBeginBlock) (*tmabci.ResponseBe
 }
 
 // BeginRecheckTxAsync provides a mock function with given fields: _a0, _a1
-func (_m *Client) BeginRecheckTxAsync(_a0 abci.RequestBeginRecheckTx, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
+func (_m *Client) BeginRecheckTxAsync(_a0 ocabci.RequestBeginRecheckTx, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 *abcicli.ReqRes
-	if rf, ok := ret.Get(0).(func(abci.RequestBeginRecheckTx, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
+	if rf, ok := ret.Get(0).(func(ocabci.RequestBeginRecheckTx, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
@@ -112,20 +112,20 @@ func (_m *Client) BeginRecheckTxAsync(_a0 abci.RequestBeginRecheckTx, _a1 abcicl
 }
 
 // BeginRecheckTxSync provides a mock function with given fields: _a0
-func (_m *Client) BeginRecheckTxSync(_a0 abci.RequestBeginRecheckTx) (*abci.ResponseBeginRecheckTx, error) {
+func (_m *Client) BeginRecheckTxSync(_a0 ocabci.RequestBeginRecheckTx) (*ocabci.ResponseBeginRecheckTx, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *abci.ResponseBeginRecheckTx
-	if rf, ok := ret.Get(0).(func(abci.RequestBeginRecheckTx) *abci.ResponseBeginRecheckTx); ok {
+	var r0 *ocabci.ResponseBeginRecheckTx
+	if rf, ok := ret.Get(0).(func(ocabci.RequestBeginRecheckTx) *ocabci.ResponseBeginRecheckTx); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*abci.ResponseBeginRecheckTx)
+			r0 = ret.Get(0).(*ocabci.ResponseBeginRecheckTx)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(abci.RequestBeginRecheckTx) error); ok {
+	if rf, ok := ret.Get(1).(func(ocabci.RequestBeginRecheckTx) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
@@ -135,11 +135,11 @@ func (_m *Client) BeginRecheckTxSync(_a0 abci.RequestBeginRecheckTx) (*abci.Resp
 }
 
 // CheckTxAsync provides a mock function with given fields: _a0, _a1
-func (_m *Client) CheckTxAsync(_a0 tmabci.RequestCheckTx, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
+func (_m *Client) CheckTxAsync(_a0 abci.RequestCheckTx, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 *abcicli.ReqRes
-	if rf, ok := ret.Get(0).(func(tmabci.RequestCheckTx, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
+	if rf, ok := ret.Get(0).(func(abci.RequestCheckTx, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
@@ -151,20 +151,20 @@ func (_m *Client) CheckTxAsync(_a0 tmabci.RequestCheckTx, _a1 abcicli.ResponseCa
 }
 
 // CheckTxSync provides a mock function with given fields: _a0
-func (_m *Client) CheckTxSync(_a0 tmabci.RequestCheckTx) (*abci.ResponseCheckTx, error) {
+func (_m *Client) CheckTxSync(_a0 abci.RequestCheckTx) (*ocabci.ResponseCheckTx, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *abci.ResponseCheckTx
-	if rf, ok := ret.Get(0).(func(tmabci.RequestCheckTx) *abci.ResponseCheckTx); ok {
+	var r0 *ocabci.ResponseCheckTx
+	if rf, ok := ret.Get(0).(func(abci.RequestCheckTx) *ocabci.ResponseCheckTx); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*abci.ResponseCheckTx)
+			r0 = ret.Get(0).(*ocabci.ResponseCheckTx)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(tmabci.RequestCheckTx) error); ok {
+	if rf, ok := ret.Get(1).(func(abci.RequestCheckTx) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
@@ -190,15 +190,15 @@ func (_m *Client) CommitAsync(_a0 abcicli.ResponseCallback) *abcicli.ReqRes {
 }
 
 // CommitSync provides a mock function with given fields:
-func (_m *Client) CommitSync() (*tmabci.ResponseCommit, error) {
+func (_m *Client) CommitSync() (*abci.ResponseCommit, error) {
 	ret := _m.Called()
 
-	var r0 *tmabci.ResponseCommit
-	if rf, ok := ret.Get(0).(func() *tmabci.ResponseCommit); ok {
+	var r0 *abci.ResponseCommit
+	if rf, ok := ret.Get(0).(func() *abci.ResponseCommit); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*tmabci.ResponseCommit)
+			r0 = ret.Get(0).(*abci.ResponseCommit)
 		}
 	}
 
@@ -213,11 +213,11 @@ func (_m *Client) CommitSync() (*tmabci.ResponseCommit, error) {
 }
 
 // DeliverTxAsync provides a mock function with given fields: _a0, _a1
-func (_m *Client) DeliverTxAsync(_a0 tmabci.RequestDeliverTx, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
+func (_m *Client) DeliverTxAsync(_a0 abci.RequestDeliverTx, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 *abcicli.ReqRes
-	if rf, ok := ret.Get(0).(func(tmabci.RequestDeliverTx, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
+	if rf, ok := ret.Get(0).(func(abci.RequestDeliverTx, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
@@ -229,20 +229,20 @@ func (_m *Client) DeliverTxAsync(_a0 tmabci.RequestDeliverTx, _a1 abcicli.Respon
 }
 
 // DeliverTxSync provides a mock function with given fields: _a0
-func (_m *Client) DeliverTxSync(_a0 tmabci.RequestDeliverTx) (*tmabci.ResponseDeliverTx, error) {
+func (_m *Client) DeliverTxSync(_a0 abci.RequestDeliverTx) (*abci.ResponseDeliverTx, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *tmabci.ResponseDeliverTx
-	if rf, ok := ret.Get(0).(func(tmabci.RequestDeliverTx) *tmabci.ResponseDeliverTx); ok {
+	var r0 *abci.ResponseDeliverTx
+	if rf, ok := ret.Get(0).(func(abci.RequestDeliverTx) *abci.ResponseDeliverTx); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*tmabci.ResponseDeliverTx)
+			r0 = ret.Get(0).(*abci.ResponseDeliverTx)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(tmabci.RequestDeliverTx) error); ok {
+	if rf, ok := ret.Get(1).(func(abci.RequestDeliverTx) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
@@ -268,15 +268,15 @@ func (_m *Client) EchoAsync(_a0 string, _a1 abcicli.ResponseCallback) *abcicli.R
 }
 
 // EchoSync provides a mock function with given fields: _a0
-func (_m *Client) EchoSync(_a0 string) (*tmabci.ResponseEcho, error) {
+func (_m *Client) EchoSync(_a0 string) (*abci.ResponseEcho, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *tmabci.ResponseEcho
-	if rf, ok := ret.Get(0).(func(string) *tmabci.ResponseEcho); ok {
+	var r0 *abci.ResponseEcho
+	if rf, ok := ret.Get(0).(func(string) *abci.ResponseEcho); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*tmabci.ResponseEcho)
+			r0 = ret.Get(0).(*abci.ResponseEcho)
 		}
 	}
 
@@ -291,11 +291,11 @@ func (_m *Client) EchoSync(_a0 string) (*tmabci.ResponseEcho, error) {
 }
 
 // EndBlockAsync provides a mock function with given fields: _a0, _a1
-func (_m *Client) EndBlockAsync(_a0 tmabci.RequestEndBlock, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
+func (_m *Client) EndBlockAsync(_a0 abci.RequestEndBlock, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 *abcicli.ReqRes
-	if rf, ok := ret.Get(0).(func(tmabci.RequestEndBlock, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
+	if rf, ok := ret.Get(0).(func(abci.RequestEndBlock, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
@@ -307,20 +307,20 @@ func (_m *Client) EndBlockAsync(_a0 tmabci.RequestEndBlock, _a1 abcicli.Response
 }
 
 // EndBlockSync provides a mock function with given fields: _a0
-func (_m *Client) EndBlockSync(_a0 tmabci.RequestEndBlock) (*abci.ResponseEndBlock, error) {
+func (_m *Client) EndBlockSync(_a0 abci.RequestEndBlock) (*ocabci.ResponseEndBlock, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *abci.ResponseEndBlock
-	if rf, ok := ret.Get(0).(func(tmabci.RequestEndBlock) *abci.ResponseEndBlock); ok {
+	var r0 *ocabci.ResponseEndBlock
+	if rf, ok := ret.Get(0).(func(abci.RequestEndBlock) *ocabci.ResponseEndBlock); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*abci.ResponseEndBlock)
+			r0 = ret.Get(0).(*ocabci.ResponseEndBlock)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(tmabci.RequestEndBlock) error); ok {
+	if rf, ok := ret.Get(1).(func(abci.RequestEndBlock) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
@@ -330,11 +330,11 @@ func (_m *Client) EndBlockSync(_a0 tmabci.RequestEndBlock) (*abci.ResponseEndBlo
 }
 
 // EndRecheckTxAsync provides a mock function with given fields: _a0, _a1
-func (_m *Client) EndRecheckTxAsync(_a0 abci.RequestEndRecheckTx, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
+func (_m *Client) EndRecheckTxAsync(_a0 ocabci.RequestEndRecheckTx, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 *abcicli.ReqRes
-	if rf, ok := ret.Get(0).(func(abci.RequestEndRecheckTx, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
+	if rf, ok := ret.Get(0).(func(ocabci.RequestEndRecheckTx, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
@@ -346,20 +346,20 @@ func (_m *Client) EndRecheckTxAsync(_a0 abci.RequestEndRecheckTx, _a1 abcicli.Re
 }
 
 // EndRecheckTxSync provides a mock function with given fields: _a0
-func (_m *Client) EndRecheckTxSync(_a0 abci.RequestEndRecheckTx) (*abci.ResponseEndRecheckTx, error) {
+func (_m *Client) EndRecheckTxSync(_a0 ocabci.RequestEndRecheckTx) (*ocabci.ResponseEndRecheckTx, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *abci.ResponseEndRecheckTx
-	if rf, ok := ret.Get(0).(func(abci.RequestEndRecheckTx) *abci.ResponseEndRecheckTx); ok {
+	var r0 *ocabci.ResponseEndRecheckTx
+	if rf, ok := ret.Get(0).(func(ocabci.RequestEndRecheckTx) *ocabci.ResponseEndRecheckTx); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*abci.ResponseEndRecheckTx)
+			r0 = ret.Get(0).(*ocabci.ResponseEndRecheckTx)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(abci.RequestEndRecheckTx) error); ok {
+	if rf, ok := ret.Get(1).(func(ocabci.RequestEndRecheckTx) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
@@ -399,15 +399,15 @@ func (_m *Client) FlushAsync(_a0 abcicli.ResponseCallback) *abcicli.ReqRes {
 }
 
 // FlushSync provides a mock function with given fields:
-func (_m *Client) FlushSync() (*tmabci.ResponseFlush, error) {
+func (_m *Client) FlushSync() (*abci.ResponseFlush, error) {
 	ret := _m.Called()
 
-	var r0 *tmabci.ResponseFlush
-	if rf, ok := ret.Get(0).(func() *tmabci.ResponseFlush); ok {
+	var r0 *abci.ResponseFlush
+	if rf, ok := ret.Get(0).(func() *abci.ResponseFlush); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*tmabci.ResponseFlush)
+			r0 = ret.Get(0).(*abci.ResponseFlush)
 		}
 	}
 
@@ -438,11 +438,11 @@ func (_m *Client) GetGlobalCallback() abcicli.GlobalCallback {
 }
 
 // InfoAsync provides a mock function with given fields: _a0, _a1
-func (_m *Client) InfoAsync(_a0 tmabci.RequestInfo, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
+func (_m *Client) InfoAsync(_a0 abci.RequestInfo, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 *abcicli.ReqRes
-	if rf, ok := ret.Get(0).(func(tmabci.RequestInfo, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
+	if rf, ok := ret.Get(0).(func(abci.RequestInfo, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
@@ -454,20 +454,20 @@ func (_m *Client) InfoAsync(_a0 tmabci.RequestInfo, _a1 abcicli.ResponseCallback
 }
 
 // InfoSync provides a mock function with given fields: _a0
-func (_m *Client) InfoSync(_a0 tmabci.RequestInfo) (*tmabci.ResponseInfo, error) {
+func (_m *Client) InfoSync(_a0 abci.RequestInfo) (*abci.ResponseInfo, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *tmabci.ResponseInfo
-	if rf, ok := ret.Get(0).(func(tmabci.RequestInfo) *tmabci.ResponseInfo); ok {
+	var r0 *abci.ResponseInfo
+	if rf, ok := ret.Get(0).(func(abci.RequestInfo) *abci.ResponseInfo); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*tmabci.ResponseInfo)
+			r0 = ret.Get(0).(*abci.ResponseInfo)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(tmabci.RequestInfo) error); ok {
+	if rf, ok := ret.Get(1).(func(abci.RequestInfo) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
@@ -477,11 +477,11 @@ func (_m *Client) InfoSync(_a0 tmabci.RequestInfo) (*tmabci.ResponseInfo, error)
 }
 
 // InitChainAsync provides a mock function with given fields: _a0, _a1
-func (_m *Client) InitChainAsync(_a0 abci.RequestInitChain, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
+func (_m *Client) InitChainAsync(_a0 ocabci.RequestInitChain, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 *abcicli.ReqRes
-	if rf, ok := ret.Get(0).(func(abci.RequestInitChain, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
+	if rf, ok := ret.Get(0).(func(ocabci.RequestInitChain, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
@@ -493,20 +493,20 @@ func (_m *Client) InitChainAsync(_a0 abci.RequestInitChain, _a1 abcicli.Response
 }
 
 // InitChainSync provides a mock function with given fields: _a0
-func (_m *Client) InitChainSync(_a0 abci.RequestInitChain) (*abci.ResponseInitChain, error) {
+func (_m *Client) InitChainSync(_a0 ocabci.RequestInitChain) (*ocabci.ResponseInitChain, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *abci.ResponseInitChain
-	if rf, ok := ret.Get(0).(func(abci.RequestInitChain) *abci.ResponseInitChain); ok {
+	var r0 *ocabci.ResponseInitChain
+	if rf, ok := ret.Get(0).(func(ocabci.RequestInitChain) *ocabci.ResponseInitChain); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*abci.ResponseInitChain)
+			r0 = ret.Get(0).(*ocabci.ResponseInitChain)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(abci.RequestInitChain) error); ok {
+	if rf, ok := ret.Get(1).(func(ocabci.RequestInitChain) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
@@ -530,11 +530,11 @@ func (_m *Client) IsRunning() bool {
 }
 
 // ListSnapshotsAsync provides a mock function with given fields: _a0, _a1
-func (_m *Client) ListSnapshotsAsync(_a0 tmabci.RequestListSnapshots, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
+func (_m *Client) ListSnapshotsAsync(_a0 abci.RequestListSnapshots, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 *abcicli.ReqRes
-	if rf, ok := ret.Get(0).(func(tmabci.RequestListSnapshots, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
+	if rf, ok := ret.Get(0).(func(abci.RequestListSnapshots, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
@@ -546,20 +546,20 @@ func (_m *Client) ListSnapshotsAsync(_a0 tmabci.RequestListSnapshots, _a1 abcicl
 }
 
 // ListSnapshotsSync provides a mock function with given fields: _a0
-func (_m *Client) ListSnapshotsSync(_a0 tmabci.RequestListSnapshots) (*tmabci.ResponseListSnapshots, error) {
+func (_m *Client) ListSnapshotsSync(_a0 abci.RequestListSnapshots) (*abci.ResponseListSnapshots, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *tmabci.ResponseListSnapshots
-	if rf, ok := ret.Get(0).(func(tmabci.RequestListSnapshots) *tmabci.ResponseListSnapshots); ok {
+	var r0 *abci.ResponseListSnapshots
+	if rf, ok := ret.Get(0).(func(abci.RequestListSnapshots) *abci.ResponseListSnapshots); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*tmabci.ResponseListSnapshots)
+			r0 = ret.Get(0).(*abci.ResponseListSnapshots)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(tmabci.RequestListSnapshots) error); ok {
+	if rf, ok := ret.Get(1).(func(abci.RequestListSnapshots) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
@@ -569,11 +569,11 @@ func (_m *Client) ListSnapshotsSync(_a0 tmabci.RequestListSnapshots) (*tmabci.Re
 }
 
 // LoadSnapshotChunkAsync provides a mock function with given fields: _a0, _a1
-func (_m *Client) LoadSnapshotChunkAsync(_a0 tmabci.RequestLoadSnapshotChunk, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
+func (_m *Client) LoadSnapshotChunkAsync(_a0 abci.RequestLoadSnapshotChunk, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 *abcicli.ReqRes
-	if rf, ok := ret.Get(0).(func(tmabci.RequestLoadSnapshotChunk, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
+	if rf, ok := ret.Get(0).(func(abci.RequestLoadSnapshotChunk, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
@@ -585,20 +585,20 @@ func (_m *Client) LoadSnapshotChunkAsync(_a0 tmabci.RequestLoadSnapshotChunk, _a
 }
 
 // LoadSnapshotChunkSync provides a mock function with given fields: _a0
-func (_m *Client) LoadSnapshotChunkSync(_a0 tmabci.RequestLoadSnapshotChunk) (*tmabci.ResponseLoadSnapshotChunk, error) {
+func (_m *Client) LoadSnapshotChunkSync(_a0 abci.RequestLoadSnapshotChunk) (*abci.ResponseLoadSnapshotChunk, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *tmabci.ResponseLoadSnapshotChunk
-	if rf, ok := ret.Get(0).(func(tmabci.RequestLoadSnapshotChunk) *tmabci.ResponseLoadSnapshotChunk); ok {
+	var r0 *abci.ResponseLoadSnapshotChunk
+	if rf, ok := ret.Get(0).(func(abci.RequestLoadSnapshotChunk) *abci.ResponseLoadSnapshotChunk); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*tmabci.ResponseLoadSnapshotChunk)
+			r0 = ret.Get(0).(*abci.ResponseLoadSnapshotChunk)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(tmabci.RequestLoadSnapshotChunk) error); ok {
+	if rf, ok := ret.Get(1).(func(abci.RequestLoadSnapshotChunk) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
@@ -608,11 +608,11 @@ func (_m *Client) LoadSnapshotChunkSync(_a0 tmabci.RequestLoadSnapshotChunk) (*t
 }
 
 // OfferSnapshotAsync provides a mock function with given fields: _a0, _a1
-func (_m *Client) OfferSnapshotAsync(_a0 tmabci.RequestOfferSnapshot, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
+func (_m *Client) OfferSnapshotAsync(_a0 abci.RequestOfferSnapshot, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 *abcicli.ReqRes
-	if rf, ok := ret.Get(0).(func(tmabci.RequestOfferSnapshot, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
+	if rf, ok := ret.Get(0).(func(abci.RequestOfferSnapshot, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
@@ -624,20 +624,20 @@ func (_m *Client) OfferSnapshotAsync(_a0 tmabci.RequestOfferSnapshot, _a1 abcicl
 }
 
 // OfferSnapshotSync provides a mock function with given fields: _a0
-func (_m *Client) OfferSnapshotSync(_a0 tmabci.RequestOfferSnapshot) (*tmabci.ResponseOfferSnapshot, error) {
+func (_m *Client) OfferSnapshotSync(_a0 abci.RequestOfferSnapshot) (*abci.ResponseOfferSnapshot, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *tmabci.ResponseOfferSnapshot
-	if rf, ok := ret.Get(0).(func(tmabci.RequestOfferSnapshot) *tmabci.ResponseOfferSnapshot); ok {
+	var r0 *abci.ResponseOfferSnapshot
+	if rf, ok := ret.Get(0).(func(abci.RequestOfferSnapshot) *abci.ResponseOfferSnapshot); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*tmabci.ResponseOfferSnapshot)
+			r0 = ret.Get(0).(*abci.ResponseOfferSnapshot)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(tmabci.RequestOfferSnapshot) error); ok {
+	if rf, ok := ret.Get(1).(func(abci.RequestOfferSnapshot) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
@@ -680,11 +680,11 @@ func (_m *Client) OnStop() {
 }
 
 // QueryAsync provides a mock function with given fields: _a0, _a1
-func (_m *Client) QueryAsync(_a0 tmabci.RequestQuery, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
+func (_m *Client) QueryAsync(_a0 abci.RequestQuery, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 *abcicli.ReqRes
-	if rf, ok := ret.Get(0).(func(tmabci.RequestQuery, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
+	if rf, ok := ret.Get(0).(func(abci.RequestQuery, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
@@ -696,20 +696,20 @@ func (_m *Client) QueryAsync(_a0 tmabci.RequestQuery, _a1 abcicli.ResponseCallba
 }
 
 // QuerySync provides a mock function with given fields: _a0
-func (_m *Client) QuerySync(_a0 tmabci.RequestQuery) (*tmabci.ResponseQuery, error) {
+func (_m *Client) QuerySync(_a0 abci.RequestQuery) (*abci.ResponseQuery, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *tmabci.ResponseQuery
-	if rf, ok := ret.Get(0).(func(tmabci.RequestQuery) *tmabci.ResponseQuery); ok {
+	var r0 *abci.ResponseQuery
+	if rf, ok := ret.Get(0).(func(abci.RequestQuery) *abci.ResponseQuery); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*tmabci.ResponseQuery)
+			r0 = ret.Get(0).(*abci.ResponseQuery)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(tmabci.RequestQuery) error); ok {
+	if rf, ok := ret.Get(1).(func(abci.RequestQuery) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
@@ -759,11 +759,11 @@ func (_m *Client) SetLogger(_a0 log.Logger) {
 }
 
 // SetOptionAsync provides a mock function with given fields: _a0, _a1
-func (_m *Client) SetOptionAsync(_a0 tmabci.RequestSetOption, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
+func (_m *Client) SetOptionAsync(_a0 abci.RequestSetOption, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 *abcicli.ReqRes
-	if rf, ok := ret.Get(0).(func(tmabci.RequestSetOption, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
+	if rf, ok := ret.Get(0).(func(abci.RequestSetOption, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
@@ -775,20 +775,20 @@ func (_m *Client) SetOptionAsync(_a0 tmabci.RequestSetOption, _a1 abcicli.Respon
 }
 
 // SetOptionSync provides a mock function with given fields: _a0
-func (_m *Client) SetOptionSync(_a0 tmabci.RequestSetOption) (*tmabci.ResponseSetOption, error) {
+func (_m *Client) SetOptionSync(_a0 abci.RequestSetOption) (*abci.ResponseSetOption, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *tmabci.ResponseSetOption
-	if rf, ok := ret.Get(0).(func(tmabci.RequestSetOption) *tmabci.ResponseSetOption); ok {
+	var r0 *abci.ResponseSetOption
+	if rf, ok := ret.Get(0).(func(abci.RequestSetOption) *abci.ResponseSetOption); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*tmabci.ResponseSetOption)
+			r0 = ret.Get(0).(*abci.ResponseSetOption)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(tmabci.RequestSetOption) error); ok {
+	if rf, ok := ret.Get(1).(func(abci.RequestSetOption) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)

@@ -6,10 +6,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 	db "github.com/tendermint/tm-db"
 
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/pubsub/query"
 	blockidxkv "github.com/line/ostracon/state/indexer/block/kv"
 	"github.com/line/ostracon/types"
@@ -20,11 +20,11 @@ func TestBlockIndexer(t *testing.T) {
 	indexer := blockidxkv.New(store)
 	require.NoError(t, indexer.Index(types.EventDataNewBlockHeader{
 		Header: types.Header{Height: 1},
-		ResultBeginBlock: tmabci.ResponseBeginBlock{
-			Events: []tmabci.Event{
+		ResultBeginBlock: abci.ResponseBeginBlock{
+			Events: []abci.Event{
 				{
 					Type: "begin_event",
-					Attributes: []tmabci.EventAttribute{
+					Attributes: []abci.EventAttribute{
 						{
 							Key:   []byte("proposer"),
 							Value: []byte("FCAA001"),
@@ -34,11 +34,11 @@ func TestBlockIndexer(t *testing.T) {
 				},
 			},
 		},
-		ResultEndBlock: abci.ResponseEndBlock{
-			Events: []tmabci.Event{
+		ResultEndBlock: ocabci.ResponseEndBlock{
+			Events: []abci.Event{
 				{
 					Type: "end_event",
-					Attributes: []tmabci.EventAttribute{
+					Attributes: []abci.EventAttribute{
 						{
 							Key:   []byte("foo"),
 							Value: []byte("100"),
@@ -58,11 +58,11 @@ func TestBlockIndexer(t *testing.T) {
 
 		require.NoError(t, indexer.Index(types.EventDataNewBlockHeader{
 			Header: types.Header{Height: int64(i)},
-			ResultBeginBlock: tmabci.ResponseBeginBlock{
-				Events: []tmabci.Event{
+			ResultBeginBlock: abci.ResponseBeginBlock{
+				Events: []abci.Event{
 					{
 						Type: "begin_event",
-						Attributes: []tmabci.EventAttribute{
+						Attributes: []abci.EventAttribute{
 							{
 								Key:   []byte("proposer"),
 								Value: []byte("FCAA001"),
@@ -72,11 +72,11 @@ func TestBlockIndexer(t *testing.T) {
 					},
 				},
 			},
-			ResultEndBlock: abci.ResponseEndBlock{
-				Events: []tmabci.Event{
+			ResultEndBlock: ocabci.ResponseEndBlock{
+				Events: []abci.Event{
 					{
 						Type: "end_event",
-						Attributes: []tmabci.EventAttribute{
+						Attributes: []abci.EventAttribute{
 							{
 								Key:   []byte("foo"),
 								Value: []byte(fmt.Sprintf("%d", i)),

@@ -13,11 +13,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	cfg "github.com/line/ostracon/config"
 	"github.com/line/ostracon/crypto/ed25519"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
@@ -108,12 +108,12 @@ func TestABCIResponsesSaveLoad1(t *testing.T) {
 	block := makeBlock(state, 2)
 
 	abciResponses := new(ocstate.ABCIResponses)
-	dtxs := make([]*tmabci.ResponseDeliverTx, 2)
+	dtxs := make([]*abci.ResponseDeliverTx, 2)
 	abciResponses.DeliverTxs = dtxs
 
-	abciResponses.DeliverTxs[0] = &tmabci.ResponseDeliverTx{Data: []byte("foo"), Events: nil}
-	abciResponses.DeliverTxs[1] = &tmabci.ResponseDeliverTx{Data: []byte("bar"), Log: "ok", Events: nil}
-	abciResponses.EndBlock = &abci.ResponseEndBlock{ValidatorUpdates: []abci.ValidatorUpdate{
+	abciResponses.DeliverTxs[0] = &abci.ResponseDeliverTx{Data: []byte("foo"), Events: nil}
+	abciResponses.DeliverTxs[1] = &abci.ResponseDeliverTx{Data: []byte("bar"), Log: "ok", Events: nil}
+	abciResponses.EndBlock = &ocabci.ResponseEndBlock{ValidatorUpdates: []ocabci.ValidatorUpdate{
 		types.OC2PB.NewValidatorUpdate(ed25519.GenPrivKey().PubKey(), 10),
 	}}
 
@@ -137,36 +137,36 @@ func TestABCIResponsesSaveLoad2(t *testing.T) {
 	cases := [...]struct {
 		// Height is implied to equal index+2,
 		// as block 1 is created from genesis.
-		added    []*tmabci.ResponseDeliverTx
-		expected []*tmabci.ResponseDeliverTx
+		added    []*abci.ResponseDeliverTx
+		expected []*abci.ResponseDeliverTx
 	}{
 		0: {
 			nil,
 			nil,
 		},
 		1: {
-			[]*tmabci.ResponseDeliverTx{
+			[]*abci.ResponseDeliverTx{
 				{Code: 32, Data: []byte("Hello"), Log: "Huh?"},
 			},
-			[]*tmabci.ResponseDeliverTx{
+			[]*abci.ResponseDeliverTx{
 				{Code: 32, Data: []byte("Hello")},
 			}},
 		2: {
-			[]*tmabci.ResponseDeliverTx{
+			[]*abci.ResponseDeliverTx{
 				{Code: 383},
 				{
 					Data: []byte("Gotcha!"),
-					Events: []tmabci.Event{
-						{Type: "type1", Attributes: []tmabci.EventAttribute{{Key: []byte("a"), Value: []byte("1")}}},
-						{Type: "type2", Attributes: []tmabci.EventAttribute{{Key: []byte("build"), Value: []byte("stuff")}}},
+					Events: []abci.Event{
+						{Type: "type1", Attributes: []abci.EventAttribute{{Key: []byte("a"), Value: []byte("1")}}},
+						{Type: "type2", Attributes: []abci.EventAttribute{{Key: []byte("build"), Value: []byte("stuff")}}},
 					},
 				},
 			},
-			[]*tmabci.ResponseDeliverTx{
+			[]*abci.ResponseDeliverTx{
 				{Code: 383, Data: nil},
-				{Code: 0, Data: []byte("Gotcha!"), Events: []tmabci.Event{
-					{Type: "type1", Attributes: []tmabci.EventAttribute{{Key: []byte("a"), Value: []byte("1")}}},
-					{Type: "type2", Attributes: []tmabci.EventAttribute{{Key: []byte("build"), Value: []byte("stuff")}}},
+				{Code: 0, Data: []byte("Gotcha!"), Events: []abci.Event{
+					{Type: "type1", Attributes: []abci.EventAttribute{{Key: []byte("a"), Value: []byte("1")}}},
+					{Type: "type2", Attributes: []abci.EventAttribute{{Key: []byte("build"), Value: []byte("stuff")}}},
 				}},
 			}},
 		3: {
@@ -174,7 +174,7 @@ func TestABCIResponsesSaveLoad2(t *testing.T) {
 			nil,
 		},
 		4: {
-			[]*tmabci.ResponseDeliverTx{nil},
+			[]*abci.ResponseDeliverTx{nil},
 			nil,
 		},
 	}
@@ -190,9 +190,9 @@ func TestABCIResponsesSaveLoad2(t *testing.T) {
 	for i, tc := range cases {
 		h := int64(i + 1) // last block height, one below what we save
 		responses := &ocstate.ABCIResponses{
-			BeginBlock: &tmabci.ResponseBeginBlock{},
+			BeginBlock: &abci.ResponseBeginBlock{},
 			DeliverTxs: tc.added,
-			EndBlock:   &abci.ResponseEndBlock{},
+			EndBlock:   &ocabci.ResponseEndBlock{},
 		}
 		err := stateStore.SaveABCIResponses(h, responses)
 		require.NoError(t, err)
@@ -205,9 +205,9 @@ func TestABCIResponsesSaveLoad2(t *testing.T) {
 		if assert.NoError(err, "%d", i) {
 			t.Log(res)
 			responses := &ocstate.ABCIResponses{
-				BeginBlock: &tmabci.ResponseBeginBlock{},
+				BeginBlock: &abci.ResponseBeginBlock{},
 				DeliverTxs: tc.expected,
-				EndBlock:   &abci.ResponseEndBlock{},
+				EndBlock:   &ocabci.ResponseEndBlock{},
 			}
 			assert.Equal(sm.ABCIResponsesResultsHash(responses), sm.ABCIResponsesResultsHash(res), "%d", i)
 		}
@@ -492,8 +492,8 @@ func TestProposerPriorityDoesNotGetResetToZero(t *testing.T) {
 	block := makeBlock(state, state.LastBlockHeight+1)
 	blockID := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
 	abciResponses := &ocstate.ABCIResponses{
-		BeginBlock: &tmabci.ResponseBeginBlock{},
-		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: nil},
+		BeginBlock: &abci.ResponseBeginBlock{},
+		EndBlock:   &ocabci.ResponseEndBlock{ValidatorUpdates: nil},
 	}
 	validatorUpdates, err := types.PB2OC.ValidatorUpdates(abciResponses.EndBlock.ValidatorUpdates)
 	require.NoError(t, err)
@@ -509,8 +509,8 @@ func TestProposerPriorityDoesNotGetResetToZero(t *testing.T) {
 	fvp, err := cryptoenc.PubKeyToProto(val2PubKey)
 	require.NoError(t, err)
 
-	updateAddVal := abci.ValidatorUpdate{PubKey: fvp, Power: val2VotingPower}
-	validatorUpdates, err = types.PB2OC.ValidatorUpdates([]abci.ValidatorUpdate{updateAddVal})
+	updateAddVal := ocabci.ValidatorUpdate{PubKey: fvp, Power: val2VotingPower}
+	validatorUpdates, err = types.PB2OC.ValidatorUpdates([]ocabci.ValidatorUpdate{updateAddVal})
 	assert.NoError(t, err)
 	updatedState2, err := sm.UpdateState(updatedState, blockID, &block.Header, abciResponses, validatorUpdates)
 	assert.NoError(t, err)
@@ -545,8 +545,8 @@ func TestProposerPriorityDoesNotGetResetToZero(t *testing.T) {
 	// Updating a validator does not reset the ProposerPriority to zero:
 	// 1. Add - Val2 VotingPower change to 1 =>
 	updatedVotingPowVal2 := int64(1)
-	updateVal := abci.ValidatorUpdate{PubKey: fvp, Power: updatedVotingPowVal2}
-	validatorUpdates, err = types.PB2OC.ValidatorUpdates([]abci.ValidatorUpdate{updateVal})
+	updateVal := ocabci.ValidatorUpdate{PubKey: fvp, Power: updatedVotingPowVal2}
+	validatorUpdates, err = types.PB2OC.ValidatorUpdates([]ocabci.ValidatorUpdate{updateVal})
 	assert.NoError(t, err)
 
 	// this will cause the diff of priorities (77)
@@ -609,8 +609,8 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 	blockID := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
 	// no updates:
 	abciResponses := &ocstate.ABCIResponses{
-		BeginBlock: &tmabci.ResponseBeginBlock{},
-		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: nil},
+		BeginBlock: &abci.ResponseBeginBlock{},
+		EndBlock:   &ocabci.ResponseEndBlock{ValidatorUpdates: nil},
 	}
 	validatorUpdates, err := types.PB2OC.ValidatorUpdates(abciResponses.EndBlock.ValidatorUpdates)
 	require.NoError(t, err)
@@ -628,8 +628,8 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 	val2PubKey := ed25519.GenPrivKey().PubKey()
 	fvp, err := cryptoenc.PubKeyToProto(val2PubKey)
 	require.NoError(t, err)
-	updateAddVal := abci.ValidatorUpdate{PubKey: fvp, Power: val1VotingPower}
-	validatorUpdates, err = types.PB2OC.ValidatorUpdates([]abci.ValidatorUpdate{updateAddVal})
+	updateAddVal := ocabci.ValidatorUpdate{PubKey: fvp, Power: val1VotingPower}
+	validatorUpdates, err = types.PB2OC.ValidatorUpdates([]ocabci.ValidatorUpdate{updateAddVal})
 	assert.NoError(t, err)
 
 	updatedState2, err := sm.UpdateState(updatedState, blockID, &block.Header, abciResponses, validatorUpdates)
@@ -712,8 +712,8 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 	// -> proposers should alternate:
 	oldState := updatedState3
 	abciResponses = &ocstate.ABCIResponses{
-		BeginBlock: &tmabci.ResponseBeginBlock{},
-		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: nil},
+		BeginBlock: &abci.ResponseBeginBlock{},
+		EndBlock:   &ocabci.ResponseEndBlock{ValidatorUpdates: nil},
 	}
 	validatorUpdates, err = types.PB2OC.ValidatorUpdates(abciResponses.EndBlock.ValidatorUpdates)
 	require.NoError(t, err)
@@ -728,8 +728,8 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		// no validator updates:
 		abciResponses := &ocstate.ABCIResponses{
-			BeginBlock: &tmabci.ResponseBeginBlock{},
-			EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: nil},
+			BeginBlock: &abci.ResponseBeginBlock{},
+			EndBlock:   &ocabci.ResponseEndBlock{ValidatorUpdates: nil},
 		}
 		validatorUpdates, err = types.PB2OC.ValidatorUpdates(abciResponses.EndBlock.ValidatorUpdates)
 		require.NoError(t, err)
@@ -787,8 +787,8 @@ func TestLargeGenesisValidator(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		// no updates:
 		abciResponses := &ocstate.ABCIResponses{
-			BeginBlock: &tmabci.ResponseBeginBlock{},
-			EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: nil},
+			BeginBlock: &abci.ResponseBeginBlock{},
+			EndBlock:   &ocabci.ResponseEndBlock{ValidatorUpdates: nil},
 		}
 		validatorUpdates, err := types.PB2OC.ValidatorUpdates(abciResponses.EndBlock.ValidatorUpdates)
 		require.NoError(t, err)
@@ -816,12 +816,12 @@ func TestLargeGenesisValidator(t *testing.T) {
 	firstAddedValVotingPower := int64(10)
 	fvp, err := cryptoenc.PubKeyToProto(firstAddedValPubKey)
 	require.NoError(t, err)
-	firstAddedVal := abci.ValidatorUpdate{PubKey: fvp, Power: firstAddedValVotingPower}
-	validatorUpdates, err := types.PB2OC.ValidatorUpdates([]abci.ValidatorUpdate{firstAddedVal})
+	firstAddedVal := ocabci.ValidatorUpdate{PubKey: fvp, Power: firstAddedValVotingPower}
+	validatorUpdates, err := types.PB2OC.ValidatorUpdates([]ocabci.ValidatorUpdate{firstAddedVal})
 	assert.NoError(t, err)
 	abciResponses := &ocstate.ABCIResponses{
-		BeginBlock: &tmabci.ResponseBeginBlock{},
-		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: []abci.ValidatorUpdate{firstAddedVal}},
+		BeginBlock: &abci.ResponseBeginBlock{},
+		EndBlock:   &ocabci.ResponseEndBlock{ValidatorUpdates: []ocabci.ValidatorUpdate{firstAddedVal}},
 	}
 	block := makeBlock(oldState, oldState.LastBlockHeight+1)
 	blockID := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
@@ -832,8 +832,8 @@ func TestLargeGenesisValidator(t *testing.T) {
 	for i := 0; i < 200; i++ {
 		// no updates:
 		abciResponses := &ocstate.ABCIResponses{
-			BeginBlock: &tmabci.ResponseBeginBlock{},
-			EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: nil},
+			BeginBlock: &abci.ResponseBeginBlock{},
+			EndBlock:   &ocabci.ResponseEndBlock{ValidatorUpdates: nil},
 		}
 		validatorUpdates, err := types.PB2OC.ValidatorUpdates(abciResponses.EndBlock.ValidatorUpdates)
 		require.NoError(t, err)
@@ -863,13 +863,13 @@ func TestLargeGenesisValidator(t *testing.T) {
 		addedPubKey := ed25519.GenPrivKey().PubKey()
 		ap, err := cryptoenc.PubKeyToProto(addedPubKey)
 		require.NoError(t, err)
-		addedVal := abci.ValidatorUpdate{PubKey: ap, Power: firstAddedValVotingPower}
-		validatorUpdates, err := types.PB2OC.ValidatorUpdates([]abci.ValidatorUpdate{addedVal})
+		addedVal := ocabci.ValidatorUpdate{PubKey: ap, Power: firstAddedValVotingPower}
+		validatorUpdates, err := types.PB2OC.ValidatorUpdates([]ocabci.ValidatorUpdate{addedVal})
 		assert.NoError(t, err)
 
 		abciResponses := &ocstate.ABCIResponses{
-			BeginBlock: &tmabci.ResponseBeginBlock{},
-			EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: []abci.ValidatorUpdate{addedVal}},
+			BeginBlock: &abci.ResponseBeginBlock{},
+			EndBlock:   &ocabci.ResponseEndBlock{ValidatorUpdates: []ocabci.ValidatorUpdate{addedVal}},
 		}
 		block := makeBlock(oldState, oldState.LastBlockHeight+1)
 		blockID := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
@@ -881,10 +881,10 @@ func TestLargeGenesisValidator(t *testing.T) {
 	// remove genesis validator:
 	gp, err := cryptoenc.PubKeyToProto(genesisPubKey)
 	require.NoError(t, err)
-	removeGenesisVal := abci.ValidatorUpdate{PubKey: gp, Power: 0}
+	removeGenesisVal := ocabci.ValidatorUpdate{PubKey: gp, Power: 0}
 	abciResponses = &ocstate.ABCIResponses{
-		BeginBlock: &tmabci.ResponseBeginBlock{},
-		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: []abci.ValidatorUpdate{removeGenesisVal}},
+		BeginBlock: &abci.ResponseBeginBlock{},
+		EndBlock:   &ocabci.ResponseEndBlock{ValidatorUpdates: []ocabci.ValidatorUpdate{removeGenesisVal}},
 	}
 	block = makeBlock(oldState, oldState.LastBlockHeight+1)
 	blockID = types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
@@ -902,8 +902,8 @@ func TestLargeGenesisValidator(t *testing.T) {
 	isProposerUnchanged := true
 	for isProposerUnchanged {
 		abciResponses := &ocstate.ABCIResponses{
-			BeginBlock: &tmabci.ResponseBeginBlock{},
-			EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: nil},
+			BeginBlock: &abci.ResponseBeginBlock{},
+			EndBlock:   &ocabci.ResponseEndBlock{ValidatorUpdates: nil},
 		}
 		validatorUpdates, err = types.PB2OC.ValidatorUpdates(abciResponses.EndBlock.ValidatorUpdates)
 		require.NoError(t, err)
@@ -927,8 +927,8 @@ func TestLargeGenesisValidator(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		// no updates:
 		abciResponses := &ocstate.ABCIResponses{
-			BeginBlock: &tmabci.ResponseBeginBlock{},
-			EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: nil},
+			BeginBlock: &abci.ResponseBeginBlock{},
+			EndBlock:   &ocabci.ResponseEndBlock{ValidatorUpdates: nil},
 		}
 		validatorUpdates, err := types.PB2OC.ValidatorUpdates(abciResponses.EndBlock.ValidatorUpdates)
 		require.NoError(t, err)

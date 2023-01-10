@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/stretchr/testify/assert"
@@ -105,20 +105,20 @@ func TestConsensusParamsHash(t *testing.T) {
 func TestConsensusParamsUpdate(t *testing.T) {
 	testCases := []struct {
 		params        tmproto.ConsensusParams
-		updates       *tmabci.ConsensusParams
+		updates       *abci.ConsensusParams
 		updatedParams tmproto.ConsensusParams
 	}{
 		// empty updates
 		{
 			makeParams(1, 2, 10, 3, 0, valEd25519),
-			&tmabci.ConsensusParams{},
+			&abci.ConsensusParams{},
 			makeParams(1, 2, 10, 3, 0, valEd25519),
 		},
 		// fine updates
 		{
 			makeParams(1, 2, 10, 3, 0, valEd25519),
-			&tmabci.ConsensusParams{
-				Block: &tmabci.BlockParams{
+			&abci.ConsensusParams{
+				Block: &abci.BlockParams{
 					MaxBytes: 100,
 					MaxGas:   200,
 				},
@@ -145,7 +145,7 @@ func TestConsensusParamsUpdate_AppVersion(t *testing.T) {
 	assert.EqualValues(t, 0, params.Version.AppVersion)
 
 	updated := UpdateConsensusParams(params,
-		&tmabci.ConsensusParams{Version: &tmproto.VersionParams{AppVersion: 77}})
+		&abci.ConsensusParams{Version: &tmproto.VersionParams{AppVersion: 77}})
 
 	assert.EqualValues(t, 77, updated.Version.AppVersion)
 }

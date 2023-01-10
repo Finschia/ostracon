@@ -5,7 +5,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	tmnet "github.com/line/ostracon/libs/net"
 	"github.com/line/ostracon/libs/service"
 )
@@ -18,11 +18,11 @@ type GRPCServer struct {
 	listener net.Listener
 	server   *grpc.Server
 
-	app abci.ABCIApplicationServer
+	app ocabci.ABCIApplicationServer
 }
 
 // NewGRPCServer returns a new gRPC ABCI server
-func NewGRPCServer(protoAddr string, app abci.ABCIApplicationServer) service.Service {
+func NewGRPCServer(protoAddr string, app ocabci.ABCIApplicationServer) service.Service {
 	proto, addr := tmnet.ProtocolAndAddress(protoAddr)
 	s := &GRPCServer{
 		proto:    proto,
@@ -44,7 +44,7 @@ func (s *GRPCServer) OnStart() error {
 
 	s.listener = ln
 	s.server = grpc.NewServer()
-	abci.RegisterABCIApplicationServer(s.server, s.app)
+	ocabci.RegisterABCIApplicationServer(s.server, s.app)
 
 	s.Logger.Info("Listening", "proto", s.proto, "addr", s.addr)
 	go func() {

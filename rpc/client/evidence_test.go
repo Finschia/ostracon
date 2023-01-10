@@ -6,14 +6,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/line/ostracon/abci/example/kvstore"
+	"github.com/line/ostracon/crypto/ed25519"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/line/ostracon/abci/example/kvstore"
-	abci "github.com/line/ostracon/abci/types"
-	"github.com/line/ostracon/crypto/ed25519"
+	ocabci "github.com/line/ostracon/abci/types"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
 	"github.com/line/ostracon/crypto/tmhash"
 	tmrand "github.com/line/ostracon/libs/rand"
@@ -150,8 +151,8 @@ func TestBroadcastEvidence_DuplicateVoteEvidence(t *testing.T) {
 		qres := result2.Response
 		require.True(t, qres.IsOK())
 
-		var v abci.ValidatorUpdate
-		err = abci.ReadMessage(bytes.NewReader(qres.Value), &v)
+		var v ocabci.ValidatorUpdate
+		err = ocabci.ReadMessage(bytes.NewReader(qres.Value), &v)
 		require.NoError(t, err, "Error reading query result, value %v", qres.Value)
 
 		pk, err := cryptoenc.PubKeyFromProto(&v.PubKey)

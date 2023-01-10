@@ -16,12 +16,12 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/line/ostracon/abci/example/kvstore"
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	cfg "github.com/line/ostracon/config"
 	"github.com/line/ostracon/crypto"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
@@ -610,8 +610,8 @@ func TestMockProxyApp(t *testing.T) {
 
 	assert.NotPanics(t, func() {
 		abciResWithEmptyDeliverTx := new(ocstate.ABCIResponses)
-		abciResWithEmptyDeliverTx.DeliverTxs = make([]*tmabci.ResponseDeliverTx, 0)
-		abciResWithEmptyDeliverTx.DeliverTxs = append(abciResWithEmptyDeliverTx.DeliverTxs, &tmabci.ResponseDeliverTx{})
+		abciResWithEmptyDeliverTx.DeliverTxs = make([]*abci.ResponseDeliverTx, 0)
+		abciResWithEmptyDeliverTx.DeliverTxs = append(abciResWithEmptyDeliverTx.DeliverTxs, &abci.ResponseDeliverTx{})
 
 		// called when saveABCIResponses:
 		bytes, err := proto.Marshal(abciResWithEmptyDeliverTx)
@@ -625,15 +625,15 @@ func TestMockProxyApp(t *testing.T) {
 		mock := newMockProxyApp([]byte("mock_hash"), loadedAbciRes)
 
 		abciRes := new(ocstate.ABCIResponses)
-		abciRes.DeliverTxs = make([]*tmabci.ResponseDeliverTx, len(loadedAbciRes.DeliverTxs))
+		abciRes.DeliverTxs = make([]*abci.ResponseDeliverTx, len(loadedAbciRes.DeliverTxs))
 		// Execute transactions and get hash.
-		proxyCb := func(req *abci.Request, res *abci.Response) {
-			if r, ok := res.Value.(*abci.Response_DeliverTx); ok {
+		proxyCb := func(req *ocabci.Request, res *ocabci.Response) {
+			if r, ok := res.Value.(*ocabci.Response_DeliverTx); ok {
 				// TODO: make use of res.Log
 				// TODO: make use of this info
 				// Blocks may include invalid txs.
 				txRes := r.DeliverTx
-				if txRes.Code == abci.CodeTypeOK {
+				if txRes.Code == ocabci.CodeTypeOK {
 					validTxs++
 				} else {
 					logger.Debug("Invalid tx", "code", txRes.Code, "log", txRes.Log)
@@ -646,7 +646,7 @@ func TestMockProxyApp(t *testing.T) {
 		mock.SetGlobalCallback(proxyCb)
 
 		someTx := []byte("tx")
-		mock.DeliverTxAsync(tmabci.RequestDeliverTx{Tx: someTx}, nil)
+		mock.DeliverTxAsync(abci.RequestDeliverTx{Tx: someTx}, nil)
 	})
 	assert.True(t, validTxs == 1)
 	assert.True(t, invalidTxs == 0)
@@ -783,7 +783,7 @@ func testHandshakeReplay(t *testing.T, config *cfg.Config, nBlocks int, mode uin
 	}
 
 	// get the latest app hash from the app
-	res, err := proxyApp.Query().InfoSync(tmabci.RequestInfo{Version: ""})
+	res, err := proxyApp.Query().InfoSync(abci.RequestInfo{Version: ""})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -831,7 +831,7 @@ func buildAppStateFromChain(proxyApp proxy.AppConns, stateStore sm.Store,
 	state.ConsensusParams.Version.AppVersion = kvstore.ProtocolVersion // simulate handshake, receive app version
 	state.Version.Consensus.App = kvstore.ProtocolVersion              // simulate handshake, receive app version
 	validators := types.OC2PB.ValidatorUpdates(state.Validators)
-	if _, err := proxyApp.Consensus().InitChainSync(abci.RequestInitChain{
+	if _, err := proxyApp.Consensus().InitChainSync(ocabci.RequestInitChain{
 		Validators: validators,
 	}); err != nil {
 		panic(err)
@@ -882,7 +882,7 @@ func buildOCStateFromChain(
 	state.ConsensusParams.Version.AppVersion = kvstore.ProtocolVersion // simulate handshake, receive app version
 	state.Version.Consensus.App = kvstore.ProtocolVersion              // simulate handshake, receive app version
 	validators := types.OC2PB.ValidatorUpdates(state.Validators)
-	if _, err := proxyApp.Consensus().InitChainSync(abci.RequestInitChain{
+	if _, err := proxyApp.Consensus().InitChainSync(ocabci.RequestInitChain{
 		Validators: validators,
 	}); err != nil {
 		panic(err)
@@ -1031,22 +1031,22 @@ func makeBlock(state sm.State, lastBlock *types.Block, lastBlockMeta *types.Bloc
 }
 
 type badApp struct {
-	abci.BaseApplication
+	ocabci.BaseApplication
 	numBlocks           byte
 	height              byte
 	allHashesAreWrong   bool
 	onlyLastHashIsWrong bool
 }
 
-func (app *badApp) Commit() tmabci.ResponseCommit {
+func (app *badApp) Commit() abci.ResponseCommit {
 	app.height++
 	if app.onlyLastHashIsWrong {
 		if app.height == app.numBlocks {
-			return tmabci.ResponseCommit{Data: tmrand.Bytes(8)}
+			return abci.ResponseCommit{Data: tmrand.Bytes(8)}
 		}
-		return tmabci.ResponseCommit{Data: []byte{app.height}}
+		return abci.ResponseCommit{Data: []byte{app.height}}
 	} else if app.allHashesAreWrong {
-		return tmabci.ResponseCommit{Data: tmrand.Bytes(8)}
+		return abci.ResponseCommit{Data: tmrand.Bytes(8)}
 	}
 
 	panic("either allHashesAreWrong or onlyLastHashIsWrong must be set")
@@ -1294,12 +1294,12 @@ func TestHandshakeUpdatesValidators(t *testing.T) {
 
 // returns the vals on InitChain
 type initChainApp struct {
-	abci.BaseApplication
-	vals []abci.ValidatorUpdate
+	ocabci.BaseApplication
+	vals []ocabci.ValidatorUpdate
 }
 
-func (ica *initChainApp) InitChain(req abci.RequestInitChain) abci.ResponseInitChain {
-	return abci.ResponseInitChain{
+func (ica *initChainApp) InitChain(req ocabci.RequestInitChain) ocabci.ResponseInitChain {
+	return ocabci.ResponseInitChain{
 		Validators: ica.vals,
 	}
 }

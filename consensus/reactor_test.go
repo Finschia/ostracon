@@ -20,7 +20,7 @@ import (
 
 	abcicli "github.com/line/ostracon/abci/client"
 	"github.com/line/ostracon/abci/example/kvstore"
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	cfg "github.com/line/ostracon/config"
 	cstypes "github.com/line/ostracon/consensus/types"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
@@ -143,7 +143,7 @@ func TestReactorWithEvidence(t *testing.T) {
 		ensureDir(path.Dir(thisConfig.Consensus.WalFile()), 0700) // dir for wal
 		app := appFunc()
 		vals := types.OC2PB.ValidatorUpdates(state.Validators)
-		app.InitChain(abci.RequestInitChain{Validators: vals})
+		app.InitChain(ocabci.RequestInitChain{Validators: vals})
 
 		pv := privVals[i]
 		// duplicate code from:

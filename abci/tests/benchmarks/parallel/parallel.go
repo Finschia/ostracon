@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	types "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	tmnet "github.com/line/ostracon/libs/net"
 )
 
@@ -20,8 +20,8 @@ func main() {
 	go func() {
 		counter := 0
 		for {
-			var res = &types.Response{}
-			err := types.ReadMessage(conn, res)
+			var res = &ocabci.Response{}
+			err := ocabci.ReadMessage(conn, res)
 			if err != nil {
 				log.Fatal(err.Error())
 			}
@@ -36,9 +36,9 @@ func main() {
 	counter := 0
 	for i := 0; ; i++ {
 		var bufWriter = bufio.NewWriter(conn)
-		var req = types.ToRequestEcho("foobar")
+		var req = ocabci.ToRequestEcho("foobar")
 
-		err := types.WriteMessage(req, bufWriter)
+		err := ocabci.WriteMessage(req, bufWriter)
 		if err != nil {
 			log.Fatal(err.Error())
 		}

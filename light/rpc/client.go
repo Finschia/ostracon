@@ -10,9 +10,9 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto/merkle"
 	tmbytes "github.com/line/ostracon/libs/bytes"
 	tmmath "github.com/line/ostracon/libs/math"
@@ -412,7 +412,7 @@ func (c *Client) BlockResults(ctx context.Context, height *int64) (*ctypes.Resul
 	}
 
 	// proto-encode BeginBlock events
-	bbeBytes, err := proto.Marshal(&tmabci.ResponseBeginBlock{
+	bbeBytes, err := proto.Marshal(&abci.ResponseBeginBlock{
 		Events: res.BeginBlockEvents,
 	})
 	if err != nil {
@@ -423,7 +423,7 @@ func (c *Client) BlockResults(ctx context.Context, height *int64) (*ctypes.Resul
 	results := types.NewResults(res.TxsResults)
 
 	// proto-encode EndBlock events.
-	ebeBytes, err := proto.Marshal(&abci.ResponseEndBlock{
+	ebeBytes, err := proto.Marshal(&ocabci.ResponseEndBlock{
 		Events: res.EndBlockEvents,
 	})
 	if err != nil {

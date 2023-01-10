@@ -10,9 +10,9 @@ import (
 	"reflect"
 	"time"
 
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	tmnet "github.com/line/ostracon/libs/net"
 	"github.com/line/ostracon/libs/service"
 	tmsync "github.com/line/ostracon/libs/sync"
@@ -131,14 +131,14 @@ func (cli *socketClient) sendRequestsRoutine(conn io.Writer) {
 			// cli.Logger.Debug("Sent request", "requestType", reflect.TypeOf(reqres.Request), "request", reqres.Request)
 
 			cli.willSendReq(reqres)
-			err := abci.WriteMessage(reqres.Request, w)
+			err := ocabci.WriteMessage(reqres.Request, w)
 			if err != nil {
 				cli.stopForError(fmt.Errorf("write to buffer: %w", err))
 				return
 			}
 
 			// If it's a flush request, flush the current buffer.
-			if _, ok := reqres.Request.Value.(*abci.Request_Flush); ok {
+			if _, ok := reqres.Request.Value.(*ocabci.Request_Flush); ok {
 				err = w.Flush()
 				if err != nil {
 					cli.stopForError(fmt.Errorf("flush buffer: %w", err))
@@ -147,7 +147,7 @@ func (cli *socketClient) sendRequestsRoutine(conn io.Writer) {
 			}
 		case <-cli.flushTimer.Ch: // flush queue
 			select {
-			case cli.reqQueue <- NewReqRes(abci.ToRequestFlush(), nil):
+			case cli.reqQueue <- NewReqRes(ocabci.ToRequestFlush(), nil):
 			default:
 				// Probably will fill the buffer, or retry later.
 			}
@@ -160,8 +160,8 @@ func (cli *socketClient) sendRequestsRoutine(conn io.Writer) {
 func (cli *socketClient) recvResponseRoutine(conn io.Reader) {
 	r := bufio.NewReader(conn)
 	for {
-		var res = &abci.Response{}
-		err := abci.ReadMessage(r, res)
+		var res = &ocabci.Response{}
+		err := ocabci.ReadMessage(r, res)
 		if err != nil {
 			cli.stopForError(fmt.Errorf("read message: %w", err))
 			return
@@ -170,7 +170,7 @@ func (cli *socketClient) recvResponseRoutine(conn io.Reader) {
 		// cli.Logger.Debug("Received response", "responseType", reflect.TypeOf(res), "response", res)
 
 		switch r := res.Value.(type) {
-		case *abci.Response_Exception: // app responded with error
+		case *ocabci.Response_Exception: // app responded with error
 			// XXX After setting cli.err, release waiters (e.g. reqres.Done())
 			cli.stopForError(errors.New(r.Exception.Error))
 			return
@@ -190,7 +190,7 @@ func (cli *socketClient) willSendReq(reqres *ReqRes) {
 	cli.reqSent.PushBack(reqres)
 }
 
-func (cli *socketClient) didRecvResponse(res *abci.Response) error {
+func (cli *socketClient) didRecvResponse(res *ocabci.Response) error {
 	cli.mtx.Lock()
 	defer cli.mtx.Unlock()
 
@@ -227,77 +227,77 @@ func (cli *socketClient) didRecvResponse(res *abci.Response) error {
 //----------------------------------------
 
 func (cli *socketClient) EchoAsync(msg string, cb ResponseCallback) *ReqRes {
-	return cli.queueRequest(abci.ToRequestEcho(msg), cb)
+	return cli.queueRequest(ocabci.ToRequestEcho(msg), cb)
 }
 
 func (cli *socketClient) FlushAsync(cb ResponseCallback) *ReqRes {
-	return cli.queueRequest(abci.ToRequestFlush(), cb)
+	return cli.queueRequest(ocabci.ToRequestFlush(), cb)
 }
 
-func (cli *socketClient) InfoAsync(req tmabci.RequestInfo, cb ResponseCallback) *ReqRes {
-	return cli.queueRequest(abci.ToRequestInfo(req), cb)
+func (cli *socketClient) InfoAsync(req abci.RequestInfo, cb ResponseCallback) *ReqRes {
+	return cli.queueRequest(ocabci.ToRequestInfo(req), cb)
 }
 
-func (cli *socketClient) SetOptionAsync(req tmabci.RequestSetOption, cb ResponseCallback) *ReqRes {
-	return cli.queueRequest(abci.ToRequestSetOption(req), cb)
+func (cli *socketClient) SetOptionAsync(req abci.RequestSetOption, cb ResponseCallback) *ReqRes {
+	return cli.queueRequest(ocabci.ToRequestSetOption(req), cb)
 }
 
-func (cli *socketClient) DeliverTxAsync(req tmabci.RequestDeliverTx, cb ResponseCallback) *ReqRes {
-	return cli.queueRequest(abci.ToRequestDeliverTx(req), cb)
+func (cli *socketClient) DeliverTxAsync(req abci.RequestDeliverTx, cb ResponseCallback) *ReqRes {
+	return cli.queueRequest(ocabci.ToRequestDeliverTx(req), cb)
 }
 
-func (cli *socketClient) CheckTxAsync(req tmabci.RequestCheckTx, cb ResponseCallback) *ReqRes {
-	return cli.queueRequest(abci.ToRequestCheckTx(req), cb)
+func (cli *socketClient) CheckTxAsync(req abci.RequestCheckTx, cb ResponseCallback) *ReqRes {
+	return cli.queueRequest(ocabci.ToRequestCheckTx(req), cb)
 }
 
-func (cli *socketClient) QueryAsync(req tmabci.RequestQuery, cb ResponseCallback) *ReqRes {
-	return cli.queueRequest(abci.ToRequestQuery(req), cb)
+func (cli *socketClient) QueryAsync(req abci.RequestQuery, cb ResponseCallback) *ReqRes {
+	return cli.queueRequest(ocabci.ToRequestQuery(req), cb)
 }
 
 func (cli *socketClient) CommitAsync(cb ResponseCallback) *ReqRes {
-	return cli.queueRequest(abci.ToRequestCommit(), cb)
+	return cli.queueRequest(ocabci.ToRequestCommit(), cb)
 }
 
-func (cli *socketClient) InitChainAsync(req abci.RequestInitChain, cb ResponseCallback) *ReqRes {
-	return cli.queueRequest(abci.ToRequestInitChain(req), cb)
+func (cli *socketClient) InitChainAsync(req ocabci.RequestInitChain, cb ResponseCallback) *ReqRes {
+	return cli.queueRequest(ocabci.ToRequestInitChain(req), cb)
 }
 
-func (cli *socketClient) BeginBlockAsync(req abci.RequestBeginBlock, cb ResponseCallback) *ReqRes {
-	return cli.queueRequest(abci.ToRequestBeginBlock(req), cb)
+func (cli *socketClient) BeginBlockAsync(req ocabci.RequestBeginBlock, cb ResponseCallback) *ReqRes {
+	return cli.queueRequest(ocabci.ToRequestBeginBlock(req), cb)
 }
 
-func (cli *socketClient) EndBlockAsync(req tmabci.RequestEndBlock, cb ResponseCallback) *ReqRes {
-	return cli.queueRequest(abci.ToRequestEndBlock(req), cb)
+func (cli *socketClient) EndBlockAsync(req abci.RequestEndBlock, cb ResponseCallback) *ReqRes {
+	return cli.queueRequest(ocabci.ToRequestEndBlock(req), cb)
 }
 
-func (cli *socketClient) BeginRecheckTxAsync(req abci.RequestBeginRecheckTx, cb ResponseCallback) *ReqRes {
-	return cli.queueRequest(abci.ToRequestBeginRecheckTx(req), cb)
+func (cli *socketClient) BeginRecheckTxAsync(req ocabci.RequestBeginRecheckTx, cb ResponseCallback) *ReqRes {
+	return cli.queueRequest(ocabci.ToRequestBeginRecheckTx(req), cb)
 }
 
-func (cli *socketClient) EndRecheckTxAsync(req abci.RequestEndRecheckTx, cb ResponseCallback) *ReqRes {
-	return cli.queueRequest(abci.ToRequestEndRecheckTx(req), cb)
+func (cli *socketClient) EndRecheckTxAsync(req ocabci.RequestEndRecheckTx, cb ResponseCallback) *ReqRes {
+	return cli.queueRequest(ocabci.ToRequestEndRecheckTx(req), cb)
 }
 
-func (cli *socketClient) ListSnapshotsAsync(req tmabci.RequestListSnapshots, cb ResponseCallback) *ReqRes {
-	return cli.queueRequest(abci.ToRequestListSnapshots(req), cb)
+func (cli *socketClient) ListSnapshotsAsync(req abci.RequestListSnapshots, cb ResponseCallback) *ReqRes {
+	return cli.queueRequest(ocabci.ToRequestListSnapshots(req), cb)
 }
 
-func (cli *socketClient) OfferSnapshotAsync(req tmabci.RequestOfferSnapshot, cb ResponseCallback) *ReqRes {
-	return cli.queueRequest(abci.ToRequestOfferSnapshot(req), cb)
+func (cli *socketClient) OfferSnapshotAsync(req abci.RequestOfferSnapshot, cb ResponseCallback) *ReqRes {
+	return cli.queueRequest(ocabci.ToRequestOfferSnapshot(req), cb)
 }
 
-func (cli *socketClient) LoadSnapshotChunkAsync(req tmabci.RequestLoadSnapshotChunk, cb ResponseCallback) *ReqRes {
-	return cli.queueRequest(abci.ToRequestLoadSnapshotChunk(req), cb)
+func (cli *socketClient) LoadSnapshotChunkAsync(req abci.RequestLoadSnapshotChunk, cb ResponseCallback) *ReqRes {
+	return cli.queueRequest(ocabci.ToRequestLoadSnapshotChunk(req), cb)
 }
 
-func (cli *socketClient) ApplySnapshotChunkAsync(req tmabci.RequestApplySnapshotChunk, cb ResponseCallback) *ReqRes {
-	return cli.queueRequest(abci.ToRequestApplySnapshotChunk(req), cb)
+func (cli *socketClient) ApplySnapshotChunkAsync(req abci.RequestApplySnapshotChunk, cb ResponseCallback) *ReqRes {
+	return cli.queueRequest(ocabci.ToRequestApplySnapshotChunk(req), cb)
 }
 
 //----------------------------------------
 
-func (cli *socketClient) FlushSync() (*tmabci.ResponseFlush, error) {
-	reqRes := cli.queueRequest(abci.ToRequestFlush(), nil)
+func (cli *socketClient) FlushSync() (*abci.ResponseFlush, error) {
+	reqRes := cli.queueRequest(ocabci.ToRequestFlush(), nil)
 	if err := cli.Error(); err != nil {
 		return nil, err
 	}
@@ -305,8 +305,8 @@ func (cli *socketClient) FlushSync() (*tmabci.ResponseFlush, error) {
 	return reqRes.Response.GetFlush(), cli.Error()
 }
 
-func (cli *socketClient) EchoSync(msg string) (*tmabci.ResponseEcho, error) {
-	reqres := cli.queueRequest(abci.ToRequestEcho(msg), nil)
+func (cli *socketClient) EchoSync(msg string) (*abci.ResponseEcho, error) {
+	reqres := cli.queueRequest(ocabci.ToRequestEcho(msg), nil)
 	if _, err := cli.FlushSync(); err != nil {
 		return nil, err
 	}
@@ -314,8 +314,8 @@ func (cli *socketClient) EchoSync(msg string) (*tmabci.ResponseEcho, error) {
 	return reqres.Response.GetEcho(), cli.Error()
 }
 
-func (cli *socketClient) InfoSync(req tmabci.RequestInfo) (*tmabci.ResponseInfo, error) {
-	reqres := cli.queueRequest(abci.ToRequestInfo(req), nil)
+func (cli *socketClient) InfoSync(req abci.RequestInfo) (*abci.ResponseInfo, error) {
+	reqres := cli.queueRequest(ocabci.ToRequestInfo(req), nil)
 	if _, err := cli.FlushSync(); err != nil {
 		return nil, err
 	}
@@ -323,8 +323,8 @@ func (cli *socketClient) InfoSync(req tmabci.RequestInfo) (*tmabci.ResponseInfo,
 	return reqres.Response.GetInfo(), cli.Error()
 }
 
-func (cli *socketClient) SetOptionSync(req tmabci.RequestSetOption) (*tmabci.ResponseSetOption, error) {
-	reqres := cli.queueRequest(abci.ToRequestSetOption(req), nil)
+func (cli *socketClient) SetOptionSync(req abci.RequestSetOption) (*abci.ResponseSetOption, error) {
+	reqres := cli.queueRequest(ocabci.ToRequestSetOption(req), nil)
 	if _, err := cli.FlushSync(); err != nil {
 		return nil, err
 	}
@@ -332,8 +332,8 @@ func (cli *socketClient) SetOptionSync(req tmabci.RequestSetOption) (*tmabci.Res
 	return reqres.Response.GetSetOption(), cli.Error()
 }
 
-func (cli *socketClient) DeliverTxSync(req tmabci.RequestDeliverTx) (*tmabci.ResponseDeliverTx, error) {
-	reqres := cli.queueRequest(abci.ToRequestDeliverTx(req), nil)
+func (cli *socketClient) DeliverTxSync(req abci.RequestDeliverTx) (*abci.ResponseDeliverTx, error) {
+	reqres := cli.queueRequest(ocabci.ToRequestDeliverTx(req), nil)
 	if _, err := cli.FlushSync(); err != nil {
 		return nil, err
 	}
@@ -341,8 +341,8 @@ func (cli *socketClient) DeliverTxSync(req tmabci.RequestDeliverTx) (*tmabci.Res
 	return reqres.Response.GetDeliverTx(), cli.Error()
 }
 
-func (cli *socketClient) CheckTxSync(req tmabci.RequestCheckTx) (*abci.ResponseCheckTx, error) {
-	reqres := cli.queueRequest(abci.ToRequestCheckTx(req), nil)
+func (cli *socketClient) CheckTxSync(req abci.RequestCheckTx) (*ocabci.ResponseCheckTx, error) {
+	reqres := cli.queueRequest(ocabci.ToRequestCheckTx(req), nil)
 	if _, err := cli.FlushSync(); err != nil {
 		return nil, err
 	}
@@ -350,8 +350,8 @@ func (cli *socketClient) CheckTxSync(req tmabci.RequestCheckTx) (*abci.ResponseC
 	return reqres.Response.GetCheckTx(), cli.Error()
 }
 
-func (cli *socketClient) QuerySync(req tmabci.RequestQuery) (*tmabci.ResponseQuery, error) {
-	reqres := cli.queueRequest(abci.ToRequestQuery(req), nil)
+func (cli *socketClient) QuerySync(req abci.RequestQuery) (*abci.ResponseQuery, error) {
+	reqres := cli.queueRequest(ocabci.ToRequestQuery(req), nil)
 	if _, err := cli.FlushSync(); err != nil {
 		return nil, err
 	}
@@ -359,8 +359,8 @@ func (cli *socketClient) QuerySync(req tmabci.RequestQuery) (*tmabci.ResponseQue
 	return reqres.Response.GetQuery(), cli.Error()
 }
 
-func (cli *socketClient) CommitSync() (*tmabci.ResponseCommit, error) {
-	reqres := cli.queueRequest(abci.ToRequestCommit(), nil)
+func (cli *socketClient) CommitSync() (*abci.ResponseCommit, error) {
+	reqres := cli.queueRequest(ocabci.ToRequestCommit(), nil)
 	if _, err := cli.FlushSync(); err != nil {
 		return nil, err
 	}
@@ -368,8 +368,8 @@ func (cli *socketClient) CommitSync() (*tmabci.ResponseCommit, error) {
 	return reqres.Response.GetCommit(), cli.Error()
 }
 
-func (cli *socketClient) InitChainSync(req abci.RequestInitChain) (*abci.ResponseInitChain, error) {
-	reqres := cli.queueRequest(abci.ToRequestInitChain(req), nil)
+func (cli *socketClient) InitChainSync(req ocabci.RequestInitChain) (*ocabci.ResponseInitChain, error) {
+	reqres := cli.queueRequest(ocabci.ToRequestInitChain(req), nil)
 	if _, err := cli.FlushSync(); err != nil {
 		return nil, err
 	}
@@ -377,8 +377,8 @@ func (cli *socketClient) InitChainSync(req abci.RequestInitChain) (*abci.Respons
 	return reqres.Response.GetInitChain(), cli.Error()
 }
 
-func (cli *socketClient) BeginBlockSync(req abci.RequestBeginBlock) (*tmabci.ResponseBeginBlock, error) {
-	reqres := cli.queueRequest(abci.ToRequestBeginBlock(req), nil)
+func (cli *socketClient) BeginBlockSync(req ocabci.RequestBeginBlock) (*abci.ResponseBeginBlock, error) {
+	reqres := cli.queueRequest(ocabci.ToRequestBeginBlock(req), nil)
 	if _, err := cli.FlushSync(); err != nil {
 		return nil, err
 	}
@@ -386,8 +386,8 @@ func (cli *socketClient) BeginBlockSync(req abci.RequestBeginBlock) (*tmabci.Res
 	return reqres.Response.GetBeginBlock(), cli.Error()
 }
 
-func (cli *socketClient) EndBlockSync(req tmabci.RequestEndBlock) (*abci.ResponseEndBlock, error) {
-	reqres := cli.queueRequest(abci.ToRequestEndBlock(req), nil)
+func (cli *socketClient) EndBlockSync(req abci.RequestEndBlock) (*ocabci.ResponseEndBlock, error) {
+	reqres := cli.queueRequest(ocabci.ToRequestEndBlock(req), nil)
 	if _, err := cli.FlushSync(); err != nil {
 		return nil, err
 	}
@@ -395,8 +395,8 @@ func (cli *socketClient) EndBlockSync(req tmabci.RequestEndBlock) (*abci.Respons
 	return reqres.Response.GetEndBlock(), cli.Error()
 }
 
-func (cli *socketClient) BeginRecheckTxSync(req abci.RequestBeginRecheckTx) (*abci.ResponseBeginRecheckTx, error) {
-	reqres := cli.queueRequest(abci.ToRequestBeginRecheckTx(req), nil)
+func (cli *socketClient) BeginRecheckTxSync(req ocabci.RequestBeginRecheckTx) (*ocabci.ResponseBeginRecheckTx, error) {
+	reqres := cli.queueRequest(ocabci.ToRequestBeginRecheckTx(req), nil)
 	if _, err := cli.FlushSync(); err != nil {
 		return nil, err
 	}
@@ -404,8 +404,8 @@ func (cli *socketClient) BeginRecheckTxSync(req abci.RequestBeginRecheckTx) (*ab
 	return reqres.Response.GetBeginRecheckTx(), cli.Error()
 }
 
-func (cli *socketClient) EndRecheckTxSync(req abci.RequestEndRecheckTx) (*abci.ResponseEndRecheckTx, error) {
-	reqres := cli.queueRequest(abci.ToRequestEndRecheckTx(req), nil)
+func (cli *socketClient) EndRecheckTxSync(req ocabci.RequestEndRecheckTx) (*ocabci.ResponseEndRecheckTx, error) {
+	reqres := cli.queueRequest(ocabci.ToRequestEndRecheckTx(req), nil)
 	if _, err := cli.FlushSync(); err != nil {
 		return nil, err
 	}
@@ -413,8 +413,8 @@ func (cli *socketClient) EndRecheckTxSync(req abci.RequestEndRecheckTx) (*abci.R
 	return reqres.Response.GetEndRecheckTx(), cli.Error()
 }
 
-func (cli *socketClient) ListSnapshotsSync(req tmabci.RequestListSnapshots) (*tmabci.ResponseListSnapshots, error) {
-	reqres := cli.queueRequest(abci.ToRequestListSnapshots(req), nil)
+func (cli *socketClient) ListSnapshotsSync(req abci.RequestListSnapshots) (*abci.ResponseListSnapshots, error) {
+	reqres := cli.queueRequest(ocabci.ToRequestListSnapshots(req), nil)
 	if _, err := cli.FlushSync(); err != nil {
 		return nil, err
 	}
@@ -422,8 +422,8 @@ func (cli *socketClient) ListSnapshotsSync(req tmabci.RequestListSnapshots) (*tm
 	return reqres.Response.GetListSnapshots(), cli.Error()
 }
 
-func (cli *socketClient) OfferSnapshotSync(req tmabci.RequestOfferSnapshot) (*tmabci.ResponseOfferSnapshot, error) {
-	reqres := cli.queueRequest(abci.ToRequestOfferSnapshot(req), nil)
+func (cli *socketClient) OfferSnapshotSync(req abci.RequestOfferSnapshot) (*abci.ResponseOfferSnapshot, error) {
+	reqres := cli.queueRequest(ocabci.ToRequestOfferSnapshot(req), nil)
 	if _, err := cli.FlushSync(); err != nil {
 		return nil, err
 	}
@@ -432,8 +432,8 @@ func (cli *socketClient) OfferSnapshotSync(req tmabci.RequestOfferSnapshot) (*tm
 }
 
 func (cli *socketClient) LoadSnapshotChunkSync(
-	req tmabci.RequestLoadSnapshotChunk) (*tmabci.ResponseLoadSnapshotChunk, error) {
-	reqres := cli.queueRequest(abci.ToRequestLoadSnapshotChunk(req), nil)
+	req abci.RequestLoadSnapshotChunk) (*abci.ResponseLoadSnapshotChunk, error) {
+	reqres := cli.queueRequest(ocabci.ToRequestLoadSnapshotChunk(req), nil)
 	if _, err := cli.FlushSync(); err != nil {
 		return nil, err
 	}
@@ -442,8 +442,8 @@ func (cli *socketClient) LoadSnapshotChunkSync(
 }
 
 func (cli *socketClient) ApplySnapshotChunkSync(
-	req tmabci.RequestApplySnapshotChunk) (*tmabci.ResponseApplySnapshotChunk, error) {
-	reqres := cli.queueRequest(abci.ToRequestApplySnapshotChunk(req), nil)
+	req abci.RequestApplySnapshotChunk) (*abci.ResponseApplySnapshotChunk, error) {
+	reqres := cli.queueRequest(ocabci.ToRequestApplySnapshotChunk(req), nil)
 	if _, err := cli.FlushSync(); err != nil {
 		return nil, err
 	}
@@ -452,7 +452,7 @@ func (cli *socketClient) ApplySnapshotChunkSync(
 
 //----------------------------------------
 
-func (cli *socketClient) queueRequest(req *abci.Request, cb ResponseCallback) *ReqRes {
+func (cli *socketClient) queueRequest(req *ocabci.Request, cb ResponseCallback) *ReqRes {
 	reqres := NewReqRes(req, cb)
 
 	// TODO: set cli.err if reqQueue times out
@@ -460,7 +460,7 @@ func (cli *socketClient) queueRequest(req *abci.Request, cb ResponseCallback) *R
 
 	// Maybe auto-flush, or unset auto-flush
 	switch req.Value.(type) {
-	case *abci.Request_Flush:
+	case *ocabci.Request_Flush:
 		cli.flushTimer.Unset()
 	default:
 		cli.flushTimer.Set()
@@ -493,42 +493,42 @@ LOOP:
 
 //----------------------------------------
 
-func resMatchesReq(req *abci.Request, res *abci.Response) (ok bool) {
+func resMatchesReq(req *ocabci.Request, res *ocabci.Response) (ok bool) {
 	switch req.Value.(type) {
-	case *abci.Request_Echo:
-		_, ok = res.Value.(*abci.Response_Echo)
-	case *abci.Request_Flush:
-		_, ok = res.Value.(*abci.Response_Flush)
-	case *abci.Request_Info:
-		_, ok = res.Value.(*abci.Response_Info)
-	case *abci.Request_SetOption:
-		_, ok = res.Value.(*abci.Response_SetOption)
-	case *abci.Request_DeliverTx:
-		_, ok = res.Value.(*abci.Response_DeliverTx)
-	case *abci.Request_CheckTx:
-		_, ok = res.Value.(*abci.Response_CheckTx)
-	case *abci.Request_Commit:
-		_, ok = res.Value.(*abci.Response_Commit)
-	case *abci.Request_Query:
-		_, ok = res.Value.(*abci.Response_Query)
-	case *abci.Request_InitChain:
-		_, ok = res.Value.(*abci.Response_InitChain)
-	case *abci.Request_BeginBlock:
-		_, ok = res.Value.(*abci.Response_BeginBlock)
-	case *abci.Request_EndBlock:
-		_, ok = res.Value.(*abci.Response_EndBlock)
-	case *abci.Request_BeginRecheckTx:
-		_, ok = res.Value.(*abci.Response_BeginRecheckTx)
-	case *abci.Request_EndRecheckTx:
-		_, ok = res.Value.(*abci.Response_EndRecheckTx)
-	case *abci.Request_ApplySnapshotChunk:
-		_, ok = res.Value.(*abci.Response_ApplySnapshotChunk)
-	case *abci.Request_LoadSnapshotChunk:
-		_, ok = res.Value.(*abci.Response_LoadSnapshotChunk)
-	case *abci.Request_ListSnapshots:
-		_, ok = res.Value.(*abci.Response_ListSnapshots)
-	case *abci.Request_OfferSnapshot:
-		_, ok = res.Value.(*abci.Response_OfferSnapshot)
+	case *ocabci.Request_Echo:
+		_, ok = res.Value.(*ocabci.Response_Echo)
+	case *ocabci.Request_Flush:
+		_, ok = res.Value.(*ocabci.Response_Flush)
+	case *ocabci.Request_Info:
+		_, ok = res.Value.(*ocabci.Response_Info)
+	case *ocabci.Request_SetOption:
+		_, ok = res.Value.(*ocabci.Response_SetOption)
+	case *ocabci.Request_DeliverTx:
+		_, ok = res.Value.(*ocabci.Response_DeliverTx)
+	case *ocabci.Request_CheckTx:
+		_, ok = res.Value.(*ocabci.Response_CheckTx)
+	case *ocabci.Request_Commit:
+		_, ok = res.Value.(*ocabci.Response_Commit)
+	case *ocabci.Request_Query:
+		_, ok = res.Value.(*ocabci.Response_Query)
+	case *ocabci.Request_InitChain:
+		_, ok = res.Value.(*ocabci.Response_InitChain)
+	case *ocabci.Request_BeginBlock:
+		_, ok = res.Value.(*ocabci.Response_BeginBlock)
+	case *ocabci.Request_EndBlock:
+		_, ok = res.Value.(*ocabci.Response_EndBlock)
+	case *ocabci.Request_BeginRecheckTx:
+		_, ok = res.Value.(*ocabci.Response_BeginRecheckTx)
+	case *ocabci.Request_EndRecheckTx:
+		_, ok = res.Value.(*ocabci.Response_EndRecheckTx)
+	case *ocabci.Request_ApplySnapshotChunk:
+		_, ok = res.Value.(*ocabci.Response_ApplySnapshotChunk)
+	case *ocabci.Request_LoadSnapshotChunk:
+		_, ok = res.Value.(*ocabci.Response_LoadSnapshotChunk)
+	case *ocabci.Request_ListSnapshots:
+		_, ok = res.Value.(*ocabci.Response_ListSnapshots)
+	case *ocabci.Request_OfferSnapshot:
+		_, ok = res.Value.(*ocabci.Response_OfferSnapshot)
 	}
 	return ok
 }

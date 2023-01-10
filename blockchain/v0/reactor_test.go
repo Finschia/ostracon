@@ -10,10 +10,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tm-db"
 
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	cfg "github.com/line/ostracon/config"
 	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/mempool/mock"
@@ -313,39 +313,39 @@ func makeBlock(privVal types.PrivValidator, height int64, state sm.State, lastCo
 }
 
 type testApp struct {
-	abci.BaseApplication
+	ocabci.BaseApplication
 }
 
-var _ abci.Application = (*testApp)(nil)
+var _ ocabci.Application = (*testApp)(nil)
 
-func (app *testApp) Info(req tmabci.RequestInfo) (resInfo tmabci.ResponseInfo) {
-	return tmabci.ResponseInfo{}
+func (app *testApp) Info(req abci.RequestInfo) (resInfo abci.ResponseInfo) {
+	return abci.ResponseInfo{}
 }
 
-func (app *testApp) BeginBlock(req abci.RequestBeginBlock) tmabci.ResponseBeginBlock {
-	return tmabci.ResponseBeginBlock{}
+func (app *testApp) BeginBlock(req ocabci.RequestBeginBlock) abci.ResponseBeginBlock {
+	return abci.ResponseBeginBlock{}
 }
 
-func (app *testApp) EndBlock(req tmabci.RequestEndBlock) abci.ResponseEndBlock {
-	return abci.ResponseEndBlock{}
+func (app *testApp) EndBlock(req abci.RequestEndBlock) ocabci.ResponseEndBlock {
+	return ocabci.ResponseEndBlock{}
 }
 
-func (app *testApp) DeliverTx(req tmabci.RequestDeliverTx) tmabci.ResponseDeliverTx {
-	return tmabci.ResponseDeliverTx{Events: []tmabci.Event{}}
+func (app *testApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
+	return abci.ResponseDeliverTx{Events: []abci.Event{}}
 }
 
-func (app *testApp) CheckTxSync(req tmabci.RequestCheckTx) abci.ResponseCheckTx {
-	return abci.ResponseCheckTx{}
+func (app *testApp) CheckTxSync(req abci.RequestCheckTx) ocabci.ResponseCheckTx {
+	return ocabci.ResponseCheckTx{}
 }
 
-func (app *testApp) CheckTxAsync(req tmabci.RequestCheckTx, callback abci.CheckTxCallback) {
-	callback(abci.ResponseCheckTx{})
+func (app *testApp) CheckTxAsync(req abci.RequestCheckTx, callback ocabci.CheckTxCallback) {
+	callback(ocabci.ResponseCheckTx{})
 }
 
-func (app *testApp) Commit() tmabci.ResponseCommit {
-	return tmabci.ResponseCommit{}
+func (app *testApp) Commit() abci.ResponseCommit {
+	return abci.ResponseCommit{}
 }
 
-func (app *testApp) Query(reqQuery tmabci.RequestQuery) (resQuery tmabci.ResponseQuery) {
+func (app *testApp) Query(reqQuery abci.RequestQuery) (resQuery abci.ResponseQuery) {
 	return
 }

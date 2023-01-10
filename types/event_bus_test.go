@@ -10,9 +10,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	tmpubsub "github.com/line/ostracon/libs/pubsub"
 	tmquery "github.com/line/ostracon/libs/pubsub/query"
 	tmrand "github.com/line/ostracon/libs/rand"
@@ -29,10 +29,10 @@ func TestEventBusPublishEventTx(t *testing.T) {
 	})
 
 	tx := Tx("foo")
-	result := tmabci.ResponseDeliverTx{
+	result := abci.ResponseDeliverTx{
 		Data: []byte("bar"),
-		Events: []tmabci.Event{
-			{Type: "testType", Attributes: []tmabci.EventAttribute{{Key: []byte("baz"), Value: []byte("1")}}},
+		Events: []abci.Event{
+			{Type: "testType", Attributes: []abci.EventAttribute{{Key: []byte("baz"), Value: []byte("1")}}},
 		},
 	}
 
@@ -52,7 +52,7 @@ func TestEventBusPublishEventTx(t *testing.T) {
 		close(done)
 	}()
 
-	err = eventBus.PublishEventTx(EventDataTx{tmabci.TxResult{
+	err = eventBus.PublishEventTx(EventDataTx{abci.TxResult{
 		Height: 1,
 		Index:  0,
 		Tx:     tx,
@@ -78,14 +78,14 @@ func TestEventBusPublishEventNewBlock(t *testing.T) {
 	})
 
 	block := MakeBlock(0, []Tx{}, nil, []Evidence{}, TestConsensusVersion)
-	resultBeginBlock := tmabci.ResponseBeginBlock{
-		Events: []tmabci.Event{
-			{Type: "testType", Attributes: []tmabci.EventAttribute{{Key: []byte("baz"), Value: []byte("1")}}},
+	resultBeginBlock := abci.ResponseBeginBlock{
+		Events: []abci.Event{
+			{Type: "testType", Attributes: []abci.EventAttribute{{Key: []byte("baz"), Value: []byte("1")}}},
 		},
 	}
-	resultEndBlock := abci.ResponseEndBlock{
-		Events: []tmabci.Event{
-			{Type: "testType", Attributes: []tmabci.EventAttribute{{Key: []byte("foz"), Value: []byte("2")}}},
+	resultEndBlock := ocabci.ResponseEndBlock{
+		Events: []abci.Event{
+			{Type: "testType", Attributes: []abci.EventAttribute{{Key: []byte("foz"), Value: []byte("2")}}},
 		},
 	}
 
@@ -129,12 +129,12 @@ func TestEventBusPublishEventTxDuplicateKeys(t *testing.T) {
 	})
 
 	tx := Tx("foo")
-	result := tmabci.ResponseDeliverTx{
+	result := abci.ResponseDeliverTx{
 		Data: []byte("bar"),
-		Events: []tmabci.Event{
+		Events: []abci.Event{
 			{
 				Type: "transfer",
-				Attributes: []tmabci.EventAttribute{
+				Attributes: []abci.EventAttribute{
 					{Key: []byte("sender"), Value: []byte("foo")},
 					{Key: []byte("recipient"), Value: []byte("bar")},
 					{Key: []byte("amount"), Value: []byte("5")},
@@ -142,7 +142,7 @@ func TestEventBusPublishEventTxDuplicateKeys(t *testing.T) {
 			},
 			{
 				Type: "transfer",
-				Attributes: []tmabci.EventAttribute{
+				Attributes: []abci.EventAttribute{
 					{Key: []byte("sender"), Value: []byte("baz")},
 					{Key: []byte("recipient"), Value: []byte("cat")},
 					{Key: []byte("amount"), Value: []byte("13")},
@@ -150,7 +150,7 @@ func TestEventBusPublishEventTxDuplicateKeys(t *testing.T) {
 			},
 			{
 				Type: "withdraw.rewards",
-				Attributes: []tmabci.EventAttribute{
+				Attributes: []abci.EventAttribute{
 					{Key: []byte("address"), Value: []byte("bar")},
 					{Key: []byte("source"), Value: []byte("iceman")},
 					{Key: []byte("amount"), Value: []byte("33")},
@@ -205,7 +205,7 @@ func TestEventBusPublishEventTxDuplicateKeys(t *testing.T) {
 			}
 		}()
 
-		err = eventBus.PublishEventTx(EventDataTx{tmabci.TxResult{
+		err = eventBus.PublishEventTx(EventDataTx{abci.TxResult{
 			Height: 1,
 			Index:  0,
 			Tx:     tx,
@@ -237,14 +237,14 @@ func TestEventBusPublishEventNewBlockHeader(t *testing.T) {
 	})
 
 	block := MakeBlock(0, []Tx{}, nil, []Evidence{}, TestConsensusVersion)
-	resultBeginBlock := tmabci.ResponseBeginBlock{
-		Events: []tmabci.Event{
-			{Type: "testType", Attributes: []tmabci.EventAttribute{{Key: []byte("baz"), Value: []byte("1")}}},
+	resultBeginBlock := abci.ResponseBeginBlock{
+		Events: []abci.Event{
+			{Type: "testType", Attributes: []abci.EventAttribute{{Key: []byte("baz"), Value: []byte("1")}}},
 		},
 	}
-	resultEndBlock := abci.ResponseEndBlock{
-		Events: []tmabci.Event{
-			{Type: "testType", Attributes: []tmabci.EventAttribute{{Key: []byte("foz"), Value: []byte("2")}}},
+	resultEndBlock := ocabci.ResponseEndBlock{
+		Events: []abci.Event{
+			{Type: "testType", Attributes: []abci.EventAttribute{{Key: []byte("foz"), Value: []byte("2")}}},
 		},
 	}
 

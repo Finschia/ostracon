@@ -19,10 +19,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tm-db"
 
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	ocstate "github.com/line/ostracon/proto/ostracon/state"
 	ctypes "github.com/line/ostracon/rpc/core/types"
 	rpctypes "github.com/line/ostracon/rpc/jsonrpc/types"
@@ -84,13 +84,13 @@ func TestBlockchainInfo(t *testing.T) {
 
 func TestBlockResults(t *testing.T) {
 	results := &ocstate.ABCIResponses{
-		DeliverTxs: []*tmabci.ResponseDeliverTx{
+		DeliverTxs: []*abci.ResponseDeliverTx{
 			{Code: 0, Data: []byte{0x01}, Log: "ok"},
 			{Code: 0, Data: []byte{0x02}, Log: "ok"},
 			{Code: 1, Log: "not ok"},
 		},
-		EndBlock:   &abci.ResponseEndBlock{},
-		BeginBlock: &tmabci.ResponseBeginBlock{},
+		EndBlock:   &ocabci.ResponseEndBlock{},
+		BeginBlock: &abci.ResponseBeginBlock{},
 	}
 
 	env = &Environment{}
@@ -302,7 +302,7 @@ func storeTestBlocks(startHeight, numToMakeBlocks, numToMakeTxs int64, state sm.
 			tx := []byte{byte(height), byte(txIndex)}
 			txs[txIndex] = tx
 			// Indexing
-			env.TxIndexer.Index(&tmabci.TxResult{Height: height, Index: uint32(txIndex), Tx: tx}) // nolint:errcheck
+			env.TxIndexer.Index(&abci.TxResult{Height: height, Index: uint32(txIndex), Tx: tx}) // nolint:errcheck
 		}
 		lastCommit := types.NewCommit(lastHeight, round, blockID, commitSigs)
 		block, _ := state.MakeBlock(height, txs, lastCommit, nil, proposer.Address, round, nil)

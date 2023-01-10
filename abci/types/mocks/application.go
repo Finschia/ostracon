@@ -3,9 +3,9 @@
 package mocks
 
 import (
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 
-	types "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -15,215 +15,215 @@ type Application struct {
 }
 
 // ApplySnapshotChunk provides a mock function with given fields: _a0
-func (_m *Application) ApplySnapshotChunk(_a0 tmabci.RequestApplySnapshotChunk) tmabci.ResponseApplySnapshotChunk {
+func (_m *Application) ApplySnapshotChunk(_a0 abci.RequestApplySnapshotChunk) abci.ResponseApplySnapshotChunk {
 	ret := _m.Called(_a0)
 
-	var r0 tmabci.ResponseApplySnapshotChunk
-	if rf, ok := ret.Get(0).(func(tmabci.RequestApplySnapshotChunk) tmabci.ResponseApplySnapshotChunk); ok {
+	var r0 abci.ResponseApplySnapshotChunk
+	if rf, ok := ret.Get(0).(func(abci.RequestApplySnapshotChunk) abci.ResponseApplySnapshotChunk); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(tmabci.ResponseApplySnapshotChunk)
+		r0 = ret.Get(0).(abci.ResponseApplySnapshotChunk)
 	}
 
 	return r0
 }
 
 // BeginBlock provides a mock function with given fields: _a0
-func (_m *Application) BeginBlock(_a0 types.RequestBeginBlock) tmabci.ResponseBeginBlock {
+func (_m *Application) BeginBlock(_a0 ocabci.RequestBeginBlock) abci.ResponseBeginBlock {
 	ret := _m.Called(_a0)
 
-	var r0 tmabci.ResponseBeginBlock
-	if rf, ok := ret.Get(0).(func(types.RequestBeginBlock) tmabci.ResponseBeginBlock); ok {
+	var r0 abci.ResponseBeginBlock
+	if rf, ok := ret.Get(0).(func(ocabci.RequestBeginBlock) abci.ResponseBeginBlock); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(tmabci.ResponseBeginBlock)
+		r0 = ret.Get(0).(abci.ResponseBeginBlock)
 	}
 
 	return r0
 }
 
 // BeginRecheckTx provides a mock function with given fields: _a0
-func (_m *Application) BeginRecheckTx(_a0 types.RequestBeginRecheckTx) types.ResponseBeginRecheckTx {
+func (_m *Application) BeginRecheckTx(_a0 ocabci.RequestBeginRecheckTx) ocabci.ResponseBeginRecheckTx {
 	ret := _m.Called(_a0)
 
-	var r0 types.ResponseBeginRecheckTx
-	if rf, ok := ret.Get(0).(func(types.RequestBeginRecheckTx) types.ResponseBeginRecheckTx); ok {
+	var r0 ocabci.ResponseBeginRecheckTx
+	if rf, ok := ret.Get(0).(func(ocabci.RequestBeginRecheckTx) ocabci.ResponseBeginRecheckTx); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(types.ResponseBeginRecheckTx)
+		r0 = ret.Get(0).(ocabci.ResponseBeginRecheckTx)
 	}
 
 	return r0
 }
 
 // CheckTxAsync provides a mock function with given fields: _a0, _a1
-func (_m *Application) CheckTxAsync(_a0 tmabci.RequestCheckTx, _a1 types.CheckTxCallback) {
+func (_m *Application) CheckTxAsync(_a0 abci.RequestCheckTx, _a1 ocabci.CheckTxCallback) {
 	_m.Called(_a0, _a1)
 }
 
 // CheckTxSync provides a mock function with given fields: _a0
-func (_m *Application) CheckTxSync(_a0 tmabci.RequestCheckTx) types.ResponseCheckTx {
+func (_m *Application) CheckTxSync(_a0 abci.RequestCheckTx) ocabci.ResponseCheckTx {
 	ret := _m.Called(_a0)
 
-	var r0 types.ResponseCheckTx
-	if rf, ok := ret.Get(0).(func(tmabci.RequestCheckTx) types.ResponseCheckTx); ok {
+	var r0 ocabci.ResponseCheckTx
+	if rf, ok := ret.Get(0).(func(abci.RequestCheckTx) ocabci.ResponseCheckTx); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(types.ResponseCheckTx)
+		r0 = ret.Get(0).(ocabci.ResponseCheckTx)
 	}
 
 	return r0
 }
 
 // Commit provides a mock function with given fields:
-func (_m *Application) Commit() tmabci.ResponseCommit {
+func (_m *Application) Commit() abci.ResponseCommit {
 	ret := _m.Called()
 
-	var r0 tmabci.ResponseCommit
-	if rf, ok := ret.Get(0).(func() tmabci.ResponseCommit); ok {
+	var r0 abci.ResponseCommit
+	if rf, ok := ret.Get(0).(func() abci.ResponseCommit); ok {
 		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(tmabci.ResponseCommit)
+		r0 = ret.Get(0).(abci.ResponseCommit)
 	}
 
 	return r0
 }
 
 // DeliverTx provides a mock function with given fields: _a0
-func (_m *Application) DeliverTx(_a0 tmabci.RequestDeliverTx) tmabci.ResponseDeliverTx {
+func (_m *Application) DeliverTx(_a0 abci.RequestDeliverTx) abci.ResponseDeliverTx {
 	ret := _m.Called(_a0)
 
-	var r0 tmabci.ResponseDeliverTx
-	if rf, ok := ret.Get(0).(func(tmabci.RequestDeliverTx) tmabci.ResponseDeliverTx); ok {
+	var r0 abci.ResponseDeliverTx
+	if rf, ok := ret.Get(0).(func(abci.RequestDeliverTx) abci.ResponseDeliverTx); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(tmabci.ResponseDeliverTx)
+		r0 = ret.Get(0).(abci.ResponseDeliverTx)
 	}
 
 	return r0
 }
 
 // EndBlock provides a mock function with given fields: _a0
-func (_m *Application) EndBlock(_a0 tmabci.RequestEndBlock) types.ResponseEndBlock {
+func (_m *Application) EndBlock(_a0 abci.RequestEndBlock) ocabci.ResponseEndBlock {
 	ret := _m.Called(_a0)
 
-	var r0 types.ResponseEndBlock
-	if rf, ok := ret.Get(0).(func(tmabci.RequestEndBlock) types.ResponseEndBlock); ok {
+	var r0 ocabci.ResponseEndBlock
+	if rf, ok := ret.Get(0).(func(abci.RequestEndBlock) ocabci.ResponseEndBlock); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(types.ResponseEndBlock)
+		r0 = ret.Get(0).(ocabci.ResponseEndBlock)
 	}
 
 	return r0
 }
 
 // EndRecheckTx provides a mock function with given fields: _a0
-func (_m *Application) EndRecheckTx(_a0 types.RequestEndRecheckTx) types.ResponseEndRecheckTx {
+func (_m *Application) EndRecheckTx(_a0 ocabci.RequestEndRecheckTx) ocabci.ResponseEndRecheckTx {
 	ret := _m.Called(_a0)
 
-	var r0 types.ResponseEndRecheckTx
-	if rf, ok := ret.Get(0).(func(types.RequestEndRecheckTx) types.ResponseEndRecheckTx); ok {
+	var r0 ocabci.ResponseEndRecheckTx
+	if rf, ok := ret.Get(0).(func(ocabci.RequestEndRecheckTx) ocabci.ResponseEndRecheckTx); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(types.ResponseEndRecheckTx)
+		r0 = ret.Get(0).(ocabci.ResponseEndRecheckTx)
 	}
 
 	return r0
 }
 
 // Info provides a mock function with given fields: _a0
-func (_m *Application) Info(_a0 tmabci.RequestInfo) tmabci.ResponseInfo {
+func (_m *Application) Info(_a0 abci.RequestInfo) abci.ResponseInfo {
 	ret := _m.Called(_a0)
 
-	var r0 tmabci.ResponseInfo
-	if rf, ok := ret.Get(0).(func(tmabci.RequestInfo) tmabci.ResponseInfo); ok {
+	var r0 abci.ResponseInfo
+	if rf, ok := ret.Get(0).(func(abci.RequestInfo) abci.ResponseInfo); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(tmabci.ResponseInfo)
+		r0 = ret.Get(0).(abci.ResponseInfo)
 	}
 
 	return r0
 }
 
 // InitChain provides a mock function with given fields: _a0
-func (_m *Application) InitChain(_a0 types.RequestInitChain) types.ResponseInitChain {
+func (_m *Application) InitChain(_a0 ocabci.RequestInitChain) ocabci.ResponseInitChain {
 	ret := _m.Called(_a0)
 
-	var r0 types.ResponseInitChain
-	if rf, ok := ret.Get(0).(func(types.RequestInitChain) types.ResponseInitChain); ok {
+	var r0 ocabci.ResponseInitChain
+	if rf, ok := ret.Get(0).(func(ocabci.RequestInitChain) ocabci.ResponseInitChain); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(types.ResponseInitChain)
+		r0 = ret.Get(0).(ocabci.ResponseInitChain)
 	}
 
 	return r0
 }
 
 // ListSnapshots provides a mock function with given fields: _a0
-func (_m *Application) ListSnapshots(_a0 tmabci.RequestListSnapshots) tmabci.ResponseListSnapshots {
+func (_m *Application) ListSnapshots(_a0 abci.RequestListSnapshots) abci.ResponseListSnapshots {
 	ret := _m.Called(_a0)
 
-	var r0 tmabci.ResponseListSnapshots
-	if rf, ok := ret.Get(0).(func(tmabci.RequestListSnapshots) tmabci.ResponseListSnapshots); ok {
+	var r0 abci.ResponseListSnapshots
+	if rf, ok := ret.Get(0).(func(abci.RequestListSnapshots) abci.ResponseListSnapshots); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(tmabci.ResponseListSnapshots)
+		r0 = ret.Get(0).(abci.ResponseListSnapshots)
 	}
 
 	return r0
 }
 
 // LoadSnapshotChunk provides a mock function with given fields: _a0
-func (_m *Application) LoadSnapshotChunk(_a0 tmabci.RequestLoadSnapshotChunk) tmabci.ResponseLoadSnapshotChunk {
+func (_m *Application) LoadSnapshotChunk(_a0 abci.RequestLoadSnapshotChunk) abci.ResponseLoadSnapshotChunk {
 	ret := _m.Called(_a0)
 
-	var r0 tmabci.ResponseLoadSnapshotChunk
-	if rf, ok := ret.Get(0).(func(tmabci.RequestLoadSnapshotChunk) tmabci.ResponseLoadSnapshotChunk); ok {
+	var r0 abci.ResponseLoadSnapshotChunk
+	if rf, ok := ret.Get(0).(func(abci.RequestLoadSnapshotChunk) abci.ResponseLoadSnapshotChunk); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(tmabci.ResponseLoadSnapshotChunk)
+		r0 = ret.Get(0).(abci.ResponseLoadSnapshotChunk)
 	}
 
 	return r0
 }
 
 // OfferSnapshot provides a mock function with given fields: _a0
-func (_m *Application) OfferSnapshot(_a0 tmabci.RequestOfferSnapshot) tmabci.ResponseOfferSnapshot {
+func (_m *Application) OfferSnapshot(_a0 abci.RequestOfferSnapshot) abci.ResponseOfferSnapshot {
 	ret := _m.Called(_a0)
 
-	var r0 tmabci.ResponseOfferSnapshot
-	if rf, ok := ret.Get(0).(func(tmabci.RequestOfferSnapshot) tmabci.ResponseOfferSnapshot); ok {
+	var r0 abci.ResponseOfferSnapshot
+	if rf, ok := ret.Get(0).(func(abci.RequestOfferSnapshot) abci.ResponseOfferSnapshot); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(tmabci.ResponseOfferSnapshot)
+		r0 = ret.Get(0).(abci.ResponseOfferSnapshot)
 	}
 
 	return r0
 }
 
 // Query provides a mock function with given fields: _a0
-func (_m *Application) Query(_a0 tmabci.RequestQuery) tmabci.ResponseQuery {
+func (_m *Application) Query(_a0 abci.RequestQuery) abci.ResponseQuery {
 	ret := _m.Called(_a0)
 
-	var r0 tmabci.ResponseQuery
-	if rf, ok := ret.Get(0).(func(tmabci.RequestQuery) tmabci.ResponseQuery); ok {
+	var r0 abci.ResponseQuery
+	if rf, ok := ret.Get(0).(func(abci.RequestQuery) abci.ResponseQuery); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(tmabci.ResponseQuery)
+		r0 = ret.Get(0).(abci.ResponseQuery)
 	}
 
 	return r0
 }
 
 // SetOption provides a mock function with given fields: _a0
-func (_m *Application) SetOption(_a0 tmabci.RequestSetOption) tmabci.ResponseSetOption {
+func (_m *Application) SetOption(_a0 abci.RequestSetOption) abci.ResponseSetOption {
 	ret := _m.Called(_a0)
 
-	var r0 tmabci.ResponseSetOption
-	if rf, ok := ret.Get(0).(func(tmabci.RequestSetOption) tmabci.ResponseSetOption); ok {
+	var r0 abci.ResponseSetOption
+	if rf, ok := ret.Get(0).(func(abci.RequestSetOption) abci.ResponseSetOption); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(tmabci.ResponseSetOption)
+		r0 = ret.Get(0).(abci.ResponseSetOption)
 	}
 
 	return r0

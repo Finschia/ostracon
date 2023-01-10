@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/line/ostracon/libs/pubsub/query"
 	"github.com/line/ostracon/state/indexer"
@@ -28,14 +28,14 @@ func TestBackportTxIndexer_AddBatch(t *testing.T) {
 func TestBackportTxIndexer_Index(t *testing.T) {
 	indexer := &EventSink{store: testDB(), chainID: chainID}
 	txIndexer := indexer.TxIndexer()
-	err := txIndexer.Index(&tmabci.TxResult{})
+	err := txIndexer.Index(&abci.TxResult{})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "finding block ID: ")
 
 	blockIndexer := indexer.BlockIndexer()
 	err = blockIndexer.Index(types.EventDataNewBlockHeader{})
 	require.NoError(t, err)
-	err = txIndexer.Index(&tmabci.TxResult{})
+	err = txIndexer.Index(&abci.TxResult{})
 	require.NoError(t, err)
 }
 

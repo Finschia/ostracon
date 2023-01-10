@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/ed25519"
 	tmrand "github.com/line/ostracon/libs/rand"
@@ -176,14 +176,14 @@ func makeHeaderPartsResponsesValPubKeyChange(
 
 	block := makeBlock(state, state.LastBlockHeight+1)
 	abciResponses := &ocstate.ABCIResponses{
-		BeginBlock: &tmabci.ResponseBeginBlock{},
-		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: nil},
+		BeginBlock: &abci.ResponseBeginBlock{},
+		EndBlock:   &ocabci.ResponseEndBlock{ValidatorUpdates: nil},
 	}
 	// If the pubkey is new, remove the old and add the new.
 	_, val := state.NextValidators.GetByIndex(0)
 	if !bytes.Equal(pubkey.Bytes(), val.PubKey.Bytes()) {
-		abciResponses.EndBlock = &abci.ResponseEndBlock{
-			ValidatorUpdates: []abci.ValidatorUpdate{
+		abciResponses.EndBlock = &ocabci.ResponseEndBlock{
+			ValidatorUpdates: []ocabci.ValidatorUpdate{
 				types.OC2PB.NewValidatorUpdate(val.PubKey, 0),
 				types.OC2PB.NewValidatorUpdate(pubkey, 10),
 			},
@@ -200,15 +200,15 @@ func makeHeaderPartsResponsesValPowerChange(
 
 	block := makeBlock(state, state.LastBlockHeight+1)
 	abciResponses := &ocstate.ABCIResponses{
-		BeginBlock: &tmabci.ResponseBeginBlock{},
-		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: nil},
+		BeginBlock: &abci.ResponseBeginBlock{},
+		EndBlock:   &ocabci.ResponseEndBlock{ValidatorUpdates: nil},
 	}
 
 	// If the pubkey is new, remove the old and add the new.
 	_, val := state.NextValidators.GetByIndex(0)
 	if val.VotingPower != power {
-		abciResponses.EndBlock = &abci.ResponseEndBlock{
-			ValidatorUpdates: []abci.ValidatorUpdate{
+		abciResponses.EndBlock = &ocabci.ResponseEndBlock{
+			ValidatorUpdates: []ocabci.ValidatorUpdate{
 				types.OC2PB.NewValidatorUpdate(val.PubKey, power),
 			},
 		}
@@ -224,8 +224,8 @@ func makeHeaderPartsResponsesParams(
 
 	block := makeBlock(state, state.LastBlockHeight+1)
 	abciResponses := &ocstate.ABCIResponses{
-		BeginBlock: &tmabci.ResponseBeginBlock{},
-		EndBlock:   &abci.ResponseEndBlock{ConsensusParamUpdates: types.OC2PB.ConsensusParams(&params)},
+		BeginBlock: &abci.ResponseBeginBlock{},
+		EndBlock:   &ocabci.ResponseEndBlock{ConsensusParamUpdates: types.OC2PB.ConsensusParams(&params)},
 	}
 	return block.Header, types.BlockID{Hash: block.Hash(), PartSetHeader: types.PartSetHeader{}}, abciResponses
 }
@@ -250,50 +250,50 @@ func randomGenesisDoc() *types.GenesisDoc {
 //----------------------------------------------------------------------------
 
 type testApp struct {
-	abci.BaseApplication
+	ocabci.BaseApplication
 
-	CommitVotes         []abci.VoteInfo
-	ByzantineValidators []abci.Evidence
-	ValidatorUpdates    []abci.ValidatorUpdate
+	CommitVotes         []ocabci.VoteInfo
+	ByzantineValidators []ocabci.Evidence
+	ValidatorUpdates    []ocabci.ValidatorUpdate
 }
 
-var _ abci.Application = (*testApp)(nil)
+var _ ocabci.Application = (*testApp)(nil)
 var TestAppVersion uint64 = 66
 
-func (app *testApp) Info(req tmabci.RequestInfo) (resInfo tmabci.ResponseInfo) {
-	return tmabci.ResponseInfo{}
+func (app *testApp) Info(req abci.RequestInfo) (resInfo abci.ResponseInfo) {
+	return abci.ResponseInfo{}
 }
 
-func (app *testApp) BeginBlock(req abci.RequestBeginBlock) tmabci.ResponseBeginBlock {
+func (app *testApp) BeginBlock(req ocabci.RequestBeginBlock) abci.ResponseBeginBlock {
 	app.CommitVotes = req.LastCommitInfo.Votes
 	app.ByzantineValidators = req.ByzantineValidators
-	return tmabci.ResponseBeginBlock{}
+	return abci.ResponseBeginBlock{}
 }
 
-func (app *testApp) EndBlock(req tmabci.RequestEndBlock) abci.ResponseEndBlock {
-	return abci.ResponseEndBlock{
+func (app *testApp) EndBlock(req abci.RequestEndBlock) ocabci.ResponseEndBlock {
+	return ocabci.ResponseEndBlock{
 		ValidatorUpdates: app.ValidatorUpdates,
-		ConsensusParamUpdates: &tmabci.ConsensusParams{
+		ConsensusParamUpdates: &abci.ConsensusParams{
 			Version: &tmproto.VersionParams{
 				AppVersion: TestAppVersion}}}
 }
 
-func (app *testApp) DeliverTx(req tmabci.RequestDeliverTx) tmabci.ResponseDeliverTx {
-	return tmabci.ResponseDeliverTx{Events: []tmabci.Event{}}
+func (app *testApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
+	return abci.ResponseDeliverTx{Events: []abci.Event{}}
 }
 
-func (app *testApp) CheckTxSync(req tmabci.RequestCheckTx) abci.ResponseCheckTx {
-	return abci.ResponseCheckTx{}
+func (app *testApp) CheckTxSync(req abci.RequestCheckTx) ocabci.ResponseCheckTx {
+	return ocabci.ResponseCheckTx{}
 }
 
-func (app *testApp) CheckTxAsync(req tmabci.RequestCheckTx, callback abci.CheckTxCallback) {
-	callback(abci.ResponseCheckTx{})
+func (app *testApp) CheckTxAsync(req abci.RequestCheckTx, callback ocabci.CheckTxCallback) {
+	callback(ocabci.ResponseCheckTx{})
 }
 
-func (app *testApp) Commit() tmabci.ResponseCommit {
-	return tmabci.ResponseCommit{RetainHeight: 1}
+func (app *testApp) Commit() abci.ResponseCommit {
+	return abci.ResponseCommit{RetainHeight: 1}
 }
 
-func (app *testApp) Query(reqQuery tmabci.RequestQuery) (resQuery tmabci.ResponseQuery) {
+func (app *testApp) Query(reqQuery abci.RequestQuery) (resQuery abci.ResponseQuery) {
 	return
 }

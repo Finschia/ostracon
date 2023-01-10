@@ -1,9 +1,9 @@
 package abcicli
 
 import (
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/service"
 	tmsync "github.com/line/ostracon/libs/sync"
 )
@@ -19,8 +19,8 @@ type localClient struct {
 
 	// TODO: remove `mtx` to increase concurrency. We could remove it because the app should protect itself.
 	mtx *tmsync.Mutex
-	// CONTRACT: The application should protect itself from concurrency as an abci server.
-	abci.Application
+	// CONTRACT: The application should protect itself from concurrency as an ocabci server.
+	ocabci.Application
 
 	globalCbMtx tmsync.Mutex
 	globalCb    GlobalCallback
@@ -32,7 +32,7 @@ var _ Client = (*localClient)(nil)
 // methods of the given app.
 //
 // Both Async and Sync methods ignore the given context.Context parameter.
-func NewLocalClient(mtx *tmsync.Mutex, app abci.Application) Client {
+func NewLocalClient(mtx *tmsync.Mutex, app ocabci.Application) Client {
 	if mtx == nil {
 		mtx = new(tmsync.Mutex)
 	}
@@ -64,8 +64,8 @@ func (app *localClient) Error() error {
 
 func (app *localClient) FlushAsync(cb ResponseCallback) *ReqRes {
 	// Do nothing
-	reqRes := NewReqRes(abci.ToRequestFlush(), cb)
-	return app.done(reqRes, abci.ToResponseFlush())
+	reqRes := NewReqRes(ocabci.ToRequestFlush(), cb)
+	return app.done(reqRes, ocabci.ToResponseFlush())
 }
 
 func (app *localClient) EchoAsync(msg string, cb ResponseCallback) *ReqRes {
@@ -73,167 +73,167 @@ func (app *localClient) EchoAsync(msg string, cb ResponseCallback) *ReqRes {
 	// app.mtx.Lock()
 	// defer app.mtx.Unlock()
 
-	reqRes := NewReqRes(abci.ToRequestEcho(msg), cb)
-	return app.done(reqRes, abci.ToResponseEcho(msg))
+	reqRes := NewReqRes(ocabci.ToRequestEcho(msg), cb)
+	return app.done(reqRes, ocabci.ToResponseEcho(msg))
 }
 
-func (app *localClient) InfoAsync(req tmabci.RequestInfo, cb ResponseCallback) *ReqRes {
+func (app *localClient) InfoAsync(req abci.RequestInfo, cb ResponseCallback) *ReqRes {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
-	reqRes := NewReqRes(abci.ToRequestInfo(req), cb)
+	reqRes := NewReqRes(ocabci.ToRequestInfo(req), cb)
 	res := app.Application.Info(req)
-	return app.done(reqRes, abci.ToResponseInfo(res))
+	return app.done(reqRes, ocabci.ToResponseInfo(res))
 }
 
-func (app *localClient) SetOptionAsync(req tmabci.RequestSetOption, cb ResponseCallback) *ReqRes {
+func (app *localClient) SetOptionAsync(req abci.RequestSetOption, cb ResponseCallback) *ReqRes {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
-	reqRes := NewReqRes(abci.ToRequestSetOption(req), cb)
+	reqRes := NewReqRes(ocabci.ToRequestSetOption(req), cb)
 	res := app.Application.SetOption(req)
-	return app.done(reqRes, abci.ToResponseSetOption(res))
+	return app.done(reqRes, ocabci.ToResponseSetOption(res))
 }
 
-func (app *localClient) DeliverTxAsync(req tmabci.RequestDeliverTx, cb ResponseCallback) *ReqRes {
+func (app *localClient) DeliverTxAsync(req abci.RequestDeliverTx, cb ResponseCallback) *ReqRes {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
-	reqRes := NewReqRes(abci.ToRequestDeliverTx(req), cb)
+	reqRes := NewReqRes(ocabci.ToRequestDeliverTx(req), cb)
 	res := app.Application.DeliverTx(req)
-	return app.done(reqRes, abci.ToResponseDeliverTx(res))
+	return app.done(reqRes, ocabci.ToResponseDeliverTx(res))
 }
 
-func (app *localClient) CheckTxAsync(req tmabci.RequestCheckTx, cb ResponseCallback) *ReqRes {
+func (app *localClient) CheckTxAsync(req abci.RequestCheckTx, cb ResponseCallback) *ReqRes {
 	// NOTE: commented out for performance. delete all after commenting out all `app.mtx`
 	// app.mtx.Lock()
 	// defer app.mtx.Unlock()
 
-	reqRes := NewReqRes(abci.ToRequestCheckTx(req), cb)
+	reqRes := NewReqRes(ocabci.ToRequestCheckTx(req), cb)
 
-	app.Application.CheckTxAsync(req, func(r abci.ResponseCheckTx) {
-		res := abci.ToResponseCheckTx(r)
+	app.Application.CheckTxAsync(req, func(r ocabci.ResponseCheckTx) {
+		res := ocabci.ToResponseCheckTx(r)
 		app.done(reqRes, res)
 	})
 
 	return reqRes
 }
 
-func (app *localClient) QueryAsync(req tmabci.RequestQuery, cb ResponseCallback) *ReqRes {
+func (app *localClient) QueryAsync(req abci.RequestQuery, cb ResponseCallback) *ReqRes {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
-	reqRes := NewReqRes(abci.ToRequestQuery(req), cb)
+	reqRes := NewReqRes(ocabci.ToRequestQuery(req), cb)
 	res := app.Application.Query(req)
-	return app.done(reqRes, abci.ToResponseQuery(res))
+	return app.done(reqRes, ocabci.ToResponseQuery(res))
 }
 
 func (app *localClient) CommitAsync(cb ResponseCallback) *ReqRes {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
-	reqRes := NewReqRes(abci.ToRequestCommit(), cb)
+	reqRes := NewReqRes(ocabci.ToRequestCommit(), cb)
 	res := app.Application.Commit()
-	return app.done(reqRes, abci.ToResponseCommit(res))
+	return app.done(reqRes, ocabci.ToResponseCommit(res))
 }
 
-func (app *localClient) InitChainAsync(req abci.RequestInitChain, cb ResponseCallback) *ReqRes {
+func (app *localClient) InitChainAsync(req ocabci.RequestInitChain, cb ResponseCallback) *ReqRes {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
-	reqRes := NewReqRes(abci.ToRequestInitChain(req), cb)
+	reqRes := NewReqRes(ocabci.ToRequestInitChain(req), cb)
 	res := app.Application.InitChain(req)
-	return app.done(reqRes, abci.ToResponseInitChain(res))
+	return app.done(reqRes, ocabci.ToResponseInitChain(res))
 }
 
-func (app *localClient) BeginBlockAsync(req abci.RequestBeginBlock, cb ResponseCallback) *ReqRes {
+func (app *localClient) BeginBlockAsync(req ocabci.RequestBeginBlock, cb ResponseCallback) *ReqRes {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
-	reqRes := NewReqRes(abci.ToRequestBeginBlock(req), cb)
+	reqRes := NewReqRes(ocabci.ToRequestBeginBlock(req), cb)
 	res := app.Application.BeginBlock(req)
-	return app.done(reqRes, abci.ToResponseBeginBlock(res))
+	return app.done(reqRes, ocabci.ToResponseBeginBlock(res))
 }
 
-func (app *localClient) EndBlockAsync(req tmabci.RequestEndBlock, cb ResponseCallback) *ReqRes {
+func (app *localClient) EndBlockAsync(req abci.RequestEndBlock, cb ResponseCallback) *ReqRes {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
-	reqRes := NewReqRes(abci.ToRequestEndBlock(req), cb)
+	reqRes := NewReqRes(ocabci.ToRequestEndBlock(req), cb)
 	res := app.Application.EndBlock(req)
-	return app.done(reqRes, abci.ToResponseEndBlock(res))
+	return app.done(reqRes, ocabci.ToResponseEndBlock(res))
 }
 
-func (app *localClient) BeginRecheckTxAsync(req abci.RequestBeginRecheckTx, cb ResponseCallback) *ReqRes {
+func (app *localClient) BeginRecheckTxAsync(req ocabci.RequestBeginRecheckTx, cb ResponseCallback) *ReqRes {
 	// NOTE: commented out for performance. delete all after commenting out all `app.mtx`
 	// app.mtx.Lock()
 	// defer app.mtx.Unlock()
 
-	reqRes := NewReqRes(abci.ToRequestBeginRecheckTx(req), cb)
+	reqRes := NewReqRes(ocabci.ToRequestBeginRecheckTx(req), cb)
 	res := app.Application.BeginRecheckTx(req)
-	return app.done(reqRes, abci.ToResponseBeginRecheckTx(res))
+	return app.done(reqRes, ocabci.ToResponseBeginRecheckTx(res))
 }
 
-func (app *localClient) EndRecheckTxAsync(req abci.RequestEndRecheckTx, cb ResponseCallback) *ReqRes {
+func (app *localClient) EndRecheckTxAsync(req ocabci.RequestEndRecheckTx, cb ResponseCallback) *ReqRes {
 	// NOTE: commented out for performance. delete all after commenting out all `app.mtx`
 	// app.mtx.Lock()
 	// defer app.mtx.Unlock()
 
-	reqRes := NewReqRes(abci.ToRequestEndRecheckTx(req), cb)
+	reqRes := NewReqRes(ocabci.ToRequestEndRecheckTx(req), cb)
 	res := app.Application.EndRecheckTx(req)
-	return app.done(reqRes, abci.ToResponseEndRecheckTx(res))
+	return app.done(reqRes, ocabci.ToResponseEndRecheckTx(res))
 }
 
-func (app *localClient) ListSnapshotsAsync(req tmabci.RequestListSnapshots, cb ResponseCallback) *ReqRes {
+func (app *localClient) ListSnapshotsAsync(req abci.RequestListSnapshots, cb ResponseCallback) *ReqRes {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
-	reqRes := NewReqRes(abci.ToRequestListSnapshots(req), cb)
+	reqRes := NewReqRes(ocabci.ToRequestListSnapshots(req), cb)
 	res := app.Application.ListSnapshots(req)
-	return app.done(reqRes, abci.ToResponseListSnapshots(res))
+	return app.done(reqRes, ocabci.ToResponseListSnapshots(res))
 }
 
-func (app *localClient) OfferSnapshotAsync(req tmabci.RequestOfferSnapshot, cb ResponseCallback) *ReqRes {
+func (app *localClient) OfferSnapshotAsync(req abci.RequestOfferSnapshot, cb ResponseCallback) *ReqRes {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
-	reqRes := NewReqRes(abci.ToRequestOfferSnapshot(req), cb)
+	reqRes := NewReqRes(ocabci.ToRequestOfferSnapshot(req), cb)
 	res := app.Application.OfferSnapshot(req)
-	return app.done(reqRes, abci.ToResponseOfferSnapshot(res))
+	return app.done(reqRes, ocabci.ToResponseOfferSnapshot(res))
 }
 
-func (app *localClient) LoadSnapshotChunkAsync(req tmabci.RequestLoadSnapshotChunk, cb ResponseCallback) *ReqRes {
+func (app *localClient) LoadSnapshotChunkAsync(req abci.RequestLoadSnapshotChunk, cb ResponseCallback) *ReqRes {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
-	reqRes := NewReqRes(abci.ToRequestLoadSnapshotChunk(req), cb)
+	reqRes := NewReqRes(ocabci.ToRequestLoadSnapshotChunk(req), cb)
 	res := app.Application.LoadSnapshotChunk(req)
-	return app.done(reqRes, abci.ToResponseLoadSnapshotChunk(res))
+	return app.done(reqRes, ocabci.ToResponseLoadSnapshotChunk(res))
 }
 
-func (app *localClient) ApplySnapshotChunkAsync(req tmabci.RequestApplySnapshotChunk, cb ResponseCallback) *ReqRes {
+func (app *localClient) ApplySnapshotChunkAsync(req abci.RequestApplySnapshotChunk, cb ResponseCallback) *ReqRes {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
-	reqRes := NewReqRes(abci.ToRequestApplySnapshotChunk(req), cb)
+	reqRes := NewReqRes(ocabci.ToRequestApplySnapshotChunk(req), cb)
 	res := app.Application.ApplySnapshotChunk(req)
-	return app.done(reqRes, abci.ToResponseApplySnapshotChunk(res))
+	return app.done(reqRes, ocabci.ToResponseApplySnapshotChunk(res))
 }
 
 //-------------------------------------------------------
-func (app *localClient) FlushSync() (*tmabci.ResponseFlush, error) {
-	return &tmabci.ResponseFlush{}, nil
+func (app *localClient) FlushSync() (*abci.ResponseFlush, error) {
+	return &abci.ResponseFlush{}, nil
 }
 
-func (app *localClient) EchoSync(msg string) (*tmabci.ResponseEcho, error) {
+func (app *localClient) EchoSync(msg string) (*abci.ResponseEcho, error) {
 	// NOTE: commented out for performance. delete all after commenting out all `app.mtx`
 	// app.mtx.Lock()
 	// defer app.mtx.Unlock()
 
-	return &tmabci.ResponseEcho{Message: msg}, nil
+	return &abci.ResponseEcho{Message: msg}, nil
 }
 
-func (app *localClient) InfoSync(req tmabci.RequestInfo) (*tmabci.ResponseInfo, error) {
+func (app *localClient) InfoSync(req abci.RequestInfo) (*abci.ResponseInfo, error) {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
@@ -241,7 +241,7 @@ func (app *localClient) InfoSync(req tmabci.RequestInfo) (*tmabci.ResponseInfo, 
 	return &res, nil
 }
 
-func (app *localClient) SetOptionSync(req tmabci.RequestSetOption) (*tmabci.ResponseSetOption, error) {
+func (app *localClient) SetOptionSync(req abci.RequestSetOption) (*abci.ResponseSetOption, error) {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
@@ -249,7 +249,7 @@ func (app *localClient) SetOptionSync(req tmabci.RequestSetOption) (*tmabci.Resp
 	return &res, nil
 }
 
-func (app *localClient) DeliverTxSync(req tmabci.RequestDeliverTx) (*tmabci.ResponseDeliverTx, error) {
+func (app *localClient) DeliverTxSync(req abci.RequestDeliverTx) (*abci.ResponseDeliverTx, error) {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
@@ -257,7 +257,7 @@ func (app *localClient) DeliverTxSync(req tmabci.RequestDeliverTx) (*tmabci.Resp
 	return &res, nil
 }
 
-func (app *localClient) CheckTxSync(req tmabci.RequestCheckTx) (*abci.ResponseCheckTx, error) {
+func (app *localClient) CheckTxSync(req abci.RequestCheckTx) (*ocabci.ResponseCheckTx, error) {
 	// NOTE: commented out for performance. delete all after commenting out all `app.mtx`
 	// app.mtx.Lock()
 	// defer app.mtx.Unlock()
@@ -266,7 +266,7 @@ func (app *localClient) CheckTxSync(req tmabci.RequestCheckTx) (*abci.ResponseCh
 	return &res, nil
 }
 
-func (app *localClient) QuerySync(req tmabci.RequestQuery) (*tmabci.ResponseQuery, error) {
+func (app *localClient) QuerySync(req abci.RequestQuery) (*abci.ResponseQuery, error) {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
@@ -274,7 +274,7 @@ func (app *localClient) QuerySync(req tmabci.RequestQuery) (*tmabci.ResponseQuer
 	return &res, nil
 }
 
-func (app *localClient) CommitSync() (*tmabci.ResponseCommit, error) {
+func (app *localClient) CommitSync() (*abci.ResponseCommit, error) {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
@@ -282,7 +282,7 @@ func (app *localClient) CommitSync() (*tmabci.ResponseCommit, error) {
 	return &res, nil
 }
 
-func (app *localClient) InitChainSync(req abci.RequestInitChain) (*abci.ResponseInitChain, error) {
+func (app *localClient) InitChainSync(req ocabci.RequestInitChain) (*ocabci.ResponseInitChain, error) {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
@@ -290,7 +290,7 @@ func (app *localClient) InitChainSync(req abci.RequestInitChain) (*abci.Response
 	return &res, nil
 }
 
-func (app *localClient) BeginBlockSync(req abci.RequestBeginBlock) (*tmabci.ResponseBeginBlock, error) {
+func (app *localClient) BeginBlockSync(req ocabci.RequestBeginBlock) (*abci.ResponseBeginBlock, error) {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
@@ -298,7 +298,7 @@ func (app *localClient) BeginBlockSync(req abci.RequestBeginBlock) (*tmabci.Resp
 	return &res, nil
 }
 
-func (app *localClient) EndBlockSync(req tmabci.RequestEndBlock) (*abci.ResponseEndBlock, error) {
+func (app *localClient) EndBlockSync(req abci.RequestEndBlock) (*ocabci.ResponseEndBlock, error) {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
@@ -306,7 +306,7 @@ func (app *localClient) EndBlockSync(req tmabci.RequestEndBlock) (*abci.Response
 	return &res, nil
 }
 
-func (app *localClient) BeginRecheckTxSync(req abci.RequestBeginRecheckTx) (*abci.ResponseBeginRecheckTx, error) {
+func (app *localClient) BeginRecheckTxSync(req ocabci.RequestBeginRecheckTx) (*ocabci.ResponseBeginRecheckTx, error) {
 	// NOTE: commented out for performance. delete all after commenting out all `app.mtx`
 	// app.mtx.Lock()
 	// defer app.mtx.Unlock()
@@ -315,7 +315,7 @@ func (app *localClient) BeginRecheckTxSync(req abci.RequestBeginRecheckTx) (*abc
 	return &res, nil
 }
 
-func (app *localClient) EndRecheckTxSync(req abci.RequestEndRecheckTx) (*abci.ResponseEndRecheckTx, error) {
+func (app *localClient) EndRecheckTxSync(req ocabci.RequestEndRecheckTx) (*ocabci.ResponseEndRecheckTx, error) {
 	// NOTE: commented out for performance. delete all after commenting out all `app.mtx`
 	// app.mtx.Lock()
 	// defer app.mtx.Unlock()
@@ -324,7 +324,7 @@ func (app *localClient) EndRecheckTxSync(req abci.RequestEndRecheckTx) (*abci.Re
 	return &res, nil
 }
 
-func (app *localClient) ListSnapshotsSync(req tmabci.RequestListSnapshots) (*tmabci.ResponseListSnapshots, error) {
+func (app *localClient) ListSnapshotsSync(req abci.RequestListSnapshots) (*abci.ResponseListSnapshots, error) {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
@@ -332,7 +332,7 @@ func (app *localClient) ListSnapshotsSync(req tmabci.RequestListSnapshots) (*tma
 	return &res, nil
 }
 
-func (app *localClient) OfferSnapshotSync(req tmabci.RequestOfferSnapshot) (*tmabci.ResponseOfferSnapshot, error) {
+func (app *localClient) OfferSnapshotSync(req abci.RequestOfferSnapshot) (*abci.ResponseOfferSnapshot, error) {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
@@ -341,7 +341,7 @@ func (app *localClient) OfferSnapshotSync(req tmabci.RequestOfferSnapshot) (*tma
 }
 
 func (app *localClient) LoadSnapshotChunkSync(
-	req tmabci.RequestLoadSnapshotChunk) (*tmabci.ResponseLoadSnapshotChunk, error) {
+	req abci.RequestLoadSnapshotChunk) (*abci.ResponseLoadSnapshotChunk, error) {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
@@ -350,7 +350,7 @@ func (app *localClient) LoadSnapshotChunkSync(
 }
 
 func (app *localClient) ApplySnapshotChunkSync(
-	req tmabci.RequestApplySnapshotChunk) (*tmabci.ResponseApplySnapshotChunk, error) {
+	req abci.RequestApplySnapshotChunk) (*abci.ResponseApplySnapshotChunk, error) {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
@@ -360,7 +360,7 @@ func (app *localClient) ApplySnapshotChunkSync(
 
 //-------------------------------------------------------
 
-func (app *localClient) done(reqRes *ReqRes, res *abci.Response) *ReqRes {
+func (app *localClient) done(reqRes *ReqRes, res *ocabci.Response) *ReqRes {
 	set := reqRes.SetDone(res)
 	if set {
 		if globalCb := app.GetGlobalCallback(); globalCb != nil {

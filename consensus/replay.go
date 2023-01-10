@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"time"
 
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto/merkle"
 	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/proxy"
@@ -309,7 +309,7 @@ func (h *Handshaker) ReplayBlocks(
 		validatorSet := types.NewValidatorSet(validators)
 		nextVals := types.OC2PB.ValidatorUpdates(validatorSet)
 		csParams := types.OC2PB.ConsensusParams(h.genDoc.ConsensusParams)
-		req := abci.RequestInitChain{
+		req := ocabci.RequestInitChain{
 			Time:            h.genDoc.GenesisTime,
 			ChainId:         h.genDoc.ChainID,
 			InitialHeight:   h.genDoc.InitialHeight,

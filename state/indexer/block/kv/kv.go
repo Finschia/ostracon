@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/google/orderedcode"
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/line/ostracon/libs/pubsub/query"
@@ -453,7 +453,7 @@ func (idx *BlockerIndexer) match(
 	return filteredHeights, nil
 }
 
-func (idx *BlockerIndexer) indexEvents(batch dbm.Batch, events []tmabci.Event, typ string, height int64) error {
+func (idx *BlockerIndexer) indexEvents(batch dbm.Batch, events []abci.Event, typ string, height int64) error {
 	heightBz := int64ToBytes(height)
 
 	for _, event := range events {

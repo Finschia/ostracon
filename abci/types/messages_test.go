@@ -9,13 +9,13 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 
 	ocproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 func TestMarshalJSON(t *testing.T) {
-	b, err := json.Marshal(&tmabci.ResponseDeliverTx{})
+	b, err := json.Marshal(&abci.ResponseDeliverTx{})
 	assert.Nil(t, err)
 	// include empty fields.
 	assert.True(t, strings.Contains(string(b), "code"))
@@ -23,10 +23,10 @@ func TestMarshalJSON(t *testing.T) {
 		Code:      1,
 		Data:      []byte("hello"),
 		GasWanted: 43,
-		Events: []tmabci.Event{
+		Events: []abci.Event{
 			{
 				Type: "testEvent",
-				Attributes: []tmabci.EventAttribute{
+				Attributes: []abci.EventAttribute{
 					{Key: []byte("pho"), Value: []byte("bo")},
 				},
 			},
@@ -43,7 +43,7 @@ func TestMarshalJSON(t *testing.T) {
 
 func TestWriteReadMessageSimple(t *testing.T) {
 	cases := []proto.Message{
-		&tmabci.RequestEcho{
+		&abci.RequestEcho{
 			Message: "Hello",
 		},
 	}
@@ -53,7 +53,7 @@ func TestWriteReadMessageSimple(t *testing.T) {
 		err := WriteMessage(c, buf)
 		assert.Nil(t, err)
 
-		msg := new(tmabci.RequestEcho)
+		msg := new(abci.RequestEcho)
 		err = ReadMessage(buf, msg)
 		assert.Nil(t, err)
 
@@ -90,10 +90,10 @@ func TestWriteReadMessage2(t *testing.T) {
 			Data:      []byte(phrase),
 			Log:       phrase,
 			GasWanted: 10,
-			Events: []tmabci.Event{
+			Events: []abci.Event{
 				{
 					Type: "testEvent",
-					Attributes: []tmabci.EventAttribute{
+					Attributes: []abci.EventAttribute{
 						{Key: []byte("abc"), Value: []byte("def")},
 					},
 				},

@@ -11,7 +11,7 @@ import (
 
 	tmbcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
 
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/behaviour"
 	bc "github.com/line/ostracon/blockchain"
 	cfg "github.com/line/ostracon/config"
@@ -465,7 +465,7 @@ func makeBlock(privVal types.PrivValidator, height int64, state sm.State, lastCo
 }
 
 type testApp struct {
-	abci.BaseApplication
+	ocabci.BaseApplication
 }
 
 func randGenesisDoc(chainID string, numValidators int, randPower bool, minPower int64) (

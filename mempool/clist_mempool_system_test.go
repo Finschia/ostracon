@@ -14,11 +14,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 
 	"github.com/line/ostracon/abci/example/counter"
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/config"
 	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/proxy"
@@ -94,17 +94,17 @@ func sizeOfSyncMap(m *sync.Map) int {
 }
 
 func createProposalBlockAndDeliverTxs(
-	mem *CListMempool, height int64) (*types.Block, []*tmabci.ResponseDeliverTx) {
+	mem *CListMempool, height int64) (*types.Block, []*abci.ResponseDeliverTx) {
 	// mempool.lock/unlock in ReapMaxBytesMaxGasMaxTxs
 	txs := mem.ReapMaxBytesMaxGasMaxTxs(mem.config.MaxTxsBytes, 0, int64(mem.config.Size))
 	block := types.MakeBlock(height, txs, nil, nil, tmversion.Consensus{
 		Block: version.BlockProtocol,
 		App:   version.AppProtocol,
 	})
-	deliverTxResponses := make([]*tmabci.ResponseDeliverTx, len(block.Txs))
+	deliverTxResponses := make([]*abci.ResponseDeliverTx, len(block.Txs))
 	for i, tx := range block.Txs {
-		deliverTxResponses[i] = &tmabci.ResponseDeliverTx{
-			Code: abci.CodeTypeOK,
+		deliverTxResponses[i] = &abci.ResponseDeliverTx{
+			Code: ocabci.CodeTypeOK,
 			Data: tx,
 		}
 	}
@@ -112,7 +112,7 @@ func createProposalBlockAndDeliverTxs(
 }
 
 func commitBlock(ctx context.Context, t *testing.T,
-	mem *CListMempool, block *types.Block, deliverTxResponses []*tmabci.ResponseDeliverTx) {
+	mem *CListMempool, block *types.Block, deliverTxResponses []*abci.ResponseDeliverTx) {
 	mem.Lock()
 	defer mem.Unlock()
 	err := mem.Update(block, deliverTxResponses, nil, nil)
@@ -143,9 +143,9 @@ func receiveTx(ctx context.Context, t *testing.T,
 				}
 			}
 		},
-		func(res *abci.Response) {
+		func(res *ocabci.Response) {
 			resCheckTx := res.GetCheckTx()
-			if resCheckTx.Code != abci.CodeTypeOK && len(resCheckTx.Log) != 0 {
+			if resCheckTx.Code != ocabci.CodeTypeOK && len(resCheckTx.Log) != 0 {
 				atomic.AddInt64(&receiveTxCounter.abciFail, 1)
 			} else {
 				atomic.AddInt64(&receiveTxCounter.success, 1)

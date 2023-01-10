@@ -1,7 +1,7 @@
 package core
 
 import (
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/line/ostracon/libs/bytes"
 	"github.com/line/ostracon/proxy"
@@ -18,7 +18,7 @@ func ABCIQuery(
 	height int64,
 	prove bool,
 ) (*ctypes.ResultABCIQuery, error) {
-	resQuery, err := env.ProxyAppQuery.QuerySync(tmabci.RequestQuery{
+	resQuery, err := env.ProxyAppQuery.QuerySync(abci.RequestQuery{
 		Path:   path,
 		Data:   data,
 		Height: height,

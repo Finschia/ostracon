@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 	ssproto "github.com/tendermint/tendermint/proto/tendermint/statesync"
 
 	"github.com/line/ostracon/config"
@@ -332,8 +332,8 @@ func (s *syncer) Sync(snapshot *snapshot, chunks *chunkQueue) (sm.State, sm.Stat
 func (s *syncer) offerSnapshot(snapshot *snapshot) error {
 	s.logger.Info("Offering snapshot to ABCI app", "height", snapshot.Height,
 		"format", snapshot.Format, "hash", snapshot.Hash)
-	resp, err := s.conn.OfferSnapshotSync(tmabci.RequestOfferSnapshot{
-		Snapshot: &tmabci.Snapshot{
+	resp, err := s.conn.OfferSnapshotSync(abci.RequestOfferSnapshot{
+		Snapshot: &abci.Snapshot{
 			Height:   snapshot.Height,
 			Format:   snapshot.Format,
 			Chunks:   snapshot.Chunks,
@@ -346,17 +346,17 @@ func (s *syncer) offerSnapshot(snapshot *snapshot) error {
 		return fmt.Errorf("failed to offer snapshot: %w", err)
 	}
 	switch resp.Result {
-	case tmabci.ResponseOfferSnapshot_ACCEPT:
+	case abci.ResponseOfferSnapshot_ACCEPT:
 		s.logger.Info("Snapshot accepted, restoring", "height", snapshot.Height,
 			"format", snapshot.Format, "hash", snapshot.Hash)
 		return nil
-	case tmabci.ResponseOfferSnapshot_ABORT:
+	case abci.ResponseOfferSnapshot_ABORT:
 		return errAbort
-	case tmabci.ResponseOfferSnapshot_REJECT:
+	case abci.ResponseOfferSnapshot_REJECT:
 		return errRejectSnapshot
-	case tmabci.ResponseOfferSnapshot_REJECT_FORMAT:
+	case abci.ResponseOfferSnapshot_REJECT_FORMAT:
 		return errRejectFormat
-	case tmabci.ResponseOfferSnapshot_REJECT_SENDER:
+	case abci.ResponseOfferSnapshot_REJECT_SENDER:
 		return errRejectSender
 	default:
 		return fmt.Errorf("unknown ResponseOfferSnapshot result %v", resp.Result)
@@ -374,7 +374,7 @@ func (s *syncer) applyChunks(chunks *chunkQueue) error {
 			return fmt.Errorf("failed to fetch chunk: %w", err)
 		}
 
-		resp, err := s.conn.ApplySnapshotChunkSync(tmabci.RequestApplySnapshotChunk{
+		resp, err := s.conn.ApplySnapshotChunkSync(abci.RequestApplySnapshotChunk{
 			Index:  chunk.Index,
 			Chunk:  chunk.Chunk,
 			Sender: string(chunk.Sender),
@@ -405,14 +405,14 @@ func (s *syncer) applyChunks(chunks *chunkQueue) error {
 		}
 
 		switch resp.Result {
-		case tmabci.ResponseApplySnapshotChunk_ACCEPT:
-		case tmabci.ResponseApplySnapshotChunk_ABORT:
+		case abci.ResponseApplySnapshotChunk_ACCEPT:
+		case abci.ResponseApplySnapshotChunk_ABORT:
 			return errAbort
-		case tmabci.ResponseApplySnapshotChunk_RETRY:
+		case abci.ResponseApplySnapshotChunk_RETRY:
 			chunks.Retry(chunk.Index)
-		case tmabci.ResponseApplySnapshotChunk_RETRY_SNAPSHOT:
+		case abci.ResponseApplySnapshotChunk_RETRY_SNAPSHOT:
 			return errRetrySnapshot
-		case tmabci.ResponseApplySnapshotChunk_REJECT_SNAPSHOT:
+		case abci.ResponseApplySnapshotChunk_REJECT_SNAPSHOT:
 			return errRejectSnapshot
 		default:
 			return fmt.Errorf("unknown ResponseApplySnapshotChunk result %v", resp.Result)

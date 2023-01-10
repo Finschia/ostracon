@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/line/ostracon/libs/pubsub/query"
 )
@@ -17,31 +17,31 @@ type TxIndexer interface {
 	AddBatch(b *Batch) error
 
 	// Index analyzes, indexes and stores a single transaction.
-	Index(result *tmabci.TxResult) error
+	Index(result *abci.TxResult) error
 
 	// Get returns the transaction specified by hash or nil if the transaction is not indexed
 	// or stored.
-	Get(hash []byte) (*tmabci.TxResult, error)
+	Get(hash []byte) (*abci.TxResult, error)
 
 	// Search allows you to query for transactions.
-	Search(ctx context.Context, q *query.Query) ([]*tmabci.TxResult, error)
+	Search(ctx context.Context, q *query.Query) ([]*abci.TxResult, error)
 }
 
 // Batch groups together multiple Index operations to be performed at the same time.
 // NOTE: Batch is NOT thread-safe and must not be modified after starting its execution.
 type Batch struct {
-	Ops []*tmabci.TxResult
+	Ops []*abci.TxResult
 }
 
 // NewBatch creates a new Batch.
 func NewBatch(n int64) *Batch {
 	return &Batch{
-		Ops: make([]*tmabci.TxResult, n),
+		Ops: make([]*abci.TxResult, n),
 	}
 }
 
 // Add or update an entry for the given result.Index.
-func (b *Batch) Add(result *tmabci.TxResult) error {
+func (b *Batch) Add(result *abci.TxResult) error {
 	b.Ops[result.Index] = result
 	return nil
 }

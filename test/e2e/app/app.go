@@ -10,10 +10,10 @@ import (
 	"strconv"
 	"time"
 
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/line/ostracon/abci/example/code"
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
 	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/proto/ostracon/crypto"
@@ -27,12 +27,12 @@ const E2EAppVersion = 999
 // to disk as JSON, taking state sync snapshots if requested.
 
 type Application struct {
-	abci.BaseApplication
+	ocabci.BaseApplication
 	logger          log.Logger
 	state           *State
 	snapshots       *SnapshotStore
 	cfg             *Config
-	restoreSnapshot *tmabci.Snapshot
+	restoreSnapshot *abci.Snapshot
 	restoreChunks   [][]byte
 }
 
@@ -111,8 +111,8 @@ func NewApplication(cfg *Config) (*Application, error) {
 }
 
 // Info implements ABCI.
-func (app *Application) Info(req tmabci.RequestInfo) tmabci.ResponseInfo {
-	return tmabci.ResponseInfo{
+func (app *Application) Info(req abci.RequestInfo) abci.ResponseInfo {
+	return abci.ResponseInfo{
 		Version:          version.ABCIVersion,
 		AppVersion:       E2EAppVersion,
 		LastBlockHeight:  int64(app.state.Height),
@@ -121,7 +121,7 @@ func (app *Application) Info(req tmabci.RequestInfo) tmabci.ResponseInfo {
 }
 
 // Info implements ABCI.
-func (app *Application) InitChain(req abci.RequestInitChain) abci.ResponseInitChain {
+func (app *Application) InitChain(req ocabci.RequestInitChain) ocabci.ResponseInitChain {
 	var err error
 	app.state.initialHeight = uint64(req.InitialHeight)
 	if len(req.AppStateBytes) > 0 {
@@ -130,7 +130,7 @@ func (app *Application) InitChain(req abci.RequestInitChain) abci.ResponseInitCh
 			panic(err)
 		}
 	}
-	resp := abci.ResponseInitChain{
+	resp := ocabci.ResponseInitChain{
 		AppHash: app.state.Hash,
 	}
 	if resp.Validators, err = app.validatorUpdates(0); err != nil {
@@ -140,10 +140,10 @@ func (app *Application) InitChain(req abci.RequestInitChain) abci.ResponseInitCh
 }
 
 // CheckTx implements ABCI.
-func (app *Application) CheckTx(req tmabci.RequestCheckTx) abci.ResponseCheckTx {
+func (app *Application) CheckTx(req abci.RequestCheckTx) ocabci.ResponseCheckTx {
 	_, _, err := parseTx(req.Tx)
 	if err != nil {
-		return abci.ResponseCheckTx{
+		return ocabci.ResponseCheckTx{
 			Code: code.CodeTypeEncodingError,
 			Log:  err.Error(),
 		}
@@ -153,32 +153,32 @@ func (app *Application) CheckTx(req tmabci.RequestCheckTx) abci.ResponseCheckTx 
 		time.Sleep(app.cfg.CheckTxDelay)
 	}
 
-	return abci.ResponseCheckTx{Code: code.CodeTypeOK, GasWanted: 1}
+	return ocabci.ResponseCheckTx{Code: code.CodeTypeOK, GasWanted: 1}
 }
 
 // DeliverTx implements ABCI.
-func (app *Application) DeliverTx(req tmabci.RequestDeliverTx) tmabci.ResponseDeliverTx {
+func (app *Application) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
 	key, value, err := parseTx(req.Tx)
 	if err != nil {
 		panic(err) // shouldn't happen since we verified it in CheckTx
 	}
 	app.state.Set(key, value)
-	return tmabci.ResponseDeliverTx{Code: code.CodeTypeOK}
+	return abci.ResponseDeliverTx{Code: code.CodeTypeOK}
 }
 
 // EndBlock implements ABCI.
-func (app *Application) EndBlock(req tmabci.RequestEndBlock) abci.ResponseEndBlock {
+func (app *Application) EndBlock(req abci.RequestEndBlock) ocabci.ResponseEndBlock {
 	valUpdates, err := app.validatorUpdates(uint64(req.Height))
 	if err != nil {
 		panic(err)
 	}
 
-	return abci.ResponseEndBlock{
+	return ocabci.ResponseEndBlock{
 		ValidatorUpdates: valUpdates,
-		Events: []tmabci.Event{
+		Events: []abci.Event{
 			{
 				Type: "val_updates",
-				Attributes: []tmabci.EventAttribute{
+				Attributes: []abci.EventAttribute{
 					{
 						Key:   []byte("size"),
 						Value: []byte(strconv.Itoa(valUpdates.Len())),
@@ -194,7 +194,7 @@ func (app *Application) EndBlock(req tmabci.RequestEndBlock) abci.ResponseEndBlo
 }
 
 // Commit implements ABCI.
-func (app *Application) Commit() tmabci.ResponseCommit {
+func (app *Application) Commit() abci.ResponseCommit {
 	height, hash, err := app.state.Commit()
 	if err != nil {
 		panic(err)
@@ -210,15 +210,15 @@ func (app *Application) Commit() tmabci.ResponseCommit {
 	if app.cfg.RetainBlocks > 0 {
 		retainHeight = int64(height - app.cfg.RetainBlocks + 1)
 	}
-	return tmabci.ResponseCommit{
+	return abci.ResponseCommit{
 		Data:         hash,
 		RetainHeight: retainHeight,
 	}
 }
 
 // Query implements ABCI.
-func (app *Application) Query(req tmabci.RequestQuery) tmabci.ResponseQuery {
-	return tmabci.ResponseQuery{
+func (app *Application) Query(req abci.RequestQuery) abci.ResponseQuery {
+	return abci.ResponseQuery{
 		Height: int64(app.state.Height),
 		Key:    req.Data,
 		Value:  []byte(app.state.Get(string(req.Data))),
@@ -226,35 +226,35 @@ func (app *Application) Query(req tmabci.RequestQuery) tmabci.ResponseQuery {
 }
 
 // ListSnapshots implements ABCI.
-func (app *Application) ListSnapshots(req tmabci.RequestListSnapshots) tmabci.ResponseListSnapshots {
+func (app *Application) ListSnapshots(req abci.RequestListSnapshots) abci.ResponseListSnapshots {
 	snapshots, err := app.snapshots.List()
 	if err != nil {
 		panic(err)
 	}
-	return tmabci.ResponseListSnapshots{Snapshots: snapshots}
+	return abci.ResponseListSnapshots{Snapshots: snapshots}
 }
 
 // LoadSnapshotChunk implements ABCI.
-func (app *Application) LoadSnapshotChunk(req tmabci.RequestLoadSnapshotChunk) tmabci.ResponseLoadSnapshotChunk {
+func (app *Application) LoadSnapshotChunk(req abci.RequestLoadSnapshotChunk) abci.ResponseLoadSnapshotChunk {
 	chunk, err := app.snapshots.LoadChunk(req.Height, req.Format, req.Chunk)
 	if err != nil {
 		panic(err)
 	}
-	return tmabci.ResponseLoadSnapshotChunk{Chunk: chunk}
+	return abci.ResponseLoadSnapshotChunk{Chunk: chunk}
 }
 
 // OfferSnapshot implements ABCI.
-func (app *Application) OfferSnapshot(req tmabci.RequestOfferSnapshot) tmabci.ResponseOfferSnapshot {
+func (app *Application) OfferSnapshot(req abci.RequestOfferSnapshot) abci.ResponseOfferSnapshot {
 	if app.restoreSnapshot != nil {
 		panic("A snapshot is already being restored")
 	}
 	app.restoreSnapshot = req.Snapshot
 	app.restoreChunks = [][]byte{}
-	return tmabci.ResponseOfferSnapshot{Result: tmabci.ResponseOfferSnapshot_ACCEPT}
+	return abci.ResponseOfferSnapshot{Result: abci.ResponseOfferSnapshot_ACCEPT}
 }
 
 // ApplySnapshotChunk implements ABCI.
-func (app *Application) ApplySnapshotChunk(req tmabci.RequestApplySnapshotChunk) tmabci.ResponseApplySnapshotChunk {
+func (app *Application) ApplySnapshotChunk(req abci.RequestApplySnapshotChunk) abci.ResponseApplySnapshotChunk {
 	if app.restoreSnapshot == nil {
 		panic("No restore in progress")
 	}
@@ -271,7 +271,7 @@ func (app *Application) ApplySnapshotChunk(req tmabci.RequestApplySnapshotChunk)
 		app.restoreSnapshot = nil
 		app.restoreChunks = nil
 	}
-	return tmabci.ResponseApplySnapshotChunk{Result: tmabci.ResponseApplySnapshotChunk_ACCEPT}
+	return abci.ResponseApplySnapshotChunk{Result: abci.ResponseApplySnapshotChunk_ACCEPT}
 }
 
 func (app *Application) Rollback() error {
@@ -279,13 +279,13 @@ func (app *Application) Rollback() error {
 }
 
 // validatorUpdates generates a validator set update.
-func (app *Application) validatorUpdates(height uint64) (abci.ValidatorUpdates, error) {
+func (app *Application) validatorUpdates(height uint64) (ocabci.ValidatorUpdates, error) {
 	updates := app.cfg.ValidatorUpdates[fmt.Sprintf("%v", height)]
 	if len(updates) == 0 {
 		return nil, nil
 	}
 
-	valUpdates := abci.ValidatorUpdates{}
+	valUpdates := ocabci.ValidatorUpdates{}
 	for keyString, power := range updates {
 
 		keyBytes, err := base64.StdEncoding.DecodeString(keyString)
@@ -301,7 +301,7 @@ func (app *Application) validatorUpdates(height uint64) (abci.ValidatorUpdates, 
 		if err != nil {
 			return nil, fmt.Errorf("invalid crypto pubkey %q: %w", keyString, err)
 		}
-		valUpdates = append(valUpdates, abci.NewValidatorUpdate(pubKey, int64(power)))
+		valUpdates = append(valUpdates, ocabci.NewValidatorUpdate(pubKey, int64(power)))
 	}
 	return valUpdates, nil
 }

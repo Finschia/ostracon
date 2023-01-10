@@ -9,12 +9,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	cfg "github.com/line/ostracon/config"
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/ed25519"
@@ -180,7 +180,7 @@ func TestPruneStates(t *testing.T) {
 
 				currentHeight := state.LastBlockHeight + int64(1)
 				err = stateStore.SaveABCIResponses(currentHeight, &ocstate.ABCIResponses{
-					DeliverTxs: []*tmabci.ResponseDeliverTx{
+					DeliverTxs: []*abci.ResponseDeliverTx{
 						{Data: []byte{1}},
 						{Data: []byte{2}},
 						{Data: []byte{3}},
@@ -290,11 +290,11 @@ func TestPruneStatesDeleteErrHandle(t *testing.T) {
 
 func TestABCIResponsesResultsHash(t *testing.T) {
 	responses := &ocstate.ABCIResponses{
-		BeginBlock: &tmabci.ResponseBeginBlock{},
-		DeliverTxs: []*tmabci.ResponseDeliverTx{
+		BeginBlock: &abci.ResponseBeginBlock{},
+		DeliverTxs: []*abci.ResponseDeliverTx{
 			{Code: 32, Data: []byte("Hello"), Log: "Huh?"},
 		},
-		EndBlock: &abci.ResponseEndBlock{},
+		EndBlock: &ocabci.ResponseEndBlock{},
 	}
 
 	root := sm.ABCIResponsesResultsHash(responses)

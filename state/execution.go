@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"time"
 
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto"
+	canonictime "github.com/line/ostracon/types/time"
+
+	ocabci "github.com/line/ostracon/abci/types"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
 	"github.com/line/ostracon/crypto/vrf"
 	"github.com/line/ostracon/libs/fail"
@@ -18,7 +20,6 @@ import (
 	ocstate "github.com/line/ostracon/proto/ostracon/state"
 	"github.com/line/ostracon/proxy"
 	"github.com/line/ostracon/types"
-	canonictime "github.com/line/ostracon/types/time"
 )
 
 //-----------------------------------------------------------------------------
@@ -274,7 +275,7 @@ func (blockExec *BlockExecutor) ApplyBlock(
 func (blockExec *BlockExecutor) Commit(
 	state State,
 	block *types.Block,
-	deliverTxResponses []*tmabci.ResponseDeliverTx,
+	deliverTxResponses []*abci.ResponseDeliverTx,
 	stepTimes *CommitStepTimes,
 ) ([]byte, int64, error) {
 	blockExec.mempool.Lock()
@@ -348,17 +349,17 @@ func execBlockOnProxyApp(
 
 	txIndex := 0
 	abciResponses := new(ocstate.ABCIResponses)
-	dtxs := make([]*tmabci.ResponseDeliverTx, len(block.Txs))
+	dtxs := make([]*abci.ResponseDeliverTx, len(block.Txs))
 	abciResponses.DeliverTxs = dtxs
 
 	// Execute transactions and get hash.
-	proxyCb := func(req *abci.Request, res *abci.Response) {
-		if r, ok := res.Value.(*abci.Response_DeliverTx); ok {
+	proxyCb := func(req *ocabci.Request, res *ocabci.Response) {
+		if r, ok := res.Value.(*ocabci.Response_DeliverTx); ok {
 			// TODO: make use of res.Log
 			// TODO: make use of this info
 			// Blocks may include invalid txs.
 			txRes := r.DeliverTx
-			if txRes.Code == abci.CodeTypeOK {
+			if txRes.Code == ocabci.CodeTypeOK {
 				validTxs++
 			} else {
 				logger.Debug("invalid tx", "code", txRes.Code, "log", txRes.Log)
@@ -373,7 +374,7 @@ func execBlockOnProxyApp(
 
 	commitInfo := getBeginBlockValidatorInfo(block, store, initialHeight)
 
-	byzVals := make([]abci.Evidence, 0)
+	byzVals := make([]ocabci.Evidence, 0)
 	for _, evidence := range block.Evidence.Evidence {
 		byzVals = append(byzVals, evidence.ABCI()...)
 	}
@@ -385,7 +386,7 @@ func execBlockOnProxyApp(
 		return nil, errors.New("nil header")
 	}
 
-	abciResponses.BeginBlock, err = proxyAppConn.BeginBlockSync(abci.RequestBeginBlock{
+	abciResponses.BeginBlock, err = proxyAppConn.BeginBlockSync(ocabci.RequestBeginBlock{
 		Hash:                block.Hash(),
 		Header:              *pbh,
 		LastCommitInfo:      commitInfo,
@@ -399,7 +400,7 @@ func execBlockOnProxyApp(
 	startTime := time.Now()
 	// run txs of block
 	for _, tx := range block.Txs {
-		proxyAppConn.DeliverTxAsync(tmabci.RequestDeliverTx{Tx: tx}, nil)
+		proxyAppConn.DeliverTxAsync(abci.RequestDeliverTx{Tx: tx}, nil)
 		if err := proxyAppConn.Error(); err != nil {
 			return nil, err
 		}
@@ -408,7 +409,7 @@ func execBlockOnProxyApp(
 	execTime := endTime.Sub(startTime)
 
 	// End block.
-	abciResponses.EndBlock, err = proxyAppConn.EndBlockSync(tmabci.RequestEndBlock{Height: block.Height})
+	abciResponses.EndBlock, err = proxyAppConn.EndBlockSync(abci.RequestEndBlock{Height: block.Height})
 	if err != nil {
 		logger.Error("error in proxyAppConn.EndBlock", "err", err)
 		return nil, err
@@ -424,8 +425,8 @@ func execBlockOnProxyApp(
 }
 
 func getBeginBlockValidatorInfo(block *types.Block, store Store,
-	initialHeight int64) abci.LastCommitInfo {
-	voteInfos := make([]abci.VoteInfo, block.LastCommit.Size())
+	initialHeight int64) ocabci.LastCommitInfo {
+	voteInfos := make([]ocabci.VoteInfo, block.LastCommit.Size())
 	// Initial block -> LastCommitInfo.Votes are empty.
 	// Remember that the first LastCommit is intentionally empty, so it makes
 	// sense for LastCommitInfo.Votes to also be empty.
@@ -450,20 +451,20 @@ func getBeginBlockValidatorInfo(block *types.Block, store Store,
 
 		for i, val := range lastValSet.Validators {
 			commitSig := block.LastCommit.Signatures[i]
-			voteInfos[i] = abci.VoteInfo{
+			voteInfos[i] = ocabci.VoteInfo{
 				Validator:       types.OC2PB.Validator(val),
 				SignedLastBlock: !commitSig.Absent(),
 			}
 		}
 	}
 
-	return abci.LastCommitInfo{
+	return ocabci.LastCommitInfo{
 		Round: block.LastCommit.Round,
 		Votes: voteInfos,
 	}
 }
 
-func validateValidatorUpdates(abciUpdates []abci.ValidatorUpdate,
+func validateValidatorUpdates(abciUpdates []ocabci.ValidatorUpdate,
 	params tmproto.ValidatorParams) error {
 	for _, valUpdate := range abciUpdates {
 		if valUpdate.GetPower() < 0 {
@@ -600,7 +601,7 @@ func fireEvents(
 	}
 
 	for i, tx := range block.Data.Txs {
-		if err := eventBus.PublishEventTx(types.EventDataTx{TxResult: tmabci.TxResult{
+		if err := eventBus.PublishEventTx(types.EventDataTx{TxResult: abci.TxResult{
 			Height: block.Height,
 			Index:  uint32(i),
 			Tx:     tx,

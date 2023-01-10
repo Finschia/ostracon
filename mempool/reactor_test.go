@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 	memproto "github.com/tendermint/tendermint/proto/tendermint/mempool"
 
 	"github.com/line/ostracon/abci/example/kvstore"
@@ -104,9 +104,9 @@ func TestReactorConcurrency(t *testing.T) {
 			reactors[0].mempool.Lock()
 			defer reactors[0].mempool.Unlock()
 
-			deliverTxResponses := make([]*tmabci.ResponseDeliverTx, len(txs))
+			deliverTxResponses := make([]*abci.ResponseDeliverTx, len(txs))
 			for i := range txs {
-				deliverTxResponses[i] = &tmabci.ResponseDeliverTx{Code: 0}
+				deliverTxResponses[i] = &abci.ResponseDeliverTx{Code: 0}
 			}
 			err := reactors[0].mempool.Update(newTestBlock(1, txs), deliverTxResponses, nil, nil)
 			assert.NoError(t, err)
@@ -121,7 +121,7 @@ func TestReactorConcurrency(t *testing.T) {
 			reactors[1].mempool.Lock()
 			defer reactors[1].mempool.Unlock()
 			err := reactors[1].mempool.Update(newTestBlock(1, []types.Tx{}),
-				make([]*tmabci.ResponseDeliverTx, 0), nil, nil)
+				make([]*abci.ResponseDeliverTx, 0), nil, nil)
 			assert.NoError(t, err)
 		}()
 

@@ -8,7 +8,7 @@ import (
 	"os"
 	"runtime"
 
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	tmlog "github.com/line/ostracon/libs/log"
 	tmnet "github.com/line/ostracon/libs/net"
 	"github.com/line/ostracon/libs/service"
@@ -30,10 +30,10 @@ type SocketServer struct {
 	nextConnID int
 
 	appMtx tmsync.Mutex
-	app    abci.Application
+	app    ocabci.Application
 }
 
-func NewSocketServer(protoAddr string, app abci.Application) service.Service {
+func NewSocketServer(protoAddr string, app ocabci.Application) service.Service {
 	proto, addr := tmnet.ProtocolAndAddress(protoAddr)
 	s := &SocketServer{
 		proto:    proto,
@@ -120,8 +120,8 @@ func (s *SocketServer) acceptConnectionsRoutine() {
 
 		connID := s.addConn(conn)
 
-		closeConn := make(chan error, 2)             // Push to signal connection closed
-		responses := make(chan *abci.Response, 1000) // A channel to buffer responses
+		closeConn := make(chan error, 2)               // Push to signal connection closed
+		responses := make(chan *ocabci.Response, 1000) // A channel to buffer responses
 
 		// Read requests from conn and deal with them
 		go s.handleRequests(closeConn, conn, responses)
@@ -152,7 +152,7 @@ func (s *SocketServer) waitForClose(closeConn chan error, connID int) {
 }
 
 // Read requests from conn and deal with them
-func (s *SocketServer) handleRequests(closeConn chan error, conn io.Reader, responses chan<- *abci.Response) {
+func (s *SocketServer) handleRequests(closeConn chan error, conn io.Reader, responses chan<- *ocabci.Response) {
 	var count int
 	var bufReader = bufio.NewReader(conn)
 
@@ -174,8 +174,8 @@ func (s *SocketServer) handleRequests(closeConn chan error, conn io.Reader, resp
 
 	for {
 
-		var req = &abci.Request{}
-		err := abci.ReadMessage(bufReader, req)
+		var req = &ocabci.Request{}
+		err := ocabci.ReadMessage(bufReader, req)
 		if err != nil {
 			if err == io.EOF {
 				closeConn <- err
@@ -191,74 +191,74 @@ func (s *SocketServer) handleRequests(closeConn chan error, conn io.Reader, resp
 	}
 }
 
-func (s *SocketServer) handleRequest(req *abci.Request, responses chan<- *abci.Response) {
+func (s *SocketServer) handleRequest(req *ocabci.Request, responses chan<- *ocabci.Response) {
 	switch r := req.Value.(type) {
-	case *abci.Request_Echo:
-		responses <- abci.ToResponseEcho(r.Echo.Message)
-	case *abci.Request_Flush:
-		responses <- abci.ToResponseFlush()
-	case *abci.Request_Info:
+	case *ocabci.Request_Echo:
+		responses <- ocabci.ToResponseEcho(r.Echo.Message)
+	case *ocabci.Request_Flush:
+		responses <- ocabci.ToResponseFlush()
+	case *ocabci.Request_Info:
 		res := s.app.Info(*r.Info)
-		responses <- abci.ToResponseInfo(res)
-	case *abci.Request_SetOption:
+		responses <- ocabci.ToResponseInfo(res)
+	case *ocabci.Request_SetOption:
 		res := s.app.SetOption(*r.SetOption)
-		responses <- abci.ToResponseSetOption(res)
-	case *abci.Request_DeliverTx:
+		responses <- ocabci.ToResponseSetOption(res)
+	case *ocabci.Request_DeliverTx:
 		res := s.app.DeliverTx(*r.DeliverTx)
-		responses <- abci.ToResponseDeliverTx(res)
-	case *abci.Request_CheckTx:
+		responses <- ocabci.ToResponseDeliverTx(res)
+	case *ocabci.Request_CheckTx:
 		res := s.app.CheckTxSync(*r.CheckTx)
-		responses <- abci.ToResponseCheckTx(res)
-	case *abci.Request_Commit:
+		responses <- ocabci.ToResponseCheckTx(res)
+	case *ocabci.Request_Commit:
 		res := s.app.Commit()
-		responses <- abci.ToResponseCommit(res)
-	case *abci.Request_Query:
+		responses <- ocabci.ToResponseCommit(res)
+	case *ocabci.Request_Query:
 		res := s.app.Query(*r.Query)
-		responses <- abci.ToResponseQuery(res)
-	case *abci.Request_InitChain:
+		responses <- ocabci.ToResponseQuery(res)
+	case *ocabci.Request_InitChain:
 		res := s.app.InitChain(*r.InitChain)
-		responses <- abci.ToResponseInitChain(res)
-	case *abci.Request_BeginBlock:
+		responses <- ocabci.ToResponseInitChain(res)
+	case *ocabci.Request_BeginBlock:
 		res := s.app.BeginBlock(*r.BeginBlock)
-		responses <- abci.ToResponseBeginBlock(res)
-	case *abci.Request_EndBlock:
+		responses <- ocabci.ToResponseBeginBlock(res)
+	case *ocabci.Request_EndBlock:
 		res := s.app.EndBlock(*r.EndBlock)
-		responses <- abci.ToResponseEndBlock(res)
-	case *abci.Request_BeginRecheckTx:
+		responses <- ocabci.ToResponseEndBlock(res)
+	case *ocabci.Request_BeginRecheckTx:
 		res := s.app.BeginRecheckTx(*r.BeginRecheckTx)
-		responses <- abci.ToResponseBeginRecheckTx(res)
-	case *abci.Request_EndRecheckTx:
+		responses <- ocabci.ToResponseBeginRecheckTx(res)
+	case *ocabci.Request_EndRecheckTx:
 		res := s.app.EndRecheckTx(*r.EndRecheckTx)
-		responses <- abci.ToResponseEndRecheckTx(res)
-	case *abci.Request_ListSnapshots:
+		responses <- ocabci.ToResponseEndRecheckTx(res)
+	case *ocabci.Request_ListSnapshots:
 		res := s.app.ListSnapshots(*r.ListSnapshots)
-		responses <- abci.ToResponseListSnapshots(res)
-	case *abci.Request_OfferSnapshot:
+		responses <- ocabci.ToResponseListSnapshots(res)
+	case *ocabci.Request_OfferSnapshot:
 		res := s.app.OfferSnapshot(*r.OfferSnapshot)
-		responses <- abci.ToResponseOfferSnapshot(res)
-	case *abci.Request_LoadSnapshotChunk:
+		responses <- ocabci.ToResponseOfferSnapshot(res)
+	case *ocabci.Request_LoadSnapshotChunk:
 		res := s.app.LoadSnapshotChunk(*r.LoadSnapshotChunk)
-		responses <- abci.ToResponseLoadSnapshotChunk(res)
-	case *abci.Request_ApplySnapshotChunk:
+		responses <- ocabci.ToResponseLoadSnapshotChunk(res)
+	case *ocabci.Request_ApplySnapshotChunk:
 		res := s.app.ApplySnapshotChunk(*r.ApplySnapshotChunk)
-		responses <- abci.ToResponseApplySnapshotChunk(res)
+		responses <- ocabci.ToResponseApplySnapshotChunk(res)
 	default:
-		responses <- abci.ToResponseException("Unknown request")
+		responses <- ocabci.ToResponseException("Unknown request")
 	}
 }
 
 // Pull responses from 'responses' and write them to conn.
-func (s *SocketServer) handleResponses(closeConn chan error, conn io.Writer, responses <-chan *abci.Response) {
+func (s *SocketServer) handleResponses(closeConn chan error, conn io.Writer, responses <-chan *ocabci.Response) {
 	var count int
 	var bufWriter = bufio.NewWriter(conn)
 	for {
 		var res = <-responses
-		err := abci.WriteMessage(res, bufWriter)
+		err := ocabci.WriteMessage(res, bufWriter)
 		if err != nil {
 			closeConn <- fmt.Errorf("error writing message: %w", err)
 			return
 		}
-		if _, ok := res.Value.(*abci.Response_Flush); ok {
+		if _, ok := res.Value.(*ocabci.Response_Flush); ok {
 			err = bufWriter.Flush()
 			if err != nil {
 				closeConn <- fmt.Errorf("error flushing write buffer: %w", err)

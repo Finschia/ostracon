@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	mempl "github.com/line/ostracon/mempool"
 	ctypes "github.com/line/ostracon/rpc/core/types"
 	rpctypes "github.com/line/ostracon/rpc/jsonrpc/types"
@@ -87,10 +87,10 @@ func BroadcastTxCommit(ctx *rpctypes.Context, tx types.Tx) (*ctypes.ResultBroadc
 		return nil, fmt.Errorf("error on broadcastTxCommit: %v", err)
 	}
 	checkTxRes := checkTxResMsg.GetCheckTx()
-	if checkTxRes.Code != abci.CodeTypeOK {
+	if checkTxRes.Code != ocabci.CodeTypeOK {
 		return &ctypes.ResultBroadcastTxCommit{
 			CheckTx:   *checkTxRes,
-			DeliverTx: tmabci.ResponseDeliverTx{},
+			DeliverTx: abci.ResponseDeliverTx{},
 			Hash:      tx.Hash(),
 		}, nil
 	}
@@ -116,7 +116,7 @@ func BroadcastTxCommit(ctx *rpctypes.Context, tx types.Tx) (*ctypes.ResultBroadc
 		env.Logger.Error("Error on broadcastTxCommit", "err", err)
 		return &ctypes.ResultBroadcastTxCommit{
 			CheckTx:   *checkTxRes,
-			DeliverTx: tmabci.ResponseDeliverTx{},
+			DeliverTx: abci.ResponseDeliverTx{},
 			Hash:      tx.Hash(),
 		}, err
 	case <-time.After(env.Config.TimeoutBroadcastTxCommit):
@@ -124,7 +124,7 @@ func BroadcastTxCommit(ctx *rpctypes.Context, tx types.Tx) (*ctypes.ResultBroadc
 		env.Logger.Error("Error on broadcastTxCommit", "err", err)
 		return &ctypes.ResultBroadcastTxCommit{
 			CheckTx:   *checkTxRes,
-			DeliverTx: tmabci.ResponseDeliverTx{},
+			DeliverTx: abci.ResponseDeliverTx{},
 			Hash:      tx.Hash(),
 		}, err
 	}
@@ -158,7 +158,7 @@ func NumUnconfirmedTxs(ctx *rpctypes.Context) (*ctypes.ResultUnconfirmedTxs, err
 // be added to the mempool either.
 // More: https://docs.tendermint.com/master/rpc/#/Tx/check_tx
 func CheckTx(ctx *rpctypes.Context, tx types.Tx) (*ctypes.ResultCheckTx, error) {
-	res, err := env.ProxyAppMempool.CheckTxSync(tmabci.RequestCheckTx{Tx: tx})
+	res, err := env.ProxyAppMempool.CheckTxSync(abci.RequestCheckTx{Tx: tx})
 	if err != nil {
 		return nil, err
 	}

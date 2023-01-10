@@ -11,11 +11,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/line/ostracon/abci/example/code"
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	mempl "github.com/line/ostracon/mempool"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"
@@ -149,18 +149,18 @@ func TestMempoolRmBadTx(t *testing.T) {
 	txBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(txBytes, uint64(0))
 
-	resDeliver := app.DeliverTx(tmabci.RequestDeliverTx{Tx: txBytes})
+	resDeliver := app.DeliverTx(abci.RequestDeliverTx{Tx: txBytes})
 	assert.False(t, resDeliver.IsErr(), fmt.Sprintf("expected no error. got %v", resDeliver))
 
 	resCommit := app.Commit()
 	assert.True(t, len(resCommit.Data) > 0)
 
-	resBeginRecheckTx := app.BeginRecheckTx(abci.RequestBeginRecheckTx{})
+	resBeginRecheckTx := app.BeginRecheckTx(ocabci.RequestBeginRecheckTx{})
 	assert.Equal(t, code.CodeTypeOK, resBeginRecheckTx.Code)
 
 	// There is no tx to recheck
 
-	resEndRecheckTx := app.EndRecheckTx(abci.RequestEndRecheckTx{})
+	resEndRecheckTx := app.EndRecheckTx(ocabci.RequestEndRecheckTx{})
 	assert.Equal(t, code.CodeTypeOK, resEndRecheckTx.Code)
 
 	checkTxErrorCh := make(chan error)
@@ -172,7 +172,7 @@ func TestMempoolRmBadTx(t *testing.T) {
 		// and the tx should get removed from the pool
 		assertMempool(cs.txNotifier).CheckTxAsync(txBytes, mempl.TxInfo{}, func(err error) {
 			checkTxErrorCh <- err
-		}, func(r *abci.Response) {
+		}, func(r *ocabci.Response) {
 			if r.GetCheckTx().Code != code.CodeTypeBadNonce {
 				t.Errorf("expected checktx to return bad nonce, got %v", r)
 				return
@@ -226,7 +226,7 @@ func TestMempoolRmBadTx(t *testing.T) {
 
 // CounterApplication that maintains a mempool state and resets it upon commit
 type CounterApplication struct {
-	abci.BaseApplication
+	ocabci.BaseApplication
 
 	txCount           int
 	mempoolTxCount    int
@@ -237,45 +237,45 @@ func NewCounterApplication() *CounterApplication {
 	return &CounterApplication{}
 }
 
-func (app *CounterApplication) Info(req tmabci.RequestInfo) tmabci.ResponseInfo {
-	return tmabci.ResponseInfo{Data: fmt.Sprintf("txs:%v", app.txCount)}
+func (app *CounterApplication) Info(req abci.RequestInfo) abci.ResponseInfo {
+	return abci.ResponseInfo{Data: fmt.Sprintf("txs:%v", app.txCount)}
 }
 
-func (app *CounterApplication) DeliverTx(req tmabci.RequestDeliverTx) tmabci.ResponseDeliverTx {
+func (app *CounterApplication) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
 	txValue := txAsUint64(req.Tx)
 	if txValue != uint64(app.txCount) {
-		return tmabci.ResponseDeliverTx{
+		return abci.ResponseDeliverTx{
 			Code: code.CodeTypeBadNonce,
 			Log:  fmt.Sprintf("Invalid nonce. Expected %v, got %v", app.txCount, txValue)}
 	}
 	app.txCount++
-	return tmabci.ResponseDeliverTx{Code: code.CodeTypeOK}
+	return abci.ResponseDeliverTx{Code: code.CodeTypeOK}
 }
 
-func (app *CounterApplication) CheckTxSync(req tmabci.RequestCheckTx) abci.ResponseCheckTx {
+func (app *CounterApplication) CheckTxSync(req abci.RequestCheckTx) ocabci.ResponseCheckTx {
 	return app.checkTx(req)
 }
 
-func (app *CounterApplication) CheckTxAsync(req tmabci.RequestCheckTx, callback abci.CheckTxCallback) {
+func (app *CounterApplication) CheckTxAsync(req abci.RequestCheckTx, callback ocabci.CheckTxCallback) {
 	callback(app.checkTx(req))
 }
 
-func (app *CounterApplication) checkTx(req tmabci.RequestCheckTx) abci.ResponseCheckTx {
+func (app *CounterApplication) checkTx(req abci.RequestCheckTx) ocabci.ResponseCheckTx {
 	txValue := txAsUint64(req.Tx)
 	app.mempoolTxCountMtx.Lock()
 	defer app.mempoolTxCountMtx.Unlock()
 	if txValue != uint64(app.mempoolTxCount) {
-		return abci.ResponseCheckTx{
+		return ocabci.ResponseCheckTx{
 			Code: code.CodeTypeBadNonce,
 			Log:  fmt.Sprintf("Invalid nonce. Expected %v, got %v", app.mempoolTxCount, txValue)}
 	}
 	app.mempoolTxCount++
-	return abci.ResponseCheckTx{Code: code.CodeTypeOK}
+	return ocabci.ResponseCheckTx{Code: code.CodeTypeOK}
 }
 
-func (app *CounterApplication) BeginRecheckTx(abci.RequestBeginRecheckTx) abci.ResponseBeginRecheckTx {
+func (app *CounterApplication) BeginRecheckTx(ocabci.RequestBeginRecheckTx) ocabci.ResponseBeginRecheckTx {
 	app.mempoolTxCount = app.txCount
-	return abci.ResponseBeginRecheckTx{Code: code.CodeTypeOK}
+	return ocabci.ResponseBeginRecheckTx{Code: code.CodeTypeOK}
 }
 
 func txAsUint64(tx []byte) uint64 {
@@ -284,11 +284,11 @@ func txAsUint64(tx []byte) uint64 {
 	return binary.BigEndian.Uint64(tx8)
 }
 
-func (app *CounterApplication) Commit() tmabci.ResponseCommit {
+func (app *CounterApplication) Commit() abci.ResponseCommit {
 	if app.txCount == 0 {
-		return tmabci.ResponseCommit{}
+		return abci.ResponseCommit{}
 	}
 	hash := make([]byte, 8)
 	binary.BigEndian.PutUint64(hash, uint64(app.txCount))
-	return tmabci.ResponseCommit{Data: hash}
+	return abci.ResponseCommit{Data: hash}
 }

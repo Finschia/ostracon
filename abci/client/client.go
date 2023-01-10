@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"sync"
 
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 
-	types "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/service"
 	tmsync "github.com/line/ostracon/libs/sync"
 )
@@ -31,39 +31,39 @@ type Client interface {
 
 	FlushAsync(ResponseCallback) *ReqRes
 	EchoAsync(string, ResponseCallback) *ReqRes
-	InfoAsync(tmabci.RequestInfo, ResponseCallback) *ReqRes
-	SetOptionAsync(tmabci.RequestSetOption, ResponseCallback) *ReqRes
-	DeliverTxAsync(tmabci.RequestDeliverTx, ResponseCallback) *ReqRes
-	CheckTxAsync(tmabci.RequestCheckTx, ResponseCallback) *ReqRes
-	QueryAsync(tmabci.RequestQuery, ResponseCallback) *ReqRes
+	InfoAsync(abci.RequestInfo, ResponseCallback) *ReqRes
+	SetOptionAsync(abci.RequestSetOption, ResponseCallback) *ReqRes
+	DeliverTxAsync(abci.RequestDeliverTx, ResponseCallback) *ReqRes
+	CheckTxAsync(abci.RequestCheckTx, ResponseCallback) *ReqRes
+	QueryAsync(abci.RequestQuery, ResponseCallback) *ReqRes
 	CommitAsync(ResponseCallback) *ReqRes
-	InitChainAsync(types.RequestInitChain, ResponseCallback) *ReqRes
-	BeginBlockAsync(types.RequestBeginBlock, ResponseCallback) *ReqRes
-	EndBlockAsync(tmabci.RequestEndBlock, ResponseCallback) *ReqRes
-	BeginRecheckTxAsync(types.RequestBeginRecheckTx, ResponseCallback) *ReqRes
-	EndRecheckTxAsync(types.RequestEndRecheckTx, ResponseCallback) *ReqRes
-	ListSnapshotsAsync(tmabci.RequestListSnapshots, ResponseCallback) *ReqRes
-	OfferSnapshotAsync(tmabci.RequestOfferSnapshot, ResponseCallback) *ReqRes
-	LoadSnapshotChunkAsync(tmabci.RequestLoadSnapshotChunk, ResponseCallback) *ReqRes
-	ApplySnapshotChunkAsync(tmabci.RequestApplySnapshotChunk, ResponseCallback) *ReqRes
+	InitChainAsync(ocabci.RequestInitChain, ResponseCallback) *ReqRes
+	BeginBlockAsync(ocabci.RequestBeginBlock, ResponseCallback) *ReqRes
+	EndBlockAsync(abci.RequestEndBlock, ResponseCallback) *ReqRes
+	BeginRecheckTxAsync(ocabci.RequestBeginRecheckTx, ResponseCallback) *ReqRes
+	EndRecheckTxAsync(ocabci.RequestEndRecheckTx, ResponseCallback) *ReqRes
+	ListSnapshotsAsync(abci.RequestListSnapshots, ResponseCallback) *ReqRes
+	OfferSnapshotAsync(abci.RequestOfferSnapshot, ResponseCallback) *ReqRes
+	LoadSnapshotChunkAsync(abci.RequestLoadSnapshotChunk, ResponseCallback) *ReqRes
+	ApplySnapshotChunkAsync(abci.RequestApplySnapshotChunk, ResponseCallback) *ReqRes
 
-	FlushSync() (*tmabci.ResponseFlush, error)
-	EchoSync(string) (*tmabci.ResponseEcho, error)
-	InfoSync(tmabci.RequestInfo) (*tmabci.ResponseInfo, error)
-	SetOptionSync(tmabci.RequestSetOption) (*tmabci.ResponseSetOption, error)
-	DeliverTxSync(tmabci.RequestDeliverTx) (*tmabci.ResponseDeliverTx, error)
-	CheckTxSync(tmabci.RequestCheckTx) (*types.ResponseCheckTx, error)
-	QuerySync(tmabci.RequestQuery) (*tmabci.ResponseQuery, error)
-	CommitSync() (*tmabci.ResponseCommit, error)
-	InitChainSync(types.RequestInitChain) (*types.ResponseInitChain, error)
-	BeginBlockSync(types.RequestBeginBlock) (*tmabci.ResponseBeginBlock, error)
-	EndBlockSync(tmabci.RequestEndBlock) (*types.ResponseEndBlock, error)
-	BeginRecheckTxSync(types.RequestBeginRecheckTx) (*types.ResponseBeginRecheckTx, error)
-	EndRecheckTxSync(types.RequestEndRecheckTx) (*types.ResponseEndRecheckTx, error)
-	ListSnapshotsSync(tmabci.RequestListSnapshots) (*tmabci.ResponseListSnapshots, error)
-	OfferSnapshotSync(tmabci.RequestOfferSnapshot) (*tmabci.ResponseOfferSnapshot, error)
-	LoadSnapshotChunkSync(tmabci.RequestLoadSnapshotChunk) (*tmabci.ResponseLoadSnapshotChunk, error)
-	ApplySnapshotChunkSync(tmabci.RequestApplySnapshotChunk) (*tmabci.ResponseApplySnapshotChunk, error)
+	FlushSync() (*abci.ResponseFlush, error)
+	EchoSync(string) (*abci.ResponseEcho, error)
+	InfoSync(abci.RequestInfo) (*abci.ResponseInfo, error)
+	SetOptionSync(abci.RequestSetOption) (*abci.ResponseSetOption, error)
+	DeliverTxSync(abci.RequestDeliverTx) (*abci.ResponseDeliverTx, error)
+	CheckTxSync(abci.RequestCheckTx) (*ocabci.ResponseCheckTx, error)
+	QuerySync(abci.RequestQuery) (*abci.ResponseQuery, error)
+	CommitSync() (*abci.ResponseCommit, error)
+	InitChainSync(ocabci.RequestInitChain) (*ocabci.ResponseInitChain, error)
+	BeginBlockSync(ocabci.RequestBeginBlock) (*abci.ResponseBeginBlock, error)
+	EndBlockSync(abci.RequestEndBlock) (*ocabci.ResponseEndBlock, error)
+	BeginRecheckTxSync(ocabci.RequestBeginRecheckTx) (*ocabci.ResponseBeginRecheckTx, error)
+	EndRecheckTxSync(ocabci.RequestEndRecheckTx) (*ocabci.ResponseEndRecheckTx, error)
+	ListSnapshotsSync(abci.RequestListSnapshots) (*abci.ResponseListSnapshots, error)
+	OfferSnapshotSync(abci.RequestOfferSnapshot) (*abci.ResponseOfferSnapshot, error)
+	LoadSnapshotChunkSync(abci.RequestLoadSnapshotChunk) (*abci.ResponseLoadSnapshotChunk, error)
+	ApplySnapshotChunkSync(abci.RequestApplySnapshotChunk) (*abci.ResponseApplySnapshotChunk, error)
 }
 
 //----------------------------------------
@@ -82,12 +82,12 @@ func NewClient(addr, transport string, mustConnect bool) (client Client, err err
 	return
 }
 
-type GlobalCallback func(*types.Request, *types.Response)
-type ResponseCallback func(*types.Response)
+type GlobalCallback func(*ocabci.Request, *ocabci.Response)
+type ResponseCallback func(*ocabci.Response)
 
 type ReqRes struct {
-	*types.Request
-	*types.Response // Not set atomically, so be sure to use WaitGroup.
+	*ocabci.Request
+	*ocabci.Response // Not set atomically, so be sure to use WaitGroup.
 
 	mtx  tmsync.Mutex
 	wg   *sync.WaitGroup
@@ -95,7 +95,7 @@ type ReqRes struct {
 	cb   ResponseCallback // A single callback that may be set.
 }
 
-func NewReqRes(req *types.Request, cb ResponseCallback) *ReqRes {
+func NewReqRes(req *ocabci.Request, cb ResponseCallback) *ReqRes {
 	return &ReqRes{
 		Request:  req,
 		Response: nil,
@@ -117,7 +117,7 @@ func (reqRes *ReqRes) InvokeCallback() {
 	}
 }
 
-func (reqRes *ReqRes) SetDone(res *types.Response) (set bool) {
+func (reqRes *ReqRes) SetDone(res *ocabci.Response) (set bool) {
 	reqRes.mtx.Lock()
 	// TODO should we panic if it's already done?
 	set = !reqRes.done

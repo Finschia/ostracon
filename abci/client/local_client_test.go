@@ -4,14 +4,14 @@ import (
 	"testing"
 	"time"
 
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 
-	types "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/stretchr/testify/require"
 )
 
 type sampleApp struct {
-	types.BaseApplication
+	ocabci.BaseApplication
 }
 
 func newDoneChan(t *testing.T) chan struct{} {
@@ -29,7 +29,7 @@ func newDoneChan(t *testing.T) chan struct{} {
 
 func getResponseCallback(t *testing.T) ResponseCallback {
 	doneChan := newDoneChan(t)
-	return func(res *types.Response) {
+	return func(res *ocabci.Response) {
 		require.NotNil(t, res)
 		doneChan <- struct{}{}
 	}
@@ -39,26 +39,26 @@ func TestLocalClientCalls(t *testing.T) {
 	app := sampleApp{}
 	c := NewLocalClient(nil, app)
 
-	c.SetGlobalCallback(func(*types.Request, *types.Response) {
+	c.SetGlobalCallback(func(*ocabci.Request, *ocabci.Response) {
 	})
 
 	c.EchoAsync("msg", getResponseCallback(t))
 	c.FlushAsync(getResponseCallback(t))
-	c.InfoAsync(tmabci.RequestInfo{}, getResponseCallback(t))
-	c.SetOptionAsync(tmabci.RequestSetOption{}, getResponseCallback(t))
-	c.DeliverTxAsync(tmabci.RequestDeliverTx{}, getResponseCallback(t))
-	c.CheckTxAsync(tmabci.RequestCheckTx{}, getResponseCallback(t))
-	c.QueryAsync(tmabci.RequestQuery{}, getResponseCallback(t))
+	c.InfoAsync(abci.RequestInfo{}, getResponseCallback(t))
+	c.SetOptionAsync(abci.RequestSetOption{}, getResponseCallback(t))
+	c.DeliverTxAsync(abci.RequestDeliverTx{}, getResponseCallback(t))
+	c.CheckTxAsync(abci.RequestCheckTx{}, getResponseCallback(t))
+	c.QueryAsync(abci.RequestQuery{}, getResponseCallback(t))
 	c.CommitAsync(getResponseCallback(t))
-	c.InitChainAsync(types.RequestInitChain{}, getResponseCallback(t))
-	c.BeginBlockAsync(types.RequestBeginBlock{}, getResponseCallback(t))
-	c.EndBlockAsync(tmabci.RequestEndBlock{}, getResponseCallback(t))
-	c.BeginRecheckTxAsync(types.RequestBeginRecheckTx{}, getResponseCallback(t))
-	c.EndRecheckTxAsync(types.RequestEndRecheckTx{}, getResponseCallback(t))
-	c.ListSnapshotsAsync(tmabci.RequestListSnapshots{}, getResponseCallback(t))
-	c.OfferSnapshotAsync(tmabci.RequestOfferSnapshot{}, getResponseCallback(t))
-	c.LoadSnapshotChunkAsync(tmabci.RequestLoadSnapshotChunk{}, getResponseCallback(t))
-	c.ApplySnapshotChunkAsync(tmabci.RequestApplySnapshotChunk{}, getResponseCallback(t))
+	c.InitChainAsync(ocabci.RequestInitChain{}, getResponseCallback(t))
+	c.BeginBlockAsync(ocabci.RequestBeginBlock{}, getResponseCallback(t))
+	c.EndBlockAsync(abci.RequestEndBlock{}, getResponseCallback(t))
+	c.BeginRecheckTxAsync(ocabci.RequestBeginRecheckTx{}, getResponseCallback(t))
+	c.EndRecheckTxAsync(ocabci.RequestEndRecheckTx{}, getResponseCallback(t))
+	c.ListSnapshotsAsync(abci.RequestListSnapshots{}, getResponseCallback(t))
+	c.OfferSnapshotAsync(abci.RequestOfferSnapshot{}, getResponseCallback(t))
+	c.LoadSnapshotChunkAsync(abci.RequestLoadSnapshotChunk{}, getResponseCallback(t))
+	c.ApplySnapshotChunkAsync(abci.RequestApplySnapshotChunk{}, getResponseCallback(t))
 
 	_, err := c.EchoSync("msg")
 	require.NoError(t, err)
@@ -66,48 +66,48 @@ func TestLocalClientCalls(t *testing.T) {
 	_, err = c.FlushSync()
 	require.NoError(t, err)
 
-	_, err = c.InfoSync(tmabci.RequestInfo{})
+	_, err = c.InfoSync(abci.RequestInfo{})
 	require.NoError(t, err)
 
-	_, err = c.SetOptionSync(tmabci.RequestSetOption{})
+	_, err = c.SetOptionSync(abci.RequestSetOption{})
 	require.NoError(t, err)
 
-	_, err = c.DeliverTxSync(tmabci.RequestDeliverTx{})
+	_, err = c.DeliverTxSync(abci.RequestDeliverTx{})
 	require.NoError(t, err)
 
-	_, err = c.CheckTxSync(tmabci.RequestCheckTx{})
+	_, err = c.CheckTxSync(abci.RequestCheckTx{})
 	require.NoError(t, err)
 
-	_, err = c.QuerySync(tmabci.RequestQuery{})
+	_, err = c.QuerySync(abci.RequestQuery{})
 	require.NoError(t, err)
 
 	_, err = c.CommitSync()
 	require.NoError(t, err)
 
-	_, err = c.InitChainSync(types.RequestInitChain{})
+	_, err = c.InitChainSync(ocabci.RequestInitChain{})
 	require.NoError(t, err)
 
-	_, err = c.BeginBlockSync(types.RequestBeginBlock{})
+	_, err = c.BeginBlockSync(ocabci.RequestBeginBlock{})
 	require.NoError(t, err)
 
-	_, err = c.EndBlockSync(tmabci.RequestEndBlock{})
+	_, err = c.EndBlockSync(abci.RequestEndBlock{})
 	require.NoError(t, err)
 
-	_, err = c.BeginRecheckTxSync(types.RequestBeginRecheckTx{})
+	_, err = c.BeginRecheckTxSync(ocabci.RequestBeginRecheckTx{})
 	require.NoError(t, err)
 
-	_, err = c.EndRecheckTxSync(types.RequestEndRecheckTx{})
+	_, err = c.EndRecheckTxSync(ocabci.RequestEndRecheckTx{})
 	require.NoError(t, err)
 
-	_, err = c.ListSnapshotsSync(tmabci.RequestListSnapshots{})
+	_, err = c.ListSnapshotsSync(abci.RequestListSnapshots{})
 	require.NoError(t, err)
 
-	_, err = c.OfferSnapshotSync(tmabci.RequestOfferSnapshot{})
+	_, err = c.OfferSnapshotSync(abci.RequestOfferSnapshot{})
 	require.NoError(t, err)
 
-	_, err = c.LoadSnapshotChunkSync(tmabci.RequestLoadSnapshotChunk{})
+	_, err = c.LoadSnapshotChunkSync(abci.RequestLoadSnapshotChunk{})
 	require.NoError(t, err)
 
-	_, err = c.ApplySnapshotChunkSync(tmabci.RequestApplySnapshotChunk{})
+	_, err = c.ApplySnapshotChunkSync(abci.RequestApplySnapshotChunk{})
 	require.NoError(t, err)
 }

@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/line/ostracon/abci/example/kvstore"
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/bytes"
 	"github.com/line/ostracon/rpc/client"
 	"github.com/line/ostracon/rpc/client/mock"
@@ -30,7 +30,7 @@ func TestABCIMock(t *testing.T) {
 
 	m := mock.ABCIMock{
 		Info: mock.Call{Error: errors.New("foobar")},
-		Query: mock.Call{Response: tmabci.ResponseQuery{
+		Query: mock.Call{Response: abci.ResponseQuery{
 			Key:    key,
 			Value:  value,
 			Height: height,
@@ -39,8 +39,8 @@ func TestABCIMock(t *testing.T) {
 		BroadcastCommit: mock.Call{
 			Args: goodTx,
 			Response: &ctypes.ResultBroadcastTxCommit{
-				CheckTx:   abci.ResponseCheckTx{Data: bytes.HexBytes("stand")},
-				DeliverTx: tmabci.ResponseDeliverTx{Data: bytes.HexBytes("deliver")},
+				CheckTx:   ocabci.ResponseCheckTx{Data: bytes.HexBytes("stand")},
+				DeliverTx: abci.ResponseDeliverTx{Data: bytes.HexBytes("deliver")},
 			},
 			Error: errors.New("bad tx"),
 		},
@@ -85,7 +85,7 @@ func TestABCIRecorder(t *testing.T) {
 
 	// This mock returns errors on everything but Query
 	m := mock.ABCIMock{
-		Info: mock.Call{Response: tmabci.ResponseInfo{
+		Info: mock.Call{Response: abci.ResponseInfo{
 			Data:    "data",
 			Version: "v0.9.9",
 		}},

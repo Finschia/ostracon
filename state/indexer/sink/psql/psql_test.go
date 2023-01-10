@@ -12,11 +12,11 @@ import (
 	"testing"
 	"time"
 
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/adlio/schema"
 	"github.com/gogo/protobuf/proto"
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/types"
 	"github.com/ory/dockertest"
 	"github.com/ory/dockertest/docker"
@@ -161,12 +161,12 @@ func TestIndexing(t *testing.T) {
 	t.Run("IndexTxEvents", func(t *testing.T) {
 		indexer := &EventSink{store: testDB(), chainID: chainID}
 
-		txResult := txResultWithEvents([]tmabci.Event{
+		txResult := txResultWithEvents([]abci.Event{
 			makeIndexedEvent("account.number", "1"),
 			makeIndexedEvent("account.owner", "Ivan"),
 			makeIndexedEvent("account.owner", "Yulieta"),
 
-			{Type: "", Attributes: []tmabci.EventAttribute{
+			{Type: "", Attributes: []abci.EventAttribute{
 				{
 					Key:   []byte("not_allowed"),
 					Value: []byte("Vlad"),
@@ -174,7 +174,7 @@ func TestIndexing(t *testing.T) {
 				},
 			}},
 		})
-		require.NoError(t, indexer.IndexTxEvents([]*tmabci.TxResult{txResult}))
+		require.NoError(t, indexer.IndexTxEvents([]*abci.TxResult{txResult}))
 
 		txr, err := loadTxResult(types.Tx(txResult.Tx).Hash())
 		require.NoError(t, err)
@@ -193,7 +193,7 @@ func TestIndexing(t *testing.T) {
 		})
 
 		// try to insert the duplicate tx events.
-		err = indexer.IndexTxEvents([]*tmabci.TxResult{txResult})
+		err = indexer.IndexTxEvents([]*abci.TxResult{txResult})
 		require.NoError(t, err)
 	})
 }
@@ -208,14 +208,14 @@ func TestStop(t *testing.T) {
 func newTestBlockHeader() types.EventDataNewBlockHeader {
 	return types.EventDataNewBlockHeader{
 		Header: types.Header{Height: 1},
-		ResultBeginBlock: tmabci.ResponseBeginBlock{
-			Events: []tmabci.Event{
+		ResultBeginBlock: abci.ResponseBeginBlock{
+			Events: []abci.Event{
 				makeIndexedEvent("begin_event.proposer", "FCAA001"),
 				makeIndexedEvent("thingy.whatzit", "O.O"),
 			},
 		},
-		ResultEndBlock: abci.ResponseEndBlock{
-			Events: []tmabci.Event{
+		ResultEndBlock: ocabci.ResponseEndBlock{
+			Events: []abci.Event{
 				makeIndexedEvent("end_event.foo", "100"),
 				makeIndexedEvent("thingy.whatzit", "-.O"),
 			},
@@ -252,21 +252,21 @@ func resetDatabase(db *sql.DB) error {
 
 // txResultWithEvents constructs a fresh transaction result with fixed values
 // for testing, that includes the specified events.
-func txResultWithEvents(events []tmabci.Event) *tmabci.TxResult {
-	return &tmabci.TxResult{
+func txResultWithEvents(events []abci.Event) *abci.TxResult {
+	return &abci.TxResult{
 		Height: 1,
 		Index:  0,
 		Tx:     types.Tx("HELLO WORLD"),
-		Result: tmabci.ResponseDeliverTx{
+		Result: abci.ResponseDeliverTx{
 			Data:   []byte{0},
-			Code:   abci.CodeTypeOK,
+			Code:   ocabci.CodeTypeOK,
 			Log:    "",
 			Events: events,
 		},
 	}
 }
 
-func loadTxResult(hash []byte) (*tmabci.TxResult, error) {
+func loadTxResult(hash []byte) (*abci.TxResult, error) {
 	hashString := fmt.Sprintf("%X", hash)
 	var resultData []byte
 	if err := testDB().QueryRow(`
@@ -275,7 +275,7 @@ SELECT tx_result FROM `+tableTxResults+` WHERE tx_hash = $1;
 		return nil, fmt.Errorf("lookup transaction for hash %q failed: %v", hashString, err)
 	}
 
-	txr := new(tmabci.TxResult)
+	txr := new(abci.TxResult)
 	if err := proto.Unmarshal(resultData, txr); err != nil {
 		return nil, fmt.Errorf("unmarshaling txr: %v", err)
 	}

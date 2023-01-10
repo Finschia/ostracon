@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/ed25519"
 	tmjson "github.com/line/ostracon/libs/json"
@@ -34,10 +34,10 @@ func GenDefaultPrivKey() crypto.PrivKey {
 
 // RandVal creates one random validator, with a key derived
 // from the input value
-func RandVal(i int) types.ValidatorUpdate {
+func RandVal(i int) ocabci.ValidatorUpdate {
 	pk := GenDefaultPrivKey().PubKey()
 	power := tmrand.Uint16() + 1
-	v := types.NewValidatorUpdate(pk, int64(power))
+	v := ocabci.NewValidatorUpdate(pk, int64(power))
 	return v
 }
 
@@ -45,8 +45,8 @@ func RandVal(i int) types.ValidatorUpdate {
 // the application. Note that the keys are deterministically
 // derived from the index in the array, while the power is
 // random (Change this if not desired)
-func RandVals(cnt int) []types.ValidatorUpdate {
-	res := make([]types.ValidatorUpdate, cnt)
+func RandVals(cnt int) []ocabci.ValidatorUpdate {
+	res := make([]ocabci.ValidatorUpdate, cnt)
 	for i := 0; i < cnt; i++ {
 		res[i] = RandVal(i)
 	}
@@ -57,7 +57,7 @@ func RandVals(cnt int) []types.ValidatorUpdate {
 // which allows tests to pass and is fine as long as you
 // don't make any tx that modify the validator state
 func InitKVStore(app *PersistentKVStoreApplication) {
-	app.InitChain(types.RequestInitChain{
+	app.InitChain(ocabci.RequestInitChain{
 		Validators: RandVals(1),
 	})
 }

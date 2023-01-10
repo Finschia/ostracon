@@ -6,16 +6,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	tmabci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 func TestABCIResults(t *testing.T) {
-	a := &tmabci.ResponseDeliverTx{Code: 0, Data: nil}
-	b := &tmabci.ResponseDeliverTx{Code: 0, Data: []byte{}}
-	c := &tmabci.ResponseDeliverTx{Code: 0, Data: []byte("one")}
-	d := &tmabci.ResponseDeliverTx{Code: 14, Data: nil}
-	e := &tmabci.ResponseDeliverTx{Code: 14, Data: []byte("foo")}
-	f := &tmabci.ResponseDeliverTx{Code: 14, Data: []byte("bar")}
+	a := &abci.ResponseDeliverTx{Code: 0, Data: nil}
+	b := &abci.ResponseDeliverTx{Code: 0, Data: []byte{}}
+	c := &abci.ResponseDeliverTx{Code: 0, Data: []byte("one")}
+	d := &abci.ResponseDeliverTx{Code: 14, Data: nil}
+	e := &abci.ResponseDeliverTx{Code: 14, Data: []byte("foo")}
+	f := &abci.ResponseDeliverTx{Code: 14, Data: []byte("bar")}
 
 	// Nil and []byte{} should produce the same bytes
 	bzA, err := a.Marshal()
