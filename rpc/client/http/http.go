@@ -553,54 +553,6 @@ func (c *baseRPCClient) Validators(
 	return result, nil
 }
 
-func (c *baseRPCClient) Voters(
-	ctx context.Context,
-	height *int64,
-	page,
-	perPage *int,
-) (*ctypes.ResultVoters, error) {
-	result := new(ctypes.ResultVoters)
-	params := make(map[string]interface{})
-	if page != nil {
-		params["page"] = page
-	}
-	if perPage != nil {
-		params["per_page"] = perPage
-	}
-	if height != nil {
-		params["height"] = height
-	}
-	_, err := c.caller.Call(ctx, "voters", params, result)
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
-}
-
-func (c *baseRPCClient) ValidatorsWithVoters(
-	ctx context.Context,
-	height *int64,
-	page,
-	perPage *int,
-) (*ctypes.ResultValidatorsWithVoters, error) {
-	result := new(ctypes.ResultValidatorsWithVoters)
-	params := make(map[string]interface{})
-	if page != nil {
-		params["page"] = page
-	}
-	if perPage != nil {
-		params["per_page"] = perPage
-	}
-	if height != nil {
-		params["height"] = height
-	}
-	_, err := c.caller.Call(ctx, "validators_voters", params, result)
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
-}
-
 func (c *baseRPCClient) BroadcastEvidence(
 	ctx context.Context,
 	ev types.Evidence,

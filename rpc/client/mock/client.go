@@ -174,10 +174,6 @@ func (c Client) Validators(ctx context.Context, height *int64, page, perPage *in
 	return core.Validators(&rpctypes.Context{}, height, page, perPage)
 }
 
-func (c Client) Voters(ctx context.Context, height *int64, page, perPage *int) (*ctypes.ResultVoters, error) {
-	return core.Voters(&rpctypes.Context{}, height, page, perPage)
-}
-
 func (c Client) BroadcastEvidence(ctx context.Context, ev types.Evidence) (*ctypes.ResultBroadcastEvidence, error) {
 	return core.BroadcastEvidence(&rpctypes.Context{}, ev)
 }

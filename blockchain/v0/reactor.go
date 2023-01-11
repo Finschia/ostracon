@@ -373,7 +373,7 @@ FOR_LOOP:
 			// NOTE: we can probably make this more efficient, but note that calling
 			// first.Hash() doesn't verify the tx contents, so MakePartSet() is
 			// currently necessary.
-			err := state.Voters.VerifyCommitLight(chainID, firstID, first.Height, second.LastCommit)
+			err := state.Validators.VerifyCommitLight(chainID, firstID, first.Height, second.LastCommit)
 			if err == nil {
 				// validate the block before we persist it
 				err = bcR.blockExec.ValidateBlock(state, first.Round, first)

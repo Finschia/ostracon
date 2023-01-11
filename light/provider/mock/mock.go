@@ -18,7 +18,6 @@ type Mock struct {
 	mtx              sync.Mutex
 	headers          map[int64]*types.SignedHeader
 	vals             map[int64]*types.ValidatorSet
-	voters           map[int64]*types.VoterSet
 	evidenceToReport map[string]types.Evidence // hash => evidence
 	latestHeight     int64
 }
@@ -31,7 +30,6 @@ func New(
 	chainID string,
 	headers map[int64]*types.SignedHeader,
 	vals map[int64]*types.ValidatorSet,
-	voters map[int64]*types.VoterSet,
 ) *Mock {
 	height := int64(0)
 	for h := range headers {
@@ -43,7 +41,6 @@ func New(
 		chainID:          chainID,
 		headers:          headers,
 		vals:             vals,
-		voters:           voters,
 		evidenceToReport: make(map[string]types.Evidence),
 		latestHeight:     height,
 	}
@@ -60,12 +57,12 @@ func (p *Mock) String() string {
 		fmt.Fprintf(&headers, " %d:%X", h.Height, h.Hash())
 	}
 
-	var voters strings.Builder
+	var vals strings.Builder
 	for _, v := range p.vals {
-		fmt.Fprintf(&voters, " %X", v.Hash())
+		fmt.Fprintf(&vals, " %X", v.Hash())
 	}
 
-	return fmt.Sprintf("Mock{headers: %s, voters: %v}", headers.String(), voters.String())
+	return fmt.Sprintf("Mock{headers: %s, vals: %v}", headers.String(), vals.String())
 }
 
 func (p *Mock) LightBlock(ctx context.Context, height int64) (*types.LightBlock, error) {
@@ -92,18 +89,16 @@ func (p *Mock) LightBlock(ctx context.Context, height int64) (*types.LightBlock,
 	if _, ok := p.headers[height]; ok {
 		sh := p.headers[height]
 		vals := p.vals[height]
-		voters := p.voters[height]
 		lb = &types.LightBlock{
 			SignedHeader: sh,
 			ValidatorSet: vals,
-			VoterSet:     voters,
 		}
 	}
 	if lb == nil {
 		return nil, provider.ErrLightBlockNotFound
 	}
-	if lb.SignedHeader == nil || lb.ValidatorSet == nil || lb.VoterSet == nil {
-		return nil, provider.ErrBadLightBlock{Reason: errors.New("nil header or validators/voters")}
+	if lb.SignedHeader == nil || lb.ValidatorSet == nil {
+		return nil, provider.ErrBadLightBlock{Reason: errors.New("nil header or vals")}
 	}
 	if err := lb.ValidateBasic(lb.ChainID); err != nil {
 		return nil, provider.ErrBadLightBlock{Reason: err}
@@ -130,12 +125,11 @@ func (p *Mock) AddLightBlock(lb *types.LightBlock) {
 	}
 	p.headers[lb.Height] = lb.SignedHeader
 	p.vals[lb.Height] = lb.ValidatorSet
-	p.voters[lb.Height] = lb.VoterSet
 	if lb.Height > p.latestHeight {
 		p.latestHeight = lb.Height
 	}
 }
 
 func (p *Mock) Copy(id string) *Mock {
-	return New(id, p.headers, p.vals, p.voters)
+	return New(id, p.headers, p.vals)
 }

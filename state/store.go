@@ -29,10 +29,6 @@ func calcValidatorsKey(height int64) []byte {
 	return []byte(fmt.Sprintf("validatorsKey:%v", height))
 }
 
-func calcVoterParamsKey(height int64) []byte {
-	return []byte(fmt.Sprintf("voterParamsKey:%v", height))
-}
-
 func calcProofHashKey(height int64) []byte {
 	return []byte(fmt.Sprintf("proofHashKey:%v", height))
 }
@@ -64,8 +60,8 @@ type Store interface {
 	Load() (State, error)
 	// LoadValidators loads the validator set at a given height
 	LoadValidators(int64) (*types.ValidatorSet, error)
-	// LoadVoters loads the voter set at a given height
-	LoadVoters(int64, *types.VoterParams) (*types.ValidatorSet, *types.VoterSet, *types.VoterParams, []byte, error)
+	// LoadProofHash loads the proof hash at a given height
+	LoadProofHash(int64) ([]byte, error)
 	// LoadABCIResponses loads the abciResponse for a given height
 	LoadABCIResponses(int64) (*tmstate.ABCIResponses, error)
 	// LoadConsensusParams loads the consensus params for a given height
@@ -190,11 +186,6 @@ func (store dbStore) save(state State, key []byte) error {
 		return err
 	}
 
-	// Save current voter param
-	if err := store.saveVoterParams(nextHeight, state.VoterParams); err != nil {
-		return err
-	}
-
 	// Save current proof hash
 	if err := store.saveProofHash(nextHeight, state.LastProofHash); err != nil {
 		return err
@@ -224,10 +215,6 @@ func (store dbStore) Bootstrap(state State) error {
 
 	if err := store.saveConsensusParamsInfo(height,
 		state.LastHeightConsensusParamsChanged, state.ConsensusParams); err != nil {
-		return err
-	}
-
-	if err := store.saveVoterParams(height, state.VoterParams); err != nil {
 		return err
 	}
 
@@ -308,10 +295,6 @@ func (store dbStore) PruneStates(from int64, to int64) error {
 			}
 		} else {
 			err = batch.Delete(calcValidatorsKey(h))
-			if err != nil {
-				return err
-			}
-			err = batch.Delete(calcVoterParamsKey(h))
 			if err != nil {
 				return err
 			}
@@ -491,66 +474,16 @@ func (store dbStore) LoadValidators(height int64) (*types.ValidatorSet, error) {
 	return vip, nil
 }
 
-// LoadVoters loads the VoterSet for a given height.
-// Returns ErrNoValSetForHeight if the validator set can't be found for this height.
-// Returns ErrNoVoterParamsForHeight if the voter params can't be found for this height.
-// Returns ErrNoProofHashForHeight if the proof hash can't be found for this height.
-// We cannot get the voters for latest height, because we save next validators for latest height+1 and,
-// the voter params and the proof hash for latest height
-func (store dbStore) LoadVoters(height int64, voterParams *types.VoterParams) (
-	*types.ValidatorSet, *types.VoterSet, *types.VoterParams, []byte, error) {
+func (store dbStore) LoadProofHash(height int64) ([]byte, error) {
 	if height == 0 {
-		return nil, nil, nil, nil, ErrNoValSetForHeight{height}
+		return nil, ErrNoValSetForHeight{height}
 	}
-	valInfo, err := loadValidatorsInfo(store.db, height)
-	if err != nil || valInfo == nil {
-		return nil, nil, nil, nil, ErrNoValSetForHeight{height}
-	}
-	if valInfo.ValidatorSet == nil {
-		lastStoredHeight := lastStoredHeightFor(height, valInfo.LastHeightChanged)
-		valInfo2, err := loadValidatorsInfo(store.db, lastStoredHeight)
-		if err != nil || valInfo2 == nil || valInfo2.ValidatorSet == nil {
-			return nil, nil, nil, nil,
-				fmt.Errorf("couldn't find validators at height %d (height %d was originally requested): %w",
-					lastStoredHeight,
-					height,
-					err,
-				)
-		}
-
-		vs, err := types.ValidatorSetFromProto(valInfo2.ValidatorSet)
-		if err != nil {
-			return nil, nil, nil, nil, err
-		}
-
-		vs.IncrementProposerPriority(tmmath.SafeConvertInt32(height - lastStoredHeight)) // mutate
-		vi2, err := vs.ToProto()
-		if err != nil {
-			return nil, nil, nil, nil, err
-		}
-
-		valInfo2.ValidatorSet = vi2
-		valInfo = valInfo2
-	}
-
-	vip, err := types.ValidatorSetFromProto(valInfo.ValidatorSet)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-
-	if voterParams == nil {
-		voterParams, err = loadVoterParams(store.db, height)
-		if err != nil {
-			return nil, nil, nil, nil, ErrNoVoterParamsForHeight{height}
-		}
-	}
-
 	proofHash, err := loadProofHash(store.db, height)
 	if err != nil {
-		return nil, nil, nil, nil, ErrNoProofHashForHeight{height}
+		return nil, ErrNoProofHashForHeight{height}
 	}
 
-	return vip, types.SelectVoter(vip, proofHash, voterParams), voterParams, proofHash, nil
+	return proofHash, nil
 }
 
 func lastStoredHeightFor(height, lastHeightChanged int64) int64 {
@@ -613,38 +546,6 @@ func (store dbStore) saveValidatorsInfo(height, lastHeightChanged int64, valSet 
 		return err
 	}
 
-	return nil
-}
-
-func loadVoterParams(db dbm.DB, height int64) (*types.VoterParams, error) {
-	buf, err := db.Get(calcVoterParamsKey(height))
-	if err != nil {
-		return nil, err
-	}
-
-	if len(buf) == 0 {
-		return nil, errors.New("loadVoterParams: value retrieved from db is empty")
-	}
-
-	v := new(tmproto.VoterParams)
-	err = v.Unmarshal(buf)
-	if err != nil {
-		// DATA HAS BEEN CORRUPTED OR THE SPEC HAS CHANGED
-		tmos.Exit(fmt.Sprintf(`loadVoterParams: Data has been corrupted or its spec has changed:
-                %v\n`, err))
-	}
-
-	return types.VoterParamsFromProto(v), nil
-}
-
-func (store dbStore) saveVoterParams(height int64, voterParams *types.VoterParams) error {
-	bz, err := voterParams.ToProto().Marshal()
-	if err != nil {
-		return err
-	}
-	if err := store.db.Set(calcVoterParamsKey(height), bz); err != nil {
-		return err
-	}
 	return nil
 }
 

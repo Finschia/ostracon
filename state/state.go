@@ -50,7 +50,6 @@ type State struct {
 	// immutable
 	ChainID       string
 	InitialHeight int64 // should be 1, not 0, when starting from height 1
-	VoterParams   *types.VoterParams
 
 	// LastBlockHeight=0 at genesis (ie. block(H=0) does not exist)
 	LastBlockHeight int64
@@ -60,7 +59,7 @@ type State struct {
 	// vrf hash from proof
 	LastProofHash []byte
 
-	// LastVoters is used to validate block.LastCommit.
+	// LastValidators is used to validate block.LastCommit.
 	// Validators are persisted to the database separately every time they change,
 	// so we can query for historical validator sets.
 	// Note that if s.LastBlockHeight causes a valset change,
@@ -68,8 +67,7 @@ type State struct {
 	// Extra +1 due to nextValSet delay.
 	NextValidators              *types.ValidatorSet
 	Validators                  *types.ValidatorSet
-	Voters                      *types.VoterSet
-	LastVoters                  *types.VoterSet
+	LastValidators              *types.ValidatorSet
 	LastHeightValidatorsChanged int64
 
 	// Consensus parameters used for validating blocks.
@@ -95,7 +93,6 @@ func (state State) Copy() State {
 		Version:       state.Version,
 		ChainID:       state.ChainID,
 		InitialHeight: state.InitialHeight,
-		VoterParams:   state.VoterParams,
 
 		LastBlockHeight: state.LastBlockHeight,
 		LastBlockID:     state.LastBlockID,
@@ -105,8 +102,7 @@ func (state State) Copy() State {
 
 		NextValidators:              state.NextValidators.Copy(),
 		Validators:                  state.Validators.Copy(),
-		Voters:                      state.Voters.Copy(),
-		LastVoters:                  state.LastVoters.Copy(), // there is a possibility of nil when height is 1
+		LastValidators:              state.LastValidators.Copy(),
 		LastHeightValidatorsChanged: state.LastHeightValidatorsChanged,
 
 		ConsensusParams:                  state.ConsensusParams,
@@ -155,7 +151,6 @@ func (state *State) ToProto() (*tmstate.State, error) {
 	sm.ChainID = state.ChainID
 	sm.InitialHeight = state.InitialHeight
 	sm.LastBlockHeight = state.LastBlockHeight
-	sm.VoterParams = state.VoterParams.ToProto()
 
 	sm.LastBlockID = state.LastBlockID.ToProto()
 	sm.LastBlockTime = state.LastBlockTime
@@ -165,26 +160,18 @@ func (state *State) ToProto() (*tmstate.State, error) {
 	}
 	sm.Validators = vals
 
-	voters, err := state.Voters.ToProto()
-	if err != nil {
-		return nil, err
-	}
-	sm.Voters = voters
-
 	nVals, err := state.NextValidators.ToProto()
 	if err != nil {
 		return nil, err
 	}
 	sm.NextValidators = nVals
 
-	if state.LastBlockHeight >= 1 { // At Block 1 LastVoters is nil
-		lVoters, err := state.LastVoters.ToProto()
+	if state.LastBlockHeight >= 1 { // At Block 1 LastValidators is nil
+		lVals, err := state.LastValidators.ToProto()
 		if err != nil {
 			return nil, err
 		}
-		sm.LastVoters = lVoters
-	} else {
-		sm.LastVoters = nil
+		sm.LastValidators = lVals
 	}
 
 	sm.LastHeightValidatorsChanged = state.LastHeightValidatorsChanged
@@ -209,7 +196,6 @@ func FromProto(pb *tmstate.State) (*State, error) { //nolint:golint
 	state.Version = pb.Version
 	state.ChainID = pb.ChainID
 	state.InitialHeight = pb.InitialHeight
-	state.VoterParams = types.VoterParamsFromProto(pb.VoterParams)
 
 	bi, err := types.BlockIDFromProto(&pb.LastBlockID)
 	if err != nil {
@@ -225,26 +211,20 @@ func FromProto(pb *tmstate.State) (*State, error) { //nolint:golint
 	}
 	state.Validators = vals
 
-	voters, err := types.VoterSetFromProto(pb.Voters)
-	if err != nil {
-		return nil, err
-	}
-	state.Voters = voters
-
 	nVals, err := types.ValidatorSetFromProto(pb.NextValidators)
 	if err != nil {
 		return nil, err
 	}
 	state.NextValidators = nVals
 
-	if state.LastBlockHeight >= 1 { // At Block 1 LastVoters is nil
-		lVoters, err := types.VoterSetFromProto(pb.LastVoters)
+	if state.LastBlockHeight >= 1 { // At Block 1 LastValidators is nil
+		lVals, err := types.ValidatorSetFromProto(pb.LastValidators)
 		if err != nil {
 			return nil, err
 		}
-		state.LastVoters = lVoters
+		state.LastValidators = lVals
 	} else {
-		state.LastVoters = &types.VoterSet{Voters: []*types.Validator{}} // XXX Need to be the same
+		state.LastValidators = types.NewValidatorSet(nil)
 	}
 
 	state.LastHeightValidatorsChanged = pb.LastHeightValidatorsChanged
@@ -282,14 +262,14 @@ func (state State) MakeBlock(
 	if height == state.InitialHeight {
 		timestamp = state.LastBlockTime // genesis time
 	} else {
-		timestamp = MedianTime(commit, state.LastVoters)
+		timestamp = MedianTime(commit, state.LastValidators)
 	}
 
 	// Fill rest of header with state data.
 	block.Header.Populate(
 		state.Version.Consensus, state.ChainID,
 		timestamp, state.LastBlockID,
-		state.Voters.Hash(), state.Validators.Hash(), state.NextValidators.Hash(),
+		state.Validators.Hash(), state.NextValidators.Hash(),
 		types.HashConsensusParams(state.ConsensusParams), state.AppHash, state.LastResultsHash,
 		proposerAddress,
 		round,
@@ -303,23 +283,23 @@ func (state State) MakeBlock(
 // corresponding validator set. The computed time is always between timestamps of
 // the votes sent by honest processes, i.e., a faulty processes can not arbitrarily increase or decrease the
 // computed value.
-func MedianTime(commit *types.Commit, voters *types.VoterSet) time.Time {
+func MedianTime(commit *types.Commit, validators *types.ValidatorSet) time.Time {
 	weightedTimes := make([]*tmtime.WeightedTime, len(commit.Signatures))
-	totalVotingWeight := int64(0)
+	totalVotingPower := int64(0)
 
 	for i, commitSig := range commit.Signatures {
 		if commitSig.Absent() {
 			continue
 		}
-		_, validator := voters.GetByAddress(commitSig.ValidatorAddress)
+		_, validator := validators.GetByAddress(commitSig.ValidatorAddress)
 		// If there's no condition, TestValidateBlockCommit panics; not needed normally.
 		if validator != nil {
-			totalVotingWeight += validator.VotingWeight
-			weightedTimes[i] = tmtime.NewWeightedTime(commitSig.Timestamp, validator.VotingWeight)
+			totalVotingPower += validator.VotingPower
+			weightedTimes[i] = tmtime.NewWeightedTime(commitSig.Timestamp, validator.VotingPower)
 		}
 	}
 
-	return tmtime.WeightedMedian(weightedTimes, totalVotingWeight)
+	return tmtime.WeightedMedian(weightedTimes, totalVotingPower)
 }
 
 //------------------------------------------------------------------------
@@ -374,7 +354,6 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 		Version:       InitStateVersion,
 		ChainID:       genDoc.ChainID,
 		InitialHeight: genDoc.InitialHeight,
-		VoterParams:   genDoc.VoterParams,
 
 		LastBlockHeight: 0,
 		LastBlockID:     types.BlockID{},
@@ -385,8 +364,7 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 
 		NextValidators:              nextValidatorSet,
 		Validators:                  validatorSet,
-		Voters:                      types.SelectVoter(validatorSet, genDoc.Hash(), genDoc.VoterParams),
-		LastVoters:                  &types.VoterSet{Voters: []*types.Validator{}}, // Don't exist if LastBlockHeight==0
+		LastValidators:              types.NewValidatorSet(nil),
 		LastHeightValidatorsChanged: genDoc.InitialHeight,
 
 		ConsensusParams:                  *genDoc.ConsensusParams,

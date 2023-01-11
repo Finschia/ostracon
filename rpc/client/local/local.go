@@ -177,15 +177,6 @@ func (c *Local) Validators(ctx context.Context, height *int64, page, perPage *in
 	return core.Validators(c.ctx, height, page, perPage)
 }
 
-func (c *Local) Voters(ctx context.Context, height *int64, page, perPage *int) (*ctypes.ResultVoters, error) {
-	return core.Voters(c.ctx, height, page, perPage)
-}
-
-func (c *Local) ValidatorsWithVoters(
-	ctx context.Context, height *int64, page, perPage *int) (*ctypes.ResultValidatorsWithVoters, error) {
-	return core.ValidatorsWithVoters(c.ctx, height, page, perPage)
-}
-
 func (c *Local) Tx(ctx context.Context, hash []byte, prove bool) (*ctypes.ResultTx, error) {
 	return core.Tx(c.ctx, hash, prove)
 }

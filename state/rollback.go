@@ -50,12 +50,12 @@ func Rollback(bs BlockStore, ss Store) (int64, []byte, error) {
 		return -1, nil, fmt.Errorf("block at LastBlockHeight %d not found", invalidState.LastBlockHeight)
 	}
 
-	_, prevVoterSet, _, _, err := ss.LoadVoters(rollbackHeight, nil)
+	previousLastValidatorSet, err := ss.LoadValidators(rollbackHeight)
 	if err != nil {
 		return -1, nil, err
 	}
 
-	currValidatorSet, currVoterSet, currVoterParam, currProofHash, err := ss.LoadVoters(rollbackHeight+1, nil)
+	currProofHash, err := ss.LoadProofHash(rollbackHeight + 1)
 	if err != nil {
 		return -1, nil, err
 	}
@@ -95,10 +95,8 @@ func Rollback(bs BlockStore, ss Store) (int64, []byte, error) {
 		LastBlockTime:   rollbackBlock.Header.Time,
 
 		NextValidators:              invalidState.Validators,
-		Validators:                  currValidatorSet,
-		Voters:                      currVoterSet,
-		VoterParams:                 currVoterParam,
-		LastVoters:                  prevVoterSet,
+		Validators:                  invalidState.LastValidators,
+		LastValidators:              previousLastValidatorSet,
 		LastProofHash:               currProofHash,
 		LastHeightValidatorsChanged: valChangeHeight,
 

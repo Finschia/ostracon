@@ -83,15 +83,14 @@ func (p *http) LightBlock(ctx context.Context, height int64) (*types.LightBlock,
 		}
 	}
 
-	valSet, voterSet, err := p.validatorSetAndVoterSet(ctx, &sh.Height)
+	vs, err := p.validatorSet(ctx, &sh.Height)
 	if err != nil {
 		return nil, err
 	}
 
 	lb := &types.LightBlock{
 		SignedHeader: sh,
-		ValidatorSet: valSet,
-		VoterSet:     voterSet,
+		ValidatorSet: vs,
 	}
 
 	err = lb.ValidateBasic(p.chainID)
@@ -108,8 +107,7 @@ func (p *http) ReportEvidence(ctx context.Context, ev types.Evidence) error {
 	return err
 }
 
-func (p *http) validatorSetAndVoterSet(
-	ctx context.Context, height *int64) (*types.ValidatorSet, *types.VoterSet, error) {
+func (p *http) validatorSet(ctx context.Context, height *int64) (*types.ValidatorSet, error) {
 	// Since the malicious node could report a massive number of pages, making us
 	// spend a considerable time iterating, we restrict the number of pages here.
 	// => 10000 validators max
@@ -118,7 +116,6 @@ func (p *http) validatorSetAndVoterSet(
 	var (
 		perPage = 100
 		vals    = []*types.Validator{}
-		voters  = []*types.Validator{}
 		page    = 1
 		total   = -1
 	)
@@ -126,18 +123,18 @@ func (p *http) validatorSetAndVoterSet(
 OUTER_LOOP:
 	for len(vals) != total && page <= maxPages {
 		for attempt := 1; attempt <= maxRetryAttempts; attempt++ {
-			res, err := p.client.ValidatorsWithVoters(ctx, height, &page, &perPage)
+			res, err := p.client.Validators(ctx, height, &page, &perPage)
 			switch {
 			case err == nil:
 				// Validate response.
 				if len(res.Validators) == 0 {
-					return nil, nil, provider.ErrBadLightBlock{
+					return nil, provider.ErrBadLightBlock{
 						Reason: fmt.Errorf("validator set is empty (height: %d, page: %d, per_page: %d)",
 							height, page, perPage),
 					}
 				}
 				if res.Total <= 0 {
-					return nil, nil, provider.ErrBadLightBlock{
+					return nil, provider.ErrBadLightBlock{
 						Reason: fmt.Errorf("total number of vals is <= 0: %d (height: %d, page: %d, per_page: %d)",
 							res.Total, height, page, perPage),
 					}
@@ -145,21 +142,18 @@ OUTER_LOOP:
 
 				total = res.Total
 				vals = append(vals, res.Validators...)
-				for i := range res.VoterIndices {
-					voters = append(voters, res.Validators[res.VoterIndices[i]])
-				}
 				page++
 				continue OUTER_LOOP
 
 			case regexpTooHigh.MatchString(err.Error()):
-				return nil, nil, provider.ErrHeightTooHigh
+				return nil, provider.ErrHeightTooHigh
 
 			case regexpMissingHeight.MatchString(err.Error()):
-				return nil, nil, provider.ErrLightBlockNotFound
+				return nil, provider.ErrLightBlockNotFound
 
 			// if we have exceeded retry attempts then return no response error
 			case attempt == maxRetryAttempts:
-				return nil, nil, provider.ErrNoResponse
+				return nil, provider.ErrNoResponse
 
 			case regexpTimedOut.MatchString(err.Error()):
 				// we wait and try again with exponential backoff
@@ -168,7 +162,7 @@ OUTER_LOOP:
 
 			// context canceled or connection refused we return the error
 			default:
-				return nil, nil, err
+				return nil, err
 			}
 
 		}
@@ -176,9 +170,9 @@ OUTER_LOOP:
 
 	valSet, err := types.ValidatorSetFromExistingValidators(vals)
 	if err != nil {
-		return nil, nil, provider.ErrBadLightBlock{Reason: err}
+		return nil, provider.ErrBadLightBlock{Reason: err}
 	}
-	return valSet, types.WrapValidatorsToVoterSet(voters), nil
+	return valSet, nil
 }
 
 func (p *http) signedHeader(ctx context.Context, height *int64) (*types.SignedHeader, error) {

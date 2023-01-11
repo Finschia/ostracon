@@ -50,18 +50,18 @@ func (evpool *Pool) verify(evidence types.Evidence) error {
 	// apply the evidence-specific verification logic
 	switch ev := evidence.(type) {
 	case *types.DuplicateVoteEvidence:
-		_, voterSet, _, _, err := evpool.stateDB.LoadVoters(evidence.Height(), state.VoterParams)
+		valSet, err := evpool.stateDB.LoadValidators(evidence.Height())
 		if err != nil {
 			return err
 		}
-		return VerifyDuplicateVote(ev, state.ChainID, voterSet)
+		return VerifyDuplicateVote(ev, state.ChainID, valSet)
 
 	case *types.LightClientAttackEvidence:
 		commonHeader, err := getSignedHeader(evpool.blockStore, evidence.Height())
 		if err != nil {
 			return err
 		}
-		commonVals, commonVoters, _, _, err := evpool.stateDB.LoadVoters(evidence.Height(), state.VoterParams)
+		commonVals, err := evpool.stateDB.LoadValidators(evidence.Height())
 		if err != nil {
 			return err
 		}
@@ -88,8 +88,8 @@ func (evpool *Pool) verify(evidence types.Evidence) error {
 			}
 		}
 
-		err = VerifyLightClientAttack(ev, commonHeader, trustedHeader, commonVals, commonVoters, state.LastBlockTime,
-			state.ConsensusParams.Evidence.MaxAgeDuration, state.VoterParams)
+		err = VerifyLightClientAttack(ev, commonHeader, trustedHeader, commonVals, state.LastBlockTime,
+			state.ConsensusParams.Evidence.MaxAgeDuration)
 		if err != nil {
 			return err
 		}
@@ -109,20 +109,12 @@ func (evpool *Pool) verify(evidence types.Evidence) error {
 //
 // CONTRACT: must run ValidateBasic() on the evidence before verifying
 //           must check that the evidence has not expired (i.e. is outside the maximum age threshold)
-func VerifyLightClientAttack(
-	e *types.LightClientAttackEvidence,
-	commonHeader, trustedHeader *types.SignedHeader,
-	commonVals *types.ValidatorSet,
-	commonVoters *types.VoterSet,
-	now time.Time,
-	trustPeriod time.Duration,
-	voterParams *types.VoterParams,
-) error {
-	// In the case of lunatic attack there will be a different commonHeader height.
-	// Therefore the node perform a single verification jump between the common header and the conflicting one
+func VerifyLightClientAttack(e *types.LightClientAttackEvidence, commonHeader, trustedHeader *types.SignedHeader,
+	commonVals *types.ValidatorSet, now time.Time, trustPeriod time.Duration) error {
+	// In the case of lunatic attack there will be a different commonHeader height. Therefore the node perform a single
+	// verification jump between the common header and the conflicting one
 	if commonHeader.Height != e.ConflictingBlock.Height {
-		err := commonVoters.VerifyCommitLightTrusting(
-			trustedHeader.ChainID, e.ConflictingBlock.Commit, light.DefaultTrustLevel)
+		err := commonVals.VerifyCommitLightTrusting(trustedHeader.ChainID, e.ConflictingBlock.Commit, light.DefaultTrustLevel)
 		if err != nil {
 			return fmt.Errorf("skipping verification of conflicting block failed: %w", err)
 		}
@@ -134,16 +126,15 @@ func VerifyLightClientAttack(
 	}
 
 	// Verify that the 2/3+ commits from the conflicting validator set were for the conflicting header
-	if err := e.ConflictingBlock.VoterSet.VerifyCommitLight(
-		trustedHeader.ChainID, e.ConflictingBlock.Commit.BlockID,
+	if err := e.ConflictingBlock.ValidatorSet.VerifyCommitLight(trustedHeader.ChainID, e.ConflictingBlock.Commit.BlockID,
 		e.ConflictingBlock.Height, e.ConflictingBlock.Commit); err != nil {
 		return fmt.Errorf("invalid commit from conflicting block: %w", err)
 	}
 
 	// Assert the correct amount of voting power of the validator set
-	if evTotal, votersTotal := e.TotalVotingPower, commonVoters.TotalVotingWeight(); evTotal != votersTotal {
-		return fmt.Errorf("total voting power from the evidence and our voter set does not match (%d != %d)",
-			evTotal, votersTotal)
+	if evTotal, valsTotal := e.TotalVotingPower, commonVals.TotalVotingPower(); evTotal != valsTotal {
+		return fmt.Errorf("total voting power from the evidence and our validator set does not match (%d != %d)",
+			evTotal, valsTotal)
 	}
 
 	// check in the case of a forward lunatic attack that monotonically increasing time has been violated
@@ -158,17 +149,17 @@ func VerifyLightClientAttack(
 			trustedHeader.Hash())
 	}
 
-	return validateABCIEvidence(e, commonVoters, trustedHeader)
+	return validateABCIEvidence(e, commonVals, trustedHeader)
 }
 
 // VerifyDuplicateVote verifies DuplicateVoteEvidence against the state of full node. This involves the
 // following checks:
-//      - the validator is in the voter set at the height of the evidence
+//      - the validator is in the validator set at the height of the evidence
 //      - the height, round, type and validator address of the votes must be the same
 //      - the block ID's must be different
 //      - The signatures must both be valid
-func VerifyDuplicateVote(e *types.DuplicateVoteEvidence, chainID string, voterSet *types.VoterSet) error {
-	_, val := voterSet.GetByAddress(e.VoteA.ValidatorAddress)
+func VerifyDuplicateVote(e *types.DuplicateVoteEvidence, chainID string, valSet *types.ValidatorSet) error {
+	_, val := valSet.GetByAddress(e.VoteA.ValidatorAddress)
 	if val == nil {
 		return fmt.Errorf("address %X was not a validator at height %d", e.VoteA.ValidatorAddress, e.Height())
 	}
@@ -208,12 +199,12 @@ func VerifyDuplicateVote(e *types.DuplicateVoteEvidence, chainID string, voterSe
 
 	// validator voting power and total voting power must match
 	if val.VotingPower != e.ValidatorPower {
-		return fmt.Errorf("validator power from evidence and our voter set does not match (%d != %d)",
+		return fmt.Errorf("validator power from evidence and our validator set does not match (%d != %d)",
 			e.ValidatorPower, val.VotingPower)
 	}
-	if voterSet.TotalVotingWeight() != e.TotalVotingPower {
-		return fmt.Errorf("total voting power from the evidence and our voter set does not match (%d != %d)",
-			e.TotalVotingPower, voterSet.TotalVotingWeight())
+	if valSet.TotalVotingPower() != e.TotalVotingPower {
+		return fmt.Errorf("total voting power from the evidence and our validator set does not match (%d != %d)",
+			e.TotalVotingPower, valSet.TotalVotingPower())
 	}
 
 	va := e.VoteA.ToProto()
@@ -233,14 +224,18 @@ func VerifyDuplicateVote(e *types.DuplicateVoteEvidence, chainID string, voterSe
 // evidence i.e voting power and byzantine validators
 func validateABCIEvidence(
 	ev *types.LightClientAttackEvidence,
-	commonVoter *types.VoterSet,
+	commonVals *types.ValidatorSet,
 	trustedHeader *types.SignedHeader,
 ) error {
+	if evTotal, valsTotal := ev.TotalVotingPower, commonVals.TotalVotingPower(); evTotal != valsTotal {
+		return fmt.Errorf("total voting power from the evidence and our validator set does not match (%d != %d)",
+			evTotal, valsTotal)
+	}
 
 	// Find out what type of attack this was and thus extract the malicious
 	// validators. Note, in the case of an Amnesia attack we don't have any
 	// malicious validators.
-	validators := ev.GetByzantineValidators(commonVoter, trustedHeader)
+	validators := ev.GetByzantineValidators(commonVals, trustedHeader)
 
 	// Ensure this matches the validators that are listed in the evidence. They
 	// should be ordered based on power.
@@ -267,13 +262,6 @@ func validateABCIEvidence(
 			return fmt.Errorf(
 				"evidence contained unexpected byzantine validator voting power; expected %d, got %d",
 				val.VotingPower, ev.ByzantineValidators[idx].VotingPower,
-			)
-		}
-
-		if ev.ByzantineValidators[idx].VotingWeight != val.VotingWeight {
-			return fmt.Errorf(
-				"evidence contained unexpected byzantine validator voting weight; expected %d, got %d",
-				val.VotingWeight, ev.ByzantineValidators[idx].VotingWeight,
 			)
 		}
 	}

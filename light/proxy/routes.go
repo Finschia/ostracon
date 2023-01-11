@@ -32,7 +32,6 @@ func RPCRoutes(c *lrpc.Client) map[string]*rpcserver.RPCFunc {
 		"tx_search":            rpcserver.NewRPCFunc(makeTxSearchFunc(c), "query,prove,page,per_page,order_by"),
 		"block_search":         rpcserver.NewRPCFunc(makeBlockSearchFunc(c), "query,page,per_page,order_by"),
 		"validators":           rpcserver.NewRPCFunc(makeValidatorsFunc(c), "height,page,per_page"),
-		"voters":               rpcserver.NewRPCFunc(makeVotersFunc(c), "height,page,per_page"),
 		"dump_consensus_state": rpcserver.NewRPCFunc(makeDumpConsensusStateFunc(c), ""),
 		"consensus_state":      rpcserver.NewRPCFunc(makeConsensusStateFunc(c), ""),
 		"consensus_params":     rpcserver.NewRPCFunc(makeConsensusParamsFunc(c), "height"),
@@ -188,15 +187,6 @@ type rpcValidatorsFunc func(ctx *rpctypes.Context, height *int64,
 func makeValidatorsFunc(c *lrpc.Client) rpcValidatorsFunc {
 	return func(ctx *rpctypes.Context, height *int64, page, perPage *int) (*ctypes.ResultValidators, error) {
 		return c.Validators(ctx.Context(), height, page, perPage)
-	}
-}
-
-type rpcVotersFunc func(ctx *rpctypes.Context, height *int64,
-	page, perPage *int) (*ctypes.ResultVoters, error)
-
-func makeVotersFunc(c *lrpc.Client) rpcVotersFunc {
-	return func(ctx *rpctypes.Context, height *int64, page, perPage *int) (*ctypes.ResultVoters, error) {
-		return c.Voters(ctx.Context(), height, page, perPage)
 	}
 }
 

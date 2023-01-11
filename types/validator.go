@@ -13,18 +13,13 @@ import (
 )
 
 // Volatile state for each Validator
-// NOTE: The ProposerPriority, VotingWeight is not included in Validator.Hash();
+// NOTE: The ProposerPriority is not included in Validator.Hash();
 // make sure to update that method if changes are made here
-// VotingPower is the potential voting power proportional to the amount of stake,
-// and VotingWeight is the actual voting power granted by the election process.
-// VotingPower is durable and can be changed by updating Validator via txs.
-// VotingWeight is volatile and can be changed at every height.
 type Validator struct {
 	Address     Address       `json:"address"`
 	PubKey      crypto.PubKey `json:"pub_key"`
 	VotingPower int64         `json:"voting_power"`
 
-	VotingWeight     int64 `json:"voting_weight"`
 	ProposerPriority int64 `json:"proposer_priority"`
 }
 
@@ -34,7 +29,6 @@ func NewValidator(pubKey crypto.PubKey, votingPower int64) *Validator {
 		Address:          pubKey.Address(),
 		PubKey:           pubKey,
 		VotingPower:      votingPower,
-		VotingWeight:     0,
 		ProposerPriority: 0,
 	}
 }
@@ -99,11 +93,10 @@ func (v *Validator) String() string {
 	if v == nil {
 		return "nil-Validator"
 	}
-	return fmt.Sprintf("Validator{%v %v VP:%v VW:%v A:%v}",
+	return fmt.Sprintf("Validator{%v %v VP:%v A:%v}",
 		v.Address,
 		v.PubKey,
 		v.VotingPower,
-		v.VotingWeight,
 		v.ProposerPriority)
 }
 
@@ -154,7 +147,6 @@ func (v *Validator) ToProto() (*tmproto.Validator, error) {
 		Address:          v.Address,
 		PubKey:           pk,
 		VotingPower:      v.VotingPower,
-		VotingWeight:     v.VotingWeight,
 		ProposerPriority: v.ProposerPriority,
 	}
 
@@ -176,7 +168,6 @@ func ValidatorFromProto(vp *tmproto.Validator) (*Validator, error) {
 	v.Address = vp.GetAddress()
 	v.PubKey = pk
 	v.VotingPower = vp.GetVotingPower()
-	v.VotingWeight = vp.GetVotingWeight()
 	v.ProposerPriority = vp.GetProposerPriority()
 
 	return v, nil

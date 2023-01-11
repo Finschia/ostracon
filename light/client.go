@@ -54,21 +54,19 @@ func SequentialVerification() Option {
 }
 
 // SkippingVerification option configures the light client to skip blocks as
-// long as {trustLevel} of the old voter set signed the new header. The
+// long as {trustLevel} of the old validator set signed the new header. The
 // verifySkipping algorithm from the specification is used for finding the minimal
 // "trust path".
 //
-// trustLevel - fraction of the old voter set (in terms of voting power),
+// trustLevel - fraction of the old validator set (in terms of voting power),
 // which must sign the new header in order for us to trust it. NOTE this only
 // applies to non-adjacent headers. For adjacent headers, sequential
 // verification is used.
-// Deprecated:
 func SkippingVerification(trustLevel tmmath.Fraction) Option {
-	panic("lite client cannot use skipping verification under selection of voters")
-	//	return func(c *Client) {
-	//		c.verificationMode = skipping
-	//		c.trustLevel = trustLeveldetector_test
-	// 	}
+	return func(c *Client) {
+		c.verificationMode = skipping
+		c.trustLevel = trustLevel
+	}
 }
 
 // PruningSize option sets the maximum amount of light blocks that the light
@@ -222,7 +220,7 @@ func NewClientFromTrustedStore(
 	c := &Client{
 		chainID:          chainID,
 		trustingPeriod:   trustingPeriod,
-		verificationMode: sequential, // we cannot use skipping under selection of voters
+		verificationMode: skipping,
 		trustLevel:       DefaultTrustLevel,
 		maxRetryAttempts: defaultMaxRetryAttempts,
 		maxClockDrift:    defaultMaxClockDrift,
@@ -380,7 +378,7 @@ func (c *Client) initializeWithTrustOptions(ctx context.Context, options TrustOp
 	}
 
 	// 2) Ensure that +2/3 of validators signed correctly.
-	err = l.VoterSet.VerifyCommitLight(c.chainID, l.Commit.BlockID, l.Height, l.Commit)
+	err = l.ValidatorSet.VerifyCommitLight(c.chainID, l.Commit.BlockID, l.Height, l.Commit)
 	if err != nil {
 		return fmt.Errorf("invalid commit: %w", err)
 	}
@@ -499,12 +497,12 @@ func (c *Client) VerifyLightBlockAtHeight(ctx context.Context, height int64, now
 // immediately if newHeader exists in trustedStore (no verification is
 // needed). Else it performs one of the two types of verification:
 //
-// SequentialVerification: verifies that 2/3 of the trusted voter set has
+// SequentialVerification: verifies that 2/3 of the trusted validator set has
 // signed the new header. If the headers are not adjacent, **all** intermediate
 // headers will be requested. Intermediate headers are not saved to database.
 //
 // SkippingVerification(trustLevel): verifies that {trustLevel} of the trusted
-// voter set has signed the new header. If it's not the case and the
+// validator set has signed the new header. If it's not the case and the
 // headers are not adjacent, verifySkipping is performed and necessary (not all)
 // intermediate headers will be requested. See the specification for details.
 // Intermediate headers are not saved to database.
@@ -642,7 +640,7 @@ func (c *Client) verifySequential(
 			"newHeight", interimBlock.Height,
 			"newHash", interimBlock.Hash())
 
-		err = VerifyAdjacent(verifiedBlock.SignedHeader, interimBlock.SignedHeader, interimBlock.ValidatorSet, interimBlock.VoterSet,
+		err = VerifyAdjacent(verifiedBlock.SignedHeader, interimBlock.SignedHeader, interimBlock.ValidatorSet,
 			c.trustingPeriod, now, c.maxClockDrift)
 		if err != nil {
 			err := ErrVerificationFailed{From: verifiedBlock.Height, To: interimBlock.Height, Reason: err}
@@ -726,8 +724,8 @@ func (c *Client) verifySkipping(
 			"newHeight", blockCache[depth].Height,
 			"newHash", blockCache[depth].Hash())
 
-		err := Verify(verifiedBlock.SignedHeader, verifiedBlock.ValidatorSet, verifiedBlock.VoterSet, blockCache[depth].SignedHeader,
-			blockCache[depth].ValidatorSet, blockCache[depth].VoterSet, c.trustingPeriod, now, c.maxClockDrift, c.trustLevel)
+		err := Verify(verifiedBlock.SignedHeader, verifiedBlock.ValidatorSet, blockCache[depth].SignedHeader,
+			blockCache[depth].ValidatorSet, c.trustingPeriod, now, c.maxClockDrift, c.trustLevel)
 		switch err.(type) {
 		case nil:
 			// Have we verified the last header
@@ -869,7 +867,7 @@ func (c *Client) Witnesses() []provider.Provider {
 	return c.witnesses
 }
 
-// Cleanup removes all the data (headers and validator/voter sets) stored. Note: the
+// Cleanup removes all the data (headers and validator sets) stored. Note: the
 // client must be stopped at this point.
 func (c *Client) Cleanup() error {
 	c.logger.Info("Removing all the data")
@@ -877,7 +875,7 @@ func (c *Client) Cleanup() error {
 	return c.trustedStore.Prune(0)
 }
 
-// cleanupAfter deletes all headers & validator/voter sets after +height+. It also
+// cleanupAfter deletes all headers & validator sets after +height+. It also
 // resets latestTrustedBlock to the latest header.
 func (c *Client) cleanupAfter(height int64) error {
 	prevHeight := c.latestTrustedBlock.Height
@@ -892,7 +890,7 @@ func (c *Client) cleanupAfter(height int64) error {
 
 		err = c.trustedStore.DeleteLightBlock(h.Height)
 		if err != nil {
-			c.logger.Error("can't remove a trusted header & validator/voter set", "err", err,
+			c.logger.Error("can't remove a trusted header & validator set", "err", err,
 				"height", h.Height)
 		}
 

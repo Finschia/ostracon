@@ -41,10 +41,6 @@ type (
 		Height int64
 	}
 
-	ErrNoVoterParamsForHeight struct {
-		Height int64
-	}
-
 	ErrNoProofHashForHeight struct {
 		Height int64
 	}
@@ -100,12 +96,8 @@ func (e ErrNoValSetForHeight) Error() string {
 	return fmt.Sprintf("could not find validator set for height #%d", e.Height)
 }
 
-func (e ErrNoVoterParamsForHeight) Error() string {
-	return fmt.Sprintf("could not find voter params for height #%d", e.Height)
-}
-
 func (e ErrNoProofHashForHeight) Error() string {
-	return fmt.Sprintf("could not find proof hash for height to select voters #%d", e.Height)
+	return fmt.Sprintf("could not find proof hash for height #%d", e.Height)
 }
 
 func (e ErrNoConsensusParamsForHeight) Error() string {

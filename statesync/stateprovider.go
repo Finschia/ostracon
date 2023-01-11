@@ -43,7 +43,6 @@ type lightClientStateProvider struct {
 	version       tmstate.Version
 	initialHeight int64
 	providers     map[lightprovider.Provider]string
-	voterParams   *types.VoterParams
 }
 
 // NewLightClientStateProvider creates a new StateProvider using a light client and RPC clients.
@@ -63,18 +62,10 @@ func NewLightClientStateProvider(
 
 	providers := make([]lightprovider.Provider, 0, len(servers))
 	providerRemotes := make(map[lightprovider.Provider]string)
-	var voterParams *types.VoterParams
 	for _, server := range servers {
 		client, err := rpcClient(server)
 		if err != nil {
 			return nil, fmt.Errorf("failed to set up RPC client: %w", err)
-		}
-		if voterParams == nil {
-			genDoc, err := client.Genesis(ctx)
-			if err != nil {
-				return nil, fmt.Errorf("failed to retrieve genesis doc: %w", err)
-			}
-			voterParams = genDoc.Genesis.VoterParams
 		}
 		provider := lighthttp.NewWithClient(chainID, client)
 		providers = append(providers, provider)
@@ -93,7 +84,6 @@ func NewLightClientStateProvider(
 		version:       version,
 		initialHeight: initialHeight,
 		providers:     providerRemotes,
-		voterParams:   voterParams,
 	}, nil
 }
 
@@ -199,9 +189,8 @@ func (s *lightClientStateProvider) State(ctx context.Context, height uint64) (sm
 	state.LastBlockID = lastLightBlock.Commit.BlockID
 	state.AppHash = currentLightBlock.AppHash
 	state.LastResultsHash = currentLightBlock.LastResultsHash
-	state.LastVoters = lastLightBlock.VoterSet
+	state.LastValidators = lastLightBlock.ValidatorSet
 	state.Validators = currentLightBlock.ValidatorSet
-	state.Voters = currentLightBlock.VoterSet
 	state.NextValidators = nextLightBlock.ValidatorSet
 	state.LastHeightValidatorsChanged = nextLightBlock.Height
 	state.LastProofHash = proofHash
@@ -224,9 +213,6 @@ func (s *lightClientStateProvider) State(ctx context.Context, height uint64) (sm
 	state.ConsensusParams = result.ConsensusParams
 	state.Version.Consensus.App = state.ConsensusParams.Version.AppVersion
 	state.LastHeightConsensusParamsChanged = currentLightBlock.Height
-
-	// VoterParams
-	state.VoterParams = s.voterParams
 
 	return state, nil
 }

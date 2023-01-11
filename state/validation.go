@@ -70,12 +70,6 @@ func validateBlock(state State, round int32, block *types.Block) error {
 			block.LastResultsHash,
 		)
 	}
-	if !bytes.Equal(block.VotersHash, state.Voters.Hash()) {
-		return fmt.Errorf("wrong Block.Header.VotersHash.  Expected %X, got %v",
-			state.Voters.Hash(),
-			block.VotersHash,
-		)
-	}
 	if !bytes.Equal(block.ValidatorsHash, state.Validators.Hash()) {
 		return fmt.Errorf("wrong Block.Header.ValidatorsHash.  Expected %X, got %v",
 			state.Validators.Hash(),
@@ -96,7 +90,7 @@ func validateBlock(state State, round int32, block *types.Block) error {
 		}
 	} else {
 		// LastCommit.Signatures length is checked in VerifyCommit.
-		if err := state.LastVoters.VerifyCommit(
+		if err := state.LastValidators.VerifyCommit(
 			state.ChainID, state.LastBlockID, block.Height-1, block.LastCommit); err != nil {
 			return err
 		}
@@ -126,7 +120,7 @@ func validateBlock(state State, round int32, block *types.Block) error {
 				state.LastBlockTime,
 			)
 		}
-		medianTime := MedianTime(block.LastCommit, state.LastVoters)
+		medianTime := MedianTime(block.LastCommit, state.LastValidators)
 		if !block.Time.Equal(medianTime) {
 			return fmt.Errorf("invalid block time. Expected %v, got %v",
 				medianTime,

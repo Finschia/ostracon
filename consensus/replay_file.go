@@ -257,8 +257,8 @@ func (pb *playback) replayConsoleLoop() int {
 				switch tokens[1] {
 				case "short":
 					fmt.Printf("%v/%v/%v\n", rs.Height, rs.Round, rs.Step)
-				case "voters":
-					fmt.Println(rs.Voters)
+				case "validators":
+					fmt.Println(rs.Validators)
 				case "proposal":
 					fmt.Println(rs.Proposal)
 				case "proposal_block":

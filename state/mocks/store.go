@@ -150,6 +150,29 @@ func (_m *Store) LoadFromDBOrGenesisFile(_a0 string) (state.State, error) {
 	return r0, r1
 }
 
+// LoadProofHash provides a mock function with given fields: _a0
+func (_m *Store) LoadProofHash(_a0 int64) ([]byte, error) {
+	ret := _m.Called(_a0)
+
+	var r0 []byte
+	if rf, ok := ret.Get(0).(func(int64) []byte); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]byte)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(int64) error); ok {
+		r1 = rf(_a0)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // LoadValidators provides a mock function with given fields: _a0
 func (_m *Store) LoadValidators(_a0 int64) (*ostracontypes.ValidatorSet, error) {
 	ret := _m.Called(_a0)
