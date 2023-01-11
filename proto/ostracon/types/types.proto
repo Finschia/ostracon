@@ -8,7 +8,6 @@ import "google/protobuf/timestamp.proto";
 import "ostracon/crypto/proof.proto";
 import "ostracon/version/types.proto";
 import "ostracon/types/validator.proto";
-import "ostracon/types/voter.proto";
 
 // BlockIdFlag indicates which BlcokID the signature is for
 enum BlockIDFlag {
@@ -85,9 +84,8 @@ message Header {
   // Note that MaxHeaderSize must be modified when adding/removing fields.
 
   // vrf info
-  int32 round       = 1000;
-  bytes proof       = 1001;
-  bytes voters_hash = 1002;  // voters for the current block
+  int32 round = 1000;
+  bytes proof = 1001;
 }
 
 // Data contains the set of transactions included in the block
@@ -149,10 +147,6 @@ message SignedHeader {
 message LightBlock {
   SignedHeader                signed_header = 1;
   ostracon.types.ValidatorSet validator_set = 2;
-
-  // *** Ostracon Extended Fields ***
-
-  ostracon.types.VoterSet voter_set = 1000;
 }
 
 message BlockMeta {

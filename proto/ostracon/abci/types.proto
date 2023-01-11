@@ -36,7 +36,7 @@ message Request {
     RequestOfferSnapshot      offer_snapshot       = 13;
     RequestLoadSnapshotChunk  load_snapshot_chunk  = 14;
     RequestApplySnapshotChunk apply_snapshot_chunk = 15;
-    RequestBeginRecheckTx     begin_recheck_tx     = 1000; // 16~99 are reserved for merging original tendermint
+    RequestBeginRecheckTx     begin_recheck_tx     = 1000;  // 16~99 are reserved for merging original tendermint
     RequestEndRecheckTx       end_recheck_tx       = 1001;
   }
 }
@@ -156,7 +156,7 @@ message Response {
     ResponseOfferSnapshot      offer_snapshot       = 14;
     ResponseLoadSnapshotChunk  load_snapshot_chunk  = 15;
     ResponseApplySnapshotChunk apply_snapshot_chunk = 16;
-    ResponseBeginRecheckTx     begin_recheck_tx     = 1000; // 17~99 are reserved for merging original tendermint
+    ResponseBeginRecheckTx     begin_recheck_tx     = 1000;  // 17~99 are reserved for merging original tendermint
     ResponseEndRecheckTx       end_recheck_tx       = 1001;
   }
 }
@@ -224,12 +224,12 @@ message ResponseCheckTx {
   repeated Event events     = 7
       [(gogoproto.nullable) = false, (gogoproto.jsontag) = "events,omitempty"];
   string codespace = 8;
-  string         sender        = 9;  // MEMO: not used, just reservation to implement https://github.com/tendermint/tendermint/pull/6740 first
-  int64          priority      = 10; // MEMO: not used, just reservation to implement https://github.com/tendermint/tendermint/pull/6740 first
-  
+  string sender    = 9;   // MEMO: not used, just reservation to implement https://github.com/tendermint/tendermint/pull/6740 first
+  int64  priority  = 10;  // MEMO: not used, just reservation to implement https://github.com/tendermint/tendermint/pull/6740 first
+
   // mempool_error is set by Ostracon.
   // ABCI applictions creating a ResponseCheckTX should not set mempool_error.
-  string         mempool_error = 11;
+  string mempool_error = 11;
 }
 
 message ResponseDeliverTx {
@@ -240,7 +240,7 @@ message ResponseDeliverTx {
   int64          gas_wanted = 5 [json_name = "gas_wanted"];
   int64          gas_used   = 6 [json_name = "gas_used"];
   repeated Event events     = 7
-      [(gogoproto.nullable) = false, (gogoproto.jsontag) = "events,omitempty"]; // nondeterministic
+      [(gogoproto.nullable) = false, (gogoproto.jsontag) = "events,omitempty"];  // nondeterministic
   string codespace = 8;
 }
 
@@ -362,16 +362,13 @@ message TxResult {
 message Validator {
   bytes address = 1;  // The first 20 bytes of SHA256(public key)
   // PubKey pub_key = 2 [(gogoproto.nullable)=false];
-  int64 power = 3;    // The voting power
-
-  // *** Ostracon Extended Fields ***
-  int64 voting_weight = 1000;  // The voting weight
+  int64 power = 3;  // The voting power
 }
 
 // ValidatorUpdate
 message ValidatorUpdate {
   ostracon.crypto.PublicKey pub_key = 1 [(gogoproto.nullable) = false];
-  int64                     power   = 2;    // The voting power
+  int64                     power   = 2;  // The voting power
 }
 
 // VoteInfo
@@ -400,7 +397,7 @@ message Evidence {
   // Total voting power of the validator set in case the ABCI application does
   // not store historical validators.
   // https://github.com/tendermint/tendermint/issues/4581
-  int64 total_voting_power = 5; // total voting weight
+  int64 total_voting_power = 5;  // total voting weight
 }
 
 //----------------------------------------
