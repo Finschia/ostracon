@@ -6,10 +6,6 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/line/ostracon/crypto/bls"
-	"github.com/line/ostracon/crypto/composite"
-	"github.com/line/ostracon/crypto/ed25519"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -606,50 +602,4 @@ func TestVoteSet_MakeCommit(t *testing.T) {
 	if err := commit.ValidateBasic(); err != nil {
 		t.Errorf("error in Commit.ValidateBasic(): %v", err)
 	}
-
-	// Signature aggregation
-	t.Run("SignatureAggregation", func(t *testing.T) {
-		privKeys := [...]crypto.PrivKey{
-			bls.GenPrivKey(),
-			composite.GenPrivKey(),
-			ed25519.GenPrivKey(),
-			bls.GenPrivKey(),
-		}
-		voteSet, _, _, privValidators := randVoteSetForPrivKeys(height, round, tmproto.PrecommitType, privKeys[:], 1)
-		for i := range privKeys {
-			pubKey, err := privValidators[i].GetPubKey()
-			if err != nil {
-				t.Fatal(err)
-			}
-			addr := pubKey.Address()
-			vote := withValidator(voteProto, addr, int32(i))
-			fmt.Printf("*** %v - %v\n", vote.ValidatorAddress, addr)
-			if _, err := signAddVote(privValidators[i], vote, voteSet); err != nil {
-				t.Error(err)
-			}
-		}
-
-		commit := voteSet.MakeCommit()
-
-		assert.Equal(t, height, commit.Height)
-		assert.Equal(t, round, commit.Round)
-		assert.NotNil(t, commit.AggregatedSignature)
-		// The order of commit.Signatures is sorted by address.
-		for i := range commit.Signatures {
-			idx := 0
-			for {
-				if bytes.Equal(privKeys[idx].PubKey().Address(), commit.Signatures[i].ValidatorAddress) {
-					break
-				}
-				idx++
-			}
-			if _, ok := privKeys[idx].(ed25519.PrivKey); ok {
-				assert.NotNil(t, commit.Signatures[i].Signature)
-			} else if _, ok := privKeys[idx].(bls.PrivKey); ok {
-				assert.Nil(t, commit.Signatures[i].Signature)
-			} else if _, ok := privKeys[idx].(composite.PrivKey); ok {
-				assert.Nil(t, commit.Signatures[i].Signature)
-			}
-		}
-	})
 }

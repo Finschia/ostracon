@@ -1,7 +1,6 @@
 package evidence_test
 
 import (
-	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -13,9 +12,6 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/bls"
-	"github.com/line/ostracon/crypto/composite"
-	"github.com/line/ostracon/crypto/ed25519"
 	"github.com/line/ostracon/evidence"
 	"github.com/line/ostracon/evidence/mocks"
 	"github.com/line/ostracon/libs/log"
@@ -90,17 +86,7 @@ func TestEvidencePoolBasic(t *testing.T) {
 	next := pool.EvidenceFront()
 	assert.Equal(t, ev, next.Value.(types.Evidence))
 
-	var evidenceBytes int64
-	switch keyType := voterSet.Voters[0].PubKey.(type) {
-	case ed25519.PubKey:
-		evidenceBytes = 375
-	case bls.PubKey:
-		evidenceBytes = 439
-	case composite.PubKey:
-		evidenceBytes = 439
-	default:
-		assert.Fail(t, fmt.Sprintf("unknown public key: %s", keyType))
-	}
+	var evidenceBytes int64 = 375
 	evs, size = pool.PendingEvidence(evidenceBytes)
 	assert.Equal(t, 1, len(evs))
 	assert.Equal(t, evidenceBytes, size) // check that the size of the single evidence in bytes is correct
@@ -115,7 +101,7 @@ func TestEvidencePoolBasic(t *testing.T) {
 // Tests inbound evidence for the right time and height
 func TestAddExpiredEvidence(t *testing.T) {
 	var (
-		val                 = types.NewMockPV(types.PrivKeyComposite) // TODO 🏺 need to test by all key types
+		val                 = types.NewMockPV()
 		height              = int64(30)
 		stateStore          = initializeValidatorState(val, height)
 		evidenceDB          = dbm.NewMemDB()
@@ -272,10 +258,6 @@ func TestLightClientAttackEvidenceLifecycle(t *testing.T) {
 	stateStore := &smmocks.Store{}
 	stateStore.On("LoadValidators", height).Return(trusted.ValidatorSet, nil)
 	stateStore.On("LoadValidators", commonHeight).Return(common.ValidatorSet, nil)
-	// Should use correct VoterSet for bls.VerifyAggregatedSignature
-	stateStore.On("LoadVoters", height, state.VoterParams).Return(
-		trusted.ValidatorSet, ev.ConflictingBlock.VoterSet, state.VoterParams, mock.Anything, nil)
-	// Should use correct VoterSet for bls.VerifyAggregatedSignature
 	stateStore.On("LoadVoters", commonHeight, state.VoterParams).Return(
 		trusted.ValidatorSet, ev.ConflictingBlock.VoterSet, state.VoterParams, state.LastProofHash, nil)
 	stateStore.On("Load").Return(state, nil)
@@ -324,7 +306,7 @@ func TestLightClientAttackEvidenceLifecycle(t *testing.T) {
 // pending evidence and continue to gossip it
 func TestRecoverPendingEvidence(t *testing.T) {
 	height := int64(10)
-	val := types.NewMockPV(types.PrivKeyComposite) // TODO 🏺 need to test by all key types
+	val := types.NewMockPV()
 	evidenceDB := dbm.NewMemDB()
 	stateStore := initializeValidatorState(val, height)
 	state, err := stateStore.Load()
@@ -457,7 +439,7 @@ func makeCommit(height int64, valAddr []byte) *types.Commit {
 }
 
 func defaultTestPool(height int64) (*evidence.Pool, types.MockPV) {
-	val := types.NewMockPV(types.PrivKeyComposite) // TODO 🏺 need to test by all key types
+	val := types.NewMockPV()
 	evidenceDB := dbm.NewMemDB()
 	stateStore := initializeValidatorState(val, height)
 	state, _ := stateStore.Load()

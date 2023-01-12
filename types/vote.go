@@ -6,10 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/line/ostracon/crypto/bls"
-	"github.com/line/ostracon/crypto/ed25519"
-
 	"github.com/line/ostracon/crypto"
+	"github.com/line/ostracon/crypto/ed25519"
 	tmbytes "github.com/line/ostracon/libs/bytes"
 	"github.com/line/ostracon/libs/protoio"
 	tmproto "github.com/line/ostracon/proto/ostracon/types"
@@ -61,26 +59,14 @@ type Vote struct {
 	Signature        []byte                `json:"signature"`
 }
 
-func MaxVoteBytes(signSize int) int64 {
-	size := (1 + 1) + // Type
-		(1 + 9) + // Height
-		(1 + 5) + // Round
-		(1 + 76 + 1) + // BlockID
-		(1 + 17 + 1) + // Timestamp
-		(1 + 20 + 1) + // ValidatorAddress
-		(1 + 5) // ValidatorIndex
-	switch signSize { // Signature
-	case 0:
-		/* */
-	case ed25519.SignatureSize:
-		fallthrough
-	case bls.SignatureSize:
-		size += 1 + signSize + 1
-	default:
-		panic(fmt.Sprintf("unsupported signature size: %d", signSize))
-	}
-	return int64(size)
-}
+const MaxVoteBytes int64 = (1 + 1) + // Type
+	(1 + 9) + // Height
+	(1 + 5) + // Round
+	(1 + 76 + 1) + // BlockID
+	(1 + 17 + 1) + // Timestamp
+	(1 + 20 + 1) + // ValidatorAddress
+	(1 + 5) + // ValidatorIndex
+	(1 + ed25519.SignatureSize + 1) // Signature
 
 // CommitSig converts the Vote to a CommitSig.
 func (vote *Vote) CommitSig() CommitSig {

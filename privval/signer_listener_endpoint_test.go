@@ -68,7 +68,7 @@ func TestSignerRemoteRetryTCPOnly(t *testing.T) {
 	SignerDialerEndpointConnRetries(retries)(dialerEndpoint)
 
 	chainID := tmrand.Str(12)
-	mockPV := types.NewMockPV(types.PrivKeyEd25519)
+	mockPV := types.NewMockPV()
 	signerServer := NewSignerServer(dialerEndpoint, chainID, mockPV)
 
 	err = signerServer.Start()
@@ -92,7 +92,7 @@ func TestRetryConnToRemoteSigner(t *testing.T) {
 		var (
 			logger           = log.TestingLogger()
 			chainID          = tmrand.Str(12)
-			mockPV           = types.NewMockPV(types.PrivKeyEd25519)
+			mockPV           = types.NewMockPV()
 			endpointIsOpenCh = make(chan struct{})
 			thisConnTimeout  = testTimeoutReadWrite
 			listenerEndpoint = newSignerListenerEndpoint(logger, tc.addr, thisConnTimeout)

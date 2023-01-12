@@ -6,13 +6,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/line/ostracon/abci/example/kvstore"
-	"github.com/line/ostracon/crypto/ed25519"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/line/ostracon/abci/example/kvstore"
 	abci "github.com/line/ostracon/abci/types"
+	"github.com/line/ostracon/crypto/ed25519"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
 	"github.com/line/ostracon/crypto/tmhash"
 	tmrand "github.com/line/ostracon/libs/rand"
@@ -123,14 +122,9 @@ func TestBroadcastEvidence_DuplicateVoteEvidence(t *testing.T) {
 	var (
 		config  = rpctest.GetConfig()
 		chainID = config.ChainID()
-		pv, err = privval.LoadOrGenFilePV(
-			config.PrivValidatorKeyFile(),
-			config.PrivValidatorStateFile(),
-			privval.PrivKeyTypeEd25519,
-		)
+		pv      = privval.LoadOrGenFilePV(config.PrivValidatorKeyFile(), config.PrivValidatorStateFile())
 	)
 
-	require.NoError(t, err)
 	for i, c := range GetClients() {
 		correct, fakes := makeEvidences(t, pv, chainID)
 		t.Logf("client %d", i)

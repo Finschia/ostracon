@@ -55,50 +55,43 @@ func TestProposalString(t *testing.T) {
 }
 
 func TestProposalVerifySignature(t *testing.T) {
-	keyTypeCases := []PrivKeyType{
-		PrivKeyEd25519,
-		PrivKeyComposite,
-		PrivKeyBLS,
-	}
-	for _, kt := range keyTypeCases {
-		privVal := NewMockPV(kt)
-		pubKey, err := privVal.GetPubKey()
-		require.NoError(t, err)
+	privVal := NewMockPV()
+	pubKey, err := privVal.GetPubKey()
+	require.NoError(t, err)
 
-		prop := NewProposal(
-			4, 2, 2,
-			BlockID{tmrand.Bytes(tmhash.Size), PartSetHeader{777, tmrand.Bytes(tmhash.Size)}})
-		p := prop.ToProto()
-		signBytes := ProposalSignBytes("test_chain_id", p)
+	prop := NewProposal(
+		4, 2, 2,
+		BlockID{tmrand.Bytes(tmhash.Size), PartSetHeader{777, tmrand.Bytes(tmhash.Size)}})
+	p := prop.ToProto()
+	signBytes := ProposalSignBytes("test_chain_id", p)
 
-		// sign it
-		err = privVal.SignProposal("test_chain_id", p)
-		require.NoError(t, err)
-		prop.Signature = p.Signature
+	// sign it
+	err = privVal.SignProposal("test_chain_id", p)
+	require.NoError(t, err)
+	prop.Signature = p.Signature
 
-		// verify the same proposal
-		valid := pubKey.VerifySignature(signBytes, prop.Signature)
-		require.True(t, valid)
+	// verify the same proposal
+	valid := pubKey.VerifySignature(signBytes, prop.Signature)
+	require.True(t, valid)
 
-		// serialize, deserialize and verify again....
-		newProp := new(tmproto.Proposal)
-		pb := prop.ToProto()
+	// serialize, deserialize and verify again....
+	newProp := new(tmproto.Proposal)
+	pb := prop.ToProto()
 
-		bs, err := proto.Marshal(pb)
-		require.NoError(t, err)
+	bs, err := proto.Marshal(pb)
+	require.NoError(t, err)
 
-		err = proto.Unmarshal(bs, newProp)
-		require.NoError(t, err)
+	err = proto.Unmarshal(bs, newProp)
+	require.NoError(t, err)
 
-		np, err := ProposalFromProto(newProp)
-		require.NoError(t, err)
+	np, err := ProposalFromProto(newProp)
+	require.NoError(t, err)
 
-		// verify the transmitted proposal
-		newSignBytes := ProposalSignBytes("test_chain_id", pb)
-		require.Equal(t, string(signBytes), string(newSignBytes))
-		valid = pubKey.VerifySignature(newSignBytes, np.Signature)
-		require.True(t, valid)
-	}
+	// verify the transmitted proposal
+	newSignBytes := ProposalSignBytes("test_chain_id", pb)
+	require.Equal(t, string(signBytes), string(newSignBytes))
+	valid = pubKey.VerifySignature(newSignBytes, np.Signature)
+	require.True(t, valid)
 }
 
 func BenchmarkProposalWriteSignBytes(b *testing.B) {
@@ -108,19 +101,11 @@ func BenchmarkProposalWriteSignBytes(b *testing.B) {
 }
 
 func BenchmarkProposalSignEd25519(b *testing.B) {
-	benchmarkProposalSign(b, PrivKeyEd25519)
+	benchmarkProposalSign(b)
 }
 
-func BenchmarkProposalSignComposite(b *testing.B) {
-	benchmarkProposalSign(b, PrivKeyComposite)
-}
-
-func BenchmarkProposalSignBLS(b *testing.B) {
-	benchmarkProposalSign(b, PrivKeyBLS)
-}
-
-func benchmarkProposalSign(b *testing.B, keyType PrivKeyType) {
-	privVal := NewMockPV(keyType)
+func benchmarkProposalSign(b *testing.B) {
+	privVal := NewMockPV()
 	for i := 0; i < b.N; i++ {
 		err := privVal.SignProposal("test_chain_id", pbp)
 		if err != nil {
@@ -130,19 +115,11 @@ func benchmarkProposalSign(b *testing.B, keyType PrivKeyType) {
 }
 
 func BenchmarkProposalVerifySignatureEd25519(b *testing.B) {
-	benchmarkProposalVerifySignature(b, PrivKeyEd25519)
+	benchmarkProposalVerifySignature(b)
 }
 
-func BenchmarkProposalVerifySignatureComposite(b *testing.B) {
-	benchmarkProposalVerifySignature(b, PrivKeyComposite)
-}
-
-func BenchmarkProposalVerifySignatureBLS(b *testing.B) {
-	benchmarkProposalVerifySignature(b, PrivKeyBLS)
-}
-
-func benchmarkProposalVerifySignature(b *testing.B, keyType PrivKeyType) {
-	privVal := NewMockPV(keyType)
+func benchmarkProposalVerifySignature(b *testing.B) {
+	privVal := NewMockPV()
 	err := privVal.SignProposal("test_chain_id", pbp)
 	require.NoError(b, err)
 	pubKey, err := privVal.GetPubKey()
@@ -155,49 +132,43 @@ func benchmarkProposalVerifySignature(b *testing.B, keyType PrivKeyType) {
 }
 
 func TestProposalValidateBasic(t *testing.T) {
-	keyTypeCases := []PrivKeyType{
-		PrivKeyEd25519,
-		PrivKeyComposite,
-		PrivKeyBLS,
-	}
-	for _, kt := range keyTypeCases {
-		privVal := NewMockPV(kt)
-		testCases := []struct {
-			testName         string
-			malleateProposal func(*Proposal)
-			expectErr        bool
-		}{
-			{"Good Proposal", func(p *Proposal) {}, false},
-			{"Invalid Type", func(p *Proposal) { p.Type = tmproto.PrecommitType }, true},
-			{"Invalid Height", func(p *Proposal) { p.Height = -1 }, true},
-			{"Invalid Round", func(p *Proposal) { p.Round = -1 }, true},
-			{"Invalid POLRound", func(p *Proposal) { p.POLRound = -2 }, true},
-			{"Invalid BlockId", func(p *Proposal) {
-				p.BlockID = BlockID{[]byte{1, 2, 3}, PartSetHeader{111, []byte("blockparts")}}
-			}, true},
-			{"Invalid Signature", func(p *Proposal) {
-				p.Signature = make([]byte, 0)
-			}, true},
-			{"Too big Signature", func(p *Proposal) {
-				p.Signature = make([]byte, MaxSignatureSize+1)
-			}, true},
-		}
-		blockID := makeBlockID(tmhash.Sum([]byte("blockhash")), math.MaxInt32, tmhash.Sum([]byte("partshash")))
 
-		for _, tc := range testCases {
-			tc := tc
-			t.Run(tc.testName, func(t *testing.T) {
-				prop := NewProposal(
-					4, 2, 2,
-					blockID)
-				p := prop.ToProto()
-				err := privVal.SignProposal("test_chain_id", p)
-				prop.Signature = p.Signature
-				require.NoError(t, err)
-				tc.malleateProposal(prop)
-				assert.Equal(t, tc.expectErr, prop.ValidateBasic() != nil, "Validate Basic had an unexpected result")
-			})
-		}
+	privVal := NewMockPV()
+	testCases := []struct {
+		testName         string
+		malleateProposal func(*Proposal)
+		expectErr        bool
+	}{
+		{"Good Proposal", func(p *Proposal) {}, false},
+		{"Invalid Type", func(p *Proposal) { p.Type = tmproto.PrecommitType }, true},
+		{"Invalid Height", func(p *Proposal) { p.Height = -1 }, true},
+		{"Invalid Round", func(p *Proposal) { p.Round = -1 }, true},
+		{"Invalid POLRound", func(p *Proposal) { p.POLRound = -2 }, true},
+		{"Invalid BlockId", func(p *Proposal) {
+			p.BlockID = BlockID{[]byte{1, 2, 3}, PartSetHeader{111, []byte("blockparts")}}
+		}, true},
+		{"Invalid Signature", func(p *Proposal) {
+			p.Signature = make([]byte, 0)
+		}, true},
+		{"Too big Signature", func(p *Proposal) {
+			p.Signature = make([]byte, MaxSignatureSize+1)
+		}, true},
+	}
+	blockID := makeBlockID(tmhash.Sum([]byte("blockhash")), math.MaxInt32, tmhash.Sum([]byte("partshash")))
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.testName, func(t *testing.T) {
+			prop := NewProposal(
+				4, 2, 2,
+				blockID)
+			p := prop.ToProto()
+			err := privVal.SignProposal("test_chain_id", p)
+			prop.Signature = p.Signature
+			require.NoError(t, err)
+			tc.malleateProposal(prop)
+			assert.Equal(t, tc.expectErr, prop.ValidateBasic() != nil, "Validate Basic had an unexpected result")
+		})
 	}
 }
 

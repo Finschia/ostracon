@@ -6,9 +6,6 @@ import (
 
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/ed25519"
-
-	"github.com/line/ostracon/crypto/bls"
-	"github.com/line/ostracon/crypto/composite"
 )
 
 func testPubKeyFromToProto(t *testing.T, sk crypto.PrivKey) {
@@ -31,6 +28,4 @@ func testPubKeyFromToProto(t *testing.T, sk crypto.PrivKey) {
 
 func TestPubKeyFromToProto(t *testing.T) {
 	testPubKeyFromToProto(t, ed25519.GenPrivKey())
-	testPubKeyFromToProto(t, bls.GenPrivKey())
-	testPubKeyFromToProto(t, composite.NewPrivKeyComposite(bls.GenPrivKey(), ed25519.GenPrivKey()))
 }

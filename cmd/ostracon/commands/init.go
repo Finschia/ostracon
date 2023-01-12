@@ -21,13 +21,7 @@ func NewInitCmd() *cobra.Command {
 		RunE:  initFiles,
 	}
 
-	AddInitFlags(cmd)
 	return cmd
-}
-
-func AddInitFlags(cmd *cobra.Command) {
-	cmd.Flags().String("priv_key_type", config.PrivKeyType,
-		"Specify validator's private key type (ed25519 | composite)")
 }
 
 func initFiles(cmd *cobra.Command, args []string) error {
@@ -38,21 +32,14 @@ func initFilesWithConfig(config *cfg.Config) error {
 	// private validator
 	privValKeyFile := config.PrivValidatorKeyFile()
 	privValStateFile := config.PrivValidatorStateFile()
-	privKeyType := config.PrivValidatorKeyType()
 	var pv *privval.FilePV
 	if tmos.FileExists(privValKeyFile) {
 		pv = privval.LoadFilePV(privValKeyFile, privValStateFile)
 		logger.Info("Found private validator", "keyFile", privValKeyFile,
 			"stateFile", privValStateFile)
 	} else {
-		var err error
-		pv, err = privval.GenFilePV(privValKeyFile, privValStateFile, privKeyType)
-		if err != nil {
-			return err
-		}
-		if pv != nil {
-			pv.Save()
-		}
+		pv = privval.GenFilePV(privValKeyFile, privValStateFile)
+		pv.Save()
 		logger.Info("Generated private validator", "keyFile", privValKeyFile,
 			"stateFile", privValStateFile)
 	}

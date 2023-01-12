@@ -702,11 +702,9 @@ OUTER_LOOP:
 		// If peer is lagging by more than 1, send Commit.
 		blockStoreBase := conR.conS.blockStore.Base()
 		if blockStoreBase > 0 && prs.Height != 0 && rs.Height >= prs.Height+2 && prs.Height >= blockStoreBase {
-			// Load the seen commit for prs.Height,
+			// Load the block commit for prs.Height,
 			// which contains precommit signatures for prs.Height.
-			// Originally the block commit was used, but with the addition of the BLS signature-aggregation,
-			// we use seen commit instead of the block commit because block commit has no individual signature.
-			if commit := conR.conS.blockStore.LoadSeenCommit(prs.Height); commit != nil {
+			if commit := conR.conS.blockStore.LoadBlockCommit(prs.Height); commit != nil {
 				if ps.PickSendVote(commit) {
 					logger.Debug("Picked Catchup commit to send", "height", prs.Height)
 					continue OUTER_LOOP

@@ -40,11 +40,7 @@ func WALGenerateNBlocks(t *testing.T, wr io.Writer, numBlocks int) (err error) {
 	// NOTE: we don't do handshake so need to set state.Version.Consensus.App directly.
 	privValidatorKeyFile := config.PrivValidatorKeyFile()
 	privValidatorStateFile := config.PrivValidatorStateFile()
-	privKeyType := config.PrivValidatorKeyType()
-	privValidator, err := privval.LoadOrGenFilePV(privValidatorKeyFile, privValidatorStateFile, privKeyType)
-	if err != nil {
-		return fmt.Errorf("failed to load FilePV: %w", err)
-	}
+	privValidator := privval.LoadOrGenFilePV(privValidatorKeyFile, privValidatorStateFile)
 	genDoc, err := types.GenesisDocFromFile(config.GenesisFile())
 	if err != nil {
 		return fmt.Errorf("failed to read genesis file: %w", err)

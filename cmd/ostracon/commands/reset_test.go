@@ -48,7 +48,7 @@ func Test_ResetAll(t *testing.T) {
 	pv.LastSignState.Height = 10
 	pv.Save()
 	require.NoError(t, resetAll(config.DBDir(), config.P2P.AddrBookFile(), config.PrivValidatorKeyFile(),
-		config.PrivValidatorStateFile(), config.PrivKeyType, logger))
+		config.PrivValidatorStateFile(), logger))
 	require.DirExists(t, config.DBDir())
 	require.NoFileExists(t, filepath.Join(config.DBDir(), "block.db"))
 	require.NoFileExists(t, filepath.Join(config.DBDir(), "state.db"))

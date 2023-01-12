@@ -8,29 +8,23 @@ import (
 	"github.com/golang/protobuf/proto" // nolint: staticcheck // still used by gogoproto
 	"github.com/tendermint/go-amino"
 
-	"github.com/line/ostracon/proto/ostracon/version"
-	"github.com/line/ostracon/types/time"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/bls"
-	"github.com/line/ostracon/crypto/composite"
 	"github.com/line/ostracon/crypto/ed25519"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
+	"github.com/line/ostracon/proto/ostracon/version"
+	"github.com/line/ostracon/types/time"
 )
 
 func TestABCIPubKey(t *testing.T) {
 	pkEd := ed25519.GenPrivKey().PubKey()
 	pkSecp := secp256k1.GenPrivKey().PubKey()
-	pkComposite := composite.NewPrivKeyComposite(bls.GenPrivKey(), ed25519.GenPrivKey()).PubKey()
 	err := testABCIPubKey(t, pkEd, ABCIPubKeyTypeEd25519)
 	assert.NoError(t, err)
 	err = testABCIPubKey(t, pkSecp, ABCIPubKeyTypeSecp256k1)
-	assert.NoError(t, err)
-	err = testABCIPubKey(t, pkComposite, ABCIPubKeyTypeBls12WithEd25519)
 	assert.NoError(t, err)
 }
 
@@ -134,23 +128,21 @@ func TestABCIHeader(t *testing.T) {
 }
 
 func TestABCIEvidence(t *testing.T) {
-	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
-		val := NewMockPV(kt)
-		blockID := makeBlockID([]byte("blockhash"), 1000, []byte("partshash"))
-		blockID2 := makeBlockID([]byte("blockhash2"), 1000, []byte("partshash"))
-		const chainID = "mychain"
-		now := time.Now()
-		ev := &DuplicateVoteEvidence{
-			VoteA:            makeVote(t, val, chainID, 0, 10, 2, 1, blockID, now),
-			VoteB:            makeVote(t, val, chainID, 0, 10, 2, 1, blockID2, now),
-			TotalVotingPower: int64(100),
-			ValidatorPower:   int64(10),
-			Timestamp:        now,
-		}
-		for _, abciEv := range ev.ABCI() {
-			assert.Equal(t, "DUPLICATE_VOTE", abciEv.Type.String())
-		}
-	})
+	val := NewMockPV()
+	blockID := makeBlockID([]byte("blockhash"), 1000, []byte("partshash"))
+	blockID2 := makeBlockID([]byte("blockhash2"), 1000, []byte("partshash"))
+	const chainID = "mychain"
+	now := time.Now()
+	ev := &DuplicateVoteEvidence{
+		VoteA:            makeVote(t, val, chainID, 0, 10, 2, 1, blockID, now),
+		VoteB:            makeVote(t, val, chainID, 0, 10, 2, 1, blockID2, now),
+		TotalVotingPower: int64(100),
+		ValidatorPower:   int64(10),
+		Timestamp:        now,
+	}
+	for _, abciEv := range ev.ABCI() {
+		assert.Equal(t, "DUPLICATE_VOTE", abciEv.Type.String())
+	}
 }
 
 type pubKeyEddie struct{}

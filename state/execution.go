@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/line/ostracon/crypto"
-	canonictime "github.com/line/ostracon/types/time"
-
 	abci "github.com/line/ostracon/abci/types"
+	"github.com/line/ostracon/crypto"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
 	"github.com/line/ostracon/crypto/vrf"
 	"github.com/line/ostracon/libs/fail"
@@ -18,6 +16,7 @@ import (
 	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/proxy"
 	"github.com/line/ostracon/types"
+	canonictime "github.com/line/ostracon/types/time"
 )
 
 //-----------------------------------------------------------------------------
@@ -131,10 +130,10 @@ func (blockExec *BlockExecutor) CreateProposalBlock(
 	maxBytes := state.ConsensusParams.Block.MaxBytes
 	maxGas := state.ConsensusParams.Block.MaxGas
 
-	evidence, _ := blockExec.evpool.PendingEvidence(state.ConsensusParams.Evidence.MaxBytes)
+	evidence, evSize := blockExec.evpool.PendingEvidence(state.ConsensusParams.Evidence.MaxBytes)
 
 	// Fetch a limited amount of valid txs
-	maxDataBytes := types.MaxDataBytes(maxBytes, commit, evidence)
+	maxDataBytes := types.MaxDataBytes(maxBytes, evSize, state.Voters.Size())
 
 	txs := blockExec.mempool.ReapMaxBytesMaxGasMaxTxs(maxDataBytes, maxGas, maxTxs)
 

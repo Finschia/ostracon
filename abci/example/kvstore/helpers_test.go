@@ -4,9 +4,10 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/line/ostracon/privval"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/line/ostracon/privval"
 )
 
 func TestLoadPrivValidatorKeyFile(t *testing.T) {
@@ -29,8 +30,7 @@ func TestLoadPrivValidatorKeyFile(t *testing.T) {
 		require.Contains(t, err.Error(), "error reading")
 	}
 
-	expected, err := privval.GenFilePV(tempKeyFile.Name(), tempStateFile.Name(), privval.PrivKeyTypeEd25519)
-	require.Nil(t, err)
+	expected := privval.GenFilePV(tempKeyFile.Name(), tempStateFile.Name())
 
 	expected.Save()
 

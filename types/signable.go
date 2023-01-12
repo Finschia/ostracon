@@ -1,7 +1,6 @@
 package types
 
 import (
-	"github.com/line/ostracon/crypto/bls"
 	"github.com/line/ostracon/crypto/ed25519"
 	tmmath "github.com/line/ostracon/libs/math"
 )
@@ -10,7 +9,7 @@ var (
 	// MaxSignatureSize is a maximum allowed signature size for the Proposal
 	// and Vote.
 	// XXX: secp256k1 does not have Size nor MaxSize defined.
-	MaxSignatureSize = tmmath.MaxInt(tmmath.MaxInt(ed25519.SignatureSize, bls.SignatureSize), 64)
+	MaxSignatureSize = tmmath.MaxInt(ed25519.SignatureSize, 64)
 )
 
 // Signable is an interface for all signable things.
