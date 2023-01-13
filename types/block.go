@@ -836,14 +836,6 @@ func NewCommit(height int64, round int32, blockID BlockID, commitSigs []CommitSi
 	}
 }
 
-const (
-	CommitHeighMaxtLen    = 11
-	CommitRoundMaxLen     = 6
-	CommitBlockIDMaxLen   = 76
-	CommitAminoOverhead   = 1
-	CommitAggrSigOverhead = 2
-)
-
 // CommitToVoteSet constructs a VoteSet from the Commit and validator set.
 // Panics if signatures from the commit can't be added to the voteset.
 // Inverse of VoteSet.MakeCommit().
@@ -855,7 +847,7 @@ func CommitToVoteSet(chainID string, commit *Commit, voters *VoterSet) *VoteSet 
 		}
 		added, err := voteSet.AddVote(commit.GetVote(int32(idx)))
 		if !added || err != nil {
-			panic(fmt.Sprintf("Failedd to reconstruct LastCommit: %v", err))
+			panic(fmt.Sprintf("Failed to reconstruct LastCommit: %v", err))
 		}
 	}
 	return voteSet

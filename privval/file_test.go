@@ -1,6 +1,7 @@
 package privval
 
 import (
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
@@ -11,7 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/ed25519"
 	"github.com/line/ostracon/crypto/tmhash"
 	tmjson "github.com/line/ostracon/libs/json"
@@ -20,18 +20,6 @@ import (
 	"github.com/line/ostracon/types"
 	tmtime "github.com/line/ostracon/types/time"
 )
-
-var jsonKey = func(t *testing.T, addr crypto.Address, privKey crypto.PrivKey, pubKey crypto.PubKey) string {
-	privKeyBytes, err := tmjson.MarshalIndent(privKey, "  ", "  ")
-	assert.Nil(t, err)
-	pubKeyBytes, err := tmjson.MarshalIndent(pubKey, "  ", "  ")
-	assert.Nil(t, err)
-	return fmt.Sprintf(`{
-  "address": "%s",
-  "pub_key": %s,
-  "priv_key": %s
-}`, addr, pubKeyBytes, privKeyBytes)
-}
 
 func TestGenFilePV(t *testing.T) {
 	tempKeyFile, err := ioutil.TempFile("", "priv_validator_key_")
@@ -53,6 +41,7 @@ func TestGenLoadValidator(t *testing.T) {
 	require.Nil(t, err)
 
 	privVal := GenFilePV(tempKeyFile.Name(), tempStateFile.Name())
+
 	height := int64(100)
 	privVal.LastSignState.Height = height
 	privVal.Save()
@@ -147,8 +136,22 @@ func TestUnmarshalValidatorKey(t *testing.T) {
 	privKey := ed25519.GenPrivKey()
 	pubKey := privKey.PubKey()
 	addr := pubKey.Address()
+	pubBytes := pubKey.Bytes()
+	privBytes := privKey.Bytes()
+	pubB64 := base64.StdEncoding.EncodeToString(pubBytes)
+	privB64 := base64.StdEncoding.EncodeToString(privBytes)
 
-	serialized := jsonKey(t, addr, privKey, pubKey)
+	serialized := fmt.Sprintf(`{
+  "address": "%s",
+  "pub_key": {
+    "type": "tendermint/PubKeyEd25519",
+    "value": "%s"
+  },
+  "priv_key": {
+    "type": "tendermint/PrivKeyEd25519",
+    "value": "%s"
+  }
+}`, addr, pubB64, privB64)
 
 	val := FilePVKey{}
 	err := tmjson.Unmarshal([]byte(serialized), &val)
@@ -174,6 +177,7 @@ func TestSignVote(t *testing.T) {
 	require.Nil(t, err)
 
 	privVal := GenFilePV(tempKeyFile.Name(), tempStateFile.Name())
+
 	randbytes := tmrand.Bytes(tmhash.Size)
 	randbytes2 := tmrand.Bytes(tmhash.Size)
 
@@ -226,6 +230,7 @@ func TestSignProposal(t *testing.T) {
 	require.Nil(t, err)
 
 	privVal := GenFilePV(tempKeyFile.Name(), tempStateFile.Name())
+
 	randbytes := tmrand.Bytes(tmhash.Size)
 	randbytes2 := tmrand.Bytes(tmhash.Size)
 
@@ -293,7 +298,6 @@ func TestDifferByTimestamp(t *testing.T) {
 	require.Nil(t, err)
 
 	privVal := GenFilePV(tempKeyFile.Name(), tempStateFile.Name())
-	require.Nil(t, err)
 	randbytes := tmrand.Bytes(tmhash.Size)
 	block1 := types.BlockID{Hash: randbytes, PartSetHeader: types.PartSetHeader{Total: 5, Hash: randbytes}}
 	height, round := int64(10), int32(1)

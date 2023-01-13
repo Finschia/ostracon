@@ -114,19 +114,6 @@ func (app *PersistentKVStoreApplication) Query(reqQuery types.RequestQuery) (res
 
 		resQuery.Key = reqQuery.Data
 		resQuery.Value = value
-
-		if value == nil {
-			resQuery.Log = "cannot get"
-			return
-		}
-		validatorUpdate := types.ValidatorUpdate{}
-		err = types.ReadMessage(bytes.NewReader(resQuery.Value), &validatorUpdate)
-		if err != nil {
-			panic(err)
-		}
-		pubKey, _ := cryptoenc.PubKeyFromProto(&validatorUpdate.PubKey)
-		resQuery.Log = fmt.Sprintf("key=%s, validatorUpdate.PubKey=%v, validatorUpdate.Power=%d",
-			resQuery.Key, pubKey, validatorUpdate.Power)
 		return
 	default:
 		return app.app.Query(reqQuery)
