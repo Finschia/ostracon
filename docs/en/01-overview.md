@@ -18,9 +18,7 @@ LINE Blockchain sets out a number of principles to be archived in selecting the 
 
 P2P consensus algorithms based on BFT are more suitable than Bitcoin-like proof of work (PoW) in terms of functionality and performance. Among them, Tendermint-BFT, with its modern blockchain-optimized design, was the closest implementation in our direction (and even better, it can be connected to Cosmos Hub).
 
-We are introducing two new cryptographic technologies with Tendermint-BFT to further improve our blockchain. One is Verifiable Random Function (VRF), which was introduced to randomly select the Proposer node that will generate blocks and makes future selection unpredictable. This randomness is expected to deter malicious attacks and make it difficult for participants to act in collusion at some point in the future.
-
-Another feature is the Boneh–Lynn–Shacham (BLS) signature. BLS signature scheme, which is based on bilinear mapping, gives us the ability to aggregate multiple digital signatures into a single one. In many blockchain protocols, large amounts of signatures must be stored to approve a block. Enabling BLS signature aggregation reduces the footprint and can significantly improve communication overhead and storage consumption.
+We are introducing a new cryptographic technology with Tendermint-BFT to further improve our blockchain. This Verifiable Random Function (VRF) was introduced to randomly select the Proposer node that will generate blocks and makes future selection unpredictable. This randomness is expected to deter malicious attacks and make it difficult for participants to act in collusion at some point in the future.
 
 ## Layered Structure
 
@@ -34,29 +32,27 @@ Ostracon's consensus state and generated blocks are stored in the State DB and B
 
 ## Specifications and Technology Stack
 
-| Specifications        | Policy / Algorithms           | Methods / Implementations                                    |
-|:----------------------|:------------------------------|:-------------------------------------------------------------|
-| Participation         | Permissioned                  | Consortium or Private                                        |
-| Election              | Proof of Stake                | VRF-based Weighted Sampling without Replacement + SplitMix64 |
-| Agreement             | Strong Consistency w/Finality | Tendermint-BFT                                               |
-| Signature             | Elliptic Curve Cryptography   | Ed25519, *BLS12-381*<sup>*1</sup>                            |
-| Hash                  | SHA2                          | SHA-256, SHA-512                                             |
-| Key Management        | Local KeyStore, Remote KMS    | *HSM is not support due to VRF or BLS*                       |
-| Key Auth Protocol     | Station-to-Station            |                                                              |
-| Tx Sharing Protocol   | Gossiping                     | mempool                                                      |
-| Application Protocol  | ABCI                          |                                                              |
-| Interchain Protocol   | IBC (Cosmos Hub)              |                                                              |
-| Storage               | Embedded KVS                  | LevelDB                                                      |
-| Message Recovery      | WAL                           |                                                              |
-| Block Generation Time | 2 seconds                     |                                                              |
-
-<sup>*1</sup> experimental implementation.
+| Specifications        | Policy / Algorithms            | Methods / Implementations                                    |
+|:----------------------|:-------------------------------|:-------------------------------------------------------------|
+| Participation         | Permissioned                   | Consortium or Private                                        |
+| Election              | Proof of Stake                 | VRF-based Weighted Sampling without Replacement + SplitMix64 |
+| Agreement             | Strong Consistency w/Finality  | Tendermint-BFT                                               |
+| Signature             | Elliptic Curve Cryptography    | Ed25519                                                      |
+| Hash                  | SHA2                           | SHA-256, SHA-512                                             |
+| VRF                   | ECVRF-EDWARDS25519-SHA512-ELL2 | Ed25529                                                      |
+| Key Management        | Local KeyStore, Remote KMS     | *HSM is not support due to VRF*                              |
+| Key Auth Protocol     | Station-to-Station             |                                                              |
+| Tx Sharing Protocol   | Gossiping                      | mempool                                                      |
+| Application Protocol  | ABCI                           |                                                              |
+| Interchain Protocol   | IBC (Cosmos Hub)               |                                                              |
+| Storage               | Embedded KVS                   | LevelDB                                                      |
+| Message Recovery      | WAL                            |                                                              |
+| Block Generation Time | 2 seconds                      |                                                              |
 
 ## Ostracon Features
 
 * [Extending Tendermint-BFT with VRF-based Election](02-consensus.md)
 * [Transaction Sharing](03-tx-sharing.md)
-* [BLS Signature Aggregation](04-signature-aggregation.md)
 
 ## Consideration with Other Consensus Schemes
 

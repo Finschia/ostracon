@@ -22,14 +22,9 @@ LINE Blockchain はインターネット上の電子サービスのみならず�
 合意アルゴリズムの方が適しています。中でもブロックチェーンに最適化された近代的な設計が行われている Tendermint-BFT は我々の方針に最も
 近い実装でした (さらに良いことに Cosmos Hub とも接続できます)。
 
-我々は我々のブロックチェーンをさらに改善するために Tendermint-BFT に二つの新しい暗号技術を導入しています。その一つである**検証可能な
-疑似乱数** (VRF) は、ブロックを生成する Proposer ノードの選出にランダム性をもたせて未来の選出を予測困難にすることを目的に導入されました。
-このランダム性の導入により、悪意を持つ攻撃者に攻撃の猶予を与えたり、将来のある時点を狙って参加者どうしで共謀することを困難にする効果が期待
-できます。
-
-もう一つの機能は **BLS 署名**です。双線形写像に基づく BLS 署名は複数の電子署名をたった一つの電子署名に集約できる特徴を持ちます。多くの
-ブロックチェーンプロトコルでは、ブロックを承認するために多数の署名を保存しなければなりませんが、BLS 署名集約を有効にすることでそのフット
-プリントを削減し、通信速度やストレージ消費量を大きく改善する効果が期待できます。
+我々は我々のブロックチェーンをさらに改善するために Tendermint-BFT に新しい暗号技術を導入しています。この **検証可能な疑似乱数** (VRF) は
+ブロックを生成する Proposer ノードの選出にランダム性をもたせて未来の選出を予測困難にすることを目的に導入されました。このランダム性の導入により、
+悪意を持つ攻撃者に攻撃の猶予を与えたり、将来のある時点を狙って参加者どうしで共謀することを困難にする効果が期待できます。
 
 ## Layered Structure
 
@@ -48,29 +43,27 @@ Ostracon のコンセンサスの状態は State DB に、生成されたブロ�
 
 ## Specifications and Technology Stack
 
-| Specifications        | Policy / Algorithms           | Methods / Implementations                                    |
-|:----------------------|:------------------------------|:-------------------------------------------------------------|
-| Participation         | Permissioned                  | Consortium or Private                                        |
-| Election              | Proof of Stake                | VRF-based Weighted Sampling without Replacement + SplitMix64 |
-| Agreement             | Strong Consistency w/Finality | Tendermint-BFT                                               |
-| Signature             | Elliptic Curve Cryptography   | Ed25519, *BLS12-381*<sup>*1</sup>                            |
-| Hash                  | SHA2                          | SHA-256, SHA-512                                             |
-| Key Management        | Local KeyStore, Remote KMS    | *HSM is not support due to VRF or BLS*                       |
-| Key Auth Protocol     | Station-to-Station            |                                                              |
-| Tx Sharing Protocol   | Gossiping                     | mempool                                                      |
-| Application Protocol  | ABCI                          |                                                              |
-| Interchain Protocol   | IBC (Cosmos Hub)              |                                                              |
-| Storage               | Embedded KVS                  | LevelDB                                                      |
-| Message Recovery      | WAL                           |                                                              |
-| Block Generation Time | 2 seconds                     |                                                              |
-
-<sup>*1</sup> experimental implementation.
+| Specifications        | Policy / Algorithms            | Methods / Implementations                                    |
+|:----------------------|:-------------------------------|:-------------------------------------------------------------|
+| Participation         | Permissioned                   | Consortium or Private                                        |
+| Election              | Proof of Stake                 | VRF-based Weighted Sampling without Replacement + SplitMix64 |
+| Agreement             | Strong Consistency w/Finality  | Tendermint-BFT                                               |
+| Signature             | Elliptic Curve Cryptography    | Ed25519                                                      |
+| Hash                  | SHA2                           | SHA-256, SHA-512                                             |
+| VRF                   | ECVRF-EDWARDS25519-SHA512-ELL2 | Ed25529                                                      |
+| Key Management        | Local KeyStore, Remote KMS     | *HSM is not support due to VRF*                              |
+| Key Auth Protocol     | Station-to-Station             |                                                              |
+| Tx Sharing Protocol   | Gossiping                      | mempool                                                      |
+| Application Protocol  | ABCI                           |                                                              |
+| Interchain Protocol   | IBC (Cosmos Hub)               |                                                              |
+| Storage               | Embedded KVS                   | LevelDB                                                      |
+| Message Recovery      | WAL                            |                                                              |
+| Block Generation Time | 2 seconds                      |                                                              |
 
 ## Ostracon Features
 
 * [Extending Tendermint-BFT with VRF-based Election](02-consensus.md)
 * [Transaction Sharing](03-tx-sharing.md)
-* [BLS Signature Aggregation](04-signature-aggregation.md)
 
 ## Consideration with Other Consensus Schemes
 
