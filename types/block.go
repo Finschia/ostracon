@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/line/ostracon/crypto/ed25519"
 	"strings"
 	"time"
+
+	"github.com/line/ostracon/crypto/ed25519"
 
 	"github.com/gogo/protobuf/proto"
 	gogotypes "github.com/gogo/protobuf/types"
@@ -670,18 +671,8 @@ type CommitSig struct {
 	BlockIDFlag      BlockIDFlag `json:"block_id_flag"`
 	ValidatorAddress Address     `json:"validator_address"`
 	Timestamp        time.Time   `json:"timestamp"`
-
-	// This can take a nil in case when the signature is being aggregated.
-	Signature []byte `json:"signature"`
+	Signature        []byte      `json:"signature"`
 }
-
-const (
-	BlockIDFlagLen      = 4
-	TimestampMaxLen     = 18
-	Bytes20AminoHeadLen = 2
-	Bytes64AminoHeadLen = 2
-	Bytes96AminoHeadLen = 3
-)
 
 // NewCommitSigForBlock returns new CommitSig with BlockIDFlagCommit.
 func NewCommitSigForBlock(signature []byte, valAddr Address, ts time.Time) CommitSig {

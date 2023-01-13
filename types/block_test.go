@@ -362,7 +362,7 @@ func TestCommitHash(t *testing.T) {
 		assert.Equal(t, expected, commit.Hash().Bytes())
 	})
 
-	t.Run("with out without aggregated signature", func(t *testing.T) {
+	t.Run("with signatures", func(t *testing.T) {
 		signature := []byte{0, 0, 0, 0}
 		address := []byte{0, 0, 0, 0}
 		tm := time.Unix(0, 0)

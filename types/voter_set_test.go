@@ -137,15 +137,7 @@ func TestVoterSet_VerifyCommitLight_ReturnsAsSoonAsMajorityOfVotingWeightSigned(
 		blockID = makeBlockIDRandom()
 	)
 
-	// use only ed25519 because all signatures are verified, not "as soon as", when votes contain aggregated signature
-	privKeys := []crypto.PrivKey{
-		ed25519.GenPrivKey(),
-		ed25519.GenPrivKey(),
-		ed25519.GenPrivKey(),
-		ed25519.GenPrivKey(),
-	}
-
-	voteSet, _, voterSet, vals := randVoteSetForPrivKeys(h, 0, tmproto.PrecommitType, privKeys, 10)
+	voteSet, _, voterSet, vals := randVoteSet(h, 0, tmproto.PrecommitType, 4, 10)
 	commit, err := MakeCommit(blockID, h, 0, voteSet, vals, time.Now())
 	require.NoError(t, err)
 
@@ -168,15 +160,7 @@ func TestVoterSet_VerifyCommitLightTrusting_ReturnsAsSoonAsTrustLevelOfVotingWei
 		blockID = makeBlockIDRandom()
 	)
 
-	// use only ed25519 because all signatures are verified, not "as soon as", when votes contain aggregated signature
-	privKeys := []crypto.PrivKey{
-		ed25519.GenPrivKey(),
-		ed25519.GenPrivKey(),
-		ed25519.GenPrivKey(),
-		ed25519.GenPrivKey(),
-	}
-
-	voteSet, _, voterSet, vals := randVoteSetForPrivKeys(h, 0, tmproto.PrecommitType, privKeys, 10)
+	voteSet, _, voterSet, vals := randVoteSet(h, 0, tmproto.PrecommitType, 4, 10)
 	commit, err := MakeCommit(blockID, h, 0, voteSet, vals, time.Now())
 	require.NoError(t, err)
 

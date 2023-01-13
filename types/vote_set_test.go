@@ -2,8 +2,6 @@ package types
 
 import (
 	"bytes"
-	"fmt"
-	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -25,31 +23,6 @@ func randVoteSet(
 ) (*VoteSet, *ValidatorSet, *VoterSet, []PrivValidator) {
 	valSet, voterSet, privValidators := RandVoterSet(numValidators, votingPower)
 	return NewVoteSet("test_chain_id", height, round, signedMsgType, voterSet), valSet, voterSet, privValidators
-}
-
-func randVoteSetForPrivKeys(
-	height int64,
-	round int32,
-	signedMsgType tmproto.SignedMsgType,
-	privKeys []crypto.PrivKey,
-	votingPower int64,
-) (*VoteSet, *ValidatorSet, *VoterSet, []PrivValidator) {
-	valz := make([]*Validator, len(privKeys))
-	privValidators := make([]PrivValidator, len(privKeys))
-	for i := 0; i < len(privKeys); i++ {
-		privVal := MockPV{privKeys[i], false, false}
-		pubKey, err := privVal.GetPubKey()
-		if err != nil {
-			panic(fmt.Errorf("could not retrieve pubkey %w", err))
-		}
-		val := NewValidator(pubKey, votingPower)
-		valz[i] = val
-		privValidators[i] = privVal
-	}
-	vals := NewValidatorSet(valz)
-	sort.Sort(PrivValidatorsByAddress(privValidators))
-	voterSet := SelectVoter(vals, []byte{}, DefaultVoterParams())
-	return NewVoteSet("test_chain_id", height, round, signedMsgType, voterSet), vals, voterSet, privValidators
 }
 
 func addVoteByAllVoterSet(t *testing.T, voteSet *VoteSet, privVals []PrivValidator, height int64, round int32) []Vote {

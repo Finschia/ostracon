@@ -161,21 +161,6 @@ func (voteSet *VoteSet) AddVote(vote *Vote) (added bool, err error) {
 	return voteSet.addVote(vote, vote.Verify)
 }
 
-func (voteSet *VoteSet) AddAggregatedVote(vote *Vote) (added bool, err error) {
-	if voteSet == nil {
-		panic("AddAggregatedVote() on nil VoteSet")
-	}
-	voteSet.mtx.Lock()
-	defer voteSet.mtx.Unlock()
-
-	return voteSet.addVote(vote, func(chainID string, pubKey crypto.PubKey) (err error) {
-		if !bytes.Equal(pubKey.Address(), vote.ValidatorAddress) {
-			return ErrVoteInvalidValidatorAddress
-		}
-		return nil
-	})
-}
-
 // NOTE: Validates as much as possible before attempting to verify the signature.
 func (voteSet *VoteSet) addVote(vote *Vote, execVoteVerify func(chainID string,
 	pub crypto.PubKey) (err error)) (added bool, err error) {
@@ -655,9 +640,6 @@ func (voteSet *VoteSet) MakeCommit() *Commit {
 	commitSigs := make([]CommitSig, len(voteSet.votes))
 	for i, v := range voteSet.votes {
 		commitSig := v.CommitSig()
-		if !commitSig.Absent() && commitSig.Signature == nil {
-			panic(fmt.Sprintf("This signature of commitSig is already aggregated: commitSig: <%v>", commitSig))
-		}
 		// if block ID exists but doesn't match, exclude sig
 		if commitSig.ForBlock() && !v.BlockID.Equals(*voteSet.maj23) {
 			commitSig = NewCommitSigAbsent()
