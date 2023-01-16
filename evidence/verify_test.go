@@ -46,7 +46,7 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 	// good pass -> no error
 	err := evidence.VerifyLightClientAttack(ev, common.SignedHeader, trusted.SignedHeader,
 		common.ValidatorSet,
-		ev.ConflictingBlock.VoterSet, // Should use correct VoterSet for bls.VerifyAggregatedSignature
+		ev.ConflictingBlock.VoterSet,
 		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour, types.DefaultVoterParams())
 	assert.NoError(t, err)
 
@@ -89,7 +89,7 @@ func TestVerifyLightClientAttack_validateABCIEvidence(t *testing.T) {
 	// good pass -> no error
 	err := evidence.VerifyLightClientAttack(ev, common.SignedHeader, trusted.SignedHeader,
 		common.ValidatorSet,
-		ev.ConflictingBlock.VoterSet, // Should use correct VoterSet for bls.VerifyAggregatedSignature
+		ev.ConflictingBlock.VoterSet,
 		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour, types.DefaultVoterParams())
 	assert.NoError(t, err)
 
@@ -102,7 +102,7 @@ func TestVerifyLightClientAttack_validateABCIEvidence(t *testing.T) {
 	amnesiaHeader.Commit.Round = 2
 	err = evidence.VerifyLightClientAttack(ev, common.SignedHeader, amnesiaHeader, // illegal header
 		common.ValidatorSet,
-		ev.ConflictingBlock.VoterSet, // Should use correct VoterSet for bls.VerifyAggregatedSignature
+		ev.ConflictingBlock.VoterSet,
 		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour, types.DefaultVoterParams())
 	require.Error(t, err)
 	require.Equal(t, "expected nil validators from an amnesia light client attack but got 1", err.Error())
@@ -113,7 +113,7 @@ func TestVerifyLightClientAttack_validateABCIEvidence(t *testing.T) {
 	equivocationHeader.ProposerAddress = nil
 	err = evidence.VerifyLightClientAttack(ev, common.SignedHeader, equivocationHeader, // illegal header
 		common.ValidatorSet,
-		ev.ConflictingBlock.VoterSet, // Should use correct VoterSet for bls.VerifyAggregatedSignature
+		ev.ConflictingBlock.VoterSet,
 		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour, types.DefaultVoterParams())
 	require.Error(t, err)
 	require.Equal(t, "expected 10 byzantine validators from evidence but got 1", err.Error())
@@ -123,7 +123,7 @@ func TestVerifyLightClientAttack_validateABCIEvidence(t *testing.T) {
 	ev.ByzantineValidators = phantomVoterSet.Voters
 	err = evidence.VerifyLightClientAttack(ev, common.SignedHeader, trusted.SignedHeader,
 		common.ValidatorSet,
-		ev.ConflictingBlock.VoterSet, // Should use correct VoterSet for bls.VerifyAggregatedSignature
+		ev.ConflictingBlock.VoterSet,
 		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour, types.DefaultVoterParams())
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "evidence contained an unexpected byzantine validator address;")
@@ -134,7 +134,7 @@ func TestVerifyLightClientAttack_validateABCIEvidence(t *testing.T) {
 	ev.ByzantineValidators = phantomVoterSet.Voters
 	err = evidence.VerifyLightClientAttack(ev, common.SignedHeader, trusted.SignedHeader,
 		common.ValidatorSet,
-		ev.ConflictingBlock.VoterSet, // Should use correct VoterSet for bls.VerifyAggregatedSignature
+		ev.ConflictingBlock.VoterSet,
 		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour, types.DefaultVoterParams())
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "evidence contained unexpected byzantine validator voting power;")
@@ -145,7 +145,7 @@ func TestVerifyLightClientAttack_validateABCIEvidence(t *testing.T) {
 	ev.ByzantineValidators = phantomVoterSet.Voters
 	err = evidence.VerifyLightClientAttack(ev, common.SignedHeader, trusted.SignedHeader,
 		common.ValidatorSet,
-		ev.ConflictingBlock.VoterSet, // Should use correct VoterSet for bls.VerifyAggregatedSignature
+		ev.ConflictingBlock.VoterSet,
 		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour, types.DefaultVoterParams())
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "evidence contained unexpected byzantine validator voting weight;")
@@ -172,7 +172,6 @@ func TestVerify_LunaticAttackAgainstState(t *testing.T) {
 	}
 	stateStore := &smmocks.Store{}
 	stateStore.On("LoadValidators", commonHeight).Return(common.ValidatorSet, nil)
-	// Should use correct VoterSet for bls.VerifyAggregatedSignature
 	stateStore.On("LoadVoters", commonHeight, state.VoterParams).Return(
 		common.ValidatorSet, ev.ConflictingBlock.VoterSet, state.VoterParams, state.LastProofHash, nil)
 	stateStore.On("Load").Return(state, nil)
@@ -251,7 +250,6 @@ func TestVerify_ForwardLunaticAttack(t *testing.T) {
 
 	stateStore := &smmocks.Store{}
 	stateStore.On("LoadValidators", commonHeight).Return(common.ValidatorSet, nil)
-	// Should use correct VoterSet for bls.VerifyAggregatedSignature
 	stateStore.On("LoadVoters", commonHeight, state.VoterParams).Return(
 		common.ValidatorSet, ev.ConflictingBlock.VoterSet, state.VoterParams, state.LastProofHash, nil)
 	stateStore.On("Load").Return(state, nil)
@@ -373,7 +371,6 @@ func TestVerifyLightClientAttack_Equivocation(t *testing.T) {
 	}
 	stateStore := &smmocks.Store{}
 	stateStore.On("LoadValidators", int64(10)).Return(conflictingVals, nil)
-	// Should use correct VoterSet for bls.VerifyAggregatedSignature
 	stateStore.On("LoadVoters", int64(10), state.VoterParams).Return(
 		conflictingVals, conflictingVoters, state.VoterParams, state.LastProofHash, nil)
 	stateStore.On("Load").Return(state, nil)
@@ -472,7 +469,6 @@ func TestVerifyLightClientAttack_Amnesia(t *testing.T) {
 	}
 	stateStore := &smmocks.Store{}
 	stateStore.On("LoadValidators", int64(10)).Return(conflictingVals, nil)
-	// Should use correct VoterSet for bls.VerifyAggregatedSignature
 	stateStore.On("LoadVoters", int64(10), state.VoterParams).Return(
 		conflictingVals, conflictingVoters, state.VoterParams, state.LastProofHash, nil)
 	stateStore.On("Load").Return(state, nil)
@@ -499,8 +495,8 @@ type voteData struct {
 }
 
 func TestVerifyDuplicateVoteEvidence(t *testing.T) {
-	val := types.NewMockPV(types.PrivKeyComposite) // TODO 🏺 need to test by all key types
-	val2 := types.NewMockPV(types.PrivKeyComposite)
+	val := types.NewMockPV()
+	val2 := types.NewMockPV()
 	valSet := types.NewValidatorSet([]*types.Validator{val.ExtractIntoValidator(1)})
 	voterSet := types.ToVoterAll(valSet.Validators)
 
@@ -570,7 +566,6 @@ func TestVerifyDuplicateVoteEvidence(t *testing.T) {
 		VoterParams:     types.DefaultVoterParams(),
 	}
 	stateStore := &smmocks.Store{}
-	// Should use correct VoterSet for bls.VerifyAggregatedSignature
 	stateStore.On("LoadVoters", int64(10), state.VoterParams).Return(
 		valSet, voterSet, state.VoterParams, state.LastProofHash, nil)
 	stateStore.On("Load").Return(state, nil)

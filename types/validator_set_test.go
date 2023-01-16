@@ -414,21 +414,21 @@ func randValidatorSet(numValidators int) *ValidatorSet {
 	return NewValidatorSet(validators)
 }
 
-func randValidatorWithMinMax(keyType PrivKeyType, min, max int64) (*Validator, PrivValidator) {
-	privVal := NewMockPV(keyType)
+func randValidatorWithMinMax(min, max int64) (*Validator, PrivValidator) {
+	privVal := NewMockPV()
 	pubKey, _ := privVal.GetPubKey()
 	val := NewValidator(pubKey, min+int64(tmrand.Uint64()%uint64(1+max-min)))
 	val.ProposerPriority = min + tmrand.Int64()%max
 	return val, privVal
 }
 
-func randValidatorSetWithMinMax(keyType PrivKeyType, numValidators int, min, max int64) (*ValidatorSet,
+func randValidatorSetWithMinMax(numValidators int, min, max int64) (*ValidatorSet,
 	map[string]PrivValidator) {
 	validators := make([]*Validator, numValidators)
 	privMap := make(map[string]PrivValidator)
 	var privVal PrivValidator
 	for i := 0; i < numValidators; i++ {
-		validators[i], privVal = randValidatorWithMinMax(keyType, min, max)
+		validators[i], privVal = randValidatorWithMinMax(min, max)
 		privMap[validators[i].Address.String()] = privVal
 	}
 	return NewValidatorSet(validators), privMap
@@ -1326,7 +1326,7 @@ func TestNewValidatorSetFromExistingValidators(t *testing.T) {
 	size := 5
 	vals := make([]*Validator, size)
 	for i := 0; i < size; i++ {
-		pv := NewMockPV(PrivKeyComposite) // TODO 🏺 need to test by all key types
+		pv := NewMockPV()
 		vals[i] = pv.ExtractIntoValidator(int64(i + 1))
 	}
 	valSet := NewValidatorSet(vals)

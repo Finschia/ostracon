@@ -188,11 +188,7 @@ func ValidatorFromProto(vp *tmproto.Validator) (*Validator, error) {
 // RandValidator returns a randomized validator, useful for testing.
 // UNSTABLE
 func RandValidator(randPower bool, minPower int64) (*Validator, PrivValidator) {
-	return RandValidatorForPrivKey(RandomKeyType(), randPower, minPower)
-}
-
-func RandValidatorForPrivKey(keyType PrivKeyType, randPower bool, minPower int64) (*Validator, PrivValidator) {
-	privVal := NewMockPV(keyType)
+	privVal := NewMockPV()
 	votingPower := minPower
 	if randPower {
 		votingPower += int64(tmrand.Uint32())

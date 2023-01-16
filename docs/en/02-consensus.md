@@ -65,8 +65,6 @@ By repeating this sequence of rounds, fair random sampling can be chained across
 
 Recall here that the node that receives the block can deterministically calculate which nodes are the next Proposer and Voters. By revealing the nodes that are responsible for generating and verifying blocks in a given round, we can penalize nodes that are elected but don't actually perform their responsibility or that behave malicious actions such as Eclipse attacks. On the other hand, it's still difficult to predict the Proposer and Voters beyond one block, as they are only revealed for the minimum necessary time.
 
-VRF is currently implemented using Ed25519, and even if a node uses BLS signatures, it also has an Ed25519 key to calculate VRF.
-
 ## Voters
 
 In the Ostracon network, Validators mean candidate nodes that hold Stakes and can be elected as Proposers or Voters. The Voters (a subset of Validators) are a new concept introduced in Ostracon for two reasons; first, to make the distribution of rewards to nodes elected as Voters flexible, and second, to allow the ratio of Byzantine assumptions to be changed in networks with different trust policies for the participant nodes (as a result of the configuration, if the number of Voters is set to match the number of Validators, the behavior will be the same as in Tendermint).

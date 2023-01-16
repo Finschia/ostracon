@@ -137,15 +137,7 @@ func TestVoterSet_VerifyCommitLight_ReturnsAsSoonAsMajorityOfVotingWeightSigned(
 		blockID = makeBlockIDRandom()
 	)
 
-	// use only ed25519 because all signatures are verified, not "as soon as", when votes contain aggregated signature
-	privKeys := []crypto.PrivKey{
-		ed25519.GenPrivKey(),
-		ed25519.GenPrivKey(),
-		ed25519.GenPrivKey(),
-		ed25519.GenPrivKey(),
-	}
-
-	voteSet, _, voterSet, vals := randVoteSetForPrivKeys(h, 0, tmproto.PrecommitType, privKeys, 10)
+	voteSet, _, voterSet, vals := randVoteSet(h, 0, tmproto.PrecommitType, 4, 10)
 	commit, err := MakeCommit(blockID, h, 0, voteSet, vals, time.Now())
 	require.NoError(t, err)
 
@@ -168,15 +160,7 @@ func TestVoterSet_VerifyCommitLightTrusting_ReturnsAsSoonAsTrustLevelOfVotingWei
 		blockID = makeBlockIDRandom()
 	)
 
-	// use only ed25519 because all signatures are verified, not "as soon as", when votes contain aggregated signature
-	privKeys := []crypto.PrivKey{
-		ed25519.GenPrivKey(),
-		ed25519.GenPrivKey(),
-		ed25519.GenPrivKey(),
-		ed25519.GenPrivKey(),
-	}
-
-	voteSet, _, voterSet, vals := randVoteSetForPrivKeys(h, 0, tmproto.PrecommitType, privKeys, 10)
+	voteSet, _, voterSet, vals := randVoteSet(h, 0, tmproto.PrecommitType, 4, 10)
 	commit, err := MakeCommit(blockID, h, 0, voteSet, vals, time.Now())
 	require.NoError(t, err)
 
@@ -408,7 +392,7 @@ func BenchmarkSelectVoterReasonableVotingPower(b *testing.B) {
 }
 
 func findLargestVotingPowerGap(b *testing.B, loopCount int, minMaxRate int, maxVoters int) {
-	valSet, privMap := randValidatorSetWithMinMax(PrivKeyEd25519, 30, 100, 100*int64(minMaxRate))
+	valSet, privMap := randValidatorSetWithMinMax(30, 100, 100*int64(minMaxRate))
 	genDoc := &GenesisDoc{
 		GenesisTime: tmtime.Now(),
 		ChainID:     "ostracon-test",
@@ -457,7 +441,7 @@ func BenchmarkSelectVoterMaxVarious(b *testing.B) {
 		b.Logf("<<< min: 100, max: %d >>>", 100*minMaxRate)
 		for validators := 16; validators <= 256; validators *= 4 {
 			for voters := 1; voters <= validators; voters += 10 {
-				valSet, _ := randValidatorSetWithMinMax(PrivKeyEd25519, validators, 100, 100*int64(minMaxRate))
+				valSet, _ := randValidatorSetWithMinMax(validators, 100, 100*int64(minMaxRate))
 				voterSet := SelectVoter(valSet, []byte{byte(hash)}, &VoterParams{int32(voters), 20})
 				if voterSet.Size() < voters {
 					b.Logf("Cannot elect voters up to MaxVoters: validators=%d, MaxVoters=%d, actual voters=%d",

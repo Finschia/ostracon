@@ -10,7 +10,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/line/ostracon/crypto/bls"
 	"github.com/line/ostracon/crypto/merkle"
 	"github.com/line/ostracon/crypto/tmhash"
 	tmmath "github.com/line/ostracon/libs/math"
@@ -173,8 +172,6 @@ func (voters *VoterSet) VerifyCommit(chainID string, blockID BlockID, height int
 
 	talliedVotingWeight := int64(0)
 	requiredVotingWeight := voters.TotalVotingWeight() * 2 / 3 // FIXME: 🏺 arithmetic overflow
-	blsPubKeys := make([]bls.PubKey, 0, len(commit.Signatures))
-	messages := make([][]byte, 0, len(commit.Signatures))
 	for idx, commitSig := range commit.Signatures {
 		if commitSig.Absent() {
 			continue // OK, some signatures can be absent.
@@ -186,29 +183,20 @@ func (voters *VoterSet) VerifyCommit(chainID string, blockID BlockID, height int
 
 		// Validate signature.
 		voteSignBytes := commit.VoteSignBytes(chainID, int32(idx))
-		verifiedVotingWeight, unverifiedVotingWeight, err := verifySignatureOrCollectBlsPubKeysAndGetVotingWeight(
-			idx, commitSig, voter, voteSignBytes, &blsPubKeys, &messages)
-		if err != nil {
-			return err
+		if !voter.PubKey.VerifySignature(voteSignBytes, commitSig.Signature) {
+			return fmt.Errorf("wrong signature (#%d): %X", idx, commitSig.Signature)
 		}
 
 		// Good!
 		if commitSig.ForBlock() {
-			talliedVotingWeight += verifiedVotingWeight + unverifiedVotingWeight
+			talliedVotingWeight += voter.VotingWeight
 		}
-
 		// else {
 		// It's OK. We include stray signatures (~votes for nil) to measure
 		// voter availability.
 		// }
 	}
 
-	// Validate aggregate signature
-	if err := bls.VerifyAggregatedSignature(commit.AggregatedSignature, blsPubKeys, messages); err != nil {
-		return fmt.Errorf("wrong aggregated signature: %X; %s", commit.AggregatedSignature, err)
-	}
-
-	// add voting weight for BLS batch verification and return without error if trust-level of the signatures are verified
 	if got, needed := talliedVotingWeight, requiredVotingWeight; got <= needed {
 		return ErrNotEnoughVotingWeightSigned{Got: got, Needed: needed}
 	}
@@ -243,10 +231,7 @@ func (voters *VoterSet) VerifyCommitLight(chainID string, blockID BlockID,
 	}
 
 	talliedVotingWeight := int64(0)
-	talliedUnverifiedVotingWeight := int64(0)
 	requiredVotingWeight := voters.TotalVotingWeight() * 2 / 3 // FIXME: 🏺 arithmetic overflow
-	blsPubKeys := make([]bls.PubKey, 0, len(commit.Signatures))
-	messages := make([][]byte, 0, len(commit.Signatures))
 	for idx, commitSig := range commit.Signatures {
 		// No need to verify absent or nil votes.
 		if !commitSig.ForBlock() {
@@ -263,29 +248,16 @@ func (voters *VoterSet) VerifyCommitLight(chainID string, blockID BlockID,
 
 		// Validate signature.
 		voteSignBytes := commit.VoteSignBytes(chainID, int32(idx))
-		verifiedVotingWeight, unverifiedVotingWeight, err := verifySignatureOrCollectBlsPubKeysAndGetVotingWeight(
-			idx, commitSig, voter, voteSignBytes, &blsPubKeys, &messages)
-		if err != nil {
-			return err
+		if !voter.PubKey.VerifySignature(voteSignBytes, commitSig.Signature) {
+			return fmt.Errorf("wrong signature (#%d): %X", idx, commitSig.Signature)
 		}
 
-		talliedVotingWeight += verifiedVotingWeight
-		talliedUnverifiedVotingWeight += unverifiedVotingWeight
+		talliedVotingWeight += voter.VotingWeight
 
 		// return as soon as +2/3 of the signatures are verified by individual verification
 		if talliedVotingWeight > requiredVotingWeight {
 			return nil
 		}
-	}
-
-	// Validate aggregate signature
-	if err := bls.VerifyAggregatedSignature(commit.AggregatedSignature, blsPubKeys, messages); err != nil {
-		return fmt.Errorf("wrong aggregated signature: %X; %s", commit.AggregatedSignature, err)
-	}
-	// add voting weight for BLS batch verification and return without error if +2/3 of the signatures are verified
-	talliedVotingWeight += talliedUnverifiedVotingWeight
-	if talliedVotingWeight > requiredVotingWeight {
-		return nil
 	}
 
 	return ErrNotEnoughVotingWeightSigned{Got: talliedVotingWeight, Needed: requiredVotingWeight}
@@ -306,9 +278,8 @@ func (voters *VoterSet) VerifyCommitLightTrusting(chainID string, commit *Commit
 	}
 
 	var (
-		talliedVotingWeight           int64
-		talliedUnverifiedVotingWeight int64
-		seenVoters                    = make(map[int32]int, len(commit.Signatures)) // voter index -> commit index
+		talliedVotingWeight int64
+		seenVoters          = make(map[int32]int, len(commit.Signatures)) // voter index -> commit index
 	)
 
 	// Safely calculate voting weight needed.
@@ -319,8 +290,6 @@ func (voters *VoterSet) VerifyCommitLightTrusting(chainID string, commit *Commit
 	}
 	requiredVotingWeight := totalVotingWeightMulByNumerator / int64(trustLevel.Denominator)
 
-	blsPubKeys := make([]bls.PubKey, 0, len(commit.Signatures))
-	messages := make([][]byte, 0, len(commit.Signatures))
 	for idx, commitSig := range commit.Signatures {
 		// No need to verify absent or nil votes.
 		if !commitSig.ForBlock() {
@@ -341,14 +310,11 @@ func (voters *VoterSet) VerifyCommitLightTrusting(chainID string, commit *Commit
 
 			// Verify Signature
 			voteSignBytes := commit.VoteSignBytes(chainID, int32(idx))
-			verifiedVotingWeight, unverifiedVotingWeight, err := verifySignatureOrCollectBlsPubKeysAndGetVotingWeight(
-				idx, commitSig, voter, voteSignBytes, &blsPubKeys, &messages)
-			if err != nil {
-				return err
+			if !voter.PubKey.VerifySignature(voteSignBytes, commitSig.Signature) {
+				return fmt.Errorf("wrong signature (#%d): %X", idx, commitSig.Signature)
 			}
 
-			talliedVotingWeight += verifiedVotingWeight
-			talliedUnverifiedVotingWeight += unverifiedVotingWeight
+			talliedVotingWeight += voter.VotingWeight
 
 			if talliedVotingWeight > requiredVotingWeight {
 				return nil
@@ -356,46 +322,7 @@ func (voters *VoterSet) VerifyCommitLightTrusting(chainID string, commit *Commit
 		}
 	}
 
-	// Validate aggregate signature
-	if err := bls.VerifyAggregatedSignature(commit.AggregatedSignature, blsPubKeys, messages); err != nil {
-		return fmt.Errorf("wrong aggregated signature: %X; %s", commit.AggregatedSignature, err)
-	}
-	// add voting weight for BLS batch verification and return without error if trust-level of the signatures are verified
-	talliedVotingWeight += talliedUnverifiedVotingWeight
-	if talliedVotingWeight > requiredVotingWeight {
-		return nil
-	}
-
 	return ErrNotEnoughVotingWeightSigned{Got: talliedVotingWeight, Needed: requiredVotingWeight}
-}
-
-func verifySignatureOrCollectBlsPubKeysAndGetVotingWeight(
-	idx int, commitSig CommitSig, val *Validator, voteSignBytes []byte,
-	blsPubKeys *[]bls.PubKey, messages *[][]byte) (int64, int64, error) {
-	verifiedVotingWeight := int64(0)
-	unverifiedVotingWeight := int64(0)
-	if commitSig.Signature != nil {
-		if !val.PubKey.VerifySignature(voteSignBytes, commitSig.Signature) {
-			return verifiedVotingWeight, unverifiedVotingWeight, fmt.Errorf(
-				"wrong signature (#%d): %X",
-				idx,
-				commitSig.Signature,
-			)
-		}
-		verifiedVotingWeight = val.VotingWeight
-	} else {
-		blsPubKey := GetSignatureKey(val.PubKey)
-		if blsPubKey == nil {
-			return verifiedVotingWeight, unverifiedVotingWeight, fmt.Errorf(
-				"signature %d has been omitted, even though it is not a BLS key",
-				idx,
-			)
-		}
-		*blsPubKeys = append(*blsPubKeys, *blsPubKey)
-		*messages = append(*messages, voteSignBytes)
-		unverifiedVotingWeight = val.VotingWeight
-	}
-	return verifiedVotingWeight, unverifiedVotingWeight, nil
 }
 
 // ToProto converts VoterSet to protobuf

@@ -472,8 +472,7 @@ func loadPrivValidator(config *cfg.Config) *privval.FilePV {
 	privValidatorKeyFile := config.PrivValidatorKeyFile()
 	ensureDir(filepath.Dir(privValidatorKeyFile), 0700)
 	privValidatorStateFile := config.PrivValidatorStateFile()
-	privKeyType := config.PrivValidatorKeyType()
-	privValidator, _ := privval.LoadOrGenFilePV(privValidatorKeyFile, privValidatorStateFile, privKeyType)
+	privValidator := privval.LoadOrGenFilePV(privValidatorKeyFile, privValidatorStateFile)
 	privValidator.Reset()
 	return privValidator
 }
@@ -868,28 +867,6 @@ func randConsensusNet(nValidators int, testName string, tickerFunc func() Timeou
 	}
 }
 
-// nPeers = nValidators(ed25519 or composite) + nNotValidator
-// (0 <= numOfComposite <= nValidators)
-func consensusNetWithPeers(
-	nValidators,
-	nPeers int,
-	testName string,
-	tickerFunc func() TimeoutTicker,
-	appFunc func(string) abci.Application,
-	nValsWithComposite int,
-) ([]*State, *types.GenesisDoc, *cfg.Config, cleanupFunc) {
-	genDoc, privVals := genesisDoc(nValidators, testMinPower, types.DefaultVoterParams(), nValsWithComposite)
-
-	css, peer0Config, configRootDirs := createPeersAndValidators(nValidators, nPeers, testName,
-		genDoc, privVals, tickerFunc, appFunc)
-
-	return css, genDoc, peer0Config, func() {
-		for _, dir := range configRootDirs {
-			os.RemoveAll(dir)
-		}
-	}
-}
-
 // nPeers = nValidators + nNotValidator
 func randConsensusNetWithPeers(
 	nValidators,
@@ -939,7 +916,7 @@ func createPeersAndValidators(nValidators, nPeers int, testName string,
 				panic(err)
 			}
 
-			privVal, _ = privval.GenFilePV(tempKeyFile.Name(), tempStateFile.Name(), privval.PrivKeyTypeEd25519)
+			privVal = privval.GenFilePV(tempKeyFile.Name(), tempStateFile.Name())
 		}
 
 		app := appFunc(path.Join(config.DBDir(), fmt.Sprintf("%s_%d", testName, i)))
@@ -970,41 +947,6 @@ func getSwitchIndex(switches []*p2p.Switch, peer p2p.Peer) int {
 
 //-------------------------------------------------------------------------------
 // genesis
-func genesisDoc(
-	numValidators int,
-	minPower int64,
-	voterParams *types.VoterParams,
-	nValsWithComposite int,
-) (*types.GenesisDoc, []types.PrivValidator) {
-	validators := make([]types.GenesisValidator, numValidators)
-	privValidators := make([]types.PrivValidator, numValidators)
-	var val *types.Validator
-	var privVal types.PrivValidator
-	for i := 0; i < nValsWithComposite; i++ {
-		val, privVal = createTestValidator(minPower, types.PrivKeyComposite)
-		validators[i] = types.GenesisValidator{
-			PubKey: val.PubKey,
-			Power:  val.VotingPower,
-		}
-		privValidators[i] = privVal
-	}
-	for i := nValsWithComposite; i < numValidators; i++ {
-		val, privVal = createTestValidator(minPower, types.PrivKeyEd25519)
-		validators[i] = types.GenesisValidator{
-			PubKey: val.PubKey,
-			Power:  val.VotingPower,
-		}
-		privValidators[i] = privVal
-	}
-	sort.Sort(types.PrivValidatorsByAddress(privValidators))
-
-	return &types.GenesisDoc{
-		GenesisTime: tmtime.Now(),
-		ChainID:     config.ChainID(),
-		Validators:  validators,
-		VoterParams: voterParams,
-	}, privValidators
-}
 
 func randGenesisDoc(
 	numValidators int,
@@ -1117,19 +1059,4 @@ func signDataIsEqual(v1 *types.Vote, v2 *tmproto.Vote) bool {
 		v1.Round == v2.Round &&
 		bytes.Equal(v1.ValidatorAddress.Bytes(), v2.GetValidatorAddress()) &&
 		v1.ValidatorIndex == v2.GetValidatorIndex()
-}
-
-//----------------------------------------
-// Validator
-func createTestValidator(minPower int64, keytype types.PrivKeyType) (*types.Validator, types.PrivValidator) {
-	privVal := types.NewMockPV(keytype)
-	votingPower := minPower
-	votingPower += 100
-
-	pubKey, err := privVal.GetPubKey()
-	if err != nil {
-		panic(fmt.Errorf("could not retrieve pubkey %w", err))
-	}
-	val := types.NewValidator(pubKey, votingPower)
-	return val, privVal
 }

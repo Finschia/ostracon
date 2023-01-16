@@ -220,7 +220,7 @@ func existInPersistStore(t *testing.T, kvstore types.Application, v types.Valida
 	pubkeyStr, _ := MakeValSetChangeTxAndMore(v.PubKey, v.Power)
 	resQuery := kvstore.Query(types.RequestQuery{Path: "/val", Data: []byte(pubkeyStr)})
 	assert.False(t, resQuery.IsErr(), resQuery)
-	assert.Regexp(t, "^key=.+, validatorUpdate.PubKey=.+, validatorUpdate.Power=.+$", resQuery.Log)
+	assert.Equal(t, "", resQuery.Log)
 	// failures
 	{
 		// default Query: does not exist
@@ -232,7 +232,7 @@ func existInPersistStore(t *testing.T, kvstore types.Application, v types.Valida
 		// Query: does not exist
 		r := kvstore.Query(types.RequestQuery{Path: "/val", Data: []byte{}})
 		assert.False(t, r.IsErr(), r)
-		assert.Contains(t, r.Log, "cannot get")
+		assert.Equal(t, "", resQuery.Log)
 	}
 }
 

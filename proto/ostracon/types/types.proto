@@ -119,11 +119,6 @@ message Commit {
   int32              round      = 2;
   BlockID            block_id   = 3 [(gogoproto.nullable) = false, (gogoproto.customname) = "BlockID"];
   repeated CommitSig signatures = 4 [(gogoproto.nullable) = false];
-
-  // *** Ostracon Extended Fields ***
-
-  // Additional field that LINE Blockchain uses for aggregated signature.
-  bytes aggregated_signature = 1000;
 }
 
 // CommitSig is a part of the Vote included in a Commit.

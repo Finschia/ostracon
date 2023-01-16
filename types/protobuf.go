@@ -3,8 +3,6 @@ package types
 import (
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/bls"
-	"github.com/line/ostracon/crypto/composite"
 	"github.com/line/ostracon/crypto/ed25519"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
 	"github.com/line/ostracon/crypto/secp256k1"
@@ -15,19 +13,15 @@ import (
 // Use strings to distinguish types in ABCI messages
 
 const (
-	ABCIPubKeyTypeBls12WithEd25519 = composite.KeyTypeBlsWithEd25519
-	ABCIPubKeyTypeEd25519          = ed25519.KeyType
-	ABCIPubKeyTypeSecp256k1        = secp256k1.KeyType
-	ABCIPubKeyTypeBls12            = bls.KeyType
+	ABCIPubKeyTypeEd25519   = ed25519.KeyType
+	ABCIPubKeyTypeSecp256k1 = secp256k1.KeyType
 )
 
 // TODO: Make non-global by allowing for registration of more pubkey types
 
 var ABCIPubKeyTypesToNames = map[string]string{
-	ABCIPubKeyTypeBls12WithEd25519: composite.PubKeyName,
-	ABCIPubKeyTypeEd25519:          ed25519.PubKeyName,
-	ABCIPubKeyTypeSecp256k1:        secp256k1.PubKeyName,
-	ABCIPubKeyTypeBls12:            bls.PubKeyName,
+	ABCIPubKeyTypeEd25519:   ed25519.PubKeyName,
+	ABCIPubKeyTypeSecp256k1: secp256k1.PubKeyName,
 }
 
 //-------------------------------------------------------

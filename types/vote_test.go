@@ -47,16 +47,6 @@ func exampleVote(t byte) *Vote {
 	}
 }
 
-func isEqualVoteWithoutSignature(t *testing.T, vote1, vote2 *Vote) {
-	assert.Equal(t, vote1.Type, vote2.Type)
-	assert.Equal(t, vote1.Height, vote2.Height)
-	assert.Equal(t, vote1.Round, vote2.Round)
-	assert.Equal(t, vote1.BlockID, vote2.BlockID)
-	assert.Equal(t, vote1.Timestamp, vote2.Timestamp)
-	assert.Equal(t, vote1.ValidatorAddress, vote2.ValidatorAddress)
-	assert.Equal(t, vote1.ValidatorIndex, vote2.ValidatorIndex)
-}
-
 func TestVoteSignable(t *testing.T) {
 	vote := examplePrecommit()
 	v := vote.ToProto()
@@ -158,36 +148,34 @@ func TestVoteProposalNotEq(t *testing.T) {
 }
 
 func TestVoteVerifySignature(t *testing.T) {
-	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
-		privVal := NewMockPV(kt)
-		pubkey, err := privVal.GetPubKey()
-		require.NoError(t, err)
+	privVal := NewMockPV()
+	pubkey, err := privVal.GetPubKey()
+	require.NoError(t, err)
 
-		vote := examplePrecommit()
-		v := vote.ToProto()
-		signBytes := VoteSignBytes("test_chain_id", v)
+	vote := examplePrecommit()
+	v := vote.ToProto()
+	signBytes := VoteSignBytes("test_chain_id", v)
 
-		// sign it
-		err = privVal.SignVote("test_chain_id", v)
-		require.NoError(t, err)
+	// sign it
+	err = privVal.SignVote("test_chain_id", v)
+	require.NoError(t, err)
 
-		// verify the same vote
-		valid := pubkey.VerifySignature(VoteSignBytes("test_chain_id", v), v.Signature)
-		require.True(t, valid)
+	// verify the same vote
+	valid := pubkey.VerifySignature(VoteSignBytes("test_chain_id", v), v.Signature)
+	require.True(t, valid)
 
-		// serialize, deserialize and verify again....
-		precommit := new(tmproto.Vote)
-		bs, err := proto.Marshal(v)
-		require.NoError(t, err)
-		err = proto.Unmarshal(bs, precommit)
-		require.NoError(t, err)
+	// serialize, deserialize and verify again....
+	precommit := new(tmproto.Vote)
+	bs, err := proto.Marshal(v)
+	require.NoError(t, err)
+	err = proto.Unmarshal(bs, precommit)
+	require.NoError(t, err)
 
-		// verify the transmitted vote
-		newSignBytes := VoteSignBytes("test_chain_id", precommit)
-		require.Equal(t, string(signBytes), string(newSignBytes))
-		valid = pubkey.VerifySignature(newSignBytes, precommit.Signature)
-		require.True(t, valid)
-	})
+	// verify the transmitted vote
+	newSignBytes := VoteSignBytes("test_chain_id", precommit)
+	require.Equal(t, string(signBytes), string(newSignBytes))
+	valid = pubkey.VerifySignature(newSignBytes, precommit.Signature)
+	require.True(t, valid)
 }
 
 func TestIsVoteTypeValid(t *testing.T) {
@@ -212,24 +200,22 @@ func TestIsVoteTypeValid(t *testing.T) {
 }
 
 func TestVoteVerify(t *testing.T) {
-	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
-		privVal := NewMockPV(kt)
-		pubkey, err := privVal.GetPubKey()
-		require.NoError(t, err)
+	privVal := NewMockPV()
+	pubkey, err := privVal.GetPubKey()
+	require.NoError(t, err)
 
-		vote := examplePrevote()
-		vote.ValidatorAddress = pubkey.Address()
+	vote := examplePrevote()
+	vote.ValidatorAddress = pubkey.Address()
 
-		err = vote.Verify("test_chain_id", ed25519.GenPrivKey().PubKey())
-		if assert.Error(t, err) {
-			assert.Equal(t, ErrVoteInvalidValidatorAddress, err)
-		}
+	err = vote.Verify("test_chain_id", ed25519.GenPrivKey().PubKey())
+	if assert.Error(t, err) {
+		assert.Equal(t, ErrVoteInvalidValidatorAddress, err)
+	}
 
-		err = vote.Verify("test_chain_id", pubkey)
-		if assert.Error(t, err) {
-			assert.Equal(t, ErrVoteInvalidSignature, err)
-		}
-	})
+	err = vote.Verify("test_chain_id", pubkey)
+	if assert.Error(t, err) {
+		assert.Equal(t, ErrVoteInvalidSignature, err)
+	}
 }
 
 func TestMaxVoteBytes(t *testing.T) {
@@ -252,16 +238,14 @@ func TestMaxVoteBytes(t *testing.T) {
 		},
 	}
 
-	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
-		privVal := NewMockPV(kt)
-		pbVote := vote.ToProto()
-		err := privVal.SignVote("test_chain_id", pbVote)
-		require.NoError(t, err)
+	privVal := NewMockPV()
+	pbVote := vote.ToProto()
+	err := privVal.SignVote("test_chain_id", pbVote)
+	require.NoError(t, err)
 
-		bz, err := pbVote.Marshal()
-		require.NoError(t, err)
-		assert.Equal(t, MaxVoteBytes(len(pbVote.Signature)), int64(len(bz)))
-	})
+	bz, err := pbVote.Marshal()
+	require.NoError(t, err)
+	assert.Equal(t, MaxVoteBytes, int64(len(bz)))
 }
 
 func TestVoteString(t *testing.T) {
@@ -295,51 +279,47 @@ func TestVoteValidateBasic(t *testing.T) {
 		{"Invalid Signature", func(v *Vote) { v.Signature = nil }, true},
 		{"Too big Signature", func(v *Vote) { v.Signature = make([]byte, MaxSignatureSize+1) }, true},
 	}
-	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
-		privVal := NewMockPV(kt)
-		for _, tc := range testCases {
-			tc := tc
-			t.Run(tc.testName, func(t *testing.T) {
-				vote := examplePrecommit()
-				v := vote.ToProto()
-				err := privVal.SignVote("test_chain_id", v)
-				vote.Signature = v.Signature
-				require.NoError(t, err)
-				tc.malleateVote(vote)
-				assert.Equal(t, tc.expectErr, vote.ValidateBasic() != nil, "Validate Basic had an unexpected result")
-			})
-		}
-	})
+	privVal := NewMockPV()
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.testName, func(t *testing.T) {
+			vote := examplePrecommit()
+			v := vote.ToProto()
+			err := privVal.SignVote("test_chain_id", v)
+			vote.Signature = v.Signature
+			require.NoError(t, err)
+			tc.malleateVote(vote)
+			assert.Equal(t, tc.expectErr, vote.ValidateBasic() != nil, "Validate Basic had an unexpected result")
+		})
+	}
 }
 
 func TestVoteProtobuf(t *testing.T) {
-	forAllPrivKeyTypes(t, func(t *testing.T, name string, kt PrivKeyType) {
-		privVal := NewMockPV(kt)
-		vote := examplePrecommit()
-		v := vote.ToProto()
-		err := privVal.SignVote("test_chain_id", v)
-		vote.Signature = v.Signature
-		require.NoError(t, err)
+	privVal := NewMockPV()
+	vote := examplePrecommit()
+	v := vote.ToProto()
+	err := privVal.SignVote("test_chain_id", v)
+	vote.Signature = v.Signature
+	require.NoError(t, err)
 
-		testCases := []struct {
-			msg     string
-			v1      *Vote
-			expPass bool
-		}{
-			{"success", vote, true},
-			{"fail vote validate basic", &Vote{}, false},
-			{"failure nil", nil, false},
-		}
-		for _, tc := range testCases {
-			protoProposal := tc.v1.ToProto()
+	testCases := []struct {
+		msg     string
+		v1      *Vote
+		expPass bool
+	}{
+		{"success", vote, true},
+		{"fail vote validate basic", &Vote{}, false},
+		{"failure nil", nil, false},
+	}
+	for _, tc := range testCases {
+		protoProposal := tc.v1.ToProto()
 
-			v, err := VoteFromProto(protoProposal)
-			if tc.expPass {
-				require.NoError(t, err)
-				require.Equal(t, tc.v1, v, tc.msg)
-			} else {
-				require.Error(t, err)
-			}
+		v, err := VoteFromProto(protoProposal)
+		if tc.expPass {
+			require.NoError(t, err)
+			require.Equal(t, tc.v1, v, tc.msg)
+		} else {
+			require.Error(t, err)
 		}
-	})
+	}
 }

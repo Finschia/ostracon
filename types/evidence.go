@@ -20,12 +20,12 @@ import (
 func MaxEvidenceBytes(ev Evidence) int64 {
 	switch ev := ev.(type) {
 	case *DuplicateVoteEvidence:
-		return (1 + MaxVoteBytes(len(ev.VoteA.Signature)) + 2) + // VoteA
-			(1 + MaxVoteBytes(len(ev.VoteB.Signature)) + 2) + // VoteB
+		return (1 + MaxVoteBytes + 2) + // VoteA
+			(1 + MaxVoteBytes + 2) + // VoteB
 			(1 + 9) + // TotalVotingPower
 			(1 + 9) + // ValidatorPower
-			//(1 + 9) + // VotingWeight is not include
-			(1 + 17 + 1) // Timestamp
+			(1 + 17 + 1) + // Timestamp
+			(2 + 9) // VotingWeight is not include
 	case *LightClientAttackEvidence:
 		// FIXME 🏺 need this?
 		return 0
@@ -576,7 +576,7 @@ func (err *ErrEvidenceOverflow) Error() string {
 
 // assumes the round to be 0 and the validator index to be 0
 func NewMockDuplicateVoteEvidence(height int64, time time.Time, chainID string) *DuplicateVoteEvidence {
-	val := NewMockPV(PrivKeyEd25519)
+	val := NewMockPV()
 	return NewMockDuplicateVoteEvidenceWithValidator(height, time, val, chainID)
 }
 

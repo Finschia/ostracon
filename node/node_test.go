@@ -172,7 +172,7 @@ func TestNodeSetPrivValTCP(t *testing.T) {
 	signerServer := privval.NewSignerServer(
 		dialerEndpoint,
 		config.ChainID(),
-		types.NewMockPV(types.PrivKeyEd25519),
+		types.NewMockPV(),
 	)
 
 	go func() {
@@ -218,7 +218,7 @@ func TestNodeSetPrivValIPC(t *testing.T) {
 	pvsc := privval.NewSignerServer(
 		dialerEndpoint,
 		config.ChainID(),
-		types.NewMockPV(types.PrivKeyEd25519),
+		types.NewMockPV(),
 	)
 
 	go func() {
@@ -426,10 +426,8 @@ func TestNodeNewNodeCustomReactors(t *testing.T) {
 	nodeKey, err := p2p.LoadOrGenNodeKey(config.NodeKeyFile())
 	require.NoError(t, err)
 
-	pvKey, _ := privval.LoadOrGenFilePV(config.PrivValidatorKeyFile(), config.PrivValidatorStateFile(),
-		config.PrivValidatorKeyType())
 	n, err := NewNode(config,
-		pvKey,
+		privval.LoadOrGenFilePV(config.PrivValidatorKeyFile(), config.PrivValidatorStateFile()),
 		nodeKey,
 		proxy.DefaultClientCreator(config.ProxyApp, config.ABCI, config.DBDir()),
 		DefaultGenesisDocProviderFunc(config),
@@ -463,10 +461,8 @@ func TestNodeNewNodeTxIndexIndexer(t *testing.T) {
 		nodeKey, err := p2p.LoadOrGenNodeKey(config.NodeKeyFile())
 		require.NoError(t, err)
 
-		pvKey, _ := privval.LoadOrGenFilePV(config.PrivValidatorKeyFile(), config.PrivValidatorStateFile(),
-			config.PrivValidatorKeyType())
 		return NewNode(config,
-			pvKey,
+			privval.LoadOrGenFilePV(config.PrivValidatorKeyFile(), config.PrivValidatorStateFile()),
 			nodeKey,
 			proxy.DefaultClientCreator(config.ProxyApp, config.ABCI, config.DBDir()),
 			DefaultGenesisDocProviderFunc(config),
@@ -600,10 +596,8 @@ func TestNodeInvalidNodeInfoCustomReactors(t *testing.T) {
 	nodeKey, err := p2p.LoadOrGenNodeKey(config.NodeKeyFile())
 	require.NoError(t, err)
 
-	pvKey, _ := privval.LoadOrGenFilePV(config.PrivValidatorKeyFile(), config.PrivValidatorStateFile(),
-		config.PrivValidatorKeyType())
 	_, err = NewInvalidNode(config,
-		pvKey,
+		privval.LoadOrGenFilePV(config.PrivValidatorKeyFile(), config.PrivValidatorStateFile()),
 		nodeKey,
 		proxy.DefaultClientCreator(config.ProxyApp, config.ABCI, config.DBDir()),
 		DefaultGenesisDocProviderFunc(config),

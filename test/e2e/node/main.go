@@ -122,11 +122,7 @@ func startNode(cfg *Config) error {
 		return fmt.Errorf("failed to setup config: %w", err)
 	}
 
-	privVal, err := privval.LoadOrGenFilePV(
-		tmcfg.PrivValidatorKeyFile(),
-		tmcfg.PrivValidatorStateFile(),
-		privval.PrivKeyTypeEd25519,
-	)
+	privVal := privval.LoadOrGenFilePV(tmcfg.PrivValidatorKeyFile(), tmcfg.PrivValidatorStateFile())
 	if err != nil {
 		return fmt.Errorf("failed to load/generate FilePV%w", err)
 	}

@@ -9,9 +9,8 @@ import (
 	"time"
 
 	abci "github.com/line/ostracon/abci/types"
-	"github.com/line/ostracon/libs/log"
-
 	cfg "github.com/line/ostracon/config"
+	"github.com/line/ostracon/libs/log"
 	tmnet "github.com/line/ostracon/libs/net"
 	nm "github.com/line/ostracon/node"
 	"github.com/line/ostracon/p2p"
@@ -161,8 +160,7 @@ func NewOstracon(app abci.Application, opts *Options) *nm.Node {
 	}
 	pvKeyFile := config.PrivValidatorKeyFile()
 	pvKeyStateFile := config.PrivValidatorStateFile()
-	pvKeyType := config.PrivValidatorKeyType()
-	pv, _ := privval.LoadOrGenFilePV(pvKeyFile, pvKeyStateFile, pvKeyType)
+	pv := privval.LoadOrGenFilePV(pvKeyFile, pvKeyStateFile)
 	papp := proxy.NewLocalClientCreator(app)
 	nodeKey, err := p2p.LoadOrGenNodeKey(config.NodeKeyFile())
 	if err != nil {

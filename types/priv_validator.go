@@ -5,11 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/line/ostracon/libs/rand"
-
 	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/bls"
-	"github.com/line/ostracon/crypto/composite"
 	"github.com/line/ostracon/crypto/ed25519"
 	tmproto "github.com/line/ostracon/proto/ostracon/types"
 )
@@ -59,37 +55,8 @@ type MockPV struct {
 	breakVoteSigning     bool
 }
 
-type PrivKeyType int
-
-const (
-	PrivKeyEd25519 PrivKeyType = iota
-	PrivKeyComposite
-	PrivKeyBLS
-)
-
-func NewMockPV(keyType PrivKeyType) MockPV {
-	switch keyType {
-	case PrivKeyEd25519:
-		return MockPV{ed25519.GenPrivKey(), false, false}
-	case PrivKeyComposite:
-		return MockPV{composite.GenPrivKey(), false, false}
-	case PrivKeyBLS:
-		return MockPV{bls.GenPrivKey(), false, false}
-	default:
-		panic(fmt.Sprintf("known pv key type: %d", keyType))
-	}
-}
-
-func PrivKeyTypeByPubKey(pubKey crypto.PubKey) PrivKeyType {
-	switch pubKey.(type) {
-	case ed25519.PubKey:
-		return PrivKeyEd25519
-	case composite.PubKey:
-		return PrivKeyComposite
-	case bls.PubKey:
-		return PrivKeyBLS
-	}
-	panic(fmt.Sprintf("unknown public key type: %v", pubKey))
+func NewMockPV() MockPV {
+	return MockPV{ed25519.GenPrivKey(), false, false}
 }
 
 // NewMockPVWithParams allows one to create a MockPV instance, but with finer
@@ -182,18 +149,4 @@ func (pv *ErroringMockPV) SignProposal(chainID string, proposal *tmproto.Proposa
 
 func NewErroringMockPV() *ErroringMockPV {
 	return &ErroringMockPV{MockPV{ed25519.GenPrivKey(), false, false}}
-}
-
-// ========================================
-
-// RandomKeyType for testing
-func RandomKeyType() PrivKeyType {
-	r := rand.Uint32() % 2
-	switch r {
-	case 0:
-		return PrivKeyEd25519
-	case 1:
-		return PrivKeyComposite
-	}
-	return PrivKeyEd25519
 }

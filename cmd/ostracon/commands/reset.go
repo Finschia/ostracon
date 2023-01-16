@@ -40,10 +40,6 @@ var ResetStateCmd = &cobra.Command{
 
 func init() {
 	ResetAllCmd.Flags().BoolVar(&keepAddrBook, "keep-addr-book", false, "keep the address book intact")
-	ResetAllCmd.Flags().String("priv_key_type", config.PrivKeyType,
-		"Specify validator's private key type (ed25519 | composite)")
-	ResetPrivValidatorCmd.Flags().String("priv_key_type", config.PrivKeyType,
-		"Specify validator's private key type (ed25519 | composite)")
 }
 
 // ResetPrivValidatorCmd resets the private validator files.
@@ -68,7 +64,6 @@ func resetAllCmd(cmd *cobra.Command, args []string) (err error) {
 		config.P2P.AddrBookFile(),
 		config.PrivValidatorKeyFile(),
 		config.PrivValidatorStateFile(),
-		config.PrivValidatorKeyType(),
 		logger,
 	)
 }
@@ -81,13 +76,12 @@ func resetPrivValidator(cmd *cobra.Command, args []string) (err error) {
 		return err
 	}
 
-	return resetFilePV(config.PrivValidatorKeyFile(), config.PrivValidatorStateFile(),
-		config.PrivValidatorKeyType(), logger)
-
+	resetFilePV(config.PrivValidatorKeyFile(), config.PrivValidatorStateFile(), logger)
+	return nil
 }
 
 // resetAll removes address book files plus all data, and resets the privValdiator data.
-func resetAll(dbDir, addrBookFile, privValKeyFile, privValStateFile, privKeyType string, logger log.Logger) error {
+func resetAll(dbDir, addrBookFile, privValKeyFile, privValStateFile string, logger log.Logger) error {
 	if keepAddrBook {
 		logger.Info("The address book remains intact")
 	} else {
@@ -105,7 +99,8 @@ func resetAll(dbDir, addrBookFile, privValKeyFile, privValStateFile, privKeyType
 	}
 
 	// recreate the dbDir since the privVal state needs to live there
-	return resetFilePV(privValKeyFile, privValStateFile, privKeyType, logger)
+	resetFilePV(privValKeyFile, privValStateFile, logger)
+	return nil
 }
 
 // resetState removes address book files plus all databases.
@@ -162,7 +157,7 @@ func resetState(dbDir string, logger log.Logger) error {
 	return nil
 }
 
-func resetFilePV(privValKeyFile, privValStateFile, privKeyType string, logger log.Logger) error {
+func resetFilePV(privValKeyFile, privValStateFile string, logger log.Logger) {
 	if _, err := os.Stat(privValKeyFile); err == nil {
 		pv := privval.LoadFilePVEmptyState(privValKeyFile, privValStateFile)
 		pv.Reset()
@@ -172,7 +167,7 @@ func resetFilePV(privValKeyFile, privValStateFile, privKeyType string, logger lo
 			"stateFile", privValStateFile,
 		)
 	} else {
-		pv, _ := privval.GenFilePV(privValKeyFile, privValStateFile, privKeyType)
+		pv := privval.GenFilePV(privValKeyFile, privValStateFile)
 		pv.Save()
 		logger.Info(
 			"Generated private validator file",
@@ -180,7 +175,6 @@ func resetFilePV(privValKeyFile, privValStateFile, privKeyType string, logger lo
 			"stateFile", privValStateFile,
 		)
 	}
-	return nil
 }
 
 func removeAddrBook(addrBookFile string, logger log.Logger) {
