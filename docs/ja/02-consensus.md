@@ -9,41 +9,45 @@ Extending Tendermint-BFT with VRF-based Election
 Tendermint-BFT に基づく Ostracon のブロック生成メカニズムは以下の 3 つのフェーズで構成されています。
 ここで、ブロックの世代を*高さ*、この 3 つのブロック承認プロセスを*ラウンド*と呼んでいます。
 
-**選出フェーズ**. 候補ノードの中から １ つの Proposer と複数の Voter を選出します。これは一般的な分散システムにおけるリーダー選挙と同じ
+**選出フェーズ**. 候補ノードの中から １ つの Proposer を選出します。これは一般的な分散システムにおけるリーダー選挙と同じ
 ですが、ブロックチェーンでは悪意を持った妨害によってシステム全体の性能を低下させないために作為的な選出ができないように設計する必要があります。
 また公平性を保証するために Ostracon の選挙には中央集権的な機関が介在していないことにも注意してください。選挙結果はすべてのノードで決定論的に
-算出できるため、各ノードは「自分が Proposer または Voter に当選しているか」を自律的に判断することができます。
+算出できるため、各ノードは「自分が Proposer として当選しているか」を自律的に判断することができます。
 
 **ブロック作成フェーズ**. ブロックの提案は選挙で選出された Proposer によって行われます。ブロックチェーンに取り込まれていない未承認の
 トランザクションは P2P でネットワーク上のノードに共有され、各ノードの mempool と呼ばれる領域に保管されます。Proposer に選ばれたノードは
-自分の mempool に残っている未承認のトランザクションからブロックを生成して Voter に*提案*します。
+自分の mempool に残っている未承認のトランザクションからブロックを生成して Validator に*提案*します。
 
-**ブロック検証フェーズ**. Proposer の提案したブロックは選挙で選出された Voter によって正当性が検証されます。各 Voter はブロックの内容が
-正しいかどうかを投票し、票は Tendermint-BFT によって他の Voter に複製され、すべての Voter 数の 2/3+1 以上の賛成票が集まればそのブロックは
+**ブロック検証フェーズ**. Proposer の提案したブロックは Validator によって正当性が検証されます。各 Validator はブロックの内容が
+正しいかどうかを投票し、票は Tendermint-BFT によって他の Validator に複製され、すべての Validator 数の 2/3+1 以上の賛成票が集まればそのブロックは
 正式に*承認*されます。反対に、定足数の賛成票が集まらなければ提案されたブロックは拒否され新しいラウンドで選挙または投票からやり直しとなります
 (Tendermint-BFT には拒否の理由によってショートカットする経路がいくつかあります)。
 
 ![VRF-based Block Generation Round](../static/consensus/vrf_based_round.png)
 
-## VRF-based Consensus Group Election
+## VRF-based Consensus Election
 
 VRF は暗号論的疑似乱数として使用できるハッシュ値 $t$ を生成するアルゴリズムです。VRF が一般的なハッシュ関数や疑似乱数生成器と異なるのは、
 秘密鍵の所有者のみがハッシュ値 $t$ を算出でき、対応する公開鍵を持つ人であれば誰でもそのハッシュ値の正当性を検証できる点です。
 
-乱数の生成者 $k$ は式 `1.` のように自身の秘密鍵 $S_k$ を使ってメッセージ $m$ から証明 (VRF Proof) $\pi$ を生成します。ここでハッシュ値
-$t$ は式 `2.` を使って証明 $pi$ から生成することができます。一方、検証者はハッシュ値 $t$ が秘密鍵 $S_k$ の所有者によってメッセージ $m$ に
-基づいて生成されたものであることを検証するために、$S_k$ に対する公開鍵 $P_k$ と $m$, $\pi$ を式 `3.` に適用して同一のハッシュ値 $t$ が
+乱数の生成者 $k$ は式 (1) のように自身の秘密鍵 $S_k$ を使ってメッセージ $m$ から証明 (VRF Proof) $\pi$ を生成します。ここでハッシュ値
+$t$ は式 (2) を使って証明 $pi$ から生成することができます。一方、検証者はハッシュ値 $t$ が秘密鍵 $S_k$ の所有者によってメッセージ $m$ に
+基づいて生成されたものであることを検証するために、$S_k$ に対する公開鍵 $P_k$ と $m$, $\pi$ を式 (3) に適用して同一のハッシュ値 $t$ が
 生成されることを確認します。
 
-1. $\pi = {\rm vrf\\_prove}(S_k, m)$
-2. $t = {\rm vrf\\_proof\\_to\\_hash}(\pi)$
-3. ${\rm vrf\\_proof\\_to\\_hash}(\pi) \overset{\text{?}}{=} {\rm vrf\\_verify}(P_k, m, \pi)$
+```math
+\begin{align*}
+   \pi & = & {\rm vrf\\_prove}(S_k, m) \tag{1}\\
+   t & = & {\rm vrf\\_proof\\_to\\_hash}(\pi) \tag{2}\\
+   {\rm vrf\\_proof\\_to\\_hash}(\pi) & \overset{\text{?}} {=} & {\rm vrf\\_verify}(P_k, m, \pi) \tag{3}
+\end{align*}
+```
 
-Ostracon では、あるブロックを作成した Proposer による*無作為で検証可能な乱数*によって次の Proposer と Voter を決定します。そして
+Ostracon では、あるブロックを作成した Proposer による*無作為で検証可能な乱数*によって次の Proposer を決定します。そして
 ブロックにはそのための VRF Proof フィールド $\pi$ が追加されています。
 
 新しいブロックを受信したノードは選出フェーズを開始します。選出フェーズではブロックに含まれている VRF Proof $\pi$ を検証し、「公正な
-疑似乱数」である VRF ハッシュ $t$ を算出し、その値に基づいてこのラウンドの Proposer と Voter を選択します。これは Stake 保有量に
+疑似乱数」である VRF ハッシュ $t$ を算出し、その値に基づいてこのラウンドの Proposer を選択します。これは Stake 保有量に
 応じた選出確率に基づく (つまり PoS に基づく) シンプルで高速な加重ランダムサンプリングによって行われます。
 
 ![VRF-based Proposer/Voter Election](../static/consensus/vrf_election.png)
@@ -53,11 +57,11 @@ Ostracon では、あるブロックを作成した Proposer による*無作為
 $r$ に基づいて算出した新しい VRF Proof $\pi'$ をブロックに設定します。
 
 ```math
-\begin{eqnarray*}
+\begin{align*}
 m_h & = & {\rm SHA256}(h \,\|\, r \,\|\, t_{h-1}) \\
 \pi_h & = & {\rm vrf\_prove}(S_i, m_h) \\
 t_h & = & {\rm vrf\_proof\_to\_hash}(\pi_h)
-\end{eqnarray*}
+\end{align*}
 ```
 
 VRF Proof $\pi$ を算出するためのメッセージ $m$ にはブロックそのもののハッシュ値は関与しないことに注意してください。ブロックのハッシュ値は
@@ -65,7 +69,7 @@ VRF Proof $\pi$ を算出するためのメッセージ $m$ にはブロック�
 
 ![VRF-based Block Generation](../static/consensus/vrf_block_generation.png)
 
-選出フェーズで自分自身が Voter に選ばれたノードは、受信した Proposal ブロックを検証して投票します。票は Tendermint-BFT により
+Validator は、受信した Proposal ブロックを検証して投票します。票は Tendermint-BFT により
 prevote, precommit, commit を経て複製され、定足数以上の有効票が集まればブロックが承認されます。
 
 ![VRF-based Block Validation](../static/consensus/vrf_block_validation.png)
@@ -85,22 +89,10 @@ prevote, precommit, commit を経て複製され、定足数以上の有効票�
 
 ![BFT-based Block Generation](../static/consensus/bft_round.png)
 
-ここで、ブロックを受信したノードは次の Proposer と Voter がどのノードなのかを決定論的に算出できることを思い出してください。あるラウンドで
+ここで、ブロックを受信したノードは次の Proposer がどのノードなのかを決定論的に算出できることを思い出してください。あるラウンドで
 ブロックの生成や検証の責任を持つノードを明らかにすることによって、選出されながら実際にはその作業を行わなかったり、Eclipse 攻撃のような悪意の
 ある行動を行ったノードに対して懲罰を与えることができます。一方で、それらが明らかになるのは必要最小限の期間のみであり、1 ブロックより先の
-Proposer や Voter を予測することは依然として困難です。
-
-## Voters
-
-Ostracon のネットワークでは Stake を保有して Proposer または Voter に選出される可能性のある候補ノードを Validator としています。
-Voter は Validator のサブセットであり、2 つの理由で Ostracon に新しく導入された概念です; 一つ目は Voter に選出されたノードへの
-報酬配当を調整するため、もう一つは参加可能なノードの信頼ポリシーが異なるネットワークでビザンチンとして想定する比率を調整可能にするためです
-(Voter 数が Validator 数と一致する設定では Tendermint と完全に一致します)。
-
-Voter 選出では、一つの VRF ハッシュ $t$ から複数のノードをランダムに選択するために、疑似乱数関数 $r$ を使って $t$ に基づいた乱数列を
-生成します。$t$ が既に暗号論的疑似乱数の性質を持つことから、この $r$ は実装がシンプルで変種が発生しづらく、高速で省メモリであることが
-より重要です。Ostracon ではこの Voter 選出にシフトレジスタ型と呼ばれる非常に高速な疑似乱数生成アルゴリズムである
-SplitMix64 を使用しています。
+Proposer を予測することは依然として困難です。
 
 ## Failures
 
