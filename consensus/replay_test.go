@@ -357,7 +357,7 @@ var modes = []uint{0, 1, 2, 3, 4}
 
 func getProposerIdx(state *State, height int64, round int32) (int32, *types.Validator) {
 	proposer := state.Validators.SelectProposer(state.state.LastProofHash, height, round)
-	return state.Voters.GetByAddress(proposer.PubKey.Address())
+	return state.Validators.GetByAddress(proposer.PubKey.Address())
 }
 
 func consensusNewBlock(t *testing.T, height int64, vss []*validatorStub, css []*State,
@@ -385,10 +385,10 @@ func consensusNewBlock(t *testing.T, height int64, vss []*validatorStub, css []*
 		}
 	}
 
-	// make idx of voter in the vss
+	// make idx of validator in the vss
 	proposerIdxOfVSS := 0
-	voterSet := cs.Voters
-	vssIndexOfVoterList := make([]int, len(voterSet.Voters)-1)
+	valSet := cs.Validators
+	vssIndexOfValidatorList := make([]int, len(valSet.Validators)-1)
 	var idx = 0
 	for i, vs := range vss {
 		vsPubKey, err := vs.GetPubKey()
@@ -396,15 +396,15 @@ func consensusNewBlock(t *testing.T, height int64, vss []*validatorStub, css []*
 		if vsPubKey.Equals(csPubKey) {
 			continue
 		}
-		index, voter := voterSet.GetByAddress(vsPubKey.Address())
-		if index == -1 && voter == nil {
+		index, val := valSet.GetByAddress(vsPubKey.Address())
+		if index == -1 && val == nil {
 			continue
 		}
 		if index == proposerIdx {
 			proposerIdxOfVSS = i
 		}
-		vs.Index = index // Update validatorStub.Index for signAndVote since VoterSet's order is changed
-		vssIndexOfVoterList[idx] = i
+		vs.Index = index // Update validatorStub.Index for signAndVote since ValSet's order is changed
+		vssIndexOfValidatorList[idx] = i
 		idx++
 	}
 
@@ -419,8 +419,8 @@ func consensusNewBlock(t *testing.T, height int64, vss []*validatorStub, css []*
 
 	ensureNewProposal(proposalCH, height, 0)
 	rs := cs.GetRoundState()
-	for _, voterIdx := range vssIndexOfVoterList {
-		signAddVotes(cs, tmproto.PrecommitType, rs.ProposalBlock.Hash(), rs.ProposalBlockParts.Header(), vss[voterIdx])
+	for _, valIdx := range vssIndexOfValidatorList {
+		signAddVotes(cs, tmproto.PrecommitType, rs.ProposalBlock.Hash(), rs.ProposalBlockParts.Header(), vss[valIdx])
 	}
 
 	ensureNewRound(newRoundCh, height+1, 0)
@@ -925,7 +925,7 @@ func TestHandshakePanicsIfAppReturnsWrongAppHash(t *testing.T) {
 	stateDB, state, store := stateAndStore(config, pubKey, version.AppProtocol)
 	stateStore := sm.NewStore(stateDB)
 	genDoc, _ := sm.MakeGenesisDocFromFile(config.GenesisFile())
-	state.LastVoters = state.Voters.Copy()
+	state.LastValidators = state.Validators.Copy()
 	// mode = 0 for committing all the blocks
 	blocks := makeBlocks(3, &state, privVal)
 	store.chain = blocks

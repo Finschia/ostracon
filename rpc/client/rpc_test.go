@@ -181,18 +181,10 @@ func TestGenesisAndValidators(t *testing.T) {
 		require.Equal(t, 1, vals.Count)
 		require.Equal(t, 1, vals.Total)
 		val := vals.Validators[0]
-		voters, err := c.Voters(context.Background(), &h, nil, nil)
-		require.Nil(t, err, "%d: %+v", i, err)
-		require.Equal(t, 1, len(voters.Voters))
-		require.Equal(t, 1, voters.Count)
-		require.Equal(t, 1, voters.Total)
-		voter := voters.Voters[0]
 
 		// make sure the current set is also the genesis set
 		assert.Equal(t, gval.Power, val.VotingPower)
 		assert.Equal(t, gval.PubKey, val.PubKey)
-		assert.Equal(t, gval.Power, voter.VotingPower)
-		assert.Equal(t, gval.PubKey, voter.PubKey)
 	}
 }
 

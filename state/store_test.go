@@ -56,78 +56,6 @@ func TestStoreLoadValidators(t *testing.T) {
 	assert.NotZero(t, loadedVals.Size())
 }
 
-func TestStoreLoadVoters(t *testing.T) {
-	stateDB := dbm.NewMemDB()
-	stateStore := sm.NewStore(stateDB)
-	val, _ := types.RandValidator(true, 10)
-	vals := types.NewValidatorSet([]*types.Validator{val})
-
-	height := int64(1)
-
-	state := createState(height, 1, 1, vals)
-	err := stateStore.Save(state)
-	require.NoError(t, err)
-
-	{
-		_, loadedVoters, _, _, err := stateStore.LoadVoters(height, nil)
-		require.NoError(t, err)
-		assert.Equal(t, vals.Size(), loadedVoters.Size())
-	}
-	{
-		_, _, _, _, err := stateStore.LoadVoters(height-1, nil)
-		require.Error(t, err)
-		require.Equal(t, sm.ErrNoValSetForHeight{Height: height - 1}, err)
-	}
-	{
-		_, _, _, _, err := stateStore.LoadVoters(height+1, nil)
-		require.Error(t, err)
-		require.Error(t, sm.ErrNoValSetForHeight{Height: height + 1}, err)
-	}
-
-	state.Validators = types.NewValidatorSet([]*types.Validator{})
-	err = stateStore.Save(state)
-	require.NoError(t, err)
-
-	{
-		_, _, _, _, err := stateStore.LoadVoters(height, nil)
-		require.Error(t, err)
-		require.Equal(t, "validator set is nil or empty", err.Error())
-	}
-	{
-		_, _, _, _, err := stateStore.LoadVoters(height+1, nil)
-		require.Error(t, err)
-		require.Equal(t, "validator set is nil or empty", err.Error())
-	}
-
-	err = sm.SaveValidatorsInfo(stateDB, height, height, []byte{}, types.NewValidatorSet([]*types.Validator{val}))
-	require.NoError(t, err)
-
-	height++
-	{
-		_, _, _, _, err := stateStore.LoadVoters(height, nil)
-		require.Error(t, err)
-		require.Equal(t, sm.ErrNoVoterParamsForHeight{Height: height}, err)
-	}
-
-	err = sm.SaveVoterParams(stateDB, height, types.DefaultVoterParams())
-	require.NoError(t, err)
-
-	{
-		_, _, _, _, err := stateStore.LoadVoters(height, nil)
-		require.Error(t, err)
-		require.Equal(t, sm.ErrNoProofHashForHeight{Height: height}, err)
-	}
-
-	err = sm.SaveProofHash(stateDB, height, []byte{0})
-	require.NoError(t, err)
-
-	{
-		_, loadedVoters, _, _, err := stateStore.LoadVoters(height, nil)
-		require.NoError(t, err)
-		assert.Equal(t, vals.Size(), loadedVoters.Size())
-	}
-}
-
 func BenchmarkLoadValidators(b *testing.B) {
 	const valSetSize = 100
 
@@ -173,11 +101,9 @@ func createState(height, valsChanged, paramsChanged int64, validatorSet *types.V
 	}
 	state := sm.State{
 		InitialHeight:   1,
-		VoterParams:     types.DefaultVoterParams(),
 		LastBlockHeight: height - 1,
 		Validators:      validatorSet,
 		NextValidators:  validatorSet,
-		Voters:          types.ToVoterAll(validatorSet.Validators),
 		ConsensusParams: tmproto.ConsensusParams{
 			Block: tmproto.BlockParams{MaxBytes: 10e6},
 		},
@@ -186,7 +112,7 @@ func createState(height, valsChanged, paramsChanged int64, validatorSet *types.V
 		LastProofHash:                    []byte{0},
 	}
 	if state.LastBlockHeight >= 1 {
-		state.LastVoters = state.Voters
+		state.LastValidators = state.Validators
 	}
 	return state
 }
@@ -299,15 +225,6 @@ func TestPruneStates(t *testing.T) {
 					require.Error(t, err, "abci height %v", h)
 					require.Equal(t, sm.ErrNoABCIResponsesForHeight{Height: h}, err)
 				}
-				_, voters, voterParams, proof, err := stateStore.LoadVoters(h, nil)
-				if expectVals[h] {
-					require.NotNil(t, voters)
-					require.NotNil(t, voterParams)
-					require.NotNil(t, proof)
-				} else {
-					require.Error(t, err, "validators height %v", h)
-					require.Equal(t, sm.ErrNoValSetForHeight{Height: h}, err)
-				}
 			}
 		})
 	}
@@ -317,15 +234,12 @@ func TestPruneStatesDeleteErrHandle(t *testing.T) {
 	testcases := map[string]struct {
 		deleteValidatorsRet      error
 		deleteConsensusParamsRet error
-		deleteVoterParamsRet     error
 		deleteProofHashRet       error
 	}{
-		"error on deleting validators":       {errors.New("error"), nil, nil, nil},
-		"error on deleting consensus params": {nil, errors.New("error"), nil, nil},
-		"error on deleting voter params":     {nil, nil, errors.New("error"), nil},
-		"error on deleting proof hash":       {nil, nil, nil, errors.New("error")},
-		"error on deleting all": {errors.New("error"), errors.New("error"),
-			errors.New("error"), errors.New("error")},
+		"error on deleting validators":       {errors.New("error"), nil, nil},
+		"error on deleting consensus params": {nil, errors.New("error"), nil},
+		"error on deleting proof hash":       {nil, nil, errors.New("error")},
+		"error on deleting all":              {errors.New("error"), errors.New("error"), errors.New("error")},
 	}
 	for name, tc := range testcases {
 		tc := tc
@@ -359,12 +273,6 @@ func TestPruneStatesDeleteErrHandle(t *testing.T) {
 				require.NoError(t, err)
 				batchMock.On("Delete", []byte(fmt.Sprintf("consensusParamsKey:%v", nextHeight))).Return(tc.deleteConsensusParamsRet)
 				dbMock.On("Get", []byte(fmt.Sprintf("consensusParamsKey:%v", nextHeight))).Return(bufConsensusParams, nil)
-
-				// create voter params mock method
-				bufVoterParams, err := voterParamsToByte(state.VoterParams)
-				require.NoError(t, err)
-				batchMock.On("Delete", []byte(fmt.Sprintf("voterParamsKey:%v", nextHeight))).Return(tc.deleteVoterParamsRet)
-				dbMock.On("Get", []byte(fmt.Sprintf("voterParamsKey:%v", nextHeight))).Return(bufVoterParams, nil)
 
 				// create proof hash mock method
 				batchMock.On("Delete", []byte(fmt.Sprintf("proofHashKey:%v", nextHeight))).Return(tc.deleteProofHashRet)
@@ -421,15 +329,6 @@ func validatorsInfoToByte(height, lastHeightChanged int64, valSet *types.Validat
 	}
 
 	bz, err := valInfo.Marshal()
-	if err != nil {
-		return nil, err
-	}
-
-	return bz, nil
-}
-
-func voterParamsToByte(voterParams *types.VoterParams) ([]byte, error) {
-	bz, err := voterParams.ToProto().Marshal()
 	if err != nil {
 		return nil, err
 	}

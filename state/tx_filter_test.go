@@ -26,8 +26,8 @@ func TestTxFilter(t *testing.T) {
 		tx    types.Tx
 		isErr bool
 	}{
-		{types.Tx(tmrand.Bytes(2145 - vrf.ProofSize)), false},
-		{types.Tx(tmrand.Bytes(2146 - vrf.ProofSize)), true},
+		{types.Tx(tmrand.Bytes(2180 - vrf.ProofSize)), false},
+		{types.Tx(tmrand.Bytes(2181 - vrf.ProofSize)), true},
 		{types.Tx(tmrand.Bytes(3000)), true},
 	}
 

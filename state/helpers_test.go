@@ -131,7 +131,7 @@ func makeState(nVals, height int) (sm.State, dbm.DB, map[string]types.PrivValida
 
 	for i := 1; i < height; i++ {
 		s.LastBlockHeight++
-		s.LastVoters = s.Voters.Copy()
+		s.LastValidators = s.Validators.Copy()
 		if err := stateStore.Save(s); err != nil {
 			panic(err)
 		}

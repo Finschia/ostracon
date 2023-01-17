@@ -41,12 +41,8 @@ func TestByzantinePrevoteEquivocation(t *testing.T) {
 	testName := "consensus_byzantine_test"
 	tickerFunc := newMockTickerFunc(true)
 	appFunc := newCounter
-	params := &types.VoterParams{
-		VoterElectionThreshold:          5,
-		MaxTolerableByzantinePercentage: 20,
-	}
 
-	genDoc, privVals := randGenesisDoc(nValidators, false, 30, params)
+	genDoc, privVals := randGenesisDoc(nValidators, false, 30)
 	css := make([]*State, nValidators)
 
 	for i := 0; i < nValidators; i++ {
@@ -458,7 +454,7 @@ func TestByzantineConflictingProposalsWithPartition(t *testing.T) {
 // find proposer of current height and round from State
 func findProposer(state *State) (int32, *types.Validator) {
 	proposer := state.Validators.SelectProposer(state.state.LastProofHash, state.Height, state.Round)
-	return state.Voters.GetByAddress(proposer.PubKey.Address())
+	return state.Validators.GetByAddress(proposer.PubKey.Address())
 }
 
 //-------------------------------

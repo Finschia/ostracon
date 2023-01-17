@@ -263,6 +263,8 @@ func TestVoteString(t *testing.T) {
 }
 
 func TestVoteValidateBasic(t *testing.T) {
+	privVal := NewMockPV()
+
 	testCases := []struct {
 		testName     string
 		malleateVote func(*Vote)
@@ -279,7 +281,6 @@ func TestVoteValidateBasic(t *testing.T) {
 		{"Invalid Signature", func(v *Vote) { v.Signature = nil }, true},
 		{"Too big Signature", func(v *Vote) { v.Signature = make([]byte, MaxSignatureSize+1) }, true},
 	}
-	privVal := NewMockPV()
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.testName, func(t *testing.T) {

@@ -45,16 +45,13 @@ func TestEvidencePoolBasic(t *testing.T) {
 		blockStore = &mocks.BlockStore{}
 	)
 
-	valSet, voterSet, privVals := types.RandVoterSet(1, 10)
-	state := createState(height+1, valSet)
+	valSet, privVals := types.RandValidatorSet(1, 10)
 
 	blockStore.On("LoadBlockMeta", mock.AnythingOfType("int64")).Return(
 		&types.BlockMeta{Header: types.Header{Time: defaultEvidenceTime}},
 	)
 	stateStore.On("LoadValidators", mock.AnythingOfType("int64")).Return(valSet, nil)
-	stateStore.On("LoadVoters", mock.AnythingOfType("int64"), state.VoterParams).Return(
-		valSet, voterSet, state.VoterParams, state.LastProofHash, nil)
-	stateStore.On("Load").Return(state, nil)
+	stateStore.On("Load").Return(createState(height+1, valSet), nil)
 
 	pool, err := evidence.NewPool(evidenceDB, stateStore, blockStore)
 	require.NoError(t, err)
@@ -86,7 +83,7 @@ func TestEvidencePoolBasic(t *testing.T) {
 	next := pool.EvidenceFront()
 	assert.Equal(t, ev, next.Value.(types.Evidence))
 
-	var evidenceBytes int64 = 375
+	const evidenceBytes int64 = 372
 	evs, size = pool.PendingEvidence(evidenceBytes)
 	assert.Equal(t, 1, len(evs))
 	assert.Equal(t, evidenceBytes, size) // check that the size of the single evidence in bytes is correct
@@ -172,7 +169,7 @@ func TestReportConflictingVotes(t *testing.T) {
 	state := pool.State()
 	state.LastBlockHeight++
 	state.LastBlockTime = ev.Time()
-	state.LastVoters = types.ToVoterAll([]*types.Validator{val})
+	state.LastValidators = types.NewValidatorSet([]*types.Validator{val})
 	pool.Update(state, []types.Evidence{})
 
 	// should be able to retrieve evidence from pool
@@ -246,6 +243,7 @@ func TestLightClientAttackEvidenceLifecycle(t *testing.T) {
 		height       int64 = 100
 		commonHeight int64 = 90
 	)
+
 	ev, trusted, common := makeLunaticEvidence(t, height, commonHeight,
 		10, 5, 5, defaultEvidenceTime, defaultEvidenceTime.Add(1*time.Hour))
 
@@ -253,13 +251,10 @@ func TestLightClientAttackEvidenceLifecycle(t *testing.T) {
 		LastBlockTime:   defaultEvidenceTime.Add(2 * time.Hour),
 		LastBlockHeight: 110,
 		ConsensusParams: *types.DefaultConsensusParams(),
-		VoterParams:     types.DefaultVoterParams(),
 	}
 	stateStore := &smmocks.Store{}
 	stateStore.On("LoadValidators", height).Return(trusted.ValidatorSet, nil)
 	stateStore.On("LoadValidators", commonHeight).Return(common.ValidatorSet, nil)
-	stateStore.On("LoadVoters", commonHeight, state.VoterParams).Return(
-		trusted.ValidatorSet, ev.ConflictingBlock.VoterSet, state.VoterParams, state.LastProofHash, nil)
 	stateStore.On("Load").Return(state, nil)
 	blockStore := &mocks.BlockStore{}
 	blockStore.On("LoadBlockMeta", height).Return(&types.BlockMeta{Header: *trusted.Header})
@@ -357,13 +352,11 @@ func initializeStateFromValidatorSet(valSet *types.ValidatorSet, height int64) s
 	state := sm.State{
 		ChainID:                     evidenceChainID,
 		InitialHeight:               1,
-		VoterParams:                 types.DefaultVoterParams(),
 		LastBlockHeight:             height,
 		LastBlockTime:               defaultEvidenceTime,
 		Validators:                  valSet,
 		NextValidators:              valSet.Copy(),
-		Voters:                      types.ToVoterAll(valSet.Validators),
-		LastVoters:                  types.ToVoterAll(valSet.Validators),
+		LastValidators:              valSet,
 		LastHeightValidatorsChanged: 1,
 		ConsensusParams: tmproto.ConsensusParams{
 			Block: tmproto.BlockParams{
@@ -459,6 +452,5 @@ func createState(height int64, valSet *types.ValidatorSet) sm.State {
 		LastBlockTime:   defaultEvidenceTime,
 		Validators:      valSet,
 		ConsensusParams: *types.DefaultConsensusParams(),
-		VoterParams:     types.DefaultVoterParams(),
 	}
 }

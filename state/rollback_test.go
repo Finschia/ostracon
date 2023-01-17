@@ -18,8 +18,7 @@ import (
 )
 
 var (
-	proofHash   = []byte{0}
-	voterParams = types.DefaultVoterParams()
+	proofHash = []byte{0}
 )
 
 func TestRollback(t *testing.T) {
@@ -41,8 +40,7 @@ func TestRollback(t *testing.T) {
 	nextState.Version.Consensus.App = 11
 	nextState.LastBlockID = makeBlockIDRandom()
 	nextState.AppHash = tmhash.Sum([]byte("app_hash"))
-	nextState.LastVoters = initialState.Voters
-	nextState.Voters = types.SelectVoter(initialState.NextValidators, proofHash, voterParams)
+	nextState.LastValidators = initialState.Validators
 	nextState.Validators = initialState.NextValidators
 	nextState.NextValidators = initialState.NextValidators.CopyIncrementProposerPriority(1)
 	nextState.ConsensusParams = *newParams
@@ -130,11 +128,8 @@ func setupStateStore(t *testing.T, height int64) state.Store {
 	stateStore := state.NewStore(dbm.NewMemDB())
 
 	previousValSet, _ := types.RandValidatorSet(5, 10)
-	previousVoterSet := types.SelectVoter(previousValSet, proofHash, voterParams)
 	lastValSet := previousValSet.CopyIncrementProposerPriority(1)
-	lastVoterSet := types.SelectVoter(lastValSet, proofHash, voterParams)
 	initialValSet := lastValSet.CopyIncrementProposerPriority(1)
-	initialVoterSet := types.SelectVoter(initialValSet, proofHash, voterParams)
 	nextValSet := initialValSet.CopyIncrementProposerPriority(1)
 
 	params := types.DefaultConsensusParams()
@@ -154,15 +149,13 @@ func setupStateStore(t *testing.T, height int64) state.Store {
 		AppHash:                          tmhash.Sum([]byte("app_hash")),
 		LastResultsHash:                  tmhash.Sum([]byte("last_results_hash")),
 		LastBlockHeight:                  height,
-		LastVoters:                       lastVoterSet,
-		LastProofHash:                    proofHash,
-		Voters:                           initialVoterSet,
-		VoterParams:                      voterParams,
+		LastValidators:                   lastValSet,
 		Validators:                       initialValSet,
 		NextValidators:                   nextValSet,
 		LastHeightValidatorsChanged:      height + 1,
 		ConsensusParams:                  *params,
 		LastHeightConsensusParamsChanged: height + 1,
+		LastProofHash:                    proofHash,
 	}
 
 	// Need to set previous initial state for VRF verify
@@ -170,8 +163,7 @@ func setupStateStore(t *testing.T, height int64) state.Store {
 	previousState.LastBlockHeight = initialState.LastBlockHeight - 1
 	previousState.LastHeightConsensusParamsChanged = initialState.LastHeightConsensusParamsChanged - 1
 	previousState.LastHeightValidatorsChanged = initialState.LastHeightValidatorsChanged - 1
-	previousState.LastVoters = previousVoterSet
-	previousState.Voters = lastVoterSet
+	previousState.LastValidators = previousValSet
 	previousState.Validators = lastValSet
 	previousState.NextValidators = initialValSet
 	require.NoError(t, stateStore.Bootstrap(previousState))
