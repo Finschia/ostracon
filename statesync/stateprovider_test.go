@@ -119,14 +119,13 @@ const (
 )
 
 var (
-	chainId     string
-	cfg         *config.Config
-	genDoc      *types.GenesisDoc
-	privVals    []*types.PrivValidator
-	vals        []*types.Validator
-	valsIndices []int32
-	header      *types.Header
-	commit      *types.Commit
+	chainId  string
+	cfg      *config.Config
+	genDoc   *types.GenesisDoc
+	privVals []*types.PrivValidator
+	vals     []*types.Validator
+	header   *types.Header
+	commit   *types.Commit
 )
 
 func setupVars(t *testing.T) {
@@ -142,12 +141,10 @@ func setupVars(t *testing.T) {
 	// validators
 	privVals = make([]*types.PrivValidator, size)
 	vals = make([]*types.Validator, size)
-	valsIndices = make([]int32, size)
 	for i := 0; i < size; i++ {
 		val, privVal := types.RandValidator(true, 1)
 		privVals[i] = &privVal
 		vals[i] = val
-		valsIndices[i] = int32(i)
 	}
 	// header
 	valSet, err := types.ValidatorSetFromExistingValidators(vals)
