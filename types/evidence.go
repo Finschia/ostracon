@@ -24,8 +24,7 @@ func MaxEvidenceBytes(ev Evidence) int64 {
 			(1 + MaxVoteBytes + 2) + // VoteB
 			(1 + 9) + // TotalVotingPower
 			(1 + 9) + // ValidatorPower
-			(1 + 17 + 1) + // Timestamp
-			(2 + 9) // VotingWeight is not include
+			(1 + 17 + 1) // Timestamp
 	case *LightClientAttackEvidence:
 		// FIXME 🏺 need this?
 		return 0
@@ -54,9 +53,8 @@ type DuplicateVoteEvidence struct {
 	VoteB *Vote `json:"vote_b"`
 
 	// abci specific information
-	TotalVotingPower int64 // VoterSet.TotalVotingWeight()
-	ValidatorPower   int64 // Validator.VotingPower
-	VotingWeight     int64 // Validator.VotingWeight
+	TotalVotingPower int64
+	ValidatorPower   int64
 	Timestamp        time.Time
 }
 
@@ -64,12 +62,12 @@ var _ Evidence = &DuplicateVoteEvidence{}
 
 // NewDuplicateVoteEvidence creates DuplicateVoteEvidence with right ordering given
 // two conflicting votes. If one of the votes is nil, evidence returned is nil as well
-func NewDuplicateVoteEvidence(vote1, vote2 *Vote, blockTime time.Time, voterSet *VoterSet) *DuplicateVoteEvidence {
+func NewDuplicateVoteEvidence(vote1, vote2 *Vote, blockTime time.Time, valSet *ValidatorSet) *DuplicateVoteEvidence {
 	var voteA, voteB *Vote
-	if vote1 == nil || vote2 == nil || voterSet == nil {
+	if vote1 == nil || vote2 == nil || valSet == nil {
 		return nil
 	}
-	idx, val := voterSet.GetByAddress(vote1.ValidatorAddress)
+	idx, val := valSet.GetByAddress(vote1.ValidatorAddress)
 	if idx == -1 {
 		return nil
 	}
@@ -84,9 +82,8 @@ func NewDuplicateVoteEvidence(vote1, vote2 *Vote, blockTime time.Time, voterSet 
 	return &DuplicateVoteEvidence{
 		VoteA:            voteA,
 		VoteB:            voteB,
-		TotalVotingPower: voterSet.TotalVotingWeight(),
+		TotalVotingPower: valSet.TotalVotingPower(),
 		ValidatorPower:   val.VotingPower,
-		VotingWeight:     val.VotingWeight,
 		Timestamp:        blockTime,
 	}
 }
@@ -96,9 +93,8 @@ func (dve *DuplicateVoteEvidence) ABCI() []abci.Evidence {
 	return []abci.Evidence{{
 		Type: abci.EvidenceType_DUPLICATE_VOTE,
 		Validator: abci.Validator{
-			Address:      dve.VoteA.ValidatorAddress,
-			Power:        dve.ValidatorPower,
-			VotingWeight: dve.VotingWeight,
+			Address: dve.VoteA.ValidatorAddress,
+			Power:   dve.ValidatorPower,
 		},
 		Height:           dve.VoteA.Height,
 		Time:             dve.Timestamp,
@@ -168,7 +164,6 @@ func (dve *DuplicateVoteEvidence) ToProto() *tmproto.DuplicateVoteEvidence {
 		VoteB:            voteB,
 		TotalVotingPower: dve.TotalVotingPower,
 		ValidatorPower:   dve.ValidatorPower,
-		VotingWeight:     dve.VotingWeight,
 		Timestamp:        dve.Timestamp,
 	}
 	return &tp
@@ -195,7 +190,6 @@ func DuplicateVoteEvidenceFromProto(pb *tmproto.DuplicateVoteEvidence) (*Duplica
 		VoteB:            vB,
 		TotalVotingPower: pb.TotalVotingPower,
 		ValidatorPower:   pb.ValidatorPower,
-		VotingWeight:     pb.VotingWeight,
 		Timestamp:        pb.Timestamp,
 	}
 
@@ -215,7 +209,7 @@ type LightClientAttackEvidence struct {
 
 	// abci specific information
 	ByzantineValidators []*Validator // validators in the validator set that misbehaved in creating the conflicting block
-	TotalVotingPower    int64        // total voting weight of the voter set at the common height
+	TotalVotingPower    int64        // total voting power of the validator set at the common height
 	Timestamp           time.Time    // timestamp of the block at the common height
 }
 
@@ -252,20 +246,20 @@ func (l *LightClientAttackEvidence) Bytes() []byte {
 // GetByzantineValidators finds out what style of attack LightClientAttackEvidence was and then works out who
 // the malicious validators were and returns them. This is used both for forming the ByzantineValidators
 // field and for validating that it is correct. Validators are ordered based on validator power
-func (l *LightClientAttackEvidence) GetByzantineValidators(commonVoters *VoterSet,
+func (l *LightClientAttackEvidence) GetByzantineValidators(commonVals *ValidatorSet,
 	trusted *SignedHeader) []*Validator {
 	var validators []*Validator
 	// First check if the header is invalid. This means that it is a lunatic attack and therefore we take the
-	// validators who are in the commonVoters and voted for the lunatic header
+	// validators who are in the commonVals and voted for the lunatic header
 	if l.ConflictingHeaderIsInvalid(trusted.Header) {
 		for _, commitSig := range l.ConflictingBlock.Commit.Signatures {
 			if !commitSig.ForBlock() {
 				continue
 			}
 
-			_, val := commonVoters.GetByAddress(commitSig.ValidatorAddress)
+			_, val := commonVals.GetByAddress(commitSig.ValidatorAddress)
 			if val == nil {
-				// validator wasn't in the common voter set
+				// validator wasn't in the common validator set
 				continue
 			}
 			validators = append(validators, val)
@@ -288,7 +282,7 @@ func (l *LightClientAttackEvidence) GetByzantineValidators(commonVoters *VoterSe
 				continue
 			}
 
-			_, val := l.ConflictingBlock.VoterSet.GetByAddress(sigA.ValidatorAddress)
+			_, val := l.ConflictingBlock.ValidatorSet.GetByAddress(sigA.ValidatorAddress)
 			validators = append(validators, val)
 		}
 		sort.Sort(ValidatorsByVotingPower(validators))
@@ -296,7 +290,7 @@ func (l *LightClientAttackEvidence) GetByzantineValidators(commonVoters *VoterSe
 	}
 	// if the rounds are different then this is an amnesia attack. Unfortunately, given the nature of the attack,
 	// we aren't able yet to deduce which are malicious validators and which are not hence we return an
-	// empty voter set.
+	// empty validator set.
 	return validators
 }
 
@@ -305,7 +299,7 @@ func (l *LightClientAttackEvidence) GetByzantineValidators(commonVoters *VoterSe
 // or not. If it is then all the deterministic fields of the header should be the same.
 // If not, it is an invalid header and constitutes a lunatic attack.
 func (l *LightClientAttackEvidence) ConflictingHeaderIsInvalid(trustedHeader *Header) bool {
-	return !bytes.Equal(trustedHeader.VotersHash, l.ConflictingBlock.VotersHash) ||
+	return !bytes.Equal(trustedHeader.ValidatorsHash, l.ConflictingBlock.ValidatorsHash) ||
 		!bytes.Equal(trustedHeader.NextValidatorsHash, l.ConflictingBlock.NextValidatorsHash) ||
 		!bytes.Equal(trustedHeader.ConsensusHash, l.ConflictingBlock.ConsensusHash) ||
 		!bytes.Equal(trustedHeader.AppHash, l.ConflictingBlock.AppHash) ||
@@ -593,7 +587,7 @@ func NewMockDuplicateVoteEvidenceWithValidator(height int64, time time.Time,
 	vB := voteB.ToProto()
 	_ = pv.SignVote(chainID, vB)
 	voteB.Signature = vB.Signature
-	return NewDuplicateVoteEvidence(voteA, voteB, time, ToVoterAll([]*Validator{val}))
+	return NewDuplicateVoteEvidence(voteA, voteB, time, NewValidatorSet([]*Validator{val}))
 }
 
 func makeMockVote(height int64, round, index int32, addr Address,

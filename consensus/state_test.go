@@ -11,8 +11,6 @@ import (
 	"github.com/line/ostracon/abci/types/mocks"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/line/ostracon/abci/example/kvstore"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -22,7 +20,6 @@ import (
 	"github.com/line/ostracon/libs/log"
 	tmpubsub "github.com/line/ostracon/libs/pubsub"
 	tmrand "github.com/line/ostracon/libs/rand"
-	mempl "github.com/line/ostracon/mempool"
 	p2pmock "github.com/line/ostracon/p2p/mock"
 	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/types"
@@ -56,9 +53,6 @@ CatchupSuite
   * TestCatchup - if we might be behind and we've seen any 2/3 prevotes, round skip to new round, precommit, or prevote
 HaltSuite
 x * TestHalt1 - if we see +2/3 precommits after timing out into new round, we should still commit
-VoterSamplingSuite
-x * TestStateFullRoundWithSelectedVoter - voter sampling version of TestStateFullRound2
-x * TestStateAllVoterToSelectedVoter - selected voters increase under the situation that validators change from 5 to 24
 
 */
 
@@ -123,7 +117,7 @@ func TestStateProposerSelection2(t *testing.T) {
 		addr := cs1.Validators.SelectProposer(cs1.state.LastProofHash, height, i+round).PubKey.Address()
 		correctProposer := addr
 		if !bytes.Equal(prop.Address, correctProposer) {
-			idx, _ := cs1.Voters.GetByAddress(addr)
+			idx, _ := cs1.Validators.GetByAddress(addr)
 			panic(fmt.Sprintf(
 				"expected RoundState.Validators.GetProposer() to be validator %d. Got %X",
 				idx,
@@ -2100,379 +2094,6 @@ func subscribeUnBuffered(eventBus *types.EventBus, q tmpubsub.Query) <-chan tmpu
 	return sub.Out()
 }
 
-func makeVssMap(vss []*validatorStub) map[string]*validatorStub {
-	vssMap := make(map[string]*validatorStub)
-	for _, pv := range vss {
-		pubKey, _ := pv.GetPubKey()
-		vssMap[pubKey.Address().String()] = pv
-	}
-	return vssMap
-}
-
-func votersPrivVals(voterSet *types.VoterSet, vssMap map[string]*validatorStub) []*validatorStub {
-	totalVotingWeight := voterSet.TotalVotingWeight()
-	votingWeight := int64(0)
-	voters := 0
-	for i, v := range voterSet.Voters {
-		vssMap[v.PubKey.Address().String()].Index = int32(i) // NOTE: re-indexing for new voters
-		if votingWeight < totalVotingWeight*2/3+1 {
-			votingWeight += v.VotingWeight
-			voters++
-		}
-	}
-	result := make([]*validatorStub, voters)
-	for i := 0; i < voters; i++ {
-		result[i] = vssMap[voterSet.Voters[i].PubKey.Address().String()]
-	}
-	return result
-}
-
-func proposeBlock(t *testing.T, cs *State, round int32, vssMap map[string]*validatorStub) types.BlockID {
-	prop, propBlock := decideProposal(cs, vssMap[cs.Proposer.PubKey.Address().String()], cs.Height, round)
-	propBlockHash := propBlock.Hash()
-	propBlockParts := propBlock.MakePartSet(types.BlockPartSizeBytes)
-
-	// set the proposal block
-	if err := cs.SetProposalAndBlock(prop, propBlock, propBlockParts, "some peer"); err != nil {
-		t.Fatal(err)
-	}
-
-	assert.Equal(t,
-		cs.Validators.SelectProposer(cs.state.LastProofHash, cs.Height, round).Address,
-		propBlock.ProposerAddress)
-
-	return types.BlockID{Hash: propBlockHash, PartSetHeader: propBlockParts.Header()}
-}
-
-func TestStateFullRoundWithSelectedVoter(t *testing.T) {
-	cs, vss := randStateWithVoterParams(10, &types.VoterParams{
-		VoterElectionThreshold:          5,
-		MaxTolerableByzantinePercentage: 20})
-	vss[0].Height = 1 // this is needed because of `incrementHeight(vss[1:]...)` of randStateWithVoterParams()
-	vssMap := makeVssMap(vss)
-	height, round := cs.Height, cs.Round
-
-	voteCh := subscribeUnBuffered(cs.eventBus, types.EventQueryVote)
-	propCh := subscribe(cs.eventBus, types.EventQueryCompleteProposal)
-	newRoundCh := subscribe(cs.eventBus, types.EventQueryNewRound)
-	newBlockCh := subscribe(cs.eventBus, types.EventQueryNewBlock)
-
-	startTestRound(cs, height, round)
-
-	// height 1
-	ensureNewRound(newRoundCh, height, round)
-	privPubKey, _ := cs.privValidator.GetPubKey()
-	if !cs.isProposer(privPubKey.Address()) {
-		blockID := proposeBlock(t, cs, round, vssMap)
-		ensureProposal(propCh, height, round, blockID)
-	} else {
-		ensureNewProposal(propCh, height, round)
-	}
-
-	propBlock := cs.GetRoundState().ProposalBlock
-	voters := cs.Voters
-	voterPrivVals := votersPrivVals(voters, vssMap)
-	signAddVotes(cs, tmproto.PrevoteType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
-		voterPrivVals...)
-
-	for range voterPrivVals {
-		ensurePrevote(voteCh, height, round) // wait for prevote
-	}
-
-	signAddVotes(cs, tmproto.PrecommitType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
-		voterPrivVals...)
-
-	for range voterPrivVals {
-		ensurePrecommit(voteCh, height, round) // wait for precommit
-	}
-
-	ensureNewBlock(newBlockCh, height)
-
-	// height 2
-	incrementHeight(vss...)
-
-	ensureNewRound(newRoundCh, height+1, 0)
-
-	height = cs.Height
-	privPubKey, _ = cs.privValidator.GetPubKey()
-	if !cs.isProposer(privPubKey.Address()) {
-		blockID := proposeBlock(t, cs, round, vssMap)
-		ensureProposal(propCh, height, round, blockID)
-	} else {
-		ensureNewProposal(propCh, height, round)
-	}
-
-	propBlock = cs.GetRoundState().ProposalBlock
-	voters = cs.Voters
-	voterPrivVals = votersPrivVals(voters, vssMap)
-
-	signAddVotes(cs, tmproto.PrevoteType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
-		voterPrivVals...)
-
-	for range voterPrivVals {
-		ensurePrevote(voteCh, height, round) // wait for prevote
-	}
-
-	signAddVotes(cs, tmproto.PrecommitType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
-		voterPrivVals...)
-
-	for range voterPrivVals {
-		ensurePrecommit(voteCh, height, round) // wait for precommit
-	}
-
-	ensureNewBlock(newBlockCh, height)
-
-	// we're going to roll right into new height
-	ensureNewRound(newRoundCh, height+1, 0)
-}
-
-func ensureVotingPowerOfVoteSet(t *testing.T, voteSet *types.VoteSet, votingPower int64) {
-	assert.True(t, voteSet.GetSum() == votingPower)
-}
-
-func TestStateBadVoterWithSelectedVoter(t *testing.T) {
-	// if validators are 9, then selected voters are 4+
-	// if one of 4+ voters does not vote, the consensus state does not progress to next step
-	// making him having 1/3 + 1 voting weight of total
-	cs, vss := randStateWithVoterParams(9, &types.VoterParams{
-		VoterElectionThreshold:          5,
-		MaxTolerableByzantinePercentage: 20})
-
-	assert.True(t, cs.Voters.Size() >= 4)
-
-	// a validator being not a voter votes instead of a voter
-	notVoter := getValidatorBeingNotVoter(cs)
-	if notVoter == nil {
-		panic("invalid test case: cannot find a validator being not a voter")
-	}
-
-	nonMyIndex := 0
-	myPub, _ := cs.privValidator.GetPubKey()
-	for i, v := range cs.Voters.Voters {
-		if !myPub.Equals(v.PubKey) {
-			nonMyIndex = i
-			break
-		}
-	}
-
-	// make the invalid voter having voting weight of 1/3+1 of total
-	cs.Voters.Voters[nonMyIndex].VotingWeight =
-		(cs.Voters.TotalVotingWeight()-cs.Voters.Voters[nonMyIndex].VotingWeight)/2 + 1
-
-	voters := cs.Voters.Copy()
-
-	// make a voter having invalid pub key
-	voters.Voters[nonMyIndex] = &types.Validator{
-		PubKey:       notVoter.PubKey,
-		Address:      notVoter.Address,
-		VotingPower:  cs.Voters.Voters[nonMyIndex].VotingPower,
-		VotingWeight: cs.Voters.Voters[nonMyIndex].VotingWeight,
-	}
-
-	vss[0].Height = 1 // this is needed because of `incrementHeight(vss[1:]...)` of randStateWithVoterParams()
-	vssMap := makeVssMap(vss)
-	height, round := cs.Height, cs.Round
-
-	forceProposer(cs, vss, []int{0, 0}, []int64{height, height + 1}, []int32{round, 0})
-
-	voteCh := subscribeUnBuffered(cs.eventBus, types.EventQueryVote)
-	propCh := subscribe(cs.eventBus, types.EventQueryCompleteProposal)
-	newRoundCh := subscribe(cs.eventBus, types.EventQueryNewRound)
-	newBlockCh := subscribe(cs.eventBus, types.EventQueryNewBlock)
-
-	startTestRound(cs, height, round)
-
-	// height 1
-	ensureNewRound(newRoundCh, height, round)
-	privPubKey, _ := cs.privValidator.GetPubKey()
-	if !cs.isProposer(privPubKey.Address()) {
-		blockID := proposeBlock(t, cs, round, vssMap)
-		ensureProposal(propCh, height, round, blockID)
-	} else {
-		ensureNewProposal(propCh, height, round)
-	}
-
-	propBlock := cs.GetRoundState().ProposalBlock
-
-	voterPrivVals := votersPrivVals(voters, vssMap)
-	signAddVotes(cs, tmproto.PrevoteType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
-		voterPrivVals...)
-
-	sumVotingWeight := int64(0)
-	for i := range voterPrivVals { // one failed
-		if i == nonMyIndex {
-			continue
-		}
-		ensurePrevote(voteCh, height, round) // wait for prevote
-		sumVotingWeight += voters.Voters[i].VotingWeight
-	}
-
-	// ensure we didn't get a vote for Voters[nonMyIndex]
-	ensureVotingPowerOfVoteSet(t, cs.Votes.Prevotes(round), sumVotingWeight)
-	assert.False(t, cs.Votes.Prevotes(round).HasTwoThirdsMajority())
-
-	// add remain vote
-	voterPrivVals = votersPrivVals(cs.Voters, vssMap)
-	signAddVotes(cs, tmproto.PrevoteType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
-		voterPrivVals[nonMyIndex:nonMyIndex+1]...)
-
-	ensurePrevote(voteCh, height, round)
-
-	signAddVotes(cs, tmproto.PrecommitType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
-		voterPrivVals...)
-
-	for range voterPrivVals {
-		ensurePrecommit(voteCh, height, round) // wait for precommit
-	}
-
-	ensureNewBlock(newBlockCh, height)
-
-	// height 2
-	incrementHeight(vss...)
-
-	ensureNewRound(newRoundCh, height+1, 0)
-
-	height = cs.Height
-	privPubKey, _ = cs.privValidator.GetPubKey()
-	if !cs.isProposer(privPubKey.Address()) {
-		blockID := proposeBlock(t, cs, round, vssMap)
-		ensureProposal(propCh, height, round, blockID)
-	} else {
-		ensureNewProposal(propCh, height, round)
-	}
-
-	propBlock = cs.GetRoundState().ProposalBlock
-	voterPrivVals = votersPrivVals(cs.Voters, vssMap)
-
-	signAddVotes(cs, tmproto.PrevoteType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
-		voterPrivVals...)
-
-	for range voterPrivVals {
-		ensurePrevote(voteCh, height, round) // wait for prevote
-	}
-
-	signAddVotes(cs, tmproto.PrecommitType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
-		voterPrivVals...)
-
-	for range voterPrivVals {
-		ensurePrecommit(voteCh, height, round) // wait for precommit
-	}
-
-	ensureNewBlock(newBlockCh, height)
-
-	// we're going to roll right into new height
-	ensureNewRound(newRoundCh, height+1, 0)
-}
-
-func addValidator(cs *State, vssMap map[string]*validatorStub, height int64) {
-	newVal, privVal := types.RandValidator(false, 10)
-	val, err := newVal.ToProto()
-	if err != nil {
-		panic("failed to convert newVal to protobuf")
-	}
-	newValidatorTx := kvstore.MakeValSetChangeTx(val.PubKey, 10)
-	_, _ = assertMempool(cs.txNotifier).CheckTxSync(newValidatorTx, mempl.TxInfo{})
-	vssMap[newVal.PubKey.Address().String()] = newValidatorStub(privVal, int32(len(vssMap)+1))
-	vssMap[newVal.PubKey.Address().String()].Height = height
-}
-
-func TestStateAllVoterToSelectedVoter(t *testing.T) {
-	startValidators := 5
-	cs, vss := randStateWithVoterParamsWithPersistentKVStoreApp(startValidators, &types.VoterParams{
-		VoterElectionThreshold:          int32(startValidators),
-		MaxTolerableByzantinePercentage: 20},
-		"TestStateAllVoterToSelectedVoter")
-	vss[0].Height = 1 // this is needed because of `incrementHeight(vss[1:]...)` of randStateWithVoterParams()
-	vssMap := makeVssMap(vss)
-	height, round := cs.Height, cs.Round
-
-	voteCh := subscribeUnBuffered(cs.eventBus, types.EventQueryVote)
-	propCh := subscribe(cs.eventBus, types.EventQueryCompleteProposal)
-	newRoundCh := subscribe(cs.eventBus, types.EventQueryNewRound)
-	newBlockCh := subscribe(cs.eventBus, types.EventQueryNewBlock)
-
-	// add first validator
-	addValidator(cs, vssMap, height)
-
-	startTestRound(cs, height, round)
-
-	// height 1
-	ensureNewRound(newRoundCh, height, round)
-	privPubKey, _ := cs.privValidator.GetPubKey()
-	if !cs.isProposer(privPubKey.Address()) {
-		blockID := proposeBlock(t, cs, round, vssMap)
-		ensureProposal(propCh, height, round, blockID)
-	} else {
-		ensureNewProposal(propCh, height, round)
-	}
-
-	propBlock := cs.GetRoundState().ProposalBlock
-	voters := cs.Voters
-	voterPrivVals := votersPrivVals(voters, vssMap)
-	signAddVotes(cs, tmproto.PrevoteType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
-		voterPrivVals...)
-
-	for range voterPrivVals {
-		ensurePrevote(voteCh, height, round) // wait for prevote
-	}
-
-	signAddVotes(cs, tmproto.PrecommitType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
-		voterPrivVals...)
-
-	// add sescond validator
-	addValidator(cs, vssMap, height)
-
-	for range voterPrivVals {
-		ensurePrecommit(voteCh, height, round) // wait for precommit
-	}
-
-	ensureNewBlock(newBlockCh, height)
-
-	incrementHeightByMap(vssMap)
-
-	ensureNewRound(newRoundCh, height+1, 0)
-
-	endHeight := 20
-	for i := 2; i <= endHeight; i++ { // height 2~10
-		height = cs.Height
-		privPubKey, _ = cs.privValidator.GetPubKey()
-		if !cs.isProposer(privPubKey.Address()) {
-			blockID := proposeBlock(t, cs, round, vssMap)
-			ensureProposal(propCh, height, round, blockID)
-		} else {
-			ensureNewProposal(propCh, height, round)
-		}
-
-		propBlock = cs.GetRoundState().ProposalBlock
-		voters = cs.Voters
-		voterPrivVals = votersPrivVals(voters, vssMap)
-
-		signAddVotes(cs, tmproto.PrevoteType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
-			voterPrivVals...)
-
-		for range voterPrivVals {
-			ensurePrevote(voteCh, height, round) // wait for prevote
-		}
-
-		signAddVotes(cs, tmproto.PrecommitType, propBlock.Hash(), propBlock.MakePartSet(types.BlockPartSizeBytes).Header(),
-			voterPrivVals...)
-
-		// add next validator
-		addValidator(cs, vssMap, height)
-
-		for range voterPrivVals {
-			ensurePrecommit(voteCh, height, round) // wait for precommit
-		}
-
-		ensureNewBlock(newBlockCh, height)
-
-		incrementHeightByMap(vssMap)
-
-		// we're going to roll right into new height
-		ensureNewRound(newRoundCh, height+1, 0)
-	}
-}
-
 func TestPruneBlocks(t *testing.T) {
 	// Based behaviour is counter.Application
 	mockApp := &mocks.Application{}
@@ -2483,8 +2104,7 @@ func TestPruneBlocks(t *testing.T) {
 	// Mocking behaviour to response `RetainHeight` for pruneBlocks
 	mockApp.On("Commit", mock.Anything, mock.Anything).Return(abci.ResponseCommit{RetainHeight: 1})
 
-	cs1, vss := randStateWithVoterParamsWithApp(
-		4, types.DefaultVoterParams(), mockApp)
+	cs1, vss := randStateWithApp(4, mockApp)
 	height, round := cs1.Height, cs1.Round
 
 	newRoundCh := subscribe(cs1.eventBus, types.EventQueryNewRound)

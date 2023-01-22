@@ -44,7 +44,6 @@ func TestMaxEvidenceBytes(t *testing.T) {
 		VoteB:            makeVote(t, val, chainID, math.MaxInt32, math.MaxInt64, math.MaxInt32, 32, blockID2, timestamp),
 		TotalVotingPower: math.MaxInt64,
 		ValidatorPower:   math.MaxInt64,
-		VotingWeight:     math.MaxInt64,
 		Timestamp:        timestamp,
 	}
 
@@ -111,8 +110,8 @@ func TestDuplicateVoteEvidenceValidation(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			vote1 := makeVote(t, val, chainID, math.MaxInt32, math.MaxInt64, math.MaxInt32, 0x02, blockID, defaultVoteTime)
 			vote2 := makeVote(t, val, chainID, math.MaxInt32, math.MaxInt64, math.MaxInt32, 0x02, blockID2, defaultVoteTime)
-			voterSet := WrapValidatorsToVoterSet([]*Validator{val.ExtractIntoValidator(10)})
-			ev := NewDuplicateVoteEvidence(vote1, vote2, defaultVoteTime, voterSet)
+			valSet := NewValidatorSet([]*Validator{val.ExtractIntoValidator(10)})
+			ev := NewDuplicateVoteEvidence(vote1, vote2, defaultVoteTime, valSet)
 			tc.malleateEvidence(ev)
 			assert.Equal(t, tc.expectErr, ev.ValidateBasic() != nil, "Validate Basic had an unexpected result")
 		})
@@ -123,7 +122,7 @@ func TestLightClientAttackEvidenceBasic(t *testing.T) {
 	height := int64(5)
 	commonHeight := height - 1
 	nValidators := 10
-	voteSet, valSet, voterSet, privVals := randVoteSet(height, 1, tmproto.PrecommitType, nValidators, 1)
+	voteSet, valSet, privVals := randVoteSet(height, 1, tmproto.PrecommitType, nValidators, 1)
 	header := makeHeaderRandom()
 	header.Height = height
 	blockID := makeBlockID(tmhash.Sum([]byte("blockhash")), math.MaxInt32, tmhash.Sum([]byte("partshash")))
@@ -136,10 +135,9 @@ func TestLightClientAttackEvidenceBasic(t *testing.T) {
 				Commit: commit,
 			},
 			ValidatorSet: valSet,
-			VoterSet:     voterSet,
 		},
 		CommonHeight:        commonHeight,
-		TotalVotingPower:    voterSet.TotalVotingWeight(),
+		TotalVotingPower:    valSet.TotalVotingPower(),
 		Timestamp:           header.Time,
 		ByzantineValidators: valSet.Validators[:nValidators/2],
 	}
@@ -169,7 +167,7 @@ func TestLightClientAttackEvidenceBasic(t *testing.T) {
 				ValidatorSet: valSet,
 			},
 			CommonHeight:        commonHeight,
-			TotalVotingPower:    voterSet.TotalVotingWeight(),
+			TotalVotingPower:    valSet.TotalVotingPower(),
 			Timestamp:           header.Time,
 			ByzantineValidators: valSet.Validators[:nValidators/2],
 		}
@@ -183,11 +181,10 @@ func TestLightClientAttackEvidenceValidation(t *testing.T) {
 	height := int64(5)
 	commonHeight := height - 1
 	nValidators := 10
-	voteSet, valSet, voterSet, privVals := randVoteSet(height, 1, tmproto.PrecommitType, nValidators, 1)
+	voteSet, valSet, privVals := randVoteSet(height, 1, tmproto.PrecommitType, nValidators, 1)
 	header := makeHeaderRandom()
 	header.Height = height
 	header.ValidatorsHash = valSet.Hash()
-	header.VotersHash = voterSet.Hash()
 	blockID := makeBlockID(header.Hash(), math.MaxInt32, tmhash.Sum([]byte("partshash")))
 	commit, err := MakeCommit(blockID, height, 1, voteSet, privVals, time.Now())
 	require.NoError(t, err)
@@ -198,10 +195,9 @@ func TestLightClientAttackEvidenceValidation(t *testing.T) {
 				Commit: commit,
 			},
 			ValidatorSet: valSet,
-			VoterSet:     voterSet,
 		},
 		CommonHeight:        commonHeight,
-		TotalVotingPower:    voterSet.TotalVotingWeight(),
+		TotalVotingPower:    valSet.TotalVotingPower(),
 		Timestamp:           header.Time,
 		ByzantineValidators: valSet.Validators[:nValidators/2],
 	}
@@ -225,9 +221,6 @@ func TestLightClientAttackEvidenceValidation(t *testing.T) {
 		{"Nil validator set", func(ev *LightClientAttackEvidence) {
 			ev.ConflictingBlock.ValidatorSet = &ValidatorSet{}
 		}, true},
-		{"Nil voter set", func(ev *LightClientAttackEvidence) {
-			ev.ConflictingBlock.VoterSet = &VoterSet{}
-		}, true},
 		{"Negative total voting power", func(ev *LightClientAttackEvidence) {
 			ev.TotalVotingPower = -1
 		}, true},
@@ -242,10 +235,9 @@ func TestLightClientAttackEvidenceValidation(t *testing.T) {
 						Commit: commit,
 					},
 					ValidatorSet: valSet,
-					VoterSet:     voterSet,
 				},
 				CommonHeight:        commonHeight,
-				TotalVotingPower:    voterSet.TotalVotingWeight(),
+				TotalVotingPower:    valSet.TotalVotingPower(),
 				Timestamp:           header.Time,
 				ByzantineValidators: valSet.Validators[:nValidators/2],
 			}
@@ -299,7 +291,6 @@ func makeHeaderRandom() *Header {
 		LastBlockID:        makeBlockIDRandom(),
 		LastCommitHash:     crypto.CRandBytes(tmhash.Size),
 		DataHash:           crypto.CRandBytes(tmhash.Size),
-		VotersHash:         crypto.CRandBytes(tmhash.Size),
 		ValidatorsHash:     crypto.CRandBytes(tmhash.Size),
 		NextValidatorsHash: crypto.CRandBytes(tmhash.Size),
 		ConsensusHash:      crypto.CRandBytes(tmhash.Size),

@@ -19,33 +19,28 @@ type Metrics struct {
 	// Height of the chain.
 	Height metrics.Gauge
 
-	// VoterLastSignedHeight of a voter.
-	VoterLastSignedHeight metrics.Gauge
+	// ValidatorLastSignedHeight of a validator.
+	ValidatorLastSignedHeight metrics.Gauge
 
 	// Number of rounds.
 	Rounds metrics.Gauge
 
-	// ValidatorOrVoter: voter
-	// Number of validators
+	// Number of validators.
 	Validators metrics.Gauge
 	// Total power of all validators.
 	ValidatorsPower metrics.Gauge
-	// Number of voters.
-	Voters metrics.Gauge
-	// Total power of all voters.
-	VotersPower metrics.Gauge
-	// Power of a voter.
-	VoterPower metrics.Gauge
-	// Amount of blocks missed by a voter.
-	VoterMissedBlocks metrics.Gauge
-	// Number of voters who did not sign.
-	MissingVoters metrics.Gauge
-	// Total power of the missing voters.
-	MissingVotersPower metrics.Gauge
-	// Number of voters who tried to double sign.
-	ByzantineVoters metrics.Gauge
-	// Total power of the byzantine voters.
-	ByzantineVotersPower metrics.Gauge
+	// Power of a validator.
+	ValidatorPower metrics.Gauge
+	// Amount of blocks missed by a validator.
+	ValidatorMissedBlocks metrics.Gauge
+	// Number of validators who did not sign.
+	MissingValidators metrics.Gauge
+	// Total power of the missing validators.
+	MissingValidatorsPower metrics.Gauge
+	// Number of validators who tried to double sign.
+	ByzantineValidators metrics.Gauge
+	// Total power of the byzantine validators.
+	ByzantineValidatorsPower metrics.Gauge
 
 	// Time between this and the last block.
 	BlockIntervalSeconds metrics.Gauge
@@ -138,65 +133,53 @@ func PrometheusMetrics(namespace string, labelsAndValues ...string) *Metrics {
 			Name:      "validators",
 			Help:      "Number of validators.",
 		}, labels).With(labelsAndValues...),
+		ValidatorLastSignedHeight: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "validator_last_signed_height",
+			Help:      "Last signed height for a validator",
+		}, append(labels, "validator_address")).With(labelsAndValues...),
+		ValidatorMissedBlocks: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: MetricsSubsystem,
+			Name:      "validator_missed_blocks",
+			Help:      "Total missed blocks for a validator",
+		}, append(labels, "validator_address")).With(labelsAndValues...),
 		ValidatorsPower: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
 			Name:      "validators_power",
 			Help:      "Total power of all validators.",
 		}, labels).With(labelsAndValues...),
-		Voters: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+		ValidatorPower: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
-			Name:      "voters",
-			Help:      "Number of voters.",
-		}, labels).With(labelsAndValues...),
-		VoterLastSignedHeight: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
-			Namespace: namespace,
-			Subsystem: MetricsSubsystem,
-			Name:      "voter_last_signed_height",
-			Help:      "Last signed height for a voter",
+			Name:      "validator_power",
+			Help:      "Power of a validator",
 		}, append(labels, "validator_address")).With(labelsAndValues...),
-		VoterMissedBlocks: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+		MissingValidators: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
-			Name:      "voter_missed_blocks",
-			Help:      "Total missed blocks for a voter",
-		}, append(labels, "validator_address")).With(labelsAndValues...),
-		VotersPower: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
-			Namespace: namespace,
-			Subsystem: MetricsSubsystem,
-			Name:      "voters_power",
-			Help:      "Total power of all voters.",
+			Name:      "missing_validators",
+			Help:      "Number of validators who did not sign.",
 		}, labels).With(labelsAndValues...),
-		VoterPower: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+		MissingValidatorsPower: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
-			Name:      "voter_power",
-			Help:      "Power of a voter",
-		}, append(labels, "validator_address")).With(labelsAndValues...),
-		MissingVoters: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
-			Namespace: namespace,
-			Subsystem: MetricsSubsystem,
-			Name:      "missing_voters",
-			Help:      "Number of voters who did not sign.",
+			Name:      "missing_validators_power",
+			Help:      "Total power of the missing validators.",
 		}, labels).With(labelsAndValues...),
-		MissingVotersPower: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+		ByzantineValidators: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
-			Name:      "missing_voters_power",
-			Help:      "Total power of the missing voters.",
+			Name:      "byzantine_validators",
+			Help:      "Number of validators who tried to double sign.",
 		}, labels).With(labelsAndValues...),
-		ByzantineVoters: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+		ByzantineValidatorsPower: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: MetricsSubsystem,
-			Name:      "byzantine_voters",
-			Help:      "Number of voters who tried to double sign.",
-		}, labels).With(labelsAndValues...),
-		ByzantineVotersPower: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
-			Namespace: namespace,
-			Subsystem: MetricsSubsystem,
-			Name:      "byzantine_voters_power",
-			Help:      "Total power of the byzantine voters.",
+			Name:      "byzantine_validators_power",
+			Help:      "Total power of the byzantine validators.",
 		}, labels).With(labelsAndValues...),
 		BlockIntervalSeconds: prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
 			Namespace: namespace,
@@ -372,20 +355,18 @@ func NopMetrics() *Metrics {
 	return &Metrics{
 		Height: discard.NewGauge(),
 
-		VoterLastSignedHeight: discard.NewGauge(),
+		ValidatorLastSignedHeight: discard.NewGauge(),
 
 		Rounds: discard.NewGauge(),
 
-		Validators:           discard.NewGauge(),
-		ValidatorsPower:      discard.NewGauge(),
-		Voters:               discard.NewGauge(),
-		VotersPower:          discard.NewGauge(),
-		VoterPower:           discard.NewGauge(),
-		VoterMissedBlocks:    discard.NewGauge(),
-		MissingVoters:        discard.NewGauge(),
-		MissingVotersPower:   discard.NewGauge(),
-		ByzantineVoters:      discard.NewGauge(),
-		ByzantineVotersPower: discard.NewGauge(),
+		Validators:               discard.NewGauge(),
+		ValidatorsPower:          discard.NewGauge(),
+		ValidatorPower:           discard.NewGauge(),
+		ValidatorMissedBlocks:    discard.NewGauge(),
+		MissingValidators:        discard.NewGauge(),
+		MissingValidatorsPower:   discard.NewGauge(),
+		ByzantineValidators:      discard.NewGauge(),
+		ByzantineValidatorsPower: discard.NewGauge(),
 
 		BlockIntervalSeconds: discard.NewGauge(),
 

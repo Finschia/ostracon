@@ -306,7 +306,6 @@ func (cs *State) GetRoundStateSimpleJSON() ([]byte, error) {
 }
 
 // GetValidators returns a copy of the current validators.
-// ValidatorOrVoter: validator
 func (cs *State) GetValidators() (int64, []*types.Validator) {
 	cs.mtx.RLock()
 	defer cs.mtx.RUnlock()
@@ -615,7 +614,8 @@ func (cs *State) reconstructLastCommit(state sm.State) {
 			state.LastBlockHeight,
 		))
 	}
-	lastPrecommits := types.CommitToVoteSet(state.ChainID, seenCommit, state.LastVoters)
+
+	lastPrecommits := types.CommitToVoteSet(state.ChainID, seenCommit, state.LastValidators)
 	if !lastPrecommits.HasTwoThirdsMajority() {
 		panic("failed to reconstruct last commit; does not have +2/3 maj")
 	}
@@ -666,7 +666,7 @@ func (cs *State) updateToState(state sm.State) {
 	}
 
 	// Reset fields based on state.
-	voters := state.Voters
+	validators := state.Validators
 
 	switch {
 	case state.LastBlockHeight == 0: // Very first commit should be empty.
@@ -712,7 +712,6 @@ func (cs *State) updateToState(state sm.State) {
 	}
 
 	cs.Validators = state.Validators.Copy()
-	cs.Voters = state.Voters.Copy()
 	cs.Proposal = nil
 	cs.ProposalBlock = nil
 	cs.ProposalBlockParts = nil
@@ -722,9 +721,9 @@ func (cs *State) updateToState(state sm.State) {
 	cs.ValidRound = -1
 	cs.ValidBlock = nil
 	cs.ValidBlockParts = nil
-	cs.Votes = cstypes.NewHeightVoteSet(state.ChainID, height, voters)
+	cs.Votes = cstypes.NewHeightVoteSet(state.ChainID, height, validators)
 	cs.CommitRound = -1
-	cs.LastVoters = state.LastVoters
+	cs.LastValidators = state.LastValidators
 	cs.TriggeredTimeoutPrecommit = false
 
 	cs.state = state
@@ -899,7 +898,7 @@ func (cs *State) handleMsg(mi msgInfo) {
 		}
 
 	case *VoteMessage:
-		// attempt to add the vote and dupeout the voter if its a duplicate signature
+		// attempt to add the vote and dupeout the validator if its a duplicate signature
 		// if the vote gives us a 2/3-any or 2/3-one, we transition
 		added, err = cs.tryAddVote(msg.Vote, peerID)
 		if added {
@@ -1136,8 +1135,6 @@ func (cs *State) enterPropose(height int64, round int32) {
 		return
 	}
 
-	logger.Debug("node is a validator")
-
 	if cs.privValidatorPubKey == nil {
 		// If this node is a validator & proposer in the current round, it will
 		// miss the opportunity to create a block.
@@ -1147,19 +1144,21 @@ func (cs *State) enterPropose(height int64, round int32) {
 
 	address := cs.privValidatorPubKey.Address()
 
-	// I'm a proposer, but I might not be a voter
+	// if not a validator, we're done
+	if !cs.Validators.HasAddress(address) {
+		logger.Debug("node is not a validator", "addr", address, "vals", cs.Validators)
+		return
+	}
+
+	logger.Debug("node is a validator")
+
+	// I'm a proposer, but I might not be a validator
 	if cs.isProposer(address) {
 		logger.Debug("propose step; our turn to propose", "proposer", address)
 		cs.decideProposal(height, round)
 	} else {
 		logger.Debug("propose step; not our turn to propose", "proposer", cs.Proposer.Address,
 			"privValidator", cs.privValidator)
-	}
-
-	if !cs.Voters.HasAddress(address) {
-		logger.Debug("This node is not elected as a voter")
-	} else {
-		logger.Debug("This node is elected as a voter")
 	}
 }
 
@@ -1785,27 +1784,25 @@ func (cs *State) pruneBlocks(retainHeight int64) (uint64, error) {
 func (cs *State) recordMetrics(height int64, block *types.Block) {
 	cs.metrics.Validators.Set(float64(cs.Validators.Size()))
 	cs.metrics.ValidatorsPower.Set(float64(cs.Validators.TotalVotingPower()))
-	cs.metrics.Voters.Set(float64(cs.Voters.Size()))
-	cs.metrics.VotersPower.Set(float64(cs.Voters.TotalVotingWeight()))
 
 	var (
-		missingVoters      int
-		missingVotersPower int64
+		missingValidators      int
+		missingValidatorsPower int64
 	)
-	// height=0 -> MissingVoters and MissingVotersPower are both 0.
+	// height=0 -> MissingValidators and MissingValidatorsPower are both 0.
 	// Remember that the first LastCommit is intentionally empty, so it's not
-	// fair to increment missing voters number.
+	// fair to increment missing validators number.
 	if height > cs.state.InitialHeight {
-		// Sanity check that commit size matches voter set size - only applies
+		// Sanity check that commit size matches validator set size - only applies
 		// after first block.
 		var (
 			commitSize = block.LastCommit.Size()
-			valSetLen  = len(cs.LastVoters.Voters)
+			valSetLen  = len(cs.LastValidators.Validators)
 			address    types.Address
 		)
 		if commitSize != valSetLen {
 			panic(fmt.Sprintf("commit size (%d) doesn't match valset length (%d) at height %d\n\n%v\n\n%v",
-				commitSize, valSetLen, block.Height, block.LastCommit.Signatures, cs.LastVoters.Voters))
+				commitSize, valSetLen, block.Height, block.LastCommit.Signatures, cs.LastValidators.Validators))
 		}
 
 		if cs.privValidator != nil {
@@ -1817,7 +1814,6 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 			}
 		}
 
-		selectedAsVoter := false
 		if cs.privValidator != nil {
 			pubkey, err := cs.privValidator.GetPubKey()
 			if err != nil {
@@ -1828,59 +1824,45 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 			}
 		}
 
-		for i, val := range cs.LastVoters.Voters {
+		for i, val := range cs.LastValidators.Validators {
 			commitSig := block.LastCommit.Signatures[i]
 			if commitSig.Absent() {
-				missingVoters++
-				missingVotersPower += val.VotingWeight
+				missingValidators++
+				missingValidatorsPower += val.VotingPower
 			}
 
 			if bytes.Equal(val.Address, address) {
 				label := []string{
 					"validator_address", val.Address.String(),
 				}
-				cs.metrics.VoterPower.With(label...).Set(float64(val.VotingWeight))
-				selectedAsVoter = true
+				cs.metrics.ValidatorPower.With(label...).Set(float64(val.VotingPower))
 				if commitSig.ForBlock() {
-					cs.metrics.VoterLastSignedHeight.With(label...).Set(float64(height))
+					cs.metrics.ValidatorLastSignedHeight.With(label...).Set(float64(height))
 				} else {
-					cs.metrics.VoterMissedBlocks.With(label...).Add(float64(1))
+					cs.metrics.ValidatorMissedBlocks.With(label...).Add(float64(1))
 				}
 			}
 
-		}
-		if !selectedAsVoter {
-			address := ""
-			if cs.privValidator != nil {
-				pubKey, err := cs.privValidator.GetPubKey()
-				if err == nil && cs.Validators != nil && cs.Validators.HasAddress(pubKey.Address().Bytes()) {
-					address = pubKey.Address().String()
-				}
-			}
-			label := []string{
-				"validator_address", address,
-			}
-			cs.metrics.VoterPower.With(label...).Set(float64(0))
 		}
 	}
-	cs.metrics.MissingVoters.Set(float64(missingVoters))
-	cs.metrics.MissingVotersPower.Set(float64(missingVotersPower))
+	cs.metrics.MissingValidators.Set(float64(missingValidators))
+	cs.metrics.MissingValidatorsPower.Set(float64(missingValidatorsPower))
 
-	// NOTE: byzantine voters power and count is only for consensus evidence i.e. duplicate vote
+	// NOTE: byzantine validators power and count is only for consensus evidence i.e. duplicate vote
 	var (
-		byzantineVotersPower = int64(0)
-		byzantineVotersCount = int64(0)
+		byzantineValidatorsPower = int64(0)
+		byzantineValidatorsCount = int64(0)
 	)
 	for _, ev := range block.Evidence.Evidence {
 		if dve, ok := ev.(*types.DuplicateVoteEvidence); ok {
-			if _, val := cs.Voters.GetByAddress(dve.VoteA.ValidatorAddress); val != nil {
-				byzantineVotersCount++
-				byzantineVotersPower += val.VotingWeight
+			if _, val := cs.Validators.GetByAddress(dve.VoteA.ValidatorAddress); val != nil {
+				byzantineValidatorsCount++
+				byzantineValidatorsPower += val.VotingPower
 			}
 		}
 	}
-	cs.metrics.ByzantineVoters.Set(float64(byzantineVotersCount))
-	cs.metrics.ByzantineVotersPower.Set(float64(byzantineVotersPower))
+	cs.metrics.ByzantineValidators.Set(float64(byzantineValidatorsCount))
+	cs.metrics.ByzantineValidatorsPower.Set(float64(byzantineValidatorsPower))
 
 	if height > 1 {
 		lastBlockMeta := cs.blockStore.LoadBlockMeta(height - 1)
@@ -2175,7 +2157,6 @@ func (cs *State) addVote(vote *types.Vote, peerID p2p.ID) (added bool, err error
 
 		// If +2/3 prevotes for a block or nil for *any* round:
 		if blockID, ok := prevotes.TwoThirdsMajority(); ok {
-
 			// There was a polka!
 			// If we're locked but this is a recent polka, unlock.
 			// If it matches our ProposalBlock, update the ValidBlock
@@ -2301,7 +2282,7 @@ func (cs *State) signVote(
 	}
 
 	addr := cs.privValidatorPubKey.Address()
-	valIdx, _ := cs.Voters.GetByAddress(addr)
+	valIdx, _ := cs.Validators.GetByAddress(addr)
 
 	vote := &types.Vote{
 		ValidatorAddress: addr,
@@ -2352,8 +2333,8 @@ func (cs *State) signAddVote(msgType tmproto.SignedMsgType, hash []byte, header 
 		return nil
 	}
 
-	// If the node not in the voter set, do nothing.
-	if !cs.Voters.HasAddress(cs.privValidatorPubKey.Address()) {
+	// If the node not in the validator set, do nothing.
+	if !cs.Validators.HasAddress(cs.privValidatorPubKey.Address()) {
 		return nil
 	}
 
@@ -2422,11 +2403,11 @@ func (cs *State) calculatePrevoteMessageDelayMetrics() {
 		return pl[i].Timestamp.Before(pl[j].Timestamp)
 	})
 
-	var totalVotingWeight int64
+	var votingPowerSeen int64
 	for _, v := range pl {
-		_, voter := cs.Voters.GetByAddress(v.ValidatorAddress)
-		totalVotingWeight += voter.VotingWeight
-		if totalVotingWeight >= cs.Voters.TotalVotingWeight()*2/3+1 {
+		_, val := cs.Validators.GetByAddress(v.ValidatorAddress)
+		votingPowerSeen += val.VotingPower
+		if votingPowerSeen >= cs.Validators.TotalVotingPower()*2/3+1 {
 			cs.metrics.QuorumPrevoteMessageDelay.Set(v.Timestamp.Sub(cs.Proposal.Timestamp).Seconds())
 			break
 		}

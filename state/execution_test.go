@@ -107,7 +107,7 @@ func TestBeginBlockValidators(t *testing.T) {
 		// block for height 2
 		block, _ := state.MakeBlock(2, makeTxs(2), lastCommit, nil, proposer.Address, 0, proof)
 
-		_, err = sm.ExecCommitBlock(proxyApp.Consensus(), block, log.TestingLogger(), stateStore, 1, state.VoterParams)
+		_, err = sm.ExecCommitBlock(proxyApp.Consensus(), block, log.TestingLogger(), stateStore, 1)
 		require.Nil(t, err, tc.desc)
 
 		// -> app receives a list of validators with a bool indicating if they signed
@@ -135,7 +135,6 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 	defer proxyApp.Stop() //nolint:errcheck // ignore for tests
 
 	state, stateDB, privVals := makeState(2, 12)
-	state.Validators.Validators[0].VotingWeight = 10
 	stateStore := sm.NewStore(stateDB)
 
 	defaultEvidenceTime := time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -149,7 +148,6 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 		LastBlockID:        blockID,
 		LastCommitHash:     crypto.CRandBytes(tmhash.Size),
 		DataHash:           crypto.CRandBytes(tmhash.Size),
-		VotersHash:         state.Voters.Hash(),
 		ValidatorsHash:     state.Validators.Hash(),
 		NextValidatorsHash: state.Validators.Hash(),
 		ConsensusHash:      crypto.CRandBytes(tmhash.Size),
@@ -162,7 +160,6 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 	// we don't need to worry about validating the evidence as long as they pass validate basic
 	dve := types.NewMockDuplicateVoteEvidenceWithValidator(3, defaultEvidenceTime, privVal, state.ChainID)
 	dve.ValidatorPower = 1000
-	dve.VotingWeight = state.Validators.Validators[0].VotingWeight
 	lcae := &types.LightClientAttackEvidence{
 		ConflictingBlock: &types.LightBlock{
 			SignedHeader: &types.SignedHeader{
@@ -175,7 +172,6 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 				}}),
 			},
 			ValidatorSet: state.Validators,
-			VoterSet:     state.Voters,
 		},
 		CommonHeight:        8,
 		ByzantineValidators: []*types.Validator{state.Validators.Validators[0]},
@@ -256,7 +252,7 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 		block, _ := state.MakeBlock(10, makeTxs(2), lastCommit, nil, proposer.Address, 0, proof)
 		block.Time = now
 		block.Evidence.Evidence = tc.evidence
-		_, err = sm.ExecCommitBlock(proxyApp.Consensus(), block, log.TestingLogger(), stateStore, 10, state.VoterParams)
+		_, err = sm.ExecCommitBlock(proxyApp.Consensus(), block, log.TestingLogger(), stateStore, 10)
 		require.Nil(t, err, tc.desc)
 	}
 
@@ -269,7 +265,7 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 	blockID = types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
 	block.LastCommit, _ = makeValidCommit(11, state.LastBlockID, state.Validators, privVals)
 	block.LastCommitHash = block.LastCommit.Hash()
-	block.Time = sm.MedianTime(block.LastCommit, state.LastVoters)
+	block.Time = sm.MedianTime(block.LastCommit, state.LastValidators)
 	message := state.MakeHashMessage(block.Round)
 	proof, _ := privVal.GenerateVRFProof(message)
 	block.Proof = bytes.HexBytes(proof)

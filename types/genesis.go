@@ -35,18 +35,6 @@ type GenesisValidator struct {
 	Name    string        `json:"name"`
 }
 
-type VoterParams struct {
-	VoterElectionThreshold          int32 `json:"voter_election_threshold"`
-	MaxTolerableByzantinePercentage int32 `json:"max_tolerable_byzantine_percentage"`
-}
-
-func (vp *VoterParams) DefaultVoterParams() *VoterParams {
-	return &VoterParams{
-		DefaultVoterElectionThreshold,
-		DefaultMaxTolerableByzantinePercentage,
-	}
-}
-
 // GenesisDoc defines the initial conditions for an ostracon blockchain, in particular its validator set.
 type GenesisDoc struct {
 	GenesisTime     time.Time                `json:"genesis_time"`
@@ -54,7 +42,6 @@ type GenesisDoc struct {
 	InitialHeight   int64                    `json:"initial_height"`
 	ConsensusParams *tmproto.ConsensusParams `json:"consensus_params,omitempty"`
 	Validators      []GenesisValidator       `json:"validators,omitempty"`
-	VoterParams     *VoterParams             `json:"voter_params,omitempty"`
 	AppHash         tmbytes.HexBytes         `json:"app_hash"`
 	AppState        json.RawMessage          `json:"app_state,omitempty"`
 }
@@ -97,12 +84,6 @@ func (genDoc *GenesisDoc) ValidateAndComplete() error {
 	if genDoc.ConsensusParams == nil {
 		genDoc.ConsensusParams = DefaultConsensusParams()
 	} else if err := ValidateConsensusParams(*genDoc.ConsensusParams); err != nil {
-		return err
-	}
-
-	if genDoc.VoterParams == nil {
-		genDoc.VoterParams = DefaultVoterParams()
-	} else if err := genDoc.VoterParams.Validate(); err != nil {
 		return err
 	}
 
@@ -163,35 +144,4 @@ func GenesisDocFromFile(genDocFile string) (*GenesisDoc, error) {
 		return nil, fmt.Errorf("error reading GenesisDoc at %s: %w", genDocFile, err)
 	}
 	return genDoc, nil
-}
-
-func (vp *VoterParams) Validate() error {
-	if vp.VoterElectionThreshold < 0 {
-		return fmt.Errorf("the VoterElectionThreshold must be greater than or equal to 0. Got %d",
-			vp.VoterElectionThreshold)
-	}
-	if vp.MaxTolerableByzantinePercentage <= 0 || vp.MaxTolerableByzantinePercentage >= 34 {
-		return fmt.Errorf("the MaxTolerableByzantinePercentage must be in between 1 and 33. Got %d",
-			vp.MaxTolerableByzantinePercentage)
-	}
-	return nil
-}
-
-func (vp *VoterParams) ToProto() *tmproto.VoterParams {
-	if vp == nil {
-		return nil
-	}
-	return &tmproto.VoterParams{
-		VoterElectionThreshold:          vp.VoterElectionThreshold,
-		MaxTolerableByzantinePercentage: vp.MaxTolerableByzantinePercentage,
-	}
-}
-func VoterParamsFromProto(pb *tmproto.VoterParams) *VoterParams {
-	if pb == nil {
-		return nil
-	}
-	return &VoterParams{
-		VoterElectionThreshold:          pb.VoterElectionThreshold,
-		MaxTolerableByzantinePercentage: pb.MaxTolerableByzantinePercentage,
-	}
 }

@@ -754,10 +754,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-  /voters:
+  /validators:
     get:
-      summary: Get voter set at a specified height
-      operationId: voters
+      summary: Get validator set at a specified height
+      operationId: validators
       parameters:
         - in: query
           name: height
@@ -785,14 +785,14 @@ paths:
       tags:
         - Info
       description: |
-        Get Voters. Validators are sorted by voting power.
+        Get Validators. Validators are sorted by voting power.
       responses:
         "200":
           description: Commit results.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/VotersResponse"
+                $ref: "#/components/schemas/ValidatorsResponse"
         "500":
           description: Error
           content:
@@ -1771,7 +1771,7 @@ components:
               type: boolean
               example: true
           type: object
-    VotersResponse:
+    ValidatorsResponse:
       type: object
       required:
         - "jsonrpc"
@@ -1787,12 +1787,12 @@ components:
         result:
           required:
             - "block_height"
-            - "voters"
+            - "validators"
           properties:
             block_height:
               type: string
               example: "55"
-            voters:
+            validators:
               type: array
               items:
                 $ref: "#/components/schemas/ValidatorPriority"
@@ -1900,8 +1900,7 @@ components:
                 - "step"
                 - "start_time"
                 - "commit_time"
-                - "voters"
-                - "proposer"
+                - "validators"
                 - "proposal"
                 - "proposal_block"
                 - "proposal_block_parts"
@@ -1914,7 +1913,7 @@ components:
                 - "votes"
                 - "commit_round"
                 - "last_commit"
-                - "last_voters"
+                - "last_validators"
                 - "triggered_timeout_precommit"
               properties:
                 height:
@@ -1932,11 +1931,11 @@ components:
                 commit_time:
                   type: string
                   example: "2019-08-05T11:28:44.064658805Z"
-                voters:
+                validators:
                   required:
-                    - "voters"
+                    - "validators"
                   properties:
-                    voters:
+                    validators:
                       type: array
                       items:
                         $ref: "#/components/schemas/ValidatorPriority"
@@ -1999,11 +1998,11 @@ components:
                       properties: {}
                       type: object
                   type: object
-                last_voters:
+                last_validators:
                   required:
-                    - "voters"
+                    - "validators"
                   properties:
-                    voters:
+                    validators:
                       type: array
                       items:
                         $ref: "#/components/schemas/ValidatorPriority"
@@ -2899,7 +2898,8 @@ components:
         - "last_block_id"
         - "last_commit_hash"
         - "data_hash"
-        - "voters_hash"
+        - "validators_hash"
+        - "next_validators_hash"
         - "consensus_hash"
         - "app_hash"
         - "last_results_hash"
@@ -2935,7 +2935,10 @@ components:
         data_hash:
           type: string
           example: "970886F99E77ED0D60DA8FCE0447C2676E59F2F77302B0C4AA10E1D02F18EF73"
-        voters_hash:
+        validators_hash:
+          type: string
+          example: "D658BFD100CA8025CFD3BECFE86194322731D387286FBD26E059115FD5F2BCA0"
+        next_validators_hash:
           type: string
           example: "D658BFD100CA8025CFD3BECFE86194322731D387286FBD26E059115FD5F2BCA0"
         consensus_hash:

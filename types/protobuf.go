@@ -54,17 +54,15 @@ func (oc2pb) Header(header *Header) tmproto.Header {
 		ProposerAddress: header.ProposerAddress,
 
 		// Ostracon fields
-		Round:      header.Round,
-		Proof:      header.Proof,
-		VotersHash: header.VotersHash,
+		Round: header.Round,
+		Proof: header.Proof,
 	}
 }
 
 func (oc2pb) Validator(val *Validator) abci.Validator {
 	return abci.Validator{
-		Address:      val.PubKey.Address(),
-		Power:        val.VotingPower,
-		VotingWeight: val.VotingWeight,
+		Address: val.PubKey.Address(),
+		Power:   val.VotingPower,
 	}
 }
 

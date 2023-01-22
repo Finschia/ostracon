@@ -131,7 +131,7 @@ func TestReactorWithEvidence(t *testing.T) {
 	// to unroll unwieldy abstractions. Here we duplicate the code from:
 	// css := randConsensusNet(N, "consensus_reactor_test", newMockTickerFunc(true), newCounter)
 
-	genDoc, privVals := randGenesisDoc(nValidators, false, 30, nil)
+	genDoc, privVals := randGenesisDoc(nValidators, false, 30)
 	css := make([]*State, nValidators)
 	logger := consensusLogger()
 	for i := 0; i < nValidators; i++ {
@@ -318,12 +318,12 @@ func TestReactorRecordsVotesAndBlockParts(t *testing.T) {
 //-------------------------------------------------------------
 // ensure we can make blocks despite cycling a validator set
 
-func TestReactorVotingWeightChange(t *testing.T) {
+func TestReactorVotingPowerChange(t *testing.T) {
 	nVals := 4
 	logger := log.TestingLogger()
 	css, cleanup := randConsensusNet(
 		nVals,
-		"consensus_voting_weight_changes_test",
+		"consensus_voting_power_changes_test",
 		newMockTickerFunc(true),
 		newPersistentKVStore)
 	defer cleanup()
@@ -345,7 +345,7 @@ func TestReactorVotingWeightChange(t *testing.T) {
 	}, css)
 
 	//---------------------------------------------------------------------------
-	logger.Debug("---------------------------- Testing changing the voting weight of one validator a few times")
+	logger.Debug("---------------------------- Testing changing the voting power of one validator a few times")
 
 	val1PubKey, err := css[0].privValidator.GetPubKey()
 	require.NoError(t, err)
@@ -353,48 +353,48 @@ func TestReactorVotingWeightChange(t *testing.T) {
 	val1PubKeyABCI, err := cryptoenc.PubKeyToProto(val1PubKey)
 	require.NoError(t, err)
 	updateValidatorTx := kvstore.MakeValSetChangeTx(val1PubKeyABCI, 25)
-	previousTotalVotingWeight := css[0].GetRoundState().LastVoters.TotalVotingWeight()
+	previousTotalVotingPower := css[0].GetRoundState().LastValidators.TotalVotingPower()
 
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlockWithTx(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 
-	if css[0].GetRoundState().LastVoters.TotalVotingWeight() == previousTotalVotingWeight {
+	if css[0].GetRoundState().LastValidators.TotalVotingPower() == previousTotalVotingPower {
 		t.Fatalf(
-			"expected voting weight to change (before: %d, after: %d)",
-			previousTotalVotingWeight,
-			css[0].GetRoundState().LastVoters.TotalVotingWeight())
+			"expected voting power to change (before: %d, after: %d)",
+			previousTotalVotingPower,
+			css[0].GetRoundState().LastValidators.TotalVotingPower())
 	}
 
 	updateValidatorTx = kvstore.MakeValSetChangeTx(val1PubKeyABCI, 2)
-	previousTotalVotingWeight = css[0].GetRoundState().LastVoters.TotalVotingWeight()
+	previousTotalVotingPower = css[0].GetRoundState().LastValidators.TotalVotingPower()
 
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlockWithTx(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 
-	if css[0].GetRoundState().LastVoters.TotalVotingWeight() == previousTotalVotingWeight {
+	if css[0].GetRoundState().LastValidators.TotalVotingPower() == previousTotalVotingPower {
 		t.Fatalf(
-			"expected voting weight to change (before: %d, after: %d)",
-			previousTotalVotingWeight,
-			css[0].GetRoundState().LastVoters.TotalVotingWeight())
+			"expected voting power to change (before: %d, after: %d)",
+			previousTotalVotingPower,
+			css[0].GetRoundState().LastValidators.TotalVotingPower())
 	}
 
 	updateValidatorTx = kvstore.MakeValSetChangeTx(val1PubKeyABCI, 26)
-	previousTotalVotingWeight = css[0].GetRoundState().LastVoters.TotalVotingWeight()
+	previousTotalVotingPower = css[0].GetRoundState().LastValidators.TotalVotingPower()
 
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlockWithTx(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
 
-	if css[0].GetRoundState().LastVoters.TotalVotingWeight() == previousTotalVotingWeight {
+	if css[0].GetRoundState().LastValidators.TotalVotingPower() == previousTotalVotingPower {
 		t.Fatalf(
-			"expected voting weight to change (before: %d, after: %d)",
-			previousTotalVotingWeight,
-			css[0].GetRoundState().LastVoters.TotalVotingWeight())
+			"expected voting power to change (before: %d, after: %d)",
+			previousTotalVotingPower,
+			css[0].GetRoundState().LastValidators.TotalVotingPower())
 	}
 }
 
@@ -464,18 +464,18 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 	updatePubKey1ABCI, err := cryptoenc.PubKeyToProto(updateValidatorPubKey1)
 	require.NoError(t, err)
 	updateValidatorTx1 := kvstore.MakeValSetChangeTx(updatePubKey1ABCI, 25)
-	previousTotalVotingWeight := css[nVals].GetRoundState().LastVoters.TotalVotingWeight()
+	previousTotalVotingPower := css[nVals].GetRoundState().LastValidators.TotalVotingPower()
 
 	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css, updateValidatorTx1)
 	waitForAndValidateBlockWithTx(t, nPeers, activeVals, blocksSubs, css, updateValidatorTx1)
 	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css)
 	waitForBlockWithUpdatedValsAndValidateIt(t, nPeers, activeVals, blocksSubs, css)
 
-	if css[nVals].GetRoundState().LastVoters.TotalVotingWeight() == previousTotalVotingWeight {
+	if css[nVals].GetRoundState().LastValidators.TotalVotingPower() == previousTotalVotingPower {
 		t.Errorf(
-			"expected voting weight to change (before: %d, after: %d)",
-			previousTotalVotingWeight,
-			css[nVals].GetRoundState().LastVoters.TotalVotingWeight())
+			"expected voting power to change (before: %d, after: %d)",
+			previousTotalVotingPower,
+			css[nVals].GetRoundState().LastValidators.TotalVotingPower())
 	}
 
 	//---------------------------------------------------------------------------

@@ -171,7 +171,7 @@ func Test_Concurrency(t *testing.T) {
 }
 
 func randLightBlock(height int64) *types.LightBlock {
-	_, voters, _ := types.RandVoterSet(2, 1)
+	vals, _ := types.RandValidatorSet(2, 1)
 	return &types.LightBlock{
 		SignedHeader: &types.SignedHeader{
 			Header: &types.Header{
@@ -182,7 +182,7 @@ func randLightBlock(height int64) *types.LightBlock {
 				LastBlockID:        types.BlockID{},
 				LastCommitHash:     crypto.CRandBytes(tmhash.Size),
 				DataHash:           crypto.CRandBytes(tmhash.Size),
-				VotersHash:         crypto.CRandBytes(tmhash.Size),
+				ValidatorsHash:     crypto.CRandBytes(tmhash.Size),
 				NextValidatorsHash: crypto.CRandBytes(tmhash.Size),
 				ConsensusHash:      crypto.CRandBytes(tmhash.Size),
 				AppHash:            crypto.CRandBytes(tmhash.Size),
@@ -192,6 +192,6 @@ func randLightBlock(height int64) *types.LightBlock {
 			},
 			Commit: &types.Commit{},
 		},
-		VoterSet: voters,
+		ValidatorSet: vals,
 	}
 }

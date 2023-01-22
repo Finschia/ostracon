@@ -570,7 +570,7 @@ func state(nVals int, height int64) (sm.State, dbm.DB, []types.PrivValidator) {
 
 	for i := 1; i < int(height); i++ {
 		s.LastBlockHeight++
-		s.LastVoters = s.Voters.Copy()
+		s.LastValidators = s.Validators.Copy()
 		if err := stateStore.Save(s); err != nil {
 			panic(err)
 		}

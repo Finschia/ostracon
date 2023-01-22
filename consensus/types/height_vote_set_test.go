@@ -23,7 +23,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestPeerCatchupRounds(t *testing.T) {
-	_, valSet, privVals := types.RandVoterSet(10, 1)
+	valSet, privVals := types.RandValidatorSet(10, 1)
 
 	hvs := NewHeightVoteSet(config.ChainID(), 1, valSet)
 

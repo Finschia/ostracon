@@ -3,6 +3,12 @@ package statesync
 import (
 	"context"
 	"fmt"
+	"net"
+	"net/http"
+	"os"
+	"testing"
+	"time"
+
 	"github.com/line/ostracon/config"
 	"github.com/line/ostracon/libs/log"
 	tmrand "github.com/line/ostracon/libs/rand"
@@ -18,11 +24,6 @@ import (
 	"github.com/line/ostracon/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"net"
-	"net/http"
-	"os"
-	"testing"
-	"time"
 )
 
 func TestNewLightClientStateProvider(t *testing.T) {
@@ -47,10 +48,6 @@ func TestNewLightClientStateProvider(t *testing.T) {
 	serversErrorFunc := func(t assert.TestingT, err error, i ...interface{}) bool {
 		return assert.Error(t, err) &&
 			assert.Contains(t, err.Error(), "at least 2 RPC servers are required, got ")
-	}
-	genesisErrorFunc := func(t assert.TestingT, err error, i ...interface{}) bool {
-		return assert.Error(t, err) &&
-			assert.Contains(t, err.Error(), "failed to retrieve genesis doc: ")
 	}
 	lightErrorFunc := func(t assert.TestingT, err error, i ...interface{}) bool {
 		return assert.Error(t, err) &&
@@ -90,12 +87,6 @@ func TestNewLightClientStateProvider(t *testing.T) {
 			wantErr: serversErrorFunc,
 		},
 		{
-			name:    "fail genesis",
-			args:    args{servers: []string{"a", "b"}},
-			want:    nil,
-			wantErr: genesisErrorFunc,
-		},
-		{
 			name:    "fail light client",
 			args:    args{ctx: ctx, servers: servers},
 			want:    nil,
@@ -128,14 +119,13 @@ const (
 )
 
 var (
-	chainId       string
-	cfg           *config.Config
-	genDoc        *types.GenesisDoc
-	privVals      []*types.PrivValidator
-	vals          []*types.Validator
-	votersIndices []int32
-	header        *types.Header
-	commit        *types.Commit
+	chainId  string
+	cfg      *config.Config
+	genDoc   *types.GenesisDoc
+	privVals []*types.PrivValidator
+	vals     []*types.Validator
+	header   *types.Header
+	commit   *types.Commit
 )
 
 func setupVars(t *testing.T) {
@@ -147,30 +137,24 @@ func setupVars(t *testing.T) {
 		ChainID:         chainId,
 		GenesisTime:     tmtime.Now(),
 		ConsensusParams: types.DefaultConsensusParams(),
-		VoterParams:     types.DefaultVoterParams(),
 	}
 	// validators
 	privVals = make([]*types.PrivValidator, size)
 	vals = make([]*types.Validator, size)
-	votersIndices = make([]int32, size)
 	for i := 0; i < size; i++ {
 		val, privVal := types.RandValidator(true, 1)
-		val.VotingWeight = val.VotingPower
 		privVals[i] = &privVal
 		vals[i] = val
-		votersIndices[i] = int32(i)
 	}
 	// header
 	valSet, err := types.ValidatorSetFromExistingValidators(vals)
 	require.NoError(t, err)
-	voterSet := types.ToVoterAll(vals)
 	header = &types.Header{
 		Version: tmversion.Consensus{
 			Block: version.BlockProtocol,
 		},
 		ChainID:         chainId,
 		Height:          height,
-		VotersHash:      voterSet.Hash(),
 		ValidatorsHash:  valSet.Hash(),
 		ProposerAddress: vals[index].Address,
 		Round:           round,
@@ -242,9 +226,9 @@ func serveTestRPCServers(t *testing.T, config *config.Config, num int,
 }
 
 var routes = map[string]*rpcserver.RPCFunc{
-	"genesis":           rpcserver.NewRPCFunc(genesisFunc, ""),
-	"commit":            rpcserver.NewRPCFunc(commitFunc, "height"),
-	"validators_voters": rpcserver.NewRPCFunc(validatorsFunc, "height,page,per_page"),
+	"genesis":    rpcserver.NewRPCFunc(genesisFunc, ""),
+	"commit":     rpcserver.NewRPCFunc(commitFunc, "height"),
+	"validators": rpcserver.NewRPCFunc(validatorsFunc, "height,page,per_page"),
 }
 
 func genesisFunc(ctx *rpctypes.Context) (*ctypes.ResultGenesis, error) {
@@ -256,12 +240,11 @@ func commitFunc(ctx *rpctypes.Context, heightPtr *int64) (*ctypes.ResultCommit, 
 }
 
 func validatorsFunc(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *int,
-) (*ctypes.ResultValidatorsWithVoters, error) {
-	return &ctypes.ResultValidatorsWithVoters{
-		BlockHeight:  height,
-		Validators:   vals,
-		VoterIndices: votersIndices,
-		Count:        size,
-		Total:        size,
+) (*ctypes.ResultValidators, error) {
+	return &ctypes.ResultValidators{
+		BlockHeight: height,
+		Validators:  vals,
+		Count:       size,
+		Total:       size,
 	}, nil
 }

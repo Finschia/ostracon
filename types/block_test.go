@@ -45,7 +45,7 @@ func TestBlockAddEvidence(t *testing.T) {
 	lastID := makeBlockIDRandom()
 	h := int64(3)
 
-	voteSet, _, _, vals := randVoteSet(h-1, 1, tmproto.PrecommitType, 10, 1)
+	voteSet, _, vals := randVoteSet(h-1, 1, tmproto.PrecommitType, 10, 1)
 	commit, err := MakeCommit(lastID, h-1, 1, voteSet, vals, time.Now())
 	require.NoError(t, err)
 
@@ -65,7 +65,7 @@ func TestBlockValidateBasic(t *testing.T) {
 	lastID := makeBlockIDRandom()
 	h := int64(3)
 
-	voteSet, valSet, _, vals := randVoteSet(h-1, 1, tmproto.PrecommitType, 10, 1)
+	voteSet, valSet, vals := randVoteSet(h-1, 1, tmproto.PrecommitType, 10, 1)
 	commit, err := MakeCommit(lastID, h-1, 1, voteSet, vals, time.Now())
 	require.NoError(t, err)
 
@@ -122,9 +122,6 @@ func TestBlockValidateBasic(t *testing.T) {
 		{"Tampered LastResultsHash", func(blk *Block) {
 			blk.LastResultsHash = []byte("something else")
 		}, true},
-		{"Tampered VotersHash", func(blk *Block) {
-			blk.VotersHash = []byte("something else")
-		}, true},
 		{"Tampered LastBlockID", func(blk *Block) {
 			blk.LastBlockID = BlockID{Hash: []byte("something else")}
 		}, true},
@@ -161,7 +158,7 @@ func TestBlockMakePartSetWithEvidence(t *testing.T) {
 	lastID := makeBlockIDRandom()
 	h := int64(3)
 
-	voteSet, _, _, vals := randVoteSet(h-1, 1, tmproto.PrecommitType, 10, 1)
+	voteSet, _, vals := randVoteSet(h-1, 1, tmproto.PrecommitType, 10, 1)
 	commit, err := MakeCommit(lastID, h-1, 1, voteSet, vals, time.Now())
 	require.NoError(t, err)
 
@@ -184,7 +181,7 @@ func TestBlockHashesTo(t *testing.T) {
 
 	lastID := makeBlockIDRandom()
 	h := int64(3)
-	voteSet, valSet, voterSet, vals := randVoteSet(h-1, 1, tmproto.PrecommitType, 10, 1)
+	voteSet, valSet, vals := randVoteSet(h-1, 1, tmproto.PrecommitType, 10, 1)
 	commit, err := MakeCommit(lastID, h-1, 1, voteSet, vals, time.Now())
 	require.NoError(t, err)
 
@@ -193,7 +190,6 @@ func TestBlockHashesTo(t *testing.T) {
 
 	block := MakeBlock(h, []Tx{Tx("Hello World")}, commit, evList, TestConsensusVersion)
 	block.ValidatorsHash = valSet.Hash()
-	block.VotersHash = voterSet.Hash()
 	assert.False(t, block.HashesTo([]byte{}))
 	assert.False(t, block.HashesTo([]byte("something else")))
 	assert.True(t, block.HashesTo(block.Hash()))
@@ -263,7 +259,7 @@ func TestNilDataHashDoesntCrash(t *testing.T) {
 func TestCommit(t *testing.T) {
 	lastID := makeBlockIDRandom()
 	h := int64(3)
-	voteSet, _, _, vals := randVoteSet(h-1, 1, tmproto.PrecommitType, 10, 1)
+	voteSet, _, vals := randVoteSet(h-1, 1, tmproto.PrecommitType, 10, 1)
 	commit, err := MakeCommit(lastID, h-1, 1, voteSet, vals, time.Now())
 	require.NoError(t, err)
 
@@ -398,7 +394,6 @@ func TestHeaderHash(t *testing.T) {
 			LastBlockID:        makeBlockID(make([]byte, tmhash.Size), 6, make([]byte, tmhash.Size)),
 			LastCommitHash:     tmhash.Sum([]byte("last_commit_hash")),
 			DataHash:           tmhash.Sum([]byte("data_hash")),
-			VotersHash:         tmhash.Sum([]byte("voters_hash")),
 			ValidatorsHash:     tmhash.Sum([]byte("validators_hash")),
 			NextValidatorsHash: tmhash.Sum([]byte("next_validators_hash")),
 			ConsensusHash:      tmhash.Sum([]byte("consensus_hash")),
@@ -410,7 +405,7 @@ func TestHeaderHash(t *testing.T) {
 			// The Proof defined here does not depend on the vrf ProofLength,
 			// but it is a fixed value for the purpose of calculating the Hash value.
 			Proof: tmhash.Sum([]byte("proof")),
-		}, hexBytesFromString("0368E6F15B6B7BC9DC5B10F36F37D6F867E132A22333F083A11290324274E183")},
+		}, hexBytesFromString("13817DE03E8288A1DEB3A7FDDCC4C4AEEE7A9A27441E4D1B00C555076CA226D0")},
 		{"nil header yields nil", nil, nil},
 		{"nil ValidatorsHash yields nil", &Header{
 			Version:            tmversion.Consensus{Block: 1, App: 2},
@@ -420,7 +415,6 @@ func TestHeaderHash(t *testing.T) {
 			LastBlockID:        makeBlockID(make([]byte, tmhash.Size), 6, make([]byte, tmhash.Size)),
 			LastCommitHash:     tmhash.Sum([]byte("last_commit_hash")),
 			DataHash:           tmhash.Sum([]byte("data_hash")),
-			VotersHash:         tmhash.Sum([]byte("voters_hash")),
 			ValidatorsHash:     nil,
 			NextValidatorsHash: tmhash.Sum([]byte("next_validators_hash")),
 			ConsensusHash:      tmhash.Sum([]byte("consensus_hash")),
@@ -430,27 +424,6 @@ func TestHeaderHash(t *testing.T) {
 			ProposerAddress:    crypto.AddressHash([]byte("proposer_address")),
 			Round:              1,
 			Proof:              tmhash.Sum([]byte("proof")),
-		}, nil},
-		{"nil VotersHash yields nil", &Header{
-			Version:            tmversion.Consensus{Block: 1, App: 2},
-			ChainID:            "chainId",
-			Height:             3,
-			Time:               time.Date(2019, 10, 13, 16, 14, 44, 0, time.UTC),
-			LastBlockID:        makeBlockID(make([]byte, tmhash.Size), 6, make([]byte, tmhash.Size)),
-			LastCommitHash:     tmhash.Sum([]byte("last_commit_hash")),
-			DataHash:           tmhash.Sum([]byte("data_hash")),
-			VotersHash:         nil,
-			ValidatorsHash:     tmhash.Sum([]byte("validators_hash")),
-			NextValidatorsHash: tmhash.Sum([]byte("next_validators_hash")),
-			ConsensusHash:      tmhash.Sum([]byte("consensus_hash")),
-			AppHash:            tmhash.Sum([]byte("app_hash")),
-			LastResultsHash:    tmhash.Sum([]byte("last_results_hash")),
-			EvidenceHash:       tmhash.Sum([]byte("evidence_hash")),
-			ProposerAddress:    crypto.AddressHash([]byte("proposer_address")),
-			Round:              1,
-			// The Proof defined here does not depend on the vrf ProofLength,
-			// but it is a fixed value for the purpose of calculating the Hash value.
-			Proof: tmhash.Sum([]byte("proof")),
 		}, nil},
 	}
 	for _, tc := range testCases {
@@ -539,9 +512,6 @@ func TestHeaderValidateBasic(t *testing.T) {
 		{"Invalid Proposer Address length", func(header *Header) {
 			header.ProposerAddress = make([]byte, crypto.AddressSize-1)
 		}, true},
-		{"Invalid Voters Hash", func(header *Header) {
-			header.VotersHash = []byte(strings.Repeat("h", invalidHashLength))
-		}, true},
 		{"Invalid Next Validators Hash", func(header *Header) {
 			header.NextValidatorsHash = []byte(strings.Repeat("h", invalidHashLength))
 		}, true},
@@ -574,7 +544,6 @@ func TestHeaderValidateBasic(t *testing.T) {
 				LastCommitHash:     tmhash.Sum([]byte("last_commit_hash")),
 				DataHash:           tmhash.Sum([]byte("data_hash")),
 				ValidatorsHash:     tmhash.Sum([]byte("validators_hash")),
-				VotersHash:         tmhash.Sum([]byte("voters_hash")),
 				NextValidatorsHash: tmhash.Sum([]byte("next_validators_hash")),
 				ConsensusHash:      tmhash.Sum([]byte("consensus_hash")),
 				AppHash:            tmhash.Sum([]byte("app_hash")),
@@ -618,7 +587,6 @@ func TestMaxHeaderBytes(t *testing.T) {
 		LastBlockID:        makeBlockID(make([]byte, tmhash.Size), math.MaxInt32, make([]byte, tmhash.Size)),
 		LastCommitHash:     tmhash.Sum([]byte("last_commit_hash")),
 		DataHash:           tmhash.Sum([]byte("data_hash")),
-		VotersHash:         tmhash.Sum([]byte("voters_hash")),
 		ValidatorsHash:     tmhash.Sum([]byte("validators_hash")),
 		NextValidatorsHash: tmhash.Sum([]byte("next_validators_hash")),
 		ConsensusHash:      tmhash.Sum([]byte("consensus_hash")),
@@ -639,7 +607,7 @@ func TestMaxHeaderBytes(t *testing.T) {
 func randCommit(now time.Time) *Commit {
 	lastID := makeBlockIDRandom()
 	h := int64(3)
-	voteSet, _, _, vals := randVoteSet(h-1, 1, tmproto.PrecommitType, 10, 1)
+	voteSet, _, vals := randVoteSet(h-1, 1, tmproto.PrecommitType, 10, 1)
 	commit, err := MakeCommit(lastID, h-1, 1, voteSet, vals, now)
 	if err != nil {
 		panic(err)
@@ -665,15 +633,15 @@ func TestBlockMaxDataBytes(t *testing.T) {
 	}{
 		0:  {-10, 1, 0, true, 0},
 		1:  {10, 1, 0, true, 0},
-		2:  {886 + int64(vrf.ProofSize), 1, 0, true, 0},
-		3:  {887 + int64(vrf.ProofSize), 1, 0, false, 0},
-		4:  {888 + int64(vrf.ProofSize), 1, 0, false, 1},
-		5:  {997 + int64(vrf.ProofSize), 2, 0, true, 0},
-		6:  {998 + int64(vrf.ProofSize), 2, 0, false, 0},
-		7:  {999 + int64(vrf.ProofSize), 2, 0, false, 1},
-		8:  {1097 + int64(vrf.ProofSize), 2, 100, true, 0},
-		9:  {1098 + int64(vrf.ProofSize), 2, 100, false, 0},
-		10: {1099 + int64(vrf.ProofSize), 2, 100, false, 1},
+		2:  {851 + int64(vrf.ProofSize), 1, 0, true, 0},
+		3:  {852 + int64(vrf.ProofSize), 1, 0, false, 0},
+		4:  {853 + int64(vrf.ProofSize), 1, 0, false, 1},
+		5:  {962 + int64(vrf.ProofSize), 2, 0, true, 0},
+		6:  {963 + int64(vrf.ProofSize), 2, 0, false, 0},
+		7:  {964 + int64(vrf.ProofSize), 2, 0, false, 1},
+		8:  {1062 + int64(vrf.ProofSize), 2, 100, true, 0},
+		9:  {1063 + int64(vrf.ProofSize), 2, 100, false, 0},
+		10: {1064 + int64(vrf.ProofSize), 2, 100, false, 1},
 	}
 
 	for i, tc := range testCases {
@@ -700,12 +668,12 @@ func TestBlockMaxDataBytesNoEvidence(t *testing.T) {
 	}{
 		0: {-10, 1, true, 0},
 		1: {10, 1, true, 0},
-		2: {886 + int64(vrf.ProofSize), 1, true, 0},
-		3: {887 + int64(vrf.ProofSize), 1, false, 0},
-		4: {888 + int64(vrf.ProofSize), 1, false, 1},
-		5: {997 + int64(vrf.ProofSize), 2, true, 0},
-		6: {998 + int64(vrf.ProofSize), 2, false, 0},
-		7: {999 + int64(vrf.ProofSize), 2, false, 1},
+		2: {851 + int64(vrf.ProofSize), 1, true, 0},
+		3: {852 + int64(vrf.ProofSize), 1, false, 0},
+		4: {853 + int64(vrf.ProofSize), 1, false, 1},
+		5: {962 + int64(vrf.ProofSize), 2, true, 0},
+		6: {963 + int64(vrf.ProofSize), 2, false, 0},
+		7: {964 + int64(vrf.ProofSize), 2, false, 1},
 	}
 
 	for i, tc := range testCases {
@@ -730,12 +698,12 @@ func TestCommitToVoteSet(t *testing.T) {
 	lastID := makeBlockIDRandom()
 	h := int64(3)
 
-	voteSet, _, voterSet, vals := randVoteSet(h-1, 1, tmproto.PrecommitType, 10, 1)
+	voteSet, valSet, vals := randVoteSet(h-1, 1, tmproto.PrecommitType, 10, 1)
 	commit, err := MakeCommit(lastID, h-1, 1, voteSet, vals, time.Now())
 	assert.NoError(t, err)
 
 	chainID := voteSet.ChainID()
-	voteSet2 := CommitToVoteSet(chainID, commit, voterSet)
+	voteSet2 := CommitToVoteSet(chainID, commit, valSet)
 
 	for i := int32(0); int(i) < len(vals); i++ {
 		// This is the vote before `MakeCommit`.
@@ -776,7 +744,7 @@ func TestCommitToVoteSetWithVotesForNilBlock(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		voteSet, _, voterSet, vals := randVoteSet(height-1, round, tmproto.PrecommitType, tc.numValidators, 1)
+		voteSet, valSet, vals := randVoteSet(height-1, round, tmproto.PrecommitType, tc.numValidators, 1)
 
 		vi := int32(0)
 		for n := range tc.blockIDs {
@@ -804,7 +772,7 @@ func TestCommitToVoteSetWithVotesForNilBlock(t *testing.T) {
 		if tc.valid {
 			commit := voteSet.MakeCommit() // panics without > 2/3 valid votes
 			assert.NotNil(t, commit)
-			err := voterSet.VerifyCommit(voteSet.ChainID(), blockID, height-1, commit)
+			err := valSet.VerifyCommit(voteSet.ChainID(), blockID, height-1, commit)
 			assert.Nil(t, err)
 		} else {
 			assert.Panics(t, func() { voteSet.MakeCommit() })
@@ -973,7 +941,6 @@ func makeRandHeader() Header {
 		LastBlockID:        BlockID{},
 		LastCommitHash:     randBytes,
 		DataHash:           randBytes,
-		VotersHash:         randBytes,
 		ValidatorsHash:     randBytes,
 		NextValidatorsHash: randBytes,
 		ConsensusHash:      randBytes,

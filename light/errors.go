@@ -23,7 +23,7 @@ func (e ErrOldHeaderExpired) Error() string {
 // ErrNewValSetCantBeTrusted means the new validator set cannot be trusted
 // because < 1/3rd (+trustLevel+) of the old validator set has signed.
 type ErrNewValSetCantBeTrusted struct {
-	Reason types.ErrNotEnoughVotingWeightSigned
+	Reason types.ErrNotEnoughVotingPowerSigned
 }
 
 func (e ErrNewValSetCantBeTrusted) Error() string {

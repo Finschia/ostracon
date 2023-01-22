@@ -49,15 +49,6 @@ func TestGenesisBad(t *testing.T) {
 				`},"power":"10","name":""}` +
 				`]}`,
 		),
-		// missing some params in voter_params
-		[]byte(
-			`{"chain_id":"mychain", "validators":[` +
-				`{"pub_key":{` +
-				`"type":"tendermint/PubKeyEd25519","value":"AT/+aaL1eB0477Mud9JMm8Sh8BIvOYlPGC9KkIUmFaE="` +
-				`},"power":"10","name":""}], ` +
-				`"voter_params":{"voter_election_threshold":"1"}` +
-				`}`,
-		),
 	}
 
 	for _, testCase := range testCases {
@@ -79,7 +70,6 @@ func TestGenesisGood(t *testing.T) {
 				"power":"10",
 				"name":""
 			}],
-            "voter_params":null,
 			"app_hash":"",
 			"app_state":{"account_owner": "Bob"}
 		}`,
@@ -168,7 +158,6 @@ func randomGenesisDoc() *GenesisDoc {
 		GenesisTime:     tmtime.Now(),
 		ChainID:         "abc",
 		InitialHeight:   1000,
-		VoterParams:     DefaultVoterParams(),
 		Validators:      []GenesisValidator{{pubkey.Address(), pubkey, 10, "myval"}},
 		ConsensusParams: DefaultConsensusParams(),
 		AppHash:         []byte{1, 2, 3},

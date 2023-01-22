@@ -39,9 +39,9 @@ We let each peer provide us with up to 2 unexpected "catchup" rounds.
 One for their LastCommit round, and another for the official commit round.
 */
 type HeightVoteSet struct {
-	chainID  string
-	height   int64
-	voterSet *types.VoterSet
+	chainID string
+	height  int64
+	valSet  *types.ValidatorSet
 
 	mtx               sync.Mutex
 	round             int32                  // max tracked round
@@ -49,20 +49,20 @@ type HeightVoteSet struct {
 	peerCatchupRounds map[p2p.ID][]int32     // keys: peer.ID; values: at most 2 rounds
 }
 
-func NewHeightVoteSet(chainID string, height int64, voterSet *types.VoterSet) *HeightVoteSet {
+func NewHeightVoteSet(chainID string, height int64, valSet *types.ValidatorSet) *HeightVoteSet {
 	hvs := &HeightVoteSet{
 		chainID: chainID,
 	}
-	hvs.Reset(height, voterSet)
+	hvs.Reset(height, valSet)
 	return hvs
 }
 
-func (hvs *HeightVoteSet) Reset(height int64, voterSet *types.VoterSet) {
+func (hvs *HeightVoteSet) Reset(height int64, valSet *types.ValidatorSet) {
 	hvs.mtx.Lock()
 	defer hvs.mtx.Unlock()
 
 	hvs.height = height
-	hvs.voterSet = voterSet
+	hvs.valSet = valSet
 	hvs.roundVoteSets = make(map[int32]RoundVoteSet)
 	hvs.peerCatchupRounds = make(map[p2p.ID][]int32)
 
@@ -104,8 +104,8 @@ func (hvs *HeightVoteSet) addRound(round int32) {
 		panic("addRound() for an existing round")
 	}
 	// log.Debug("addRound(round)", "round", round)
-	prevotes := types.NewVoteSet(hvs.chainID, hvs.height, round, tmproto.PrevoteType, hvs.voterSet)
-	precommits := types.NewVoteSet(hvs.chainID, hvs.height, round, tmproto.PrecommitType, hvs.voterSet)
+	prevotes := types.NewVoteSet(hvs.chainID, hvs.height, round, tmproto.PrevoteType, hvs.valSet)
+	precommits := types.NewVoteSet(hvs.chainID, hvs.height, round, tmproto.PrecommitType, hvs.valSet)
 	hvs.roundVoteSets[round] = RoundVoteSet{
 		Prevotes:   prevotes,
 		Precommits: precommits,

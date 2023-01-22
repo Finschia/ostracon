@@ -56,17 +56,6 @@ func TestValidator_Sets(t *testing.T) {
 					"incorrect PubKey of validator set at height %v", h)
 				require.Equal(t, expected.VotingPower, actual.VotingPower,
 					"incorrect VotingPower of validator set at height %v", h)
-				if node.Name == "full02" {
-					// `full02` sync to use `light.Block.ValidatorSet`
-					// It's made by `client.ValidatorsAndVoters` (It's not `client.Validators`)
-					// See: Validators and ValidatorsAndVoters in `rpc.core.consensus.go`
-					// VotingWeight is set VotingPower until sync finished
-					// After syncing, VotingWeight is set zero
-					// It's difficult to check the VotingWeight in this test, so skipping
-				} else {
-					require.Equal(t, int64(0), actual.VotingWeight,
-						"incorrect VotingWeight of validator set at height %v", h)
-				}
 				if expected.ProposerPriority == 0 {
 					// ProposerPriority is not changed
 					// the other value can ignore since we don't use it

@@ -96,7 +96,7 @@ func TestABCIHeader(t *testing.T) {
 	}
 	header.Populate(
 		protocolVersion, "chainID", timestamp, lastBlockID,
-		[]byte("votersHash"), []byte("valHash"), []byte("nextValHash"),
+		[]byte("valHash"), []byte("nextValHash"),
 		[]byte("consHash"), []byte("appHash"), []byte("lastResultsHash"),
 		[]byte("proposerAddress"), 0, []byte("lastProof"),
 	)

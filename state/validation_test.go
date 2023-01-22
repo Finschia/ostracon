@@ -60,7 +60,6 @@ func TestValidateBlockHeader(t *testing.T) {
 		{"LastCommitHash wrong", func(block *types.Block) { block.LastCommitHash = wrongHash }},
 		{"DataHash wrong", func(block *types.Block) { block.DataHash = wrongHash }},
 
-		{"VotersHash wrong", func(block *types.Block) { block.VotersHash = wrongHash }},
 		{"ValidatorsHash wrong", func(block *types.Block) { block.ValidatorsHash = wrongHash }},
 		{"NextValidatorsHash wrong", func(block *types.Block) { block.NextValidatorsHash = wrongHash }},
 		{"ConsensusHash wrong", func(block *types.Block) { block.ConsensusHash = wrongHash }},
@@ -118,7 +117,7 @@ func TestValidateBlockCommit(t *testing.T) {
 		proposerAddr := state.Validators.SelectProposer([]byte{}, height, 0).Address
 		if height > 1 {
 			/*
-				#2589: ensure state.LastVoters.VerifyCommit fails here
+				#2589: ensure state.LastValidators.VerifyCommit fails here
 			*/
 			// should be height-1 instead of height
 			wrongHeightVote, err := types.MakeVote(
@@ -144,7 +143,7 @@ func TestValidateBlockCommit(t *testing.T) {
 			require.True(t, isErrInvalidCommitHeight, "expected ErrInvalidCommitHeight at height %d but got: %v", height, err)
 
 			/*
-				#2589: test len(block.LastCommit.Signatures) == state.LastVoters.Size()
+				#2589: test len(block.LastCommit.Signatures) == state.LastValidators.Size()
 			*/
 			block, _ = state.MakeBlock(height, makeTxs(height), wrongSigsCommit, nil, proposerAddr, 0, proof)
 			err = blockExec.ValidateBlock(state, 0, block)

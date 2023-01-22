@@ -73,7 +73,6 @@ type RoundState struct {
 	// Subjective time when +2/3 precommits for Block at Round were found
 	CommitTime         time.Time           `json:"commit_time"`
 	Validators         *types.ValidatorSet `json:"validators"`
-	Voters             *types.VoterSet     `json:"voters"`
 	Proposer           *types.Validator    `json:"proposer"`
 	Proposal           *types.Proposal     `json:"proposal"`
 	ProposalBlock      *types.Block        `json:"proposal_block"`
@@ -87,12 +86,12 @@ type RoundState struct {
 	ValidBlock *types.Block `json:"valid_block"` // Last known block of POL mentioned above.
 
 	// Last known block parts of POL mentioned above.
-	ValidBlockParts           *types.PartSet  `json:"valid_block_parts"`
-	Votes                     *HeightVoteSet  `json:"votes"`
-	CommitRound               int32           `json:"commit_round"` //
-	LastCommit                *types.VoteSet  `json:"last_commit"`  // Last precommits at Height-1
-	LastVoters                *types.VoterSet `json:"last_voters"`
-	TriggeredTimeoutPrecommit bool            `json:"triggered_timeout_precommit"`
+	ValidBlockParts           *types.PartSet      `json:"valid_block_parts"`
+	Votes                     *HeightVoteSet      `json:"votes"`
+	CommitRound               int32               `json:"commit_round"` //
+	LastCommit                *types.VoteSet      `json:"last_commit"`  // Last precommits at Height-1
+	LastValidators            *types.ValidatorSet `json:"last_validators"`
+	TriggeredTimeoutPrecommit bool                `json:"triggered_timeout_precommit"`
 }
 
 // Compressed version of the RoundState for use in RPC
@@ -114,7 +113,7 @@ func (rs *RoundState) RoundStateSimple() RoundStateSimple {
 	}
 
 	addr := rs.Proposer.Address
-	idx, _ := rs.Voters.GetByAddress(addr)
+	idx, _ := rs.Validators.GetByAddress(addr)
 
 	return RoundStateSimple{
 		HeightRoundStep:   fmt.Sprintf("%d/%d/%d", rs.Height, rs.Round, rs.Step),
@@ -133,7 +132,7 @@ func (rs *RoundState) RoundStateSimple() RoundStateSimple {
 // NewRoundEvent returns the RoundState with proposer information as an event.
 func (rs *RoundState) NewRoundEvent() types.EventDataNewRound {
 	addr := rs.Proposer.Address
-	idx, _ := rs.Voters.GetByAddress(addr)
+	idx, _ := rs.Validators.GetByAddress(addr)
 
 	return types.EventDataNewRound{
 		Height: rs.Height,
@@ -183,7 +182,7 @@ func (rs *RoundState) StringIndented(indent string) string {
 %s  H:%v R:%v S:%v
 %s  StartTime:     %v
 %s  CommitTime:    %v
-%s  Voters:    %v
+%s  Validators:    %v
 %s  Proposer:      %v
 %s  Proposal:      %v
 %s  ProposalBlock: %v %v
@@ -193,12 +192,12 @@ func (rs *RoundState) StringIndented(indent string) string {
 %s  ValidBlock:   %v %v
 %s  Votes:         %v
 %s  LastCommit:    %v
-%s  LastVoters:%v
+%s  LastValidators:%v
 %s}`,
 		indent, rs.Height, rs.Round, rs.Step,
 		indent, rs.StartTime,
 		indent, rs.CommitTime,
-		indent, rs.Voters.StringIndented(indent+"  "),
+		indent, rs.Validators.StringIndented(indent+"  "),
 		indent, rs.Proposer.String(),
 		indent, rs.Proposal,
 		indent, rs.ProposalBlockParts.StringShort(), rs.ProposalBlock.StringShort(),
@@ -208,7 +207,7 @@ func (rs *RoundState) StringIndented(indent string) string {
 		indent, rs.ValidBlockParts.StringShort(), rs.ValidBlock.StringShort(),
 		indent, rs.Votes.StringIndented(indent+"  "),
 		indent, rs.LastCommit.StringShort(),
-		indent, rs.LastVoters.StringIndented(indent+"  "),
+		indent, rs.LastValidators.StringIndented(indent+"  "),
 		indent)
 }
 

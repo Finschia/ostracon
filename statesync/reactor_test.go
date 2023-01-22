@@ -269,11 +269,9 @@ func makeTestStateAndCommit(appHash string, height int64) (sm.State, *types.Comm
 		LastResultsHash: []byte("last_results_hash"),
 		AppHash:         []byte(appHash),
 
-		LastVoters:     &types.VoterSet{},
+		LastValidators: &types.ValidatorSet{},
 		Validators:     &types.ValidatorSet{},
-		Voters:         &types.VoterSet{},
 		NextValidators: &types.ValidatorSet{},
-		VoterParams:    types.DefaultVoterParams(),
 
 		ConsensusParams:                  *types.DefaultConsensusParams(),
 		LastHeightConsensusParamsChanged: 1,

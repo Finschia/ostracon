@@ -20,9 +20,6 @@ const (
 
 	// MaxBlockPartsCount is the maximum number of block parts.
 	MaxBlockPartsCount = (MaxBlockSizeBytes / BlockPartSizeBytes) + 1
-
-	DefaultVoterElectionThreshold          = 33 // 33 is a statistically tested threshold
-	DefaultMaxTolerableByzantinePercentage = 33 // 20 is a statistically tested percentage, but we recommend using 33
 )
 
 // DefaultConsensusParams returns a default ConsensusParams.
@@ -33,13 +30,6 @@ func DefaultConsensusParams() *tmproto.ConsensusParams {
 		Validator: DefaultValidatorParams(),
 		Version:   DefaultVersionParams(),
 	}
-}
-
-// DefaultVoterParams returns a default VoterParams.
-func DefaultVoterParams() *VoterParams {
-	return &VoterParams{
-		VoterElectionThreshold:          DefaultVoterElectionThreshold,
-		MaxTolerableByzantinePercentage: DefaultMaxTolerableByzantinePercentage}
 }
 
 // DefaultBlockParams returns a default BlockParams.
