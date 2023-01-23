@@ -8,13 +8,13 @@ import (
 	"strings"
 
 	abci "github.com/tendermint/tendermint/abci/types"
+	pc "github.com/tendermint/tendermint/proto/tendermint/crypto"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/line/ostracon/abci/example/code"
 	ocabci "github.com/line/ostracon/abci/types"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
 	"github.com/line/ostracon/libs/log"
-	pc "github.com/line/ostracon/proto/ostracon/crypto"
 )
 
 const (

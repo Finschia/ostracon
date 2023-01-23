@@ -9,7 +9,7 @@ import "tendermint/crypto/proof.proto";
 import "tendermint/types/params.proto";
 import "tendermint/abci/types.proto";
 import "ostracon/types/types.proto";
-import "ostracon/crypto/keys.proto";
+import "tendermint/crypto/keys.proto";
 import "google/protobuf/timestamp.proto";
 import "gogoproto/gogo.proto";
 
@@ -368,7 +368,7 @@ message Validator {
 
 // ValidatorUpdate
 message ValidatorUpdate {
-  ostracon.crypto.PublicKey pub_key = 1 [(gogoproto.nullable) = false];
+  tendermint.crypto.PublicKey pub_key = 1 [(gogoproto.nullable) = false];
   int64                     power   = 2;  // The voting power
 }
 

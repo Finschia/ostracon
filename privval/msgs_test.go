@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	cryptoproto "github.com/tendermint/tendermint/proto/tendermint/crypto"
 	tmprivvalproto "github.com/tendermint/tendermint/proto/tendermint/privval"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
@@ -15,7 +16,6 @@ import (
 	"github.com/line/ostracon/crypto/ed25519"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
 	"github.com/line/ostracon/crypto/tmhash"
-	cryptoproto "github.com/line/ostracon/proto/ostracon/crypto"
 	privvalproto "github.com/line/ostracon/proto/ostracon/privval"
 	"github.com/line/ostracon/types"
 )

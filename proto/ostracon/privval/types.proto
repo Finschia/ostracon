@@ -1,7 +1,7 @@
 syntax = "proto3";
 package ostracon.privval;
 
-import "ostracon/crypto/keys.proto";
+import "tendermint/crypto/keys.proto";
 import "gogoproto/gogo.proto";
 import "tendermint/types/types.proto";
 import "tendermint/privval/types.proto";
@@ -29,7 +29,7 @@ option go_package = "github.com/line/ostracon/proto/ostracon/privval";
 
 // PubKeyResponse is a response message containing the public key.
 message PubKeyResponse {
-  ostracon.crypto.PublicKey pub_key = 1 [(gogoproto.nullable) = false];
+  tendermint.crypto.PublicKey pub_key = 1 [(gogoproto.nullable) = false];
   tendermint.privval.RemoteSignerError         error   = 2;
 }
 
