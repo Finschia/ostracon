@@ -19,7 +19,6 @@ import (
 	"github.com/line/ostracon/crypto/ed25519"
 	tmmath "github.com/line/ostracon/libs/math"
 	tmrand "github.com/line/ostracon/libs/rand"
-	ocproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 func TestValidatorSetBasic(t *testing.T) {
@@ -414,7 +413,7 @@ func (vals *ValidatorSet) toBytes() []byte {
 }
 
 func (vals *ValidatorSet) fromBytes(b []byte) *ValidatorSet {
-	pbvs := new(ocproto.ValidatorSet)
+	pbvs := new(tmproto.ValidatorSet)
 	err := pbvs.Unmarshal(b)
 	if err != nil {
 		// DATA HAS BEEN CORRUPTED OR THE SPEC HAS CHANGED

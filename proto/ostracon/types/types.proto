@@ -8,7 +8,7 @@ import "google/protobuf/timestamp.proto";
 import "tendermint/crypto/proof.proto";
 import "tendermint/version/types.proto";
 import "tendermint/types/types.proto";
-import "ostracon/types/validator.proto";
+import "tendermint/types/validator.proto";
 
 // BlockIdFlag indicates which BlcokID the signature is for
 //enum BlockIDFlag {
@@ -147,7 +147,7 @@ message SignedHeader {
 
 message LightBlock {
   SignedHeader                signed_header = 1;
-  ostracon.types.ValidatorSet validator_set = 2;
+  tendermint.types.ValidatorSet validator_set = 2;
 }
 
 message BlockMeta {

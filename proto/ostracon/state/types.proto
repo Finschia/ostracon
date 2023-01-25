@@ -6,7 +6,7 @@ option go_package = "github.com/line/ostracon/proto/ostracon/state";
 import "gogoproto/gogo.proto";
 import "ostracon/abci/types.proto";
 import "ostracon/types/types.proto";
-import "ostracon/types/validator.proto";
+import "tendermint/types/validator.proto";
 import "tendermint/types/params.proto";
 import "tendermint/types/types.proto";
 import "tendermint/version/types.proto";
@@ -26,7 +26,7 @@ message ABCIResponses {
 
 // ValidatorsInfo represents the latest validator set, or the last height it changed
 message ValidatorsInfo {
-  ostracon.types.ValidatorSet validator_set       = 1;
+  tendermint.types.ValidatorSet validator_set       = 1;
   int64                       last_height_changed = 2;
 }
 
@@ -61,9 +61,9 @@ message State {
   // Note that if s.LastBlockHeight causes a valset change,
   // we set s.LastHeightValidatorsChanged = s.LastBlockHeight + 1 + 1
   // Extra +1 due to nextValSet delay.
-  ostracon.types.ValidatorSet next_validators                = 6;
-  ostracon.types.ValidatorSet validators                     = 7;
-  ostracon.types.ValidatorSet last_validators                = 8;
+  tendermint.types.ValidatorSet next_validators                = 6;
+  tendermint.types.ValidatorSet validators                     = 7;
+  tendermint.types.ValidatorSet last_validators                = 8;
   int64                       last_height_validators_changed = 9;
 
   // Consensus parameters used for validating blocks.

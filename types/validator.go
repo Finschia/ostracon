@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"strings"
 
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	"github.com/line/ostracon/crypto"
 	ce "github.com/line/ostracon/crypto/encoding"
 	tmrand "github.com/line/ostracon/libs/rand"
-	ocproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 // Volatile state for each Validator
@@ -120,7 +121,7 @@ func (v *Validator) Bytes() []byte {
 		panic(err)
 	}
 
-	pbv := ocproto.SimpleValidator{
+	pbv := tmproto.SimpleValidator{
 		PubKey:      &pk,
 		VotingPower: v.VotingPower,
 	}
@@ -133,7 +134,7 @@ func (v *Validator) Bytes() []byte {
 }
 
 // ToProto converts Valiator to protobuf
-func (v *Validator) ToProto() (*ocproto.Validator, error) {
+func (v *Validator) ToProto() (*tmproto.Validator, error) {
 	if v == nil {
 		return nil, errors.New("nil validator")
 	}
@@ -143,7 +144,7 @@ func (v *Validator) ToProto() (*ocproto.Validator, error) {
 		return nil, err
 	}
 
-	vp := ocproto.Validator{
+	vp := tmproto.Validator{
 		Address:          v.Address,
 		PubKey:           pk,
 		VotingPower:      v.VotingPower,
@@ -155,7 +156,7 @@ func (v *Validator) ToProto() (*ocproto.Validator, error) {
 
 // FromProto sets a protobuf Validator to the given pointer.
 // It returns an error if the public key is invalid.
-func ValidatorFromProto(vp *ocproto.Validator) (*Validator, error) {
+func ValidatorFromProto(vp *tmproto.Validator) (*Validator, error) {
 	if vp == nil {
 		return nil, errors.New("nil validator")
 	}

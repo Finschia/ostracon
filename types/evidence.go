@@ -391,7 +391,7 @@ func (l *LightClientAttackEvidence) ToProto() (*ocproto.LightClientAttackEvidenc
 		return nil, err
 	}
 
-	byzVals := make([]*ocproto.Validator, len(l.ByzantineValidators))
+	byzVals := make([]*tmproto.Validator, len(l.ByzantineValidators))
 	for idx, val := range l.ByzantineValidators {
 		valpb, err := val.ToProto()
 		if err != nil {
