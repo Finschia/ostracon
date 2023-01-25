@@ -11,7 +11,6 @@ import "tendermint/types/params.proto";
 import "tendermint/types/types.proto";
 import "tendermint/version/types.proto";
 import "google/protobuf/timestamp.proto";
-import "tendermint/types/types.proto";
 import "tendermint/state/types.proto";
 import "tendermint/abci/types.proto";
 
