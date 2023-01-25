@@ -8,55 +8,6 @@ import "tendermint/privval/types.proto";
 
 option go_package = "github.com/line/ostracon/proto/ostracon/privval";
 
-//enum Errors {
-//  ERRORS_UNKNOWN             = 0;
-//  ERRORS_UNEXPECTED_RESPONSE = 1;
-//  ERRORS_NO_CONNECTION       = 2;
-//  ERRORS_CONNECTION_TIMEOUT  = 3;
-//  ERRORS_READ_TIMEOUT        = 4;
-//  ERRORS_WRITE_TIMEOUT       = 5;
-//}
-
-//message RemoteSignerError {
-//  int32  code        = 1;
-//  string description = 2;
-//}
-
-// PubKeyRequest requests the consensus public key from the remote signer.
-//message PubKeyRequest {
-//  string chain_id = 1;
-//}
-
-// PubKeyResponse is a response message containing the public key.
-//message PubKeyResponse {
-//  tendermint.crypto.PublicKey pub_key = 1 [(gogoproto.nullable) = false];
-//  tendermint.privval.RemoteSignerError         error   = 2;
-//}
-
-// SignVoteRequest is a request to sign a vote
-//message SignVoteRequest {
-//  tendermint.types.Vote vote     = 1;
-//  string              chain_id = 2;
-//}
-
-// SignedVoteResponse is a response containing a signed vote or an error
-//message SignedVoteResponse {
-//  tendermint.types.Vote vote  = 1 [(gogoproto.nullable) = false];
-//  RemoteSignerError   error = 2;
-//}
-
-// SignProposalRequest is a request to sign a proposal
-//message SignProposalRequest {
-//  tendermint.types.Proposal proposal = 1;
-//  string                  chain_id = 2;
-//}
-
-// SignedProposalResponse is response containing a signed proposal or an error
-//message SignedProposalResponse {
-//  tendermint.types.Proposal proposal = 1 [(gogoproto.nullable) = false];
-//  RemoteSignerError       error    = 2;
-//}
-
 // VRFProofRequest is a PrivValidatorSocket message containing a message to generate proof.
 message VRFProofRequest {
   bytes message = 1;
@@ -67,12 +18,6 @@ message VRFProofResponse {
   bytes             proof = 1;
   tendermint.privval.RemoteSignerError error = 2;
 }
-
-// PingRequest is a request to confirm that the connection is alive.
-//message PingRequest {}
-
-// PingResponse is a response to confirm that the connection is alive.
-//message PingResponse {}
 
 message Message {
   oneof sum {

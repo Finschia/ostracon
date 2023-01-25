@@ -24,23 +24,6 @@ message ABCIResponses {
   tendermint.abci.ResponseBeginBlock         begin_block = 3;
 }
 
-// ValidatorsInfo represents the latest validator set, or the last height it changed
-//message ValidatorsInfo {
-//  tendermint.types.ValidatorSet validator_set       = 1;
-//  int64                       last_height_changed = 2;
-//}
-
-// ConsensusParamsInfo represents the latest consensus params, or the last height it changed
-//message ConsensusParamsInfo {
-//  tendermint.types.ConsensusParams consensus_params    = 1 [(gogoproto.nullable) = false];
-//  int64                          last_height_changed = 2;
-//}
-
-//message Version {
-//  tendermint.version.Consensus consensus = 1 [(gogoproto.nullable) = false];
-//  string                     software  = 2;
-//}
-
 message State {
   tendermint.state.Version version = 1 [(gogoproto.nullable) = false];
 

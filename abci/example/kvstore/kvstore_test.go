@@ -241,8 +241,8 @@ func valsEqual(t *testing.T, vals1, vals2 []abci.ValidatorUpdate) {
 	if len(vals1) != len(vals2) {
 		t.Fatalf("vals dont match in len. got %d, expected %d", len(vals2), len(vals1))
 	}
-	sort.Sort(abci.ValidatorUpdates(vals1))
-	sort.Sort(abci.ValidatorUpdates(vals2))
+	sort.Sort(ocabci.ValidatorUpdates(vals1))
+	sort.Sort(ocabci.ValidatorUpdates(vals2))
 	for i, v1 := range vals1 {
 		v2 := vals2[i]
 		if !v1.PubKey.Equal(v2.PubKey) ||

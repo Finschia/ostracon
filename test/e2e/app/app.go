@@ -279,13 +279,13 @@ func (app *Application) Rollback() error {
 }
 
 // validatorUpdates generates a validator set update.
-func (app *Application) validatorUpdates(height uint64) (abci.ValidatorUpdates, error) {
+func (app *Application) validatorUpdates(height uint64) (ocabci.ValidatorUpdates, error) {
 	updates := app.cfg.ValidatorUpdates[fmt.Sprintf("%v", height)]
 	if len(updates) == 0 {
 		return nil, nil
 	}
 
-	valUpdates := abci.ValidatorUpdates{}
+	valUpdates := ocabci.ValidatorUpdates{}
 	for keyString, power := range updates {
 
 		keyBytes, err := base64.StdEncoding.DecodeString(keyString)
