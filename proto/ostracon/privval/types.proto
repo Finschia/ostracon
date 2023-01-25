@@ -15,7 +15,7 @@ message VRFProofRequest {
 
 // VRFProofResponse is a PrivValidatorSocket message containing a Proof.
 message VRFProofResponse {
-  bytes             proof = 1;
+  bytes                                proof = 1;
   tendermint.privval.RemoteSignerError error = 2;
 }
 
@@ -29,7 +29,7 @@ message Message {
     tendermint.privval.SignedProposalResponse signed_proposal_response = 6;
     tendermint.privval.PingRequest            ping_request             = 7;
     tendermint.privval.PingResponse           ping_response            = 8;
-    VRFProofRequest        vrf_proof_request        = 1000;
-    VRFProofResponse       vrf_proof_response       = 1001;
+    VRFProofRequest                           vrf_proof_request        = 1000;
+    VRFProofResponse                          vrf_proof_response       = 1001;
   }
 }

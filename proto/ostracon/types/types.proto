@@ -16,9 +16,9 @@ import "tendermint/types/validator.proto";
 message Header {
   // basic block info
   tendermint.version.Consensus version  = 1 [(gogoproto.nullable) = false];
-  string                     chain_id = 2 [(gogoproto.customname) = "ChainID"];
-  int64                      height   = 3;
-  google.protobuf.Timestamp  time     = 4 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
+  string                       chain_id = 2 [(gogoproto.customname) = "ChainID"];
+  int64                        height   = 3;
+  google.protobuf.Timestamp    time     = 4 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
 
   // prev block info
   tendermint.types.BlockID last_block_id = 5 [(gogoproto.nullable) = false];
@@ -47,18 +47,18 @@ message Header {
 }
 
 message SignedHeader {
-  Header header = 1;
+  Header                  header = 1;
   tendermint.types.Commit commit = 2;
 }
 
 message LightBlock {
-  SignedHeader                signed_header = 1;
+  SignedHeader                  signed_header = 1;
   tendermint.types.ValidatorSet validator_set = 2;
 }
 
 message BlockMeta {
   tendermint.types.BlockID block_id   = 1 [(gogoproto.customname) = "BlockID", (gogoproto.nullable) = false];
-  int64   block_size = 2;
-  Header  header     = 3 [(gogoproto.nullable) = false];
-  int64   num_txs    = 4;
+  int64                    block_size = 2;
+  Header                   header     = 3 [(gogoproto.nullable) = false];
+  int64                    num_txs    = 4;
 }

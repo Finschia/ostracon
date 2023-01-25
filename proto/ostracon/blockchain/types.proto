@@ -15,7 +15,7 @@ message Message {
   oneof sum {
     tendermint.blockchain.BlockRequest    block_request     = 1;
     tendermint.blockchain.NoBlockResponse no_block_response = 2;
-    BlockResponse   block_response    = 3;
+    BlockResponse                         block_response    = 3;
     tendermint.blockchain.StatusRequest   status_request    = 4;
     tendermint.blockchain.StatusResponse  status_response   = 5;
   }

@@ -28,7 +28,7 @@ message Request {
     tendermint.abci.RequestSetOption          set_option           = 4;
     tendermint.abci.RequestInitChain          init_chain           = 5;
     tendermint.abci.RequestQuery              query                = 6;
-    RequestBeginBlock         begin_block          = 7;
+    RequestBeginBlock                         begin_block          = 7;
     tendermint.abci.RequestCheckTx            check_tx             = 8;
     tendermint.abci.RequestDeliverTx          deliver_tx           = 9;
     tendermint.abci.RequestEndBlock           end_block            = 10;
@@ -37,16 +37,16 @@ message Request {
     tendermint.abci.RequestOfferSnapshot      offer_snapshot       = 13;
     tendermint.abci.RequestLoadSnapshotChunk  load_snapshot_chunk  = 14;
     tendermint.abci.RequestApplySnapshotChunk apply_snapshot_chunk = 15;
-    RequestBeginRecheckTx     begin_recheck_tx     = 1000; // 16~99 are reserved for merging original tendermint
-    RequestEndRecheckTx       end_recheck_tx       = 1001;
+    RequestBeginRecheckTx                     begin_recheck_tx     = 1000;  // 16~99 are reserved for merging original tendermint
+    RequestEndRecheckTx                       end_recheck_tx       = 1001;
   }
 }
 
 message RequestBeginBlock {
-  bytes                 hash                 = 1;
-  ostracon.types.Header header               = 2 [(gogoproto.nullable) = false];
-  tendermint.abci.LastCommitInfo        last_commit_info     = 3 [(gogoproto.nullable) = false];
-  repeated tendermint.abci.Evidence     byzantine_validators = 4 [(gogoproto.nullable) = false];
+  bytes                          hash                    = 1;
+  ostracon.types.Header          header                  = 2 [(gogoproto.nullable) = false];
+  tendermint.abci.LastCommitInfo last_commit_info        = 3 [(gogoproto.nullable) = false];
+  repeated tendermint.abci.Evidence byzantine_validators = 4 [(gogoproto.nullable) = false];
 }
 
 message RequestBeginRecheckTx {
@@ -70,7 +70,7 @@ message Response {
     tendermint.abci.ResponseInitChain          init_chain           = 6;
     tendermint.abci.ResponseQuery              query                = 7;
     tendermint.abci.ResponseBeginBlock         begin_block          = 8;
-    ResponseCheckTx            check_tx             = 9;
+    ResponseCheckTx                            check_tx             = 9;
     tendermint.abci.ResponseDeliverTx          deliver_tx           = 10;
     tendermint.abci.ResponseEndBlock           end_block            = 11;
     tendermint.abci.ResponseCommit             commit               = 12;
@@ -78,19 +78,19 @@ message Response {
     tendermint.abci.ResponseOfferSnapshot      offer_snapshot       = 14;
     tendermint.abci.ResponseLoadSnapshotChunk  load_snapshot_chunk  = 15;
     tendermint.abci.ResponseApplySnapshotChunk apply_snapshot_chunk = 16;
-    ResponseBeginRecheckTx     begin_recheck_tx     = 1000; // 17~99 are reserved for merging original tendermint
-    ResponseEndRecheckTx       end_recheck_tx       = 1001;
+    ResponseBeginRecheckTx                     begin_recheck_tx     = 1000;  // 17~99 are reserved for merging original tendermint
+    ResponseEndRecheckTx                       end_recheck_tx       = 1001;
   }
 }
 
 message ResponseCheckTx {
-  uint32         code       = 1;
-  bytes          data       = 2;
-  string         log        = 3;  // nondeterministic
-  string         info       = 4;  // nondeterministic
-  int64          gas_wanted = 5 [json_name = "gas_wanted"];
-  int64          gas_used   = 6 [json_name = "gas_used"];
-  repeated tendermint.abci.Event events     = 7
+  uint32   code                         = 1;
+  bytes    data                         = 2;
+  string   log                          = 3;  // nondeterministic
+  string   info                         = 4;  // nondeterministic
+  int64    gas_wanted                   = 5 [json_name = "gas_wanted"];
+  int64    gas_used                     = 6 [json_name = "gas_used"];
+  repeated tendermint.abci.Event events = 7
       [(gogoproto.nullable) = false, (gogoproto.jsontag) = "events,omitempty"];
   string codespace = 8;
   string sender    = 9;   // MEMO: not used, just reservation to implement https://github.com/tendermint/tendermint/pull/6740 first

@@ -20,7 +20,7 @@ message RequestBroadcastTx {
 message ResponsePing {}
 
 message ResponseBroadcastTx {
-  ostracon.abci.ResponseCheckTx   check_tx   = 1;
+  ostracon.abci.ResponseCheckTx     check_tx   = 1;
   tendermint.abci.ResponseDeliverTx deliver_tx = 2;
 }
 
