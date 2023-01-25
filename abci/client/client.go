@@ -37,7 +37,7 @@ type Client interface {
 	CheckTxAsync(abci.RequestCheckTx, ResponseCallback) *ReqRes
 	QueryAsync(abci.RequestQuery, ResponseCallback) *ReqRes
 	CommitAsync(ResponseCallback) *ReqRes
-	InitChainAsync(ocabci.RequestInitChain, ResponseCallback) *ReqRes
+	InitChainAsync(abci.RequestInitChain, ResponseCallback) *ReqRes
 	BeginBlockAsync(ocabci.RequestBeginBlock, ResponseCallback) *ReqRes
 	EndBlockAsync(abci.RequestEndBlock, ResponseCallback) *ReqRes
 	BeginRecheckTxAsync(ocabci.RequestBeginRecheckTx, ResponseCallback) *ReqRes
@@ -55,9 +55,9 @@ type Client interface {
 	CheckTxSync(abci.RequestCheckTx) (*ocabci.ResponseCheckTx, error)
 	QuerySync(abci.RequestQuery) (*abci.ResponseQuery, error)
 	CommitSync() (*abci.ResponseCommit, error)
-	InitChainSync(ocabci.RequestInitChain) (*ocabci.ResponseInitChain, error)
+	InitChainSync(abci.RequestInitChain) (*ocabci.ResponseInitChain, error)
 	BeginBlockSync(ocabci.RequestBeginBlock) (*abci.ResponseBeginBlock, error)
-	EndBlockSync(abci.RequestEndBlock) (*ocabci.ResponseEndBlock, error)
+	EndBlockSync(abci.RequestEndBlock) (*abci.ResponseEndBlock, error)
 	BeginRecheckTxSync(ocabci.RequestBeginRecheckTx) (*ocabci.ResponseBeginRecheckTx, error)
 	EndRecheckTxSync(ocabci.RequestEndRecheckTx) (*ocabci.ResponseEndRecheckTx, error)
 	ListSnapshotsSync(abci.RequestListSnapshots) (*abci.ResponseListSnapshots, error)

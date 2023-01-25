@@ -214,7 +214,7 @@ func newTestBlockHeader() types.EventDataNewBlockHeader {
 				makeIndexedEvent("thingy.whatzit", "O.O"),
 			},
 		},
-		ResultEndBlock: ocabci.ResponseEndBlock{
+		ResultEndBlock: abci.ResponseEndBlock{
 			Events: []abci.Event{
 				makeIndexedEvent("end_event.foo", "100"),
 				makeIndexedEvent("thingy.whatzit", "-.O"),

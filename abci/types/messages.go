@@ -119,7 +119,7 @@ func ToRequestQuery(req abci.RequestQuery) *Request {
 	}
 }
 
-func ToRequestInitChain(req RequestInitChain) *Request {
+func ToRequestInitChain(req abci.RequestInitChain) *Request {
 	return &Request{
 		Value: &Request_InitChain{&req},
 	}
@@ -241,7 +241,7 @@ func ToResponseBeginBlock(res abci.ResponseBeginBlock) *Response {
 	}
 }
 
-func ToResponseEndBlock(res ResponseEndBlock) *Response {
+func ToResponseEndBlock(res abci.ResponseEndBlock) *Response {
 	return &Response{
 		Value: &Response_EndBlock{&res},
 	}

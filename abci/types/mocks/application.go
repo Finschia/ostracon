@@ -104,14 +104,14 @@ func (_m *Application) DeliverTx(_a0 abci.RequestDeliverTx) abci.ResponseDeliver
 }
 
 // EndBlock provides a mock function with given fields: _a0
-func (_m *Application) EndBlock(_a0 abci.RequestEndBlock) ocabci.ResponseEndBlock {
+func (_m *Application) EndBlock(_a0 abci.RequestEndBlock) abci.ResponseEndBlock {
 	ret := _m.Called(_a0)
 
-	var r0 ocabci.ResponseEndBlock
-	if rf, ok := ret.Get(0).(func(abci.RequestEndBlock) ocabci.ResponseEndBlock); ok {
+	var r0 abci.ResponseEndBlock
+	if rf, ok := ret.Get(0).(func(abci.RequestEndBlock) abci.ResponseEndBlock); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(ocabci.ResponseEndBlock)
+		r0 = ret.Get(0).(abci.ResponseEndBlock)
 	}
 
 	return r0
@@ -146,11 +146,11 @@ func (_m *Application) Info(_a0 abci.RequestInfo) abci.ResponseInfo {
 }
 
 // InitChain provides a mock function with given fields: _a0
-func (_m *Application) InitChain(_a0 ocabci.RequestInitChain) ocabci.ResponseInitChain {
+func (_m *Application) InitChain(_a0 abci.RequestInitChain) ocabci.ResponseInitChain {
 	ret := _m.Called(_a0)
 
 	var r0 ocabci.ResponseInitChain
-	if rf, ok := ret.Get(0).(func(ocabci.RequestInitChain) ocabci.ResponseInitChain); ok {
+	if rf, ok := ret.Get(0).(func(abci.RequestInitChain) ocabci.ResponseInitChain); ok {
 		r0 = rf(_a0)
 	} else {
 		r0 = ret.Get(0).(ocabci.ResponseInitChain)

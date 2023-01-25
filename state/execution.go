@@ -425,8 +425,8 @@ func execBlockOnProxyApp(
 }
 
 func getBeginBlockValidatorInfo(block *types.Block, store Store,
-	initialHeight int64) ocabci.LastCommitInfo {
-	voteInfos := make([]ocabci.VoteInfo, block.LastCommit.Size())
+	initialHeight int64) abci.LastCommitInfo {
+	voteInfos := make([]abci.VoteInfo, block.LastCommit.Size())
 	// Initial block -> LastCommitInfo.Votes are empty.
 	// Remember that the first LastCommit is intentionally empty, so it makes
 	// sense for LastCommitInfo.Votes to also be empty.
@@ -451,20 +451,20 @@ func getBeginBlockValidatorInfo(block *types.Block, store Store,
 
 		for i, val := range lastValSet.Validators {
 			commitSig := block.LastCommit.Signatures[i]
-			voteInfos[i] = ocabci.VoteInfo{
+			voteInfos[i] = abci.VoteInfo{
 				Validator:       types.OC2PB.Validator(val),
 				SignedLastBlock: !commitSig.Absent(),
 			}
 		}
 	}
 
-	return ocabci.LastCommitInfo{
+	return abci.LastCommitInfo{
 		Round: block.LastCommit.Round,
 		Votes: voteInfos,
 	}
 }
 
-func validateValidatorUpdates(abciUpdates []ocabci.ValidatorUpdate,
+func validateValidatorUpdates(abciUpdates []abci.ValidatorUpdate,
 	params tmproto.ValidatorParams) error {
 	for _, valUpdate := range abciUpdates {
 		if valUpdate.GetPower() < 0 {

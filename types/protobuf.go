@@ -4,7 +4,6 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/ed25519"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
@@ -62,8 +61,8 @@ func (oc2pb) Header(header *Header) ocproto.Header {
 	}
 }
 
-func (oc2pb) Validator(val *Validator) ocabci.Validator {
-	return ocabci.Validator{
+func (oc2pb) Validator(val *Validator) abci.Validator {
+	return abci.Validator{
 		Address: val.PubKey.Address(),
 		Power:   val.VotingPower,
 	}
@@ -84,20 +83,20 @@ func (oc2pb) PartSetHeader(header PartSetHeader) tmproto.PartSetHeader {
 }
 
 // XXX: panics on unknown pubkey type
-func (oc2pb) ValidatorUpdate(val *Validator) ocabci.ValidatorUpdate {
+func (oc2pb) ValidatorUpdate(val *Validator) abci.ValidatorUpdate {
 	pk, err := cryptoenc.PubKeyToProto(val.PubKey)
 	if err != nil {
 		panic(err)
 	}
-	return ocabci.ValidatorUpdate{
+	return abci.ValidatorUpdate{
 		PubKey: pk,
 		Power:  val.VotingPower,
 	}
 }
 
 // XXX: panics on nil or unknown pubkey type
-func (oc2pb) ValidatorUpdates(vals *ValidatorSet) []ocabci.ValidatorUpdate {
-	validators := make([]ocabci.ValidatorUpdate, vals.Size())
+func (oc2pb) ValidatorUpdates(vals *ValidatorSet) []abci.ValidatorUpdate {
+	validators := make([]abci.ValidatorUpdate, vals.Size())
 	for i, val := range vals.Validators {
 		validators[i] = OC2PB.ValidatorUpdate(val)
 	}
@@ -116,12 +115,12 @@ func (oc2pb) ConsensusParams(params *tmproto.ConsensusParams) *abci.ConsensusPar
 }
 
 // XXX: panics on nil or unknown pubkey type
-func (oc2pb) NewValidatorUpdate(pubkey crypto.PubKey, power int64) ocabci.ValidatorUpdate {
+func (oc2pb) NewValidatorUpdate(pubkey crypto.PubKey, power int64) abci.ValidatorUpdate {
 	pubkeyABCI, err := cryptoenc.PubKeyToProto(pubkey)
 	if err != nil {
 		panic(err)
 	}
-	return ocabci.ValidatorUpdate{
+	return abci.ValidatorUpdate{
 		PubKey: pubkeyABCI,
 		Power:  power,
 	}
@@ -135,7 +134,7 @@ var PB2OC = pb2tm{}
 
 type pb2tm struct{}
 
-func (pb2tm) ValidatorUpdates(vals []ocabci.ValidatorUpdate) ([]*Validator, error) {
+func (pb2tm) ValidatorUpdates(vals []abci.ValidatorUpdate) ([]*Validator, error) {
 	tmVals := make([]*Validator, len(vals))
 	for i, v := range vals {
 		pub, err := cryptoenc.PubKeyFromProto(&v.PubKey)

@@ -258,7 +258,7 @@ func (cli *socketClient) CommitAsync(cb ResponseCallback) *ReqRes {
 	return cli.queueRequest(ocabci.ToRequestCommit(), cb)
 }
 
-func (cli *socketClient) InitChainAsync(req ocabci.RequestInitChain, cb ResponseCallback) *ReqRes {
+func (cli *socketClient) InitChainAsync(req abci.RequestInitChain, cb ResponseCallback) *ReqRes {
 	return cli.queueRequest(ocabci.ToRequestInitChain(req), cb)
 }
 
@@ -368,7 +368,7 @@ func (cli *socketClient) CommitSync() (*abci.ResponseCommit, error) {
 	return reqres.Response.GetCommit(), cli.Error()
 }
 
-func (cli *socketClient) InitChainSync(req ocabci.RequestInitChain) (*ocabci.ResponseInitChain, error) {
+func (cli *socketClient) InitChainSync(req abci.RequestInitChain) (*ocabci.ResponseInitChain, error) {
 	reqres := cli.queueRequest(ocabci.ToRequestInitChain(req), nil)
 	if _, err := cli.FlushSync(); err != nil {
 		return nil, err
@@ -386,7 +386,7 @@ func (cli *socketClient) BeginBlockSync(req ocabci.RequestBeginBlock) (*abci.Res
 	return reqres.Response.GetBeginBlock(), cli.Error()
 }
 
-func (cli *socketClient) EndBlockSync(req abci.RequestEndBlock) (*ocabci.ResponseEndBlock, error) {
+func (cli *socketClient) EndBlockSync(req abci.RequestEndBlock) (*abci.ResponseEndBlock, error) {
 	reqres := cli.queueRequest(ocabci.ToRequestEndBlock(req), nil)
 	if _, err := cli.FlushSync(); err != nil {
 		return nil, err

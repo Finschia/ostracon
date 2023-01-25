@@ -1,10 +1,10 @@
 package state
 
 import (
+	abci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	ocabci "github.com/line/ostracon/abci/types"
 	ocstate "github.com/line/ostracon/proto/ostracon/state"
 	"github.com/line/ostracon/types"
 )
@@ -36,7 +36,7 @@ func UpdateState(
 
 // ValidateValidatorUpdates is an alias for validateValidatorUpdates exported
 // from execution.go, exclusively and explicitly for testing.
-func ValidateValidatorUpdates(abciUpdates []ocabci.ValidatorUpdate, params tmproto.ValidatorParams) error {
+func ValidateValidatorUpdates(abciUpdates []abci.ValidatorUpdate, params tmproto.ValidatorParams) error {
 	return validateValidatorUpdates(abciUpdates, params)
 }
 

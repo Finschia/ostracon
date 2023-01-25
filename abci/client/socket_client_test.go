@@ -147,7 +147,7 @@ func TestSockerClientCalls(t *testing.T) {
 	c.CheckTxAsync(abci.RequestCheckTx{}, getResponseCallback(t))
 	c.QueryAsync(abci.RequestQuery{}, getResponseCallback(t))
 	c.CommitAsync(getResponseCallback(t))
-	c.InitChainAsync(ocabci.RequestInitChain{}, getResponseCallback(t))
+	c.InitChainAsync(abci.RequestInitChain{}, getResponseCallback(t))
 	c.BeginBlockAsync(ocabci.RequestBeginBlock{}, getResponseCallback(t))
 	c.EndBlockAsync(abci.RequestEndBlock{}, getResponseCallback(t))
 	c.BeginRecheckTxAsync(ocabci.RequestBeginRecheckTx{}, getResponseCallback(t))
@@ -181,7 +181,7 @@ func TestSockerClientCalls(t *testing.T) {
 	_, err = c.CommitSync()
 	require.NoError(t, err)
 
-	_, err = c.InitChainSync(ocabci.RequestInitChain{})
+	_, err = c.InitChainSync(abci.RequestInitChain{})
 	require.NoError(t, err)
 
 	_, err = c.BeginBlockSync(ocabci.RequestBeginBlock{})

@@ -12,7 +12,6 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	ocabci "github.com/line/ostracon/abci/types"
 	tmpubsub "github.com/line/ostracon/libs/pubsub"
 	tmquery "github.com/line/ostracon/libs/pubsub/query"
 	tmrand "github.com/line/ostracon/libs/rand"
@@ -83,7 +82,7 @@ func TestEventBusPublishEventNewBlock(t *testing.T) {
 			{Type: "testType", Attributes: []abci.EventAttribute{{Key: []byte("baz"), Value: []byte("1")}}},
 		},
 	}
-	resultEndBlock := ocabci.ResponseEndBlock{
+	resultEndBlock := abci.ResponseEndBlock{
 		Events: []abci.Event{
 			{Type: "testType", Attributes: []abci.EventAttribute{{Key: []byte("foz"), Value: []byte("2")}}},
 		},
@@ -242,7 +241,7 @@ func TestEventBusPublishEventNewBlockHeader(t *testing.T) {
 			{Type: "testType", Attributes: []abci.EventAttribute{{Key: []byte("baz"), Value: []byte("1")}}},
 		},
 	}
-	resultEndBlock := ocabci.ResponseEndBlock{
+	resultEndBlock := abci.ResponseEndBlock{
 		Events: []abci.Event{
 			{Type: "testType", Attributes: []abci.EventAttribute{{Key: []byte("foz"), Value: []byte("2")}}},
 		},

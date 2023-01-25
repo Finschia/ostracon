@@ -15,13 +15,13 @@ import (
 
 func InitChain(client abcicli.Client) error {
 	total := 10
-	vals := make([]ocabci.ValidatorUpdate, total)
+	vals := make([]abci.ValidatorUpdate, total)
 	for i := 0; i < total; i++ {
 		pubkey := kvstore.GenDefaultPrivKey().PubKey()
 		power := tmrand.Int()
 		vals[i] = ocabci.NewValidatorUpdate(pubkey, int64(power))
 	}
-	_, err := client.InitChainSync(ocabci.RequestInitChain{
+	_, err := client.InitChainSync(abci.RequestInitChain{
 		Validators: vals,
 	})
 	if err != nil {

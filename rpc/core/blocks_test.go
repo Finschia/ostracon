@@ -22,7 +22,6 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tm-db"
 
-	ocabci "github.com/line/ostracon/abci/types"
 	ocstate "github.com/line/ostracon/proto/ostracon/state"
 	ctypes "github.com/line/ostracon/rpc/core/types"
 	rpctypes "github.com/line/ostracon/rpc/jsonrpc/types"
@@ -89,7 +88,7 @@ func TestBlockResults(t *testing.T) {
 			{Code: 0, Data: []byte{0x02}, Log: "ok"},
 			{Code: 1, Log: "not ok"},
 		},
-		EndBlock:   &ocabci.ResponseEndBlock{},
+		EndBlock:   &abci.ResponseEndBlock{},
 		BeginBlock: &abci.ResponseBeginBlock{},
 	}
 

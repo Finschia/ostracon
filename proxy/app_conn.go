@@ -17,11 +17,11 @@ type AppConnConsensus interface {
 	SetGlobalCallback(abcicli.GlobalCallback)
 	Error() error
 
-	InitChainSync(ocabci.RequestInitChain) (*ocabci.ResponseInitChain, error)
+	InitChainSync(abci.RequestInitChain) (*ocabci.ResponseInitChain, error)
 
 	BeginBlockSync(ocabci.RequestBeginBlock) (*abci.ResponseBeginBlock, error)
 	DeliverTxAsync(abci.RequestDeliverTx, abcicli.ResponseCallback) *abcicli.ReqRes
-	EndBlockSync(abci.RequestEndBlock) (*ocabci.ResponseEndBlock, error)
+	EndBlockSync(abci.RequestEndBlock) (*abci.ResponseEndBlock, error)
 	CommitSync() (*abci.ResponseCommit, error)
 }
 
@@ -79,7 +79,7 @@ func (app *appConnConsensus) Error() error {
 	return app.appConn.Error()
 }
 
-func (app *appConnConsensus) InitChainSync(req ocabci.RequestInitChain) (*ocabci.ResponseInitChain, error) {
+func (app *appConnConsensus) InitChainSync(req abci.RequestInitChain) (*ocabci.ResponseInitChain, error) {
 	return app.appConn.InitChainSync(req)
 }
 
@@ -91,7 +91,7 @@ func (app *appConnConsensus) DeliverTxAsync(req abci.RequestDeliverTx, cb abcicl
 	return app.appConn.DeliverTxAsync(req, cb)
 }
 
-func (app *appConnConsensus) EndBlockSync(req abci.RequestEndBlock) (*ocabci.ResponseEndBlock, error) {
+func (app *appConnConsensus) EndBlockSync(req abci.RequestEndBlock) (*abci.ResponseEndBlock, error) {
 	return app.appConn.EndBlockSync(req)
 }
 

@@ -293,32 +293,32 @@ func TestValidateValidatorUpdates(t *testing.T) {
 	testCases := []struct {
 		name string
 
-		abciUpdates     []ocabci.ValidatorUpdate
+		abciUpdates     []abci.ValidatorUpdate
 		validatorParams tmproto.ValidatorParams
 
 		shouldErr bool
 	}{
 		{
 			"adding a validator is OK",
-			[]ocabci.ValidatorUpdate{{PubKey: pk2, Power: 20}},
+			[]abci.ValidatorUpdate{{PubKey: pk2, Power: 20}},
 			defaultValidatorParams,
 			false,
 		},
 		{
 			"updating a validator is OK",
-			[]ocabci.ValidatorUpdate{{PubKey: pk1, Power: 20}},
+			[]abci.ValidatorUpdate{{PubKey: pk1, Power: 20}},
 			defaultValidatorParams,
 			false,
 		},
 		{
 			"removing a validator is OK",
-			[]ocabci.ValidatorUpdate{{PubKey: pk2, Power: 0}},
+			[]abci.ValidatorUpdate{{PubKey: pk2, Power: 0}},
 			defaultValidatorParams,
 			false,
 		},
 		{
 			"adding a validator with negative power results in error",
-			[]ocabci.ValidatorUpdate{{PubKey: pk2, Power: -100}},
+			[]abci.ValidatorUpdate{{PubKey: pk2, Power: -100}},
 			defaultValidatorParams,
 			true,
 		},
@@ -352,7 +352,7 @@ func TestUpdateValidators(t *testing.T) {
 		name string
 
 		currentSet  *types.ValidatorSet
-		abciUpdates []ocabci.ValidatorUpdate
+		abciUpdates []abci.ValidatorUpdate
 
 		resultingSet *types.ValidatorSet
 		shouldErr    bool
@@ -360,28 +360,28 @@ func TestUpdateValidators(t *testing.T) {
 		{
 			"adding a validator is OK",
 			types.NewValidatorSet([]*types.Validator{val1}),
-			[]ocabci.ValidatorUpdate{{PubKey: pk2, Power: 20}},
+			[]abci.ValidatorUpdate{{PubKey: pk2, Power: 20}},
 			types.NewValidatorSet([]*types.Validator{val1, val2}),
 			false,
 		},
 		{
 			"updating a validator is OK",
 			types.NewValidatorSet([]*types.Validator{val1}),
-			[]ocabci.ValidatorUpdate{{PubKey: pk, Power: 20}},
+			[]abci.ValidatorUpdate{{PubKey: pk, Power: 20}},
 			types.NewValidatorSet([]*types.Validator{types.NewValidator(pubkey1, 20)}),
 			false,
 		},
 		{
 			"removing a validator is OK",
 			types.NewValidatorSet([]*types.Validator{val1, val2}),
-			[]ocabci.ValidatorUpdate{{PubKey: pk2, Power: 0}},
+			[]abci.ValidatorUpdate{{PubKey: pk2, Power: 0}},
 			types.NewValidatorSet([]*types.Validator{val1}),
 			false,
 		},
 		{
 			"removing a non-existing validator results in error",
 			types.NewValidatorSet([]*types.Validator{val1}),
-			[]ocabci.ValidatorUpdate{{PubKey: pk2, Power: 0}},
+			[]abci.ValidatorUpdate{{PubKey: pk2, Power: 0}},
 			types.NewValidatorSet([]*types.Validator{val1}),
 			true,
 		},
@@ -450,7 +450,7 @@ func TestEndBlockValidatorUpdates(t *testing.T) {
 	pubkey := ed25519.GenPrivKey().PubKey()
 	pk, err := cryptoenc.PubKeyToProto(pubkey)
 	require.NoError(t, err)
-	app.ValidatorUpdates = []ocabci.ValidatorUpdate{
+	app.ValidatorUpdates = []abci.ValidatorUpdate{
 		{PubKey: pk, Power: 10},
 	}
 
@@ -506,7 +506,7 @@ func TestEndBlockValidatorUpdatesResultingInEmptySet(t *testing.T) {
 	vp, err := cryptoenc.PubKeyToProto(state.Validators.Validators[0].PubKey)
 	require.NoError(t, err)
 	// Remove the only validator
-	app.ValidatorUpdates = []ocabci.ValidatorUpdate{
+	app.ValidatorUpdates = []abci.ValidatorUpdate{
 		{PubKey: vp, Power: 0},
 	}
 

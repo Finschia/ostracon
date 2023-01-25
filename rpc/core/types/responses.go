@@ -53,7 +53,7 @@ type ResultBlockResults struct {
 	TxsResults            []*abci.ResponseDeliverTx `json:"txs_results"`
 	BeginBlockEvents      []abci.Event              `json:"begin_block_events"`
 	EndBlockEvents        []abci.Event              `json:"end_block_events"`
-	ValidatorUpdates      []ocabci.ValidatorUpdate  `json:"validator_updates"`
+	ValidatorUpdates      []abci.ValidatorUpdate    `json:"validator_updates"`
 	ConsensusParamUpdates *abci.ConsensusParams     `json:"consensus_param_updates"`
 }
 

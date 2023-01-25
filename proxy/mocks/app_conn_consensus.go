@@ -78,15 +78,15 @@ func (_m *AppConnConsensus) DeliverTxAsync(_a0 abci.RequestDeliverTx, _a1 abcicl
 }
 
 // EndBlockSync provides a mock function with given fields: _a0
-func (_m *AppConnConsensus) EndBlockSync(_a0 abci.RequestEndBlock) (*ocabci.ResponseEndBlock, error) {
+func (_m *AppConnConsensus) EndBlockSync(_a0 abci.RequestEndBlock) (*abci.ResponseEndBlock, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *ocabci.ResponseEndBlock
-	if rf, ok := ret.Get(0).(func(abci.RequestEndBlock) *ocabci.ResponseEndBlock); ok {
+	var r0 *abci.ResponseEndBlock
+	if rf, ok := ret.Get(0).(func(abci.RequestEndBlock) *abci.ResponseEndBlock); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*ocabci.ResponseEndBlock)
+			r0 = ret.Get(0).(*abci.ResponseEndBlock)
 		}
 	}
 
@@ -115,11 +115,11 @@ func (_m *AppConnConsensus) Error() error {
 }
 
 // InitChainSync provides a mock function with given fields: _a0
-func (_m *AppConnConsensus) InitChainSync(_a0 ocabci.RequestInitChain) (*ocabci.ResponseInitChain, error) {
+func (_m *AppConnConsensus) InitChainSync(_a0 abci.RequestInitChain) (*ocabci.ResponseInitChain, error) {
 	ret := _m.Called(_a0)
 
 	var r0 *ocabci.ResponseInitChain
-	if rf, ok := ret.Get(0).(func(ocabci.RequestInitChain) *ocabci.ResponseInitChain); ok {
+	if rf, ok := ret.Get(0).(func(abci.RequestInitChain) *ocabci.ResponseInitChain); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
@@ -128,7 +128,7 @@ func (_m *AppConnConsensus) InitChainSync(_a0 ocabci.RequestInitChain) (*ocabci.
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(ocabci.RequestInitChain) error); ok {
+	if rf, ok := ret.Get(1).(func(abci.RequestInitChain) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)

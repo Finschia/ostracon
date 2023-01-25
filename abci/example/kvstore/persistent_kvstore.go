@@ -29,7 +29,7 @@ type PersistentKVStoreApplication struct {
 	app *Application
 
 	// validator set
-	ValUpdates []ocabci.ValidatorUpdate
+	ValUpdates []abci.ValidatorUpdate
 
 	valAddrToPubKeyMap map[string]pc.PublicKey
 
@@ -122,7 +122,7 @@ func (app *PersistentKVStoreApplication) Query(reqQuery abci.RequestQuery) (resQ
 }
 
 // Save the validators in the merkle tree
-func (app *PersistentKVStoreApplication) InitChain(req ocabci.RequestInitChain) ocabci.ResponseInitChain {
+func (app *PersistentKVStoreApplication) InitChain(req abci.RequestInitChain) ocabci.ResponseInitChain {
 	for _, v := range req.Validators {
 		r := app.updateValidator(v)
 		if r.IsErr() {
@@ -135,14 +135,14 @@ func (app *PersistentKVStoreApplication) InitChain(req ocabci.RequestInitChain) 
 // Track the block hash and header information
 func (app *PersistentKVStoreApplication) BeginBlock(req ocabci.RequestBeginBlock) abci.ResponseBeginBlock {
 	// reset valset changes
-	app.ValUpdates = make([]ocabci.ValidatorUpdate, 0)
+	app.ValUpdates = make([]abci.ValidatorUpdate, 0)
 
 	// Punish validators who committed equivocation.
 	for _, ev := range req.ByzantineValidators {
 		if ev.Type == abci.EvidenceType_DUPLICATE_VOTE {
 			addr := string(ev.Validator.Address)
 			if pubKey, ok := app.valAddrToPubKeyMap[addr]; ok {
-				app.updateValidator(ocabci.ValidatorUpdate{
+				app.updateValidator(abci.ValidatorUpdate{
 					PubKey: pubKey,
 					Power:  ev.Validator.Power - 1,
 				})
@@ -159,8 +159,8 @@ func (app *PersistentKVStoreApplication) BeginBlock(req ocabci.RequestBeginBlock
 }
 
 // Update the validator set
-func (app *PersistentKVStoreApplication) EndBlock(req abci.RequestEndBlock) ocabci.ResponseEndBlock {
-	return ocabci.ResponseEndBlock{ValidatorUpdates: app.ValUpdates}
+func (app *PersistentKVStoreApplication) EndBlock(req abci.RequestEndBlock) abci.ResponseEndBlock {
+	return abci.ResponseEndBlock{ValidatorUpdates: app.ValUpdates}
 }
 
 func (app *PersistentKVStoreApplication) ListSnapshots(
@@ -186,14 +186,14 @@ func (app *PersistentKVStoreApplication) ApplySnapshotChunk(
 //---------------------------------------------
 // update validators
 
-func (app *PersistentKVStoreApplication) Validators() (validators []ocabci.ValidatorUpdate) {
+func (app *PersistentKVStoreApplication) Validators() (validators []abci.ValidatorUpdate) {
 	itr, err := app.app.state.db.Iterator(nil, nil)
 	if err != nil {
 		panic(err)
 	}
 	for ; itr.Valid(); itr.Next() {
 		if isValidatorTx(itr.Key()) {
-			validator := new(ocabci.ValidatorUpdate)
+			validator := new(abci.ValidatorUpdate)
 			err := ocabci.ReadMessage(bytes.NewBuffer(itr.Value()), validator)
 			if err != nil {
 				panic(err)
@@ -275,7 +275,7 @@ func (app *PersistentKVStoreApplication) execValidatorTx(tx []byte) abci.Respons
 
 // add, update, or remove a validator
 // See MakeValSetChangeTx
-func (app *PersistentKVStoreApplication) updateValidator(v ocabci.ValidatorUpdate) abci.ResponseDeliverTx {
+func (app *PersistentKVStoreApplication) updateValidator(v abci.ValidatorUpdate) abci.ResponseDeliverTx {
 	pubkey, err := cryptoenc.PubKeyFromProto(&v.PubKey)
 	if err != nil {
 		return abci.ResponseDeliverTx{

@@ -327,7 +327,7 @@ func (w *crashingWAL) Start() error { return w.next.Start() }
 func (w *crashingWAL) Stop() error  { return w.next.Stop() }
 func (w *crashingWAL) Wait()        { w.next.Wait() }
 
-//------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------
 type testSim struct {
 	GenesisState sm.State
 	Config       *cfg.Config
@@ -831,7 +831,7 @@ func buildAppStateFromChain(proxyApp proxy.AppConns, stateStore sm.Store,
 	state.ConsensusParams.Version.AppVersion = kvstore.ProtocolVersion // simulate handshake, receive app version
 	state.Version.Consensus.App = kvstore.ProtocolVersion              // simulate handshake, receive app version
 	validators := types.OC2PB.ValidatorUpdates(state.Validators)
-	if _, err := proxyApp.Consensus().InitChainSync(ocabci.RequestInitChain{
+	if _, err := proxyApp.Consensus().InitChainSync(abci.RequestInitChain{
 		Validators: validators,
 	}); err != nil {
 		panic(err)
@@ -882,7 +882,7 @@ func buildOCStateFromChain(
 	state.ConsensusParams.Version.AppVersion = kvstore.ProtocolVersion // simulate handshake, receive app version
 	state.Version.Consensus.App = kvstore.ProtocolVersion              // simulate handshake, receive app version
 	validators := types.OC2PB.ValidatorUpdates(state.Validators)
-	if _, err := proxyApp.Consensus().InitChainSync(ocabci.RequestInitChain{
+	if _, err := proxyApp.Consensus().InitChainSync(abci.RequestInitChain{
 		Validators: validators,
 	}); err != nil {
 		panic(err)
@@ -1295,10 +1295,10 @@ func TestHandshakeUpdatesValidators(t *testing.T) {
 // returns the vals on InitChain
 type initChainApp struct {
 	ocabci.BaseApplication
-	vals []ocabci.ValidatorUpdate
+	vals []abci.ValidatorUpdate
 }
 
-func (ica *initChainApp) InitChain(req ocabci.RequestInitChain) ocabci.ResponseInitChain {
+func (ica *initChainApp) InitChain(req abci.RequestInitChain) ocabci.ResponseInitChain {
 	return ocabci.ResponseInitChain{
 		Validators: ica.vals,
 	}

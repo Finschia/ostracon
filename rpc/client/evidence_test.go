@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	abci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	ocabci "github.com/line/ostracon/abci/types"
@@ -151,7 +152,7 @@ func TestBroadcastEvidence_DuplicateVoteEvidence(t *testing.T) {
 		qres := result2.Response
 		require.True(t, qres.IsOK())
 
-		var v ocabci.ValidatorUpdate
+		var v abci.ValidatorUpdate
 		err = ocabci.ReadMessage(bytes.NewReader(qres.Value), &v)
 		require.NoError(t, err, "Error reading query result, value %v", qres.Value)
 

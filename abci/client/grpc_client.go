@@ -210,7 +210,7 @@ func (cli *grpcClient) CommitAsync(cb ResponseCallback) *ReqRes {
 	return cli.finishAsyncCall(req, &ocabci.Response{Value: &ocabci.Response_Commit{Commit: res}}, cb)
 }
 
-func (cli *grpcClient) InitChainAsync(params ocabci.RequestInitChain, cb ResponseCallback) *ReqRes {
+func (cli *grpcClient) InitChainAsync(params abci.RequestInitChain, cb ResponseCallback) *ReqRes {
 	req := ocabci.ToRequestInitChain(params)
 	res, err := cli.client.InitChain(context.Background(), req.GetInitChain(), grpc.WaitForReady(true))
 	if err != nil {
@@ -309,7 +309,7 @@ func (cli *grpcClient) finishAsyncCall(req *ocabci.Request, res *ocabci.Response
 	return reqRes
 }
 
-//----------------------------------------
+// ----------------------------------------
 func (cli *grpcClient) FlushSync() (*abci.ResponseFlush, error) {
 	reqres := cli.FlushAsync(nil)
 	reqres.Wait()
@@ -359,7 +359,7 @@ func (cli *grpcClient) CommitSync() (*abci.ResponseCommit, error) {
 	return reqres.Response.GetCommit(), cli.Error()
 }
 
-func (cli *grpcClient) InitChainSync(params ocabci.RequestInitChain) (*ocabci.ResponseInitChain, error) {
+func (cli *grpcClient) InitChainSync(params abci.RequestInitChain) (*ocabci.ResponseInitChain, error) {
 	reqres := cli.InitChainAsync(params, nil)
 	reqres.Wait()
 	return reqres.Response.GetInitChain(), cli.Error()
@@ -371,7 +371,7 @@ func (cli *grpcClient) BeginBlockSync(params ocabci.RequestBeginBlock) (*abci.Re
 	return reqres.Response.GetBeginBlock(), cli.Error()
 }
 
-func (cli *grpcClient) EndBlockSync(params abci.RequestEndBlock) (*ocabci.ResponseEndBlock, error) {
+func (cli *grpcClient) EndBlockSync(params abci.RequestEndBlock) (*abci.ResponseEndBlock, error) {
 	reqres := cli.EndBlockAsync(params, nil)
 	reqres.Wait()
 	return reqres.Response.GetEndBlock(), cli.Error()

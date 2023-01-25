@@ -84,7 +84,7 @@ func (mock *mockProxyApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeli
 	return *r
 }
 
-func (mock *mockProxyApp) EndBlock(req abci.RequestEndBlock) ocabci.ResponseEndBlock {
+func (mock *mockProxyApp) EndBlock(req abci.RequestEndBlock) abci.ResponseEndBlock {
 	mock.txCount = 0
 	return *mock.abciResponses.EndBlock
 }

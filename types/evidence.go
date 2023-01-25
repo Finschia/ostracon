@@ -95,7 +95,7 @@ func NewDuplicateVoteEvidence(vote1, vote2 *Vote, blockTime time.Time, valSet *V
 func (dve *DuplicateVoteEvidence) ABCI() []ocabci.Evidence {
 	return []ocabci.Evidence{{
 		Type: abci.EvidenceType_DUPLICATE_VOTE,
-		Validator: ocabci.Validator{
+		Validator: abci.Validator{
 			Address: dve.VoteA.ValidatorAddress,
 			Power:   dve.ValidatorPower,
 		},

@@ -121,7 +121,7 @@ func (app *Application) Info(req abci.RequestInfo) abci.ResponseInfo {
 }
 
 // Info implements ABCI.
-func (app *Application) InitChain(req ocabci.RequestInitChain) ocabci.ResponseInitChain {
+func (app *Application) InitChain(req abci.RequestInitChain) ocabci.ResponseInitChain {
 	var err error
 	app.state.initialHeight = uint64(req.InitialHeight)
 	if len(req.AppStateBytes) > 0 {
@@ -167,13 +167,13 @@ func (app *Application) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDelive
 }
 
 // EndBlock implements ABCI.
-func (app *Application) EndBlock(req abci.RequestEndBlock) ocabci.ResponseEndBlock {
+func (app *Application) EndBlock(req abci.RequestEndBlock) abci.ResponseEndBlock {
 	valUpdates, err := app.validatorUpdates(uint64(req.Height))
 	if err != nil {
 		panic(err)
 	}
 
-	return ocabci.ResponseEndBlock{
+	return abci.ResponseEndBlock{
 		ValidatorUpdates: valUpdates,
 		Events: []abci.Event{
 			{
@@ -279,13 +279,13 @@ func (app *Application) Rollback() error {
 }
 
 // validatorUpdates generates a validator set update.
-func (app *Application) validatorUpdates(height uint64) (ocabci.ValidatorUpdates, error) {
+func (app *Application) validatorUpdates(height uint64) (abci.ValidatorUpdates, error) {
 	updates := app.cfg.ValidatorUpdates[fmt.Sprintf("%v", height)]
 	if len(updates) == 0 {
 		return nil, nil
 	}
 
-	valUpdates := ocabci.ValidatorUpdates{}
+	valUpdates := abci.ValidatorUpdates{}
 	for keyString, power := range updates {
 
 		keyBytes, err := base64.StdEncoding.DecodeString(keyString)

@@ -12,7 +12,6 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto/merkle"
 	tmbytes "github.com/line/ostracon/libs/bytes"
 	tmmath "github.com/line/ostracon/libs/math"
@@ -29,6 +28,7 @@ var errNegOrZeroHeight = errors.New("negative or zero height")
 type KeyPathFunc func(path string, key []byte) (merkle.KeyPath, error)
 
 // LightClient is an interface that contains functionality needed by Client from the light client.
+//
 //go:generate mockery --case underscore --name LightClient
 type LightClient interface {
 	ChainID() string
@@ -423,7 +423,7 @@ func (c *Client) BlockResults(ctx context.Context, height *int64) (*ctypes.Resul
 	results := types.NewResults(res.TxsResults)
 
 	// proto-encode EndBlock events.
-	ebeBytes, err := proto.Marshal(&ocabci.ResponseEndBlock{
+	ebeBytes, err := proto.Marshal(&abci.ResponseEndBlock{
 		Events: res.EndBlockEvents,
 	})
 	if err != nil {

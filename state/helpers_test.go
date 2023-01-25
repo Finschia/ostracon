@@ -177,13 +177,13 @@ func makeHeaderPartsResponsesValPubKeyChange(
 	block := makeBlock(state, state.LastBlockHeight+1)
 	abciResponses := &ocstate.ABCIResponses{
 		BeginBlock: &abci.ResponseBeginBlock{},
-		EndBlock:   &ocabci.ResponseEndBlock{ValidatorUpdates: nil},
+		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: nil},
 	}
 	// If the pubkey is new, remove the old and add the new.
 	_, val := state.NextValidators.GetByIndex(0)
 	if !bytes.Equal(pubkey.Bytes(), val.PubKey.Bytes()) {
-		abciResponses.EndBlock = &ocabci.ResponseEndBlock{
-			ValidatorUpdates: []ocabci.ValidatorUpdate{
+		abciResponses.EndBlock = &abci.ResponseEndBlock{
+			ValidatorUpdates: []abci.ValidatorUpdate{
 				types.OC2PB.NewValidatorUpdate(val.PubKey, 0),
 				types.OC2PB.NewValidatorUpdate(pubkey, 10),
 			},
@@ -201,14 +201,14 @@ func makeHeaderPartsResponsesValPowerChange(
 	block := makeBlock(state, state.LastBlockHeight+1)
 	abciResponses := &ocstate.ABCIResponses{
 		BeginBlock: &abci.ResponseBeginBlock{},
-		EndBlock:   &ocabci.ResponseEndBlock{ValidatorUpdates: nil},
+		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: nil},
 	}
 
 	// If the pubkey is new, remove the old and add the new.
 	_, val := state.NextValidators.GetByIndex(0)
 	if val.VotingPower != power {
-		abciResponses.EndBlock = &ocabci.ResponseEndBlock{
-			ValidatorUpdates: []ocabci.ValidatorUpdate{
+		abciResponses.EndBlock = &abci.ResponseEndBlock{
+			ValidatorUpdates: []abci.ValidatorUpdate{
 				types.OC2PB.NewValidatorUpdate(val.PubKey, power),
 			},
 		}
@@ -225,7 +225,7 @@ func makeHeaderPartsResponsesParams(
 	block := makeBlock(state, state.LastBlockHeight+1)
 	abciResponses := &ocstate.ABCIResponses{
 		BeginBlock: &abci.ResponseBeginBlock{},
-		EndBlock:   &ocabci.ResponseEndBlock{ConsensusParamUpdates: types.OC2PB.ConsensusParams(&params)},
+		EndBlock:   &abci.ResponseEndBlock{ConsensusParamUpdates: types.OC2PB.ConsensusParams(&params)},
 	}
 	return block.Header, types.BlockID{Hash: block.Hash(), PartSetHeader: types.PartSetHeader{}}, abciResponses
 }
@@ -252,9 +252,9 @@ func randomGenesisDoc() *types.GenesisDoc {
 type testApp struct {
 	ocabci.BaseApplication
 
-	CommitVotes         []ocabci.VoteInfo
+	CommitVotes         []abci.VoteInfo
 	ByzantineValidators []ocabci.Evidence
-	ValidatorUpdates    []ocabci.ValidatorUpdate
+	ValidatorUpdates    []abci.ValidatorUpdate
 }
 
 var _ ocabci.Application = (*testApp)(nil)
@@ -270,8 +270,8 @@ func (app *testApp) BeginBlock(req ocabci.RequestBeginBlock) abci.ResponseBeginB
 	return abci.ResponseBeginBlock{}
 }
 
-func (app *testApp) EndBlock(req abci.RequestEndBlock) ocabci.ResponseEndBlock {
-	return ocabci.ResponseEndBlock{
+func (app *testApp) EndBlock(req abci.RequestEndBlock) abci.ResponseEndBlock {
+	return abci.ResponseEndBlock{
 		ValidatorUpdates: app.ValidatorUpdates,
 		ConsensusParamUpdates: &abci.ConsensusParams{
 			Version: &tmproto.VersionParams{

@@ -2099,7 +2099,7 @@ func TestPruneBlocks(t *testing.T) {
 	// Based behaviour is counter.Application
 	mockApp := &mocks.Application{}
 	mockApp.On("BeginBlock", mock.Anything).Return(abci.ResponseBeginBlock{})
-	mockApp.On("EndBlock", mock.Anything).Return(ocabci.ResponseEndBlock{})
+	mockApp.On("EndBlock", mock.Anything).Return(abci.ResponseEndBlock{})
 	mockApp.On("BeginRecheckTx", mock.Anything).Return(ocabci.ResponseBeginRecheckTx{Code: ocabci.CodeTypeOK})
 	mockApp.On("EndRecheckTx", mock.Anything).Return(ocabci.ResponseEndRecheckTx{Code: ocabci.CodeTypeOK})
 	// Mocking behaviour to response `RetainHeight` for pruneBlocks

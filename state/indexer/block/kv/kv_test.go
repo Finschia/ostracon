@@ -9,7 +9,6 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	db "github.com/tendermint/tm-db"
 
-	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/pubsub/query"
 	blockidxkv "github.com/line/ostracon/state/indexer/block/kv"
 	"github.com/line/ostracon/types"
@@ -34,7 +33,7 @@ func TestBlockIndexer(t *testing.T) {
 				},
 			},
 		},
-		ResultEndBlock: ocabci.ResponseEndBlock{
+		ResultEndBlock: abci.ResponseEndBlock{
 			Events: []abci.Event{
 				{
 					Type: "end_event",
@@ -72,7 +71,7 @@ func TestBlockIndexer(t *testing.T) {
 					},
 				},
 			},
-			ResultEndBlock: ocabci.ResponseEndBlock{
+			ResultEndBlock: abci.ResponseEndBlock{
 				Events: []abci.Event{
 					{
 						Type: "end_event",

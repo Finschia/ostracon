@@ -757,7 +757,7 @@ func cmdPersistKVStoreMakeValSetChangeTx(cmd *cobra.Command, args []string) erro
 			Log:  res.Log,
 		})
 		fmt.Printf("original:publicKey:%s\n", publicKey)
-		validatorUpdate := ocabci.ValidatorUpdate{}
+		validatorUpdate := abci.ValidatorUpdate{}
 		err = ocabci.ReadMessage(bytes.NewReader(res.Value), &validatorUpdate)
 		if err != nil {
 			panic(err)

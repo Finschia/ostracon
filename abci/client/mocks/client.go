@@ -307,15 +307,15 @@ func (_m *Client) EndBlockAsync(_a0 abci.RequestEndBlock, _a1 abcicli.ResponseCa
 }
 
 // EndBlockSync provides a mock function with given fields: _a0
-func (_m *Client) EndBlockSync(_a0 abci.RequestEndBlock) (*ocabci.ResponseEndBlock, error) {
+func (_m *Client) EndBlockSync(_a0 abci.RequestEndBlock) (*abci.ResponseEndBlock, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *ocabci.ResponseEndBlock
-	if rf, ok := ret.Get(0).(func(abci.RequestEndBlock) *ocabci.ResponseEndBlock); ok {
+	var r0 *abci.ResponseEndBlock
+	if rf, ok := ret.Get(0).(func(abci.RequestEndBlock) *abci.ResponseEndBlock); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*ocabci.ResponseEndBlock)
+			r0 = ret.Get(0).(*abci.ResponseEndBlock)
 		}
 	}
 
@@ -477,11 +477,11 @@ func (_m *Client) InfoSync(_a0 abci.RequestInfo) (*abci.ResponseInfo, error) {
 }
 
 // InitChainAsync provides a mock function with given fields: _a0, _a1
-func (_m *Client) InitChainAsync(_a0 ocabci.RequestInitChain, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
+func (_m *Client) InitChainAsync(_a0 abci.RequestInitChain, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 *abcicli.ReqRes
-	if rf, ok := ret.Get(0).(func(ocabci.RequestInitChain, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
+	if rf, ok := ret.Get(0).(func(abci.RequestInitChain, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
@@ -493,11 +493,11 @@ func (_m *Client) InitChainAsync(_a0 ocabci.RequestInitChain, _a1 abcicli.Respon
 }
 
 // InitChainSync provides a mock function with given fields: _a0
-func (_m *Client) InitChainSync(_a0 ocabci.RequestInitChain) (*ocabci.ResponseInitChain, error) {
+func (_m *Client) InitChainSync(_a0 abci.RequestInitChain) (*ocabci.ResponseInitChain, error) {
 	ret := _m.Called(_a0)
 
 	var r0 *ocabci.ResponseInitChain
-	if rf, ok := ret.Get(0).(func(ocabci.RequestInitChain) *ocabci.ResponseInitChain); ok {
+	if rf, ok := ret.Get(0).(func(abci.RequestInitChain) *ocabci.ResponseInitChain); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
@@ -506,7 +506,7 @@ func (_m *Client) InitChainSync(_a0 ocabci.RequestInitChain) (*ocabci.ResponseIn
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(ocabci.RequestInitChain) error); ok {
+	if rf, ok := ret.Get(1).(func(abci.RequestInitChain) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)

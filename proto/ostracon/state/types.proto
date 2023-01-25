@@ -20,15 +20,15 @@ import "tendermint/abci/types.proto";
 // It is persisted to disk for each height before calling Commit.
 message ABCIResponses {
   repeated tendermint.abci.ResponseDeliverTx deliver_txs = 1;
-  ostracon.abci.ResponseEndBlock           end_block   = 2;
+  tendermint.abci.ResponseEndBlock           end_block   = 2;
   tendermint.abci.ResponseBeginBlock         begin_block = 3;
 }
 
 // ValidatorsInfo represents the latest validator set, or the last height it changed
-message ValidatorsInfo {
-  tendermint.types.ValidatorSet validator_set       = 1;
-  int64                       last_height_changed = 2;
-}
+//message ValidatorsInfo {
+//  tendermint.types.ValidatorSet validator_set       = 1;
+//  int64                       last_height_changed = 2;
+//}
 
 // ConsensusParamsInfo represents the latest consensus params, or the last height it changed
 //message ConsensusParamsInfo {

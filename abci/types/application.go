@@ -27,10 +27,10 @@ type Application interface {
 	EndRecheckTx(RequestEndRecheckTx) ResponseEndRecheckTx       // Signals the end of rechecking
 
 	// Consensus Connection
-	InitChain(RequestInitChain) ResponseInitChain           // Initialize blockchain w validators/other info from OstraconCore
+	InitChain(abci.RequestInitChain) ResponseInitChain      // Initialize blockchain w validators/other info from OstraconCore
 	BeginBlock(RequestBeginBlock) abci.ResponseBeginBlock   // Signals the beginning of a block
 	DeliverTx(abci.RequestDeliverTx) abci.ResponseDeliverTx // Deliver a tx for full processing
-	EndBlock(abci.RequestEndBlock) ResponseEndBlock         // Signals the end of a block, returns changes to the validator set
+	EndBlock(abci.RequestEndBlock) abci.ResponseEndBlock    // Signals the end of a block, returns changes to the validator set
 	Commit() abci.ResponseCommit                            // Commit the state and return the application Merkle root hash
 
 	// State Sync Connection
@@ -88,7 +88,7 @@ func (BaseApplication) Query(req abci.RequestQuery) abci.ResponseQuery {
 	return abci.ResponseQuery{Code: CodeTypeOK}
 }
 
-func (BaseApplication) InitChain(req RequestInitChain) ResponseInitChain {
+func (BaseApplication) InitChain(req abci.RequestInitChain) ResponseInitChain {
 	return ResponseInitChain{}
 }
 
@@ -96,8 +96,8 @@ func (BaseApplication) BeginBlock(req RequestBeginBlock) abci.ResponseBeginBlock
 	return abci.ResponseBeginBlock{}
 }
 
-func (BaseApplication) EndBlock(req abci.RequestEndBlock) ResponseEndBlock {
-	return ResponseEndBlock{}
+func (BaseApplication) EndBlock(req abci.RequestEndBlock) abci.ResponseEndBlock {
+	return abci.ResponseEndBlock{}
 }
 
 func (BaseApplication) ListSnapshots(req abci.RequestListSnapshots) abci.ResponseListSnapshots {
@@ -176,7 +176,7 @@ func (app *GRPCApplication) Commit(ctx context.Context, req *abci.RequestCommit)
 	return &res, nil
 }
 
-func (app *GRPCApplication) InitChain(ctx context.Context, req *RequestInitChain) (*ResponseInitChain, error) {
+func (app *GRPCApplication) InitChain(ctx context.Context, req *abci.RequestInitChain) (*ResponseInitChain, error) {
 	res := app.app.InitChain(*req)
 	return &res, nil
 }
@@ -186,7 +186,7 @@ func (app *GRPCApplication) BeginBlock(ctx context.Context, req *RequestBeginBlo
 	return &res, nil
 }
 
-func (app *GRPCApplication) EndBlock(ctx context.Context, req *abci.RequestEndBlock) (*ResponseEndBlock, error) {
+func (app *GRPCApplication) EndBlock(ctx context.Context, req *abci.RequestEndBlock) (*abci.ResponseEndBlock, error) {
 	res := app.app.EndBlock(*req)
 	return &res, nil
 }

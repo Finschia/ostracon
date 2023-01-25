@@ -137,7 +137,7 @@ func (app *localClient) CommitAsync(cb ResponseCallback) *ReqRes {
 	return app.done(reqRes, ocabci.ToResponseCommit(res))
 }
 
-func (app *localClient) InitChainAsync(req ocabci.RequestInitChain, cb ResponseCallback) *ReqRes {
+func (app *localClient) InitChainAsync(req abci.RequestInitChain, cb ResponseCallback) *ReqRes {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
@@ -220,7 +220,7 @@ func (app *localClient) ApplySnapshotChunkAsync(req abci.RequestApplySnapshotChu
 	return app.done(reqRes, ocabci.ToResponseApplySnapshotChunk(res))
 }
 
-//-------------------------------------------------------
+// -------------------------------------------------------
 func (app *localClient) FlushSync() (*abci.ResponseFlush, error) {
 	return &abci.ResponseFlush{}, nil
 }
@@ -282,7 +282,7 @@ func (app *localClient) CommitSync() (*abci.ResponseCommit, error) {
 	return &res, nil
 }
 
-func (app *localClient) InitChainSync(req ocabci.RequestInitChain) (*ocabci.ResponseInitChain, error) {
+func (app *localClient) InitChainSync(req abci.RequestInitChain) (*ocabci.ResponseInitChain, error) {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
@@ -298,7 +298,7 @@ func (app *localClient) BeginBlockSync(req ocabci.RequestBeginBlock) (*abci.Resp
 	return &res, nil
 }
 
-func (app *localClient) EndBlockSync(req abci.RequestEndBlock) (*ocabci.ResponseEndBlock, error) {
+func (app *localClient) EndBlockSync(req abci.RequestEndBlock) (*abci.ResponseEndBlock, error) {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 

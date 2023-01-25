@@ -5,7 +5,6 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	ocabci "github.com/line/ostracon/abci/types"
 	tmjson "github.com/line/ostracon/libs/json"
 	tmpubsub "github.com/line/ostracon/libs/pubsub"
 	tmquery "github.com/line/ostracon/libs/pubsub/query"
@@ -67,7 +66,7 @@ type EventDataNewBlock struct {
 	Block *Block `json:"block"`
 
 	ResultBeginBlock abci.ResponseBeginBlock `json:"result_begin_block"`
-	ResultEndBlock   ocabci.ResponseEndBlock `json:"result_end_block"`
+	ResultEndBlock   abci.ResponseEndBlock   `json:"result_end_block"`
 }
 
 type EventDataNewBlockHeader struct {
@@ -75,7 +74,7 @@ type EventDataNewBlockHeader struct {
 
 	NumTxs           int64                   `json:"num_txs"` // Number of txs in a block
 	ResultBeginBlock abci.ResponseBeginBlock `json:"result_begin_block"`
-	ResultEndBlock   ocabci.ResponseEndBlock `json:"result_end_block"`
+	ResultEndBlock   abci.ResponseEndBlock   `json:"result_end_block"`
 }
 
 type EventDataNewEvidence struct {

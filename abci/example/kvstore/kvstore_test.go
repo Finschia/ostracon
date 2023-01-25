@@ -132,18 +132,18 @@ func TestValUpdates(t *testing.T) {
 	nInit := 5
 	vals := RandVals(total)
 	// initialize with the first nInit
-	kvstore.InitChain(ocabci.RequestInitChain{
+	kvstore.InitChain(abci.RequestInitChain{
 		Validators: vals[:nInit],
 	})
 
 	vals1, vals2 := vals[:nInit], kvstore.Validators()
 	valsEqual(t, vals1, vals2)
 
-	var v1, v2, v3 ocabci.ValidatorUpdate
+	var v1, v2, v3 abci.ValidatorUpdate
 
 	// add some validators
 	v1, v2 = vals[nInit], vals[nInit+1]
-	diff := []ocabci.ValidatorUpdate{v1, v2}
+	diff := []abci.ValidatorUpdate{v1, v2}
 	tx1 := MakeValSetChangeTx(v1.PubKey, v1.Power)
 	tx2 := MakeValSetChangeTx(v2.PubKey, v2.Power)
 
@@ -157,7 +157,7 @@ func TestValUpdates(t *testing.T) {
 	v1.Power = 0
 	v2.Power = 0
 	v3.Power = 0
-	diff = []ocabci.ValidatorUpdate{v1, v2, v3}
+	diff = []abci.ValidatorUpdate{v1, v2, v3}
 	tx1 = MakeValSetChangeTx(v1.PubKey, v1.Power)
 	tx2 = MakeValSetChangeTx(v2.PubKey, v2.Power)
 	tx3 := MakeValSetChangeTx(v3.PubKey, v3.Power)
@@ -175,12 +175,12 @@ func TestValUpdates(t *testing.T) {
 	} else {
 		v1.Power = 5
 	}
-	diff = []ocabci.ValidatorUpdate{v1}
+	diff = []abci.ValidatorUpdate{v1}
 	tx1 = MakeValSetChangeTx(v1.PubKey, v1.Power)
 
 	makeApplyBlock(t, kvstore, 3, diff, tx1)
 
-	vals1 = append([]ocabci.ValidatorUpdate{v1}, vals1[1:]...)
+	vals1 = append([]abci.ValidatorUpdate{v1}, vals1[1:]...)
 	vals2 = kvstore.Validators()
 	valsEqual(t, vals1, vals2)
 
@@ -193,7 +193,7 @@ func makeApplyBlock(
 	t *testing.T,
 	kvstore ocabci.Application,
 	heightInt int,
-	diff []ocabci.ValidatorUpdate,
+	diff []abci.ValidatorUpdate,
 	txs ...[]byte) {
 	// make and apply block
 	height := int64(heightInt)
@@ -215,7 +215,7 @@ func makeApplyBlock(
 
 }
 
-func existInPersistStore(t *testing.T, kvstore ocabci.Application, v ocabci.ValidatorUpdate) {
+func existInPersistStore(t *testing.T, kvstore ocabci.Application, v abci.ValidatorUpdate) {
 	// success
 	pubkeyStr, _ := MakeValSetChangeTxAndMore(v.PubKey, v.Power)
 	resQuery := kvstore.Query(abci.RequestQuery{Path: "/val", Data: []byte(pubkeyStr)})
@@ -237,12 +237,12 @@ func existInPersistStore(t *testing.T, kvstore ocabci.Application, v ocabci.Vali
 }
 
 // order doesn't matter
-func valsEqual(t *testing.T, vals1, vals2 []ocabci.ValidatorUpdate) {
+func valsEqual(t *testing.T, vals1, vals2 []abci.ValidatorUpdate) {
 	if len(vals1) != len(vals2) {
 		t.Fatalf("vals dont match in len. got %d, expected %d", len(vals2), len(vals1))
 	}
-	sort.Sort(ocabci.ValidatorUpdates(vals1))
-	sort.Sort(ocabci.ValidatorUpdates(vals2))
+	sort.Sort(abci.ValidatorUpdates(vals1))
+	sort.Sort(abci.ValidatorUpdates(vals2))
 	for i, v1 := range vals1 {
 		v2 := vals2[i]
 		if !v1.PubKey.Equal(v2.PubKey) ||

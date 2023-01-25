@@ -493,7 +493,7 @@ func lastStoredHeightFor(height, lastHeightChanged int64) int64 {
 }
 
 // CONTRACT: Returned ValidatorsInfo can be mutated.
-func loadValidatorsInfo(db dbm.DB, height int64) (*ocstate.ValidatorsInfo, error) {
+func loadValidatorsInfo(db dbm.DB, height int64) (*tmstate.ValidatorsInfo, error) {
 	buf, err := db.Get(calcValidatorsKey(height))
 	if err != nil {
 		return nil, err
@@ -503,7 +503,7 @@ func loadValidatorsInfo(db dbm.DB, height int64) (*ocstate.ValidatorsInfo, error
 		return nil, errors.New("loadValidatorsInfo: value retrieved from db is empty")
 	}
 
-	v := new(ocstate.ValidatorsInfo)
+	v := new(tmstate.ValidatorsInfo)
 	err = v.Unmarshal(buf)
 	if err != nil {
 		// DATA HAS BEEN CORRUPTED OR THE SPEC HAS CHANGED
@@ -524,7 +524,7 @@ func (store dbStore) saveValidatorsInfo(height, lastHeightChanged int64, valSet 
 	if lastHeightChanged > height {
 		return errors.New("lastHeightChanged cannot be greater than ValidatorsInfo height")
 	}
-	valInfo := &ocstate.ValidatorsInfo{
+	valInfo := &tmstate.ValidatorsInfo{
 		LastHeightChanged: lastHeightChanged,
 	}
 	// Only persist validator set if it was updated or checkpoint height (see

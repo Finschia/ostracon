@@ -17,6 +17,7 @@ import (
 	"github.com/go-kit/log/term"
 	"github.com/stretchr/testify/require"
 
+	abci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
@@ -813,7 +814,7 @@ func randConsensusNet(nValidators int, testName string, tickerFunc func() Timeou
 		ensureDir(filepath.Dir(thisConfig.Consensus.WalFile()), 0700) // dir for wal
 		app := appFunc()
 		vals := types.OC2PB.ValidatorUpdates(state.Validators)
-		app.InitChain(ocabci.RequestInitChain{Validators: vals})
+		app.InitChain(abci.RequestInitChain{Validators: vals})
 
 		css[i] = newStateWithConfigAndBlockStore(thisConfig, state, privVals[i], app, stateDB)
 		css[i].SetTimeoutTicker(tickerFunc())
@@ -884,7 +885,7 @@ func createPeersAndValidators(nValidators, nPeers int, testName string,
 			// simulate handshake, receive app version. If don't do this, replay test will fail
 			state.Version.Consensus.App = kvstore.ProtocolVersion
 		}
-		app.InitChain(ocabci.RequestInitChain{Validators: vals})
+		app.InitChain(abci.RequestInitChain{Validators: vals})
 		// sm.SaveState(stateDB,state)	//height 1's validatorsInfo already saved in LoadStateFromDBOrGenesisDoc above
 
 		css[i] = newStateWithConfig(thisConfig, state, privVal, app)
@@ -904,7 +905,7 @@ func getSwitchIndex(switches []*p2p.Switch, peer p2p.Peer) int {
 	panic("didnt find peer in switches")
 }
 
-//-------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------
 // genesis
 func randGenesisDoc(numValidators int, randPower bool, minPower int64) (*types.GenesisDoc, []types.PrivValidator) {
 	validators := make([]types.GenesisValidator, numValidators)

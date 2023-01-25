@@ -326,8 +326,8 @@ func (app *testApp) BeginBlock(req ocabci.RequestBeginBlock) abci.ResponseBeginB
 	return abci.ResponseBeginBlock{}
 }
 
-func (app *testApp) EndBlock(req abci.RequestEndBlock) ocabci.ResponseEndBlock {
-	return ocabci.ResponseEndBlock{}
+func (app *testApp) EndBlock(req abci.RequestEndBlock) abci.ResponseEndBlock {
+	return abci.ResponseEndBlock{}
 }
 
 func (app *testApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {

@@ -14,7 +14,6 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	ocabci "github.com/line/ostracon/abci/types"
 	cfg "github.com/line/ostracon/config"
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/ed25519"
@@ -294,7 +293,7 @@ func TestABCIResponsesResultsHash(t *testing.T) {
 		DeliverTxs: []*abci.ResponseDeliverTx{
 			{Code: 32, Data: []byte("Hello"), Log: "Huh?"},
 		},
-		EndBlock: &ocabci.ResponseEndBlock{},
+		EndBlock: &abci.ResponseEndBlock{},
 	}
 
 	root := sm.ABCIResponsesResultsHash(responses)
@@ -319,7 +318,7 @@ func sliceToMap(s []int64) map[int64]bool {
 }
 
 func validatorsInfoToByte(height, lastHeightChanged int64, valSet *types.ValidatorSet) ([]byte, error) {
-	valInfo := &ocstate.ValidatorsInfo{
+	valInfo := &tmstate.ValidatorsInfo{
 		LastHeightChanged: lastHeightChanged,
 	}
 	if height == lastHeightChanged || height%valSetCheckpointInterval == 0 {
