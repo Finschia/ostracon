@@ -1000,12 +1000,12 @@ func (commit *Commit) StringIndented(indent string) string {
 }
 
 // ToProto converts Commit to protobuf
-func (commit *Commit) ToProto() *ocproto.Commit {
+func (commit *Commit) ToProto() *tmproto.Commit {
 	if commit == nil {
 		return nil
 	}
 
-	c := new(ocproto.Commit)
+	c := new(tmproto.Commit)
 	sigs := make([]tmproto.CommitSig, len(commit.Signatures))
 	for i := range commit.Signatures {
 		sigs[i] = *commit.Signatures[i].ToProto()
@@ -1021,7 +1021,7 @@ func (commit *Commit) ToProto() *ocproto.Commit {
 
 // FromProto sets a protobuf Commit to the given pointer.
 // It returns an error if the commit is invalid.
-func CommitFromProto(cp *ocproto.Commit) (*Commit, error) {
+func CommitFromProto(cp *tmproto.Commit) (*Commit, error) {
 	if cp == nil {
 		return nil, errors.New("nil Commit")
 	}

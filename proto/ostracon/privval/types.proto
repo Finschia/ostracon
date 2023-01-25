@@ -28,10 +28,10 @@ option go_package = "github.com/line/ostracon/proto/ostracon/privval";
 //}
 
 // PubKeyResponse is a response message containing the public key.
-message PubKeyResponse {
-  tendermint.crypto.PublicKey pub_key = 1 [(gogoproto.nullable) = false];
-  tendermint.privval.RemoteSignerError         error   = 2;
-}
+//message PubKeyResponse {
+//  tendermint.crypto.PublicKey pub_key = 1 [(gogoproto.nullable) = false];
+//  tendermint.privval.RemoteSignerError         error   = 2;
+//}
 
 // SignVoteRequest is a request to sign a vote
 //message SignVoteRequest {
@@ -77,7 +77,7 @@ message VRFProofResponse {
 message Message {
   oneof sum {
     tendermint.privval.PubKeyRequest          pub_key_request          = 1;
-    PubKeyResponse         pub_key_response         = 2;
+    tendermint.privval.PubKeyResponse         pub_key_response         = 2;
     tendermint.privval.SignVoteRequest        sign_vote_request        = 3;
     tendermint.privval.SignedVoteResponse     signed_vote_response     = 4;
     tendermint.privval.SignProposalRequest    sign_proposal_request    = 5;

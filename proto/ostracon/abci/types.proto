@@ -191,11 +191,11 @@ message Response {
 //  string info = 4;
 //}
 
-message ResponseInitChain {
-  tendermint.abci.ConsensusParams          consensus_params = 1;
-  repeated tendermint.abci.ValidatorUpdate validators       = 2 [(gogoproto.nullable) = false];
-  bytes                    app_hash         = 3;
-}
+//message ResponseInitChain {
+//  tendermint.abci.ConsensusParams          consensus_params = 1;
+//  repeated tendermint.abci.ValidatorUpdate validators       = 2 [(gogoproto.nullable) = false];
+//  bytes                    app_hash         = 3;
+//}
 
 //message ResponseQuery {
 //  uint32 code = 1;

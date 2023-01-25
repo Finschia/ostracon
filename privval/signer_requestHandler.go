@@ -26,7 +26,7 @@ func DefaultValidationRequestHandler(
 	switch r := req.Sum.(type) {
 	case *privvalproto.Message_PubKeyRequest:
 		if r.PubKeyRequest.GetChainId() != chainID {
-			res = mustWrapMsg(&privvalproto.PubKeyResponse{
+			res = mustWrapMsg(&tmprivvalproto.PubKeyResponse{
 				PubKey: cryptoproto.PublicKey{}, Error: &tmprivvalproto.RemoteSignerError{
 					Code: 0, Description: "unable to provide pubkey"}})
 			return res, fmt.Errorf("want chainID: %s, got chainID: %s", r.PubKeyRequest.GetChainId(), chainID)
@@ -43,10 +43,10 @@ func DefaultValidationRequestHandler(
 		}
 
 		if err != nil {
-			res = mustWrapMsg(&privvalproto.PubKeyResponse{
+			res = mustWrapMsg(&tmprivvalproto.PubKeyResponse{
 				PubKey: cryptoproto.PublicKey{}, Error: &tmprivvalproto.RemoteSignerError{Code: 0, Description: err.Error()}})
 		} else {
-			res = mustWrapMsg(&privvalproto.PubKeyResponse{PubKey: pk, Error: nil})
+			res = mustWrapMsg(&tmprivvalproto.PubKeyResponse{PubKey: pk, Error: nil})
 		}
 
 	case *privvalproto.Message_SignVoteRequest:
