@@ -229,7 +229,7 @@ func ToResponseQuery(res abci.ResponseQuery) *Response {
 	}
 }
 
-func ToResponseInitChain(res ResponseInitChain) *Response {
+func ToResponseInitChain(res abci.ResponseInitChain) *Response {
 	return &Response{
 		Value: &Response_InitChain{&res},
 	}

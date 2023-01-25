@@ -146,14 +146,14 @@ func (_m *Application) Info(_a0 abci.RequestInfo) abci.ResponseInfo {
 }
 
 // InitChain provides a mock function with given fields: _a0
-func (_m *Application) InitChain(_a0 abci.RequestInitChain) ocabci.ResponseInitChain {
+func (_m *Application) InitChain(_a0 abci.RequestInitChain) abci.ResponseInitChain {
 	ret := _m.Called(_a0)
 
-	var r0 ocabci.ResponseInitChain
-	if rf, ok := ret.Get(0).(func(abci.RequestInitChain) ocabci.ResponseInitChain); ok {
+	var r0 abci.ResponseInitChain
+	if rf, ok := ret.Get(0).(func(abci.RequestInitChain) abci.ResponseInitChain); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(ocabci.ResponseInitChain)
+		r0 = ret.Get(0).(abci.ResponseInitChain)
 	}
 
 	return r0

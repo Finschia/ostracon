@@ -368,7 +368,7 @@ func (cli *socketClient) CommitSync() (*abci.ResponseCommit, error) {
 	return reqres.Response.GetCommit(), cli.Error()
 }
 
-func (cli *socketClient) InitChainSync(req abci.RequestInitChain) (*ocabci.ResponseInitChain, error) {
+func (cli *socketClient) InitChainSync(req abci.RequestInitChain) (*abci.ResponseInitChain, error) {
 	reqres := cli.queueRequest(ocabci.ToRequestInitChain(req), nil)
 	if _, err := cli.FlushSync(); err != nil {
 		return nil, err

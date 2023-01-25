@@ -81,7 +81,7 @@ message RequestBeginBlock {
   bytes                 hash                 = 1;
   ostracon.types.Header header               = 2 [(gogoproto.nullable) = false];
   tendermint.abci.LastCommitInfo        last_commit_info     = 3 [(gogoproto.nullable) = false];
-  repeated Evidence     byzantine_validators = 4 [(gogoproto.nullable) = false];
+  repeated tendermint.abci.Evidence     byzantine_validators = 4 [(gogoproto.nullable) = false];
 }
 
 //enum CheckTxType {
@@ -146,7 +146,7 @@ message Response {
     tendermint.abci.ResponseFlush              flush                = 3;
     tendermint.abci.ResponseInfo               info                 = 4;
     tendermint.abci.ResponseSetOption          set_option           = 5;
-    ResponseInitChain          init_chain           = 6;
+    tendermint.abci.ResponseInitChain          init_chain           = 6;
     tendermint.abci.ResponseQuery              query                = 7;
     tendermint.abci.ResponseBeginBlock         begin_block          = 8;
     ResponseCheckTx            check_tx             = 9;
@@ -384,22 +384,22 @@ message ResponseEndRecheckTx {
 //  LIGHT_CLIENT_ATTACK = 2;
 //}
 
-message Evidence {
-  tendermint.abci.EvidenceType type = 1;
-  // The offending validator
-  tendermint.abci.Validator validator = 2 [(gogoproto.nullable) = false];
-  // The height when the offense occurred
-  int64 height = 3;
-  // The corresponding time where the offense occurred
-  google.protobuf.Timestamp time = 4 [
-    (gogoproto.nullable) = false,
-    (gogoproto.stdtime)  = true
-  ];
-  // Total voting power of the validator set in case the ABCI application does
-  // not store historical validators.
-  // https://github.com/tendermint/tendermint/issues/4581
-  int64 total_voting_power = 5;  // total voting power
-}
+//message Evidence {
+//  tendermint.abci.EvidenceType type = 1;
+//  // The offending validator
+//  tendermint.abci.Validator validator = 2 [(gogoproto.nullable) = false];
+//  // The height when the offense occurred
+//  int64 height = 3;
+//  // The corresponding time where the offense occurred
+//  google.protobuf.Timestamp time = 4 [
+//    (gogoproto.nullable) = false,
+//    (gogoproto.stdtime)  = true
+//  ];
+//  // Total voting power of the validator set in case the ABCI application does
+//  // not store historical validators.
+//  // https://github.com/tendermint/tendermint/issues/4581
+//  int64 total_voting_power = 5;  // total voting power
+//}
 
 //----------------------------------------
 // State Sync Types
@@ -424,7 +424,7 @@ service ABCIApplication {
   rpc CheckTx(tendermint.abci.RequestCheckTx) returns (ResponseCheckTx);
   rpc Query(tendermint.abci.RequestQuery) returns (tendermint.abci.ResponseQuery);
   rpc Commit(tendermint.abci.RequestCommit) returns (tendermint.abci.ResponseCommit);
-  rpc InitChain(tendermint.abci.RequestInitChain) returns (ResponseInitChain);
+  rpc InitChain(tendermint.abci.RequestInitChain) returns (tendermint.abci.ResponseInitChain);
   rpc BeginBlock(RequestBeginBlock) returns (tendermint.abci.ResponseBeginBlock);
   rpc EndBlock(tendermint.abci.RequestEndBlock) returns (tendermint.abci.ResponseEndBlock);
   rpc ListSnapshots(tendermint.abci.RequestListSnapshots) returns (tendermint.abci.ResponseListSnapshots);

@@ -8,9 +8,9 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	abci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto/ed25519"
 	"github.com/line/ostracon/crypto/tmhash"
 	"github.com/line/ostracon/libs/log"
@@ -225,7 +225,7 @@ func TestValidateBlockEvidence(t *testing.T) {
 	evpool.On("CheckEvidence", mock.AnythingOfType("types.EvidenceList")).Return(nil)
 	evpool.On("Update", mock.AnythingOfType("state.State"), mock.AnythingOfType("types.EvidenceList")).Return()
 	evpool.On("ABCIEvidence", mock.AnythingOfType("int64"), mock.AnythingOfType("[]types.Evidence")).Return(
-		[]ocabci.Evidence{})
+		[]abci.Evidence{})
 
 	state.ConsensusParams.Evidence.MaxBytes = 1000
 	blockExec := sm.NewBlockExecutor(

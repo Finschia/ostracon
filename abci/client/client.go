@@ -55,7 +55,7 @@ type Client interface {
 	CheckTxSync(abci.RequestCheckTx) (*ocabci.ResponseCheckTx, error)
 	QuerySync(abci.RequestQuery) (*abci.ResponseQuery, error)
 	CommitSync() (*abci.ResponseCommit, error)
-	InitChainSync(abci.RequestInitChain) (*ocabci.ResponseInitChain, error)
+	InitChainSync(abci.RequestInitChain) (*abci.ResponseInitChain, error)
 	BeginBlockSync(ocabci.RequestBeginBlock) (*abci.ResponseBeginBlock, error)
 	EndBlockSync(abci.RequestEndBlock) (*abci.ResponseEndBlock, error)
 	BeginRecheckTxSync(ocabci.RequestBeginRecheckTx) (*ocabci.ResponseBeginRecheckTx, error)

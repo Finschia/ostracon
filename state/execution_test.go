@@ -13,7 +13,6 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 
-	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/ed25519"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
@@ -183,7 +182,7 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 
 	ev := []types.Evidence{dve, lcae}
 
-	abciEv := []ocabci.Evidence{
+	abciEv := []abci.Evidence{
 		{
 			Type:             abci.EvidenceType_DUPLICATE_VOTE,
 			Height:           3,
@@ -228,9 +227,9 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 	testCases := []struct {
 		desc                        string
 		evidence                    []types.Evidence
-		expectedByzantineValidators []ocabci.Evidence
+		expectedByzantineValidators []abci.Evidence
 	}{
-		{"none byzantine", []types.Evidence{}, []ocabci.Evidence{}},
+		{"none byzantine", []types.Evidence{}, []abci.Evidence{}},
 		{"one byzantine", []types.Evidence{&ev1}, ev1.ABCI()},
 		{"multiple byzantine", []types.Evidence{&ev1, &ev2}, append(ev1.ABCI(), ev2.ABCI()...)},
 	}

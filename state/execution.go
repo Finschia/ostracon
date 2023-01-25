@@ -374,7 +374,7 @@ func execBlockOnProxyApp(
 
 	commitInfo := getBeginBlockValidatorInfo(block, store, initialHeight)
 
-	byzVals := make([]ocabci.Evidence, 0)
+	byzVals := make([]abci.Evidence, 0)
 	for _, evidence := range block.Evidence.Evidence {
 		byzVals = append(byzVals, evidence.ABCI()...)
 	}

@@ -121,7 +121,7 @@ func (app *Application) Info(req abci.RequestInfo) abci.ResponseInfo {
 }
 
 // Info implements ABCI.
-func (app *Application) InitChain(req abci.RequestInitChain) ocabci.ResponseInitChain {
+func (app *Application) InitChain(req abci.RequestInitChain) abci.ResponseInitChain {
 	var err error
 	app.state.initialHeight = uint64(req.InitialHeight)
 	if len(req.AppStateBytes) > 0 {
@@ -130,7 +130,7 @@ func (app *Application) InitChain(req abci.RequestInitChain) ocabci.ResponseInit
 			panic(err)
 		}
 	}
-	resp := ocabci.ResponseInitChain{
+	resp := abci.ResponseInitChain{
 		AppHash: app.state.Hash,
 	}
 	if resp.Validators, err = app.validatorUpdates(0); err != nil {

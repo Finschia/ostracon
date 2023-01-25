@@ -17,7 +17,7 @@ type AppConnConsensus interface {
 	SetGlobalCallback(abcicli.GlobalCallback)
 	Error() error
 
-	InitChainSync(abci.RequestInitChain) (*ocabci.ResponseInitChain, error)
+	InitChainSync(abci.RequestInitChain) (*abci.ResponseInitChain, error)
 
 	BeginBlockSync(ocabci.RequestBeginBlock) (*abci.ResponseBeginBlock, error)
 	DeliverTxAsync(abci.RequestDeliverTx, abcicli.ResponseCallback) *abcicli.ReqRes
@@ -79,7 +79,7 @@ func (app *appConnConsensus) Error() error {
 	return app.appConn.Error()
 }
 
-func (app *appConnConsensus) InitChainSync(req abci.RequestInitChain) (*ocabci.ResponseInitChain, error) {
+func (app *appConnConsensus) InitChainSync(req abci.RequestInitChain) (*abci.ResponseInitChain, error) {
 	return app.appConn.InitChainSync(req)
 }
 

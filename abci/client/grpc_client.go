@@ -359,7 +359,7 @@ func (cli *grpcClient) CommitSync() (*abci.ResponseCommit, error) {
 	return reqres.Response.GetCommit(), cli.Error()
 }
 
-func (cli *grpcClient) InitChainSync(params abci.RequestInitChain) (*ocabci.ResponseInitChain, error) {
+func (cli *grpcClient) InitChainSync(params abci.RequestInitChain) (*abci.ResponseInitChain, error) {
 	reqres := cli.InitChainAsync(params, nil)
 	reqres.Wait()
 	return reqres.Response.GetInitChain(), cli.Error()

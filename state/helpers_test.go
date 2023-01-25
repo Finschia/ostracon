@@ -253,7 +253,7 @@ type testApp struct {
 	ocabci.BaseApplication
 
 	CommitVotes         []abci.VoteInfo
-	ByzantineValidators []ocabci.Evidence
+	ByzantineValidators []abci.Evidence
 	ValidatorUpdates    []abci.ValidatorUpdate
 }
 

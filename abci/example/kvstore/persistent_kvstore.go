@@ -122,14 +122,14 @@ func (app *PersistentKVStoreApplication) Query(reqQuery abci.RequestQuery) (resQ
 }
 
 // Save the validators in the merkle tree
-func (app *PersistentKVStoreApplication) InitChain(req abci.RequestInitChain) ocabci.ResponseInitChain {
+func (app *PersistentKVStoreApplication) InitChain(req abci.RequestInitChain) abci.ResponseInitChain {
 	for _, v := range req.Validators {
 		r := app.updateValidator(v)
 		if r.IsErr() {
 			app.logger.Error("Error updating validators", "r", r)
 		}
 	}
-	return ocabci.ResponseInitChain{}
+	return abci.ResponseInitChain{}
 }
 
 // Track the block hash and header information

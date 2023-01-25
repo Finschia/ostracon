@@ -282,7 +282,7 @@ func (app *localClient) CommitSync() (*abci.ResponseCommit, error) {
 	return &res, nil
 }
 
-func (app *localClient) InitChainSync(req abci.RequestInitChain) (*ocabci.ResponseInitChain, error) {
+func (app *localClient) InitChainSync(req abci.RequestInitChain) (*abci.ResponseInitChain, error) {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 

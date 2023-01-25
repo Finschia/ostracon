@@ -1298,8 +1298,8 @@ type initChainApp struct {
 	vals []abci.ValidatorUpdate
 }
 
-func (ica *initChainApp) InitChain(req abci.RequestInitChain) ocabci.ResponseInitChain {
-	return ocabci.ResponseInitChain{
+func (ica *initChainApp) InitChain(req abci.RequestInitChain) abci.ResponseInitChain {
+	return abci.ResponseInitChain{
 		Validators: ica.vals,
 	}
 }

@@ -12,7 +12,6 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto/merkle"
 	"github.com/line/ostracon/crypto/tmhash"
 	tmjson "github.com/line/ostracon/libs/json"
@@ -39,13 +38,13 @@ func MaxEvidenceBytes(ev Evidence) int64 {
 // Evidence represents any provable malicious activity by a validator.
 // Verification logic for each evidence is part of the evidence module.
 type Evidence interface {
-	ABCI() []ocabci.Evidence // forms individual evidence to be sent to the application
-	Bytes() []byte           // bytes which comprise the evidence
-	Hash() []byte            // hash of the evidence
-	Height() int64           // height of the infraction
-	String() string          // string format of the evidence
-	Time() time.Time         // time of the infraction
-	ValidateBasic() error    // basic consistency check
+	ABCI() []abci.Evidence // forms individual evidence to be sent to the application
+	Bytes() []byte         // bytes which comprise the evidence
+	Hash() []byte          // hash of the evidence
+	Height() int64         // height of the infraction
+	String() string        // string format of the evidence
+	Time() time.Time       // time of the infraction
+	ValidateBasic() error  // basic consistency check
 }
 
 //--------------------------------------------------------------------------------------
@@ -92,8 +91,8 @@ func NewDuplicateVoteEvidence(vote1, vote2 *Vote, blockTime time.Time, valSet *V
 }
 
 // ABCI returns the application relevant representation of the evidence
-func (dve *DuplicateVoteEvidence) ABCI() []ocabci.Evidence {
-	return []ocabci.Evidence{{
+func (dve *DuplicateVoteEvidence) ABCI() []abci.Evidence {
+	return []abci.Evidence{{
 		Type: abci.EvidenceType_DUPLICATE_VOTE,
 		Validator: abci.Validator{
 			Address: dve.VoteA.ValidatorAddress,
@@ -219,10 +218,10 @@ type LightClientAttackEvidence struct {
 var _ Evidence = &LightClientAttackEvidence{}
 
 // ABCI forms an array of abci evidence for each byzantine validator
-func (l *LightClientAttackEvidence) ABCI() []ocabci.Evidence {
-	abciEv := make([]ocabci.Evidence, len(l.ByzantineValidators))
+func (l *LightClientAttackEvidence) ABCI() []abci.Evidence {
+	abciEv := make([]abci.Evidence, len(l.ByzantineValidators))
 	for idx, val := range l.ByzantineValidators {
-		abciEv[idx] = ocabci.Evidence{
+		abciEv[idx] = abci.Evidence{
 			Type:             abci.EvidenceType_LIGHT_CLIENT_ATTACK,
 			Validator:        OC2PB.Validator(val),
 			Height:           l.Height(),

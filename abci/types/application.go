@@ -27,7 +27,7 @@ type Application interface {
 	EndRecheckTx(RequestEndRecheckTx) ResponseEndRecheckTx       // Signals the end of rechecking
 
 	// Consensus Connection
-	InitChain(abci.RequestInitChain) ResponseInitChain      // Initialize blockchain w validators/other info from OstraconCore
+	InitChain(abci.RequestInitChain) abci.ResponseInitChain // Initialize blockchain w validators/other info from OstraconCore
 	BeginBlock(RequestBeginBlock) abci.ResponseBeginBlock   // Signals the beginning of a block
 	DeliverTx(abci.RequestDeliverTx) abci.ResponseDeliverTx // Deliver a tx for full processing
 	EndBlock(abci.RequestEndBlock) abci.ResponseEndBlock    // Signals the end of a block, returns changes to the validator set
@@ -88,8 +88,8 @@ func (BaseApplication) Query(req abci.RequestQuery) abci.ResponseQuery {
 	return abci.ResponseQuery{Code: CodeTypeOK}
 }
 
-func (BaseApplication) InitChain(req abci.RequestInitChain) ResponseInitChain {
-	return ResponseInitChain{}
+func (BaseApplication) InitChain(req abci.RequestInitChain) abci.ResponseInitChain {
+	return abci.ResponseInitChain{}
 }
 
 func (BaseApplication) BeginBlock(req RequestBeginBlock) abci.ResponseBeginBlock {
@@ -176,7 +176,7 @@ func (app *GRPCApplication) Commit(ctx context.Context, req *abci.RequestCommit)
 	return &res, nil
 }
 
-func (app *GRPCApplication) InitChain(ctx context.Context, req *abci.RequestInitChain) (*ResponseInitChain, error) {
+func (app *GRPCApplication) InitChain(ctx context.Context, req *abci.RequestInitChain) (*abci.ResponseInitChain, error) {
 	res := app.app.InitChain(*req)
 	return &res, nil
 }
