@@ -9,7 +9,6 @@ import (
 	"time"
 
 	abci "github.com/line/ostracon/abci/types"
-
 	cfg "github.com/line/ostracon/config"
 	"github.com/line/ostracon/libs/log"
 	tmnet "github.com/line/ostracon/libs/net"

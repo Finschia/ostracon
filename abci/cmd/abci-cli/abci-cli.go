@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/tendermint/tendermint/abci/types"
-	tmcrypto "github.com/tendermint/tendermint/proto/tendermint/crypto"
+	"github.com/tendermint/tendermint/proto/tendermint/crypto"
 
 	abcicli "github.com/line/ostracon/abci/client"
 	"github.com/line/ostracon/abci/example/code"
@@ -109,7 +109,7 @@ type queryResponse struct {
 	Key      []byte
 	Value    []byte
 	Height   int64
-	ProofOps *tmcrypto.ProofOps
+	ProofOps *crypto.ProofOps
 }
 
 func Execute() error {
