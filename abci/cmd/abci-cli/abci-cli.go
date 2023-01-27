@@ -13,7 +13,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/abci/types"
 	tmcrypto "github.com/tendermint/tendermint/proto/tendermint/crypto"
 
 	abcicli "github.com/line/ostracon/abci/client"
@@ -519,7 +519,7 @@ func cmdInfo(cmd *cobra.Command, args []string) error {
 	if len(args) == 1 {
 		version = args[0]
 	}
-	res, err := client.InfoSync(abci.RequestInfo{Version: version})
+	res, err := client.InfoSync(types.RequestInfo{Version: version})
 	if err != nil {
 		return err
 	}
@@ -542,7 +542,7 @@ func cmdSetOption(cmd *cobra.Command, args []string) error {
 	}
 
 	key, val := args[0], args[1]
-	_, err := client.SetOptionSync(abci.RequestSetOption{Key: key, Value: val})
+	_, err := client.SetOptionSync(types.RequestSetOption{Key: key, Value: val})
 	if err != nil {
 		return err
 	}
@@ -563,7 +563,7 @@ func cmdDeliverTx(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	res, err := client.DeliverTxSync(abci.RequestDeliverTx{Tx: txBytes})
+	res, err := client.DeliverTxSync(types.RequestDeliverTx{Tx: txBytes})
 	if err != nil {
 		return err
 	}
@@ -589,7 +589,7 @@ func cmdCheckTx(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	res, err := client.CheckTxSync(abci.RequestCheckTx{Tx: txBytes})
+	res, err := client.CheckTxSync(types.RequestCheckTx{Tx: txBytes})
 	if err != nil {
 		return err
 	}
@@ -629,7 +629,7 @@ func cmdQuery(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	resQuery, err := client.QuerySync(abci.RequestQuery{
+	resQuery, err := client.QuerySync(types.RequestQuery{
 		Data:   queryBytes,
 		Path:   flagPath,
 		Height: int64(flagHeight),
@@ -734,7 +734,7 @@ func cmdPersistKVStoreMakeValSetChangeTx(cmd *cobra.Command, args []string) erro
 	pubStr, tx := kvstore.MakeValSetChangeTxAndMore(publicKey, flagVotingPower)
 	{
 		fmt.Printf("DeliverTxSync: data=%s, tx=%s\n", pubStr, tx)
-		res, err := client.DeliverTxSync(abci.RequestDeliverTx{Tx: []byte(tx)})
+		res, err := client.DeliverTxSync(types.RequestDeliverTx{Tx: []byte(tx)})
 		if err != nil {
 			return err
 		}
@@ -747,7 +747,7 @@ func cmdPersistKVStoreMakeValSetChangeTx(cmd *cobra.Command, args []string) erro
 	}
 	{
 		fmt.Printf("QuerySync: data=%s\n", pubStr)
-		res, err := client.QuerySync(abci.RequestQuery{Path: "/val", Data: []byte(pubStr)})
+		res, err := client.QuerySync(types.RequestQuery{Path: "/val", Data: []byte(pubStr)})
 		if err != nil {
 			return err
 		}
@@ -757,7 +757,7 @@ func cmdPersistKVStoreMakeValSetChangeTx(cmd *cobra.Command, args []string) erro
 			Log:  res.Log,
 		})
 		fmt.Printf("original:publicKey:%s\n", publicKey)
-		validatorUpdate := abci.ValidatorUpdate{}
+		validatorUpdate := types.ValidatorUpdate{}
 		err = ocabci.ReadMessage(bytes.NewReader(res.Value), &validatorUpdate)
 		if err != nil {
 			panic(err)

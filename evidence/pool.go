@@ -14,7 +14,7 @@ import (
 
 	"github.com/line/ostracon/libs/clist"
 	"github.com/line/ostracon/libs/log"
-	ocproto "github.com/line/ostracon/proto/ostracon/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"
 )
@@ -362,7 +362,7 @@ func (evpool *Pool) listEvidence(prefixKey byte, maxBytes int64) ([]types.Eviden
 		evSize    int64
 		totalSize int64
 		evidence  []types.Evidence
-		evList    ocproto.EvidenceList // used for calculating the bytes size
+		evList    tmproto.EvidenceList // used for calculating the bytes size
 	)
 
 	iter, err := dbm.IteratePrefix(evpool.evidenceStore, []byte{prefixKey})
@@ -371,7 +371,7 @@ func (evpool *Pool) listEvidence(prefixKey byte, maxBytes int64) ([]types.Eviden
 	}
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
-		var evpb ocproto.Evidence
+		var evpb tmproto.Evidence
 		err := evpb.Unmarshal(iter.Value())
 		if err != nil {
 			return evidence, totalSize, err
@@ -534,7 +534,7 @@ type duplicateVoteSet struct {
 }
 
 func bytesToEv(evBytes []byte) (types.Evidence, error) {
-	var evpb ocproto.Evidence
+	var evpb tmproto.Evidence
 	err := evpb.Unmarshal(evBytes)
 	if err != nil {
 		return &types.DuplicateVoteEvidence{}, err

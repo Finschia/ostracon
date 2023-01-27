@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/line/ostracon/abci/example/code"
-	ocabci "github.com/line/ostracon/abci/types"
+	"github.com/line/ostracon/abci/types"
 )
 
 var abciType string
@@ -83,13 +83,13 @@ func testCounter() {
 	commit(client, nil)
 	deliverTx(client, []byte("abc"), code.CodeTypeBadNonce, nil)
 	commit(client, nil)
-	deliverTx(client, []byte{0x00}, ocabci.CodeTypeOK, nil)
+	deliverTx(client, []byte{0x00}, types.CodeTypeOK, nil)
 	commit(client, []byte{0, 0, 0, 0, 0, 0, 0, 1})
 	deliverTx(client, []byte{0x00}, code.CodeTypeBadNonce, nil)
-	deliverTx(client, []byte{0x01}, ocabci.CodeTypeOK, nil)
-	deliverTx(client, []byte{0x00, 0x02}, ocabci.CodeTypeOK, nil)
-	deliverTx(client, []byte{0x00, 0x03}, ocabci.CodeTypeOK, nil)
-	deliverTx(client, []byte{0x00, 0x00, 0x04}, ocabci.CodeTypeOK, nil)
+	deliverTx(client, []byte{0x01}, types.CodeTypeOK, nil)
+	deliverTx(client, []byte{0x00, 0x02}, types.CodeTypeOK, nil)
+	deliverTx(client, []byte{0x00, 0x03}, types.CodeTypeOK, nil)
+	deliverTx(client, []byte{0x00, 0x00, 0x04}, types.CodeTypeOK, nil)
 	deliverTx(client, []byte{0x00, 0x00, 0x06}, code.CodeTypeBadNonce, nil)
 	commit(client, []byte{0, 0, 0, 0, 0, 0, 0, 5})
 }

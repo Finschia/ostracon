@@ -15,7 +15,7 @@ import (
 
 	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/libs/protoio"
-	ocproto "github.com/line/ostracon/proto/ostracon/types"
+	"github.com/line/ostracon/proto/ostracon/types"
 )
 
 const maxPingPongPacketSize = 1024 // bytes
@@ -533,7 +533,7 @@ func TestMConnectionReadErrorUnknownMsgType(t *testing.T) {
 	defer mconnServer.Stop() // nolint:errcheck // ignore for tests
 
 	// send msg with unknown msg type
-	_, err := protoio.NewDelimitedWriter(mconnClient.conn).WriteMsg(&ocproto.Header{ChainID: "x"})
+	_, err := protoio.NewDelimitedWriter(mconnClient.conn).WriteMsg(&types.Header{ChainID: "x"})
 	require.NoError(t, err)
 	assert.True(t, expectSend(chOnErr), "unknown msg type")
 }

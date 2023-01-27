@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/line/ostracon/abci/example/kvstore"
-	ocabci "github.com/line/ostracon/abci/types"
+	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/proxy"
 	"github.com/line/ostracon/types"
 )
@@ -69,7 +69,7 @@ func TestCacheAfterUpdate(t *testing.T) {
 			updateTxs = append(updateTxs, tx)
 		}
 		err := mempool.Update(newTestBlock(int64(tcIndex), updateTxs),
-			abciResponses(len(updateTxs), ocabci.CodeTypeOK), nil, nil)
+			abciResponses(len(updateTxs), abci.CodeTypeOK), nil, nil)
 		require.NoError(t, err)
 
 		for _, v := range tc.reAddIndices {

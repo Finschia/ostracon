@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/go-amino"
 	abci "github.com/tendermint/tendermint/abci/types"
-	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
+	"github.com/tendermint/tendermint/proto/tendermint/version"
 
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/ed25519"
@@ -83,7 +83,7 @@ func TestABCIHeader(t *testing.T) {
 	// build a full header
 	var height int64 = 5
 	header := newHeader(height, []byte("lastCommitHash"), []byte("dataHash"), []byte("evidenceHash"))
-	protocolVersion := tmversion.Consensus{Block: 7, App: 8}
+	protocolVersion := version.Consensus{Block: 7, App: 8}
 	timestamp := time.Now()
 	lastBlockID := BlockID{
 		Hash: []byte("hash"),

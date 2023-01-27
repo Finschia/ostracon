@@ -24,7 +24,7 @@ import (
 	"github.com/line/ostracon/abci/example/code"
 	"github.com/line/ostracon/abci/example/kvstore"
 	abciserver "github.com/line/ostracon/abci/server"
-	ocabci "github.com/line/ostracon/abci/types"
+	"github.com/line/ostracon/abci/types"
 )
 
 func init() {
@@ -38,15 +38,15 @@ func TestKVStore(t *testing.T) {
 
 func TestBaseApp(t *testing.T) {
 	fmt.Println("### Testing BaseApp")
-	testStream(t, ocabci.NewBaseApplication())
+	testStream(t, types.NewBaseApplication())
 }
 
 func TestGRPC(t *testing.T) {
 	fmt.Println("### Testing GRPC")
-	testGRPCSync(t, ocabci.NewGRPCApplication(ocabci.NewBaseApplication()))
+	testGRPCSync(t, types.NewGRPCApplication(types.NewBaseApplication()))
 }
 
-func testStream(t *testing.T, app ocabci.Application) {
+func testStream(t *testing.T, app types.Application) {
 	numDeliverTxs := 20000
 	socketFile := fmt.Sprintf("test-%08x.sock", rand.Int31n(1<<30))
 	defer os.Remove(socketFile)
@@ -78,10 +78,10 @@ func testStream(t *testing.T, app ocabci.Application) {
 
 	done := make(chan struct{})
 	counter := 0
-	client.SetGlobalCallback(func(req *ocabci.Request, res *ocabci.Response) {
+	client.SetGlobalCallback(func(req *types.Request, res *types.Response) {
 		// Process response
 		switch r := res.Value.(type) {
-		case *ocabci.Response_DeliverTx:
+		case *types.Response_DeliverTx:
 			counter++
 			if r.DeliverTx.Code != code.CodeTypeOK {
 				t.Error("DeliverTx failed with ret_code", r.DeliverTx.Code)
@@ -96,7 +96,7 @@ func testStream(t *testing.T, app ocabci.Application) {
 				}()
 				return
 			}
-		case *ocabci.Response_Flush:
+		case *types.Response_Flush:
 			// ignore
 		default:
 			t.Error("Unexpected response type", reflect.TypeOf(res.Value))
@@ -130,7 +130,7 @@ func dialerFunc(ctx context.Context, addr string) (net.Conn, error) {
 	return tmnet.Connect(addr)
 }
 
-func testGRPCSync(t *testing.T, app ocabci.ABCIApplicationServer) {
+func testGRPCSync(t *testing.T, app types.ABCIApplicationServer) {
 	numDeliverTxs := 2000
 	socketFile := fmt.Sprintf("/tmp/test-%08x.sock", rand.Int31n(1<<30))
 	defer os.Remove(socketFile)
@@ -162,7 +162,7 @@ func testGRPCSync(t *testing.T, app ocabci.ABCIApplicationServer) {
 		}
 	})
 
-	client := ocabci.NewABCIApplicationClient(conn)
+	client := types.NewABCIApplicationClient(conn)
 
 	// Write requests
 	for counter := 0; counter < numDeliverTxs; counter++ {

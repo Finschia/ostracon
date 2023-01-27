@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	ocabci "github.com/line/ostracon/abci/types"
+	abci "github.com/line/ostracon/abci/types"
 
 	cfg "github.com/line/ostracon/config"
 	"github.com/line/ostracon/libs/log"
@@ -116,7 +116,7 @@ func GetGRPCClient() core_grpc.BroadcastAPIClient {
 }
 
 // StartOstracon starts a test ostracon server in a go routine and returns when it is initialized
-func StartOstracon(app ocabci.Application, opts ...func(*Options)) *nm.Node {
+func StartOstracon(app abci.Application, opts ...func(*Options)) *nm.Node {
 	nodeOpts := defaultOptions
 	for _, opt := range opts {
 		opt(&nodeOpts)
@@ -149,7 +149,7 @@ func StopOstracon(node *nm.Node) {
 }
 
 // NewOstracon creates a new ostracon server and sleeps forever
-func NewOstracon(app ocabci.Application, opts *Options) *nm.Node {
+func NewOstracon(app abci.Application, opts *Options) *nm.Node {
 	// Create & start node
 	config := GetConfig(opts.recreateConfig)
 	var logger log.Logger

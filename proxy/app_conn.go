@@ -1,7 +1,7 @@
 package proxy
 
 import (
-	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/abci/types"
 
 	abcicli "github.com/line/ostracon/abci/client"
 	ocabci "github.com/line/ostracon/abci/types"
@@ -17,34 +17,34 @@ type AppConnConsensus interface {
 	SetGlobalCallback(abcicli.GlobalCallback)
 	Error() error
 
-	InitChainSync(abci.RequestInitChain) (*abci.ResponseInitChain, error)
+	InitChainSync(types.RequestInitChain) (*types.ResponseInitChain, error)
 
-	BeginBlockSync(ocabci.RequestBeginBlock) (*abci.ResponseBeginBlock, error)
-	DeliverTxAsync(abci.RequestDeliverTx, abcicli.ResponseCallback) *abcicli.ReqRes
-	EndBlockSync(abci.RequestEndBlock) (*abci.ResponseEndBlock, error)
-	CommitSync() (*abci.ResponseCommit, error)
+	BeginBlockSync(ocabci.RequestBeginBlock) (*types.ResponseBeginBlock, error)
+	DeliverTxAsync(types.RequestDeliverTx, abcicli.ResponseCallback) *abcicli.ReqRes
+	EndBlockSync(types.RequestEndBlock) (*types.ResponseEndBlock, error)
+	CommitSync() (*types.ResponseCommit, error)
 }
 
 type AppConnMempool interface {
 	SetGlobalCallback(abcicli.GlobalCallback)
 	Error() error
 
-	CheckTxAsync(abci.RequestCheckTx, abcicli.ResponseCallback) *abcicli.ReqRes
-	CheckTxSync(abci.RequestCheckTx) (*ocabci.ResponseCheckTx, error)
+	CheckTxAsync(types.RequestCheckTx, abcicli.ResponseCallback) *abcicli.ReqRes
+	CheckTxSync(types.RequestCheckTx) (*ocabci.ResponseCheckTx, error)
 
 	BeginRecheckTxSync(ocabci.RequestBeginRecheckTx) (*ocabci.ResponseBeginRecheckTx, error)
 	EndRecheckTxSync(ocabci.RequestEndRecheckTx) (*ocabci.ResponseEndRecheckTx, error)
 
 	FlushAsync(abcicli.ResponseCallback) *abcicli.ReqRes
-	FlushSync() (*abci.ResponseFlush, error)
+	FlushSync() (*types.ResponseFlush, error)
 }
 
 type AppConnQuery interface {
 	Error() error
 
-	EchoSync(string) (*abci.ResponseEcho, error)
-	InfoSync(abci.RequestInfo) (*abci.ResponseInfo, error)
-	QuerySync(abci.RequestQuery) (*abci.ResponseQuery, error)
+	EchoSync(string) (*types.ResponseEcho, error)
+	InfoSync(types.RequestInfo) (*types.ResponseInfo, error)
+	QuerySync(types.RequestQuery) (*types.ResponseQuery, error)
 
 	//	SetOptionSync(key string, value string) (res ocabci.Result)
 }
@@ -52,10 +52,10 @@ type AppConnQuery interface {
 type AppConnSnapshot interface {
 	Error() error
 
-	ListSnapshotsSync(abci.RequestListSnapshots) (*abci.ResponseListSnapshots, error)
-	OfferSnapshotSync(abci.RequestOfferSnapshot) (*abci.ResponseOfferSnapshot, error)
-	LoadSnapshotChunkSync(abci.RequestLoadSnapshotChunk) (*abci.ResponseLoadSnapshotChunk, error)
-	ApplySnapshotChunkSync(abci.RequestApplySnapshotChunk) (*abci.ResponseApplySnapshotChunk, error)
+	ListSnapshotsSync(types.RequestListSnapshots) (*types.ResponseListSnapshots, error)
+	OfferSnapshotSync(types.RequestOfferSnapshot) (*types.ResponseOfferSnapshot, error)
+	LoadSnapshotChunkSync(types.RequestLoadSnapshotChunk) (*types.ResponseLoadSnapshotChunk, error)
+	ApplySnapshotChunkSync(types.RequestApplySnapshotChunk) (*types.ResponseApplySnapshotChunk, error)
 }
 
 //-----------------------------------------------------------------------------------------
@@ -79,23 +79,23 @@ func (app *appConnConsensus) Error() error {
 	return app.appConn.Error()
 }
 
-func (app *appConnConsensus) InitChainSync(req abci.RequestInitChain) (*abci.ResponseInitChain, error) {
+func (app *appConnConsensus) InitChainSync(req types.RequestInitChain) (*types.ResponseInitChain, error) {
 	return app.appConn.InitChainSync(req)
 }
 
-func (app *appConnConsensus) BeginBlockSync(req ocabci.RequestBeginBlock) (*abci.ResponseBeginBlock, error) {
+func (app *appConnConsensus) BeginBlockSync(req ocabci.RequestBeginBlock) (*types.ResponseBeginBlock, error) {
 	return app.appConn.BeginBlockSync(req)
 }
 
-func (app *appConnConsensus) DeliverTxAsync(req abci.RequestDeliverTx, cb abcicli.ResponseCallback) *abcicli.ReqRes {
+func (app *appConnConsensus) DeliverTxAsync(req types.RequestDeliverTx, cb abcicli.ResponseCallback) *abcicli.ReqRes {
 	return app.appConn.DeliverTxAsync(req, cb)
 }
 
-func (app *appConnConsensus) EndBlockSync(req abci.RequestEndBlock) (*abci.ResponseEndBlock, error) {
+func (app *appConnConsensus) EndBlockSync(req types.RequestEndBlock) (*types.ResponseEndBlock, error) {
 	return app.appConn.EndBlockSync(req)
 }
 
-func (app *appConnConsensus) CommitSync() (*abci.ResponseCommit, error) {
+func (app *appConnConsensus) CommitSync() (*types.ResponseCommit, error) {
 	return app.appConn.CommitSync()
 }
 
@@ -124,15 +124,15 @@ func (app *appConnMempool) FlushAsync(cb abcicli.ResponseCallback) *abcicli.ReqR
 	return app.appConn.FlushAsync(cb)
 }
 
-func (app *appConnMempool) FlushSync() (*abci.ResponseFlush, error) {
+func (app *appConnMempool) FlushSync() (*types.ResponseFlush, error) {
 	return app.appConn.FlushSync()
 }
 
-func (app *appConnMempool) CheckTxAsync(req abci.RequestCheckTx, cb abcicli.ResponseCallback) *abcicli.ReqRes {
+func (app *appConnMempool) CheckTxAsync(req types.RequestCheckTx, cb abcicli.ResponseCallback) *abcicli.ReqRes {
 	return app.appConn.CheckTxAsync(req, cb)
 }
 
-func (app *appConnMempool) CheckTxSync(req abci.RequestCheckTx) (*ocabci.ResponseCheckTx, error) {
+func (app *appConnMempool) CheckTxSync(req types.RequestCheckTx) (*ocabci.ResponseCheckTx, error) {
 	return app.appConn.CheckTxSync(req)
 }
 
@@ -161,15 +161,15 @@ func (app *appConnQuery) Error() error {
 	return app.appConn.Error()
 }
 
-func (app *appConnQuery) EchoSync(msg string) (*abci.ResponseEcho, error) {
+func (app *appConnQuery) EchoSync(msg string) (*types.ResponseEcho, error) {
 	return app.appConn.EchoSync(msg)
 }
 
-func (app *appConnQuery) InfoSync(req abci.RequestInfo) (*abci.ResponseInfo, error) {
+func (app *appConnQuery) InfoSync(req types.RequestInfo) (*types.ResponseInfo, error) {
 	return app.appConn.InfoSync(req)
 }
 
-func (app *appConnQuery) QuerySync(reqQuery abci.RequestQuery) (*abci.ResponseQuery, error) {
+func (app *appConnQuery) QuerySync(reqQuery types.RequestQuery) (*types.ResponseQuery, error) {
 	return app.appConn.QuerySync(reqQuery)
 }
 
@@ -190,20 +190,20 @@ func (app *appConnSnapshot) Error() error {
 	return app.appConn.Error()
 }
 
-func (app *appConnSnapshot) ListSnapshotsSync(req abci.RequestListSnapshots) (*abci.ResponseListSnapshots, error) {
+func (app *appConnSnapshot) ListSnapshotsSync(req types.RequestListSnapshots) (*types.ResponseListSnapshots, error) {
 	return app.appConn.ListSnapshotsSync(req)
 }
 
-func (app *appConnSnapshot) OfferSnapshotSync(req abci.RequestOfferSnapshot) (*abci.ResponseOfferSnapshot, error) {
+func (app *appConnSnapshot) OfferSnapshotSync(req types.RequestOfferSnapshot) (*types.ResponseOfferSnapshot, error) {
 	return app.appConn.OfferSnapshotSync(req)
 }
 
 func (app *appConnSnapshot) LoadSnapshotChunkSync(
-	req abci.RequestLoadSnapshotChunk) (*abci.ResponseLoadSnapshotChunk, error) {
+	req types.RequestLoadSnapshotChunk) (*types.ResponseLoadSnapshotChunk, error) {
 	return app.appConn.LoadSnapshotChunkSync(req)
 }
 
 func (app *appConnSnapshot) ApplySnapshotChunkSync(
-	req abci.RequestApplySnapshotChunk) (*abci.ResponseApplySnapshotChunk, error) {
+	req types.RequestApplySnapshotChunk) (*types.ResponseApplySnapshotChunk, error) {
 	return app.appConn.ApplySnapshotChunkSync(req)
 }

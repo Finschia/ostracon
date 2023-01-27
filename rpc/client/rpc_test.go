@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	ocabci "github.com/line/ostracon/abci/types"
+	abci "github.com/line/ostracon/abci/types"
 	tmjson "github.com/line/ostracon/libs/json"
 	"github.com/line/ostracon/libs/log"
 	tmmath "github.com/line/ostracon/libs/math"
@@ -340,7 +340,7 @@ func TestBroadcastTxSync(t *testing.T) {
 		_, _, tx := MakeTxKV()
 		bres, err := c.BroadcastTxSync(context.Background(), tx)
 		require.Nil(err, "%d: %+v", i, err)
-		require.Equal(bres.Code, ocabci.CodeTypeOK) // FIXME
+		require.Equal(bres.Code, abci.CodeTypeOK) // FIXME
 
 		require.Equal(initMempoolSize+1, mempool.Size())
 
@@ -368,11 +368,11 @@ func TestBroadcastTxCommit(t *testing.T) {
 func TestUnconfirmedTxs(t *testing.T) {
 	_, _, tx := MakeTxKV()
 
-	ch := make(chan *ocabci.Response, 1)
+	ch := make(chan *abci.Response, 1)
 	mempool := node.Mempool()
 	mempool.CheckTxAsync(tx, mempl.TxInfo{}, func(err error) {
 		require.NoError(t, err)
-	}, func(resp *ocabci.Response) {
+	}, func(resp *abci.Response) {
 		ch <- resp
 	})
 
@@ -401,11 +401,11 @@ func TestUnconfirmedTxs(t *testing.T) {
 func TestNumUnconfirmedTxs(t *testing.T) {
 	_, _, tx := MakeTxKV()
 
-	ch := make(chan *ocabci.Response, 1)
+	ch := make(chan *abci.Response, 1)
 	mempool := node.Mempool()
 	mempool.CheckTxAsync(tx, mempl.TxInfo{}, func(err error) {
 		require.NoError(t, err)
-	}, func(resp *ocabci.Response) {
+	}, func(resp *abci.Response) {
 		ch <- resp
 	})
 
@@ -439,7 +439,7 @@ func TestCheckTx(t *testing.T) {
 
 		res, err := c.CheckTx(context.Background(), tx)
 		require.NoError(t, err)
-		assert.Equal(t, ocabci.CodeTypeOK, res.Code)
+		assert.Equal(t, abci.CodeTypeOK, res.Code)
 
 		assert.Equal(t, 0, mempool.Size(), "mempool must be empty")
 	}

@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	tmbcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
+	bcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
 
-	ocabci "github.com/line/ostracon/abci/types"
+	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/behaviour"
 	bc "github.com/line/ostracon/blockchain"
 	cfg "github.com/line/ostracon/config"
@@ -381,10 +381,10 @@ func TestReactorHelperMode(t *testing.T) {
 			name:   "status request",
 			params: params,
 			msgs: []testEvent{
-				{"P1", tmbcproto.StatusRequest{}},
-				{"P1", tmbcproto.BlockRequest{Height: 13}},
-				{"P1", tmbcproto.BlockRequest{Height: 20}},
-				{"P1", tmbcproto.BlockRequest{Height: 22}},
+				{"P1", bcproto.StatusRequest{}},
+				{"P1", bcproto.BlockRequest{Height: 13}},
+				{"P1", bcproto.BlockRequest{Height: 20}},
+				{"P1", bcproto.BlockRequest{Height: 22}},
 			},
 		},
 	}
@@ -401,13 +401,13 @@ func TestReactorHelperMode(t *testing.T) {
 			for i := 0; i < len(tt.msgs); i++ {
 				step := tt.msgs[i]
 				switch ev := step.event.(type) {
-				case tmbcproto.StatusRequest:
+				case bcproto.StatusRequest:
 					old := mockSwitch.numStatusResponse
 					msg, err := bc.EncodeMsg(&ev)
 					assert.NoError(t, err)
 					reactor.Receive(channelID, mockPeer{id: p2p.ID(step.peer)}, msg)
 					assert.Equal(t, old+1, mockSwitch.numStatusResponse)
-				case tmbcproto.BlockRequest:
+				case bcproto.BlockRequest:
 					if ev.Height > params.startHeight {
 						old := mockSwitch.numNoBlockResponse
 						msg, err := bc.EncodeMsg(&ev)
@@ -465,7 +465,7 @@ func makeBlock(privVal types.PrivValidator, height int64, state sm.State, lastCo
 }
 
 type testApp struct {
-	ocabci.BaseApplication
+	abci.BaseApplication
 }
 
 func randGenesisDoc(chainID string, numValidators int, randPower bool, minPower int64) (

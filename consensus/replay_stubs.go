@@ -6,7 +6,7 @@ import (
 	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/clist"
 	mempl "github.com/line/ostracon/mempool"
-	ocstate "github.com/line/ostracon/proto/ostracon/state"
+	tmstate "github.com/line/ostracon/proto/ostracon/state"
 	"github.com/line/ostracon/proxy"
 	"github.com/line/ostracon/types"
 )
@@ -54,7 +54,7 @@ func (emptyMempool) CloseWAL()      {}
 // Useful because we don't want to call Commit() twice for the same block on
 // the real app.
 
-func newMockProxyApp(appHash []byte, abciResponses *ocstate.ABCIResponses) proxy.AppConnConsensus {
+func newMockProxyApp(appHash []byte, abciResponses *tmstate.ABCIResponses) proxy.AppConnConsensus {
 	clientCreator := proxy.NewLocalClientCreator(&mockProxyApp{
 		appHash:       appHash,
 		abciResponses: abciResponses,
@@ -72,7 +72,7 @@ type mockProxyApp struct {
 
 	appHash       []byte
 	txCount       int
-	abciResponses *ocstate.ABCIResponses
+	abciResponses *tmstate.ABCIResponses
 }
 
 func (mock *mockProxyApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {

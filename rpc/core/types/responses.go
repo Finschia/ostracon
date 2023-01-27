@@ -222,12 +222,12 @@ type ResultUnconfirmedTxs struct {
 	Txs        []types.Tx `json:"txs"`
 }
 
-// Info ocabci msg
+// Info abci msg
 type ResultABCIInfo struct {
 	Response abci.ResponseInfo `json:"response"`
 }
 
-// Query ocabci msg
+// Query abci msg
 type ResultABCIQuery struct {
 	Response abci.ResponseQuery `json:"response"`
 }

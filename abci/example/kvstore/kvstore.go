@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/line/ostracon/abci/example/code"
@@ -76,8 +76,8 @@ func NewApplication() *Application {
 	return &Application{state: state}
 }
 
-func (app *Application) Info(req abci.RequestInfo) (resInfo abci.ResponseInfo) {
-	return abci.ResponseInfo{
+func (app *Application) Info(req types.RequestInfo) (resInfo types.ResponseInfo) {
+	return types.ResponseInfo{
 		Data:             fmt.Sprintf("{\"size\":%v}", app.state.Size),
 		Version:          version.ABCIVersion,
 		AppVersion:       ProtocolVersion,
@@ -87,7 +87,7 @@ func (app *Application) Info(req abci.RequestInfo) (resInfo abci.ResponseInfo) {
 }
 
 // tx is either "key=value" or just arbitrary bytes
-func (app *Application) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
+func (app *Application) DeliverTx(req types.RequestDeliverTx) types.ResponseDeliverTx {
 	var key, value []byte
 	parts := bytes.Split(req.Tx, []byte("="))
 	if len(parts) == 2 {
@@ -102,10 +102,10 @@ func (app *Application) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDelive
 	}
 	app.state.Size++
 
-	events := []abci.Event{
+	events := []types.Event{
 		{
 			Type: "app",
-			Attributes: []abci.EventAttribute{
+			Attributes: []types.EventAttribute{
 				{Key: []byte("creator"), Value: []byte("Cosmoshi Netowoko"), Index: true},
 				{Key: []byte("key"), Value: key, Index: true},
 				{Key: []byte("index_key"), Value: []byte("index is working"), Index: true},
@@ -114,22 +114,22 @@ func (app *Application) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDelive
 		},
 	}
 
-	return abci.ResponseDeliverTx{Code: code.CodeTypeOK, Events: events}
+	return types.ResponseDeliverTx{Code: code.CodeTypeOK, Events: events}
 }
 
-func (app *Application) CheckTxSync(req abci.RequestCheckTx) ocabci.ResponseCheckTx {
+func (app *Application) CheckTxSync(req types.RequestCheckTx) ocabci.ResponseCheckTx {
 	return app.checkTx(req)
 }
 
-func (app *Application) CheckTxAsync(req abci.RequestCheckTx, callback ocabci.CheckTxCallback) {
+func (app *Application) CheckTxAsync(req types.RequestCheckTx, callback ocabci.CheckTxCallback) {
 	callback(app.checkTx(req))
 }
 
-func (app *Application) checkTx(req abci.RequestCheckTx) ocabci.ResponseCheckTx {
+func (app *Application) checkTx(req types.RequestCheckTx) ocabci.ResponseCheckTx {
 	return ocabci.ResponseCheckTx{Code: code.CodeTypeOK, GasWanted: 1}
 }
 
-func (app *Application) Commit() abci.ResponseCommit {
+func (app *Application) Commit() types.ResponseCommit {
 	// Using a memdb - just return the big endian size of the db
 	appHash := make([]byte, 8)
 	binary.PutVarint(appHash, app.state.Size)
@@ -137,7 +137,7 @@ func (app *Application) Commit() abci.ResponseCommit {
 	app.state.Height++
 	saveState(app.state)
 
-	resp := abci.ResponseCommit{Data: appHash}
+	resp := types.ResponseCommit{Data: appHash}
 	if app.RetainBlocks > 0 && app.state.Height >= app.RetainBlocks {
 		resp.RetainHeight = app.state.Height - app.RetainBlocks + 1
 	}
@@ -145,7 +145,7 @@ func (app *Application) Commit() abci.ResponseCommit {
 }
 
 // Returns an associated value or nil if missing.
-func (app *Application) Query(reqQuery abci.RequestQuery) (resQuery abci.ResponseQuery) {
+func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.ResponseQuery) {
 	if reqQuery.Prove {
 		value, err := app.state.db.Get(prefixKey(reqQuery.Data))
 		if err != nil {

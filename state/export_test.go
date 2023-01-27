@@ -5,7 +5,7 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	ocstate "github.com/line/ostracon/proto/ostracon/state"
+	tmstate "github.com/line/ostracon/proto/ostracon/state"
 	"github.com/line/ostracon/types"
 )
 
@@ -28,7 +28,7 @@ func UpdateState(
 	state State,
 	blockID types.BlockID,
 	header *types.Header,
-	abciResponses *ocstate.ABCIResponses,
+	abciResponses *tmstate.ABCIResponses,
 	validatorUpdates []*types.Validator,
 ) (State, error) {
 	return updateState(state, blockID, header, abciResponses, validatorUpdates)

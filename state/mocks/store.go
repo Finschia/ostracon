@@ -3,10 +3,10 @@
 package mocks
 
 import (
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	types "github.com/tendermint/tendermint/proto/tendermint/types"
 	mock "github.com/stretchr/testify/mock"
 
-	ocstate "github.com/line/ostracon/proto/ostracon/state"
+	tmstate "github.com/line/ostracon/proto/ostracon/state"
 	state "github.com/line/ostracon/state"
 	ostracontypes "github.com/line/ostracon/types"
 )
@@ -66,15 +66,15 @@ func (_m *Store) Load() (state.State, error) {
 }
 
 // LoadABCIResponses provides a mock function with given fields: _a0
-func (_m *Store) LoadABCIResponses(_a0 int64) (*ocstate.ABCIResponses, error) {
+func (_m *Store) LoadABCIResponses(_a0 int64) (*tmstate.ABCIResponses, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *ocstate.ABCIResponses
-	if rf, ok := ret.Get(0).(func(int64) *ocstate.ABCIResponses); ok {
+	var r0 *tmstate.ABCIResponses
+	if rf, ok := ret.Get(0).(func(int64) *tmstate.ABCIResponses); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*ocstate.ABCIResponses)
+			r0 = ret.Get(0).(*tmstate.ABCIResponses)
 		}
 	}
 
@@ -89,14 +89,14 @@ func (_m *Store) LoadABCIResponses(_a0 int64) (*ocstate.ABCIResponses, error) {
 }
 
 // LoadConsensusParams provides a mock function with given fields: _a0
-func (_m *Store) LoadConsensusParams(_a0 int64) (tmproto.ConsensusParams, error) {
+func (_m *Store) LoadConsensusParams(_a0 int64) (types.ConsensusParams, error) {
 	ret := _m.Called(_a0)
 
-	var r0 tmproto.ConsensusParams
-	if rf, ok := ret.Get(0).(func(int64) tmproto.ConsensusParams); ok {
+	var r0 types.ConsensusParams
+	if rf, ok := ret.Get(0).(func(int64) types.ConsensusParams); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(tmproto.ConsensusParams)
+		r0 = ret.Get(0).(types.ConsensusParams)
 	}
 
 	var r1 error
@@ -226,11 +226,11 @@ func (_m *Store) Save(_a0 state.State) error {
 }
 
 // SaveABCIResponses provides a mock function with given fields: _a0, _a1
-func (_m *Store) SaveABCIResponses(_a0 int64, _a1 *ocstate.ABCIResponses) error {
+func (_m *Store) SaveABCIResponses(_a0 int64, _a1 *tmstate.ABCIResponses) error {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int64, *ocstate.ABCIResponses) error); ok {
+	if rf, ok := ret.Get(0).(func(int64, *tmstate.ABCIResponses) error); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		r0 = ret.Error(0)

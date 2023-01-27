@@ -14,7 +14,7 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	ocabci "github.com/line/ostracon/abci/types"
+	abci "github.com/line/ostracon/abci/types"
 	cfg "github.com/line/ostracon/config"
 	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/mempool/mock"
@@ -367,5 +367,5 @@ func makeBlock(privVal types.PrivValidator, height int64, state sm.State, lastCo
 }
 
 type testApp struct {
-	ocabci.BaseApplication
+	abci.BaseApplication
 }

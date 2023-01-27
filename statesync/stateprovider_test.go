@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
+	"github.com/tendermint/tendermint/proto/tendermint/state"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 
@@ -38,7 +38,7 @@ func TestNewLightClientStateProvider(t *testing.T) {
 	type args struct {
 		ctx           context.Context
 		chainID       string
-		version       tmstate.Version
+		version       state.Version
 		initialHeight int64
 		servers       []string
 		trustOptions  light.TrustOptions

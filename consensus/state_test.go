@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	ocabci "github.com/line/ostracon/abci/types"
 	"testing"
 	"time"
 
@@ -16,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/line/ostracon/abci/example/counter"
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/abci/types/mocks"
 	cstypes "github.com/line/ostracon/consensus/types"
 	"github.com/line/ostracon/crypto/tmhash"

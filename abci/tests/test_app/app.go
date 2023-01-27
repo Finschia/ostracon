@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/abci/types"
 
 	abcicli "github.com/line/ostracon/abci/client"
 	"github.com/line/ostracon/libs/log"
@@ -27,7 +27,7 @@ func startClient(abciType string) abcicli.Client {
 }
 
 func setOption(client abcicli.Client, key, value string) {
-	_, err := client.SetOptionSync(abci.RequestSetOption{Key: key, Value: value})
+	_, err := client.SetOptionSync(types.RequestSetOption{Key: key, Value: value})
 	if err != nil {
 		panicf("setting %v=%v: \nerr: %v", key, value, err)
 	}
@@ -44,7 +44,7 @@ func commit(client abcicli.Client, hashExp []byte) {
 }
 
 func deliverTx(client abcicli.Client, txBytes []byte, codeExp uint32, dataExp []byte) {
-	res, err := client.DeliverTxSync(abci.RequestDeliverTx{Tx: txBytes})
+	res, err := client.DeliverTxSync(types.RequestDeliverTx{Tx: txBytes})
 	if err != nil {
 		panicf("client error: %v", err)
 	}

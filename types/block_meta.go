@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	ocproto "github.com/line/ostracon/proto/ostracon/types"
+	tmproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 // BlockMeta contains meta information.
@@ -26,12 +26,12 @@ func NewBlockMeta(block *Block, blockParts *PartSet) *BlockMeta {
 	}
 }
 
-func (bm *BlockMeta) ToProto() *ocproto.BlockMeta {
+func (bm *BlockMeta) ToProto() *tmproto.BlockMeta {
 	if bm == nil {
 		return nil
 	}
 
-	pb := &ocproto.BlockMeta{
+	pb := &tmproto.BlockMeta{
 		BlockID:   bm.BlockID.ToProto(),
 		BlockSize: int64(bm.BlockSize),
 		Header:    *bm.Header.ToProto(),
@@ -40,7 +40,7 @@ func (bm *BlockMeta) ToProto() *ocproto.BlockMeta {
 	return pb
 }
 
-func BlockMetaFromProto(pb *ocproto.BlockMeta) (*BlockMeta, error) {
+func BlockMetaFromProto(pb *tmproto.BlockMeta) (*BlockMeta, error) {
 	if pb == nil {
 		return nil, errors.New("blockmeta is empty")
 	}

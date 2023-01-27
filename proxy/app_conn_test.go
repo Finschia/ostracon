@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/abci/types"
 
 	abcicli "github.com/line/ostracon/abci/client"
 	"github.com/line/ostracon/abci/example/kvstore"
@@ -17,9 +17,9 @@ import (
 //----------------------------------------
 
 type AppConnTest interface {
-	FlushSync() (*abci.ResponseFlush, error)
+	FlushSync() (*types.ResponseFlush, error)
 	EchoAsync(string, abcicli.ResponseCallback) *abcicli.ReqRes
-	InfoSync(abci.RequestInfo) (*abci.ResponseInfo, error)
+	InfoSync(types.RequestInfo) (*types.ResponseInfo, error)
 }
 
 type appConnTest struct {
@@ -34,11 +34,11 @@ func (app *appConnTest) EchoAsync(msg string, cb abcicli.ResponseCallback) *abci
 	return app.appConn.EchoAsync(msg, cb)
 }
 
-func (app *appConnTest) FlushSync() (*abci.ResponseFlush, error) {
+func (app *appConnTest) FlushSync() (*types.ResponseFlush, error) {
 	return app.appConn.FlushSync()
 }
 
-func (app *appConnTest) InfoSync(req abci.RequestInfo) (*abci.ResponseInfo, error) {
+func (app *appConnTest) InfoSync(req types.RequestInfo) (*types.ResponseInfo, error) {
 	return app.appConn.InfoSync(req)
 }
 

@@ -6,7 +6,7 @@ import (
 	abcicli "github.com/line/ostracon/abci/client"
 	"github.com/line/ostracon/abci/example/counter"
 	"github.com/line/ostracon/abci/example/kvstore"
-	ocabci "github.com/line/ostracon/abci/types"
+	"github.com/line/ostracon/abci/types"
 	tmsync "github.com/line/ostracon/libs/sync"
 	e2e "github.com/line/ostracon/test/e2e/app"
 )
@@ -22,12 +22,12 @@ type ClientCreator interface {
 
 type localClientCreator struct {
 	mtx *tmsync.Mutex
-	app ocabci.Application
+	app types.Application
 }
 
 // NewLocalClientCreator returns a ClientCreator for the given app,
 // which will be running locally.
-func NewLocalClientCreator(app ocabci.Application) ClientCreator {
+func NewLocalClientCreator(app types.Application) ClientCreator {
 	return &localClientCreator{
 		mtx: new(tmsync.Mutex),
 		app: app,
@@ -87,7 +87,7 @@ func DefaultClientCreator(addr, transport, dbDir string) ClientCreator {
 		}
 		return NewLocalClientCreator(app)
 	case "noop":
-		return NewLocalClientCreator(ocabci.NewBaseApplication())
+		return NewLocalClientCreator(types.NewBaseApplication())
 	default:
 		mustConnect := false // loop retrying
 		return NewRemoteClientCreator(addr, transport, mustConnect)

@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	tmbcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
+	bcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
 
 	"github.com/line/ostracon/behaviour"
 	bc "github.com/line/ostracon/blockchain"
 	"github.com/line/ostracon/libs/log"
 	tmsync "github.com/line/ostracon/libs/sync"
 	"github.com/line/ostracon/p2p"
-	bcproto "github.com/line/ostracon/proto/ostracon/blockchain"
+	ocbcproto "github.com/line/ostracon/proto/ostracon/blockchain"
 	"github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"
 )
@@ -476,12 +476,12 @@ func (r *BlockchainReactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 	r.logger.Debug("Receive", "src", src.ID(), "chID", chID, "msg", msg)
 
 	switch msg := msg.(type) {
-	case *tmbcproto.StatusRequest:
+	case *bcproto.StatusRequest:
 		if err := r.io.sendStatusResponse(r.store.Base(), r.store.Height(), src.ID()); err != nil {
 			r.logger.Error("Could not send status message to peer", "src", src)
 		}
 
-	case *tmbcproto.BlockRequest:
+	case *bcproto.BlockRequest:
 		block := r.store.LoadBlock(msg.Height)
 		if block != nil {
 			if err = r.io.sendBlockToPeer(block, src.ID()); err != nil {
@@ -495,14 +495,14 @@ func (r *BlockchainReactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 			}
 		}
 
-	case *tmbcproto.StatusResponse:
+	case *bcproto.StatusResponse:
 		r.mtx.RLock()
 		if r.events != nil {
 			r.events <- bcStatusResponse{peerID: src.ID(), base: msg.Base, height: msg.Height}
 		}
 		r.mtx.RUnlock()
 
-	case *bcproto.BlockResponse:
+	case *ocbcproto.BlockResponse:
 		bi, err := types.BlockFromProto(msg.Block)
 		if err != nil {
 			r.logger.Error("error transitioning block from protobuf", "err", err)
@@ -519,7 +519,7 @@ func (r *BlockchainReactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 		}
 		r.mtx.RUnlock()
 
-	case *tmbcproto.NoBlockResponse:
+	case *bcproto.NoBlockResponse:
 		r.mtx.RLock()
 		if r.events != nil {
 			r.events <- bcNoBlockResponse{peerID: src.ID(), height: msg.Height, time: time.Now()}

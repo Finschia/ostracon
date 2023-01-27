@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	abci "github.com/tendermint/tendermint/abci/types"
+	types "github.com/tendermint/tendermint/abci/types"
 
 	abcicli "github.com/line/ostracon/abci/client"
 	ocabci "github.com/line/ostracon/abci/types"
@@ -16,15 +16,15 @@ type AppConnConsensus struct {
 }
 
 // BeginBlockSync provides a mock function with given fields: _a0
-func (_m *AppConnConsensus) BeginBlockSync(_a0 ocabci.RequestBeginBlock) (*abci.ResponseBeginBlock, error) {
+func (_m *AppConnConsensus) BeginBlockSync(_a0 ocabci.RequestBeginBlock) (*types.ResponseBeginBlock, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *abci.ResponseBeginBlock
-	if rf, ok := ret.Get(0).(func(ocabci.RequestBeginBlock) *abci.ResponseBeginBlock); ok {
+	var r0 *types.ResponseBeginBlock
+	if rf, ok := ret.Get(0).(func(ocabci.RequestBeginBlock) *types.ResponseBeginBlock); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*abci.ResponseBeginBlock)
+			r0 = ret.Get(0).(*types.ResponseBeginBlock)
 		}
 	}
 
@@ -39,15 +39,15 @@ func (_m *AppConnConsensus) BeginBlockSync(_a0 ocabci.RequestBeginBlock) (*abci.
 }
 
 // CommitSync provides a mock function with given fields:
-func (_m *AppConnConsensus) CommitSync() (*abci.ResponseCommit, error) {
+func (_m *AppConnConsensus) CommitSync() (*types.ResponseCommit, error) {
 	ret := _m.Called()
 
-	var r0 *abci.ResponseCommit
-	if rf, ok := ret.Get(0).(func() *abci.ResponseCommit); ok {
+	var r0 *types.ResponseCommit
+	if rf, ok := ret.Get(0).(func() *types.ResponseCommit); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*abci.ResponseCommit)
+			r0 = ret.Get(0).(*types.ResponseCommit)
 		}
 	}
 
@@ -62,11 +62,11 @@ func (_m *AppConnConsensus) CommitSync() (*abci.ResponseCommit, error) {
 }
 
 // DeliverTxAsync provides a mock function with given fields: _a0, _a1
-func (_m *AppConnConsensus) DeliverTxAsync(_a0 abci.RequestDeliverTx, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
+func (_m *AppConnConsensus) DeliverTxAsync(_a0 types.RequestDeliverTx, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 *abcicli.ReqRes
-	if rf, ok := ret.Get(0).(func(abci.RequestDeliverTx, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
+	if rf, ok := ret.Get(0).(func(types.RequestDeliverTx, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
@@ -78,20 +78,20 @@ func (_m *AppConnConsensus) DeliverTxAsync(_a0 abci.RequestDeliverTx, _a1 abcicl
 }
 
 // EndBlockSync provides a mock function with given fields: _a0
-func (_m *AppConnConsensus) EndBlockSync(_a0 abci.RequestEndBlock) (*abci.ResponseEndBlock, error) {
+func (_m *AppConnConsensus) EndBlockSync(_a0 types.RequestEndBlock) (*types.ResponseEndBlock, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *abci.ResponseEndBlock
-	if rf, ok := ret.Get(0).(func(abci.RequestEndBlock) *abci.ResponseEndBlock); ok {
+	var r0 *types.ResponseEndBlock
+	if rf, ok := ret.Get(0).(func(types.RequestEndBlock) *types.ResponseEndBlock); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*abci.ResponseEndBlock)
+			r0 = ret.Get(0).(*types.ResponseEndBlock)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(abci.RequestEndBlock) error); ok {
+	if rf, ok := ret.Get(1).(func(types.RequestEndBlock) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
@@ -115,20 +115,20 @@ func (_m *AppConnConsensus) Error() error {
 }
 
 // InitChainSync provides a mock function with given fields: _a0
-func (_m *AppConnConsensus) InitChainSync(_a0 abci.RequestInitChain) (*abci.ResponseInitChain, error) {
+func (_m *AppConnConsensus) InitChainSync(_a0 types.RequestInitChain) (*types.ResponseInitChain, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *abci.ResponseInitChain
-	if rf, ok := ret.Get(0).(func(abci.RequestInitChain) *abci.ResponseInitChain); ok {
+	var r0 *types.ResponseInitChain
+	if rf, ok := ret.Get(0).(func(types.RequestInitChain) *types.ResponseInitChain); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*abci.ResponseInitChain)
+			r0 = ret.Get(0).(*types.ResponseInitChain)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(abci.RequestInitChain) error); ok {
+	if rf, ok := ret.Get(1).(func(types.RequestInitChain) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)

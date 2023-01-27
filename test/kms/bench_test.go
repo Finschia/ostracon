@@ -3,7 +3,6 @@
 //
 // $ cd test/kms
 // $ go test -tags libsodium -bench . -benchmem
-//
 package main
 
 import (
@@ -15,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	tmprivvalproto "github.com/tendermint/tendermint/proto/tendermint/privval"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	types2 "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/line/ostracon/config"
 	"github.com/line/ostracon/crypto"
@@ -102,7 +101,7 @@ func benchmarkSignVote(b *testing.B, pv types.PrivValidator, pubKey crypto.PubKe
 		},
 	}
 	vote := types.Vote{
-		Type:             tmproto.PrevoteType,
+		Type:             types2.PrevoteType,
 		Height:           1,
 		Round:            0,
 		BlockID:          blockID,
@@ -138,7 +137,7 @@ func benchmarkSignProposal(b *testing.B, pv types.PrivValidator, pubKey crypto.P
 		},
 	}
 	proposal := types.Proposal{
-		Type:      tmproto.ProposalType,
+		Type:      types2.ProposalType,
 		Height:    2,
 		Round:     0,
 		POLRound:  -1,

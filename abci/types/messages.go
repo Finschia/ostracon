@@ -7,7 +7,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 
-	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/abci/types"
 )
 
 const (
@@ -73,35 +73,35 @@ func encodeVarint(w io.Writer, i int64) (err error) {
 
 func ToRequestEcho(message string) *Request {
 	return &Request{
-		Value: &Request_Echo{&abci.RequestEcho{Message: message}},
+		Value: &Request_Echo{&types.RequestEcho{Message: message}},
 	}
 }
 
 func ToRequestFlush() *Request {
 	return &Request{
-		Value: &Request_Flush{&abci.RequestFlush{}},
+		Value: &Request_Flush{&types.RequestFlush{}},
 	}
 }
 
-func ToRequestInfo(req abci.RequestInfo) *Request {
+func ToRequestInfo(req types.RequestInfo) *Request {
 	return &Request{
 		Value: &Request_Info{&req},
 	}
 }
 
-func ToRequestSetOption(req abci.RequestSetOption) *Request {
+func ToRequestSetOption(req types.RequestSetOption) *Request {
 	return &Request{
 		Value: &Request_SetOption{&req},
 	}
 }
 
-func ToRequestDeliverTx(req abci.RequestDeliverTx) *Request {
+func ToRequestDeliverTx(req types.RequestDeliverTx) *Request {
 	return &Request{
 		Value: &Request_DeliverTx{&req},
 	}
 }
 
-func ToRequestCheckTx(req abci.RequestCheckTx) *Request {
+func ToRequestCheckTx(req types.RequestCheckTx) *Request {
 	return &Request{
 		Value: &Request_CheckTx{&req},
 	}
@@ -109,17 +109,17 @@ func ToRequestCheckTx(req abci.RequestCheckTx) *Request {
 
 func ToRequestCommit() *Request {
 	return &Request{
-		Value: &Request_Commit{&abci.RequestCommit{}},
+		Value: &Request_Commit{&types.RequestCommit{}},
 	}
 }
 
-func ToRequestQuery(req abci.RequestQuery) *Request {
+func ToRequestQuery(req types.RequestQuery) *Request {
 	return &Request{
 		Value: &Request_Query{&req},
 	}
 }
 
-func ToRequestInitChain(req abci.RequestInitChain) *Request {
+func ToRequestInitChain(req types.RequestInitChain) *Request {
 	return &Request{
 		Value: &Request_InitChain{&req},
 	}
@@ -131,7 +131,7 @@ func ToRequestBeginBlock(req RequestBeginBlock) *Request {
 	}
 }
 
-func ToRequestEndBlock(req abci.RequestEndBlock) *Request {
+func ToRequestEndBlock(req types.RequestEndBlock) *Request {
 	return &Request{
 		Value: &Request_EndBlock{&req},
 	}
@@ -149,25 +149,25 @@ func ToRequestEndRecheckTx(req RequestEndRecheckTx) *Request {
 	}
 }
 
-func ToRequestListSnapshots(req abci.RequestListSnapshots) *Request {
+func ToRequestListSnapshots(req types.RequestListSnapshots) *Request {
 	return &Request{
 		Value: &Request_ListSnapshots{&req},
 	}
 }
 
-func ToRequestOfferSnapshot(req abci.RequestOfferSnapshot) *Request {
+func ToRequestOfferSnapshot(req types.RequestOfferSnapshot) *Request {
 	return &Request{
 		Value: &Request_OfferSnapshot{&req},
 	}
 }
 
-func ToRequestLoadSnapshotChunk(req abci.RequestLoadSnapshotChunk) *Request {
+func ToRequestLoadSnapshotChunk(req types.RequestLoadSnapshotChunk) *Request {
 	return &Request{
 		Value: &Request_LoadSnapshotChunk{&req},
 	}
 }
 
-func ToRequestApplySnapshotChunk(req abci.RequestApplySnapshotChunk) *Request {
+func ToRequestApplySnapshotChunk(req types.RequestApplySnapshotChunk) *Request {
 	return &Request{
 		Value: &Request_ApplySnapshotChunk{&req},
 	}
@@ -177,35 +177,35 @@ func ToRequestApplySnapshotChunk(req abci.RequestApplySnapshotChunk) *Request {
 
 func ToResponseException(errStr string) *Response {
 	return &Response{
-		Value: &Response_Exception{&abci.ResponseException{Error: errStr}},
+		Value: &Response_Exception{&types.ResponseException{Error: errStr}},
 	}
 }
 
 func ToResponseEcho(message string) *Response {
 	return &Response{
-		Value: &Response_Echo{&abci.ResponseEcho{Message: message}},
+		Value: &Response_Echo{&types.ResponseEcho{Message: message}},
 	}
 }
 
 func ToResponseFlush() *Response {
 	return &Response{
-		Value: &Response_Flush{&abci.ResponseFlush{}},
+		Value: &Response_Flush{&types.ResponseFlush{}},
 	}
 }
 
-func ToResponseInfo(res abci.ResponseInfo) *Response {
+func ToResponseInfo(res types.ResponseInfo) *Response {
 	return &Response{
 		Value: &Response_Info{&res},
 	}
 }
 
-func ToResponseSetOption(res abci.ResponseSetOption) *Response {
+func ToResponseSetOption(res types.ResponseSetOption) *Response {
 	return &Response{
 		Value: &Response_SetOption{&res},
 	}
 }
 
-func ToResponseDeliverTx(res abci.ResponseDeliverTx) *Response {
+func ToResponseDeliverTx(res types.ResponseDeliverTx) *Response {
 	return &Response{
 		Value: &Response_DeliverTx{&res},
 	}
@@ -217,31 +217,31 @@ func ToResponseCheckTx(res ResponseCheckTx) *Response {
 	}
 }
 
-func ToResponseCommit(res abci.ResponseCommit) *Response {
+func ToResponseCommit(res types.ResponseCommit) *Response {
 	return &Response{
 		Value: &Response_Commit{&res},
 	}
 }
 
-func ToResponseQuery(res abci.ResponseQuery) *Response {
+func ToResponseQuery(res types.ResponseQuery) *Response {
 	return &Response{
 		Value: &Response_Query{&res},
 	}
 }
 
-func ToResponseInitChain(res abci.ResponseInitChain) *Response {
+func ToResponseInitChain(res types.ResponseInitChain) *Response {
 	return &Response{
 		Value: &Response_InitChain{&res},
 	}
 }
 
-func ToResponseBeginBlock(res abci.ResponseBeginBlock) *Response {
+func ToResponseBeginBlock(res types.ResponseBeginBlock) *Response {
 	return &Response{
 		Value: &Response_BeginBlock{&res},
 	}
 }
 
-func ToResponseEndBlock(res abci.ResponseEndBlock) *Response {
+func ToResponseEndBlock(res types.ResponseEndBlock) *Response {
 	return &Response{
 		Value: &Response_EndBlock{&res},
 	}
@@ -259,25 +259,25 @@ func ToResponseEndRecheckTx(res ResponseEndRecheckTx) *Response {
 	}
 }
 
-func ToResponseListSnapshots(res abci.ResponseListSnapshots) *Response {
+func ToResponseListSnapshots(res types.ResponseListSnapshots) *Response {
 	return &Response{
 		Value: &Response_ListSnapshots{&res},
 	}
 }
 
-func ToResponseOfferSnapshot(res abci.ResponseOfferSnapshot) *Response {
+func ToResponseOfferSnapshot(res types.ResponseOfferSnapshot) *Response {
 	return &Response{
 		Value: &Response_OfferSnapshot{&res},
 	}
 }
 
-func ToResponseLoadSnapshotChunk(res abci.ResponseLoadSnapshotChunk) *Response {
+func ToResponseLoadSnapshotChunk(res types.ResponseLoadSnapshotChunk) *Response {
 	return &Response{
 		Value: &Response_LoadSnapshotChunk{&res},
 	}
 }
 
-func ToResponseApplySnapshotChunk(res abci.ResponseApplySnapshotChunk) *Response {
+func ToResponseApplySnapshotChunk(res types.ResponseApplySnapshotChunk) *Response {
 	return &Response{
 		Value: &Response_ApplySnapshotChunk{&res},
 	}
