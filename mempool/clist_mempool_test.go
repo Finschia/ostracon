@@ -677,7 +677,7 @@ func newRemoteApp(
 
 	// Start server
 	server = abciserver.NewSocketServer(addr, app)
-	server.SetLogger(log.TestingLogger().With("module", "ocabci-server"))
+	server.SetLogger(log.TestingLogger().With("module", "abci-server"))
 	if err := server.Start(); err != nil {
 		t.Fatalf("Error starting socket server: %v", err.Error())
 	}
