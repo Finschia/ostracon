@@ -19,7 +19,7 @@ type localClient struct {
 
 	// TODO: remove `mtx` to increase concurrency. We could remove it because the app should protect itself.
 	mtx *tmsync.Mutex
-	// CONTRACT: The application should protect itself from concurrency as an ocabci server.
+	// CONTRACT: The application should protect itself from concurrency as an abci server.
 	ocabci.Application
 
 	globalCbMtx tmsync.Mutex
