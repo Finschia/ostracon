@@ -13,7 +13,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	tmprivvalproto "github.com/tendermint/tendermint/proto/tendermint/privval"
+	privvalproto "github.com/tendermint/tendermint/proto/tendermint/privval"
 	types2 "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/line/ostracon/config"
@@ -24,7 +24,7 @@ import (
 	tmnet "github.com/line/ostracon/libs/net"
 	"github.com/line/ostracon/node"
 	"github.com/line/ostracon/privval"
-	privvalproto "github.com/line/ostracon/proto/ostracon/privval"
+	ocprivvalproto "github.com/line/ostracon/proto/ostracon/privval"
 	"github.com/line/ostracon/types"
 )
 
@@ -184,9 +184,9 @@ func benchmarkVRFProof(b *testing.B, pv types.PrivValidator, pubKey crypto.PubKe
 }
 
 func ping(sl *privval.SignerListenerEndpoint) {
-	msg := privvalproto.Message{
-		Sum: &privvalproto.Message_PingRequest{
-			PingRequest: &tmprivvalproto.PingRequest{},
+	msg := ocprivvalproto.Message{
+		Sum: &ocprivvalproto.Message_PingRequest{
+			PingRequest: &privvalproto.PingRequest{},
 		},
 	}
 	_, err := sl.SendRequest(msg)

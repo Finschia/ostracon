@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"time"
 
-	tmprivvalproto "github.com/tendermint/tendermint/proto/tendermint/privval"
+	privvalproto "github.com/tendermint/tendermint/proto/tendermint/privval"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/line/ostracon/crypto"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
-	privvalproto "github.com/line/ostracon/proto/ostracon/privval"
+	ocprivvalproto "github.com/line/ostracon/proto/ostracon/privval"
 	"github.com/line/ostracon/types"
 )
 
@@ -55,7 +55,7 @@ func (sc *SignerClient) WaitForConnection(maxWait time.Duration) error {
 // GetPubKey retrieves a public key from a remote signer
 // returns an error if client is not able to provide the key
 func (sc *SignerClient) GetPubKey() (crypto.PubKey, error) {
-	response, err := sc.endpoint.SendRequest(mustWrapMsg(&tmprivvalproto.PubKeyRequest{ChainId: sc.chainID}))
+	response, err := sc.endpoint.SendRequest(mustWrapMsg(&privvalproto.PubKeyRequest{ChainId: sc.chainID}))
 	if err != nil {
 		return nil, fmt.Errorf("send: %w", err)
 	}
@@ -78,7 +78,7 @@ func (sc *SignerClient) GetPubKey() (crypto.PubKey, error) {
 
 // SignVote requests a remote signer to sign a vote
 func (sc *SignerClient) SignVote(chainID string, vote *tmproto.Vote) error {
-	response, err := sc.endpoint.SendRequest(mustWrapMsg(&tmprivvalproto.SignVoteRequest{Vote: vote, ChainId: chainID}))
+	response, err := sc.endpoint.SendRequest(mustWrapMsg(&privvalproto.SignVoteRequest{Vote: vote, ChainId: chainID}))
 	if err != nil {
 		return err
 	}
@@ -99,7 +99,7 @@ func (sc *SignerClient) SignVote(chainID string, vote *tmproto.Vote) error {
 // SignProposal requests a remote signer to sign a proposal
 func (sc *SignerClient) SignProposal(chainID string, proposal *tmproto.Proposal) error {
 	response, err := sc.endpoint.SendRequest(mustWrapMsg(
-		&tmprivvalproto.SignProposalRequest{Proposal: proposal, ChainId: chainID},
+		&privvalproto.SignProposalRequest{Proposal: proposal, ChainId: chainID},
 	))
 	if err != nil {
 		return err
@@ -120,7 +120,7 @@ func (sc *SignerClient) SignProposal(chainID string, proposal *tmproto.Proposal)
 
 // GenerateVRFProof requests a remote signer to generate a VRF proof
 func (sc *SignerClient) GenerateVRFProof(message []byte) (crypto.Proof, error) {
-	msg := &privvalproto.VRFProofRequest{Message: message}
+	msg := &ocprivvalproto.VRFProofRequest{Message: message}
 	response, err := sc.endpoint.SendRequest(mustWrapMsg(msg))
 	if err != nil {
 		sc.endpoint.Logger.Error("SignerClient::GenerateVRFProof", "err", err)
@@ -128,7 +128,7 @@ func (sc *SignerClient) GenerateVRFProof(message []byte) (crypto.Proof, error) {
 	}
 
 	switch r := response.Sum.(type) {
-	case *privvalproto.Message_VrfProofResponse:
+	case *ocprivvalproto.Message_VrfProofResponse:
 		if r.VrfProofResponse.Error != nil {
 			return nil, fmt.Errorf(r.VrfProofResponse.Error.Description)
 		}

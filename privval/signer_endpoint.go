@@ -8,7 +8,7 @@ import (
 	"github.com/line/ostracon/libs/protoio"
 	"github.com/line/ostracon/libs/service"
 	tmsync "github.com/line/ostracon/libs/sync"
-	privvalproto "github.com/line/ostracon/proto/ostracon/privval"
+	ocprivvalproto "github.com/line/ostracon/proto/ostracon/privval"
 )
 
 const (
@@ -80,7 +80,7 @@ func (se *signerEndpoint) DropConnection() {
 }
 
 // ReadMessage reads a message from the endpoint
-func (se *signerEndpoint) ReadMessage() (msg privvalproto.Message, err error) {
+func (se *signerEndpoint) ReadMessage() (msg ocprivvalproto.Message, err error) {
 	se.connMtx.Lock()
 	defer se.connMtx.Unlock()
 
@@ -112,7 +112,7 @@ func (se *signerEndpoint) ReadMessage() (msg privvalproto.Message, err error) {
 }
 
 // WriteMessage writes a message from the endpoint
-func (se *signerEndpoint) WriteMessage(msg privvalproto.Message) (err error) {
+func (se *signerEndpoint) WriteMessage(msg ocprivvalproto.Message) (err error) {
 	se.connMtx.Lock()
 	defer se.connMtx.Unlock()
 

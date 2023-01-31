@@ -6,16 +6,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/line/ostracon/abci/example/kvstore"
-	"github.com/line/ostracon/crypto/ed25519"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
+	"github.com/line/ostracon/abci/example/kvstore"
 	ocabci "github.com/line/ostracon/abci/types"
+	"github.com/line/ostracon/crypto/ed25519"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
 	"github.com/line/ostracon/crypto/tmhash"
 	tmrand "github.com/line/ostracon/libs/rand"

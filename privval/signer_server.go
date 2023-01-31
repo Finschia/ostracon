@@ -5,15 +5,15 @@ import (
 
 	"github.com/line/ostracon/libs/service"
 	tmsync "github.com/line/ostracon/libs/sync"
-	privvalproto "github.com/line/ostracon/proto/ostracon/privval"
+	ocprivvalproto "github.com/line/ostracon/proto/ostracon/privval"
 	"github.com/line/ostracon/types"
 )
 
 // ValidationRequestHandlerFunc handles different remoteSigner requests
 type ValidationRequestHandlerFunc func(
 	privVal types.PrivValidator,
-	requestMessage privvalproto.Message,
-	chainID string) (privvalproto.Message, error)
+	requestMessage ocprivvalproto.Message,
+	chainID string) (ocprivvalproto.Message, error)
 
 type SignerServer struct {
 	service.BaseService
@@ -71,7 +71,7 @@ func (ss *SignerServer) servicePendingRequest() {
 		return
 	}
 
-	var res privvalproto.Message
+	var res ocprivvalproto.Message
 	{
 		// limit the scope of the lock
 		ss.handlerMtx.Lock()

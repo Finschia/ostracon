@@ -8,10 +8,8 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/line/ostracon/crypto"
-	canonictime "github.com/line/ostracon/types/time"
-
 	ocabci "github.com/line/ostracon/abci/types"
+	"github.com/line/ostracon/crypto"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
 	"github.com/line/ostracon/crypto/vrf"
 	"github.com/line/ostracon/libs/fail"
@@ -20,6 +18,7 @@ import (
 	tmstate "github.com/line/ostracon/proto/ostracon/state"
 	"github.com/line/ostracon/proxy"
 	"github.com/line/ostracon/types"
+	canonictime "github.com/line/ostracon/types/time"
 )
 
 //-----------------------------------------------------------------------------
