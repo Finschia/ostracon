@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	abci "github.com/line/ostracon/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
+
+	ocabci "github.com/line/ostracon/abci/types"
 	mempl "github.com/line/ostracon/mempool"
 	ctypes "github.com/line/ostracon/rpc/core/types"
 	rpctypes "github.com/line/ostracon/rpc/jsonrpc/types"
@@ -85,7 +87,7 @@ func BroadcastTxCommit(ctx *rpctypes.Context, tx types.Tx) (*ctypes.ResultBroadc
 		return nil, fmt.Errorf("error on broadcastTxCommit: %v", err)
 	}
 	checkTxRes := checkTxResMsg.GetCheckTx()
-	if checkTxRes.Code != abci.CodeTypeOK {
+	if checkTxRes.Code != ocabci.CodeTypeOK {
 		return &ctypes.ResultBroadcastTxCommit{
 			CheckTx:   *checkTxRes,
 			DeliverTx: abci.ResponseDeliverTx{},

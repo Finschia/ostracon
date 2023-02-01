@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/tendermint/tendermint/abci/types"
+
 	abcicli "github.com/line/ostracon/abci/client"
 	"github.com/line/ostracon/abci/example/kvstore"
-	"github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	tmrand "github.com/line/ostracon/libs/rand"
 )
 
@@ -17,7 +19,7 @@ func InitChain(client abcicli.Client) error {
 	for i := 0; i < total; i++ {
 		pubkey := kvstore.GenDefaultPrivKey().PubKey()
 		power := tmrand.Int()
-		vals[i] = types.NewValidatorUpdate(pubkey, int64(power))
+		vals[i] = ocabci.NewValidatorUpdate(pubkey, int64(power))
 	}
 	_, err := client.InitChainSync(types.RequestInitChain{
 		Validators: vals,

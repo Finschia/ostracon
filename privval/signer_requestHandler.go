@@ -3,26 +3,28 @@ package privval
 import (
 	"fmt"
 
+	cryptoproto "github.com/tendermint/tendermint/proto/tendermint/crypto"
+	privvalproto "github.com/tendermint/tendermint/proto/tendermint/privval"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	"github.com/line/ostracon/crypto"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
-	cryptoproto "github.com/line/ostracon/proto/ostracon/crypto"
-	privvalproto "github.com/line/ostracon/proto/ostracon/privval"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	ocprivvalproto "github.com/line/ostracon/proto/ostracon/privval"
 	"github.com/line/ostracon/types"
 )
 
 func DefaultValidationRequestHandler(
 	privVal types.PrivValidator,
-	req privvalproto.Message,
+	req ocprivvalproto.Message,
 	chainID string,
-) (privvalproto.Message, error) {
+) (ocprivvalproto.Message, error) {
 	var (
-		res privvalproto.Message
+		res ocprivvalproto.Message
 		err error
 	)
 
 	switch r := req.Sum.(type) {
-	case *privvalproto.Message_PubKeyRequest:
+	case *ocprivvalproto.Message_PubKeyRequest:
 		if r.PubKeyRequest.GetChainId() != chainID {
 			res = mustWrapMsg(&privvalproto.PubKeyResponse{
 				PubKey: cryptoproto.PublicKey{}, Error: &privvalproto.RemoteSignerError{
@@ -47,7 +49,7 @@ func DefaultValidationRequestHandler(
 			res = mustWrapMsg(&privvalproto.PubKeyResponse{PubKey: pk, Error: nil})
 		}
 
-	case *privvalproto.Message_SignVoteRequest:
+	case *ocprivvalproto.Message_SignVoteRequest:
 		if r.SignVoteRequest.ChainId != chainID {
 			res = mustWrapMsg(&privvalproto.SignedVoteResponse{
 				Vote: tmproto.Vote{}, Error: &privvalproto.RemoteSignerError{
@@ -65,7 +67,7 @@ func DefaultValidationRequestHandler(
 			res = mustWrapMsg(&privvalproto.SignedVoteResponse{Vote: *vote, Error: nil})
 		}
 
-	case *privvalproto.Message_SignProposalRequest:
+	case *ocprivvalproto.Message_SignProposalRequest:
 		if r.SignProposalRequest.GetChainId() != chainID {
 			res = mustWrapMsg(&privvalproto.SignedProposalResponse{
 				Proposal: tmproto.Proposal{}, Error: &privvalproto.RemoteSignerError{
@@ -83,16 +85,16 @@ func DefaultValidationRequestHandler(
 		} else {
 			res = mustWrapMsg(&privvalproto.SignedProposalResponse{Proposal: *proposal, Error: nil})
 		}
-	case *privvalproto.Message_PingRequest:
+	case *ocprivvalproto.Message_PingRequest:
 		err, res = nil, mustWrapMsg(&privvalproto.PingResponse{})
 
-	case *privvalproto.Message_VrfProofRequest:
+	case *ocprivvalproto.Message_VrfProofRequest:
 		proof, err := privVal.GenerateVRFProof(r.VrfProofRequest.Message)
 		if err != nil {
 			err := privvalproto.RemoteSignerError{Code: 0, Description: err.Error()}
-			res = mustWrapMsg(&privvalproto.VRFProofResponse{Proof: nil, Error: &err})
+			res = mustWrapMsg(&ocprivvalproto.VRFProofResponse{Proof: nil, Error: &err})
 		} else {
-			res = mustWrapMsg(&privvalproto.VRFProofResponse{Proof: proof[:], Error: nil})
+			res = mustWrapMsg(&ocprivvalproto.VRFProofResponse{Proof: proof[:], Error: nil})
 		}
 
 	default:

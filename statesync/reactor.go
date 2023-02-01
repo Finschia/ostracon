@@ -5,11 +5,12 @@ import (
 	"sort"
 	"time"
 
-	abci "github.com/line/ostracon/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
+	ssproto "github.com/tendermint/tendermint/proto/tendermint/statesync"
+
 	"github.com/line/ostracon/config"
 	tmsync "github.com/line/ostracon/libs/sync"
 	"github.com/line/ostracon/p2p"
-	ssproto "github.com/line/ostracon/proto/ostracon/statesync"
 	"github.com/line/ostracon/proxy"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"

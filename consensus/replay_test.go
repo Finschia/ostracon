@@ -16,10 +16,12 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	abci "github.com/tendermint/tendermint/abci/types"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/line/ostracon/abci/example/kvstore"
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	cfg "github.com/line/ostracon/config"
 	"github.com/line/ostracon/crypto"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
@@ -29,7 +31,7 @@ import (
 	mempl "github.com/line/ostracon/mempool"
 	"github.com/line/ostracon/privval"
 	tmstate "github.com/line/ostracon/proto/ostracon/state"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	ocproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/proxy"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"
@@ -325,7 +327,7 @@ func (w *crashingWAL) Start() error { return w.next.Start() }
 func (w *crashingWAL) Stop() error  { return w.next.Stop() }
 func (w *crashingWAL) Wait()        { w.next.Wait() }
 
-//------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------
 type testSim struct {
 	GenesisState sm.State
 	Config       *cfg.Config
@@ -625,13 +627,13 @@ func TestMockProxyApp(t *testing.T) {
 		abciRes := new(tmstate.ABCIResponses)
 		abciRes.DeliverTxs = make([]*abci.ResponseDeliverTx, len(loadedAbciRes.DeliverTxs))
 		// Execute transactions and get hash.
-		proxyCb := func(req *abci.Request, res *abci.Response) {
-			if r, ok := res.Value.(*abci.Response_DeliverTx); ok {
+		proxyCb := func(req *ocabci.Request, res *ocabci.Response) {
+			if r, ok := res.Value.(*ocabci.Response_DeliverTx); ok {
 				// TODO: make use of res.Log
 				// TODO: make use of this info
 				// Blocks may include invalid txs.
 				txRes := r.DeliverTx
-				if txRes.Code == abci.CodeTypeOK {
+				if txRes.Code == ocabci.CodeTypeOK {
 					validTxs++
 				} else {
 					logger.Debug("Invalid tx", "code", txRes.Code, "log", txRes.Log)
@@ -1029,7 +1031,7 @@ func makeBlock(state sm.State, lastBlock *types.Block, lastBlockMeta *types.Bloc
 }
 
 type badApp struct {
-	abci.BaseApplication
+	ocabci.BaseApplication
 	numBlocks           byte
 	height              byte
 	allHashesAreWrong   bool
@@ -1093,7 +1095,7 @@ func makeBlockchainFromWAL(wal WAL) ([]*types.Block, []*types.Commit, error) {
 		case EndHeightMessage:
 			// if its not the first one, we have a full block
 			if thisBlockParts != nil {
-				var pbb = new(tmproto.Block)
+				var pbb = new(ocproto.Block)
 				bz, err := ioutil.ReadAll(thisBlockParts.GetReader())
 				if err != nil {
 					panic(err)
@@ -1137,7 +1139,7 @@ func makeBlockchainFromWAL(wal WAL) ([]*types.Block, []*types.Commit, error) {
 	if err != nil {
 		panic(err)
 	}
-	var pbb = new(tmproto.Block)
+	var pbb = new(ocproto.Block)
 	err = proto.Unmarshal(bz, pbb)
 	if err != nil {
 		panic(err)
@@ -1292,7 +1294,7 @@ func TestHandshakeUpdatesValidators(t *testing.T) {
 
 // returns the vals on InitChain
 type initChainApp struct {
-	abci.BaseApplication
+	ocabci.BaseApplication
 	vals []abci.ValidatorUpdate
 }
 

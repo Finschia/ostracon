@@ -3,9 +3,11 @@ package v2
 import (
 	"fmt"
 
+	bcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
+
 	bc "github.com/line/ostracon/blockchain"
 	"github.com/line/ostracon/p2p"
-	bcproto "github.com/line/ostracon/proto/ostracon/blockchain"
+	ocbcproto "github.com/line/ostracon/proto/ostracon/blockchain"
 	"github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"
 )
@@ -91,7 +93,7 @@ func (sio *switchIO) sendBlockToPeer(block *types.Block, peerID p2p.ID) error {
 		return err
 	}
 
-	msgBytes, err := bc.EncodeMsg(&bcproto.BlockResponse{Block: bpb})
+	msgBytes, err := bc.EncodeMsg(&ocbcproto.BlockResponse{Block: bpb})
 	if err != nil {
 		return err
 	}

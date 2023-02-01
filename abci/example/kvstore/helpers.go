@@ -2,14 +2,17 @@ package kvstore
 
 import (
 	"fmt"
-	"github.com/line/ostracon/abci/types"
+	"os"
+
+	"github.com/tendermint/tendermint/abci/types"
+
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/ed25519"
 	tmjson "github.com/line/ostracon/libs/json"
 	tmos "github.com/line/ostracon/libs/os"
 	tmrand "github.com/line/ostracon/libs/rand"
 	"github.com/line/ostracon/privval"
-	"os"
 )
 
 // LoadPrivValidatorKeyFile Load private key for use in an example or test.
@@ -36,7 +39,7 @@ func GenDefaultPrivKey() crypto.PrivKey {
 func RandVal(i int) types.ValidatorUpdate {
 	pk := GenDefaultPrivKey().PubKey()
 	power := tmrand.Uint16() + 1
-	v := types.NewValidatorUpdate(pk, int64(power))
+	v := ocabci.NewValidatorUpdate(pk, int64(power))
 	return v
 }
 

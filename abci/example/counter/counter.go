@@ -4,12 +4,14 @@ import (
 	"encoding/binary"
 	"fmt"
 
+	"github.com/tendermint/tendermint/abci/types"
+
 	"github.com/line/ostracon/abci/example/code"
-	"github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 )
 
 type Application struct {
-	types.BaseApplication
+	ocabci.BaseApplication
 
 	hashCount int
 	txCount   int
@@ -62,18 +64,18 @@ func (app *Application) DeliverTx(req types.RequestDeliverTx) types.ResponseDeli
 	return types.ResponseDeliverTx{Code: code.CodeTypeOK}
 }
 
-func (app *Application) CheckTxSync(req types.RequestCheckTx) types.ResponseCheckTx {
+func (app *Application) CheckTxSync(req types.RequestCheckTx) ocabci.ResponseCheckTx {
 	return app.checkTx(req)
 }
 
-func (app *Application) CheckTxAsync(req types.RequestCheckTx, callback types.CheckTxCallback) {
+func (app *Application) CheckTxAsync(req types.RequestCheckTx, callback ocabci.CheckTxCallback) {
 	callback(app.checkTx(req))
 }
 
-func (app *Application) checkTx(req types.RequestCheckTx) types.ResponseCheckTx {
+func (app *Application) checkTx(req types.RequestCheckTx) ocabci.ResponseCheckTx {
 	if app.serial {
 		if len(req.Tx) > 8 {
-			return types.ResponseCheckTx{
+			return ocabci.ResponseCheckTx{
 				Code: code.CodeTypeEncodingError,
 				Log:  fmt.Sprintf("Max tx size is 8 bytes, got %d", len(req.Tx))}
 		}
@@ -81,12 +83,12 @@ func (app *Application) checkTx(req types.RequestCheckTx) types.ResponseCheckTx 
 		copy(tx8[len(tx8)-len(req.Tx):], req.Tx)
 		txValue := binary.BigEndian.Uint64(tx8)
 		if txValue < uint64(app.txCount) {
-			return types.ResponseCheckTx{
+			return ocabci.ResponseCheckTx{
 				Code: code.CodeTypeBadNonce,
 				Log:  fmt.Sprintf("Invalid nonce. Expected >= %v, got %v", app.txCount, txValue)}
 		}
 	}
-	return types.ResponseCheckTx{Code: code.CodeTypeOK}
+	return ocabci.ResponseCheckTx{Code: code.CodeTypeOK}
 }
 
 func (app *Application) Commit() (resp types.ResponseCommit) {

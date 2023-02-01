@@ -5,9 +5,10 @@ import (
 	"errors"
 	"fmt"
 
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/ed25519"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 // PrivValidator defines the functionality of a local Ostracon validator

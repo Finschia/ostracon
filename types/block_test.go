@@ -17,6 +17,9 @@ import (
 
 	gogotypes "github.com/gogo/protobuf/types"
 
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
+
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/merkle"
 	"github.com/line/ostracon/crypto/tmhash"
@@ -24,8 +27,6 @@ import (
 	"github.com/line/ostracon/libs/bits"
 	"github.com/line/ostracon/libs/bytes"
 	tmrand "github.com/line/ostracon/libs/rand"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
-	tmversion "github.com/line/ostracon/proto/ostracon/version"
 	tmtime "github.com/line/ostracon/types/time"
 	"github.com/line/ostracon/version"
 )

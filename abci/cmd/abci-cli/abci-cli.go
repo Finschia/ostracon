@@ -11,12 +11,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/line/ostracon/config"
-
 	"github.com/spf13/cobra"
 
-	"github.com/line/ostracon/libs/log"
-	tmos "github.com/line/ostracon/libs/os"
+	"github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/proto/tendermint/crypto"
 
 	abcicli "github.com/line/ostracon/abci/client"
 	"github.com/line/ostracon/abci/example/code"
@@ -24,10 +22,12 @@ import (
 	"github.com/line/ostracon/abci/example/kvstore"
 	"github.com/line/ostracon/abci/server"
 	servertest "github.com/line/ostracon/abci/tests/server"
-	"github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/abci/version"
+	"github.com/line/ostracon/config"
 	"github.com/line/ostracon/crypto/encoding"
-	"github.com/line/ostracon/proto/ostracon/crypto"
+	"github.com/line/ostracon/libs/log"
+	tmos "github.com/line/ostracon/libs/os"
 )
 
 // client is a global variable so it can be reused by the console
@@ -682,7 +682,7 @@ func cmdKVStore(cmd *cobra.Command, args []string) error {
 	logger := log.NewOCLogger(log.NewSyncWriter(os.Stdout))
 
 	// Create the application - in memory or persisted to disk
-	var app types.Application
+	var app ocabci.Application
 	if flagPersist == "" {
 		app = kvstore.NewApplication()
 	} else {
@@ -758,7 +758,7 @@ func cmdPersistKVStoreMakeValSetChangeTx(cmd *cobra.Command, args []string) erro
 		})
 		fmt.Printf("original:publicKey:%s\n", publicKey)
 		validatorUpdate := types.ValidatorUpdate{}
-		err = types.ReadMessage(bytes.NewReader(res.Value), &validatorUpdate)
+		err = ocabci.ReadMessage(bytes.NewReader(res.Value), &validatorUpdate)
 		if err != nil {
 			panic(err)
 		}
@@ -776,7 +776,7 @@ func printResponse(cmd *cobra.Command, args []string, rsp response) {
 	}
 
 	// Always print the status code.
-	if rsp.Code == types.CodeTypeOK {
+	if rsp.Code == ocabci.CodeTypeOK {
 		fmt.Printf("-> code: OK\n")
 	} else {
 		fmt.Printf("-> code: %d\n", rsp.Code)

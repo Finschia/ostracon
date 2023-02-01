@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	tmcrypto "github.com/line/ostracon/proto/ostracon/crypto"
+	tmcrypto "github.com/tendermint/tendermint/proto/tendermint/crypto"
 )
 
 //----------------------------------------

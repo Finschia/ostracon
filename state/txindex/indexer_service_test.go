@@ -5,9 +5,10 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	abci "github.com/tendermint/tendermint/abci/types"
 	db "github.com/tendermint/tm-db"
 
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/log"
 	blockidxkv "github.com/line/ostracon/state/indexer/block/kv"
 	"github.com/line/ostracon/state/txindex"
@@ -95,7 +96,7 @@ func TestTxIndexDuplicatePreviouslySuccessful(t *testing.T) {
 				Index:  0,
 				Tx:     mockTx,
 				Result: abci.ResponseDeliverTx{
-					Code: abci.CodeTypeOK,
+					Code: ocabci.CodeTypeOK,
 				},
 			},
 			abci.TxResult{
@@ -103,7 +104,7 @@ func TestTxIndexDuplicatePreviouslySuccessful(t *testing.T) {
 				Index:  0,
 				Tx:     mockTx,
 				Result: abci.ResponseDeliverTx{
-					Code: abci.CodeTypeOK + 1,
+					Code: ocabci.CodeTypeOK + 1,
 				},
 			},
 			true,
@@ -114,7 +115,7 @@ func TestTxIndexDuplicatePreviouslySuccessful(t *testing.T) {
 				Index:  0,
 				Tx:     mockTx,
 				Result: abci.ResponseDeliverTx{
-					Code: abci.CodeTypeOK + 1,
+					Code: ocabci.CodeTypeOK + 1,
 				},
 			},
 			abci.TxResult{
@@ -122,7 +123,7 @@ func TestTxIndexDuplicatePreviouslySuccessful(t *testing.T) {
 				Index:  0,
 				Tx:     mockTx,
 				Result: abci.ResponseDeliverTx{
-					Code: abci.CodeTypeOK + 1,
+					Code: ocabci.CodeTypeOK + 1,
 				},
 			},
 			false,
@@ -133,7 +134,7 @@ func TestTxIndexDuplicatePreviouslySuccessful(t *testing.T) {
 				Index:  0,
 				Tx:     mockTx,
 				Result: abci.ResponseDeliverTx{
-					Code: abci.CodeTypeOK,
+					Code: ocabci.CodeTypeOK,
 				},
 			},
 			abci.TxResult{
@@ -141,7 +142,7 @@ func TestTxIndexDuplicatePreviouslySuccessful(t *testing.T) {
 				Index:  0,
 				Tx:     mockTx,
 				Result: abci.ResponseDeliverTx{
-					Code: abci.CodeTypeOK,
+					Code: ocabci.CodeTypeOK,
 				},
 			},
 			false,
@@ -152,7 +153,7 @@ func TestTxIndexDuplicatePreviouslySuccessful(t *testing.T) {
 				Index:  0,
 				Tx:     mockTx,
 				Result: abci.ResponseDeliverTx{
-					Code: abci.CodeTypeOK + 1,
+					Code: ocabci.CodeTypeOK + 1,
 				},
 			},
 			abci.TxResult{
@@ -160,7 +161,7 @@ func TestTxIndexDuplicatePreviouslySuccessful(t *testing.T) {
 				Index:  0,
 				Tx:     mockTx,
 				Result: abci.ResponseDeliverTx{
-					Code: abci.CodeTypeOK + 1,
+					Code: ocabci.CodeTypeOK + 1,
 				},
 			},
 			false,
@@ -171,7 +172,7 @@ func TestTxIndexDuplicatePreviouslySuccessful(t *testing.T) {
 				Index:  0,
 				Tx:     mockTx,
 				Result: abci.ResponseDeliverTx{
-					Code: abci.CodeTypeOK,
+					Code: ocabci.CodeTypeOK,
 				},
 			},
 			abci.TxResult{
@@ -179,7 +180,7 @@ func TestTxIndexDuplicatePreviouslySuccessful(t *testing.T) {
 				Index:  0,
 				Tx:     mockTx,
 				Result: abci.ResponseDeliverTx{
-					Code: abci.CodeTypeOK + 1,
+					Code: ocabci.CodeTypeOK + 1,
 				},
 			},
 			true,
@@ -190,7 +191,7 @@ func TestTxIndexDuplicatePreviouslySuccessful(t *testing.T) {
 				Index:  0,
 				Tx:     mockTx,
 				Result: abci.ResponseDeliverTx{
-					Code: abci.CodeTypeOK + 1,
+					Code: ocabci.CodeTypeOK + 1,
 				},
 			},
 			abci.TxResult{
@@ -198,7 +199,7 @@ func TestTxIndexDuplicatePreviouslySuccessful(t *testing.T) {
 				Index:  0,
 				Tx:     mockTx,
 				Result: abci.ResponseDeliverTx{
-					Code: abci.CodeTypeOK,
+					Code: ocabci.CodeTypeOK,
 				},
 			},
 			false,

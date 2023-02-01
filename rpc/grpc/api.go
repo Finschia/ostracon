@@ -3,7 +3,9 @@ package coregrpc
 import (
 	"context"
 
-	abci "github.com/line/ostracon/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
+
+	ocabci "github.com/line/ostracon/abci/types"
 	core "github.com/line/ostracon/rpc/core"
 	rpctypes "github.com/line/ostracon/rpc/jsonrpc/types"
 )
@@ -25,7 +27,7 @@ func (bapi *broadcastAPI) BroadcastTx(ctx context.Context, req *RequestBroadcast
 	}
 
 	return &ResponseBroadcastTx{
-		CheckTx: &abci.ResponseCheckTx{
+		CheckTx: &ocabci.ResponseCheckTx{
 			Code: res.CheckTx.Code,
 			Data: res.CheckTx.Data,
 			Log:  res.CheckTx.Log,

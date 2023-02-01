@@ -10,9 +10,10 @@ import (
 	"os"
 	"path/filepath"
 
+	tmp2p "github.com/tendermint/tendermint/proto/tendermint/p2p"
+
 	"github.com/line/ostracon/crypto/ed25519"
 	"github.com/line/ostracon/p2p"
-	tmp2p "github.com/line/ostracon/proto/ostracon/p2p"
 )
 
 func main() {

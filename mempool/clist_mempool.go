@@ -8,7 +8,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	abci "github.com/line/ostracon/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
+	ocabci "github.com/line/ostracon/abci/types"
 	cfg "github.com/line/ostracon/config"
 	auto "github.com/line/ostracon/libs/autofile"
 	"github.com/line/ostracon/libs/clist"
@@ -17,7 +20,6 @@ import (
 	tmos "github.com/line/ostracon/libs/os"
 	tmsync "github.com/line/ostracon/libs/sync"
 	"github.com/line/ostracon/p2p"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/proxy"
 	"github.com/line/ostracon/types"
 )
@@ -79,7 +81,7 @@ type requestCheckTxAsync struct {
 	tx        types.Tx
 	txInfo    TxInfo
 	prepareCb func(error)
-	checkTxCb func(*abci.Response)
+	checkTxCb func(*ocabci.Response)
 }
 
 var _ Mempool = &CListMempool{}
@@ -237,7 +239,7 @@ func (mem *CListMempool) TxsWaitChan() <-chan struct{} {
 
 // It blocks if we're waiting on Update() or Reap().
 // Safe for concurrent use by multiple goroutines.
-func (mem *CListMempool) CheckTxSync(tx types.Tx, txInfo TxInfo) (res *abci.Response, err error) {
+func (mem *CListMempool) CheckTxSync(tx types.Tx, txInfo TxInfo) (res *ocabci.Response, err error) {
 	mem.updateMtx.RLock()
 	// use defer to unlock mutex because application (*local client*) might panic
 	defer mem.updateMtx.RUnlock()
@@ -247,13 +249,13 @@ func (mem *CListMempool) CheckTxSync(tx types.Tx, txInfo TxInfo) (res *abci.Resp
 	}
 
 	// CONTRACT: `app.CheckTxSync()` should check whether `GasWanted` is valid (0 <= GasWanted <= block.masGas)
-	var r *abci.ResponseCheckTx
+	var r *ocabci.ResponseCheckTx
 	r, err = mem.proxyAppConn.CheckTxSync(abci.RequestCheckTx{Tx: tx})
 	if err != nil {
 		return res, err
 	}
 
-	res = abci.ToResponseCheckTx(*r)
+	res = ocabci.ToResponseCheckTx(*r)
 	mem.reqResCb(tx, txInfo.SenderID, txInfo.SenderP2PID, res, nil)
 	return res, err
 }
@@ -263,7 +265,7 @@ func (mem *CListMempool) CheckTxSync(tx types.Tx, txInfo TxInfo) (res *abci.Resp
 //
 // Safe for concurrent use by multiple goroutines.
 func (mem *CListMempool) CheckTxAsync(tx types.Tx, txInfo TxInfo, prepareCb func(error),
-	checkTxCb func(*abci.Response)) {
+	checkTxCb func(*ocabci.Response)) {
 	mem.chReqCheckTx <- &requestCheckTxAsync{tx: tx, txInfo: txInfo, prepareCb: prepareCb, checkTxCb: checkTxCb}
 }
 
@@ -275,7 +277,7 @@ func (mem *CListMempool) checkTxAsyncReactor() {
 
 // It blocks if we're waiting on Update() or Reap().
 func (mem *CListMempool) checkTxAsync(tx types.Tx, txInfo TxInfo, prepareCb func(error),
-	checkTxCb func(*abci.Response)) {
+	checkTxCb func(*ocabci.Response)) {
 	mem.updateMtx.RLock()
 	defer func() {
 		if r := recover(); r != nil {
@@ -294,8 +296,8 @@ func (mem *CListMempool) checkTxAsync(tx types.Tx, txInfo TxInfo, prepareCb func
 	}
 
 	// CONTRACT: `app.CheckTxAsync()` should check whether `GasWanted` is valid (0 <= GasWanted <= block.masGas)
-	mem.proxyAppConn.CheckTxAsync(abci.RequestCheckTx{Tx: tx}, func(res *abci.Response) {
-		mem.reqResCb(tx, txInfo.SenderID, txInfo.SenderP2PID, res, func(response *abci.Response) {
+	mem.proxyAppConn.CheckTxAsync(abci.RequestCheckTx{Tx: tx}, func(res *ocabci.Response) {
+		mem.reqResCb(tx, txInfo.SenderID, txInfo.SenderP2PID, res, func(response *ocabci.Response) {
 			if checkTxCb != nil {
 				checkTxCb(response)
 			}
@@ -379,7 +381,7 @@ func (mem *CListMempool) prepareCheckTx(tx types.Tx, txInfo TxInfo) error {
 //
 // When rechecking, we don't need the peerID, so the recheck callback happens
 // here.
-func (mem *CListMempool) globalCb(req *abci.Request, res *abci.Response) {
+func (mem *CListMempool) globalCb(req *ocabci.Request, res *ocabci.Response) {
 	checkTxReq := req.GetCheckTx()
 	if checkTxReq == nil {
 		return
@@ -407,8 +409,8 @@ func (mem *CListMempool) reqResCb(
 	tx []byte,
 	peerID uint16,
 	peerP2PID p2p.ID,
-	res *abci.Response,
-	externalCb func(*abci.Response),
+	res *ocabci.Response,
+	externalCb func(*ocabci.Response),
 ) {
 	mem.resCbFirstTime(tx, peerID, peerP2PID, res)
 
@@ -507,11 +509,11 @@ func (mem *CListMempool) resCbFirstTime(
 	tx []byte,
 	peerID uint16,
 	peerP2PID p2p.ID,
-	res *abci.Response,
+	res *ocabci.Response,
 ) {
 	switch r := res.Value.(type) {
-	case *abci.Response_CheckTx:
-		if r.CheckTx.Code == abci.CodeTypeOK {
+	case *ocabci.Response_CheckTx:
+		if r.CheckTx.Code == ocabci.CodeTypeOK {
 			memTx := &mempoolTx{
 				height:    mem.height,
 				gasWanted: r.CheckTx.GasWanted,
@@ -548,9 +550,9 @@ func (mem *CListMempool) resCbFirstTime(
 //
 // The case where the app checks the tx for the first time is handled by the
 // resCbFirstTime callback.
-func (mem *CListMempool) resCbRecheck(req *abci.Request, res *abci.Response) {
+func (mem *CListMempool) resCbRecheck(req *ocabci.Request, res *ocabci.Response) {
 	switch r := res.Value.(type) {
-	case *abci.Response_CheckTx:
+	case *ocabci.Response_CheckTx:
 		tx := req.GetCheckTx().Tx
 		txHash := TxKey(tx)
 		e, ok := mem.txsMap.Load(txHash)
@@ -559,7 +561,7 @@ func (mem *CListMempool) resCbRecheck(req *abci.Request, res *abci.Response) {
 			return
 		}
 		var postCheckErr error
-		if r.CheckTx.Code == abci.CodeTypeOK {
+		if r.CheckTx.Code == ocabci.CodeTypeOK {
 			if mem.postCheck == nil {
 				return
 			}
@@ -706,7 +708,7 @@ func (mem *CListMempool) Update(
 	}
 
 	for i, tx := range block.Txs {
-		if deliverTxResponses[i].Code == abci.CodeTypeOK {
+		if deliverTxResponses[i].Code == ocabci.CodeTypeOK {
 			// Add valid committed tx to the cache (if missing).
 			_ = mem.cache.Push(tx)
 		} else if !mem.config.KeepInvalidTxsInCache {
@@ -733,7 +735,7 @@ func (mem *CListMempool) Update(
 		// recheck non-committed txs to see if they became invalid
 		recheckStartTime := time.Now().UnixNano()
 
-		_, err = mem.proxyAppConn.BeginRecheckTxSync(abci.RequestBeginRecheckTx{
+		_, err = mem.proxyAppConn.BeginRecheckTxSync(ocabci.RequestBeginRecheckTx{
 			Header: types.OC2PB.Header(&block.Header),
 		})
 		if err != nil {
@@ -741,7 +743,7 @@ func (mem *CListMempool) Update(
 		}
 		mem.logger.Debug("recheck txs", "numtxs", mem.Size(), "height", block.Height)
 		mem.recheckTxs()
-		_, err = mem.proxyAppConn.EndRecheckTxSync(abci.RequestEndRecheckTx{Height: block.Height})
+		_, err = mem.proxyAppConn.EndRecheckTxSync(ocabci.RequestEndRecheckTx{Height: block.Height})
 		if err != nil {
 			mem.logger.Error("error in proxyAppConn.EndRecheckTxSync", "err", err)
 		}
@@ -781,12 +783,12 @@ func (mem *CListMempool) recheckTxs() {
 			Type: abci.CheckTxType_Recheck,
 		}
 
-		mem.proxyAppConn.CheckTxAsync(req, func(res *abci.Response) {
+		mem.proxyAppConn.CheckTxAsync(req, func(res *ocabci.Response) {
 			wg.Done()
 		})
 	}
 
-	mem.proxyAppConn.FlushAsync(func(res *abci.Response) {})
+	mem.proxyAppConn.FlushAsync(func(res *ocabci.Response) {})
 	wg.Wait()
 }
 

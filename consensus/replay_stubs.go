@@ -1,7 +1,9 @@
 package consensus
 
 import (
-	abci "github.com/line/ostracon/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
+
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/clist"
 	mempl "github.com/line/ostracon/mempool"
 	tmstate "github.com/line/ostracon/proto/ostracon/state"
@@ -18,10 +20,10 @@ var _ mempl.Mempool = emptyMempool{}
 func (emptyMempool) Lock()     {}
 func (emptyMempool) Unlock()   {}
 func (emptyMempool) Size() int { return 0 }
-func (emptyMempool) CheckTxSync(_ types.Tx, _ mempl.TxInfo) (*abci.Response, error) {
+func (emptyMempool) CheckTxSync(_ types.Tx, _ mempl.TxInfo) (*ocabci.Response, error) {
 	return nil, nil
 }
-func (emptyMempool) CheckTxAsync(_ types.Tx, _ mempl.TxInfo, _ func(error), _ func(*abci.Response)) {
+func (emptyMempool) CheckTxAsync(_ types.Tx, _ mempl.TxInfo, _ func(error), _ func(*ocabci.Response)) {
 }
 func (emptyMempool) ReapMaxBytesMaxGas(_, _ int64) types.Txs          { return types.Txs{} }
 func (emptyMempool) ReapMaxBytesMaxGasMaxTxs(_, _, _ int64) types.Txs { return types.Txs{} }
@@ -66,7 +68,7 @@ func newMockProxyApp(appHash []byte, abciResponses *tmstate.ABCIResponses) proxy
 }
 
 type mockProxyApp struct {
-	abci.BaseApplication
+	ocabci.BaseApplication
 
 	appHash       []byte
 	txCount       int

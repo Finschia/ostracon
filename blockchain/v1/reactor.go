@@ -5,11 +5,13 @@ import (
 	"reflect"
 	"time"
 
+	bcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
+
 	"github.com/line/ostracon/behaviour"
 	bc "github.com/line/ostracon/blockchain"
 	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/p2p"
-	bcproto "github.com/line/ostracon/proto/ostracon/blockchain"
+	ocbcproto "github.com/line/ostracon/proto/ostracon/blockchain"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/store"
 	"github.com/line/ostracon/types"
@@ -213,7 +215,7 @@ func (bcR *BlockchainReactor) sendBlockToPeer(msg *bcproto.BlockRequest,
 			bcR.Logger.Error("Could not send block message to peer", "err", err)
 			return false
 		}
-		msgBytes, err := bc.EncodeMsg(&bcproto.BlockResponse{Block: pbbi})
+		msgBytes, err := bc.EncodeMsg(&ocbcproto.BlockResponse{Block: pbbi})
 		if err != nil {
 			bcR.Logger.Error("unable to marshal msg", "err", err)
 			return false
@@ -287,7 +289,7 @@ func (bcR *BlockchainReactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) 
 			bcR.Logger.Error("Could not send status message to peer", "src", src)
 		}
 
-	case *bcproto.BlockResponse:
+	case *ocbcproto.BlockResponse:
 		bi, err := types.BlockFromProto(msg.Block)
 		if err != nil {
 			bcR.Logger.Error("error transition block from protobuf", "err", err)
@@ -541,8 +543,8 @@ func (bcR *BlockchainReactor) switchToConsensus() {
 // Called by FSM and pool:
 // - pool calls when it detects slow peer or when peer times out
 // - FSM calls when:
-//    - adding a block (addBlock) fails
-//    - reactor processing of a block reports failure and FSM sends back the peers of first and second blocks
+//   - adding a block (addBlock) fails
+//   - reactor processing of a block reports failure and FSM sends back the peers of first and second blocks
 func (bcR *BlockchainReactor) sendPeerError(err error, peerID p2p.ID) {
 	bcR.Logger.Info("sendPeerError:", "peer", peerID, "error", err)
 	msgData := bcFsmMessage{

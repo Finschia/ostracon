@@ -11,9 +11,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	tmp2p "github.com/tendermint/tendermint/proto/tendermint/p2p"
+
 	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/libs/protoio"
-	tmp2p "github.com/line/ostracon/proto/ostracon/p2p"
 	"github.com/line/ostracon/proto/ostracon/types"
 )
 

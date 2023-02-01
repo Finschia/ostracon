@@ -4,12 +4,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/line/ostracon/abci/types"
+	"github.com/tendermint/tendermint/abci/types"
+
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/stretchr/testify/require"
 )
 
 type sampleApp struct {
-	types.BaseApplication
+	ocabci.BaseApplication
 }
 
 func newDoneChan(t *testing.T) chan struct{} {
@@ -27,7 +29,7 @@ func newDoneChan(t *testing.T) chan struct{} {
 
 func getResponseCallback(t *testing.T) ResponseCallback {
 	doneChan := newDoneChan(t)
-	return func(res *types.Response) {
+	return func(res *ocabci.Response) {
 		require.NotNil(t, res)
 		doneChan <- struct{}{}
 	}
@@ -37,7 +39,7 @@ func TestLocalClientCalls(t *testing.T) {
 	app := sampleApp{}
 	c := NewLocalClient(nil, app)
 
-	c.SetGlobalCallback(func(*types.Request, *types.Response) {
+	c.SetGlobalCallback(func(*ocabci.Request, *ocabci.Response) {
 	})
 
 	c.EchoAsync("msg", getResponseCallback(t))
@@ -49,10 +51,10 @@ func TestLocalClientCalls(t *testing.T) {
 	c.QueryAsync(types.RequestQuery{}, getResponseCallback(t))
 	c.CommitAsync(getResponseCallback(t))
 	c.InitChainAsync(types.RequestInitChain{}, getResponseCallback(t))
-	c.BeginBlockAsync(types.RequestBeginBlock{}, getResponseCallback(t))
+	c.BeginBlockAsync(ocabci.RequestBeginBlock{}, getResponseCallback(t))
 	c.EndBlockAsync(types.RequestEndBlock{}, getResponseCallback(t))
-	c.BeginRecheckTxAsync(types.RequestBeginRecheckTx{}, getResponseCallback(t))
-	c.EndRecheckTxAsync(types.RequestEndRecheckTx{}, getResponseCallback(t))
+	c.BeginRecheckTxAsync(ocabci.RequestBeginRecheckTx{}, getResponseCallback(t))
+	c.EndRecheckTxAsync(ocabci.RequestEndRecheckTx{}, getResponseCallback(t))
 	c.ListSnapshotsAsync(types.RequestListSnapshots{}, getResponseCallback(t))
 	c.OfferSnapshotAsync(types.RequestOfferSnapshot{}, getResponseCallback(t))
 	c.LoadSnapshotChunkAsync(types.RequestLoadSnapshotChunk{}, getResponseCallback(t))
@@ -85,16 +87,16 @@ func TestLocalClientCalls(t *testing.T) {
 	_, err = c.InitChainSync(types.RequestInitChain{})
 	require.NoError(t, err)
 
-	_, err = c.BeginBlockSync(types.RequestBeginBlock{})
+	_, err = c.BeginBlockSync(ocabci.RequestBeginBlock{})
 	require.NoError(t, err)
 
 	_, err = c.EndBlockSync(types.RequestEndBlock{})
 	require.NoError(t, err)
 
-	_, err = c.BeginRecheckTxSync(types.RequestBeginRecheckTx{})
+	_, err = c.BeginRecheckTxSync(ocabci.RequestBeginRecheckTx{})
 	require.NoError(t, err)
 
-	_, err = c.EndRecheckTxSync(types.RequestEndRecheckTx{})
+	_, err = c.EndRecheckTxSync(ocabci.RequestEndRecheckTx{})
 	require.NoError(t, err)
 
 	_, err = c.ListSnapshotsSync(types.RequestListSnapshots{})

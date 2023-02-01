@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	abci "github.com/line/ostracon/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
 	"github.com/line/ostracon/crypto/vrf"
@@ -13,7 +16,6 @@ import (
 	"github.com/line/ostracon/libs/log"
 	mempl "github.com/line/ostracon/mempool"
 	tmstate "github.com/line/ostracon/proto/ostracon/state"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/proxy"
 	"github.com/line/ostracon/types"
 	canonictime "github.com/line/ostracon/types/time"
@@ -350,13 +352,13 @@ func execBlockOnProxyApp(
 	abciResponses.DeliverTxs = dtxs
 
 	// Execute transactions and get hash.
-	proxyCb := func(req *abci.Request, res *abci.Response) {
-		if r, ok := res.Value.(*abci.Response_DeliverTx); ok {
+	proxyCb := func(req *ocabci.Request, res *ocabci.Response) {
+		if r, ok := res.Value.(*ocabci.Response_DeliverTx); ok {
 			// TODO: make use of res.Log
 			// TODO: make use of this info
 			// Blocks may include invalid txs.
 			txRes := r.DeliverTx
-			if txRes.Code == abci.CodeTypeOK {
+			if txRes.Code == ocabci.CodeTypeOK {
 				validTxs++
 			} else {
 				logger.Debug("invalid tx", "code", txRes.Code, "log", txRes.Log)
@@ -383,7 +385,7 @@ func execBlockOnProxyApp(
 		return nil, errors.New("nil header")
 	}
 
-	abciResponses.BeginBlock, err = proxyAppConn.BeginBlockSync(abci.RequestBeginBlock{
+	abciResponses.BeginBlock, err = proxyAppConn.BeginBlockSync(ocabci.RequestBeginBlock{
 		Hash:                block.Hash(),
 		Header:              *pbh,
 		LastCommitInfo:      commitInfo,

@@ -15,11 +15,12 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	abci "github.com/tendermint/tendermint/abci/types"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
 	abcicli "github.com/line/ostracon/abci/client"
 	"github.com/line/ostracon/abci/example/kvstore"
-	abci "github.com/line/ostracon/abci/types"
 	cfg "github.com/line/ostracon/config"
 	cstypes "github.com/line/ostracon/consensus/types"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
@@ -31,7 +32,6 @@ import (
 	mempl "github.com/line/ostracon/mempool"
 	"github.com/line/ostracon/p2p"
 	p2pmock "github.com/line/ostracon/p2p/mock"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	sm "github.com/line/ostracon/state"
 	statemocks "github.com/line/ostracon/state/mocks"
 	"github.com/line/ostracon/store"

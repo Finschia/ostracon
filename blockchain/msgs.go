@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/gogo/protobuf/proto"
+	tmbcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
 
 	bcproto "github.com/line/ostracon/proto/ostracon/blockchain"
 	"github.com/line/ostracon/types"
@@ -24,15 +25,15 @@ func EncodeMsg(pb proto.Message) ([]byte, error) {
 	msg := bcproto.Message{}
 
 	switch pb := pb.(type) {
-	case *bcproto.BlockRequest:
+	case *tmbcproto.BlockRequest:
 		msg.Sum = &bcproto.Message_BlockRequest{BlockRequest: pb}
 	case *bcproto.BlockResponse:
 		msg.Sum = &bcproto.Message_BlockResponse{BlockResponse: pb}
-	case *bcproto.NoBlockResponse:
+	case *tmbcproto.NoBlockResponse:
 		msg.Sum = &bcproto.Message_NoBlockResponse{NoBlockResponse: pb}
-	case *bcproto.StatusRequest:
+	case *tmbcproto.StatusRequest:
 		msg.Sum = &bcproto.Message_StatusRequest{StatusRequest: pb}
-	case *bcproto.StatusResponse:
+	case *tmbcproto.StatusResponse:
 		msg.Sum = &bcproto.Message_StatusResponse{StatusResponse: pb}
 	default:
 		return nil, fmt.Errorf("unknown message type %T", pb)
@@ -78,7 +79,7 @@ func ValidateMsg(pb proto.Message) error {
 	}
 
 	switch msg := pb.(type) {
-	case *bcproto.BlockRequest:
+	case *tmbcproto.BlockRequest:
 		if msg.Height < 0 {
 			return errors.New("negative Height")
 		}
@@ -87,11 +88,11 @@ func ValidateMsg(pb proto.Message) error {
 		if err != nil {
 			return err
 		}
-	case *bcproto.NoBlockResponse:
+	case *tmbcproto.NoBlockResponse:
 		if msg.Height < 0 {
 			return errors.New("negative Height")
 		}
-	case *bcproto.StatusResponse:
+	case *tmbcproto.StatusResponse:
 		if msg.Base < 0 {
 			return errors.New("negative Base")
 		}
@@ -101,7 +102,7 @@ func ValidateMsg(pb proto.Message) error {
 		if msg.Base > msg.Height {
 			return fmt.Errorf("base %v cannot be greater than height %v", msg.Base, msg.Height)
 		}
-	case *bcproto.StatusRequest:
+	case *tmbcproto.StatusRequest:
 		return nil
 	default:
 		return fmt.Errorf("unknown message type %T", msg)

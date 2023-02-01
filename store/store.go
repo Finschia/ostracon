@@ -7,9 +7,11 @@ import (
 	"github.com/gogo/protobuf/proto"
 	dbm "github.com/tendermint/tm-db"
 
+	tmstore "github.com/tendermint/tendermint/proto/tendermint/store"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	tmsync "github.com/line/ostracon/libs/sync"
-	tmstore "github.com/line/ostracon/proto/ostracon/store"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	ocproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/types"
 )
 
@@ -17,9 +19,9 @@ import (
 BlockStore is a simple low level store for blocks.
 
 There are three types of information stored:
- - BlockMeta:   Meta information about each block
- - Block part:  Parts of each block, aggregated w/ PartSet
- - Commit:      The commit part of each block, for gossiping precommit votes
+  - BlockMeta:   Meta information about each block
+  - Block part:  Parts of each block, aggregated w/ PartSet
+  - Commit:      The commit part of each block, for gossiping precommit votes
 
 Currently the precommit signatures are duplicated in the Block parts as
 well as the Commit.  In the future this may change, perhaps by moving
@@ -96,7 +98,7 @@ func (bs *BlockStore) LoadBlock(height int64) *types.Block {
 		return nil
 	}
 
-	pbb := new(tmproto.Block)
+	pbb := new(ocproto.Block)
 	buf := []byte{}
 	for i := 0; i < int(blockMeta.BlockID.PartSetHeader.Total); i++ {
 		part := bs.LoadBlockPart(height, i)
@@ -172,7 +174,7 @@ func (bs *BlockStore) LoadBlockPart(height int64, index int) *types.Part {
 // LoadBlockMeta returns the BlockMeta for the given height.
 // If no block is found for the given height, it returns nil.
 func (bs *BlockStore) LoadBlockMeta(height int64) *types.BlockMeta {
-	var pbbm = new(tmproto.BlockMeta)
+	var pbbm = new(ocproto.BlockMeta)
 	bz, err := bs.db.Get(calcBlockMetaKey(height))
 
 	if err != nil {
@@ -325,9 +327,10 @@ func (bs *BlockStore) PruneBlocks(height int64) (uint64, error) {
 // SaveBlock persists the given block, blockParts, and seenCommit to the underlying db.
 // blockParts: Must be parts of the block
 // seenCommit: The +2/3 precommits that were seen which committed at height.
-//             If all the nodes restart after committing a block,
-//             we need this to reload the precommits to catch-up nodes to the
-//             most recent height.  Otherwise they'd stall at H-1.
+//
+//	If all the nodes restart after committing a block,
+//	we need this to reload the precommits to catch-up nodes to the
+//	most recent height.  Otherwise they'd stall at H-1.
 func (bs *BlockStore) SaveBlock(block *types.Block, blockParts *types.PartSet, seenCommit *types.Commit) {
 	if block == nil {
 		panic("BlockStore can only save a non-nil block")

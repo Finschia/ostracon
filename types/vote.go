@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"time"
 
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/ed25519"
 	tmbytes "github.com/line/ostracon/libs/bytes"
 	"github.com/line/ostracon/libs/protoio"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 const (

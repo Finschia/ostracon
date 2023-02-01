@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	abci "github.com/tendermint/tendermint/abci/types"
 	db "github.com/tendermint/tm-db"
 
-	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/pubsub/query"
 	blockidxkv "github.com/line/ostracon/state/indexer/block/kv"
 	"github.com/line/ostracon/types"

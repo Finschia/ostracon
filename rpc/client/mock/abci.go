@@ -3,7 +3,9 @@ package mock
 import (
 	"context"
 
-	abci "github.com/line/ostracon/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
+
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/bytes"
 	"github.com/line/ostracon/proxy"
 	"github.com/line/ostracon/rpc/client"
@@ -15,7 +17,7 @@ import (
 // so you can test app behavior from a client without needing
 // an entire ostracon node
 type ABCIApp struct {
-	App abci.Application
+	App ocabci.Application
 }
 
 var (
@@ -61,8 +63,8 @@ func (a ABCIApp) BroadcastTxCommit(ctx context.Context, tx types.Tx) (*ctypes.Re
 }
 
 func (a ABCIApp) BroadcastTxAsync(ctx context.Context, tx types.Tx) (*ctypes.ResultBroadcastTx, error) {
-	chRes := make(chan abci.ResponseCheckTx, 1)
-	a.App.CheckTxAsync(abci.RequestCheckTx{Tx: tx}, func(res abci.ResponseCheckTx) {
+	chRes := make(chan ocabci.ResponseCheckTx, 1)
+	a.App.CheckTxAsync(abci.RequestCheckTx{Tx: tx}, func(res ocabci.ResponseCheckTx) {
 		chRes <- res
 	})
 	c := <-chRes

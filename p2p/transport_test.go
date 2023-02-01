@@ -12,10 +12,11 @@ import (
 	"testing"
 	"time"
 
+	tmp2p "github.com/tendermint/tendermint/proto/tendermint/p2p"
+
 	"github.com/line/ostracon/crypto/ed25519"
 	"github.com/line/ostracon/libs/protoio"
 	"github.com/line/ostracon/p2p/conn"
-	tmp2p "github.com/line/ostracon/proto/ostracon/p2p"
 	"github.com/miekg/dns"
 	"github.com/stretchr/testify/require"
 )

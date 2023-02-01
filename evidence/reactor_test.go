@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
 	cfg "github.com/line/ostracon/config"
@@ -23,7 +24,7 @@ import (
 	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/p2p"
 	p2pmocks "github.com/line/ostracon/p2p/mocks"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	ocproto "github.com/line/ostracon/proto/ostracon/types"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"
 )
@@ -396,14 +397,14 @@ func TestEvidenceVectors(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 
-		evi := make([]tmproto.Evidence, len(tc.evidenceList))
+		evi := make([]ocproto.Evidence, len(tc.evidenceList))
 		for i := 0; i < len(tc.evidenceList); i++ {
 			ev, err := types.EvidenceToProto(tc.evidenceList[i])
 			require.NoError(t, err, tc.testName)
 			evi[i] = *ev
 		}
 
-		epl := tmproto.EvidenceList{
+		epl := ocproto.EvidenceList{
 			Evidence: evi,
 		}
 

@@ -1,7 +1,8 @@
 package core
 
 import (
-	abci "github.com/line/ostracon/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
+
 	"github.com/line/ostracon/libs/bytes"
 	"github.com/line/ostracon/proxy"
 	ctypes "github.com/line/ostracon/rpc/core/types"

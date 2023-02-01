@@ -14,11 +14,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	abci "github.com/tendermint/tendermint/abci/types"
+	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
+
 	"github.com/line/ostracon/abci/example/counter"
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/config"
 	"github.com/line/ostracon/libs/log"
-	tmversion "github.com/line/ostracon/proto/ostracon/version"
 	"github.com/line/ostracon/proxy"
 	"github.com/line/ostracon/types"
 	"github.com/line/ostracon/version"
@@ -102,7 +104,7 @@ func createProposalBlockAndDeliverTxs(
 	deliverTxResponses := make([]*abci.ResponseDeliverTx, len(block.Txs))
 	for i, tx := range block.Txs {
 		deliverTxResponses[i] = &abci.ResponseDeliverTx{
-			Code: abci.CodeTypeOK,
+			Code: ocabci.CodeTypeOK,
 			Data: tx,
 		}
 	}
@@ -141,9 +143,9 @@ func receiveTx(ctx context.Context, t *testing.T,
 				}
 			}
 		},
-		func(res *abci.Response) {
+		func(res *ocabci.Response) {
 			resCheckTx := res.GetCheckTx()
-			if resCheckTx.Code != abci.CodeTypeOK && len(resCheckTx.Log) != 0 {
+			if resCheckTx.Code != ocabci.CodeTypeOK && len(resCheckTx.Log) != 0 {
 				atomic.AddInt64(&receiveTxCounter.abciFail, 1)
 			} else {
 				atomic.AddInt64(&receiveTxCounter.success, 1)

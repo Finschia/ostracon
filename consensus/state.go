@@ -12,6 +12,8 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	cfg "github.com/line/ostracon/config"
 	cstypes "github.com/line/ostracon/consensus/types"
 	"github.com/line/ostracon/crypto"
@@ -24,7 +26,7 @@ import (
 	"github.com/line/ostracon/libs/service"
 	tmsync "github.com/line/ostracon/libs/sync"
 	"github.com/line/ostracon/p2p"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	ocproto "github.com/line/ostracon/proto/ostracon/types"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"
 	tmtime "github.com/line/ostracon/types/time"
@@ -1984,7 +1986,7 @@ func (cs *State) addProposalBlockPart(msg *BlockPartMessage, peerID p2p.ID) (add
 			return added, err
 		}
 
-		var pbb = new(tmproto.Block)
+		var pbb = new(ocproto.Block)
 		err = proto.Unmarshal(bz, pbb)
 		if err != nil {
 			return added, err

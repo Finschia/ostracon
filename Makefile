@@ -93,6 +93,9 @@ mock-gen:
 ###                                Protobuf                                 ###
 ###############################################################################
 
+containerProtoVer=v0.2
+containerProtoImage=tendermintdev/sdk-proto-gen:$(containerProtoVer)
+
 ###
 # https://github.com/protocolbuffers/protobuf
 # https://developers.google.com/protocol-buffers/docs/gotutorial
@@ -108,7 +111,7 @@ proto-all: proto-gen proto-lint proto-check-breaking
 proto-gen:
 	@docker pull -q tendermintdev/docker-build-proto
 	@echo "Generating Protobuf files"
-	@docker run --rm -v $(shell pwd):/workspace --workdir /workspace tendermintdev/docker-build-proto sh ./scripts/protocgen.sh
+	@docker run --rm -v $(shell pwd):/workspace --workdir /workspace $(containerProtoImage) sh ./scripts/protocgen.sh
 .PHONY: proto-gen
 
 proto-lint:

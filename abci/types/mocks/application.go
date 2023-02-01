@@ -3,7 +3,9 @@
 package mocks
 
 import (
-	types "github.com/line/ostracon/abci/types"
+	types "github.com/tendermint/tendermint/abci/types"
+
+	ocabci "github.com/line/ostracon/abci/types"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -27,11 +29,11 @@ func (_m *Application) ApplySnapshotChunk(_a0 types.RequestApplySnapshotChunk) t
 }
 
 // BeginBlock provides a mock function with given fields: _a0
-func (_m *Application) BeginBlock(_a0 types.RequestBeginBlock) types.ResponseBeginBlock {
+func (_m *Application) BeginBlock(_a0 ocabci.RequestBeginBlock) types.ResponseBeginBlock {
 	ret := _m.Called(_a0)
 
 	var r0 types.ResponseBeginBlock
-	if rf, ok := ret.Get(0).(func(types.RequestBeginBlock) types.ResponseBeginBlock); ok {
+	if rf, ok := ret.Get(0).(func(ocabci.RequestBeginBlock) types.ResponseBeginBlock); ok {
 		r0 = rf(_a0)
 	} else {
 		r0 = ret.Get(0).(types.ResponseBeginBlock)
@@ -41,33 +43,33 @@ func (_m *Application) BeginBlock(_a0 types.RequestBeginBlock) types.ResponseBeg
 }
 
 // BeginRecheckTx provides a mock function with given fields: _a0
-func (_m *Application) BeginRecheckTx(_a0 types.RequestBeginRecheckTx) types.ResponseBeginRecheckTx {
+func (_m *Application) BeginRecheckTx(_a0 ocabci.RequestBeginRecheckTx) ocabci.ResponseBeginRecheckTx {
 	ret := _m.Called(_a0)
 
-	var r0 types.ResponseBeginRecheckTx
-	if rf, ok := ret.Get(0).(func(types.RequestBeginRecheckTx) types.ResponseBeginRecheckTx); ok {
+	var r0 ocabci.ResponseBeginRecheckTx
+	if rf, ok := ret.Get(0).(func(ocabci.RequestBeginRecheckTx) ocabci.ResponseBeginRecheckTx); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(types.ResponseBeginRecheckTx)
+		r0 = ret.Get(0).(ocabci.ResponseBeginRecheckTx)
 	}
 
 	return r0
 }
 
 // CheckTxAsync provides a mock function with given fields: _a0, _a1
-func (_m *Application) CheckTxAsync(_a0 types.RequestCheckTx, _a1 types.CheckTxCallback) {
+func (_m *Application) CheckTxAsync(_a0 types.RequestCheckTx, _a1 ocabci.CheckTxCallback) {
 	_m.Called(_a0, _a1)
 }
 
 // CheckTxSync provides a mock function with given fields: _a0
-func (_m *Application) CheckTxSync(_a0 types.RequestCheckTx) types.ResponseCheckTx {
+func (_m *Application) CheckTxSync(_a0 types.RequestCheckTx) ocabci.ResponseCheckTx {
 	ret := _m.Called(_a0)
 
-	var r0 types.ResponseCheckTx
-	if rf, ok := ret.Get(0).(func(types.RequestCheckTx) types.ResponseCheckTx); ok {
+	var r0 ocabci.ResponseCheckTx
+	if rf, ok := ret.Get(0).(func(types.RequestCheckTx) ocabci.ResponseCheckTx); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(types.ResponseCheckTx)
+		r0 = ret.Get(0).(ocabci.ResponseCheckTx)
 	}
 
 	return r0
@@ -116,14 +118,14 @@ func (_m *Application) EndBlock(_a0 types.RequestEndBlock) types.ResponseEndBloc
 }
 
 // EndRecheckTx provides a mock function with given fields: _a0
-func (_m *Application) EndRecheckTx(_a0 types.RequestEndRecheckTx) types.ResponseEndRecheckTx {
+func (_m *Application) EndRecheckTx(_a0 ocabci.RequestEndRecheckTx) ocabci.ResponseEndRecheckTx {
 	ret := _m.Called(_a0)
 
-	var r0 types.ResponseEndRecheckTx
-	if rf, ok := ret.Get(0).(func(types.RequestEndRecheckTx) types.ResponseEndRecheckTx); ok {
+	var r0 ocabci.ResponseEndRecheckTx
+	if rf, ok := ret.Get(0).(func(ocabci.RequestEndRecheckTx) ocabci.ResponseEndRecheckTx); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(types.ResponseEndRecheckTx)
+		r0 = ret.Get(0).(ocabci.ResponseEndRecheckTx)
 	}
 
 	return r0

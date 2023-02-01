@@ -3,7 +3,9 @@ package mempool
 import (
 	"fmt"
 
-	abci "github.com/line/ostracon/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
+
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/p2p"
 	"github.com/line/ostracon/types"
 )
@@ -15,8 +17,8 @@ import (
 type Mempool interface {
 	// CheckTx executes a new transaction against the application to determine
 	// its validity and whether it should be added to the mempool.
-	CheckTxSync(tx types.Tx, txInfo TxInfo) (*abci.Response, error)
-	CheckTxAsync(tx types.Tx, txInfo TxInfo, prepareCb func(error), checkTxCb func(*abci.Response))
+	CheckTxSync(tx types.Tx, txInfo TxInfo) (*ocabci.Response, error)
+	CheckTxAsync(tx types.Tx, txInfo TxInfo, prepareCb func(error), checkTxCb func(*ocabci.Response))
 
 	// ReapMaxBytesMaxGas reaps transactions from the mempool up to maxBytes
 	// bytes total with the condition that the total gasWanted must be less than
@@ -91,7 +93,7 @@ type PreCheckFunc func(types.Tx) error
 // PostCheckFunc is an optional filter executed after CheckTx and rejects
 // transaction if false is returned. An example would be to ensure a
 // transaction doesn't require more gas than available for the block.
-type PostCheckFunc func(types.Tx, *abci.ResponseCheckTx) error
+type PostCheckFunc func(types.Tx, *ocabci.ResponseCheckTx) error
 
 // TxInfo are parameters that get passed when attempting to add a tx to the
 // mempool.
@@ -121,7 +123,7 @@ func PreCheckMaxBytes(maxBytes int64) PreCheckFunc {
 // PostCheckMaxGas checks that the wanted gas is smaller or equal to the passed
 // maxGas. Returns nil if maxGas is -1.
 func PostCheckMaxGas(maxGas int64) PostCheckFunc {
-	return func(tx types.Tx, res *abci.ResponseCheckTx) error {
+	return func(tx types.Tx, res *ocabci.ResponseCheckTx) error {
 		if maxGas == -1 {
 			return nil
 		}

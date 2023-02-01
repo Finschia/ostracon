@@ -8,14 +8,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	cryptoproto "github.com/tendermint/tendermint/proto/tendermint/crypto"
+	privvalproto "github.com/tendermint/tendermint/proto/tendermint/privval"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/ed25519"
 	"github.com/line/ostracon/crypto/tmhash"
 	"github.com/line/ostracon/crypto/vrf"
 	tmrand "github.com/line/ostracon/libs/rand"
-	cryptoproto "github.com/line/ostracon/proto/ostracon/crypto"
-	privvalproto "github.com/line/ostracon/proto/ostracon/privval"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	ocprivvalproto "github.com/line/ostracon/proto/ostracon/privval"
 	"github.com/line/ostracon/types"
 )
 
@@ -407,20 +409,20 @@ func TestSignerSignVoteErrors(t *testing.T) {
 	}
 }
 
-func brokenHandler(privVal types.PrivValidator, request privvalproto.Message,
-	chainID string) (privvalproto.Message, error) {
-	var res privvalproto.Message
+func brokenHandler(privVal types.PrivValidator, request ocprivvalproto.Message,
+	chainID string) (ocprivvalproto.Message, error) {
+	var res ocprivvalproto.Message
 	var err error
 
 	switch r := request.Sum.(type) {
 	// This is broken and will answer most requests with a pubkey response
-	case *privvalproto.Message_PubKeyRequest:
+	case *ocprivvalproto.Message_PubKeyRequest:
 		res = mustWrapMsg(&privvalproto.PubKeyResponse{PubKey: cryptoproto.PublicKey{}, Error: nil})
-	case *privvalproto.Message_SignVoteRequest:
+	case *ocprivvalproto.Message_SignVoteRequest:
 		res = mustWrapMsg(&privvalproto.PubKeyResponse{PubKey: cryptoproto.PublicKey{}, Error: nil})
-	case *privvalproto.Message_SignProposalRequest:
+	case *ocprivvalproto.Message_SignProposalRequest:
 		res = mustWrapMsg(&privvalproto.PubKeyResponse{PubKey: cryptoproto.PublicKey{}, Error: nil})
-	case *privvalproto.Message_PingRequest:
+	case *ocprivvalproto.Message_PingRequest:
 		err, res = nil, mustWrapMsg(&privvalproto.PingResponse{})
 	default:
 		err = fmt.Errorf("unknown msg: %v", r)

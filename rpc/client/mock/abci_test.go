@@ -9,8 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	abci "github.com/tendermint/tendermint/abci/types"
+
 	"github.com/line/ostracon/abci/example/kvstore"
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/bytes"
 	"github.com/line/ostracon/rpc/client"
 	"github.com/line/ostracon/rpc/client/mock"
@@ -37,7 +39,7 @@ func TestABCIMock(t *testing.T) {
 		BroadcastCommit: mock.Call{
 			Args: goodTx,
 			Response: &ctypes.ResultBroadcastTxCommit{
-				CheckTx:   abci.ResponseCheckTx{Data: bytes.HexBytes("stand")},
+				CheckTx:   ocabci.ResponseCheckTx{Data: bytes.HexBytes("stand")},
 				DeliverTx: abci.ResponseDeliverTx{Data: bytes.HexBytes("deliver")},
 			},
 			Error: errors.New("bad tx"),

@@ -8,11 +8,12 @@ import (
 	"os"
 	"time"
 
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	"github.com/line/ostracon/crypto"
 	tmbytes "github.com/line/ostracon/libs/bytes"
 	tmjson "github.com/line/ostracon/libs/json"
 	tmos "github.com/line/ostracon/libs/os"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	tmtime "github.com/line/ostracon/types/time"
 )
 

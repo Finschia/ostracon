@@ -10,7 +10,8 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 
-	abci "github.com/line/ostracon/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
+
 	"github.com/line/ostracon/crypto/merkle"
 	tmbytes "github.com/line/ostracon/libs/bytes"
 	tmmath "github.com/line/ostracon/libs/math"
@@ -27,6 +28,7 @@ var errNegOrZeroHeight = errors.New("negative or zero height")
 type KeyPathFunc func(path string, key []byte) (merkle.KeyPath, error)
 
 // LightClient is an interface that contains functionality needed by Client from the light client.
+//
 //go:generate mockery --case underscore --name LightClient
 type LightClient interface {
 	ChainID() string

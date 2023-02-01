@@ -4,25 +4,25 @@ import (
 	"testing"
 	"time"
 
-	"github.com/line/ostracon/config"
-	"github.com/line/ostracon/libs/log"
-	tmstate "github.com/line/ostracon/proto/ostracon/state"
-	tmversion "github.com/line/ostracon/proto/ostracon/version"
-	"github.com/line/ostracon/proxy"
-	sm "github.com/line/ostracon/state"
-	"github.com/line/ostracon/statesync/mocks"
-	"github.com/line/ostracon/types"
-	"github.com/line/ostracon/version"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	abci "github.com/line/ostracon/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
+	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
+	ssproto "github.com/tendermint/tendermint/proto/tendermint/statesync"
+	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
+
+	"github.com/line/ostracon/config"
+	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/p2p"
 	p2pmocks "github.com/line/ostracon/p2p/mocks"
-	ssproto "github.com/line/ostracon/proto/ostracon/statesync"
+	"github.com/line/ostracon/proxy"
 	proxymocks "github.com/line/ostracon/proxy/mocks"
+	sm "github.com/line/ostracon/state"
+	"github.com/line/ostracon/statesync/mocks"
+	"github.com/line/ostracon/types"
+	"github.com/line/ostracon/version"
 )
 
 func TestReactor_Receive_ChunkRequest(t *testing.T) {

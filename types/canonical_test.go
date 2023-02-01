@@ -4,9 +4,10 @@ import (
 	"reflect"
 	"testing"
 
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	"github.com/line/ostracon/crypto/tmhash"
 	tmrand "github.com/line/ostracon/libs/rand"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 func TestCanonicalizeBlockID(t *testing.T) {

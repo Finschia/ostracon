@@ -8,11 +8,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
+
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/tmhash"
 	tmrand "github.com/line/ostracon/libs/rand"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
-	tmversion "github.com/line/ostracon/proto/ostracon/version"
 	"github.com/line/ostracon/version"
 )
 

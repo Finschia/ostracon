@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"time"
 
+	bcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
+
 	"github.com/line/ostracon/behaviour"
 	bc "github.com/line/ostracon/blockchain"
 	"github.com/line/ostracon/libs/log"
 	tmsync "github.com/line/ostracon/libs/sync"
 	"github.com/line/ostracon/p2p"
-	bcproto "github.com/line/ostracon/proto/ostracon/blockchain"
+	ocbcproto "github.com/line/ostracon/proto/ostracon/blockchain"
 	"github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"
 )
@@ -500,7 +502,7 @@ func (r *BlockchainReactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 		}
 		r.mtx.RUnlock()
 
-	case *bcproto.BlockResponse:
+	case *ocbcproto.BlockResponse:
 		bi, err := types.BlockFromProto(msg.Block)
 		if err != nil {
 			r.logger.Error("error transitioning block from protobuf", "err", err)

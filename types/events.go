@@ -3,7 +3,8 @@ package types
 import (
 	"fmt"
 
-	abci "github.com/line/ostracon/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
+
 	tmjson "github.com/line/ostracon/libs/json"
 	tmpubsub "github.com/line/ostracon/libs/pubsub"
 	tmquery "github.com/line/ostracon/libs/pubsub/query"

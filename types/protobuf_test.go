@@ -3,19 +3,17 @@ package types
 import (
 	"testing"
 
-	"github.com/line/ostracon/crypto/secp256k1"
-
 	"github.com/golang/protobuf/proto" // nolint: staticcheck // still used by gogoproto
-	"github.com/tendermint/go-amino"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tendermint/go-amino"
+	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/proto/tendermint/version"
 
-	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/ed25519"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
-	"github.com/line/ostracon/proto/ostracon/version"
+	"github.com/line/ostracon/crypto/secp256k1"
 	"github.com/line/ostracon/types/time"
 )
 

@@ -10,11 +10,13 @@ import (
 	"strconv"
 	"time"
 
+	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/proto/tendermint/crypto"
+
 	"github.com/line/ostracon/abci/example/code"
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
 	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/proto/ostracon/crypto"
 	"github.com/line/ostracon/version"
 )
 
@@ -25,7 +27,7 @@ const E2EAppVersion = 999
 // to disk as JSON, taking state sync snapshots if requested.
 
 type Application struct {
-	abci.BaseApplication
+	ocabci.BaseApplication
 	logger          log.Logger
 	state           *State
 	snapshots       *SnapshotStore
@@ -138,10 +140,10 @@ func (app *Application) InitChain(req abci.RequestInitChain) abci.ResponseInitCh
 }
 
 // CheckTx implements ABCI.
-func (app *Application) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
+func (app *Application) CheckTx(req abci.RequestCheckTx) ocabci.ResponseCheckTx {
 	_, _, err := parseTx(req.Tx)
 	if err != nil {
-		return abci.ResponseCheckTx{
+		return ocabci.ResponseCheckTx{
 			Code: code.CodeTypeEncodingError,
 			Log:  err.Error(),
 		}
@@ -151,7 +153,7 @@ func (app *Application) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 		time.Sleep(app.cfg.CheckTxDelay)
 	}
 
-	return abci.ResponseCheckTx{Code: code.CodeTypeOK, GasWanted: 1}
+	return ocabci.ResponseCheckTx{Code: code.CodeTypeOK, GasWanted: 1}
 }
 
 // DeliverTx implements ABCI.
@@ -277,13 +279,13 @@ func (app *Application) Rollback() error {
 }
 
 // validatorUpdates generates a validator set update.
-func (app *Application) validatorUpdates(height uint64) (abci.ValidatorUpdates, error) {
+func (app *Application) validatorUpdates(height uint64) (ocabci.ValidatorUpdates, error) {
 	updates := app.cfg.ValidatorUpdates[fmt.Sprintf("%v", height)]
 	if len(updates) == 0 {
 		return nil, nil
 	}
 
-	valUpdates := abci.ValidatorUpdates{}
+	valUpdates := ocabci.ValidatorUpdates{}
 	for keyString, power := range updates {
 
 		keyBytes, err := base64.StdEncoding.DecodeString(keyString)
@@ -299,7 +301,7 @@ func (app *Application) validatorUpdates(height uint64) (abci.ValidatorUpdates, 
 		if err != nil {
 			return nil, fmt.Errorf("invalid crypto pubkey %q: %w", keyString, err)
 		}
-		valUpdates = append(valUpdates, abci.NewValidatorUpdate(pubKey, int64(power)))
+		valUpdates = append(valUpdates, ocabci.NewValidatorUpdate(pubKey, int64(power)))
 	}
 	return valUpdates, nil
 }

@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
+	abci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tm-db"
 
-	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/pubsub/query"
 	"github.com/line/ostracon/state/indexer"
 	"github.com/line/ostracon/state/txindex"

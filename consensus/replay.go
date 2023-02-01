@@ -8,7 +8,8 @@ import (
 	"reflect"
 	"time"
 
-	abci "github.com/line/ostracon/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
+
 	"github.com/line/ostracon/crypto/merkle"
 	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/proxy"

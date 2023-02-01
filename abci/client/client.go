@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/line/ostracon/abci/types"
+	"github.com/tendermint/tendermint/abci/types"
+
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/service"
 	tmsync "github.com/line/ostracon/libs/sync"
 )
@@ -36,10 +38,10 @@ type Client interface {
 	QueryAsync(types.RequestQuery, ResponseCallback) *ReqRes
 	CommitAsync(ResponseCallback) *ReqRes
 	InitChainAsync(types.RequestInitChain, ResponseCallback) *ReqRes
-	BeginBlockAsync(types.RequestBeginBlock, ResponseCallback) *ReqRes
+	BeginBlockAsync(ocabci.RequestBeginBlock, ResponseCallback) *ReqRes
 	EndBlockAsync(types.RequestEndBlock, ResponseCallback) *ReqRes
-	BeginRecheckTxAsync(types.RequestBeginRecheckTx, ResponseCallback) *ReqRes
-	EndRecheckTxAsync(types.RequestEndRecheckTx, ResponseCallback) *ReqRes
+	BeginRecheckTxAsync(ocabci.RequestBeginRecheckTx, ResponseCallback) *ReqRes
+	EndRecheckTxAsync(ocabci.RequestEndRecheckTx, ResponseCallback) *ReqRes
 	ListSnapshotsAsync(types.RequestListSnapshots, ResponseCallback) *ReqRes
 	OfferSnapshotAsync(types.RequestOfferSnapshot, ResponseCallback) *ReqRes
 	LoadSnapshotChunkAsync(types.RequestLoadSnapshotChunk, ResponseCallback) *ReqRes
@@ -50,14 +52,14 @@ type Client interface {
 	InfoSync(types.RequestInfo) (*types.ResponseInfo, error)
 	SetOptionSync(types.RequestSetOption) (*types.ResponseSetOption, error)
 	DeliverTxSync(types.RequestDeliverTx) (*types.ResponseDeliverTx, error)
-	CheckTxSync(types.RequestCheckTx) (*types.ResponseCheckTx, error)
+	CheckTxSync(types.RequestCheckTx) (*ocabci.ResponseCheckTx, error)
 	QuerySync(types.RequestQuery) (*types.ResponseQuery, error)
 	CommitSync() (*types.ResponseCommit, error)
 	InitChainSync(types.RequestInitChain) (*types.ResponseInitChain, error)
-	BeginBlockSync(types.RequestBeginBlock) (*types.ResponseBeginBlock, error)
+	BeginBlockSync(ocabci.RequestBeginBlock) (*types.ResponseBeginBlock, error)
 	EndBlockSync(types.RequestEndBlock) (*types.ResponseEndBlock, error)
-	BeginRecheckTxSync(types.RequestBeginRecheckTx) (*types.ResponseBeginRecheckTx, error)
-	EndRecheckTxSync(types.RequestEndRecheckTx) (*types.ResponseEndRecheckTx, error)
+	BeginRecheckTxSync(ocabci.RequestBeginRecheckTx) (*ocabci.ResponseBeginRecheckTx, error)
+	EndRecheckTxSync(ocabci.RequestEndRecheckTx) (*ocabci.ResponseEndRecheckTx, error)
 	ListSnapshotsSync(types.RequestListSnapshots) (*types.ResponseListSnapshots, error)
 	OfferSnapshotSync(types.RequestOfferSnapshot) (*types.ResponseOfferSnapshot, error)
 	LoadSnapshotChunkSync(types.RequestLoadSnapshotChunk) (*types.ResponseLoadSnapshotChunk, error)
@@ -80,12 +82,12 @@ func NewClient(addr, transport string, mustConnect bool) (client Client, err err
 	return
 }
 
-type GlobalCallback func(*types.Request, *types.Response)
-type ResponseCallback func(*types.Response)
+type GlobalCallback func(*ocabci.Request, *ocabci.Response)
+type ResponseCallback func(*ocabci.Response)
 
 type ReqRes struct {
-	*types.Request
-	*types.Response // Not set atomically, so be sure to use WaitGroup.
+	*ocabci.Request
+	*ocabci.Response // Not set atomically, so be sure to use WaitGroup.
 
 	mtx  tmsync.Mutex
 	wg   *sync.WaitGroup
@@ -93,7 +95,7 @@ type ReqRes struct {
 	cb   ResponseCallback // A single callback that may be set.
 }
 
-func NewReqRes(req *types.Request, cb ResponseCallback) *ReqRes {
+func NewReqRes(req *ocabci.Request, cb ResponseCallback) *ReqRes {
 	return &ReqRes{
 		Request:  req,
 		Response: nil,
@@ -115,7 +117,7 @@ func (reqRes *ReqRes) InvokeCallback() {
 	}
 }
 
-func (reqRes *ReqRes) SetDone(res *types.Response) (set bool) {
+func (reqRes *ReqRes) SetDone(res *ocabci.Response) (set bool) {
 	reqRes.mtx.Lock()
 	// TODO should we panic if it's already done?
 	set = !reqRes.done

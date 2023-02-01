@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"time"
 
+	privvalproto "github.com/tendermint/tendermint/proto/tendermint/privval"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	"github.com/line/ostracon/crypto"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
-	privvalproto "github.com/line/ostracon/proto/ostracon/privval"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	ocprivvalproto "github.com/line/ostracon/proto/ostracon/privval"
 	"github.com/line/ostracon/types"
 )
 
@@ -118,7 +120,7 @@ func (sc *SignerClient) SignProposal(chainID string, proposal *tmproto.Proposal)
 
 // GenerateVRFProof requests a remote signer to generate a VRF proof
 func (sc *SignerClient) GenerateVRFProof(message []byte) (crypto.Proof, error) {
-	msg := &privvalproto.VRFProofRequest{Message: message}
+	msg := &ocprivvalproto.VRFProofRequest{Message: message}
 	response, err := sc.endpoint.SendRequest(mustWrapMsg(msg))
 	if err != nil {
 		sc.endpoint.Logger.Error("SignerClient::GenerateVRFProof", "err", err)
@@ -126,7 +128,7 @@ func (sc *SignerClient) GenerateVRFProof(message []byte) (crypto.Proof, error) {
 	}
 
 	switch r := response.Sum.(type) {
-	case *privvalproto.Message_VrfProofResponse:
+	case *ocprivvalproto.Message_VrfProofResponse:
 		if r.VrfProofResponse.Error != nil {
 			return nil, fmt.Errorf(r.VrfProofResponse.Error.Description)
 		}

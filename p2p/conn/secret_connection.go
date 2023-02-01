@@ -16,6 +16,7 @@ import (
 	gogotypes "github.com/gogo/protobuf/types"
 	"github.com/gtank/merlin"
 	pool "github.com/libp2p/go-buffer-pool"
+	tmp2p "github.com/tendermint/tendermint/proto/tendermint/p2p"
 	"golang.org/x/crypto/chacha20poly1305"
 	"golang.org/x/crypto/curve25519"
 	"golang.org/x/crypto/hkdf"
@@ -27,7 +28,6 @@ import (
 	"github.com/line/ostracon/libs/async"
 	"github.com/line/ostracon/libs/protoio"
 	tmsync "github.com/line/ostracon/libs/sync"
-	tmp2p "github.com/line/ostracon/proto/ostracon/p2p"
 )
 
 // 4 + 1024 == 1028 total frame size

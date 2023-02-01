@@ -5,10 +5,12 @@ import (
 	"reflect"
 	"time"
 
+	bcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
+
 	bc "github.com/line/ostracon/blockchain"
 	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/p2p"
-	bcproto "github.com/line/ostracon/proto/ostracon/blockchain"
+	ocbcproto "github.com/line/ostracon/proto/ostracon/blockchain"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/store"
 	"github.com/line/ostracon/types"
@@ -189,7 +191,7 @@ func (bcR *BlockchainReactor) respondToPeer(msg *bcproto.BlockRequest,
 			return false
 		}
 
-		msgBytes, err := bc.EncodeMsg(&bcproto.BlockResponse{Block: bl})
+		msgBytes, err := bc.EncodeMsg(&ocbcproto.BlockResponse{Block: bl})
 		if err != nil {
 			bcR.Logger.Error("could not marshal msg", "err", err)
 			return false
@@ -229,7 +231,7 @@ func (bcR *BlockchainReactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) 
 	switch msg := msg.(type) {
 	case *bcproto.BlockRequest:
 		bcR.respondToPeer(msg, src)
-	case *bcproto.BlockResponse:
+	case *ocbcproto.BlockResponse:
 		bi, err := types.BlockFromProto(msg.Block)
 		if err != nil {
 			bcR.Logger.Error("Block content is invalid", "err", err)

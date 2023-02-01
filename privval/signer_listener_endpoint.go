@@ -5,10 +5,12 @@ import (
 	"net"
 	"time"
 
+	privvalproto "github.com/tendermint/tendermint/proto/tendermint/privval"
+
 	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/libs/service"
 	tmsync "github.com/line/ostracon/libs/sync"
-	privvalproto "github.com/line/ostracon/proto/ostracon/privval"
+	ocprivvalproto "github.com/line/ostracon/proto/ostracon/privval"
 )
 
 // SignerListenerEndpointOption sets an optional parameter on the SignerListenerEndpoint.
@@ -104,7 +106,7 @@ func (sl *SignerListenerEndpoint) WaitForConnection(maxWait time.Duration) error
 }
 
 // SendRequest ensures there is a connection, sends a request and waits for a response
-func (sl *SignerListenerEndpoint) SendRequest(request privvalproto.Message) (*privvalproto.Message, error) {
+func (sl *SignerListenerEndpoint) SendRequest(request ocprivvalproto.Message) (*ocprivvalproto.Message, error) {
 	sl.instanceMtx.Lock()
 	defer sl.instanceMtx.Unlock()
 

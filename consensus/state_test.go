@@ -7,21 +7,22 @@ import (
 	"testing"
 	"time"
 
-	abci "github.com/line/ostracon/abci/types"
-	"github.com/line/ostracon/abci/types/mocks"
-	"github.com/stretchr/testify/mock"
+	abci "github.com/tendermint/tendermint/abci/types"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/line/ostracon/abci/example/counter"
+	ocabci "github.com/line/ostracon/abci/types"
+	"github.com/line/ostracon/abci/types/mocks"
 	cstypes "github.com/line/ostracon/consensus/types"
 	"github.com/line/ostracon/crypto/tmhash"
 	"github.com/line/ostracon/libs/log"
 	tmpubsub "github.com/line/ostracon/libs/pubsub"
 	tmrand "github.com/line/ostracon/libs/rand"
 	p2pmock "github.com/line/ostracon/p2p/mock"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/types"
 )
 
@@ -2099,8 +2100,8 @@ func TestPruneBlocks(t *testing.T) {
 	mockApp := &mocks.Application{}
 	mockApp.On("BeginBlock", mock.Anything).Return(abci.ResponseBeginBlock{})
 	mockApp.On("EndBlock", mock.Anything).Return(abci.ResponseEndBlock{})
-	mockApp.On("BeginRecheckTx", mock.Anything).Return(abci.ResponseBeginRecheckTx{Code: abci.CodeTypeOK})
-	mockApp.On("EndRecheckTx", mock.Anything).Return(abci.ResponseEndRecheckTx{Code: abci.CodeTypeOK})
+	mockApp.On("BeginRecheckTx", mock.Anything).Return(ocabci.ResponseBeginRecheckTx{Code: ocabci.CodeTypeOK})
+	mockApp.On("EndRecheckTx", mock.Anything).Return(ocabci.ResponseEndRecheckTx{Code: ocabci.CodeTypeOK})
 	// Mocking behaviour to response `RetainHeight` for pruneBlocks
 	mockApp.On("Commit", mock.Anything, mock.Anything).Return(abci.ResponseCommit{RetainHeight: 1})
 

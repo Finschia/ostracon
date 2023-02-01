@@ -8,16 +8,15 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/line/ostracon/crypto/tmhash"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/line/ostracon/crypto/ed25519"
-	"github.com/line/ostracon/privval"
-	"github.com/line/ostracon/state"
-
+	"github.com/line/ostracon/crypto/tmhash"
 	"github.com/line/ostracon/libs/log"
 	tmnet "github.com/line/ostracon/libs/net"
 	tmos "github.com/line/ostracon/libs/os"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	"github.com/line/ostracon/privval"
+	"github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"
 )
 

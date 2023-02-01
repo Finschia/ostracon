@@ -6,10 +6,11 @@ option go_package = "github.com/line/ostracon/proto/ostracon/types";
 import "gogoproto/gogo.proto";
 import "ostracon/types/types.proto";
 import "ostracon/types/evidence.proto";
+import "tendermint/types/types.proto";
 
 message Block {
   Header                      header      = 1 [(gogoproto.nullable) = false];
-  Data                        data        = 2 [(gogoproto.nullable) = false];
+  tendermint.types.Data       data        = 2 [(gogoproto.nullable) = false];
   ostracon.types.EvidenceList evidence    = 3 [(gogoproto.nullable) = false];
-  Commit                      last_commit = 4;
+  tendermint.types.Commit     last_commit = 4;
 }

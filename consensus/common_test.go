@@ -17,12 +17,14 @@ import (
 	"github.com/go-kit/log/term"
 	"github.com/stretchr/testify/require"
 
+	abci "github.com/tendermint/tendermint/abci/types"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
 	abcicli "github.com/line/ostracon/abci/client"
 	"github.com/line/ostracon/abci/example/counter"
 	"github.com/line/ostracon/abci/example/kvstore"
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	cfg "github.com/line/ostracon/config"
 	cstypes "github.com/line/ostracon/consensus/types"
 	tmbytes "github.com/line/ostracon/libs/bytes"
@@ -33,7 +35,6 @@ import (
 	mempl "github.com/line/ostracon/mempool"
 	"github.com/line/ostracon/p2p"
 	"github.com/line/ostracon/privval"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/store"
 	"github.com/line/ostracon/types"
@@ -381,7 +382,7 @@ func subscribeToVoter(cs *State, addr []byte) <-chan tmpubsub.Message {
 //-------------------------------------------------------------------------------
 // consensus states
 
-func newState(state sm.State, pv types.PrivValidator, app abci.Application) *State {
+func newState(state sm.State, pv types.PrivValidator, app ocabci.Application) *State {
 	config := cfg.ResetTestRoot("consensus_state_test")
 	return newStateWithConfig(config, state, pv, app)
 }
@@ -390,7 +391,7 @@ func newStateWithConfig(
 	thisConfig *cfg.Config,
 	state sm.State,
 	pv types.PrivValidator,
-	app abci.Application,
+	app ocabci.Application,
 ) *State {
 	blockDB := dbm.NewMemDB()
 	return newStateWithConfigAndBlockStore(thisConfig, state, pv, app, blockDB)
@@ -400,7 +401,7 @@ func newStateWithConfigAndBlockStore(
 	thisConfig *cfg.Config,
 	state sm.State,
 	pv types.PrivValidator,
-	app abci.Application,
+	app ocabci.Application,
 	blockDB dbm.DB,
 ) *State {
 	return newStateWithConfigAndBlockStoreWithLoggers(thisConfig, state, pv, app, blockDB, DefaultTestLoggers())
@@ -410,7 +411,7 @@ func newStateWithConfigAndBlockStoreWithLoggers(
 	thisConfig *cfg.Config,
 	state sm.State,
 	pv types.PrivValidator,
-	app abci.Application,
+	app ocabci.Application,
 	blockDB dbm.DB,
 	loggers TestLoggers,
 ) *State {
@@ -466,7 +467,7 @@ func randState(nValidators int) (*State, []*validatorStub) {
 	return randStateWithApp(nValidators, counter.NewApplication(true))
 }
 
-func randStateWithApp(nValidators int, app abci.Application) (*State, []*validatorStub) {
+func randStateWithApp(nValidators int, app ocabci.Application) (*State, []*validatorStub) {
 	// Get State
 	state, privVals := randGenesisState(nValidators, false, 10)
 	state.LastProofHash = []byte{2}
@@ -791,7 +792,7 @@ func consensusLogger() log.Logger {
 }
 
 func randConsensusNet(nValidators int, testName string, tickerFunc func() TimeoutTicker,
-	appFunc func() abci.Application, configOpts ...func(*cfg.Config)) ([]*State, cleanupFunc) {
+	appFunc func() ocabci.Application, configOpts ...func(*cfg.Config)) ([]*State, cleanupFunc) {
 	genDoc, privVals := randGenesisDoc(nValidators, false, 30)
 	css := make([]*State, nValidators)
 	logger := consensusLogger()
@@ -832,7 +833,7 @@ func randConsensusNetWithPeers(
 	nPeers int,
 	testName string,
 	tickerFunc func() TimeoutTicker,
-	appFunc func(string) abci.Application,
+	appFunc func(string) ocabci.Application,
 ) ([]*State, *types.GenesisDoc, *cfg.Config, cleanupFunc) {
 	genDoc, privVals := randGenesisDoc(nValidators, false, testMinPower)
 	css, peer0Config, configRootDirs := createPeersAndValidators(nValidators, nPeers, testName,
@@ -847,7 +848,7 @@ func randConsensusNetWithPeers(
 
 func createPeersAndValidators(nValidators, nPeers int, testName string,
 	genDoc *types.GenesisDoc, privVals []types.PrivValidator, tickerFunc func() TimeoutTicker,
-	appFunc func(string) abci.Application) ([]*State, *cfg.Config, []string) {
+	appFunc func(string) ocabci.Application) ([]*State, *cfg.Config, []string) {
 	css := make([]*State, nPeers)
 	logger := consensusLogger()
 	var peer0Config *cfg.Config
@@ -904,7 +905,7 @@ func getSwitchIndex(switches []*p2p.Switch, peer p2p.Peer) int {
 	panic("didnt find peer in switches")
 }
 
-//-------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------
 // genesis
 func randGenesisDoc(numValidators int, randPower bool, minPower int64) (*types.GenesisDoc, []types.PrivValidator) {
 	validators := make([]types.GenesisValidator, numValidators)
@@ -983,11 +984,11 @@ func (*mockTicker) SetLogger(log.Logger) {}
 
 //------------------------------------
 
-func newCounter() abci.Application {
+func newCounter() ocabci.Application {
 	return counter.NewApplication(true)
 }
 
-func newPersistentKVStore() abci.Application {
+func newPersistentKVStore() ocabci.Application {
 	dir, err := ioutil.TempDir("", "persistent-kvstore")
 	if err != nil {
 		panic(err)
@@ -995,7 +996,7 @@ func newPersistentKVStore() abci.Application {
 	return kvstore.NewPersistentKVStoreApplication(dir)
 }
 
-func newPersistentKVStoreWithPath(dbDir string) abci.Application {
+func newPersistentKVStoreWithPath(dbDir string) ocabci.Application {
 	return kvstore.NewPersistentKVStoreApplication(dbDir)
 }
 

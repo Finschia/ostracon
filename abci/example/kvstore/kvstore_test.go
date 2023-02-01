@@ -7,17 +7,17 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
 	"github.com/stretchr/testify/require"
 
-	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/libs/service"
+	"github.com/tendermint/tendermint/abci/types"
 
 	abcicli "github.com/line/ostracon/abci/client"
 	"github.com/line/ostracon/abci/example/code"
 	abciserver "github.com/line/ostracon/abci/server"
-	"github.com/line/ostracon/abci/types"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	ocabci "github.com/line/ostracon/abci/types"
+	"github.com/line/ostracon/libs/log"
+	"github.com/line/ostracon/libs/service"
+	ocproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 const (
@@ -25,7 +25,7 @@ const (
 	testValue = "def"
 )
 
-func testKVStore(t *testing.T, app types.Application, tx []byte, key, value string) {
+func testKVStore(t *testing.T, app ocabci.Application, tx []byte, key, value string) {
 	req := types.RequestDeliverTx{Tx: tx}
 	ar := app.DeliverTx(req)
 	require.False(t, ar.IsErr(), ar)
@@ -105,10 +105,10 @@ func TestPersistentKVStoreInfo(t *testing.T) {
 	// make and apply block
 	height = int64(1)
 	hash := []byte("foo")
-	header := tmproto.Header{
+	header := ocproto.Header{
 		Height: height,
 	}
-	kvstore.BeginBlock(types.RequestBeginBlock{Hash: hash, Header: header})
+	kvstore.BeginBlock(ocabci.RequestBeginBlock{Hash: hash, Header: header})
 	kvstore.EndBlock(types.RequestEndBlock{Height: header.Height})
 	kvstore.Commit()
 
@@ -191,18 +191,18 @@ func TestValUpdates(t *testing.T) {
 
 func makeApplyBlock(
 	t *testing.T,
-	kvstore types.Application,
+	kvstore ocabci.Application,
 	heightInt int,
 	diff []types.ValidatorUpdate,
 	txs ...[]byte) {
 	// make and apply block
 	height := int64(heightInt)
 	hash := []byte("foo")
-	header := tmproto.Header{
+	header := ocproto.Header{
 		Height: height,
 	}
 
-	kvstore.BeginBlock(types.RequestBeginBlock{Hash: hash, Header: header})
+	kvstore.BeginBlock(ocabci.RequestBeginBlock{Hash: hash, Header: header})
 	for _, tx := range txs {
 		if r := kvstore.DeliverTx(types.RequestDeliverTx{Tx: tx}); r.IsErr() {
 			t.Fatal(r)
@@ -215,7 +215,7 @@ func makeApplyBlock(
 
 }
 
-func existInPersistStore(t *testing.T, kvstore types.Application, v types.ValidatorUpdate) {
+func existInPersistStore(t *testing.T, kvstore ocabci.Application, v types.ValidatorUpdate) {
 	// success
 	pubkeyStr, _ := MakeValSetChangeTxAndMore(v.PubKey, v.Power)
 	resQuery := kvstore.Query(types.RequestQuery{Path: "/val", Data: []byte(pubkeyStr)})
@@ -241,8 +241,8 @@ func valsEqual(t *testing.T, vals1, vals2 []types.ValidatorUpdate) {
 	if len(vals1) != len(vals2) {
 		t.Fatalf("vals dont match in len. got %d, expected %d", len(vals2), len(vals1))
 	}
-	sort.Sort(types.ValidatorUpdates(vals1))
-	sort.Sort(types.ValidatorUpdates(vals2))
+	sort.Sort(ocabci.ValidatorUpdates(vals1))
+	sort.Sort(ocabci.ValidatorUpdates(vals2))
 	for i, v1 := range vals1 {
 		v2 := vals2[i]
 		if !v1.PubKey.Equal(v2.PubKey) ||
@@ -252,7 +252,7 @@ func valsEqual(t *testing.T, vals1, vals2 []types.ValidatorUpdate) {
 	}
 }
 
-func makeSocketClientServer(app types.Application, name string) (abcicli.Client, service.Service, error) {
+func makeSocketClientServer(app ocabci.Application, name string) (abcicli.Client, service.Service, error) {
 	// Start the listener
 	socket := fmt.Sprintf("unix://%s.sock", name)
 	logger := log.TestingLogger()
@@ -276,12 +276,12 @@ func makeSocketClientServer(app types.Application, name string) (abcicli.Client,
 	return client, server, nil
 }
 
-func makeGRPCClientServer(app types.Application, name string) (abcicli.Client, service.Service, error) {
+func makeGRPCClientServer(app ocabci.Application, name string) (abcicli.Client, service.Service, error) {
 	// Start the listener
 	socket := fmt.Sprintf("unix://%s.sock", name)
 	logger := log.TestingLogger()
 
-	gapp := types.NewGRPCApplication(app)
+	gapp := ocabci.NewGRPCApplication(app)
 	server := abciserver.NewGRPCServer(socket, gapp)
 	server.SetLogger(logger.With("module", "abci-server"))
 	if err := server.Start(); err != nil {

@@ -10,9 +10,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	abci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tm-db"
 
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	cfg "github.com/line/ostracon/config"
 	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/mempool/mock"
@@ -312,16 +313,16 @@ func makeBlock(privVal types.PrivValidator, height int64, state sm.State, lastCo
 }
 
 type testApp struct {
-	abci.BaseApplication
+	ocabci.BaseApplication
 }
 
-var _ abci.Application = (*testApp)(nil)
+var _ ocabci.Application = (*testApp)(nil)
 
 func (app *testApp) Info(req abci.RequestInfo) (resInfo abci.ResponseInfo) {
 	return abci.ResponseInfo{}
 }
 
-func (app *testApp) BeginBlock(req abci.RequestBeginBlock) abci.ResponseBeginBlock {
+func (app *testApp) BeginBlock(req ocabci.RequestBeginBlock) abci.ResponseBeginBlock {
 	return abci.ResponseBeginBlock{}
 }
 
@@ -333,12 +334,12 @@ func (app *testApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 	return abci.ResponseDeliverTx{Events: []abci.Event{}}
 }
 
-func (app *testApp) CheckTxSync(req abci.RequestCheckTx) abci.ResponseCheckTx {
-	return abci.ResponseCheckTx{}
+func (app *testApp) CheckTxSync(req abci.RequestCheckTx) ocabci.ResponseCheckTx {
+	return ocabci.ResponseCheckTx{}
 }
 
-func (app *testApp) CheckTxAsync(req abci.RequestCheckTx, callback abci.CheckTxCallback) {
-	callback(abci.ResponseCheckTx{})
+func (app *testApp) CheckTxAsync(req abci.RequestCheckTx, callback ocabci.CheckTxCallback) {
+	callback(ocabci.ResponseCheckTx{})
 }
 
 func (app *testApp) Commit() abci.ResponseCommit {

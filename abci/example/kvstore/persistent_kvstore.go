@@ -7,13 +7,14 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/tendermint/tendermint/abci/types"
+	pc "github.com/tendermint/tendermint/proto/tendermint/crypto"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/line/ostracon/abci/example/code"
-	"github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
 	"github.com/line/ostracon/libs/log"
-	pc "github.com/line/ostracon/proto/ostracon/crypto"
 )
 
 const (
@@ -22,7 +23,7 @@ const (
 
 //-----------------------------------------
 
-var _ types.Application = (*PersistentKVStoreApplication)(nil)
+var _ ocabci.Application = (*PersistentKVStoreApplication)(nil)
 
 type PersistentKVStoreApplication struct {
 	app *Application
@@ -80,19 +81,19 @@ func (app *PersistentKVStoreApplication) DeliverTx(req types.RequestDeliverTx) t
 	return app.app.DeliverTx(req)
 }
 
-func (app *PersistentKVStoreApplication) CheckTxSync(req types.RequestCheckTx) types.ResponseCheckTx {
+func (app *PersistentKVStoreApplication) CheckTxSync(req types.RequestCheckTx) ocabci.ResponseCheckTx {
 	return app.app.CheckTxSync(req)
 }
 
-func (app *PersistentKVStoreApplication) CheckTxAsync(req types.RequestCheckTx, callback types.CheckTxCallback) {
+func (app *PersistentKVStoreApplication) CheckTxAsync(req types.RequestCheckTx, callback ocabci.CheckTxCallback) {
 	app.app.CheckTxAsync(req, callback)
 }
 
-func (app *PersistentKVStoreApplication) BeginRecheckTx(req types.RequestBeginRecheckTx) types.ResponseBeginRecheckTx {
+func (app *PersistentKVStoreApplication) BeginRecheckTx(req ocabci.RequestBeginRecheckTx) ocabci.ResponseBeginRecheckTx {
 	return app.app.BeginRecheckTx(req)
 }
 
-func (app *PersistentKVStoreApplication) EndRecheckTx(req types.RequestEndRecheckTx) types.ResponseEndRecheckTx {
+func (app *PersistentKVStoreApplication) EndRecheckTx(req ocabci.RequestEndRecheckTx) ocabci.ResponseEndRecheckTx {
 	return app.app.EndRecheckTx(req)
 }
 
@@ -132,7 +133,7 @@ func (app *PersistentKVStoreApplication) InitChain(req types.RequestInitChain) t
 }
 
 // Track the block hash and header information
-func (app *PersistentKVStoreApplication) BeginBlock(req types.RequestBeginBlock) types.ResponseBeginBlock {
+func (app *PersistentKVStoreApplication) BeginBlock(req ocabci.RequestBeginBlock) types.ResponseBeginBlock {
 	// reset valset changes
 	app.ValUpdates = make([]types.ValidatorUpdate, 0)
 
@@ -193,7 +194,7 @@ func (app *PersistentKVStoreApplication) Validators() (validators []types.Valida
 	for ; itr.Valid(); itr.Next() {
 		if isValidatorTx(itr.Key()) {
 			validator := new(types.ValidatorUpdate)
-			err := types.ReadMessage(bytes.NewBuffer(itr.Value()), validator)
+			err := ocabci.ReadMessage(bytes.NewBuffer(itr.Value()), validator)
 			if err != nil {
 				panic(err)
 			}
@@ -269,7 +270,7 @@ func (app *PersistentKVStoreApplication) execValidatorTx(tx []byte) types.Respon
 	}
 
 	// update
-	return app.updateValidator(types.NewValidatorUpdate(pubkey, power))
+	return app.updateValidator(ocabci.NewValidatorUpdate(pubkey, power))
 }
 
 // add, update, or remove a validator

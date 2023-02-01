@@ -10,11 +10,12 @@ import (
 	"sort"
 	"strings"
 
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	"github.com/line/ostracon/crypto/merkle"
 	"github.com/line/ostracon/crypto/tmhash"
 	tmmath "github.com/line/ostracon/libs/math"
 	tmrand "github.com/line/ostracon/libs/rand"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 const (

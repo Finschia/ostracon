@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/BurntSushi/toml v1.2.1
 	github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d
-	github.com/Workiva/go-datastructures v1.0.52
+	github.com/Workiva/go-datastructures v1.0.53
 	github.com/adlio/schema v1.3.3
 	github.com/btcsuite/btcd v0.22.1
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
@@ -19,7 +19,6 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/google/orderedcode v0.0.1
 	github.com/gorilla/websocket v1.5.0
-	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
 	github.com/gtank/merlin v0.1.1
 	github.com/hdevalence/ed25519consensus v0.0.0-20200813231810-1694d75e712a
 	github.com/lib/pq v1.10.7
@@ -38,6 +37,7 @@ require (
 	github.com/spf13/viper v1.15.0
 	github.com/stretchr/testify v1.8.1
 	github.com/tendermint/go-amino v0.16.0
+	github.com/tendermint/tendermint v0.34.19
 	github.com/tendermint/tm-db v0.6.7
 	github.com/yahoo/coname v0.0.0-20170609175141-84592ddf8673 // indirect
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e
@@ -45,7 +45,6 @@ require (
 	gonum.org/v1/gonum v0.12.0
 	google.golang.org/grpc v1.52.3
 	gopkg.in/yaml.v3 v3.0.1
-	gotest.tools v2.2.0+incompatible // indirect
 )
 
 require (
@@ -72,7 +71,7 @@ require (
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
-	github.com/golang/snappy v0.0.1 // indirect
+	github.com/golang/snappy v0.0.3 // indirect
 	github.com/google/btree v1.0.0 // indirect
 	github.com/gtank/ristretto255 v0.1.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect

@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/line/ostracon/abci/types"
+	"github.com/tendermint/tendermint/abci/types"
+
 	"github.com/line/ostracon/libs/log"
 	tmpubsub "github.com/line/ostracon/libs/pubsub"
 	"github.com/line/ostracon/libs/service"
@@ -227,7 +228,7 @@ func (b *EventBus) PublishEventValidatorSetUpdates(data EventDataValidatorSetUpd
 	return b.Publish(EventValidatorSetUpdates, data)
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 type NopEventBus struct{}
 
 func (NopEventBus) Subscribe(

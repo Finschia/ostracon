@@ -11,9 +11,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	abci "github.com/tendermint/tendermint/abci/types"
 	db "github.com/tendermint/tm-db"
 
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/pubsub/query"
 	tmrand "github.com/line/ostracon/libs/rand"
 	"github.com/line/ostracon/state/txindex"
@@ -30,7 +31,7 @@ func TestTxIndex(t *testing.T) {
 		Tx:     tx,
 		Result: abci.ResponseDeliverTx{
 			Data: []byte{0},
-			Code: abci.CodeTypeOK, Log: "", Events: nil,
+			Code: ocabci.CodeTypeOK, Log: "", Events: nil,
 		},
 	}
 	hash := tx.Hash()
@@ -53,7 +54,7 @@ func TestTxIndex(t *testing.T) {
 		Tx:     tx2,
 		Result: abci.ResponseDeliverTx{
 			Data: []byte{0},
-			Code: abci.CodeTypeOK, Log: "", Events: nil,
+			Code: ocabci.CodeTypeOK, Log: "", Events: nil,
 		},
 	}
 	hash2 := tx2.Hash()
@@ -321,7 +322,7 @@ func txResultWithEvents(events []abci.Event) *abci.TxResult {
 		Tx:     tx,
 		Result: abci.ResponseDeliverTx{
 			Data:   []byte{0},
-			Code:   abci.CodeTypeOK,
+			Code:   ocabci.CodeTypeOK,
 			Log:    "",
 			Events: events,
 		},
@@ -347,7 +348,7 @@ func benchmarkTxIndex(txsCount int64, b *testing.B) {
 			Tx:     tx,
 			Result: abci.ResponseDeliverTx{
 				Data:   []byte{0},
-				Code:   abci.CodeTypeOK,
+				Code:   ocabci.CodeTypeOK,
 				Log:    "",
 				Events: []abci.Event{},
 			},

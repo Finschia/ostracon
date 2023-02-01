@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"time"
 
-	abci "github.com/line/ostracon/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/libs/bytes"
 	"github.com/line/ostracon/p2p"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/types"
 )
 
@@ -179,15 +181,15 @@ type ResultBroadcastTx struct {
 
 // CheckTx and DeliverTx results
 type ResultBroadcastTxCommit struct {
-	CheckTx   abci.ResponseCheckTx   `json:"check_tx"`
+	CheckTx   ocabci.ResponseCheckTx `json:"check_tx"`
 	DeliverTx abci.ResponseDeliverTx `json:"deliver_tx"`
 	Hash      bytes.HexBytes         `json:"hash"`
 	Height    int64                  `json:"height"`
 }
 
-// ResultCheckTx wraps abci.ResponseCheckTx.
+// ResultCheckTx wraps ocabci.ResponseCheckTx.
 type ResultCheckTx struct {
-	abci.ResponseCheckTx
+	ocabci.ResponseCheckTx
 }
 
 // Result of querying for a tx

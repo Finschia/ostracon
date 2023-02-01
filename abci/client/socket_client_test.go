@@ -8,9 +8,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/tendermint/tendermint/abci/types"
+
 	abcicli "github.com/line/ostracon/abci/client"
 	"github.com/line/ostracon/abci/server"
-	"github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	tmrand "github.com/line/ostracon/libs/rand"
 	"github.com/line/ostracon/libs/service"
 )
@@ -33,7 +35,7 @@ func TestProperSyncCalls(t *testing.T) {
 	resp := make(chan error, 1)
 	go func() {
 		// This is BeginBlockSync unrolled....
-		reqres := c.BeginBlockAsync(types.RequestBeginBlock{}, nil)
+		reqres := c.BeginBlockAsync(ocabci.RequestBeginBlock{}, nil)
 		_, err := c.FlushSync()
 		require.NoError(t, err)
 		res := reqres.Response.GetBeginBlock()
@@ -68,7 +70,7 @@ func TestHangingSyncCalls(t *testing.T) {
 	resp := make(chan error, 1)
 	go func() {
 		// Start BeginBlock and flush it
-		reqres := c.BeginBlockAsync(types.RequestBeginBlock{}, nil)
+		reqres := c.BeginBlockAsync(ocabci.RequestBeginBlock{}, nil)
 		flush := c.FlushAsync(nil)
 		// wait 20 ms for all events to travel socket, but
 		// no response yet from server
@@ -92,7 +94,7 @@ func TestHangingSyncCalls(t *testing.T) {
 	}
 }
 
-func setupClientServer(t *testing.T, app types.Application) (
+func setupClientServer(t *testing.T, app ocabci.Application) (
 	service.Service, abcicli.Client) {
 	// some port between 20k and 30k
 	port := 20000 + tmrand.Int32()%10000
@@ -111,10 +113,10 @@ func setupClientServer(t *testing.T, app types.Application) (
 }
 
 type slowApp struct {
-	types.BaseApplication
+	ocabci.BaseApplication
 }
 
-func (slowApp) BeginBlock(req types.RequestBeginBlock) types.ResponseBeginBlock {
+func (slowApp) BeginBlock(req ocabci.RequestBeginBlock) types.ResponseBeginBlock {
 	time.Sleep(200 * time.Millisecond)
 	return types.ResponseBeginBlock{}
 }
@@ -134,7 +136,7 @@ func TestSockerClientCalls(t *testing.T) {
 		}
 	})
 
-	c.SetGlobalCallback(func(*types.Request, *types.Response) {
+	c.SetGlobalCallback(func(*ocabci.Request, *ocabci.Response) {
 	})
 
 	c.EchoAsync("msg", getResponseCallback(t))
@@ -146,10 +148,10 @@ func TestSockerClientCalls(t *testing.T) {
 	c.QueryAsync(types.RequestQuery{}, getResponseCallback(t))
 	c.CommitAsync(getResponseCallback(t))
 	c.InitChainAsync(types.RequestInitChain{}, getResponseCallback(t))
-	c.BeginBlockAsync(types.RequestBeginBlock{}, getResponseCallback(t))
+	c.BeginBlockAsync(ocabci.RequestBeginBlock{}, getResponseCallback(t))
 	c.EndBlockAsync(types.RequestEndBlock{}, getResponseCallback(t))
-	c.BeginRecheckTxAsync(types.RequestBeginRecheckTx{}, getResponseCallback(t))
-	c.EndRecheckTxAsync(types.RequestEndRecheckTx{}, getResponseCallback(t))
+	c.BeginRecheckTxAsync(ocabci.RequestBeginRecheckTx{}, getResponseCallback(t))
+	c.EndRecheckTxAsync(ocabci.RequestEndRecheckTx{}, getResponseCallback(t))
 	c.ListSnapshotsAsync(types.RequestListSnapshots{}, getResponseCallback(t))
 	c.OfferSnapshotAsync(types.RequestOfferSnapshot{}, getResponseCallback(t))
 	c.LoadSnapshotChunkAsync(types.RequestLoadSnapshotChunk{}, getResponseCallback(t))
@@ -182,16 +184,16 @@ func TestSockerClientCalls(t *testing.T) {
 	_, err = c.InitChainSync(types.RequestInitChain{})
 	require.NoError(t, err)
 
-	_, err = c.BeginBlockSync(types.RequestBeginBlock{})
+	_, err = c.BeginBlockSync(ocabci.RequestBeginBlock{})
 	require.NoError(t, err)
 
 	_, err = c.EndBlockSync(types.RequestEndBlock{})
 	require.NoError(t, err)
 
-	_, err = c.BeginRecheckTxSync(types.RequestBeginRecheckTx{})
+	_, err = c.BeginRecheckTxSync(ocabci.RequestBeginRecheckTx{})
 	require.NoError(t, err)
 
-	_, err = c.EndRecheckTxSync(types.RequestEndRecheckTx{})
+	_, err = c.EndRecheckTxSync(ocabci.RequestEndRecheckTx{})
 	require.NoError(t, err)
 
 	_, err = c.ListSnapshotsSync(types.RequestListSnapshots{})
@@ -208,7 +210,7 @@ func TestSockerClientCalls(t *testing.T) {
 }
 
 type sampleApp struct {
-	types.BaseApplication
+	ocabci.BaseApplication
 }
 
 func newDoneChan(t *testing.T) chan struct{} {
@@ -226,7 +228,7 @@ func newDoneChan(t *testing.T) chan struct{} {
 
 func getResponseCallback(t *testing.T) abcicli.ResponseCallback {
 	doneChan := newDoneChan(t)
-	return func(res *types.Response) {
+	return func(res *ocabci.Response) {
 		require.NotNil(t, res)
 		doneChan <- struct{}{}
 	}

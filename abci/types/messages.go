@@ -6,6 +6,8 @@ import (
 	"io"
 
 	"github.com/gogo/protobuf/proto"
+
+	"github.com/tendermint/tendermint/abci/types"
 )
 
 const (
@@ -71,35 +73,35 @@ func encodeVarint(w io.Writer, i int64) (err error) {
 
 func ToRequestEcho(message string) *Request {
 	return &Request{
-		Value: &Request_Echo{&RequestEcho{Message: message}},
+		Value: &Request_Echo{&types.RequestEcho{Message: message}},
 	}
 }
 
 func ToRequestFlush() *Request {
 	return &Request{
-		Value: &Request_Flush{&RequestFlush{}},
+		Value: &Request_Flush{&types.RequestFlush{}},
 	}
 }
 
-func ToRequestInfo(req RequestInfo) *Request {
+func ToRequestInfo(req types.RequestInfo) *Request {
 	return &Request{
 		Value: &Request_Info{&req},
 	}
 }
 
-func ToRequestSetOption(req RequestSetOption) *Request {
+func ToRequestSetOption(req types.RequestSetOption) *Request {
 	return &Request{
 		Value: &Request_SetOption{&req},
 	}
 }
 
-func ToRequestDeliverTx(req RequestDeliverTx) *Request {
+func ToRequestDeliverTx(req types.RequestDeliverTx) *Request {
 	return &Request{
 		Value: &Request_DeliverTx{&req},
 	}
 }
 
-func ToRequestCheckTx(req RequestCheckTx) *Request {
+func ToRequestCheckTx(req types.RequestCheckTx) *Request {
 	return &Request{
 		Value: &Request_CheckTx{&req},
 	}
@@ -107,17 +109,17 @@ func ToRequestCheckTx(req RequestCheckTx) *Request {
 
 func ToRequestCommit() *Request {
 	return &Request{
-		Value: &Request_Commit{&RequestCommit{}},
+		Value: &Request_Commit{&types.RequestCommit{}},
 	}
 }
 
-func ToRequestQuery(req RequestQuery) *Request {
+func ToRequestQuery(req types.RequestQuery) *Request {
 	return &Request{
 		Value: &Request_Query{&req},
 	}
 }
 
-func ToRequestInitChain(req RequestInitChain) *Request {
+func ToRequestInitChain(req types.RequestInitChain) *Request {
 	return &Request{
 		Value: &Request_InitChain{&req},
 	}
@@ -129,7 +131,7 @@ func ToRequestBeginBlock(req RequestBeginBlock) *Request {
 	}
 }
 
-func ToRequestEndBlock(req RequestEndBlock) *Request {
+func ToRequestEndBlock(req types.RequestEndBlock) *Request {
 	return &Request{
 		Value: &Request_EndBlock{&req},
 	}
@@ -147,25 +149,25 @@ func ToRequestEndRecheckTx(req RequestEndRecheckTx) *Request {
 	}
 }
 
-func ToRequestListSnapshots(req RequestListSnapshots) *Request {
+func ToRequestListSnapshots(req types.RequestListSnapshots) *Request {
 	return &Request{
 		Value: &Request_ListSnapshots{&req},
 	}
 }
 
-func ToRequestOfferSnapshot(req RequestOfferSnapshot) *Request {
+func ToRequestOfferSnapshot(req types.RequestOfferSnapshot) *Request {
 	return &Request{
 		Value: &Request_OfferSnapshot{&req},
 	}
 }
 
-func ToRequestLoadSnapshotChunk(req RequestLoadSnapshotChunk) *Request {
+func ToRequestLoadSnapshotChunk(req types.RequestLoadSnapshotChunk) *Request {
 	return &Request{
 		Value: &Request_LoadSnapshotChunk{&req},
 	}
 }
 
-func ToRequestApplySnapshotChunk(req RequestApplySnapshotChunk) *Request {
+func ToRequestApplySnapshotChunk(req types.RequestApplySnapshotChunk) *Request {
 	return &Request{
 		Value: &Request_ApplySnapshotChunk{&req},
 	}
@@ -175,35 +177,35 @@ func ToRequestApplySnapshotChunk(req RequestApplySnapshotChunk) *Request {
 
 func ToResponseException(errStr string) *Response {
 	return &Response{
-		Value: &Response_Exception{&ResponseException{Error: errStr}},
+		Value: &Response_Exception{&types.ResponseException{Error: errStr}},
 	}
 }
 
 func ToResponseEcho(message string) *Response {
 	return &Response{
-		Value: &Response_Echo{&ResponseEcho{Message: message}},
+		Value: &Response_Echo{&types.ResponseEcho{Message: message}},
 	}
 }
 
 func ToResponseFlush() *Response {
 	return &Response{
-		Value: &Response_Flush{&ResponseFlush{}},
+		Value: &Response_Flush{&types.ResponseFlush{}},
 	}
 }
 
-func ToResponseInfo(res ResponseInfo) *Response {
+func ToResponseInfo(res types.ResponseInfo) *Response {
 	return &Response{
 		Value: &Response_Info{&res},
 	}
 }
 
-func ToResponseSetOption(res ResponseSetOption) *Response {
+func ToResponseSetOption(res types.ResponseSetOption) *Response {
 	return &Response{
 		Value: &Response_SetOption{&res},
 	}
 }
 
-func ToResponseDeliverTx(res ResponseDeliverTx) *Response {
+func ToResponseDeliverTx(res types.ResponseDeliverTx) *Response {
 	return &Response{
 		Value: &Response_DeliverTx{&res},
 	}
@@ -215,31 +217,31 @@ func ToResponseCheckTx(res ResponseCheckTx) *Response {
 	}
 }
 
-func ToResponseCommit(res ResponseCommit) *Response {
+func ToResponseCommit(res types.ResponseCommit) *Response {
 	return &Response{
 		Value: &Response_Commit{&res},
 	}
 }
 
-func ToResponseQuery(res ResponseQuery) *Response {
+func ToResponseQuery(res types.ResponseQuery) *Response {
 	return &Response{
 		Value: &Response_Query{&res},
 	}
 }
 
-func ToResponseInitChain(res ResponseInitChain) *Response {
+func ToResponseInitChain(res types.ResponseInitChain) *Response {
 	return &Response{
 		Value: &Response_InitChain{&res},
 	}
 }
 
-func ToResponseBeginBlock(res ResponseBeginBlock) *Response {
+func ToResponseBeginBlock(res types.ResponseBeginBlock) *Response {
 	return &Response{
 		Value: &Response_BeginBlock{&res},
 	}
 }
 
-func ToResponseEndBlock(res ResponseEndBlock) *Response {
+func ToResponseEndBlock(res types.ResponseEndBlock) *Response {
 	return &Response{
 		Value: &Response_EndBlock{&res},
 	}
@@ -257,25 +259,25 @@ func ToResponseEndRecheckTx(res ResponseEndRecheckTx) *Response {
 	}
 }
 
-func ToResponseListSnapshots(res ResponseListSnapshots) *Response {
+func ToResponseListSnapshots(res types.ResponseListSnapshots) *Response {
 	return &Response{
 		Value: &Response_ListSnapshots{&res},
 	}
 }
 
-func ToResponseOfferSnapshot(res ResponseOfferSnapshot) *Response {
+func ToResponseOfferSnapshot(res types.ResponseOfferSnapshot) *Response {
 	return &Response{
 		Value: &Response_OfferSnapshot{&res},
 	}
 }
 
-func ToResponseLoadSnapshotChunk(res ResponseLoadSnapshotChunk) *Response {
+func ToResponseLoadSnapshotChunk(res types.ResponseLoadSnapshotChunk) *Response {
 	return &Response{
 		Value: &Response_LoadSnapshotChunk{&res},
 	}
 }
 
-func ToResponseApplySnapshotChunk(res ResponseApplySnapshotChunk) *Response {
+func ToResponseApplySnapshotChunk(res types.ResponseApplySnapshotChunk) *Response {
 	return &Response{
 		Value: &Response_ApplySnapshotChunk{&res},
 	}

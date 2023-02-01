@@ -14,6 +14,8 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 
+	tmp2p "github.com/tendermint/tendermint/proto/tendermint/p2p"
+
 	flow "github.com/line/ostracon/libs/flowrate"
 	"github.com/line/ostracon/libs/log"
 	tmmath "github.com/line/ostracon/libs/math"
@@ -21,7 +23,6 @@ import (
 	"github.com/line/ostracon/libs/service"
 	tmsync "github.com/line/ostracon/libs/sync"
 	"github.com/line/ostracon/libs/timer"
-	tmp2p "github.com/line/ostracon/proto/ostracon/p2p"
 )
 
 const (
@@ -63,6 +64,7 @@ The byte id and the relative priorities of each `Channel` are configured upon
 initialization of the connection.
 
 There are two methods for sending messages:
+
 	func (m MConnection) Send(chID byte, msgBytes []byte) bool {}
 	func (m MConnection) TrySend(chID byte, msgBytes []byte}) bool {}
 

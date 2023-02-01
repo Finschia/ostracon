@@ -7,10 +7,12 @@ import (
 	"os"
 	"time"
 
+	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
+
 	"github.com/line/ostracon/crypto"
-	tmstate "github.com/line/ostracon/proto/ostracon/state"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
-	tmversion "github.com/line/ostracon/proto/ostracon/version"
+	ocstate "github.com/line/ostracon/proto/ostracon/state"
 	"github.com/line/ostracon/types"
 	tmtime "github.com/line/ostracon/types/time"
 	"github.com/line/ostracon/version"
@@ -140,12 +142,12 @@ func (state State) IsEmpty() bool {
 }
 
 // ToProto takes the local state type and returns the equivalent proto type
-func (state *State) ToProto() (*tmstate.State, error) {
+func (state *State) ToProto() (*ocstate.State, error) {
 	if state == nil {
 		return nil, errors.New("state is nil")
 	}
 
-	sm := new(tmstate.State)
+	sm := new(ocstate.State)
 
 	sm.Version = state.Version
 	sm.ChainID = state.ChainID
@@ -186,7 +188,7 @@ func (state *State) ToProto() (*tmstate.State, error) {
 }
 
 // FromProto takes a state proto message & returns the local state type
-func FromProto(pb *tmstate.State) (*State, error) { //nolint:golint
+func FromProto(pb *ocstate.State) (*State, error) { //nolint:golint
 	if pb == nil {
 		return nil, errors.New("nil State")
 	}

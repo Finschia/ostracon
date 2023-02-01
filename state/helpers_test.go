@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"time"
 
+	abci "github.com/tendermint/tendermint/abci/types"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/ed25519"
 	tmrand "github.com/line/ostracon/libs/rand"
 	tmstate "github.com/line/ostracon/proto/ostracon/state"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	"github.com/line/ostracon/proxy"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"
@@ -249,21 +250,21 @@ func randomGenesisDoc() *types.GenesisDoc {
 //----------------------------------------------------------------------------
 
 type testApp struct {
-	abci.BaseApplication
+	ocabci.BaseApplication
 
 	CommitVotes         []abci.VoteInfo
 	ByzantineValidators []abci.Evidence
 	ValidatorUpdates    []abci.ValidatorUpdate
 }
 
-var _ abci.Application = (*testApp)(nil)
+var _ ocabci.Application = (*testApp)(nil)
 var TestAppVersion uint64 = 66
 
 func (app *testApp) Info(req abci.RequestInfo) (resInfo abci.ResponseInfo) {
 	return abci.ResponseInfo{}
 }
 
-func (app *testApp) BeginBlock(req abci.RequestBeginBlock) abci.ResponseBeginBlock {
+func (app *testApp) BeginBlock(req ocabci.RequestBeginBlock) abci.ResponseBeginBlock {
 	app.CommitVotes = req.LastCommitInfo.Votes
 	app.ByzantineValidators = req.ByzantineValidators
 	return abci.ResponseBeginBlock{}
@@ -281,12 +282,12 @@ func (app *testApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 	return abci.ResponseDeliverTx{Events: []abci.Event{}}
 }
 
-func (app *testApp) CheckTxSync(req abci.RequestCheckTx) abci.ResponseCheckTx {
-	return abci.ResponseCheckTx{}
+func (app *testApp) CheckTxSync(req abci.RequestCheckTx) ocabci.ResponseCheckTx {
+	return ocabci.ResponseCheckTx{}
 }
 
-func (app *testApp) CheckTxAsync(req abci.RequestCheckTx, callback abci.CheckTxCallback) {
-	callback(abci.ResponseCheckTx{})
+func (app *testApp) CheckTxAsync(req abci.RequestCheckTx, callback ocabci.CheckTxCallback) {
+	callback(ocabci.ResponseCheckTx{})
 }
 
 func (app *testApp) Commit() abci.ResponseCommit {

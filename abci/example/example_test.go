@@ -15,6 +15,8 @@ import (
 
 	"golang.org/x/net/context"
 
+	abci "github.com/tendermint/tendermint/abci/types"
+
 	"github.com/line/ostracon/libs/log"
 	tmnet "github.com/line/ostracon/libs/net"
 
@@ -104,7 +106,7 @@ func testStream(t *testing.T, app types.Application) {
 	// Write requests
 	for counter := 0; counter < numDeliverTxs; counter++ {
 		// Send request
-		reqRes := client.DeliverTxAsync(types.RequestDeliverTx{Tx: []byte("test")}, nil)
+		reqRes := client.DeliverTxAsync(abci.RequestDeliverTx{Tx: []byte("test")}, nil)
 		_ = reqRes
 		// check err ?
 
@@ -165,7 +167,7 @@ func testGRPCSync(t *testing.T, app types.ABCIApplicationServer) {
 	// Write requests
 	for counter := 0; counter < numDeliverTxs; counter++ {
 		// Send request
-		response, err := client.DeliverTx(context.Background(), &types.RequestDeliverTx{Tx: []byte("test")})
+		response, err := client.DeliverTx(context.Background(), &abci.RequestDeliverTx{Tx: []byte("test")})
 		if err != nil {
 			t.Fatalf("Error in GRPC DeliverTx: %v", err.Error())
 		}

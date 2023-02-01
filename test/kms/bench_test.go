@@ -3,7 +3,6 @@
 //
 // $ cd test/kms
 // $ go test -tags libsodium -bench . -benchmem
-//
 package main
 
 import (
@@ -11,6 +10,11 @@ import (
 	"os"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
+
+	privvalproto "github.com/tendermint/tendermint/proto/tendermint/privval"
+	types2 "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/line/ostracon/config"
 	"github.com/line/ostracon/crypto"
@@ -20,10 +24,8 @@ import (
 	tmnet "github.com/line/ostracon/libs/net"
 	"github.com/line/ostracon/node"
 	"github.com/line/ostracon/privval"
-	privvalproto "github.com/line/ostracon/proto/ostracon/privval"
-	types2 "github.com/line/ostracon/proto/ostracon/types"
+	ocprivvalproto "github.com/line/ostracon/proto/ostracon/privval"
 	"github.com/line/ostracon/types"
-	"github.com/stretchr/testify/require"
 )
 
 var logger = log.NewOCLogger(log.NewSyncWriter(os.Stdout))
@@ -182,8 +184,8 @@ func benchmarkVRFProof(b *testing.B, pv types.PrivValidator, pubKey crypto.PubKe
 }
 
 func ping(sl *privval.SignerListenerEndpoint) {
-	msg := privvalproto.Message{
-		Sum: &privvalproto.Message_PingRequest{
+	msg := ocprivvalproto.Message{
+		Sum: &ocprivvalproto.Message_PingRequest{
 			PingRequest: &privvalproto.PingRequest{},
 		},
 	}

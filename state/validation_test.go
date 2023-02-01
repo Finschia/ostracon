@@ -8,12 +8,13 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	abci "github.com/line/ostracon/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	"github.com/line/ostracon/crypto/ed25519"
 	"github.com/line/ostracon/crypto/tmhash"
 	"github.com/line/ostracon/libs/log"
 	memmock "github.com/line/ostracon/mempool/mock"
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/state/mocks"
 	"github.com/line/ostracon/types"

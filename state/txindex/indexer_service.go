@@ -3,7 +3,9 @@ package txindex
 import (
 	"context"
 
-	abci "github.com/line/ostracon/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
+
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/service"
 	"github.com/line/ostracon/state/indexer"
 	"github.com/line/ostracon/types"
@@ -136,7 +138,7 @@ func DeduplicateBatch(ops []*abci.TxResult, txIdxr TxIndexer) ([]*abci.TxResult,
 			}
 
 			// if it's already indexed in an older block and was successful, skip.
-			if old != nil && old.Result.Code == abci.CodeTypeOK {
+			if old != nil && old.Result.Code == ocabci.CodeTypeOK {
 				continue
 			}
 		}

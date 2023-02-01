@@ -12,9 +12,11 @@ import (
 	"testing"
 	"time"
 
+	abci "github.com/tendermint/tendermint/abci/types"
+
 	"github.com/adlio/schema"
 	"github.com/gogo/protobuf/proto"
-	abci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/types"
 	"github.com/ory/dockertest"
 	"github.com/ory/dockertest/docker"
@@ -257,7 +259,7 @@ func txResultWithEvents(events []abci.Event) *abci.TxResult {
 		Tx:     types.Tx("HELLO WORLD"),
 		Result: abci.ResponseDeliverTx{
 			Data:   []byte{0},
-			Code:   abci.CodeTypeOK,
+			Code:   ocabci.CodeTypeOK,
 			Log:    "",
 			Events: events,
 		},
