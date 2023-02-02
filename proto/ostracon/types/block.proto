@@ -13,4 +13,5 @@ message Block {
   tendermint.types.Data       data        = 2 [(gogoproto.nullable) = false];
   ostracon.types.EvidenceList evidence    = 3 [(gogoproto.nullable) = false];
   tendermint.types.Commit     last_commit = 4;
+  ostracon.types.Entropy      entropy     = 5 [(gogoproto.nullable) = false];
 }

@@ -402,11 +402,7 @@ func TestHeaderHash(t *testing.T) {
 			LastResultsHash:    tmhash.Sum([]byte("last_results_hash")),
 			EvidenceHash:       tmhash.Sum([]byte("evidence_hash")),
 			ProposerAddress:    crypto.AddressHash([]byte("proposer_address")),
-			Round:              1,
-			// The Proof defined here does not depend on the vrf ProofLength,
-			// but it is a fixed value for the purpose of calculating the Hash value.
-			Proof: tmhash.Sum([]byte("proof")),
-		}, hexBytesFromString("13817DE03E8288A1DEB3A7FDDCC4C4AEEE7A9A27441E4D1B00C555076CA226D0")},
+		}, hexBytesFromString("F740121F553B5418C3EFBD343C2DBFE9E007BB67B0D020A0741374BAB65242A4")},
 		{"nil header yields nil", nil, nil},
 		{"nil ValidatorsHash yields nil", &Header{
 			Version:            tmversion.Consensus{Block: 1, App: 2},
@@ -423,8 +419,6 @@ func TestHeaderHash(t *testing.T) {
 			LastResultsHash:    tmhash.Sum([]byte("last_results_hash")),
 			EvidenceHash:       tmhash.Sum([]byte("evidence_hash")),
 			ProposerAddress:    crypto.AddressHash([]byte("proposer_address")),
-			Round:              1,
-			Proof:              tmhash.Sum([]byte("proof")),
 		}, nil},
 	}
 	for _, tc := range testCases {
@@ -522,12 +516,6 @@ func TestHeaderValidateBasic(t *testing.T) {
 		{"Invalid Results Hash", func(header *Header) {
 			header.LastResultsHash = []byte(strings.Repeat("h", invalidHashLength))
 		}, true},
-		{"Negative Round", func(header *Header) {
-			header.Round = -1
-		}, true},
-		{"Invalid Proof", func(header *Header) {
-			header.Proof = make([]byte, vrf.ProofSize-1)
-		}, true},
 		{"Invalid Validators Hash", func(header *Header) {
 			header.ValidatorsHash = []byte(strings.Repeat("h", invalidHashLength))
 		}, true},
@@ -551,8 +539,6 @@ func TestHeaderValidateBasic(t *testing.T) {
 				LastResultsHash:    tmhash.Sum([]byte("last_results_hash")),
 				EvidenceHash:       tmhash.Sum([]byte("evidence_hash")),
 				ProposerAddress:    crypto.AddressHash([]byte("proposer_address")),
-				Round:              1,
-				Proof:              make([]byte, vrf.ProofSize),
 			}
 			tc.malleateHeader(header)
 			err := header.ValidateBasic()
@@ -595,8 +581,6 @@ func TestMaxHeaderBytes(t *testing.T) {
 		LastResultsHash:    tmhash.Sum([]byte("last_results_hash")),
 		EvidenceHash:       tmhash.Sum([]byte("evidence_hash")),
 		ProposerAddress:    crypto.AddressHash([]byte("proposer_address")),
-		Round:              math.MaxInt32,
-		Proof:              proof,
 	}
 
 	bz, err := h.ToProto().Marshal()
@@ -634,15 +618,15 @@ func TestBlockMaxDataBytes(t *testing.T) {
 	}{
 		0:  {-10, 1, 0, true, 0},
 		1:  {10, 1, 0, true, 0},
-		2:  {851 + int64(vrf.ProofSize), 1, 0, true, 0},
-		3:  {852 + int64(vrf.ProofSize), 1, 0, false, 0},
-		4:  {853 + int64(vrf.ProofSize), 1, 0, false, 1},
-		5:  {962 + int64(vrf.ProofSize), 2, 0, true, 0},
-		6:  {963 + int64(vrf.ProofSize), 2, 0, false, 0},
-		7:  {964 + int64(vrf.ProofSize), 2, 0, false, 1},
-		8:  {1062 + int64(vrf.ProofSize), 2, 100, true, 0},
-		9:  {1063 + int64(vrf.ProofSize), 2, 100, false, 0},
-		10: {1064 + int64(vrf.ProofSize), 2, 100, false, 1},
+		2:  {849 + int64(vrf.ProofSize), 1, 0, true, 0},
+		3:  {850 + int64(vrf.ProofSize), 1, 0, false, 0},
+		4:  {851 + int64(vrf.ProofSize), 1, 0, false, 1},
+		5:  {960 + int64(vrf.ProofSize), 2, 0, true, 0},
+		6:  {961 + int64(vrf.ProofSize), 2, 0, false, 0},
+		7:  {962 + int64(vrf.ProofSize), 2, 0, false, 1},
+		8:  {1060 + int64(vrf.ProofSize), 2, 100, true, 0},
+		9:  {1061 + int64(vrf.ProofSize), 2, 100, false, 0},
+		10: {1062 + int64(vrf.ProofSize), 2, 100, false, 1},
 	}
 
 	for i, tc := range testCases {
@@ -669,12 +653,12 @@ func TestBlockMaxDataBytesNoEvidence(t *testing.T) {
 	}{
 		0: {-10, 1, true, 0},
 		1: {10, 1, true, 0},
-		2: {851 + int64(vrf.ProofSize), 1, true, 0},
-		3: {852 + int64(vrf.ProofSize), 1, false, 0},
-		4: {853 + int64(vrf.ProofSize), 1, false, 1},
-		5: {962 + int64(vrf.ProofSize), 2, true, 0},
-		6: {963 + int64(vrf.ProofSize), 2, false, 0},
-		7: {964 + int64(vrf.ProofSize), 2, false, 1},
+		2: {849 + int64(vrf.ProofSize), 1, true, 0},
+		3: {850 + int64(vrf.ProofSize), 1, false, 0},
+		4: {851 + int64(vrf.ProofSize), 1, false, 1},
+		5: {960 + int64(vrf.ProofSize), 2, true, 0},
+		6: {961 + int64(vrf.ProofSize), 2, false, 0},
+		7: {962 + int64(vrf.ProofSize), 2, false, 1},
 	}
 
 	for i, tc := range testCases {
@@ -933,7 +917,6 @@ func makeRandHeader() Header {
 	height := tmrand.Int63()
 	randBytes := tmrand.Bytes(tmhash.Size)
 	randAddress := tmrand.Bytes(crypto.AddressSize)
-	randProof := tmrand.Bytes(vrf.ProofSize)
 	h := Header{
 		Version:            tmversion.Consensus{Block: version.BlockProtocol, App: version.AppProtocol},
 		ChainID:            chainID,
@@ -951,7 +934,6 @@ func makeRandHeader() Header {
 
 		EvidenceHash:    randBytes,
 		ProposerAddress: randAddress,
-		Proof:           randProof,
 	}
 
 	return h
@@ -1050,4 +1032,146 @@ func TestBlockIDEquals(t *testing.T) {
 	assert.False(t, blockID.Equals(blockIDEmpty))
 	assert.True(t, blockIDEmpty.Equals(blockIDEmpty))
 	assert.False(t, blockIDEmpty.Equals(blockIDDifferent))
+}
+
+func TestEntropyHash(t *testing.T) {
+	testCases := []struct {
+		desc       string
+		entropy    *Entropy
+		expectHash bytes.HexBytes
+	}{
+		{"Generates expected hash", &Entropy{
+			Round: 1,
+			// The Proof defined here does not depend on the vrf ProofLength,
+			// but it is a fixed value for the purpose of calculating the Hash value.
+			Proof: tmhash.Sum([]byte("proof")),
+		}, hexBytesFromString("3EEC62453202DEF45126D758F5DF58962147B358E7B135E19D4CDB79B0CDA5C7")},
+		{"nil entropy yields nil", nil, nil},
+	}
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.desc, func(t *testing.T) {
+			assert.Equal(t, tc.expectHash, tc.entropy.Hash())
+
+			// We also make sure that all fields are hashed in struct order, and that all
+			// fields in the test struct are non-zero.
+			if tc.entropy != nil && tc.expectHash != nil {
+				byteSlices := [][]byte{}
+
+				s := reflect.ValueOf(*tc.entropy)
+				for i := 0; i < s.NumField(); i++ {
+					f := s.Field(i)
+
+					assert.False(t, f.IsZero(), "Found zero-valued field %v",
+						s.Type().Field(i).Name)
+
+					switch f := f.Interface().(type) {
+					case int32, int64, bytes.HexBytes, vrf.Proof, string:
+						byteSlices = append(byteSlices, cdcEncode(f))
+					case time.Time:
+						bz, err := gogotypes.StdTimeMarshal(f)
+						require.NoError(t, err)
+						byteSlices = append(byteSlices, bz)
+					case tmversion.Consensus:
+						bz, err := f.Marshal()
+						require.NoError(t, err)
+						byteSlices = append(byteSlices, bz)
+					case BlockID:
+						pbbi := f.ToProto()
+						bz, err := pbbi.Marshal()
+						require.NoError(t, err)
+						byteSlices = append(byteSlices, bz)
+					default:
+						t.Errorf("unknown type %T", f)
+					}
+				}
+				assert.Equal(t,
+					bytes.HexBytes(merkle.HashFromByteSlices(byteSlices)), tc.entropy.Hash())
+			}
+		})
+	}
+}
+
+func TestEntropyValidateBasic(t *testing.T) {
+	testCases := []struct {
+		testName        string
+		malleateEntropy func(*Entropy)
+		expErr          bool
+	}{
+		{"Make Entropy", func(entropy *Entropy) {}, false},
+		{"Negative Round", func(entropy *Entropy) {
+			entropy.Round = -1
+		}, true},
+		{"Invalid Proof", func(entropy *Entropy) {
+			entropy.Proof = make([]byte, vrf.ProofSize-1)
+		}, true},
+	}
+	for i, tc := range testCases {
+		tc := tc
+		i := i
+		t.Run(tc.testName, func(t *testing.T) {
+			header := &Entropy{
+				Round: 1,
+				Proof: make([]byte, vrf.ProofSize),
+			}
+			tc.malleateEntropy(header)
+			err := header.ValidateBasic()
+			assert.Equal(t, tc.expErr, err != nil, "#%d: %v", i, err)
+		})
+	}
+}
+
+func TestMaxEntropyBytes(t *testing.T) {
+	proof := make([]byte, vrf.ProofSize)
+	for i := 0; i < len(proof); i++ {
+		proof[i] = 0xFF
+	}
+
+	h := Entropy{
+		Round: math.MaxInt32,
+		Proof: proof,
+	}
+
+	bz, err := h.ToProto().Marshal()
+	require.NoError(t, err)
+
+	assert.EqualValues(t, MaxEntropyBytes, int64(len(bz)))
+}
+
+func makeEntropyHeader() Entropy {
+	round := tmrand.Int31()
+	randProof := tmrand.Bytes(vrf.ProofSize)
+	vp := Entropy{
+		Round: round,
+		Proof: randProof,
+	}
+
+	return vp
+}
+
+func TestEntropyProto(t *testing.T) {
+	vp1 := makeEntropyHeader()
+	tc := []struct {
+		msg     string
+		vp1     *Entropy
+		expPass bool
+	}{
+		{"success", &vp1, true},
+		{"success empty Entropy", &Entropy{}, true},
+	}
+
+	for _, tt := range tc {
+		tt := tt
+		t.Run(tt.msg, func(t *testing.T) {
+			pb := tt.vp1.ToProto()
+			h, err := EntropyFromProto(pb)
+			if tt.expPass {
+				require.NoError(t, err, tt.msg)
+				require.Equal(t, tt.vp1, &h, tt.msg)
+			} else {
+				require.Error(t, err, tt.msg)
+			}
+
+		})
+	}
 }

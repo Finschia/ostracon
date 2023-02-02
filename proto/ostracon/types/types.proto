@@ -37,13 +37,6 @@ message Header {
   // consensus info
   bytes evidence_hash    = 13;  // evidence included in the block
   bytes proposer_address = 14;  // original proposer of the block
-
-  // *** Ostracon Extended Fields ***
-  // Note that MaxHeaderSize must be modified when adding/removing fields.
-
-  // vrf info
-  int32 round = 1000;
-  bytes proof = 1001;
 }
 
 message SignedHeader {
@@ -61,4 +54,12 @@ message BlockMeta {
   int64                    block_size = 2;
   Header                   header     = 3 [(gogoproto.nullable) = false];
   int64                    num_txs    = 4;
+}
+
+// Entropy represents height-specific complexity and used in proposer-election.
+// Entropy contains vrf proof and generated round. The relationship of each field is as follows.
+// Entropy.proof = VRFProof(last_proof_hash, current_height, Entropy.round)
+message Entropy {
+  int32 round = 1;
+  bytes proof = 2;
 }

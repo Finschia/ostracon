@@ -9,7 +9,6 @@ import (
 	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/line/ostracon/crypto/vrf"
 	"github.com/line/ostracon/libs/log"
 	tmsync "github.com/line/ostracon/libs/sync"
 	"github.com/line/ostracon/light"
@@ -174,12 +173,6 @@ func (s *lightClientStateProvider) State(ctx context.Context, height uint64) (sm
 		return sm.State{}, err
 	}
 
-	// VRF proof
-	proofHash, err := vrf.ProofToHash(lastLightBlock.Proof.Bytes())
-	if err != nil {
-		return sm.State{}, err
-	}
-
 	state.Version = tmstate.Version{
 		Consensus: currentLightBlock.Version,
 		Software:  version.OCCoreSemVer,
@@ -193,7 +186,6 @@ func (s *lightClientStateProvider) State(ctx context.Context, height uint64) (sm
 	state.Validators = currentLightBlock.ValidatorSet
 	state.NextValidators = nextLightBlock.ValidatorSet
 	state.LastHeightValidatorsChanged = nextLightBlock.Height
-	state.LastProofHash = proofHash
 
 	// We'll also need to fetch consensus params via RPC, using light client verification.
 	primaryURL, ok := s.providers[s.lc.Primary()]

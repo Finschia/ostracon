@@ -14,7 +14,6 @@ import (
 
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/tmhash"
-	"github.com/line/ostracon/crypto/vrf"
 	"github.com/line/ostracon/evidence"
 	"github.com/line/ostracon/evidence/mocks"
 	"github.com/line/ostracon/libs/log"
@@ -519,11 +518,6 @@ func makeLunaticEvidence(
 
 	require.Greater(t, totalVals, byzVals)
 
-	// use the correct Proof to bypass the checks in libsodium
-	var proof []byte
-	proof, err := commonPrivVals[0].GenerateVRFProof([]byte{})
-	require.NoError(t, err)
-
 	// extract out the subset of byzantine validators in the common validator set
 	byzValSet, byzPrivVals := commonValSet.Validators[:byzVals], commonPrivVals[:byzVals]
 
@@ -537,11 +531,9 @@ func makeLunaticEvidence(
 
 	commonHeader := makeHeaderRandom(commonHeight)
 	commonHeader.Time = commonTime
-	commonHeader.Proof = proof
 	trustedHeader := makeHeaderRandom(height)
 
 	conflictingHeader := makeHeaderRandom(height)
-	conflictingHeader.Proof = proof
 	conflictingHeader.Time = attackTime
 	conflictingHeader.ValidatorsHash = conflictingVals.Hash()
 
@@ -573,7 +565,6 @@ func makeLunaticEvidence(
 		},
 		ValidatorSet: commonValSet,
 	}
-	trustedHeader.Proof = proof
 	trustedBlockID := makeBlockID(trustedHeader.Hash(), 1000, []byte("partshash"))
 	trustedVals, privVals := types.RandValidatorSet(totalVals, defaultVotingPower)
 	privVals = orderPrivValsByValSet(t, trustedVals, privVals)
@@ -641,7 +632,6 @@ func makeHeaderRandom(height int64) *types.Header {
 		LastResultsHash:    crypto.CRandBytes(tmhash.Size),
 		EvidenceHash:       crypto.CRandBytes(tmhash.Size),
 		ProposerAddress:    crypto.CRandBytes(crypto.AddressSize),
-		Proof:              crypto.CRandBytes(vrf.ProofSize),
 	}
 }
 

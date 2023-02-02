@@ -54,10 +54,6 @@ func (oc2pb) Header(header *Header) ocproto.Header {
 
 		EvidenceHash:    header.EvidenceHash,
 		ProposerAddress: header.ProposerAddress,
-
-		// Ostracon fields
-		Round: header.Round,
-		Proof: header.Proof,
 	}
 }
 

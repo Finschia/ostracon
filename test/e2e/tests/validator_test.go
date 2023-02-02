@@ -83,7 +83,7 @@ func TestValidator_Propose(t *testing.T) {
 		expectCount := 0
 		proposeCount := 0
 		for _, block := range blocks {
-			proofHash, _ := vrf.ProofToHash(block.Header.Proof.Bytes())
+			proofHash, _ := vrf.ProofToHash(block.Entropy.Proof.Bytes())
 			proposer := valSchedule.Set.SelectProposer(proofHash, block.Height, block.Round)
 			if bytes.Equal(proposer.Address, address) {
 				expectCount++
