@@ -558,12 +558,12 @@ func (h *Header) StringIndented(indent string) string {
 }
 
 // ToProto converts Header to protobuf
-func (h *Header) ToProto() *ocproto.Header {
+func (h *Header) ToProto() *tmproto.Header {
 	if h == nil {
 		return nil
 	}
 
-	return &ocproto.Header{
+	return &tmproto.Header{
 		Version:            h.Version,
 		ChainID:            h.ChainID,
 		Height:             h.Height,
@@ -583,7 +583,7 @@ func (h *Header) ToProto() *ocproto.Header {
 
 // FromProto sets a protobuf Header to the given pointer.
 // It returns an error if the header is invalid.
-func HeaderFromProto(ph *ocproto.Header) (Header, error) {
+func HeaderFromProto(ph *tmproto.Header) (Header, error) {
 	if ph == nil {
 		return Header{}, errors.New("nil Header")
 	}
@@ -1173,13 +1173,13 @@ func (data *EvidenceData) StringIndented(indent string) string {
 }
 
 // ToProto converts EvidenceData to protobuf
-func (data *EvidenceData) ToProto() (*ocproto.EvidenceList, error) {
+func (data *EvidenceData) ToProto() (*tmproto.EvidenceList, error) {
 	if data == nil {
 		return nil, errors.New("nil evidence data")
 	}
 
-	evi := new(ocproto.EvidenceList)
-	eviBzs := make([]ocproto.Evidence, len(data.Evidence))
+	evi := new(tmproto.EvidenceList)
+	eviBzs := make([]tmproto.Evidence, len(data.Evidence))
 	for i := range data.Evidence {
 		protoEvi, err := EvidenceToProto(data.Evidence[i])
 		if err != nil {
@@ -1193,7 +1193,7 @@ func (data *EvidenceData) ToProto() (*ocproto.EvidenceList, error) {
 }
 
 // FromProto sets a protobuf EvidenceData to the given pointer.
-func (data *EvidenceData) FromProto(eviData *ocproto.EvidenceList) error {
+func (data *EvidenceData) FromProto(eviData *tmproto.EvidenceList) error {
 	if eviData == nil {
 		return errors.New("nil evidenceData")
 	}
