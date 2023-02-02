@@ -2,17 +2,23 @@
 title: Consensus
 ---
 
-Extending Tendermint-BFT with VRF-based Election
+Ostracon is extending Tendermint-BFT with VRF-based election.
 
-## Consensus Overview
+## Consensus process
 
-Ostracon's block generation mechanism based on Tendermint-BFT consists of the following three phases. We here refer to the generations of blocks as *height*, and a single approval round consisting of the following three processes as *round*.
+Ostracon's block generation mechanism based on Tendermint-BFT consists of three phases. We here refer to the generations of blocks as **height**, and a single approval round consisting of the following three processes as **round**.
 
-**Election**. Elect one Proposer and several Voters from a candidate node set. This is the same as a Leader Election in a general distributed system, but in blockchain, it must be designed to prevent artificial selection so that malicious interference doesn't degrade the overall performance of the system. Also note that there is no centralized authority involved in Ostracon elections to ensure fairness. Since the election results can be computed deterministically by all nodes, each node can autonomously determine whether it has been elected as a Proposer or Voter.
+### Election
 
-**Block Generation**. The elected Proposer proposes a block. Unapproved transactions that have not yet been included in the blockchain are shared among nodes in the network via P2P and stored in an area of each node called the mempool. The node selected as the Proposer generates a block from the unapproved transactions remaining in its mempool and proposes it to the Voters.
+Elect one proposer and several [voters](#validators-and-voters) from a candidate node set. This is the same as a leader election in a general distributed system. But in blockchain, it must be designed to prevent artificial selection so that malicious interference doesn't degrade the overall performance of the system. Also, note that no centralized authority is involved in Ostracon elections to ensure fairness. Since all nodes can compute the election results deterministically, each node can autonomously determine whether it has been elected as a proposer or voter.
 
-**Block Verification**. The block proposed by the Proposer is verified by elected Voters. Each Voter votes on whether the block is correct or not, and the votes are replicated by Tendermint-BFT to the other Voters, and if more than 2/3+1 of all Voters vote in favor of the block, the block is officially approved. On the other hand, if a quorum is not reached, the proposed block is rejected and a new round of elections or voting is started over (Tendermint-BFT has several shortcuts depending on the reason for rejection).
+### Block generation
+
+The elected proposer proposes a block. The unconfirmed transactions that have not yet been included in the blockchain are shared among nodes in the network via P2P and stored in an area of each node called the mempool. The node selected as the proposer generates a block from the unconfirmed transactions remaining in its mempool and proposes it to the voters.
+
+### Block verification
+
+The elected voters validate the block proposed by the proposer. Each voter votes on whether the block is correct, and Tendermint-BFT replicates the votes to the other voters. If more than ${2 \over 3}+1$ of all voters vote in favor of the block, the block is officially approved. On the other hand, if a quorum is not reached, the proposed block is rejected, and a new round of elections or voting is started over.
 
 ![VRF-based Block Generation Round](../static/consensus/vrf_based_round.png)
 
@@ -55,30 +61,31 @@ During the verification phase, the following VRF-related verifications are perfo
 * The Proposer that generated the block must be a node selected based on the VRF hash of its previous block. This can be determined by matching the node that actually generated the block with the Proposer selected by weighted random sampling using the VRF hash $t$.
 * The $\pi$ contained in the block must be a VRF Proof generated using the private key of the Proposer. If the $t$ calculated from the VRF Proof $\pi$ matches the $t$ calculated using the `vrf_verify()` function, we can conclude that $\pi$ is not forged.
 
-```math
+ ```math
 {\rm vrf\_verify}(P_i, m_h, \pi_h) \overset{\text{?}}{=} {\rm vrf\_proof\_to\_hash}(\pi_h)
 ```
 
-By repeating this sequence of rounds, fair random sampling can be chained across all block generation.
+> TIP: In Tendermint-BFT, this re-election process can be routed to a particular stage of the election process, depending on reasons for rejection.
 
-![BFT-based Block Generation](../static/consensus/bft_round.png)
+## Validators and voters
 
-Recall here that the node that receives the block can deterministically calculate which nodes are the next Proposer and Voters. By revealing the nodes that are responsible for generating and verifying blocks in a given round, we can penalize nodes that are elected but don't actually perform their responsibility or that behave malicious actions such as Eclipse attacks. On the other hand, it's still difficult to predict the Proposer and Voters beyond one block, as they are only revealed for the minimum necessary time.
+In the Ostracon network, validators mean candidate nodes that hold stakes and can be elected as proposers or voters. The voters are a subset of validators, and a new concept introduced in Ostracon for two reasons:
 
-## Voters
+- To make the distribution of rewards to nodes elected as voters flexible.
+- To allow the ratio of Byzantine assumptions to be changed in networks with different trust policies for the participant nodes.
 
-In the Ostracon network, Validators mean candidate nodes that hold Stakes and can be elected as Proposers or Voters. The Voters (a subset of Validators) are a new concept introduced in Ostracon for two reasons; first, to make the distribution of rewards to nodes elected as Voters flexible, and second, to allow the ratio of Byzantine assumptions to be changed in networks with different trust policies for the participant nodes (as a result of the configuration, if the number of Voters is set to match the number of Validators, the behavior will be the same as in Tendermint).
+  > Tip: As a result of the configuration, if the number of voters is set to match the number of validators, the behavior will be the same as in Tendermint.
 
-Voter selections use a pseudo-random function $r$ to generate a sequence of random numbers in order to randomly select multiple nodes from a single VRF hash $t$. It's more important that $r$ is fast, simple to implement, has no variant by different interpretations, and saves memory since $t$ already has the properties of a cryptographic pseudo-random number. Ostracon uses a fast shift-register type pseudo-random number generation algorithm, called SplitMix64, for Voter selection.
+Voter selections use a pseudo-random function $r$ to generate a sequence of random numbers to randomly select multiple nodes from a single VRF hash $t$. It's more important that $r$ is fast, simple to implement, has no variant by different interpretations, and saves memory since $t$ already has the properties of a cryptographic pseudo-random number. Ostracon uses a fast shift-register type pseudo-random number generation algorithm called SplitMix64 for voter selection.
 
-## Failures
+## Failure handling
 
-### Disciplinary Scheme
+### Disciplinary scheme
 
-Although Ostracon's consensus scheme works correctly even if a few nodes fail, it's ideal that failed nodes aren't selected for the consensus group in order to avoid wasting network and CPU resources. In particular, for cases that aren't caused by general asynchronous messaging problems, such as intentional malpractice, evidence of the behavior (whether malicious or not) will be shared and action will be taken to eliminate the candidate from the selection process by forfeiting the Stake.
+Although Ostracon's consensus scheme works correctly even if a few nodes fail, it's ideal that failed nodes aren't selected for the consensus group to avoid wasting network and CPU resources. In particular, for cases such as intentional malpractice, not caused by general asynchronous messaging problems, evidence of the behavior will be shared, and action will be taken to eliminate the candidate from the selection process by forfeiting the stake, whether malicious or not.
 
-### Write Ahead Log
+### Recovery
 
-In a system with such a disciplinary rule, it's important to have a mechanism to prevent nodes from causing unintended behavior; Ostracon saves all received messages in its WAL (Write Ahead Log), and when it recovers from a node failure, it can correctly apply processing after the last message it applied.
+In a system with such a disciplinary rule, it's important to have a mechanism to prevent nodes from causing unintended behavior; Ostracon saves all received messages in its WAL (write-ahead log), and when it recovers from a node failure, it can correctly apply processing after the last message it applied.
 
 For more information on WAL, see [Tendermint | WAL](https://github.com/tendermint/tendermint/blob/v0.34.x/spec/consensus/wal.md).
