@@ -1,6 +1,7 @@
 package state_test
 
 import (
+	"bytes"
 	"testing"
 	"time"
 
@@ -45,6 +46,7 @@ func TestValidateBlockHeader(t *testing.T) {
 	wrongVersion1.Block += 2
 	wrongVersion2 := state.Version.Consensus
 	wrongVersion2.App += 2
+	var wrongProposer *types.Validator
 
 	// Manipulation of any header field causes failure.
 	testCases := []struct {
@@ -68,13 +70,21 @@ func TestValidateBlockHeader(t *testing.T) {
 		{"LastResultsHash wrong", func(block *types.Block) { block.LastResultsHash = wrongHash }},
 
 		{"EvidenceHash wrong", func(block *types.Block) { block.EvidenceHash = wrongHash }},
-		{"Proposer wrong", func(block *types.Block) { block.ProposerAddress = ed25519.GenPrivKey().PubKey().Address() }},
-		{"Proposer invalid", func(block *types.Block) { block.ProposerAddress = []byte("wrong size") }},
+
+		{"Invalid ProposerAddress size", func(block *types.Block) { block.ProposerAddress = []byte("wrong size") }},
+		{"ProposerAddress not known as validator", func(block *types.Block) { block.ProposerAddress = ed25519.GenPrivKey().PubKey().Address() }},
+		{"Not ProposerAddress for round", func(block *types.Block) { block.ProposerAddress = wrongProposer.Address }},
 	}
 
 	// Build up state for multiple heights
 	for height := int64(1); height < validationTestsStopHeight; height++ {
 		proposerAddr := state.Validators.SelectProposer(state.LastProofHash, height, 0).Address
+		for _, v := range state.Validators.Validators {
+			if !bytes.Equal(proposerAddr, v.Address) {
+				wrongProposer = v.Copy()
+				break
+			}
+		}
 		/*
 			Invalid blocks don't pass
 		*/
@@ -289,6 +299,59 @@ func TestValidateBlockEvidence(t *testing.T) {
 			privVals,
 			evidence,
 		)
+		require.NoError(t, err, "height %d", height)
+	}
+}
+
+func TestValidateBlockEntropy(t *testing.T) {
+	proxyApp := newTestApp()
+	require.NoError(t, proxyApp.Start())
+	defer proxyApp.Stop() //nolint:errcheck // ignore for tests
+
+	state, stateDB, privVals := makeState(3, 1)
+	stateStore := sm.NewStore(stateDB)
+	blockExec := sm.NewBlockExecutor(
+		stateStore,
+		log.TestingLogger(),
+		proxyApp.Consensus(),
+		memmock.Mempool{},
+		sm.EmptyEvidencePool{},
+	)
+	lastCommit := types.NewCommit(0, 0, types.BlockID{}, nil)
+
+	// some bad values
+	wrongRound := int32(999)
+	wrongProof := []byte("wrong size")
+
+	// Manipulation of any header field causes failure.
+	testCases := []struct {
+		name          string
+		malleateBlock func(block *types.Block)
+	}{
+		{"Round wrong", func(block *types.Block) { block.Round = wrongRound }},
+		{"Proof wrong", func(block *types.Block) { block.Proof = wrongProof }},
+	}
+
+	// Build up state for multiple heights
+	for height := int64(1); height < validationTestsStopHeight; height++ {
+		proposerAddr := state.Validators.SelectProposer(state.LastProofHash, height, 0).Address
+		/*
+			Invalid blocks don't pass
+		*/
+		for _, tc := range testCases {
+			message := state.MakeHashMessage(0)
+			proof, _ := privVals[proposerAddr.String()].GenerateVRFProof(message)
+			block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, nil, proposerAddr, 0, proof)
+			tc.malleateBlock(block)
+			err := blockExec.ValidateBlock(state, 0, block)
+			require.Error(t, err, tc.name)
+		}
+
+		/*
+			A good block passes
+		*/
+		var err error
+		state, _, lastCommit, err = makeAndCommitGoodBlock(state, height, lastCommit, proposerAddr, blockExec, privVals, nil)
 		require.NoError(t, err, "height %d", height)
 	}
 }

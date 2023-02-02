@@ -159,7 +159,6 @@ func setupVars(t *testing.T) {
 		Height:          height,
 		ValidatorsHash:  valSet.Hash(),
 		ProposerAddress: vals[index].Address,
-		Round:           round,
 	}
 	// block id
 	hash := tmrand.Bytes(32)

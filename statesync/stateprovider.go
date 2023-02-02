@@ -174,12 +174,6 @@ func (s *lightClientStateProvider) State(ctx context.Context, height uint64) (sm
 		return sm.State{}, err
 	}
 
-	// VRF proof
-	proofHash, err := vrf.ProofToHash(lastLightBlock.Proof.Bytes())
-	if err != nil {
-		return sm.State{}, err
-	}
-
 	state.Version = tmstate.Version{
 		Consensus: currentLightBlock.Version,
 		Software:  version.OCCoreSemVer,
@@ -193,9 +187,8 @@ func (s *lightClientStateProvider) State(ctx context.Context, height uint64) (sm
 	state.Validators = currentLightBlock.ValidatorSet
 	state.NextValidators = nextLightBlock.ValidatorSet
 	state.LastHeightValidatorsChanged = nextLightBlock.Height
-	state.LastProofHash = proofHash
 
-	// We'll also need to fetch consensus params via RPC, using light client verification.
+	// We'll also need to fetch consensus params and last proof hash via RPC, using light client verification.
 	primaryURL, ok := s.providers[s.lc.Primary()]
 	if !ok || primaryURL == "" {
 		return sm.State{}, fmt.Errorf("could not find address for primary light client provider")
@@ -205,15 +198,26 @@ func (s *lightClientStateProvider) State(ctx context.Context, height uint64) (sm
 		return sm.State{}, fmt.Errorf("unable to create RPC client: %w", err)
 	}
 	rpcclient := lightrpc.NewClient(primaryRPC, s.lc)
-	result, err := rpcclient.ConsensusParams(ctx, &currentLightBlock.Height)
+
+	resultConsensusParams, err := rpcclient.ConsensusParams(ctx, &currentLightBlock.Height)
 	if err != nil {
 		return sm.State{}, fmt.Errorf("unable to fetch consensus parameters for height %v: %w",
 			nextLightBlock.Height, err)
 	}
-	state.ConsensusParams = result.ConsensusParams
+	state.ConsensusParams = resultConsensusParams.ConsensusParams
 	state.Version.Consensus.App = state.ConsensusParams.Version.AppVersion
 	state.LastHeightConsensusParamsChanged = currentLightBlock.Height
 
+	resultBlock, err := rpcclient.Block(ctx, &lastLightBlock.Height)
+	if err != nil {
+		return sm.State{}, fmt.Errorf("unable to fetch block for height %v: %w",
+			lastLightBlock.Height, err)
+	}
+	proofHash, err := vrf.ProofToHash(resultBlock.Block.Proof.Bytes())
+	if err != nil {
+		return sm.State{}, err
+	}
+	state.LastProofHash = proofHash
 	return state, nil
 }
 

@@ -30,10 +30,11 @@ const (
 	// MaxHeaderBytes is a maximum header size.
 	// NOTE: Because app hash can be of arbitrary size, the header is therefore not
 	// capped in size and thus this number should be seen as a soft max
+	MaxHeaderBytes int64 = 626
+
 	// 🏺 Note that this value is the encoded size of the ProtocolBuffer. See TestMaxHeaderBytes() for how Tendermint
 	//  calculates this value. Add/remove Ostracon-specific field sizes to/from this heuristically determined constant.
-	MaxHeaderBytes int64 = 626 +
-		(2 + 5) + // +Round
+	MaxEntropyBytes int64 = 5 + // +Round
 		(2 + int64(vrf.ProofSize) + 1) // +Proof
 
 	// MaxOverheadForBlock - maximum overhead to encode a block (up to
@@ -55,6 +56,7 @@ type Block struct {
 	Data       `json:"data"`
 	Evidence   EvidenceData `json:"evidence"`
 	LastCommit *Commit      `json:"last_commit"`
+	Entropy    `json:"entropy"`
 }
 
 // MakeBlock returns a new block with an empty header, except what can be
@@ -71,6 +73,7 @@ func MakeBlock(height int64, txs []Tx, lastCommit *Commit, evidence []Evidence, 
 		},
 		Evidence:   EvidenceData{Evidence: evidence},
 		LastCommit: lastCommit,
+		Entropy:    Entropy{},
 	}
 	block.fillHeader()
 	return block
@@ -127,6 +130,10 @@ func (b *Block) ValidateBasic() error {
 			b.EvidenceHash,
 			b.Evidence.Hash(),
 		)
+	}
+
+	if err := b.Entropy.ValidateBasic(); err != nil {
+		return fmt.Errorf("invalid entropy: %w", err)
 	}
 
 	return nil
@@ -217,6 +224,7 @@ func (b *Block) String() string {
 // Data
 // Evidence
 // LastCommit
+// Entropy
 // Hash
 func (b *Block) StringIndented(indent string) string {
 	if b == nil {
@@ -227,11 +235,13 @@ func (b *Block) StringIndented(indent string) string {
 %s  %v
 %s  %v
 %s  %v
+%s  %v
 %s}#%v`,
 		indent, b.Header.StringIndented(indent+"  "),
 		indent, b.Data.StringIndented(indent+"  "),
 		indent, b.Evidence.StringIndented(indent+"  "),
 		indent, b.LastCommit.StringIndented(indent+"  "),
+		indent, b.Entropy.StringIndented(indent+"  "),
 		indent, b.Hash())
 }
 
@@ -254,6 +264,7 @@ func (b *Block) ToProto() (*ocproto.Block, error) {
 	pb.Header = *b.Header.ToProto()
 	pb.LastCommit = b.LastCommit.ToProto()
 	pb.Data = b.Data.ToProto()
+	pb.Entropy = *b.Entropy.ToProto()
 
 	protoEvidence, err := b.Evidence.ToProto()
 	if err != nil {
@@ -293,6 +304,11 @@ func BlockFromProto(bp *ocproto.Block) (*Block, error) {
 		}
 		b.LastCommit = lc
 	}
+	vp, err := EntropyFromProto(&bp.Entropy)
+	if err != nil {
+		return nil, err
+	}
+	b.Entropy = vp
 
 	return b, b.ValidateBasic()
 }
@@ -307,11 +323,12 @@ func MaxDataBytes(maxBytes, evidenceBytes int64, valsCount int) int64 {
 		MaxOverheadForBlock -
 		MaxHeaderBytes -
 		MaxCommitBytes(valsCount) -
-		evidenceBytes
+		evidenceBytes -
+		MaxEntropyBytes
 
 	if maxDataBytes < 0 {
 		panic(fmt.Sprintf(
-			"Negative MaxDataBytes. Block.MaxBytes=%d is too small to accommodate header&lastCommit&evidence=%d",
+			"Negative MaxDataBytes. Block.MaxBytes=%d is too small to accommodate header&lastCommit&evidence&entropy=%d",
 			maxBytes,
 			-(maxDataBytes - maxBytes),
 		))
@@ -329,11 +346,12 @@ func MaxDataBytesNoEvidence(maxBytes int64, valsCount int) int64 {
 	maxDataBytes := maxBytes -
 		MaxOverheadForBlock -
 		MaxHeaderBytes -
+		MaxEntropyBytes -
 		MaxCommitBytes(valsCount)
 
 	if maxDataBytes < 0 {
 		panic(fmt.Sprintf(
-			"Negative MaxDataBytesUnknownEvidence. Block.MaxBytes=%d is too small to accommodate header&lastCommit&evidence=%d",
+			"Negative MaxDataBytesUnknownEvidence. Block.MaxBytes=%d is too small to accommodate header&lastCommit&evidence&entropy=%d",
 			maxBytes,
 			-(maxDataBytes - maxBytes),
 		))
@@ -375,10 +393,6 @@ type Header struct {
 	// consensus info
 	EvidenceHash    tmbytes.HexBytes `json:"evidence_hash"`    // evidence included in the block
 	ProposerAddress Address          `json:"proposer_address"` // original proposer of the block
-
-	// vrf info
-	Round int32            `json:"round"`
-	Proof tmbytes.HexBytes `json:"proof"`
 }
 
 // Populate the Header with state-derived data.
@@ -389,8 +403,6 @@ func (h *Header) Populate(
 	valHash, nextValHash []byte,
 	consensusHash, appHash, lastResultsHash []byte,
 	proposerAddress Address,
-	round int32,
-	proof crypto.Proof,
 ) {
 	h.Version = version
 	h.ChainID = chainID
@@ -402,8 +414,6 @@ func (h *Header) Populate(
 	h.AppHash = appHash
 	h.LastResultsHash = lastResultsHash
 	h.ProposerAddress = proposerAddress
-	h.Round = round
-	h.Proof = tmbytes.HexBytes(proof)
 }
 
 // ValidateBasic performs stateless validation on a Header returning an error
@@ -463,15 +473,6 @@ func (h Header) ValidateBasic() error {
 		return fmt.Errorf("wrong LastResultsHash: %v", err)
 	}
 
-	// Add checking for Ostracon fields
-	if h.Round < 0 {
-		return errors.New("negative Round")
-	}
-
-	if err := ValidateProof(h.Proof); err != nil {
-		return fmt.Errorf("wrong Proof: %v", err)
-	}
-
 	return nil
 }
 
@@ -515,9 +516,6 @@ func (h *Header) Hash() tmbytes.HexBytes {
 		cdcEncode(h.LastResultsHash),
 		cdcEncode(h.EvidenceHash),
 		cdcEncode(h.ProposerAddress),
-		// include round and vrf proof in block hash
-		cdcEncode(h.Round),
-		cdcEncode(h.Proof),
 	})
 }
 
@@ -541,8 +539,6 @@ func (h *Header) StringIndented(indent string) string {
 %s  Results:        %v
 %s  Evidence:       %v
 %s  Proposer:       %v
-%s  Round:          %v
-%s  Proof:          %X
 %s}#%v`,
 		indent, h.Version,
 		indent, h.ChainID,
@@ -558,8 +554,6 @@ func (h *Header) StringIndented(indent string) string {
 		indent, h.LastResultsHash,
 		indent, h.EvidenceHash,
 		indent, h.ProposerAddress,
-		indent, h.Round,
-		indent, h.Proof,
 		indent, h.Hash())
 }
 
@@ -584,8 +578,6 @@ func (h *Header) ToProto() *ocproto.Header {
 		LastResultsHash:    h.LastResultsHash,
 		LastCommitHash:     h.LastCommitHash,
 		ProposerAddress:    h.ProposerAddress,
-		Round:              h.Round,
-		Proof:              h.Proof,
 	}
 }
 
@@ -618,8 +610,6 @@ func HeaderFromProto(ph *ocproto.Header) (Header, error) {
 	h.LastResultsHash = ph.LastResultsHash
 	h.LastCommitHash = ph.LastCommitHash
 	h.ProposerAddress = ph.ProposerAddress
-	h.Round = ph.Round
-	h.Proof = ph.Proof
 
 	return *h, h.ValidateBasic()
 }
@@ -1311,4 +1301,93 @@ func BlockIDFromProto(bID *tmproto.BlockID) (*BlockID, error) {
 	blockID.Hash = bID.Hash
 
 	return blockID, blockID.ValidateBasic()
+}
+
+//-----------------------------------------------------------------------------
+
+// Entropy contains vrf proof and generated round
+type Entropy struct {
+	Round int32            `json:"round"`
+	Proof tmbytes.HexBytes `json:"proof"`
+}
+
+// Populate the Entropy with state-derived data.
+// Call this after MakeBlock to complete the Entropy.
+func (vp *Entropy) Populate(
+	round int32,
+	proof crypto.Proof,
+) {
+	vp.Round = round
+	vp.Proof = tmbytes.HexBytes(proof)
+}
+
+// ValidateBasic performs stateless validation on a Entropy returning an error
+// if any validation fails.
+func (vp Entropy) ValidateBasic() error {
+	// Add checking for Ostracon fields
+	if vp.Round < 0 {
+		return errors.New("negative Round")
+	}
+	if err := ValidateProof(vp.Proof); err != nil {
+		return fmt.Errorf("wrong Proof: %v", err)
+	}
+
+	return nil
+}
+
+// Hash returns the hash of the Entropy.
+// It computes a Merkle tree from the Entropy fields
+// ordered as they appear in the Entropy.
+// Returns nil if ValidatorHash is missing,
+// since a Entropy is not valid unless there is
+// a ValidatorsHash (corresponding to the validator set).
+func (vp *Entropy) Hash() tmbytes.HexBytes {
+	if vp == nil {
+		return nil
+	}
+	return merkle.HashFromByteSlices([][]byte{
+		cdcEncode(vp.Round),
+		cdcEncode(vp.Proof),
+	})
+}
+
+// StringIndented returns an indented string representation of the Entropy.
+func (vp *Entropy) StringIndented(indent string) string {
+	if vp == nil {
+		return "nil-Entropy"
+	}
+	return fmt.Sprintf(`Entropy{
+%s  Round:          %v
+%s  Proof:          %X
+%s}#%v`,
+		indent, vp.Round,
+		indent, vp.Proof,
+		indent, vp.Hash())
+}
+
+// ToProto converts Entropy to protobuf
+func (vp *Entropy) ToProto() *ocproto.Entropy {
+	if vp == nil {
+		return nil
+	}
+
+	return &ocproto.Entropy{
+		Round: vp.Round,
+		Proof: vp.Proof,
+	}
+}
+
+// FromProto sets a protobuf Entropy to the given pointer.
+// It returns an error if the Entropy is invalid.
+func EntropyFromProto(ph *ocproto.Entropy) (Entropy, error) {
+	if ph == nil {
+		return Entropy{}, errors.New("nil Entropy")
+	}
+
+	vp := new(Entropy)
+
+	vp.Round = ph.Round
+	vp.Proof = ph.Proof
+
+	return *vp, vp.ValidateBasic()
 }
