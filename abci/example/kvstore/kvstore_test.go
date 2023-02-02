@@ -17,7 +17,7 @@ import (
 	ocabci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/libs/service"
-	ocproto "github.com/line/ostracon/proto/ostracon/types"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 const (
@@ -105,7 +105,7 @@ func TestPersistentKVStoreInfo(t *testing.T) {
 	// make and apply block
 	height = int64(1)
 	hash := []byte("foo")
-	header := ocproto.Header{
+	header := tmproto.Header{
 		Height: height,
 	}
 	kvstore.BeginBlock(ocabci.RequestBeginBlock{Hash: hash, Header: header})
@@ -198,7 +198,7 @@ func makeApplyBlock(
 	// make and apply block
 	height := int64(heightInt)
 	hash := []byte("foo")
-	header := ocproto.Header{
+	header := tmproto.Header{
 		Height: height,
 	}
 

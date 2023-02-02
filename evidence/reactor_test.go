@@ -24,7 +24,6 @@ import (
 	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/p2p"
 	p2pmocks "github.com/line/ostracon/p2p/mocks"
-	ocproto "github.com/line/ostracon/proto/ostracon/types"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"
 )
@@ -397,14 +396,14 @@ func TestEvidenceVectors(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 
-		evi := make([]ocproto.Evidence, len(tc.evidenceList))
+		evi := make([]tmproto.Evidence, len(tc.evidenceList))
 		for i := 0; i < len(tc.evidenceList); i++ {
 			ev, err := types.EvidenceToProto(tc.evidenceList[i])
 			require.NoError(t, err, tc.testName)
 			evi[i] = *ev
 		}
 
-		epl := ocproto.EvidenceList{
+		epl := tmproto.EvidenceList{
 			Evidence: evi,
 		}
 

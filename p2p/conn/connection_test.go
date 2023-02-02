@@ -15,7 +15,7 @@ import (
 
 	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/libs/protoio"
-	"github.com/line/ostracon/proto/ostracon/types"
+	"github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 const maxPingPongPacketSize = 1024 // bytes
