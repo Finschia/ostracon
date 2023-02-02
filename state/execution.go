@@ -385,11 +385,17 @@ func execBlockOnProxyApp(
 		return nil, errors.New("nil header")
 	}
 
+	pbe := block.Entropy.ToProto()
+	if pbe == nil {
+		return nil, errors.New("nil entropy")
+	}
+
 	abciResponses.BeginBlock, err = proxyAppConn.BeginBlockSync(ocabci.RequestBeginBlock{
 		Hash:                block.Hash(),
 		Header:              *pbh,
 		LastCommitInfo:      commitInfo,
 		ByzantineValidators: byzVals,
+		Entropy:             *pbe,
 	})
 	if err != nil {
 		logger.Error("error in proxyAppConn.BeginBlock", "err", err)

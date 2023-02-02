@@ -47,6 +47,7 @@ message RequestBeginBlock {
   ostracon.types.Header          header                  = 2 [(gogoproto.nullable) = false];
   tendermint.abci.LastCommitInfo last_commit_info        = 3 [(gogoproto.nullable) = false];
   repeated tendermint.abci.Evidence byzantine_validators = 4 [(gogoproto.nullable) = false];
+  ostracon.types.Entropy            entropy              = 5 [(gogoproto.nullable) = false];
 }
 
 message RequestBeginRecheckTx {
