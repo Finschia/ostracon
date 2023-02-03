@@ -39,22 +39,22 @@ Ostracon's consensus state and generated blocks are stored in the State DB and B
 
 ## Specifications and technology stack
 
-| Specifications        | Policy/Algorithms              | Methods/Implementations                                      |
-|:----------------------|:-------------------------------|:-------------------------------------------------------------|
-| Participation         | Permissioned                   | Consortium or Private                                        |
-| Election              | Proof of Stake                 | VRF-based Weighted Sampling without Replacement + SplitMix64 |
-| Agreement             | Strong Consistency w/Finality  | Tendermint-BFT                                               |
-| Signature             | Elliptic Curve Cryptography    | Ed25519                                                      |
-| Hash                  | SHA2                           | SHA-256, SHA-512                                             |
-| VRF                   | ECVRF-EDWARDS25519-SHA512-ELL2 | Ed25529                                                      |
-| Key Management        | Local KeyStore, Remote KMS     | *HSM is not support due to VRF*                              |
-| Key Auth Protocol     | Station-to-Station             |                                                              |
-| Tx Sharing Protocol   | Gossiping                      | mempool                                                      |
-| Application Protocol  | ABCI                           |                                                              |
-| Interchain Protocol   | IBC (Cosmos Hub)               |                                                              |
-| Storage               | Embedded KVS                   | LevelDB                                                      |
-| Message Recovery      | WAL                            |                                                              |
-| Block Generation Time | 2 seconds                      |                                                              |
+| Specifications        | Policy/Algorithms              | Methods/Implementations                         |
+|:----------------------|:-------------------------------|:------------------------------------------------|
+| Participation         | Permissioned                   | Consortium or Private                           |
+| Election              | Proof of Stake                 | VRF-based Weighted Sampling without Replacement |
+| Agreement             | Strong Consistency w/Finality  | Tendermint-BFT                                  |
+| Signature             | Elliptic Curve Cryptography    | Ed25519                                         |
+| Hash                  | SHA2                           | SHA-256, SHA-512                                |
+| VRF                   | ECVRF-EDWARDS25519-SHA512-ELL2 | Ed25529                                         |
+| Key Management        | Local KeyStore, Remote KMS     | *HSM is not support due to VRF*                 |
+| Key Auth Protocol     | Station-to-Station             |                                                 |
+| Tx Sharing Protocol   | Gossiping                      | mempool                                         |
+| Application Protocol  | ABCI                           |                                                 |
+| Interchain Protocol   | IBC (Cosmos Hub)               |                                                 |
+| Storage               | Embedded KVS                   | LevelDB                                         |
+| Message Recovery      | WAL                            |                                                 |
+| Block Generation Time | 2 seconds                      |                                                 |
 
 ## Consideration of other consensus schemes
 
@@ -64,7 +64,7 @@ The followings are the considerations:
 
 - The **PoW** used by Bitcoin and Ethereum (v1.10.22 and below) is the most well-known consensus mechanism for blockchain. It has a proven track record of working as a public chain but has a structural problem of not being able to guarantee consistency until a sufficient amount of time has passed. This would cause significant problems with lost updates in the short term and the inability to scale performance in the long term. So we eliminated PoW in the early stages of our consideration.
 
-- The consensus algorithm of Tendermint, **Tendermint-BFT**, is a well-considered design for blockchains. The ability to guarantee finality in a short period was also a good fit for our direction. On the other hand, the weighted round-robin algorithm used as the election algorithm works deterministically, so participants can know the future Proposer, which makes it easy to find the target and prepare an attack. For this reason, Ostracon uses VRF to make the election unpredictable to reduce the likelihood of an attack.
+- The consensus algorithm of Tendermint, **Tendermint-BFT**, is a well-considered design for blockchains. The ability to guarantee finality in a short period was also a good fit for our direction. On the other hand, the weighted round-robin algorithm used as the election algorithm works deterministically, so participants can know the future proposer, which makes it easy to find the target and prepare an attack. For this reason, Ostracon uses VRF to make the election unpredictable to reduce the likelihood of an attack.
 
 - **Algorand** also uses VRF, but in a very different way than we do. At the start of an election, each node generates a VRF random number individually, and the number is used to identify the next proposal. (It's similar to all nodes tossing a coin at the same time.) This is a better way to guarantee cryptographic security while saving a large amount of computation time and power consumption compared to the PoW method of identifying the winner by hash calculation. On the other hand, applying this scheme to LINE Blockchain is difficult for several reasons. First, the number of validators to be selected is non-deterministic. And the random behavior occurs following a binomial distribution. The protocol complexity increases due to mutual recognition among the winning nodes, and it's impossible to find nodes that have been elected but have sabotaged their roles.
 
