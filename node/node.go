@@ -22,7 +22,6 @@ import (
 	cfg "github.com/line/ostracon/config"
 	cs "github.com/line/ostracon/consensus"
 	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/vrf"
 	"github.com/line/ostracon/evidence"
 	tmjson "github.com/line/ostracon/libs/json"
 	"github.com/line/ostracon/libs/log"
@@ -663,27 +662,12 @@ func startStateSync(ssR *statesync.Reactor, bcR fastSyncReactor, conR *cs.Reacto
 			return
 		}
 		if previousState.LastBlockHeight > 0 {
-			// LastProofHash can not be get by statesync.
-			// previousState have no LastProofHash, so reconstruct LastProofHash from Block.
-			previousState.LastProofHash, err = reconstructLastProofHash(blockStore, previousState)
-			if err != nil {
-				ssR.Logger.Error("Failed to reconstruct last proof hash with previous state", "err", err)
-				return
-			}
 
 			err = stateStore.Bootstrap(previousState)
 			if err != nil {
 				ssR.Logger.Error("Failed to bootstrap node with previous state", "err", err)
 				return
 			}
-		}
-
-		// LastProofHash can not be get by statesync.
-		// state have no LastProofHash, so reconstruct LastProofHash from Block.
-		state.LastProofHash, err = reconstructLastProofHash(blockStore, state)
-		if err != nil {
-			ssR.Logger.Error("Failed to reconstruct last proof hash with new state", "err", err)
-			return
 		}
 
 		err = stateStore.Bootstrap(state)
@@ -711,19 +695,6 @@ func startStateSync(ssR *statesync.Reactor, bcR fastSyncReactor, conR *cs.Reacto
 		}
 	}()
 	return nil
-}
-
-// Reconstruct LastProofHash from Block.
-func reconstructLastProofHash(blockStore *store.BlockStore, state sm.State) ([]byte, error) {
-	block := blockStore.LoadBlock(state.LastBlockHeight)
-	if block == nil {
-		return nil, fmt.Errorf("failed to reconstruct last proof hash; block for height %v not found", state.LastBlockHeight)
-	}
-	blockId := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(types.BlockPartSizeBytes).Header()}
-	if !state.LastBlockID.Equals(blockId) {
-		return nil, fmt.Errorf("failed to reconstruct last proof hash; block id for height %v not equal to last block id", state.LastBlockHeight)
-	}
-	return vrf.ProofToHash(block.Proof.Bytes())
 }
 
 // NewNode returns a new, ready to go, Ostracon Node.
