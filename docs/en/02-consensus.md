@@ -10,7 +10,7 @@ Ostracon's Tendermint-BFT based block generation mechanism consists of three pha
 
 ### Election
 
-Elect a proposer from the set of validator (candidate) nodes. This is the same as a leader election in a general distributed system. However, in a blockchain, it must be designed to prevent artificial selection so that malicious interference doesn't degrade the overall performance of the system. Also note that there is no centralised authority is involved in the Ostracon election to ensure fairness. Since all nodes can compute the election results deterministically, each node can autonomously determine whether it has been elected as a proposer or validator.
+Elect a proposer from the set of validator (candidate) nodes. This is the same as a leader election in a general distributed system. However, in a blockchain, it must be designed to prevent artificial selection so that malicious interference doesn't degrade the overall performance of the system. Also note that there is no centralised authority is involved in the Ostracon election to ensure fairness. Since all nodes can compute the election results deterministically, each node can autonomously determine whether it has been elected as a proposer.
 
 ### Block generation
 
@@ -34,7 +34,7 @@ A VRF hash generator $k$ generates a proof $\pi$ (VRF Proof) from the message $m
 2. $t = {\rm vrf\\_proof\\_to\\_hash}(\pi)$
 3. ${\rm vrf\\_proof\\_to\\_hash}(\pi) \overset{\text{?}}{=} {\rm vrf\\_verify}(P_k, m, \pi)$
 
-In Ostracon, the proposer of the next block is randomly selected by a verifiable random number from the proposer who created the previous block. A VRF Proof field $pi$ is added to the block for this purpose.
+In Ostracon, the proposer of the next block is randomly selected by a verifiable random number from the proposer who created the previous block. A VRF Proof field $\pi$ is added to the block for this purpose.
 
 The node receiving the new block starts the election phase. In this phase, it verifies the VRF Proof $\pi$ contained in the block, computes the VRF hash $t$, which is a "fair pseudorandom number", and selects the proposer for this round based on this value. This is done by a simple and fast weighted random sampling based on the probability of selection according to Stake holdings (in other words, based on PoS).
 
