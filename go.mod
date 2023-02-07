@@ -49,7 +49,7 @@ require (
 
 require (
 	github.com/rs/zerolog v1.29.0
-	gopkg.in/natefinch/lumberjack.v2 v2.0.0
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
 require (
