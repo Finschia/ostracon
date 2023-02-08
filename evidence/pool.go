@@ -10,13 +10,13 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	gogotypes "github.com/gogo/protobuf/types"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/line/ostracon/libs/clist"
 	"github.com/line/ostracon/libs/log"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 const (

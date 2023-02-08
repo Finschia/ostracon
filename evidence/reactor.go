@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"time"
 
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	clist "github.com/line/ostracon/libs/clist"
 	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/p2p"
 	"github.com/line/ostracon/types"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 const (
