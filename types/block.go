@@ -32,10 +32,10 @@ const (
 	// capped in size and thus this number should be seen as a soft max
 	MaxHeaderBytes int64 = 626
 
-	// 🏺 Note that this value is the encoded size of the ProtocolBuffer. See TestMaxHeaderBytes() for how Tendermint
+	// 🏺 Note that this value is the encoded size of the ProtocolBuffer. See TestMaxEntropyBytes() for how Tendermint
 	//  calculates this value. Add/remove Ostracon-specific field sizes to/from this heuristically determined constant.
-	MaxEntropyBytes int64 = 5 + // +Round
-		(2 + int64(vrf.ProofSize) + 1) // +Proof
+	MaxEntropyBytes int64 = (1 + 5) + // +Round
+		(2 + int64(vrf.ProofSize)) // +Proof
 
 	// MaxOverheadForBlock - maximum overhead to encode a block (up to
 	// MaxBlockSizeBytes in size) not including it's parts except Data.
