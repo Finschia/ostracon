@@ -197,17 +197,11 @@ func verifyWinningRate(t *testing.T, vals *ValidatorSet, tries int, error float6
 			}
 		}
 	}
-	actual := make([]float64, len(vals.Validators))
-	for i := 0; i < len(selected); i++ {
-		actual[i] = float64(selected[i]) / float64(tries)
-	}
 
-	for i := 0; i < len(actual); i++ {
-		expected := float64(vals.Validators[i].VotingPower) / float64(vals.TotalVotingPower())
-		if math.Abs(expected-actual[i]) > expected*error {
-			t.Errorf("The winning rate is too far off from expected: %f ∉ %f±%f",
-				actual[i], expected, expected*error)
-		}
+	for i := 0; i < len(selected); i++ {
+		expected := float64(vals.Validators[i].VotingPower) * float64(tries) / float64(vals.TotalVotingPower())
+		assert.InEpsilonf(t, expected, selected[i], error,
+			"The winning time %d is too far off from expected: %f", selected[i], expected)
 	}
 }
 
@@ -244,21 +238,19 @@ func TestProposerSelection2(t *testing.T) {
 	expected := []int{0, 1, 0, 0, 2, 2, 0, 2, 1, 2, 2, 1, 2, 2, 2}
 	for i := 0; i < len(valList)*5; i++ {
 		prop := vals.SelectProposer([]byte{}, int64(i), 0)
-		if bytesToInt(prop.Address) != expected[i] {
-			t.Fatalf("(%d): Expected %d. Got %d", i, expected[i], bytesToInt(prop.Address))
-		}
+		assert.Equal(t, expected[i], bytesToInt(prop.Address), i)
 	}
-	verifyWinningRate(t, vals, 10000, 0.01)
+	verifyWinningRate(t, vals, 1000000, 0.01)
 
 	// One validator has more than the others
 	*val2 = *newValidator(addr2, 400)
 	vals = NewValidatorSet(valList)
-	verifyWinningRate(t, vals, 10000, 0.01)
+	verifyWinningRate(t, vals, 1000000, 0.01)
 
 	// One validator has more than the others
 	*val2 = *newValidator(addr2, 401)
 	vals = NewValidatorSet(valList)
-	verifyWinningRate(t, vals, 10000, 0.01)
+	verifyWinningRate(t, vals, 1000000, 0.01)
 
 	// each validator should be the proposer a proportional number of times
 	val0, val1, val2 = newValidator(addr0, 4), newValidator(addr1, 5), newValidator(addr2, 3)
@@ -270,35 +262,13 @@ func TestProposerSelection2(t *testing.T) {
 		prop := vals.SelectProposer([]byte{}, int64(i), 0)
 		propCount[bytesToInt(prop.Address)]++
 	}
-	fmt.Printf("%v\n", propCount)
 
-	if propCount[0] != 40257 {
-		t.Fatalf(
-			"Expected prop count for validator with 4/12 of voting power to be %d/%d. Got %d/%d",
-			40038,
-			10000*N,
-			propCount[0],
-			10000*N,
-		)
-	}
-	if propCount[1] != 50017 {
-		t.Fatalf(
-			"Expected prop count for validator with 5/12 of voting power to be %d/%d. Got %d/%d",
-			50077,
-			10000*N,
-			propCount[1],
-			10000*N,
-		)
-	}
-	if propCount[2] != 29726 {
-		t.Fatalf(
-			"Expected prop count for validator with 3/12 of voting power to be %d/%d. Got %d/%d",
-			29885,
-			10000*N,
-			propCount[2],
-			10000*N,
-		)
-	}
+	assert.InEpsilon(t, 40000, propCount[0], 0.01,
+		"the number of elected times validator with 4/12 differs from expected")
+	assert.InEpsilon(t, 50000, propCount[1], 0.01,
+		"the number of elected times validator with 5/12 differs from expected")
+	assert.InEpsilon(t, 30000, propCount[2], 0.01,
+		"the number of elected times validator with 3/12 differs from expected")
 }
 
 func TestProposerSelection3(t *testing.T) {
@@ -1638,6 +1608,19 @@ func TestValidatorSetProtoBuf(t *testing.T) {
 		} else {
 			require.Error(t, err, tc.msg)
 		}
+	}
+}
+
+func TestDividePoint(t *testing.T) {
+	assert.Equal(t, uint64(0), dividePoint(0, 0))
+	assert.Equal(t, uint64(0), dividePoint(math.MaxUint64, 0))
+
+	for _, total := range [...]int64{
+		1, math.MaxUint32, math.MaxInt64 - 1, math.MaxInt64,
+	} {
+		assert.Equalf(t, uint64(0), dividePoint(0, total), "total=0x%X", total)
+		assert.Equalf(t, uint64(total/2), dividePoint(math.MaxInt64/2+1, total), "total=0x%X", total)
+		assert.Equalf(t, uint64(total-1), dividePoint(math.MaxInt64, total), "total=0x%X", total)
 	}
 }
 

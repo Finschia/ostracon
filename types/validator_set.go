@@ -15,7 +15,6 @@ import (
 	"github.com/line/ostracon/crypto/merkle"
 	"github.com/line/ostracon/crypto/tmhash"
 	tmmath "github.com/line/ostracon/libs/math"
-	tmrand "github.com/line/ostracon/libs/rand"
 )
 
 const (
@@ -58,24 +57,6 @@ type ValidatorSet struct {
 
 	// cached (unexported)
 	totalVotingPower int64
-}
-
-type candidate struct {
-	priority uint64
-	val      *Validator
-}
-
-// for implement Candidate of rand package
-func (c *candidate) Priority() uint64 {
-	return c.priority
-}
-
-func (c *candidate) LessThan(other tmrand.Candidate) bool {
-	o, ok := other.(*candidate)
-	if !ok {
-		panic("incompatible type")
-	}
-	return bytes.Compare(c.val.Address, o.val.Address) < 0
 }
 
 // NewValidatorSet initializes a ValidatorSet by copying over the values from
@@ -822,15 +803,59 @@ func (vals *ValidatorSet) SelectProposer(proofHash []byte, height int64, round i
 		panic("empty validator set")
 	}
 	seed := hashToSeed(MakeRoundHash(proofHash, height, round))
-	candidates := make([]tmrand.Candidate, len(vals.Validators))
-	for i, val := range vals.Validators {
-		candidates[i] = &candidate{
-			priority: uint64(val.VotingPower),
-			val:      val, // don't need to assign the copy
+	random := nextRandom(&seed)
+	totalVotingPower := vals.TotalVotingPower()
+	thresholdVotingPower := dividePoint(random, totalVotingPower)
+	threshold := thresholdVotingPower
+	for _, val := range vals.Validators {
+		if threshold < uint64(val.VotingPower) {
+			return val
 		}
+		threshold -= uint64(val.VotingPower)
 	}
-	samples := tmrand.RandomSamplingWithPriority(seed, candidates, 1, uint64(vals.TotalVotingPower()))
-	return samples[0].(*candidate).val
+
+	// This code will never be reached except in the following circumstances:
+	//   1) The totalVotingPower is not equal to the actual total VotingPower.
+	//   2) The length of vals.Validators is zero (but checked above).
+	// Both are due to unexpected state irregularities and can be identified by the output error message.
+	panic(fmt.Sprintf("Cannot select samples; r=%d, thresholdVotingPower=%d, totalVotingPower=%d: %+v",
+		random, thresholdVotingPower, totalVotingPower, vals))
+}
+
+var divider *big.Int
+
+func init() {
+	divider = new(big.Int).SetUint64(math.MaxInt64)
+	divider.Add(divider, big.NewInt(1))
+}
+
+// dividePoint computes x÷(MaxUint64+1)×y without overflow for uint64. it returns a value in the [0, y) range when x≠0.
+// Otherwise returns 0.
+func dividePoint(x uint64, y int64) uint64 {
+	totalBig := big.NewInt(y)
+	a := new(big.Int).SetUint64(x & math.MaxInt64)
+	a.Mul(a, totalBig)
+	a.Div(a, divider)
+	return a.Uint64()
+}
+
+// nextRandom implements SplitMix64 (based on http://xoshiro.di.unimi.it/splitmix64.c)
+//
+// The PRNG used for this random selection:
+//   1. must be deterministic.
+//   2. should easily portable, independent of language or library
+//   3. is not necessary to keep a long period like MT, since there aren't many random numbers to generate and
+//      we expect a certain amount of randomness in the seed.
+//
+// The shift-register type pRNG fits these requirements well, but there are too many variants. So we adopted SplitMix64,
+// which is used in Java's SplittableStream.
+// https://github.com/openjdk/jdk/blob/jdk-17+35/src/java.base/share/classes/java/util/SplittableRandom.java#L193-L197
+func nextRandom(rand *uint64) uint64 {
+	*rand += uint64(0x9e3779b97f4a7c15)
+	var z = *rand
+	z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9
+	z = (z ^ (z >> 27)) * 0x94d049bb133111eb
+	return z ^ (z >> 31)
 }
 
 //-----------------
