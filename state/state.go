@@ -274,6 +274,10 @@ func (state State) MakeBlock(
 		state.Validators.Hash(), state.NextValidators.Hash(),
 		types.HashConsensusParams(state.ConsensusParams), state.AppHash, state.LastResultsHash,
 		proposerAddress,
+	)
+
+	// Fill rest of entropy with state data.
+	block.Entropy.Populate(
 		round,
 		proof,
 	)

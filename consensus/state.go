@@ -1449,7 +1449,7 @@ func (cs *State) enterPrecommit(height int64, round int32) {
 	// At this point, +2/3 prevoted for a particular block.
 
 	// If we're already locked on that block, precommit it, and update the LockedRound
-	if cs.LockedBlock.HashesTo(blockID.Hash) {
+	if cs.LockedBlock.HashesTo(blockID.Hash) && cs.LockedBlockParts.HasHeader(blockID.PartSetHeader) {
 		logger.Debug("precommit step; +2/3 prevoted locked block; relocking")
 		cs.LockedRound = round
 
@@ -1462,7 +1462,7 @@ func (cs *State) enterPrecommit(height int64, round int32) {
 	}
 
 	// If +2/3 prevoted for proposal block, stage and precommit it
-	if cs.ProposalBlock.HashesTo(blockID.Hash) {
+	if cs.ProposalBlock.HashesTo(blockID.Hash) && cs.ProposalBlockParts.HasHeader(blockID.PartSetHeader) {
 		logger.Debug("precommit step; +2/3 prevoted proposal block; locking", "hash", blockID.Hash)
 
 		// Validate the block.
@@ -1570,7 +1570,7 @@ func (cs *State) enterCommit(height int64, commitRound int32) {
 	// The Locked* fields no longer matter.
 	// Move them over to ProposalBlock if they match the commit hash,
 	// otherwise they'll be cleared in updateToState.
-	if cs.LockedBlock.HashesTo(blockID.Hash) {
+	if cs.LockedBlock.HashesTo(blockID.Hash) && cs.LockedBlockParts.HasHeader(blockID.PartSetHeader) {
 		logger.Debug("commit is for a locked block; set ProposalBlock=LockedBlock", "block_hash", blockID.Hash)
 		cs.ProposalBlock = cs.LockedBlock
 		cs.ProposalBlockParts = cs.LockedBlockParts
@@ -1613,7 +1613,7 @@ func (cs *State) tryFinalizeCommit(height int64) {
 		return
 	}
 
-	if !cs.ProposalBlock.HashesTo(blockID.Hash) {
+	if !cs.ProposalBlock.HashesTo(blockID.Hash) || !cs.ProposalBlockParts.HasHeader(blockID.PartSetHeader) {
 		// TODO: this happens every time if we're not a validator (ugly logs)
 		// TODO: ^^ wait, why does it matter that we're a validator?
 		logger.Debug(
@@ -2014,7 +2014,7 @@ func (cs *State) handleCompleteProposal(blockHeight int64) {
 	prevotes := cs.Votes.Prevotes(cs.Round)
 	blockID, hasTwoThirds := prevotes.TwoThirdsMajority()
 	if hasTwoThirds && !blockID.IsZero() && (cs.ValidRound < cs.Round) {
-		if cs.ProposalBlock.HashesTo(blockID.Hash) {
+		if cs.ProposalBlock.HashesTo(blockID.Hash) && cs.ProposalBlockParts.HasHeader(blockID.PartSetHeader) {
 			cs.Logger.Debug(
 				"updating valid block to new proposal block",
 				"valid_round", cs.Round,
@@ -2168,7 +2168,8 @@ func (cs *State) addVote(vote *types.Vote, peerID p2p.ID) (added bool, err error
 			if (cs.LockedBlock != nil) &&
 				(cs.LockedRound < vote.Round) &&
 				(vote.Round <= cs.Round) &&
-				!cs.LockedBlock.HashesTo(blockID.Hash) {
+				!cs.LockedBlock.HashesTo(blockID.Hash) &&
+				!cs.LockedBlockParts.HasHeader(blockID.PartSetHeader) {
 
 				cs.Logger.Debug("unlocking because of POL", "locked_round", cs.LockedRound, "pol_round", vote.Round)
 

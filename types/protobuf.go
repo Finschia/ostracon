@@ -8,7 +8,6 @@ import (
 	"github.com/line/ostracon/crypto/ed25519"
 	cryptoenc "github.com/line/ostracon/crypto/encoding"
 	"github.com/line/ostracon/crypto/secp256k1"
-	ocproto "github.com/line/ostracon/proto/ostracon/types"
 )
 
 //-------------------------------------------------------
@@ -34,8 +33,8 @@ var OC2PB = oc2pb{}
 
 type oc2pb struct{}
 
-func (oc2pb) Header(header *Header) ocproto.Header {
-	return ocproto.Header{
+func (oc2pb) Header(header *Header) tmproto.Header {
+	return tmproto.Header{
 		Version: header.Version,
 		ChainID: header.ChainID,
 		Height:  header.Height,
@@ -54,10 +53,6 @@ func (oc2pb) Header(header *Header) ocproto.Header {
 
 		EvidenceHash:    header.EvidenceHash,
 		ProposerAddress: header.ProposerAddress,
-
-		// Ostracon fields
-		Round: header.Round,
-		Proof: header.Proof,
 	}
 }
 

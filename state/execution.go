@@ -209,7 +209,7 @@ func (blockExec *BlockExecutor) ApplyBlock(
 	}
 
 	// Update the state with the block and responses.
-	state, err = updateState(state, blockID, &block.Header, abciResponses, validatorUpdates)
+	state, err = updateState(state, blockID, &block.Header, &block.Entropy, abciResponses, validatorUpdates)
 	if err != nil {
 		return state, 0, fmt.Errorf("commit failed for application: %v", err)
 	}
@@ -385,11 +385,17 @@ func execBlockOnProxyApp(
 		return nil, errors.New("nil header")
 	}
 
+	pbe := block.Entropy.ToProto()
+	if pbe == nil {
+		return nil, errors.New("nil entropy")
+	}
+
 	abciResponses.BeginBlock, err = proxyAppConn.BeginBlockSync(ocabci.RequestBeginBlock{
 		Hash:                block.Hash(),
 		Header:              *pbh,
 		LastCommitInfo:      commitInfo,
 		ByzantineValidators: byzVals,
+		Entropy:             *pbe,
 	})
 	if err != nil {
 		logger.Error("error in proxyAppConn.BeginBlock", "err", err)
@@ -493,6 +499,7 @@ func updateState(
 	state State,
 	blockID types.BlockID,
 	header *types.Header,
+	entropy *types.Entropy,
 	abciResponses *tmstate.ABCIResponses,
 	validatorUpdates []*types.Validator,
 ) (State, error) {
@@ -535,7 +542,7 @@ func updateState(
 	nextVersion := state.Version
 
 	// get proof hash from vrf proof
-	proofHash, err := vrf.ProofToHash(header.Proof.Bytes())
+	proofHash, err := vrf.ProofToHash(entropy.Proof.Bytes())
 	if err != nil {
 		return state, fmt.Errorf("error get proof of hash: %v", err)
 	}

@@ -28,10 +28,11 @@ func UpdateState(
 	state State,
 	blockID types.BlockID,
 	header *types.Header,
+	entropy *types.Entropy,
 	abciResponses *tmstate.ABCIResponses,
 	validatorUpdates []*types.Validator,
 ) (State, error) {
-	return updateState(state, blockID, header, abciResponses, validatorUpdates)
+	return updateState(state, blockID, header, entropy, abciResponses, validatorUpdates)
 }
 
 // ValidateValidatorUpdates is an alias for validateValidatorUpdates exported

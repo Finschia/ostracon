@@ -324,9 +324,9 @@ func (c *Client) Block(ctx context.Context, height *int64) (*ctypes.ResultBlock,
 	if err := res.Block.ValidateBasic(); err != nil {
 		return nil, err
 	}
-	if bmH, bH := res.BlockID.Hash, res.Block.Hash(); !bytes.Equal(bmH, bH) {
-		return nil, fmt.Errorf("blockID %X does not match with block %X",
-			bmH, bH)
+	rbID := types.BlockID{Hash: res.Block.Hash(), PartSetHeader: res.Block.MakePartSet(types.BlockPartSizeBytes).Header()}
+	if !res.BlockID.Equals(rbID) {
+		return nil, fmt.Errorf("blockID %v does not match with block %v", res.BlockID.String(), rbID.String())
 	}
 
 	// Update the light client if we're behind.
@@ -336,9 +336,8 @@ func (c *Client) Block(ctx context.Context, height *int64) (*ctypes.ResultBlock,
 	}
 
 	// Verify block.
-	if bH, tH := res.Block.Hash(), l.Hash(); !bytes.Equal(bH, tH) {
-		return nil, fmt.Errorf("block header %X does not match with trusted header %X",
-			bH, tH)
+	if !l.Commit.BlockID.Equals(res.BlockID) {
+		return nil, fmt.Errorf("blockID %v does not match with trusted blockID %v", res.BlockID.String(), l.Commit.BlockID.String())
 	}
 
 	return res, nil

@@ -8,6 +8,7 @@ option go_package = "github.com/line/ostracon/abci/types";
 import "tendermint/crypto/proof.proto";
 import "tendermint/types/params.proto";
 import "tendermint/abci/types.proto";
+import "tendermint/types/types.proto";
 import "ostracon/types/types.proto";
 import "tendermint/crypto/keys.proto";
 import "google/protobuf/timestamp.proto";
@@ -44,13 +45,16 @@ message Request {
 
 message RequestBeginBlock {
   bytes                          hash                    = 1;
-  ostracon.types.Header          header                  = 2 [(gogoproto.nullable) = false];
+  tendermint.types.Header        header                  = 2 [(gogoproto.nullable) = false];
   tendermint.abci.LastCommitInfo last_commit_info        = 3 [(gogoproto.nullable) = false];
   repeated tendermint.abci.Evidence byzantine_validators = 4 [(gogoproto.nullable) = false];
+
+  // *** Ostracon Extended Fields ***
+  ostracon.types.Entropy entropy = 1000 [(gogoproto.nullable) = false];
 }
 
 message RequestBeginRecheckTx {
-  ostracon.types.Header header = 1 [(gogoproto.nullable) = false];
+  tendermint.types.Header header = 1 [(gogoproto.nullable) = false];
 }
 
 message RequestEndRecheckTx {

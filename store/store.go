@@ -174,7 +174,7 @@ func (bs *BlockStore) LoadBlockPart(height int64, index int) *types.Part {
 // LoadBlockMeta returns the BlockMeta for the given height.
 // If no block is found for the given height, it returns nil.
 func (bs *BlockStore) LoadBlockMeta(height int64) *types.BlockMeta {
-	var pbbm = new(ocproto.BlockMeta)
+	var pbbm = new(tmproto.BlockMeta)
 	bz, err := bs.db.Get(calcBlockMetaKey(height))
 
 	if err != nil {

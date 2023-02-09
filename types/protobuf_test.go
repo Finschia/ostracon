@@ -96,7 +96,7 @@ func TestABCIHeader(t *testing.T) {
 		protocolVersion, "chainID", timestamp, lastBlockID,
 		[]byte("valHash"), []byte("nextValHash"),
 		[]byte("consHash"), []byte("appHash"), []byte("lastResultsHash"),
-		[]byte("proposerAddress"), 0, []byte("lastProof"),
+		[]byte("proposerAddress"),
 	)
 
 	cdc := amino.NewCodec()
