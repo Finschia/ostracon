@@ -39,22 +39,22 @@ Ostracon's consensus state and generated blocks are stored in the State DB and B
 
 ## Specifications and technology stack
 
-| Specifications        | Policy/Algorithms              | Methods/Implementations                         |
-|:----------------------|:-------------------------------|:------------------------------------------------|
-| Participation         | Permissioned                   | Consortium or Private                           |
-| Election              | Proof of Stake                 | VRF-based Weighted Sampling without Replacement |
-| Agreement             | Strong Consistency w/Finality  | Tendermint-BFT                                  |
-| Signature             | Elliptic Curve Cryptography    | Ed25519                                         |
-| Hash                  | SHA2                           | SHA-256, SHA-512                                |
-| VRF                   | ECVRF-EDWARDS25519-SHA512-ELL2 | Ed25529                                         |
-| Key Management        | Local KeyStore, Remote KMS     | *HSM is not support due to VRF*                 |
-| Key Auth Protocol     | Station-to-Station             |                                                 |
-| Tx Sharing Protocol   | Gossiping                      | mempool                                         |
-| Application Protocol  | ABCI                           |                                                 |
-| Interchain Protocol   | IBC (Cosmos Hub)               |                                                 |
-| Storage               | Embedded KVS                   | LevelDB                                         |
-| Message Recovery      | WAL                            |                                                 |
-| Block Generation Time | 2 seconds                      |                                                 |
+| Specifications        | Policy/Algorithms              | Methods/Implementations                                      |
+|:----------------------|:-------------------------------|:-------------------------------------------------------------|
+| Participation         | Permissioned                   | Consortium or Private                                        |
+| Election              | Proof of Stake                 | VRF-based Weighted Sampling without Replacement + SplitMix64 |
+| Agreement             | Strong Consistency w/Finality  | Tendermint-BFT                                               |
+| Signature             | Elliptic Curve Cryptography    | Ed25519                                                      |
+| Hash                  | SHA2                           | SHA-256, SHA-512                                             |
+| VRF                   | ECVRF-EDWARDS25519-SHA512-ELL2 | Ed25529                                                      |
+| Key Management        | Local KeyStore, Remote KMS     | *HSM is not support due to VRF*                              |
+| Key Auth Protocol     | Station-to-Station             |                                                              |
+| Tx Sharing Protocol   | Gossiping                      | mempool                                                      |
+| Application Protocol  | ABCI                           |                                                              |
+| Interchain Protocol   | IBC (Cosmos Hub)               |                                                              |
+| Storage               | Embedded KVS                   | LevelDB                                                      |
+| Message Recovery      | WAL                            |                                                              |
+| Block Generation Time | 2 seconds                      |                                                              |
 
 ## Consideration of other consensus schemes
 

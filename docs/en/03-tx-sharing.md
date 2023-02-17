@@ -6,7 +6,6 @@ A client application can send a transaction to any Ostracon nodes that join the 
 
 ## Mempool
 
-<!-- Once a block is accepted by the Ostracon consensus mechanism, the transactions contained in that block are considered **confirmed**.  -->
 Unconfirmed transactions are validated and stored in an area called [**mempool**](https://github.com/tendermint/tendermint/blob/v0.34.x/spec/abci/apps.md#mempool-connection), separated from the block storage, after checking length, content, and so on.
 > Tip: Mempool has a limited size; transactions can be rejected to store if the size of mempool reaches the limit.
 
@@ -18,7 +17,7 @@ The Ostracon node selected as a proposer by [election](02-consensus.md#election)
 
 ## Performance and asynchronization
 
-Blockchain performance tends to focus on the speed of block generation, but in a practical system, the efficiency of sharing transactions among nodes is also an important factor that significantly affects overall performance. For the high speed of Gossipping's network propagation, Ostracon's mempool must process a large number of transactions in a short period. <!-- in exchange for Gossipping's network propagation speed.-->
+Blockchain performance tends to focus on the speed of block generation, but in a practical system, the efficiency of sharing transactions among nodes is also an important factor that significantly affects overall performance. For the high speed of Gossipping's network propagation, Ostracon's mempool must process a large number of transactions in a short period.
 To this end, Ostracon has added several queues to the Tendermint's **Reactor** implementations to make all P2P messages, include transactions, processed asynchronously. This asynchronization allows the transaction sharing on nodes with modern CPU cores to process more transactions in the mempool in a shorter time, improving network throughput limits.
 
 With this asynchronization of the mempool, multiple transactions will be in a **validation-processing** state at the same time; asynchronous validation-processing transactions are also correctly included in the calculation of the mempool capacity. Therefore, Ostracon will still refuse to receive transactions when the mempool capacity is exceeded.

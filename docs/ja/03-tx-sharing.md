@@ -12,7 +12,7 @@ title: Transaction Sharing
 
 ある Ostracon ノードが mempool に保存した未確定のトランザクションは他の Ostracon ノードにもブロードキャストされます。ただし、既に受信済みであったり不正なトランザクションの場合には保存もブロードキャストもされず破棄されます。このような手法は**ゴシッピング** (またはフラッディング) と呼ばれ、$N$ を Ostracon ネットワークのノード数としたとき $O(\log N)$ ホップの速度ですべてのノードに到達します。
 
-[リーダー選出](02-consensus.md)で Proposer に選ばれた Ostracon ノードは mempool に保存されているトランザクションから新しい提案ブロックを生成します。以下の図は Ostracon ノードが未承認のトランザクションを受信し、それを mempool に保存してからブロック生成に使用されるまでの流れを示しています。
+[リーダー選出](02-consensus.md)で Proposer に選ばれた Ostracon ノードは mempool に保存されているトランザクションから新しい提案ブロックを生成します。以下の図は Ostracon ノードが未確定のトランザクションを受信し、それを mempool に保存してからブロック生成に使用されるまでの流れを示しています。
 
 ![Mempool in Ostracon structure](../static/tx-sharing/mempool.png)
 
