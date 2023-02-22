@@ -1183,7 +1183,7 @@ func TestEntropyProto(t *testing.T) {
 	}
 }
 
-func TestEntropyUniqueness(t *testing.T) {
+func TestEntropyCorrectness(t *testing.T) {
 	chainID := "test"
 	height := int64(1)
 	tx := []Tx{}
@@ -1216,10 +1216,10 @@ func TestEntropyUniqueness(t *testing.T) {
 	entropyDiffBlockId := BlockID{Hash: entropyDiffBlock.Hash(), PartSetHeader: entropyDiffBlock.MakePartSet(1024).Header()}
 
 	t.Run("test block id equality with different entropy", func(t *testing.T) {
-		assert.True(t, testBlockId.Equals(sameBlockId))
-		assert.False(t, testBlockId.Equals(roundDiffBlockId))
-		assert.False(t, testBlockId.Equals(proofDiffBlockId))
-		assert.False(t, testBlockId.Equals(entropyDiffBlockId))
+		assert.Equal(t, testBlockId, sameBlockId)
+		assert.NotEqual(t, testBlockId, roundDiffBlockId)
+		assert.NotEqual(t, testBlockId, proofDiffBlockId)
+		assert.NotEqual(t, testBlockId, entropyDiffBlockId)
 	})
 
 	t.Run("test vote signature verification with different entropy", func(t *testing.T) {
