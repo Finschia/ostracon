@@ -1182,3 +1182,87 @@ func TestEntropyProto(t *testing.T) {
 		})
 	}
 }
+
+func TestEntropyCorrectness(t *testing.T) {
+	chainID := "test"
+	height := int64(1)
+	tx := []Tx{}
+	evList := []Evidence{}
+	commit := &Commit{}
+
+	round := int32(0)
+	proof := []byte("proof")
+	differentRound := round + 1
+	differentProof := []byte("different proof")
+
+	testBlock := MakeBlock(height, tx, commit, evList, TestConsensusVersion)
+	testBlock.Entropy.Populate(round, proof)
+	testBlockId := BlockID{Hash: testBlock.Hash(), PartSetHeader: testBlock.MakePartSet(1024).Header()}
+
+	sameBlock := MakeBlock(height, tx, commit, evList, TestConsensusVersion)
+	sameBlock.Entropy.Populate(round, proof)
+	sameBlockId := BlockID{Hash: sameBlock.Hash(), PartSetHeader: sameBlock.MakePartSet(1024).Header()}
+
+	roundDiffBlock := MakeBlock(height, tx, commit, evList, TestConsensusVersion)
+	roundDiffBlock.Entropy.Populate(differentRound, proof)
+	roundDiffBlockId := BlockID{Hash: roundDiffBlock.Hash(), PartSetHeader: roundDiffBlock.MakePartSet(1024).Header()}
+
+	proofDiffBlock := MakeBlock(height, tx, commit, evList, TestConsensusVersion)
+	proofDiffBlock.Entropy.Populate(round, differentProof)
+	proofDiffBlockId := BlockID{Hash: proofDiffBlock.Hash(), PartSetHeader: proofDiffBlock.MakePartSet(1024).Header()}
+
+	entropyDiffBlock := MakeBlock(height, tx, commit, evList, TestConsensusVersion)
+	entropyDiffBlock.Entropy.Populate(differentRound, differentProof)
+	entropyDiffBlockId := BlockID{Hash: entropyDiffBlock.Hash(), PartSetHeader: entropyDiffBlock.MakePartSet(1024).Header()}
+
+	t.Run("test block id equality with different entropy", func(t *testing.T) {
+		assert.Equal(t, testBlockId, sameBlockId)
+		assert.NotEqual(t, testBlockId, roundDiffBlockId)
+		assert.NotEqual(t, testBlockId, proofDiffBlockId)
+		assert.NotEqual(t, testBlockId, entropyDiffBlockId)
+	})
+
+	t.Run("test vote signature verification with different entropy", func(t *testing.T) {
+		_, privVals := RandValidatorSet(1, 1)
+		privVal := privVals[0]
+		pubKey, err := privVal.GetPubKey()
+		assert.NoError(t, err)
+
+		testVote := &Vote{
+			ValidatorAddress: pubKey.Address(),
+			ValidatorIndex:   0,
+			Height:           height,
+			Round:            0,
+			Timestamp:        tmtime.Now(),
+			Type:             tmproto.PrecommitType,
+			BlockID:          testBlockId,
+		}
+		tv := testVote.ToProto()
+		err = privVal.SignVote(chainID, tv)
+		assert.NoError(t, err)
+		testVote.Signature = tv.Signature
+
+		sameVote := testVote.Copy()
+		sameVote.BlockID = sameBlockId
+
+		roundDiffVote := testVote.Copy()
+		roundDiffVote.BlockID = roundDiffBlockId
+
+		proofDiffVote := testVote.Copy()
+		proofDiffVote.BlockID = proofDiffBlockId
+
+		entropyDiffVote := testVote.Copy()
+		entropyDiffVote.BlockID = entropyDiffBlockId
+
+		err = testVote.Verify(chainID, pubKey)
+		assert.NoError(t, err)
+		err = sameVote.Verify(chainID, pubKey)
+		assert.NoError(t, err)
+		err = roundDiffVote.Verify(chainID, pubKey)
+		assert.Error(t, err)
+		err = proofDiffVote.Verify(chainID, pubKey)
+		assert.Error(t, err)
+		err = entropyDiffVote.Verify(chainID, pubKey)
+		assert.Error(t, err)
+	})
+}
