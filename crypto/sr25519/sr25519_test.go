@@ -28,4 +28,7 @@ func TestSignAndValidateSr25519(t *testing.T) {
 	sig[7] ^= byte(0x01)
 
 	assert.False(t, pubKey.VerifySignature(msg, sig))
+
+	// invalid parameters
+	assert.False(t, pubKey.VerifySignature(msg, nil))
 }
