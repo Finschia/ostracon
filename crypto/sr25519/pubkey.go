@@ -55,7 +55,11 @@ func (pubKey PubKey) VerifySignature(msg []byte, sig []byte) bool {
 		return false
 	}
 
-	return publicKey.Verify(signature, signingContext)
+	success, err := publicKey.Verify(signature, signingContext)
+	if err != nil {
+		return false
+	}
+	return success
 }
 
 // VRFVerify is not supported in Sr25519.
