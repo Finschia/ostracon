@@ -20,7 +20,7 @@ require (
 	github.com/google/orderedcode v0.0.1
 	github.com/gorilla/websocket v1.5.0
 	github.com/gtank/merlin v0.1.1
-	github.com/hdevalence/ed25519consensus v0.0.0-20200813231810-1694d75e712a
+	github.com/hdevalence/ed25519consensus v0.1.0
 	github.com/lib/pq v1.10.7
 	github.com/libp2p/go-buffer-pool v0.1.0
 	github.com/miekg/dns v1.1.50
@@ -53,6 +53,7 @@ require (
 )
 
 require (
+	filippo.io/edwards25519 v1.0.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/DataDog/zstd v1.4.1 // indirect
 	github.com/Microsoft/go-winio v0.5.2 // indirect
