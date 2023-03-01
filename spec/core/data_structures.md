@@ -52,5 +52,5 @@ Ostracon introduces Entropy as a new data structure. This represents height-spec
 
 | Name | Type | Description | Validation |
 |------|------|-------------|------------|
-| Round | int32                     | Round in which proposer generate a vrf proof             | Must be > 0 |
+| Round | int32                     | Round in which proposer generate a vrf proof             | Must be >= 0 |
 | Proof | slice of bytes (`[]byte`) | Proof is a vrf proof | Length of proof must be == 0, == 81 (r2ishiguro), or == 80 (libsodium) |
