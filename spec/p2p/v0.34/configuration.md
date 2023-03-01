@@ -1,4 +1,4 @@
-# CometBFT p2p configuration
+# Ostracon p2p configuration
 
 Please ensure you've first read the spec for [CometBFT p2p configuration](https://github.com/cometbft/cometbft/blob/v0.34.x/spec/p2p/v0.34/configuration.md). Here only defines the difference between CometBFT.
 
