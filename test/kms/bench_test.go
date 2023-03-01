@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	privvalproto "github.com/tendermint/tendermint/proto/tendermint/privval"
-	types2 "github.com/tendermint/tendermint/proto/tendermint/types"
+	"github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/line/ostracon/config"
 	"github.com/line/ostracon/crypto"
@@ -25,7 +25,7 @@ import (
 	"github.com/line/ostracon/node"
 	"github.com/line/ostracon/privval"
 	ocprivvalproto "github.com/line/ostracon/proto/ostracon/privval"
-	"github.com/line/ostracon/types"
+	octypes "github.com/line/ostracon/types"
 )
 
 var logger = log.NewOCLogger(log.NewSyncWriter(os.Stdout))
@@ -67,14 +67,14 @@ func BenchmarkFilePV(b *testing.B) {
 	benchmarkPrivValidator(b, n.PrivValidator())
 }
 
-func benchmarkPrivValidator(b *testing.B, pv types.PrivValidator) {
+func benchmarkPrivValidator(b *testing.B, pv octypes.PrivValidator) {
 	pubKey := benchmarkGetPubKey(b, pv)
 	benchmarkSignVote(b, pv, pubKey)
 	benchmarkSignProposal(b, pv, pubKey)
 	benchmarkVRFProof(b, pv, pubKey)
 }
 
-func benchmarkGetPubKey(b *testing.B, pv types.PrivValidator) crypto.PubKey {
+func benchmarkGetPubKey(b *testing.B, pv octypes.PrivValidator) crypto.PubKey {
 	var pubKey crypto.PubKey
 	var err error
 
@@ -92,16 +92,16 @@ func benchmarkGetPubKey(b *testing.B, pv types.PrivValidator) crypto.PubKey {
 	return pubKey
 }
 
-func benchmarkSignVote(b *testing.B, pv types.PrivValidator, pubKey crypto.PubKey) {
-	blockID := types.BlockID{
+func benchmarkSignVote(b *testing.B, pv octypes.PrivValidator, pubKey crypto.PubKey) {
+	blockID := octypes.BlockID{
 		Hash: make([]byte, 32),
-		PartSetHeader: types.PartSetHeader{
+		PartSetHeader: octypes.PartSetHeader{
 			Total: 10,
 			Hash:  make([]byte, 32),
 		},
 	}
-	vote := types.Vote{
-		Type:             types2.PrevoteType,
+	vote := octypes.Vote{
+		Type:             types.PrevoteType,
 		Height:           1,
 		Round:            0,
 		BlockID:          blockID,
@@ -124,20 +124,20 @@ func benchmarkSignVote(b *testing.B, pv types.PrivValidator, pubKey crypto.PubKe
 	require.NoError(b, err)
 	require.Equalf(b, ed25519.SignatureSize, len(pb.Signature), "SignVote: signature size = %d != %d",
 		ed25519.SignatureSize, len(pb.Signature))
-	bytes := types.VoteSignBytes(chainID, pb)
+	bytes := octypes.VoteSignBytes(chainID, pb)
 	require.Truef(b, pubKey.VerifySignature(bytes, pb.Signature), "SignVote: signature verification")
 }
 
-func benchmarkSignProposal(b *testing.B, pv types.PrivValidator, pubKey crypto.PubKey) {
-	blockID := types.BlockID{
+func benchmarkSignProposal(b *testing.B, pv octypes.PrivValidator, pubKey crypto.PubKey) {
+	blockID := octypes.BlockID{
 		Hash: make([]byte, 32),
-		PartSetHeader: types.PartSetHeader{
+		PartSetHeader: octypes.PartSetHeader{
 			Total: 10,
 			Hash:  make([]byte, 32),
 		},
 	}
-	proposal := types.Proposal{
-		Type:      types2.ProposalType,
+	proposal := octypes.Proposal{
+		Type:      types.ProposalType,
 		Height:    2,
 		Round:     0,
 		POLRound:  -1,
@@ -159,11 +159,11 @@ func benchmarkSignProposal(b *testing.B, pv types.PrivValidator, pubKey crypto.P
 	require.NoError(b, err)
 	require.Equalf(b, ed25519.SignatureSize, len(pb.Signature), "SignProposal: signature size = %d != %d",
 		ed25519.SignatureSize, len(pb.Signature))
-	bytes := types.ProposalSignBytes(chainID, pb)
+	bytes := octypes.ProposalSignBytes(chainID, pb)
 	require.Truef(b, pubKey.VerifySignature(bytes, pb.Signature), "SignProposal: signature verification")
 }
 
-func benchmarkVRFProof(b *testing.B, pv types.PrivValidator, pubKey crypto.PubKey) {
+func benchmarkVRFProof(b *testing.B, pv octypes.PrivValidator, pubKey crypto.PubKey) {
 	message := []byte("hello, world")
 	var proof crypto.Proof
 	var err error
