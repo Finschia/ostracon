@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	tmbcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
+	bcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
 
-	bcproto "github.com/line/ostracon/proto/ostracon/blockchain"
+	ocbcproto "github.com/line/ostracon/proto/ostracon/blockchain"
 	sm "github.com/line/ostracon/state"
 	"github.com/line/ostracon/types"
 )
@@ -30,7 +30,7 @@ func TestBcBlockRequestMessageValidateBasic(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.testName, func(t *testing.T) {
-			request := tmbcproto.BlockRequest{Height: tc.requestHeight}
+			request := bcproto.BlockRequest{Height: tc.requestHeight}
 			assert.Equal(t, tc.expectErr, ValidateMsg(&request) != nil, "Validate Basic had an unexpected result")
 		})
 	}
@@ -50,14 +50,14 @@ func TestBcNoBlockResponseMessageValidateBasic(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.testName, func(t *testing.T) {
-			nonResponse := tmbcproto.NoBlockResponse{Height: tc.nonResponseHeight}
+			nonResponse := bcproto.NoBlockResponse{Height: tc.nonResponseHeight}
 			assert.Equal(t, tc.expectErr, ValidateMsg(&nonResponse) != nil, "Validate Basic had an unexpected result")
 		})
 	}
 }
 
 func TestBcStatusRequestMessageValidateBasic(t *testing.T) {
-	request := tmbcproto.StatusRequest{}
+	request := bcproto.StatusRequest{}
 	assert.NoError(t, ValidateMsg(&request))
 }
 
@@ -75,7 +75,7 @@ func TestBcStatusResponseMessageValidateBasic(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.testName, func(t *testing.T) {
-			response := tmbcproto.StatusResponse{Height: tc.responseHeight}
+			response := bcproto.StatusResponse{Height: tc.responseHeight}
 			assert.Equal(t, tc.expectErr, ValidateMsg(&response) != nil, "Validate Basic had an unexpected result")
 		})
 	}
@@ -95,26 +95,26 @@ func TestBlockchainMessageVectors(t *testing.T) {
 		bmsg     proto.Message
 		expBytes string
 	}{
-		{"BlockRequestMessage", &bcproto.Message{Sum: &bcproto.Message_BlockRequest{
-			BlockRequest: &tmbcproto.BlockRequest{Height: 1}}}, "0a020801"},
-		{"BlockRequestMessage", &bcproto.Message{Sum: &bcproto.Message_BlockRequest{
-			BlockRequest: &tmbcproto.BlockRequest{Height: math.MaxInt64}}},
+		{"BlockRequestMessage", &ocbcproto.Message{Sum: &ocbcproto.Message_BlockRequest{
+			BlockRequest: &bcproto.BlockRequest{Height: 1}}}, "0a020801"},
+		{"BlockRequestMessage", &ocbcproto.Message{Sum: &ocbcproto.Message_BlockRequest{
+			BlockRequest: &bcproto.BlockRequest{Height: math.MaxInt64}}},
 			"0a0a08ffffffffffffffff7f"},
-		{"BlockResponseMessage", &bcproto.Message{Sum: &bcproto.Message_BlockResponse{
-			BlockResponse: &bcproto.BlockResponse{Block: bpb}}}, "1a750a730a5d0a04080b100b1803220b088092b8c398feffffff012a0212003a20c4da88e876062aa1543400d50d0eaa0dac88096057949cfb7bca7f3a48c04bf96a20e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855120d0a0b48656c6c6f20576f726c641a00c23e00"},
-		{"NoBlockResponseMessage", &bcproto.Message{Sum: &bcproto.Message_NoBlockResponse{
-			NoBlockResponse: &tmbcproto.NoBlockResponse{Height: 1}}}, "12020801"},
-		{"NoBlockResponseMessage", &bcproto.Message{Sum: &bcproto.Message_NoBlockResponse{
-			NoBlockResponse: &tmbcproto.NoBlockResponse{Height: math.MaxInt64}}},
+		{"BlockResponseMessage", &ocbcproto.Message{Sum: &ocbcproto.Message_BlockResponse{
+			BlockResponse: &ocbcproto.BlockResponse{Block: bpb}}}, "1a750a730a5d0a04080b100b1803220b088092b8c398feffffff012a0212003a20c4da88e876062aa1543400d50d0eaa0dac88096057949cfb7bca7f3a48c04bf96a20e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855120d0a0b48656c6c6f20576f726c641a00c23e00"},
+		{"NoBlockResponseMessage", &ocbcproto.Message{Sum: &ocbcproto.Message_NoBlockResponse{
+			NoBlockResponse: &bcproto.NoBlockResponse{Height: 1}}}, "12020801"},
+		{"NoBlockResponseMessage", &ocbcproto.Message{Sum: &ocbcproto.Message_NoBlockResponse{
+			NoBlockResponse: &bcproto.NoBlockResponse{Height: math.MaxInt64}}},
 			"120a08ffffffffffffffff7f"},
-		{"StatusRequestMessage", &bcproto.Message{Sum: &bcproto.Message_StatusRequest{
-			StatusRequest: &tmbcproto.StatusRequest{}}},
+		{"StatusRequestMessage", &ocbcproto.Message{Sum: &ocbcproto.Message_StatusRequest{
+			StatusRequest: &bcproto.StatusRequest{}}},
 			"2200"},
-		{"StatusResponseMessage", &bcproto.Message{Sum: &bcproto.Message_StatusResponse{
-			StatusResponse: &tmbcproto.StatusResponse{Height: 1, Base: 2}}},
+		{"StatusResponseMessage", &ocbcproto.Message{Sum: &ocbcproto.Message_StatusResponse{
+			StatusResponse: &bcproto.StatusResponse{Height: 1, Base: 2}}},
 			"2a0408011002"},
-		{"StatusResponseMessage", &bcproto.Message{Sum: &bcproto.Message_StatusResponse{
-			StatusResponse: &tmbcproto.StatusResponse{Height: math.MaxInt64, Base: math.MaxInt64}}},
+		{"StatusResponseMessage", &ocbcproto.Message{Sum: &ocbcproto.Message_StatusResponse{
+			StatusResponse: &bcproto.StatusResponse{Height: math.MaxInt64, Base: math.MaxInt64}}},
 			"2a1408ffffffffffffffff7f10ffffffffffffffff7f"},
 	}
 
