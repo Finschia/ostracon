@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/line/ostracon/types"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/line/ostracon/types"
 )
 
 func TestPaginationPage(t *testing.T) {

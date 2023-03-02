@@ -9,9 +9,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
+
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/line/ostracon/libs/pubsub/query"
 	"github.com/line/ostracon/types"
 )

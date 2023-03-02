@@ -12,16 +12,17 @@ import (
 	"testing"
 	"time"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-
 	"github.com/adlio/schema"
 	"github.com/gogo/protobuf/proto"
-	ocabci "github.com/line/ostracon/abci/types"
-	"github.com/line/ostracon/types"
 	"github.com/ory/dockertest"
 	"github.com/ory/dockertest/docker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	abci "github.com/tendermint/tendermint/abci/types"
+
+	ocabci "github.com/line/ostracon/abci/types"
+	"github.com/line/ostracon/types"
 
 	// Register the Postgres database driver.
 	_ "github.com/lib/pq"

@@ -3,8 +3,9 @@
 package mocks
 
 import (
-	state "github.com/line/ostracon/state"
 	mock "github.com/stretchr/testify/mock"
+
+	state "github.com/line/ostracon/state"
 
 	types "github.com/line/ostracon/types"
 )
