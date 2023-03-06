@@ -1463,10 +1463,6 @@ func saveGenesisDoc(db dbm.DB, genDoc *types.GenesisDoc) error {
 
 	blockSize := 0x40000000 // 1gb
 	blocks := make([][]byte, 0)
-	lastBlockSize := len(b) % blockSize
-	if lastBlockSize == 0 {
-		lastBlockSize = blockSize
-	}
 	for i := 0; i < len(b); i += blockSize {
 		end := i + blockSize
 		if end > len(b) {
@@ -1478,7 +1474,10 @@ func saveGenesisDoc(db dbm.DB, genDoc *types.GenesisDoc) error {
 	batch := db.NewBatch()
 	for i, block := range blocks {
 		k := append(genesisDocKey, byte(i))
-		batch.Set(k, block)
+		err = batch.Set(k, block)
+		if err != nil {
+			return err
+		}
 	}
 
 	if err = batch.WriteSync(); err != nil {
