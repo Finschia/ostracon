@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	// "strconv"
 	"strings"
 	"time"
 
@@ -168,12 +169,12 @@ type fastSyncReactor interface {
 // WARNING: using any name from the below list of the existing reactors will
 // result in replacing it with the custom one.
 //
-//  - MEMPOOL
-//  - BLOCKCHAIN
-//  - CONSENSUS
-//  - EVIDENCE
-//  - PEX
-//  - STATESYNC
+//   - MEMPOOL
+//   - BLOCKCHAIN
+//   - CONSENSUS
+//   - EVIDENCE
+//   - PEX
+//   - STATESYNC
 func CustomReactors(reactors map[string]p2p.Reactor) Option {
 	return func(n *Node) {
 		for name, reactor := range reactors {
@@ -1423,13 +1424,29 @@ func LoadStateFromDBOrGenesisDocProvider(
 
 // panics if failed to unmarshal bytes
 func loadGenesisDoc(db dbm.DB) (*types.GenesisDoc, error) {
-	b, err := db.Get(genesisDocKey)
+	var b []byte
+	iter, err := db.Iterator(append(genesisDocKey, byte(0)), append(genesisDocKey, byte(255)))
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
+
+	for ; iter.Valid(); iter.Next() {
+		if err != nil {
+			return nil, err
+		}
+		b = append(b, iter.Value()...)
+	}
+	if err = iter.Close(); err != nil {
+		return nil, err
+	}
+	if err = iter.Error(); err != nil {
+		return nil, err
+	}
+
 	if len(b) == 0 {
 		return nil, errors.New("genesis doc not found")
 	}
+
 	var genDoc *types.GenesisDoc
 	err = tmjson.Unmarshal(b, &genDoc)
 	if err != nil {
@@ -1444,7 +1461,28 @@ func saveGenesisDoc(db dbm.DB, genDoc *types.GenesisDoc) error {
 	if err != nil {
 		return fmt.Errorf("failed to save genesis doc due to marshaling error: %w", err)
 	}
-	if err := db.SetSync(genesisDocKey, b); err != nil {
+
+	blockSize := 0x40000000 // 1gb
+	blocks := make([][]byte, 0)
+	lastBlockSize := len(b) % blockSize
+	if lastBlockSize == 0 {
+		lastBlockSize = blockSize
+	}
+	for i := 0; i < len(b); i += blockSize {
+		end := i + blockSize
+		if end > len(b) {
+			end = len(b)
+		}
+		blocks = append(blocks, b[i:end])
+	}
+
+	batch := db.NewBatch()
+	for i, block := range blocks {
+		k := append(genesisDocKey, byte(i))
+		batch.Set(k, block)
+	}
+
+	if err = batch.WriteSync(); err != nil {
 		return err
 	}
 
