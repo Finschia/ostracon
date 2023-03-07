@@ -1,6 +1,6 @@
 # Ostracon Spec
 
-This is a markdown specification of the Ostracon. Ostracon is designed to have many compatibilities with CometBFT. As such, the Ostracon spec is based on the [CometBFT v0.34.x Spec](https://github.com/cometbft/cometbft/tree/v0.34.x/spec). The Ostracon also has many unique improvements to improve security and performance. This specification clarifies the differences between CometBFT and defines the base data structures, how they are validated, and how they are communicated over the network.
+This document is a specification of the Ostracon. Ostracon is designed to have many compatibilities with CometBFT. As such, the Ostracon spec is based on the [CometBFT v0.34.x Spec](https://github.com/cometbft/cometbft/tree/v0.34.x/spec). The Ostracon also has many unique improvements to improve security and performance. This specification clarifies the differences between CometBFT and defines the base data structures, how they are validated, and how they are communicated over the network.
 
 ## Contents
 
