@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/google/orderedcode"
+
 	"github.com/line/ostracon/libs/pubsub/query"
 	"github.com/line/ostracon/types"
 )

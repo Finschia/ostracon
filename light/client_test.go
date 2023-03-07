@@ -7,16 +7,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	dbm "github.com/tendermint/tm-db"
+
 	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/light"
 	"github.com/line/ostracon/light/provider"
 	mockp "github.com/line/ostracon/light/provider/mock"
 	dbs "github.com/line/ostracon/light/store/db"
 	"github.com/line/ostracon/types"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	dbm "github.com/tendermint/tm-db"
 )
 
 const (

@@ -9,7 +9,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	bcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
+	dbm "github.com/tendermint/tm-db"
 
 	abci "github.com/line/ostracon/abci/types"
 	"github.com/line/ostracon/behaviour"
@@ -25,9 +29,6 @@ import (
 	"github.com/line/ostracon/store"
 	"github.com/line/ostracon/types"
 	tmtime "github.com/line/ostracon/types/time"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	dbm "github.com/tendermint/tm-db"
 )
 
 type mockPeer struct {

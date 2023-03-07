@@ -6,8 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/line/ostracon/light"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -20,6 +18,7 @@ import (
 	"github.com/line/ostracon/config"
 	"github.com/line/ostracon/libs/log"
 	tmsync "github.com/line/ostracon/libs/sync"
+	"github.com/line/ostracon/light"
 	"github.com/line/ostracon/p2p"
 	p2pmocks "github.com/line/ostracon/p2p/mocks"
 	"github.com/line/ostracon/proxy"

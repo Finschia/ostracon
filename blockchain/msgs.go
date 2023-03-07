@@ -5,14 +5,14 @@ import (
 	"fmt"
 
 	"github.com/gogo/protobuf/proto"
-	tmbcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
+	bcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
 
-	bcproto "github.com/line/ostracon/proto/ostracon/blockchain"
+	ocbcproto "github.com/line/ostracon/proto/ostracon/blockchain"
 	"github.com/line/ostracon/types"
 )
 
 const (
-	// NOTE: keep up to date with bcproto.BlockResponse
+	// NOTE: keep up to date with ocbcproto.BlockResponse
 	BlockResponseMessagePrefixSize   = 4
 	BlockResponseMessageFieldKeySize = 1
 	MaxMsgSize                       = types.MaxBlockSizeBytes +
@@ -22,19 +22,19 @@ const (
 
 // EncodeMsg encodes a Protobuf message
 func EncodeMsg(pb proto.Message) ([]byte, error) {
-	msg := bcproto.Message{}
+	msg := ocbcproto.Message{}
 
 	switch pb := pb.(type) {
-	case *tmbcproto.BlockRequest:
-		msg.Sum = &bcproto.Message_BlockRequest{BlockRequest: pb}
-	case *bcproto.BlockResponse:
-		msg.Sum = &bcproto.Message_BlockResponse{BlockResponse: pb}
-	case *tmbcproto.NoBlockResponse:
-		msg.Sum = &bcproto.Message_NoBlockResponse{NoBlockResponse: pb}
-	case *tmbcproto.StatusRequest:
-		msg.Sum = &bcproto.Message_StatusRequest{StatusRequest: pb}
-	case *tmbcproto.StatusResponse:
-		msg.Sum = &bcproto.Message_StatusResponse{StatusResponse: pb}
+	case *bcproto.BlockRequest:
+		msg.Sum = &ocbcproto.Message_BlockRequest{BlockRequest: pb}
+	case *ocbcproto.BlockResponse:
+		msg.Sum = &ocbcproto.Message_BlockResponse{BlockResponse: pb}
+	case *bcproto.NoBlockResponse:
+		msg.Sum = &ocbcproto.Message_NoBlockResponse{NoBlockResponse: pb}
+	case *bcproto.StatusRequest:
+		msg.Sum = &ocbcproto.Message_StatusRequest{StatusRequest: pb}
+	case *bcproto.StatusResponse:
+		msg.Sum = &ocbcproto.Message_StatusResponse{StatusResponse: pb}
 	default:
 		return nil, fmt.Errorf("unknown message type %T", pb)
 	}
@@ -49,7 +49,7 @@ func EncodeMsg(pb proto.Message) ([]byte, error) {
 
 // DecodeMsg decodes a Protobuf message.
 func DecodeMsg(bz []byte) (proto.Message, error) {
-	pb := &bcproto.Message{}
+	pb := &ocbcproto.Message{}
 
 	err := proto.Unmarshal(bz, pb)
 	if err != nil {
@@ -57,15 +57,15 @@ func DecodeMsg(bz []byte) (proto.Message, error) {
 	}
 
 	switch msg := pb.Sum.(type) {
-	case *bcproto.Message_BlockRequest:
+	case *ocbcproto.Message_BlockRequest:
 		return msg.BlockRequest, nil
-	case *bcproto.Message_BlockResponse:
+	case *ocbcproto.Message_BlockResponse:
 		return msg.BlockResponse, nil
-	case *bcproto.Message_NoBlockResponse:
+	case *ocbcproto.Message_NoBlockResponse:
 		return msg.NoBlockResponse, nil
-	case *bcproto.Message_StatusRequest:
+	case *ocbcproto.Message_StatusRequest:
 		return msg.StatusRequest, nil
-	case *bcproto.Message_StatusResponse:
+	case *ocbcproto.Message_StatusResponse:
 		return msg.StatusResponse, nil
 	default:
 		return nil, fmt.Errorf("unknown message type %T", msg)
@@ -79,20 +79,20 @@ func ValidateMsg(pb proto.Message) error {
 	}
 
 	switch msg := pb.(type) {
-	case *tmbcproto.BlockRequest:
+	case *bcproto.BlockRequest:
 		if msg.Height < 0 {
 			return errors.New("negative Height")
 		}
-	case *bcproto.BlockResponse:
+	case *ocbcproto.BlockResponse:
 		_, err := types.BlockFromProto(msg.Block)
 		if err != nil {
 			return err
 		}
-	case *tmbcproto.NoBlockResponse:
+	case *bcproto.NoBlockResponse:
 		if msg.Height < 0 {
 			return errors.New("negative Height")
 		}
-	case *tmbcproto.StatusResponse:
+	case *bcproto.StatusResponse:
 		if msg.Base < 0 {
 			return errors.New("negative Base")
 		}
@@ -102,7 +102,7 @@ func ValidateMsg(pb proto.Message) error {
 		if msg.Base > msg.Height {
 			return fmt.Errorf("base %v cannot be greater than height %v", msg.Base, msg.Height)
 		}
-	case *tmbcproto.StatusRequest:
+	case *bcproto.StatusRequest:
 		return nil
 	default:
 		return fmt.Errorf("unknown message type %T", msg)
