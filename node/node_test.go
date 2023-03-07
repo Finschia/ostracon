@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -607,6 +608,21 @@ func TestNodeInvalidNodeInfoCustomReactors(t *testing.T) {
 		CustomReactors(map[string]p2p.Reactor{"FOO": cr, "BLOCKCHAIN": customBlockchainReactor}),
 	)
 	require.NoError(t, err)
+}
+
+func TestSaveAndLoadBigGensisFile(t *testing.T) {
+	stateDB := dbm.NewMemDB()
+	config := cfg.ResetTestRoot("node_big_genesis_test")
+	defer os.RemoveAll(config.RootDir)
+	n, err := DefaultNewNode(config, log.TestingLogger())
+	require.NoError(t, err)
+	newChainID := strings.Repeat("a", 2000000000) // about 2GB
+	n.genesisDoc.ChainID = newChainID
+	err = saveGenesisDoc(stateDB, n.genesisDoc)
+	require.NoError(t, err)
+	g, err := loadGenesisDoc(stateDB)
+	require.NoError(t, err)
+	require.Equal(t, newChainID, g.ChainID)
 }
 
 func NewInvalidNode(config *cfg.Config,
