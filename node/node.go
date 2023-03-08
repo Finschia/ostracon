@@ -168,12 +168,12 @@ type fastSyncReactor interface {
 // WARNING: using any name from the below list of the existing reactors will
 // result in replacing it with the custom one.
 //
-//  - MEMPOOL
-//  - BLOCKCHAIN
-//  - CONSENSUS
-//  - EVIDENCE
-//  - PEX
-//  - STATESYNC
+//   - MEMPOOL
+//   - BLOCKCHAIN
+//   - CONSENSUS
+//   - EVIDENCE
+//   - PEX
+//   - STATESYNC
 func CustomReactors(reactors map[string]p2p.Reactor) Option {
 	return func(n *Node) {
 		for name, reactor := range reactors {
@@ -1461,7 +1461,7 @@ func saveGenesisDoc(db dbm.DB, genDoc *types.GenesisDoc) error {
 		return fmt.Errorf("failed to save genesis doc due to marshaling error: %w", err)
 	}
 
-	blockSize := 0x40000000 // 1gb
+	blockSize := 100000000 // 100mb
 	blocks := make([][]byte, 0)
 	for i := 0; i < len(b); i += blockSize {
 		end := i + blockSize
