@@ -1461,7 +1461,7 @@ func saveGenesisDoc(db dbm.DB, genDoc *types.GenesisDoc) error {
 		return fmt.Errorf("failed to save genesis doc due to marshaling error: %w", err)
 	}
 
-	blockSize := 0x8000000 // 100mb
+	blockSize := 0x40000000 // 1gb
 	blocks := make([][]byte, 0)
 	for i := 0; i < len(b); i += blockSize {
 		end := i + blockSize
