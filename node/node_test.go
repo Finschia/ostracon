@@ -616,13 +616,14 @@ func TestSaveAndLoadBigGensisFile(t *testing.T) {
 	defer os.RemoveAll(config.RootDir)
 	n, err := DefaultNewNode(config, log.TestingLogger())
 	require.NoError(t, err)
-	newChainID := strings.Repeat("a", 2000000000) // about 2GB
+	newChainID := strings.Repeat("a", 300000000) // about 300MB
 	n.genesisDoc.ChainID = newChainID
 	err = saveGenesisDoc(stateDB, n.genesisDoc)
 	require.NoError(t, err)
 	g, err := loadGenesisDoc(stateDB)
 	require.NoError(t, err)
 	require.Equal(t, newChainID, g.ChainID)
+	stateDB.Close()
 }
 
 func NewInvalidNode(config *cfg.Config,
