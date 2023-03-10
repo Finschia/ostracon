@@ -1430,9 +1430,6 @@ func loadGenesisDoc(db dbm.DB) (*types.GenesisDoc, error) {
 	}
 
 	for ; iter.Valid(); iter.Next() {
-		if err != nil {
-			return nil, err
-		}
 		b = append(b, iter.Value()...)
 	}
 	if err = iter.Close(); err != nil {
