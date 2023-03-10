@@ -1438,9 +1438,6 @@ func loadGenesisDoc(db dbm.DB) (*types.GenesisDoc, error) {
 	if err = iter.Close(); err != nil {
 		return nil, err
 	}
-	if err = iter.Error(); err != nil {
-		return nil, err
-	}
 
 	if len(b) == 0 {
 		return nil, errors.New("genesis doc not found")
