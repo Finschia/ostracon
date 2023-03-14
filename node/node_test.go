@@ -611,7 +611,7 @@ func TestNodeInvalidNodeInfoCustomReactors(t *testing.T) {
 }
 
 func TestSaveAndLoadBigGensisFile(t *testing.T) {
-	stateDB, err := dbm.NewDB("state", "goleveldb", os.TempDir())
+	stateDB, err := dbm.NewGoLevelDB("state", os.TempDir())
 	require.NoError(t, err)
 	config := cfg.ResetTestRoot("node_big_genesis_test")
 	defer os.RemoveAll(config.RootDir)
