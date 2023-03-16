@@ -24,8 +24,7 @@
 - [node] [\#576](https://github.com/line/ostracon/pull/576) feat: big genesis file
 
 ### BUG FIXES
-
-* Nothing
+- Nothing
 
 ## v1.0.8
 *Dec 27, 2022*
