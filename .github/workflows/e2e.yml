@@ -19,7 +19,7 @@ jobs:
     outputs:
       CACHE_FILE: ${{ steps.prep.outputs.CACHE_FILE }}
     steps:
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
           go-version: '1.18'
 
@@ -96,7 +96,7 @@ jobs:
     needs: e2e-build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
           go-version: '1.18'
 
