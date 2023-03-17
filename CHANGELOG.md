@@ -1,5 +1,31 @@
 # Changelog
 
+## v1.0.9
+*Mar 16, 2023*
+
+* Make a breaking change to the consensus logic for tendermint compatibity
+* Define the specification of Ostracon
+
+### BREAKING CHANGE
+- [consensus] [\#541](https://github.com/line/ostracon/pull/541) Remove BLS functionality from the mainstream
+- [consensus] [\#543](https://github.com/line/ostracon/pull/543) Remove the voter election process
+- [consensus] [\#559](https://github.com/line/ostracon/pull/559) Move VRF proof from Header to Entropy for compatibity
+- [types] [\#546](https://github.com/line/ostracon/pull/546) feat!: replace a some same proto message to Tendermint
+
+### FEATURES
+- [spec] [\#565](https://github.com/line/ostracon/pull/565) Add Ostracon specification skeleton
+
+### IMPROVEMENTS
+- [types] [\#563](https://github.com/line/ostracon/pull/563) remove multiple sampling and integrate with Proposer election
+- [types] [\#565](https://github.com/line/ostracon/pull/565) Add entropy correctness test
+- [types] [\#575](https://github.com/line/ostracon/pull/575) Fix TODOs in [\#546](https://github.com/line/ostracon/pull/546)
+- [docs] [\#560](https://github.com/line/ostracon/pull/560) Merge document corrections in LBM
+- [github] [\#578](https://github.com/line/ostracon/pull/578) feat: Add codeowner
+- [node] [\#576](https://github.com/line/ostracon/pull/576) feat: big genesis file
+
+### BUG FIXES
+- Nothing
+
 ## v1.0.8
 *Dec 27, 2022*
 
