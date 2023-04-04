@@ -13,7 +13,7 @@
 - [types] [\#546](https://github.com/line/ostracon/pull/546) feat!: replace a some same proto message to Tendermint
 
 ### FEATURES
-- [spec] [\#565](https://github.com/line/ostracon/pull/565) Add Ostracon specification skeleton
+- [spec] [\#567](https://github.com/line/ostracon/pull/567) Add Ostracon specification skeleton
 
 ### IMPROVEMENTS
 - [types] [\#563](https://github.com/line/ostracon/pull/563) remove multiple sampling and integrate with Proposer election
