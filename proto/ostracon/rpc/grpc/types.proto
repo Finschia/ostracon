@@ -1,6 +1,6 @@
 syntax = "proto3";
 package ostracon.rpc.grpc;
-option  go_package = "github.com/line/ostracon/rpc/grpc;coregrpc";
+option  go_package = "github.com/Finschia/ostracon/rpc/grpc;coregrpc";
 
 import "ostracon/abci/types.proto";
 import "tendermint/abci/types.proto";

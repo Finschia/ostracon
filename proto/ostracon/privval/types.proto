@@ -6,7 +6,7 @@ import "gogoproto/gogo.proto";
 import "tendermint/types/types.proto";
 import "tendermint/privval/types.proto";
 
-option go_package = "github.com/line/ostracon/proto/ostracon/privval";
+option go_package = "github.com/Finschia/ostracon/proto/ostracon/privval";
 
 // VRFProofRequest is a PrivValidatorSocket message containing a message to generate proof.
 message VRFProofRequest {
