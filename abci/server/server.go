@@ -10,8 +10,8 @@ package server
 import (
 	"fmt"
 
-	"github.com/line/ostracon/abci/types"
-	"github.com/line/ostracon/libs/service"
+	"github.com/Finschia/ostracon/abci/types"
+	"github.com/Finschia/ostracon/libs/service"
 )
 
 func NewServer(protoAddr, transport string, app types.Application) (service.Service, error) {

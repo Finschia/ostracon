@@ -4,7 +4,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/line/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto"
 )
 
 // The code in this file is adapted from agl/ed25519.

@@ -9,7 +9,7 @@ import (
 
 	ssproto "github.com/tendermint/tendermint/proto/tendermint/statesync"
 
-	tmproto "github.com/line/ostracon/proto/ostracon/types"
+	tmproto "github.com/Finschia/ostracon/proto/ostracon/types"
 )
 
 func TestValidateMsg(t *testing.T) {

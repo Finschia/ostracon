@@ -5,8 +5,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/line/ostracon/libs/log"
-	e2e "github.com/line/ostracon/test/e2e/pkg"
+	"github.com/Finschia/ostracon/libs/log"
+	e2e "github.com/Finschia/ostracon/test/e2e/pkg"
 )
 
 func Start(testnet *e2e.Testnet) error {

@@ -8,14 +8,14 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/ed25519"
-	"github.com/line/ostracon/crypto/tmhash"
-	tmbytes "github.com/line/ostracon/libs/bytes"
-	"github.com/line/ostracon/libs/rand"
-	"github.com/line/ostracon/types"
-	tmtime "github.com/line/ostracon/types/time"
-	"github.com/line/ostracon/version"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	"github.com/Finschia/ostracon/crypto/tmhash"
+	tmbytes "github.com/Finschia/ostracon/libs/bytes"
+	"github.com/Finschia/ostracon/libs/rand"
+	"github.com/Finschia/ostracon/types"
+	tmtime "github.com/Finschia/ostracon/types/time"
+	"github.com/Finschia/ostracon/version"
 )
 
 // privKeys is a helper type for testing.

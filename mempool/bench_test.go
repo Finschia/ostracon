@@ -4,8 +4,8 @@ import (
 	"encoding/binary"
 	"testing"
 
-	"github.com/line/ostracon/abci/example/kvstore"
-	"github.com/line/ostracon/proxy"
+	"github.com/Finschia/ostracon/abci/example/kvstore"
+	"github.com/Finschia/ostracon/proxy"
 )
 
 func BenchmarkReap(b *testing.B) {

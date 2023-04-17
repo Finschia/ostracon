@@ -15,14 +15,14 @@ import (
 
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/line/ostracon/libs/log"
-	tmmath "github.com/line/ostracon/libs/math"
-	tmos "github.com/line/ostracon/libs/os"
-	"github.com/line/ostracon/light"
-	lproxy "github.com/line/ostracon/light/proxy"
-	lrpc "github.com/line/ostracon/light/rpc"
-	dbs "github.com/line/ostracon/light/store/db"
-	rpcserver "github.com/line/ostracon/rpc/jsonrpc/server"
+	"github.com/Finschia/ostracon/libs/log"
+	tmmath "github.com/Finschia/ostracon/libs/math"
+	tmos "github.com/Finschia/ostracon/libs/os"
+	"github.com/Finschia/ostracon/light"
+	lproxy "github.com/Finschia/ostracon/light/proxy"
+	lrpc "github.com/Finschia/ostracon/light/rpc"
+	dbs "github.com/Finschia/ostracon/light/store/db"
+	rpcserver "github.com/Finschia/ostracon/rpc/jsonrpc/server"
 )
 
 // LightCmd represents the base command when called without any subcommands

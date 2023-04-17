@@ -13,17 +13,17 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/ed25519"
-	"github.com/line/ostracon/crypto/merkle"
-	"github.com/line/ostracon/crypto/tmhash"
-	"github.com/line/ostracon/crypto/vrf"
-	"github.com/line/ostracon/libs/bits"
-	tmbytes "github.com/line/ostracon/libs/bytes"
-	tmmath "github.com/line/ostracon/libs/math"
-	tmsync "github.com/line/ostracon/libs/sync"
-	ocproto "github.com/line/ostracon/proto/ostracon/types"
-	"github.com/line/ostracon/version"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	"github.com/Finschia/ostracon/crypto/merkle"
+	"github.com/Finschia/ostracon/crypto/tmhash"
+	"github.com/Finschia/ostracon/crypto/vrf"
+	"github.com/Finschia/ostracon/libs/bits"
+	tmbytes "github.com/Finschia/ostracon/libs/bytes"
+	tmmath "github.com/Finschia/ostracon/libs/math"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
+	ocproto "github.com/Finschia/ostracon/proto/ostracon/types"
+	"github.com/Finschia/ostracon/version"
 )
 
 const (

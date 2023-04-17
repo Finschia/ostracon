@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/line/ostracon/libs/log"
+	"github.com/Finschia/ostracon/libs/log"
 )
 
 type Capabilities struct {

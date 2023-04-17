@@ -9,10 +9,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	rpchttp "github.com/line/ostracon/rpc/client/http"
-	rpctypes "github.com/line/ostracon/rpc/core/types"
-	e2e "github.com/line/ostracon/test/e2e/pkg"
-	"github.com/line/ostracon/types"
+	rpchttp "github.com/Finschia/ostracon/rpc/client/http"
+	rpctypes "github.com/Finschia/ostracon/rpc/core/types"
+	e2e "github.com/Finschia/ostracon/test/e2e/pkg"
+	"github.com/Finschia/ostracon/types"
 )
 
 func init() {

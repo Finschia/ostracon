@@ -1,7 +1,7 @@
 package state
 
 import (
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/types"
 )
 
 //------------------------------------------------------

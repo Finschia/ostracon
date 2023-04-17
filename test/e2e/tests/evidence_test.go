@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"testing"
 
-	e2e "github.com/line/ostracon/test/e2e/pkg"
-	"github.com/line/ostracon/types"
+	e2e "github.com/Finschia/ostracon/test/e2e/pkg"
+	"github.com/Finschia/ostracon/types"
 )
 
 // assert that all nodes that have blocks at the height of a misbehavior has evidence

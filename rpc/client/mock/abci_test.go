@@ -11,13 +11,13 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/line/ostracon/abci/example/kvstore"
-	ocabci "github.com/line/ostracon/abci/types"
-	"github.com/line/ostracon/libs/bytes"
-	"github.com/line/ostracon/rpc/client"
-	"github.com/line/ostracon/rpc/client/mock"
-	ctypes "github.com/line/ostracon/rpc/core/types"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/abci/example/kvstore"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	"github.com/Finschia/ostracon/libs/bytes"
+	"github.com/Finschia/ostracon/rpc/client"
+	"github.com/Finschia/ostracon/rpc/client/mock"
+	ctypes "github.com/Finschia/ostracon/rpc/core/types"
+	"github.com/Finschia/ostracon/types"
 )
 
 func TestABCIMock(t *testing.T) {

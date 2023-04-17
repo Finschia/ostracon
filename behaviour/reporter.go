@@ -3,8 +3,8 @@ package behaviour
 import (
 	"errors"
 
-	tmsync "github.com/line/ostracon/libs/sync"
-	"github.com/line/ostracon/p2p"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
+	"github.com/Finschia/ostracon/p2p"
 )
 
 // Reporter provides an interface for reactors to report the behaviour

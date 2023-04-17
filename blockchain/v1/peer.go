@@ -5,10 +5,10 @@ import (
 	"math"
 	"time"
 
-	flow "github.com/line/ostracon/libs/flowrate"
-	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/p2p"
-	"github.com/line/ostracon/types"
+	flow "github.com/Finschia/ostracon/libs/flowrate"
+	"github.com/Finschia/ostracon/libs/log"
+	"github.com/Finschia/ostracon/p2p"
+	"github.com/Finschia/ostracon/types"
 )
 
 //--------

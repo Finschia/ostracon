@@ -3,7 +3,7 @@ package fuzz_test
 import (
 	"fmt"
 
-	"github.com/line/ostracon/libs/pubsub/query"
+	"github.com/Finschia/ostracon/libs/pubsub/query"
 )
 
 func Fuzz(data []byte) int {

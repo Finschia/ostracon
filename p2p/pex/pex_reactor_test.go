@@ -15,10 +15,10 @@ import (
 
 	tmp2p "github.com/tendermint/tendermint/proto/tendermint/p2p"
 
-	"github.com/line/ostracon/config"
-	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/p2p"
-	"github.com/line/ostracon/p2p/mock"
+	"github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/libs/log"
+	"github.com/Finschia/ostracon/p2p"
+	"github.com/Finschia/ostracon/p2p/mock"
 )
 
 var (

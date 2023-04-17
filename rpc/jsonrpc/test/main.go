@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/line/ostracon/libs/log"
-	tmos "github.com/line/ostracon/libs/os"
-	rpcserver "github.com/line/ostracon/rpc/jsonrpc/server"
-	rpctypes "github.com/line/ostracon/rpc/jsonrpc/types"
+	"github.com/Finschia/ostracon/libs/log"
+	tmos "github.com/Finschia/ostracon/libs/os"
+	rpcserver "github.com/Finschia/ostracon/rpc/jsonrpc/server"
+	rpctypes "github.com/Finschia/ostracon/rpc/jsonrpc/types"
 )
 
 var routes = map[string]*rpcserver.RPCFunc{

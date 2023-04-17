@@ -17,13 +17,13 @@ import (
 
 	"github.com/tendermint/tendermint/abci/types"
 
-	abcicli "github.com/line/ostracon/abci/client"
-	"github.com/line/ostracon/abci/example/code"
-	"github.com/line/ostracon/abci/example/kvstore"
-	abciserver "github.com/line/ostracon/abci/server"
-	ocabci "github.com/line/ostracon/abci/types"
-	"github.com/line/ostracon/libs/log"
-	tmnet "github.com/line/ostracon/libs/net"
+	abcicli "github.com/Finschia/ostracon/abci/client"
+	"github.com/Finschia/ostracon/abci/example/code"
+	"github.com/Finschia/ostracon/abci/example/kvstore"
+	abciserver "github.com/Finschia/ostracon/abci/server"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	"github.com/Finschia/ostracon/libs/log"
+	tmnet "github.com/Finschia/ostracon/libs/net"
 )
 
 func init() {

@@ -8,11 +8,11 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/line/ostracon/abci/types"
-	tmlog "github.com/line/ostracon/libs/log"
-	tmnet "github.com/line/ostracon/libs/net"
-	"github.com/line/ostracon/libs/service"
-	tmsync "github.com/line/ostracon/libs/sync"
+	"github.com/Finschia/ostracon/abci/types"
+	tmlog "github.com/Finschia/ostracon/libs/log"
+	tmnet "github.com/Finschia/ostracon/libs/net"
+	"github.com/Finschia/ostracon/libs/service"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
 )
 
 // var maxNumberConnections = 2

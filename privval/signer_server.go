@@ -3,10 +3,10 @@ package privval
 import (
 	"io"
 
-	"github.com/line/ostracon/libs/service"
-	tmsync "github.com/line/ostracon/libs/sync"
-	privvalproto "github.com/line/ostracon/proto/ostracon/privval"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/libs/service"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
+	privvalproto "github.com/Finschia/ostracon/proto/ostracon/privval"
+	"github.com/Finschia/ostracon/types"
 )
 
 // ValidationRequestHandlerFunc handles different remoteSigner requests

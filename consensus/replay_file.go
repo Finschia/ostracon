@@ -12,13 +12,13 @@ import (
 
 	dbm "github.com/tendermint/tm-db"
 
-	cfg "github.com/line/ostracon/config"
-	"github.com/line/ostracon/libs/log"
-	tmos "github.com/line/ostracon/libs/os"
-	"github.com/line/ostracon/proxy"
-	sm "github.com/line/ostracon/state"
-	"github.com/line/ostracon/store"
-	"github.com/line/ostracon/types"
+	cfg "github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/libs/log"
+	tmos "github.com/Finschia/ostracon/libs/os"
+	"github.com/Finschia/ostracon/proxy"
+	sm "github.com/Finschia/ostracon/state"
+	"github.com/Finschia/ostracon/store"
+	"github.com/Finschia/ostracon/types"
 )
 
 const (

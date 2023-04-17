@@ -12,10 +12,10 @@ import (
 	"github.com/gorilla/websocket"
 	metrics "github.com/rcrowley/go-metrics"
 
-	tmrand "github.com/line/ostracon/libs/rand"
-	"github.com/line/ostracon/libs/service"
-	tmsync "github.com/line/ostracon/libs/sync"
-	types "github.com/line/ostracon/rpc/jsonrpc/types"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	"github.com/Finschia/ostracon/libs/service"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
+	types "github.com/Finschia/ostracon/rpc/jsonrpc/types"
 )
 
 const (

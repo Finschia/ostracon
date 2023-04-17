@@ -3,10 +3,10 @@
 package mocks
 
 import (
-	abcicli "github.com/line/ostracon/abci/client"
-	abcitypes "github.com/line/ostracon/abci/types"
+	abcicli "github.com/Finschia/ostracon/abci/client"
+	abcitypes "github.com/Finschia/ostracon/abci/types"
 
-	log "github.com/line/ostracon/libs/log"
+	log "github.com/Finschia/ostracon/libs/log"
 
 	mock "github.com/stretchr/testify/mock"
 

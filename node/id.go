@@ -3,7 +3,7 @@ package node
 import (
 	"time"
 
-	"github.com/line/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto"
 )
 
 type ID struct {

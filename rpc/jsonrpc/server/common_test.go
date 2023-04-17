@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/rpc/jsonrpc/types"
+	"github.com/Finschia/ostracon/libs/log"
+	"github.com/Finschia/ostracon/rpc/jsonrpc/types"
 )
 
 var (

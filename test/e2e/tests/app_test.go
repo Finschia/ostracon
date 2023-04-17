@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	e2e "github.com/line/ostracon/test/e2e/pkg"
-	"github.com/line/ostracon/types"
+	e2e "github.com/Finschia/ostracon/test/e2e/pkg"
+	"github.com/Finschia/ostracon/types"
 )
 
 // Tests that any initial state given in genesis has made it into the app.

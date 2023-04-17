@@ -1,7 +1,7 @@
 package cmap
 
 import (
-	tmsync "github.com/line/ostracon/libs/sync"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
 )
 
 // CMap is a goroutine-safe map

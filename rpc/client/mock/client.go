@@ -18,13 +18,13 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/line/ostracon/libs/bytes"
-	"github.com/line/ostracon/libs/service"
-	"github.com/line/ostracon/rpc/client"
-	"github.com/line/ostracon/rpc/core"
-	ctypes "github.com/line/ostracon/rpc/core/types"
-	rpctypes "github.com/line/ostracon/rpc/jsonrpc/types"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/libs/bytes"
+	"github.com/Finschia/ostracon/libs/service"
+	"github.com/Finschia/ostracon/rpc/client"
+	"github.com/Finschia/ostracon/rpc/core"
+	ctypes "github.com/Finschia/ostracon/rpc/core/types"
+	rpctypes "github.com/Finschia/ostracon/rpc/jsonrpc/types"
+	"github.com/Finschia/ostracon/types"
 )
 
 // Client wraps arbitrary implementations of the various interfaces.

@@ -14,9 +14,9 @@ import (
 
 	tmp2p "github.com/tendermint/tendermint/proto/tendermint/p2p"
 
-	"github.com/line/ostracon/crypto/ed25519"
-	"github.com/line/ostracon/libs/protoio"
-	"github.com/line/ostracon/p2p/conn"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	"github.com/Finschia/ostracon/libs/protoio"
+	"github.com/Finschia/ostracon/p2p/conn"
 	"github.com/miekg/dns"
 	"github.com/stretchr/testify/require"
 )

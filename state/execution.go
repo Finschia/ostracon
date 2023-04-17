@@ -8,17 +8,17 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	ocabci "github.com/line/ostracon/abci/types"
-	"github.com/line/ostracon/crypto"
-	cryptoenc "github.com/line/ostracon/crypto/encoding"
-	"github.com/line/ostracon/crypto/vrf"
-	"github.com/line/ostracon/libs/fail"
-	"github.com/line/ostracon/libs/log"
-	mempl "github.com/line/ostracon/mempool"
-	tmstate "github.com/line/ostracon/proto/ostracon/state"
-	"github.com/line/ostracon/proxy"
-	"github.com/line/ostracon/types"
-	canonictime "github.com/line/ostracon/types/time"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	"github.com/Finschia/ostracon/crypto"
+	cryptoenc "github.com/Finschia/ostracon/crypto/encoding"
+	"github.com/Finschia/ostracon/crypto/vrf"
+	"github.com/Finschia/ostracon/libs/fail"
+	"github.com/Finschia/ostracon/libs/log"
+	mempl "github.com/Finschia/ostracon/mempool"
+	tmstate "github.com/Finschia/ostracon/proto/ostracon/state"
+	"github.com/Finschia/ostracon/proxy"
+	"github.com/Finschia/ostracon/types"
+	canonictime "github.com/Finschia/ostracon/types/time"
 )
 
 //-----------------------------------------------------------------------------

@@ -17,12 +17,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/line/ostracon/config"
-	"github.com/line/ostracon/crypto/ed25519"
-	"github.com/line/ostracon/libs/log"
-	net2 "github.com/line/ostracon/libs/net"
-	tmsync "github.com/line/ostracon/libs/sync"
-	"github.com/line/ostracon/p2p/conn"
+	"github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	"github.com/Finschia/ostracon/libs/log"
+	net2 "github.com/Finschia/ostracon/libs/net"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
+	"github.com/Finschia/ostracon/p2p/conn"
 )
 
 var (

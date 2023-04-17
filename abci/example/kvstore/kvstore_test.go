@@ -12,12 +12,12 @@ import (
 	"github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	abcicli "github.com/line/ostracon/abci/client"
-	"github.com/line/ostracon/abci/example/code"
-	abciserver "github.com/line/ostracon/abci/server"
-	ocabci "github.com/line/ostracon/abci/types"
-	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/libs/service"
+	abcicli "github.com/Finschia/ostracon/abci/client"
+	"github.com/Finschia/ostracon/abci/example/code"
+	abciserver "github.com/Finschia/ostracon/abci/server"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	"github.com/Finschia/ostracon/libs/log"
+	"github.com/Finschia/ostracon/libs/service"
 )
 
 const (

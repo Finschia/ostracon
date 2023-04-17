@@ -3,7 +3,7 @@ package indexer
 import (
 	"time"
 
-	"github.com/line/ostracon/libs/pubsub/query"
+	"github.com/Finschia/ostracon/libs/pubsub/query"
 )
 
 // QueryRanges defines a mapping between a composite event key and a QueryRange.

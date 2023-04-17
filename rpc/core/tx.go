@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"sort"
 
-	tmmath "github.com/line/ostracon/libs/math"
-	tmquery "github.com/line/ostracon/libs/pubsub/query"
-	ctypes "github.com/line/ostracon/rpc/core/types"
-	rpctypes "github.com/line/ostracon/rpc/jsonrpc/types"
-	"github.com/line/ostracon/state/txindex/null"
-	"github.com/line/ostracon/types"
+	tmmath "github.com/Finschia/ostracon/libs/math"
+	tmquery "github.com/Finschia/ostracon/libs/pubsub/query"
+	ctypes "github.com/Finschia/ostracon/rpc/core/types"
+	rpctypes "github.com/Finschia/ostracon/rpc/jsonrpc/types"
+	"github.com/Finschia/ostracon/state/txindex/null"
+	"github.com/Finschia/ostracon/types"
 )
 
 // Tx allows you to query the transaction results. `nil` could mean the

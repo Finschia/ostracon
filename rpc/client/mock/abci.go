@@ -5,12 +5,12 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	ocabci "github.com/line/ostracon/abci/types"
-	"github.com/line/ostracon/libs/bytes"
-	"github.com/line/ostracon/proxy"
-	"github.com/line/ostracon/rpc/client"
-	ctypes "github.com/line/ostracon/rpc/core/types"
-	"github.com/line/ostracon/types"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	"github.com/Finschia/ostracon/libs/bytes"
+	"github.com/Finschia/ostracon/proxy"
+	"github.com/Finschia/ostracon/rpc/client"
+	ctypes "github.com/Finschia/ostracon/rpc/core/types"
+	"github.com/Finschia/ostracon/types"
 )
 
 // ABCIApp will send all abci related request to the named app,

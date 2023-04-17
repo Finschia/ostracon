@@ -6,12 +6,12 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/line/ostracon/libs/log"
-	tmpubsub "github.com/line/ostracon/libs/pubsub"
-	"github.com/line/ostracon/light"
-	lrpc "github.com/line/ostracon/light/rpc"
-	rpchttp "github.com/line/ostracon/rpc/client/http"
-	rpcserver "github.com/line/ostracon/rpc/jsonrpc/server"
+	"github.com/Finschia/ostracon/libs/log"
+	tmpubsub "github.com/Finschia/ostracon/libs/pubsub"
+	"github.com/Finschia/ostracon/light"
+	lrpc "github.com/Finschia/ostracon/light/rpc"
+	rpchttp "github.com/Finschia/ostracon/rpc/client/http"
+	rpcserver "github.com/Finschia/ostracon/rpc/jsonrpc/server"
 )
 
 // A Proxy defines parameters for running an HTTP server proxy.

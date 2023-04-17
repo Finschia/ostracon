@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	abcitypes "github.com/line/ostracon/abci/types"
+	abcitypes "github.com/Finschia/ostracon/abci/types"
 	mock "github.com/stretchr/testify/mock"
 
 	types "github.com/tendermint/tendermint/abci/types"

@@ -1,7 +1,7 @@
 package core
 
 import (
-	rpc "github.com/line/ostracon/rpc/jsonrpc/server"
+	rpc "github.com/Finschia/ostracon/rpc/jsonrpc/server"
 )
 
 // TODO: better system than "unsafe" prefix

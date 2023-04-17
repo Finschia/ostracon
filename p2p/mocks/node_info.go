@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	p2p "github.com/line/ostracon/p2p"
+	p2p "github.com/Finschia/ostracon/p2p"
 	mock "github.com/stretchr/testify/mock"
 )
 

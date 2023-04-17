@@ -11,15 +11,15 @@ import (
 
 	db "github.com/tendermint/tm-db"
 
-	"github.com/line/ostracon/abci/example/kvstore"
-	cfg "github.com/line/ostracon/config"
-	"github.com/line/ostracon/libs/log"
-	tmrand "github.com/line/ostracon/libs/rand"
-	"github.com/line/ostracon/privval"
-	"github.com/line/ostracon/proxy"
-	sm "github.com/line/ostracon/state"
-	"github.com/line/ostracon/store"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/abci/example/kvstore"
+	cfg "github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/libs/log"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	"github.com/Finschia/ostracon/privval"
+	"github.com/Finschia/ostracon/proxy"
+	sm "github.com/Finschia/ostracon/state"
+	"github.com/Finschia/ostracon/store"
+	"github.com/Finschia/ostracon/types"
 )
 
 // WALGenerateNBlocks generates a consensus WAL. It does this by spinning up a

@@ -3,7 +3,7 @@ package p2p
 import (
 	"net"
 
-	tmsync "github.com/line/ostracon/libs/sync"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
 )
 
 // IPeerSet has a (immutable) subset of the methods of PeerSet.

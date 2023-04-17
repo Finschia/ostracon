@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/line/ostracon/libs/service"
+	"github.com/Finschia/ostracon/libs/service"
 )
 
 const (

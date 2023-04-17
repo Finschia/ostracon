@@ -4,8 +4,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/line/ostracon/crypto/ed25519"
-	p2pconn "github.com/line/ostracon/p2p/conn"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	p2pconn "github.com/Finschia/ostracon/p2p/conn"
 )
 
 const (

@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/line/ostracon/p2p"
-	p2pmocks "github.com/line/ostracon/p2p/mocks"
+	"github.com/Finschia/ostracon/p2p"
+	p2pmocks "github.com/Finschia/ostracon/p2p/mocks"
 )
 
 func TestSnapshot_Key(t *testing.T) {

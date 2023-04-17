@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	cfg "github.com/line/ostracon/config"
-	"github.com/line/ostracon/privval"
+	cfg "github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/privval"
 )
 
 func setupEnv(t *testing.T) string {

@@ -9,9 +9,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	cfg "github.com/line/ostracon/config"
-	tmos "github.com/line/ostracon/libs/os"
-	nm "github.com/line/ostracon/node"
+	cfg "github.com/Finschia/ostracon/config"
+	tmos "github.com/Finschia/ostracon/libs/os"
+	nm "github.com/Finschia/ostracon/node"
 )
 
 var (

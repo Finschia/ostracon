@@ -7,7 +7,7 @@ import (
 	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 
-	"github.com/line/ostracon/version"
+	"github.com/Finschia/ostracon/version"
 )
 
 // Rollback overwrites the current Ostracon state (height n) with the most

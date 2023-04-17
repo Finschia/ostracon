@@ -8,17 +8,17 @@ import (
 	"strings"
 	"time"
 
-	abci "github.com/line/ostracon/abci/types"
-	cfg "github.com/line/ostracon/config"
-	"github.com/line/ostracon/libs/log"
-	tmnet "github.com/line/ostracon/libs/net"
-	nm "github.com/line/ostracon/node"
-	"github.com/line/ostracon/p2p"
-	"github.com/line/ostracon/privval"
-	"github.com/line/ostracon/proxy"
-	ctypes "github.com/line/ostracon/rpc/core/types"
-	core_grpc "github.com/line/ostracon/rpc/grpc"
-	rpcclient "github.com/line/ostracon/rpc/jsonrpc/client"
+	abci "github.com/Finschia/ostracon/abci/types"
+	cfg "github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/libs/log"
+	tmnet "github.com/Finschia/ostracon/libs/net"
+	nm "github.com/Finschia/ostracon/node"
+	"github.com/Finschia/ostracon/p2p"
+	"github.com/Finschia/ostracon/privval"
+	"github.com/Finschia/ostracon/proxy"
+	ctypes "github.com/Finschia/ostracon/rpc/core/types"
+	core_grpc "github.com/Finschia/ostracon/rpc/grpc"
+	rpcclient "github.com/Finschia/ostracon/rpc/jsonrpc/client"
 )
 
 // Options helps with specifying some parameters for our RPC testing for greater

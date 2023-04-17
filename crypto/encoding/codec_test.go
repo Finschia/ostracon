@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/ed25519"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/ed25519"
 )
 
 func testPubKeyFromToProto(t *testing.T, sk crypto.PrivKey) {

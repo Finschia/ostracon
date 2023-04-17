@@ -3,8 +3,8 @@ package main
 import (
 	"time"
 
-	"github.com/line/ostracon/libs/log"
-	e2e "github.com/line/ostracon/test/e2e/pkg"
+	"github.com/Finschia/ostracon/libs/log"
+	e2e "github.com/Finschia/ostracon/test/e2e/pkg"
 )
 
 // Wait waits for a number of blocks to be produced, and for all nodes to catch

@@ -5,11 +5,11 @@ package mocks
 import (
 	mock "github.com/stretchr/testify/mock"
 
-	state "github.com/line/ostracon/state"
+	state "github.com/Finschia/ostracon/state"
 
-	ostraconstate "github.com/line/ostracon/proto/ostracon/state"
+	ostraconstate "github.com/Finschia/ostracon/proto/ostracon/state"
 
-	ostracontypes "github.com/line/ostracon/types"
+	ostracontypes "github.com/Finschia/ostracon/types"
 
 	types "github.com/tendermint/tendermint/proto/tendermint/types"
 )

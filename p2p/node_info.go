@@ -8,9 +8,9 @@ import (
 
 	tmp2p "github.com/tendermint/tendermint/proto/tendermint/p2p"
 
-	tmbytes "github.com/line/ostracon/libs/bytes"
-	tmstrings "github.com/line/ostracon/libs/strings"
-	"github.com/line/ostracon/version"
+	tmbytes "github.com/Finschia/ostracon/libs/bytes"
+	tmstrings "github.com/Finschia/ostracon/libs/strings"
+	"github.com/Finschia/ostracon/version"
 )
 
 //go:generate mockery --case underscore --name NodeInfo

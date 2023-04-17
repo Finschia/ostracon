@@ -12,10 +12,10 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/line/ostracon/libs/pubsub/query"
-	"github.com/line/ostracon/state/indexer"
-	"github.com/line/ostracon/state/txindex"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/libs/pubsub/query"
+	"github.com/Finschia/ostracon/state/indexer"
+	"github.com/Finschia/ostracon/state/txindex"
+	"github.com/Finschia/ostracon/types"
 )
 
 const (

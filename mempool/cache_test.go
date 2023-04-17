@@ -7,10 +7,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/line/ostracon/abci/example/kvstore"
-	abci "github.com/line/ostracon/abci/types"
-	"github.com/line/ostracon/proxy"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/abci/example/kvstore"
+	abci "github.com/Finschia/ostracon/abci/types"
+	"github.com/Finschia/ostracon/proxy"
+	"github.com/Finschia/ostracon/types"
 )
 
 func TestCacheRemove(t *testing.T) {

@@ -10,14 +10,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/line/ostracon/abci/example/kvstore"
-	"github.com/line/ostracon/light/provider"
-	lighthttp "github.com/line/ostracon/light/provider/http"
-	rpcclient "github.com/line/ostracon/rpc/client"
-	rpchttp "github.com/line/ostracon/rpc/client/http"
-	rpcjson "github.com/line/ostracon/rpc/jsonrpc/client"
-	rpctest "github.com/line/ostracon/rpc/test"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/abci/example/kvstore"
+	"github.com/Finschia/ostracon/light/provider"
+	lighthttp "github.com/Finschia/ostracon/light/provider/http"
+	rpcclient "github.com/Finschia/ostracon/rpc/client"
+	rpchttp "github.com/Finschia/ostracon/rpc/client/http"
+	rpcjson "github.com/Finschia/ostracon/rpc/jsonrpc/client"
+	rpctest "github.com/Finschia/ostracon/rpc/test"
+	"github.com/Finschia/ostracon/types"
 )
 
 func TestNewProvider(t *testing.T) {

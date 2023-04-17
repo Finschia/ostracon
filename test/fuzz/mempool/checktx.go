@@ -1,10 +1,10 @@
 package checktx
 
 import (
-	"github.com/line/ostracon/abci/example/kvstore"
-	"github.com/line/ostracon/config"
-	mempl "github.com/line/ostracon/mempool"
-	"github.com/line/ostracon/proxy"
+	"github.com/Finschia/ostracon/abci/example/kvstore"
+	"github.com/Finschia/ostracon/config"
+	mempl "github.com/Finschia/ostracon/mempool"
+	"github.com/Finschia/ostracon/proxy"
 )
 
 var mempool mempl.Mempool

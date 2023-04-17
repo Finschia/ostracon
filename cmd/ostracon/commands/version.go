@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/line/ostracon/version"
+	"github.com/Finschia/ostracon/version"
 )
 
 // VersionCmd ...

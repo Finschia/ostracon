@@ -4,9 +4,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/line/ostracon/config"
-	tmrand "github.com/line/ostracon/libs/rand"
-	tmsync "github.com/line/ostracon/libs/sync"
+	"github.com/Finschia/ostracon/config"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
 )
 
 // FuzzedConnection wraps any net.Conn and depending on the mode either delays

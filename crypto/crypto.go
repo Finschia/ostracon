@@ -1,8 +1,8 @@
 package crypto
 
 import (
-	"github.com/line/ostracon/crypto/tmhash"
-	"github.com/line/ostracon/libs/bytes"
+	"github.com/Finschia/ostracon/crypto/tmhash"
+	"github.com/Finschia/ostracon/libs/bytes"
 )
 
 const (

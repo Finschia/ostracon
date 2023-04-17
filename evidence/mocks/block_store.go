@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	types "github.com/line/ostracon/types"
+	types "github.com/Finschia/ostracon/types"
 	mock "github.com/stretchr/testify/mock"
 )
 

@@ -6,13 +6,13 @@ import (
 
 	"github.com/tendermint/tendermint/abci/types"
 
-	ocabci "github.com/line/ostracon/abci/types"
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/ed25519"
-	tmjson "github.com/line/ostracon/libs/json"
-	tmos "github.com/line/ostracon/libs/os"
-	tmrand "github.com/line/ostracon/libs/rand"
-	"github.com/line/ostracon/privval"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	tmjson "github.com/Finschia/ostracon/libs/json"
+	tmos "github.com/Finschia/ostracon/libs/os"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	"github.com/Finschia/ostracon/privval"
 )
 
 // LoadPrivValidatorKeyFile Load private key for use in an example or test.

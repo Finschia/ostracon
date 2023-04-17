@@ -5,11 +5,11 @@ import (
 
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/line/ostracon/libs/bytes"
-	"github.com/line/ostracon/libs/log"
-	tmrand "github.com/line/ostracon/libs/rand"
-	"github.com/line/ostracon/p2p"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/libs/bytes"
+	"github.com/Finschia/ostracon/libs/log"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	"github.com/Finschia/ostracon/p2p"
+	"github.com/Finschia/ostracon/types"
 )
 
 //----------------------------------------------

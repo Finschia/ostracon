@@ -7,7 +7,7 @@ import (
 
 	tmcrypto "github.com/tendermint/tendermint/proto/tendermint/crypto"
 
-	"github.com/line/ostracon/crypto/tmhash"
+	"github.com/Finschia/ostracon/crypto/tmhash"
 )
 
 const (

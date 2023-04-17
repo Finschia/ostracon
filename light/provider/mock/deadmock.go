@@ -3,8 +3,8 @@ package mock
 import (
 	"context"
 
-	"github.com/line/ostracon/light/provider"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/light/provider"
+	"github.com/Finschia/ostracon/types"
 )
 
 type deadMock struct {

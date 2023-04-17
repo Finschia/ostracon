@@ -10,11 +10,11 @@ import (
 
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/line/ostracon/crypto"
-	tmbytes "github.com/line/ostracon/libs/bytes"
-	tmjson "github.com/line/ostracon/libs/json"
-	tmos "github.com/line/ostracon/libs/os"
-	tmtime "github.com/line/ostracon/types/time"
+	"github.com/Finschia/ostracon/crypto"
+	tmbytes "github.com/Finschia/ostracon/libs/bytes"
+	tmjson "github.com/Finschia/ostracon/libs/json"
+	tmos "github.com/Finschia/ostracon/libs/os"
+	tmtime "github.com/Finschia/ostracon/types/time"
 )
 
 const (

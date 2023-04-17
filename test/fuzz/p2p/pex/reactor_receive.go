@@ -3,13 +3,13 @@ package pex
 import (
 	"net"
 
-	"github.com/line/ostracon/config"
-	"github.com/line/ostracon/crypto/ed25519"
-	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/libs/service"
-	"github.com/line/ostracon/p2p"
-	"github.com/line/ostracon/p2p/pex"
-	"github.com/line/ostracon/version"
+	"github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	"github.com/Finschia/ostracon/libs/log"
+	"github.com/Finschia/ostracon/libs/service"
+	"github.com/Finschia/ostracon/p2p"
+	"github.com/Finschia/ostracon/p2p/pex"
+	"github.com/Finschia/ostracon/version"
 )
 
 var (

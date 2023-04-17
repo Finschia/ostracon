@@ -8,9 +8,9 @@ import (
 	"github.com/stretchr/testify/require"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/line/ostracon/crypto"
-	tmrand "github.com/line/ostracon/libs/rand"
-	tmtime "github.com/line/ostracon/types/time"
+	"github.com/Finschia/ostracon/crypto"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	tmtime "github.com/Finschia/ostracon/types/time"
 )
 
 func TestVoteSet_AddVote_Good(t *testing.T) {

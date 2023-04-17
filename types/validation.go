@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/line/ostracon/crypto/tmhash"
-	"github.com/line/ostracon/crypto/vrf"
-	tmtime "github.com/line/ostracon/types/time"
+	"github.com/Finschia/ostracon/crypto/tmhash"
+	"github.com/Finschia/ostracon/crypto/vrf"
+	tmtime "github.com/Finschia/ostracon/types/time"
 )
 
 // ValidateTime does a basic time validation ensuring time does not drift too

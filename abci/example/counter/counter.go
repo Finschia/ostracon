@@ -6,8 +6,8 @@ import (
 
 	"github.com/tendermint/tendermint/abci/types"
 
-	"github.com/line/ostracon/abci/example/code"
-	ocabci "github.com/line/ostracon/abci/types"
+	"github.com/Finschia/ostracon/abci/example/code"
+	ocabci "github.com/Finschia/ostracon/abci/types"
 )
 
 type Application struct {

@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	tmjson "github.com/line/ostracon/libs/json"
-	types "github.com/line/ostracon/rpc/jsonrpc/types"
+	tmjson "github.com/Finschia/ostracon/libs/json"
+	types "github.com/Finschia/ostracon/rpc/jsonrpc/types"
 )
 
 func unmarshalResponseBytes(

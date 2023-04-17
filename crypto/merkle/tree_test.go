@@ -7,10 +7,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	tmrand "github.com/line/ostracon/libs/rand"
-	. "github.com/line/ostracon/libs/test"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	. "github.com/Finschia/ostracon/libs/test"
 
-	"github.com/line/ostracon/crypto/tmhash"
+	"github.com/Finschia/ostracon/crypto/tmhash"
 )
 
 type testItem []byte

@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	tmrand "github.com/line/ostracon/libs/rand"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
 )
 
 func TestWriteFileAtomic(t *testing.T) {

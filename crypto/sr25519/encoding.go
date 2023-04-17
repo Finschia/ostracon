@@ -1,8 +1,8 @@
 package sr25519
 
 import (
-	"github.com/line/ostracon/crypto"
-	tmjson "github.com/line/ostracon/libs/json"
+	"github.com/Finschia/ostracon/crypto"
+	tmjson "github.com/Finschia/ostracon/libs/json"
 )
 
 var _ crypto.PrivKey = PrivKey{}

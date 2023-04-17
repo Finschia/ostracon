@@ -5,13 +5,13 @@ import (
 
 	"github.com/spf13/cobra"
 
-	cfg "github.com/line/ostracon/config"
-	tmos "github.com/line/ostracon/libs/os"
-	tmrand "github.com/line/ostracon/libs/rand"
-	"github.com/line/ostracon/p2p"
-	"github.com/line/ostracon/privval"
-	"github.com/line/ostracon/types"
-	tmtime "github.com/line/ostracon/types/time"
+	cfg "github.com/Finschia/ostracon/config"
+	tmos "github.com/Finschia/ostracon/libs/os"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	"github.com/Finschia/ostracon/p2p"
+	"github.com/Finschia/ostracon/privval"
+	"github.com/Finschia/ostracon/types"
+	tmtime "github.com/Finschia/ostracon/types/time"
 )
 
 func NewInitCmd() *cobra.Command {

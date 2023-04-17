@@ -1,8 +1,8 @@
 package p2p
 
 import (
-	"github.com/line/ostracon/libs/service"
-	"github.com/line/ostracon/p2p/conn"
+	"github.com/Finschia/ostracon/libs/service"
+	"github.com/Finschia/ostracon/p2p/conn"
 )
 
 // Reactor is responsible for handling incoming messages on one or more

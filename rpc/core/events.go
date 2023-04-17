@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	tmpubsub "github.com/line/ostracon/libs/pubsub"
-	tmquery "github.com/line/ostracon/libs/pubsub/query"
-	ctypes "github.com/line/ostracon/rpc/core/types"
-	rpctypes "github.com/line/ostracon/rpc/jsonrpc/types"
+	tmpubsub "github.com/Finschia/ostracon/libs/pubsub"
+	tmquery "github.com/Finschia/ostracon/libs/pubsub/query"
+	ctypes "github.com/Finschia/ostracon/rpc/core/types"
+	rpctypes "github.com/Finschia/ostracon/rpc/jsonrpc/types"
 )
 
 // Subscribe for events via WebSocket.

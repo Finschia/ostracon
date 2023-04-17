@@ -39,8 +39,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/line/ostracon/libs/service"
-	tmsync "github.com/line/ostracon/libs/sync"
+	"github.com/Finschia/ostracon/libs/service"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
 )
 
 type operation int

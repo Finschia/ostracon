@@ -7,9 +7,9 @@ import (
 
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	tmbytes "github.com/line/ostracon/libs/bytes"
-	"github.com/line/ostracon/libs/protoio"
-	tmtime "github.com/line/ostracon/types/time"
+	tmbytes "github.com/Finschia/ostracon/libs/bytes"
+	"github.com/Finschia/ostracon/libs/protoio"
+	tmtime "github.com/Finschia/ostracon/types/time"
 )
 
 var (

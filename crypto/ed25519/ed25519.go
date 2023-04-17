@@ -9,10 +9,10 @@ import (
 
 	"golang.org/x/crypto/ed25519"
 
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/tmhash"
-	"github.com/line/ostracon/crypto/vrf"
-	tmjson "github.com/line/ostracon/libs/json"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/tmhash"
+	"github.com/Finschia/ostracon/crypto/vrf"
+	tmjson "github.com/Finschia/ostracon/libs/json"
 )
 
 //-------------------------------------

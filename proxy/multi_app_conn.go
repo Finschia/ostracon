@@ -3,10 +3,10 @@ package proxy
 import (
 	"fmt"
 
-	abcicli "github.com/line/ostracon/abci/client"
-	tmlog "github.com/line/ostracon/libs/log"
-	tmos "github.com/line/ostracon/libs/os"
-	"github.com/line/ostracon/libs/service"
+	abcicli "github.com/Finschia/ostracon/abci/client"
+	tmlog "github.com/Finschia/ostracon/libs/log"
+	tmos "github.com/Finschia/ostracon/libs/os"
+	"github.com/Finschia/ostracon/libs/service"
 )
 
 const (

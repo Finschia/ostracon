@@ -13,11 +13,11 @@ import (
 	tmcons "github.com/tendermint/tendermint/proto/tendermint/consensus"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/line/ostracon/crypto/merkle"
-	"github.com/line/ostracon/libs/bits"
-	tmrand "github.com/line/ostracon/libs/rand"
-	"github.com/line/ostracon/p2p"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/crypto/merkle"
+	"github.com/Finschia/ostracon/libs/bits"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	"github.com/Finschia/ostracon/p2p"
+	"github.com/Finschia/ostracon/types"
 )
 
 func TestMsgToProto(t *testing.T) {

@@ -13,7 +13,7 @@ import (
 
 	coniks "github.com/coniks-sys/coniks-go/crypto/vrf"
 	ed25519consensus "github.com/hdevalence/ed25519consensus"
-	libsodium "github.com/line/ostracon/crypto/vrf/internal/vrf"
+	libsodium "github.com/Finschia/ostracon/crypto/vrf/internal/vrf"
 	xed25519 "golang.org/x/crypto/ed25519"
 )
 

@@ -7,7 +7,7 @@ import (
 	context "context"
 	fmt "fmt"
 	proto "github.com/gogo/protobuf/proto"
-	types "github.com/line/ostracon/abci/types"
+	types "github.com/Finschia/ostracon/abci/types"
 	types1 "github.com/tendermint/tendermint/abci/types"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"

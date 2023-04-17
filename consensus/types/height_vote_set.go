@@ -8,10 +8,10 @@ import (
 
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	tmjson "github.com/line/ostracon/libs/json"
-	tmmath "github.com/line/ostracon/libs/math"
-	"github.com/line/ostracon/p2p"
-	"github.com/line/ostracon/types"
+	tmjson "github.com/Finschia/ostracon/libs/json"
+	tmmath "github.com/Finschia/ostracon/libs/math"
+	"github.com/Finschia/ostracon/p2p"
+	"github.com/Finschia/ostracon/types"
 )
 
 type RoundVoteSet struct {

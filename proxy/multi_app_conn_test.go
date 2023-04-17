@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	abcimocks "github.com/line/ostracon/abci/client/mocks"
-	"github.com/line/ostracon/proxy/mocks"
+	abcimocks "github.com/Finschia/ostracon/abci/client/mocks"
+	"github.com/Finschia/ostracon/proxy/mocks"
 )
 
 func TestAppConns_Start_Stop(t *testing.T) {

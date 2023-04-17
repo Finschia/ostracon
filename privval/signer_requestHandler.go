@@ -7,10 +7,10 @@ import (
 	privvalproto "github.com/tendermint/tendermint/proto/tendermint/privval"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/line/ostracon/crypto"
-	cryptoenc "github.com/line/ostracon/crypto/encoding"
-	ocprivvalproto "github.com/line/ostracon/proto/ostracon/privval"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/crypto"
+	cryptoenc "github.com/Finschia/ostracon/crypto/encoding"
+	ocprivvalproto "github.com/Finschia/ostracon/proto/ostracon/privval"
+	"github.com/Finschia/ostracon/types"
 )
 
 func DefaultValidationRequestHandler(

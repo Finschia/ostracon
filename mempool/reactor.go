@@ -8,12 +8,12 @@ import (
 
 	protomem "github.com/tendermint/tendermint/proto/tendermint/mempool"
 
-	cfg "github.com/line/ostracon/config"
-	"github.com/line/ostracon/libs/clist"
-	"github.com/line/ostracon/libs/log"
-	tmsync "github.com/line/ostracon/libs/sync"
-	"github.com/line/ostracon/p2p"
-	"github.com/line/ostracon/types"
+	cfg "github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/libs/clist"
+	"github.com/Finschia/ostracon/libs/log"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
+	"github.com/Finschia/ostracon/p2p"
+	"github.com/Finschia/ostracon/types"
 )
 
 const (

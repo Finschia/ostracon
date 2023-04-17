@@ -5,8 +5,8 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	tmstate "github.com/line/ostracon/proto/ostracon/state"
-	"github.com/line/ostracon/types"
+	tmstate "github.com/Finschia/ostracon/proto/ostracon/state"
+	"github.com/Finschia/ostracon/types"
 )
 
 //

@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/line/ostracon/libs/json"
+	"github.com/Finschia/ostracon/libs/json"
 )
 
 func TestUnmarshal(t *testing.T) {

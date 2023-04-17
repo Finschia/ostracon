@@ -3,7 +3,7 @@ package p2p
 import (
 	"net"
 
-	tmsync "github.com/line/ostracon/libs/sync"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
 )
 
 // ConnSet is a lookup table for connections and all their ips.

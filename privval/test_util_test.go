@@ -3,7 +3,7 @@ package privval
 import (
 	"testing"
 
-	"github.com/line/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto"
 )
 
 func TestWithMockKMS(t *testing.T) {

@@ -9,11 +9,11 @@ import (
 	tmcons "github.com/tendermint/tendermint/proto/tendermint/consensus"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	cstypes "github.com/line/ostracon/consensus/types"
-	"github.com/line/ostracon/libs/bits"
-	tmmath "github.com/line/ostracon/libs/math"
-	"github.com/line/ostracon/p2p"
-	"github.com/line/ostracon/types"
+	cstypes "github.com/Finschia/ostracon/consensus/types"
+	"github.com/Finschia/ostracon/libs/bits"
+	tmmath "github.com/Finschia/ostracon/libs/math"
+	"github.com/Finschia/ostracon/p2p"
+	"github.com/Finschia/ostracon/types"
 )
 
 // MsgToProto takes a consensus message type and returns the proto defined consensus message

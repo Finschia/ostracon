@@ -3,7 +3,7 @@ package log
 import (
 	"fmt"
 
-	tmbytes "github.com/line/ostracon/libs/bytes"
+	tmbytes "github.com/Finschia/ostracon/libs/bytes"
 )
 
 type LazySprintf struct {

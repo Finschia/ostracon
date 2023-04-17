@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/line/ostracon/p2p"
-	"github.com/line/ostracon/p2p/pex"
+	"github.com/Finschia/ostracon/p2p"
+	"github.com/Finschia/ostracon/p2p/pex"
 )
 
 var addrBook = pex.NewAddrBook("./testdata/addrbook.json", true)

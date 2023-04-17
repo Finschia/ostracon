@@ -9,8 +9,8 @@ import (
 
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	tmrand "github.com/line/ostracon/libs/rand"
-	ctest "github.com/line/ostracon/libs/test"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	ctest "github.com/Finschia/ostracon/libs/test"
 )
 
 func makeTxs(cnt, size int) Txs {

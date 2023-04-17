@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/types"
 )
 
 // ErrOldHeaderExpired means the old (trusted) header has expired according to

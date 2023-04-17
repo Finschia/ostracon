@@ -17,12 +17,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/ed25519"
-	"github.com/line/ostracon/crypto/sr25519"
-	"github.com/line/ostracon/libs/async"
-	tmos "github.com/line/ostracon/libs/os"
-	tmrand "github.com/line/ostracon/libs/rand"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	"github.com/Finschia/ostracon/crypto/sr25519"
+	"github.com/Finschia/ostracon/libs/async"
+	tmos "github.com/Finschia/ostracon/libs/os"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
 )
 
 // Run go test -update from within this module

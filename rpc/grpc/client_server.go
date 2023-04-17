@@ -6,7 +6,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	tmnet "github.com/line/ostracon/libs/net"
+	tmnet "github.com/Finschia/ostracon/libs/net"
 )
 
 // Config is an gRPC server configuration.

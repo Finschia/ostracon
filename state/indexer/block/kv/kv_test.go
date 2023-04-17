@@ -9,9 +9,9 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	db "github.com/tendermint/tm-db"
 
-	"github.com/line/ostracon/libs/pubsub/query"
-	blockidxkv "github.com/line/ostracon/state/indexer/block/kv"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/libs/pubsub/query"
+	blockidxkv "github.com/Finschia/ostracon/state/indexer/block/kv"
+	"github.com/Finschia/ostracon/types"
 )
 
 func TestBlockIndexer(t *testing.T) {

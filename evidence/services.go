@@ -1,7 +1,7 @@
 package evidence
 
 import (
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/types"
 )
 
 //go:generate mockery --case underscore --name BlockStore

@@ -3,7 +3,7 @@ package commands
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/line/ostracon/consensus"
+	"github.com/Finschia/ostracon/consensus"
 )
 
 // ReplayCmd allows replaying of messages from the WAL.

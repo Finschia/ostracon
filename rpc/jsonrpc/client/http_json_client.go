@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	tmsync "github.com/line/ostracon/libs/sync"
-	types "github.com/line/ostracon/rpc/jsonrpc/types"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
+	types "github.com/Finschia/ostracon/rpc/jsonrpc/types"
 )
 
 const (

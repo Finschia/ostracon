@@ -12,10 +12,10 @@ import (
 	tmp2p "github.com/tendermint/tendermint/proto/tendermint/p2p"
 	"golang.org/x/crypto/chacha20poly1305"
 
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/ed25519"
-	cryptoenc "github.com/line/ostracon/crypto/encoding"
-	"github.com/line/ostracon/libs/protoio"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	cryptoenc "github.com/Finschia/ostracon/crypto/encoding"
+	"github.com/Finschia/ostracon/libs/protoio"
 )
 
 type buffer struct {

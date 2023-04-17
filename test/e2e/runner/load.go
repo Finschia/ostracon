@@ -8,10 +8,10 @@ import (
 	"math"
 	"time"
 
-	"github.com/line/ostracon/libs/log"
-	rpchttp "github.com/line/ostracon/rpc/client/http"
-	e2e "github.com/line/ostracon/test/e2e/pkg"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/libs/log"
+	rpchttp "github.com/Finschia/ostracon/rpc/client/http"
+	e2e "github.com/Finschia/ostracon/test/e2e/pkg"
+	"github.com/Finschia/ostracon/types"
 )
 
 // Load generates transactions against the network until the given context is

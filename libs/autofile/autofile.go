@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	tmrand "github.com/line/ostracon/libs/rand"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
 )
 
 /* AutoFile usage

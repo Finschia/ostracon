@@ -5,8 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	tmjson "github.com/line/ostracon/libs/json"
-	"github.com/line/ostracon/privval"
+	tmjson "github.com/Finschia/ostracon/libs/json"
+	"github.com/Finschia/ostracon/privval"
 )
 
 // GenValidatorCmd allows the generation of a keypair for a

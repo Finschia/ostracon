@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/line/ostracon/p2p"
+	"github.com/Finschia/ostracon/p2p"
 )
 
 type ErrAddrBookNonRoutable struct {

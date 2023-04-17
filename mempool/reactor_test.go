@@ -16,14 +16,14 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	memproto "github.com/tendermint/tendermint/proto/tendermint/mempool"
 
-	"github.com/line/ostracon/abci/example/kvstore"
-	cfg "github.com/line/ostracon/config"
-	"github.com/line/ostracon/libs/log"
-	tmrand "github.com/line/ostracon/libs/rand"
-	"github.com/line/ostracon/p2p"
-	"github.com/line/ostracon/p2p/mock"
-	"github.com/line/ostracon/proxy"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/abci/example/kvstore"
+	cfg "github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/libs/log"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	"github.com/Finschia/ostracon/p2p"
+	"github.com/Finschia/ostracon/p2p/mock"
+	"github.com/Finschia/ostracon/proxy"
+	"github.com/Finschia/ostracon/types"
 )
 
 const (

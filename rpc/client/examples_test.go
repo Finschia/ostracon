@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/line/ostracon/abci/example/kvstore"
-	rpchttp "github.com/line/ostracon/rpc/client/http"
-	ctypes "github.com/line/ostracon/rpc/core/types"
-	rpctest "github.com/line/ostracon/rpc/test"
+	"github.com/Finschia/ostracon/abci/example/kvstore"
+	rpchttp "github.com/Finschia/ostracon/rpc/client/http"
+	ctypes "github.com/Finschia/ostracon/rpc/core/types"
+	rpctest "github.com/Finschia/ostracon/rpc/test"
 )
 
 func ExampleHTTP_simple() {

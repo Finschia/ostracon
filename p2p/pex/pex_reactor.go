@@ -10,12 +10,12 @@ import (
 
 	tmp2p "github.com/tendermint/tendermint/proto/tendermint/p2p"
 
-	"github.com/line/ostracon/libs/cmap"
-	tmmath "github.com/line/ostracon/libs/math"
-	tmrand "github.com/line/ostracon/libs/rand"
-	"github.com/line/ostracon/libs/service"
-	"github.com/line/ostracon/p2p"
-	"github.com/line/ostracon/p2p/conn"
+	"github.com/Finschia/ostracon/libs/cmap"
+	tmmath "github.com/Finschia/ostracon/libs/math"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	"github.com/Finschia/ostracon/libs/service"
+	"github.com/Finschia/ostracon/p2p"
+	"github.com/Finschia/ostracon/p2p/conn"
 )
 
 type Peer = p2p.Peer

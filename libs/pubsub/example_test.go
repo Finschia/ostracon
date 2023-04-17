@@ -6,10 +6,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/line/ostracon/libs/log"
+	"github.com/Finschia/ostracon/libs/log"
 
-	"github.com/line/ostracon/libs/pubsub"
-	"github.com/line/ostracon/libs/pubsub/query"
+	"github.com/Finschia/ostracon/libs/pubsub"
+	"github.com/Finschia/ostracon/libs/pubsub/query"
 )
 
 func TestExample(t *testing.T) {

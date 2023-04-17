@@ -12,11 +12,11 @@ import (
 
 	"github.com/tendermint/tendermint/abci/types"
 
-	ocabci "github.com/line/ostracon/abci/types"
-	tmnet "github.com/line/ostracon/libs/net"
-	"github.com/line/ostracon/libs/service"
-	tmsync "github.com/line/ostracon/libs/sync"
-	"github.com/line/ostracon/libs/timer"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	tmnet "github.com/Finschia/ostracon/libs/net"
+	"github.com/Finschia/ostracon/libs/service"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
+	"github.com/Finschia/ostracon/libs/timer"
 )
 
 const (

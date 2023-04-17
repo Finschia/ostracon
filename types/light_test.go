@@ -9,8 +9,8 @@ import (
 
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/version"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/version"
 )
 
 func TestLightBlockValidateBasic(t *testing.T) {

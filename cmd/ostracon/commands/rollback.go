@@ -7,9 +7,9 @@ import (
 
 	dbm "github.com/tendermint/tm-db"
 
-	cfg "github.com/line/ostracon/config"
-	"github.com/line/ostracon/state"
-	"github.com/line/ostracon/store"
+	cfg "github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/state"
+	"github.com/Finschia/ostracon/store"
 )
 
 var RollbackStateCmd = &cobra.Command{

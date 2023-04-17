@@ -5,9 +5,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/line/ostracon/abci/example/kvstore"
-	nm "github.com/line/ostracon/node"
-	rpctest "github.com/line/ostracon/rpc/test"
+	"github.com/Finschia/ostracon/abci/example/kvstore"
+	nm "github.com/Finschia/ostracon/node"
+	rpctest "github.com/Finschia/ostracon/rpc/test"
 )
 
 var node *nm.Node

@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/line/ostracon/crypto/tmhash"
-	tmrand "github.com/line/ostracon/libs/rand"
+	"github.com/Finschia/ostracon/crypto/tmhash"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
 )
 
 func TestBlockMeta_ToProto(t *testing.T) {

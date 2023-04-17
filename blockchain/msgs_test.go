@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/gogo/protobuf/proto"
-	"github.com/line/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"math"
@@ -12,9 +12,9 @@ import (
 
 	bcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
 
-	ocbcproto "github.com/line/ostracon/proto/ostracon/blockchain"
-	sm "github.com/line/ostracon/state"
-	"github.com/line/ostracon/types"
+	ocbcproto "github.com/Finschia/ostracon/proto/ostracon/blockchain"
+	sm "github.com/Finschia/ostracon/state"
+	"github.com/Finschia/ostracon/types"
 )
 
 func TestBcBlockRequestMessageValidateBasic(t *testing.T) {

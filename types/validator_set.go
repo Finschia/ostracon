@@ -12,9 +12,9 @@ import (
 
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/line/ostracon/crypto/merkle"
-	"github.com/line/ostracon/crypto/tmhash"
-	tmmath "github.com/line/ostracon/libs/math"
+	"github.com/Finschia/ostracon/crypto/merkle"
+	"github.com/Finschia/ostracon/crypto/tmhash"
+	tmmath "github.com/Finschia/ostracon/libs/math"
 )
 
 const (

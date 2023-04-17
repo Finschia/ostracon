@@ -6,8 +6,8 @@ import (
 
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/types"
 )
 
 // RetrySignerClient wraps SignerClient adding retry for each operation (except

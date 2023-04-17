@@ -3,9 +3,9 @@ package v1
 import (
 	"sort"
 
-	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/p2p"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/libs/log"
+	"github.com/Finschia/ostracon/p2p"
+	"github.com/Finschia/ostracon/types"
 )
 
 // BlockPool keeps track of the fast sync peers, block requests and block responses.

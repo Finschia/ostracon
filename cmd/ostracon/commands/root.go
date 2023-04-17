@@ -8,9 +8,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	cfg "github.com/line/ostracon/config"
-	"github.com/line/ostracon/libs/cli"
-	"github.com/line/ostracon/libs/log"
+	cfg "github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/libs/cli"
+	"github.com/Finschia/ostracon/libs/log"
 )
 
 var (

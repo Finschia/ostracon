@@ -9,12 +9,12 @@ import (
 
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/light"
-	"github.com/line/ostracon/light/provider"
-	mockp "github.com/line/ostracon/light/provider/mock"
-	dbs "github.com/line/ostracon/light/store/db"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/libs/log"
+	"github.com/Finschia/ostracon/light"
+	"github.com/Finschia/ostracon/light/provider"
+	mockp "github.com/Finschia/ostracon/light/provider/mock"
+	dbs "github.com/Finschia/ostracon/light/store/db"
+	"github.com/Finschia/ostracon/types"
 )
 
 func TestLightClientAttackEvidence_Lunatic(t *testing.T) {

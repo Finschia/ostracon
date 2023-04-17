@@ -9,12 +9,12 @@ import (
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/tmhash"
-	"github.com/line/ostracon/state"
-	"github.com/line/ostracon/state/mocks"
-	"github.com/line/ostracon/types"
-	"github.com/line/ostracon/version"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/tmhash"
+	"github.com/Finschia/ostracon/state"
+	"github.com/Finschia/ostracon/state/mocks"
+	"github.com/Finschia/ostracon/types"
+	"github.com/Finschia/ostracon/version"
 )
 
 var (

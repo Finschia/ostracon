@@ -3,8 +3,8 @@ package indexer
 import (
 	"context"
 
-	"github.com/line/ostracon/libs/pubsub/query"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/libs/pubsub/query"
+	"github.com/Finschia/ostracon/types"
 )
 
 // BlockIndexer defines an interface contract for indexing block events.

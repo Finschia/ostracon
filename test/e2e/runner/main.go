@@ -9,10 +9,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/line/ostracon/libs/log"
-	e2e "github.com/line/ostracon/test/e2e/pkg"
-	"github.com/line/ostracon/test/e2e/pkg/infra"
-	"github.com/line/ostracon/test/e2e/pkg/infra/docker"
+	"github.com/Finschia/ostracon/libs/log"
+	e2e "github.com/Finschia/ostracon/test/e2e/pkg"
+	"github.com/Finschia/ostracon/test/e2e/pkg/infra"
+	"github.com/Finschia/ostracon/test/e2e/pkg/infra/docker"
 )
 
 var logger = log.NewOCLogger(log.NewSyncWriter(os.Stdout))

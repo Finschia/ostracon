@@ -3,7 +3,7 @@ package mempool
 import (
 	"testing"
 
-	abci "github.com/line/ostracon/abci/types"
+	abci "github.com/Finschia/ostracon/abci/types"
 	"github.com/stretchr/testify/require"
 )
 

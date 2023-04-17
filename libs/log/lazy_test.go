@@ -1,7 +1,7 @@
 package log
 
 import (
-	tmbytes "github.com/line/ostracon/libs/bytes"
+	tmbytes "github.com/Finschia/ostracon/libs/bytes"
 	"github.com/stretchr/testify/require"
 	"testing"
 )

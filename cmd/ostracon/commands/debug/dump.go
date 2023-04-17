@@ -10,9 +10,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	cfg "github.com/line/ostracon/config"
-	"github.com/line/ostracon/libs/cli"
-	rpchttp "github.com/line/ostracon/rpc/client/http"
+	cfg "github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/libs/cli"
+	rpchttp "github.com/Finschia/ostracon/rpc/client/http"
 )
 
 var dumpCmd = &cobra.Command{

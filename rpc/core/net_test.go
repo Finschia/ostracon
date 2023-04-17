@@ -6,10 +6,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	cfg "github.com/line/ostracon/config"
-	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/p2p"
-	rpctypes "github.com/line/ostracon/rpc/jsonrpc/types"
+	cfg "github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/libs/log"
+	"github.com/Finschia/ostracon/p2p"
+	rpctypes "github.com/Finschia/ostracon/rpc/jsonrpc/types"
 )
 
 func TestUnsafeDialSeeds(t *testing.T) {

@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	cfg "github.com/line/ostracon/config"
-	"github.com/line/ostracon/libs/cli"
-	tmos "github.com/line/ostracon/libs/os"
+	cfg "github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/libs/cli"
+	tmos "github.com/Finschia/ostracon/libs/os"
 )
 
 var (

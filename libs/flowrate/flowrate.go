@@ -10,7 +10,7 @@ import (
 	"math"
 	"time"
 
-	tmsync "github.com/line/ostracon/libs/sync"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
 )
 
 // Monitor monitors and limits the transfer rate of a data stream.

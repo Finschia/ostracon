@@ -15,12 +15,12 @@ import (
 
 	"github.com/minio/highwayhash"
 
-	"github.com/line/ostracon/crypto"
-	tmmath "github.com/line/ostracon/libs/math"
-	tmrand "github.com/line/ostracon/libs/rand"
-	"github.com/line/ostracon/libs/service"
-	tmsync "github.com/line/ostracon/libs/sync"
-	"github.com/line/ostracon/p2p"
+	"github.com/Finschia/ostracon/crypto"
+	tmmath "github.com/Finschia/ostracon/libs/math"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	"github.com/Finschia/ostracon/libs/service"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
+	"github.com/Finschia/ostracon/p2p"
 )
 
 const (

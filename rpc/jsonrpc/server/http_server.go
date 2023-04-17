@@ -15,8 +15,8 @@ import (
 
 	"golang.org/x/net/netutil"
 
-	"github.com/line/ostracon/libs/log"
-	types "github.com/line/ostracon/rpc/jsonrpc/types"
+	"github.com/Finschia/ostracon/libs/log"
+	types "github.com/Finschia/ostracon/rpc/jsonrpc/types"
 )
 
 // Config is a RPC server configuration.

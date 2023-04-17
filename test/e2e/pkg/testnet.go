@@ -12,10 +12,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/ed25519"
-	"github.com/line/ostracon/crypto/secp256k1"
-	rpchttp "github.com/line/ostracon/rpc/client/http"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	"github.com/Finschia/ostracon/crypto/secp256k1"
+	rpchttp "github.com/Finschia/ostracon/rpc/client/http"
 )
 
 const (

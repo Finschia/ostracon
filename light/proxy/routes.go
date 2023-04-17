@@ -1,13 +1,13 @@
 package proxy
 
 import (
-	"github.com/line/ostracon/libs/bytes"
-	lrpc "github.com/line/ostracon/light/rpc"
-	rpcclient "github.com/line/ostracon/rpc/client"
-	ctypes "github.com/line/ostracon/rpc/core/types"
-	rpcserver "github.com/line/ostracon/rpc/jsonrpc/server"
-	rpctypes "github.com/line/ostracon/rpc/jsonrpc/types"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/libs/bytes"
+	lrpc "github.com/Finschia/ostracon/light/rpc"
+	rpcclient "github.com/Finschia/ostracon/rpc/client"
+	ctypes "github.com/Finschia/ostracon/rpc/core/types"
+	rpcserver "github.com/Finschia/ostracon/rpc/jsonrpc/server"
+	rpctypes "github.com/Finschia/ostracon/rpc/jsonrpc/types"
+	"github.com/Finschia/ostracon/types"
 )
 
 func RPCRoutes(c *lrpc.Client) map[string]*rpcserver.RPCFunc {

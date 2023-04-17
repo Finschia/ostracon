@@ -12,9 +12,9 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	tmpubsub "github.com/line/ostracon/libs/pubsub"
-	tmquery "github.com/line/ostracon/libs/pubsub/query"
-	tmrand "github.com/line/ostracon/libs/rand"
+	tmpubsub "github.com/Finschia/ostracon/libs/pubsub"
+	tmquery "github.com/Finschia/ostracon/libs/pubsub/query"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
 )
 
 func TestEventBusPublishEventTx(t *testing.T) {

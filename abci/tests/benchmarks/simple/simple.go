@@ -7,8 +7,8 @@ import (
 	"log"
 	"reflect"
 
-	"github.com/line/ostracon/abci/types"
-	tmnet "github.com/line/ostracon/libs/net"
+	"github.com/Finschia/ostracon/abci/types"
+	tmnet "github.com/Finschia/ostracon/libs/net"
 )
 
 func main() {

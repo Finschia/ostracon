@@ -3,14 +3,14 @@ package commands
 import (
 	"fmt"
 
-	"github.com/line/ostracon/node"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/node"
+	"github.com/Finschia/ostracon/types"
 	"github.com/spf13/cobra"
 
-	cfg "github.com/line/ostracon/config"
-	tmjson "github.com/line/ostracon/libs/json"
-	tmos "github.com/line/ostracon/libs/os"
-	"github.com/line/ostracon/privval"
+	cfg "github.com/Finschia/ostracon/config"
+	tmjson "github.com/Finschia/ostracon/libs/json"
+	tmos "github.com/Finschia/ostracon/libs/os"
+	"github.com/Finschia/ostracon/privval"
 )
 
 // ShowValidatorCmd adds capabilities for showing the validator info.

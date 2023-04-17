@@ -6,7 +6,7 @@ package blockchain
 import (
 	fmt "fmt"
 	proto "github.com/gogo/protobuf/proto"
-	types "github.com/line/ostracon/proto/ostracon/types"
+	types "github.com/Finschia/ostracon/proto/ostracon/types"
 	blockchain "github.com/tendermint/tendermint/proto/tendermint/blockchain"
 	io "io"
 	math "math"

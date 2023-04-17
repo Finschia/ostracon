@@ -15,7 +15,7 @@ import (
 	"fmt"
 	"sync"
 
-	tmsync "github.com/line/ostracon/libs/sync"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
 )
 
 // MaxLength is the max allowed number of elements a linked list is

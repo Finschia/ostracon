@@ -10,15 +10,15 @@ import (
 	"github.com/gogo/protobuf/proto"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/ed25519"
-	tmbytes "github.com/line/ostracon/libs/bytes"
-	tmjson "github.com/line/ostracon/libs/json"
-	tmos "github.com/line/ostracon/libs/os"
-	"github.com/line/ostracon/libs/protoio"
-	"github.com/line/ostracon/libs/tempfile"
-	"github.com/line/ostracon/types"
-	tmtime "github.com/line/ostracon/types/time"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	tmbytes "github.com/Finschia/ostracon/libs/bytes"
+	tmjson "github.com/Finschia/ostracon/libs/json"
+	tmos "github.com/Finschia/ostracon/libs/os"
+	"github.com/Finschia/ostracon/libs/protoio"
+	"github.com/Finschia/ostracon/libs/tempfile"
+	"github.com/Finschia/ostracon/types"
+	tmtime "github.com/Finschia/ostracon/types/time"
 )
 
 // TODO: type ?

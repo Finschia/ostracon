@@ -14,11 +14,11 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	db "github.com/tendermint/tm-db"
 
-	ocabci "github.com/line/ostracon/abci/types"
-	"github.com/line/ostracon/libs/pubsub/query"
-	tmrand "github.com/line/ostracon/libs/rand"
-	"github.com/line/ostracon/state/txindex"
-	"github.com/line/ostracon/types"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	"github.com/Finschia/ostracon/libs/pubsub/query"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	"github.com/Finschia/ostracon/state/txindex"
+	"github.com/Finschia/ostracon/types"
 )
 
 func TestTxIndex(t *testing.T) {

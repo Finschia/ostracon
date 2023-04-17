@@ -9,7 +9,7 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	_ "github.com/gogo/protobuf/types"
-	types2 "github.com/line/ostracon/proto/ostracon/types"
+	types2 "github.com/Finschia/ostracon/proto/ostracon/types"
 	types "github.com/tendermint/tendermint/abci/types"
 	_ "github.com/tendermint/tendermint/proto/tendermint/crypto"
 	types1 "github.com/tendermint/tendermint/proto/tendermint/types"

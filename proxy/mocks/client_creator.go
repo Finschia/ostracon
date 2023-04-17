@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	abcicli "github.com/line/ostracon/abci/client"
+	abcicli "github.com/Finschia/ostracon/abci/client"
 	mock "github.com/stretchr/testify/mock"
 )
 

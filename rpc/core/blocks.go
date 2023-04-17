@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"sort"
 
-	tmmath "github.com/line/ostracon/libs/math"
-	tmquery "github.com/line/ostracon/libs/pubsub/query"
-	ctypes "github.com/line/ostracon/rpc/core/types"
-	rpctypes "github.com/line/ostracon/rpc/jsonrpc/types"
-	blockidxnull "github.com/line/ostracon/state/indexer/block/null"
-	"github.com/line/ostracon/types"
+	tmmath "github.com/Finschia/ostracon/libs/math"
+	tmquery "github.com/Finschia/ostracon/libs/pubsub/query"
+	ctypes "github.com/Finschia/ostracon/rpc/core/types"
+	rpctypes "github.com/Finschia/ostracon/rpc/jsonrpc/types"
+	blockidxnull "github.com/Finschia/ostracon/state/indexer/block/null"
+	"github.com/Finschia/ostracon/types"
 )
 
 // BlockchainInfo gets block headers for minHeight <= height <= maxHeight.
