@@ -280,7 +280,7 @@ experimental_close_on_slow_client = {{ .RPC.CloseOnSlowClient }}
 # How long to wait for a tx to be committed during /broadcast_tx_commit.
 # WARNING: Using a value larger than 'WriteTimeout' will result in increasing the
 # global HTTP write timeout, which applies to all connections and endpoints.
-# See https://github.com/line/ostracon/issues/3435
+# See https://github.com/tendermint/tendermint/issues/3435
 timeout_broadcast_tx_commit = "{{ .RPC.TimeoutBroadcastTxCommit }}"
 
 # Maximum size of request body, in bytes
@@ -423,7 +423,7 @@ max_tx_bytes = {{ .Mempool.MaxTxBytes }}
 
 # Maximum size of a batch of transactions to send to a peer
 # Including space needed by encoding (one varint per transaction).
-# XXX: Unused due to https://github.com/line/ostracon/issues/5796
+# XXX: Unused due to https://github.com/tendermint/tendermint/issues/5796
 max_batch_bytes = {{ .Mempool.MaxBatchBytes }}
 
 #######################################################
