@@ -1,7 +1,7 @@
 package merkle
 
 import (
-	"github.com/line/ostracon/crypto/tmhash"
+	"github.com/Finschia/ostracon/crypto/tmhash"
 )
 
 // TODO: make these have a large predefined capacity

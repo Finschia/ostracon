@@ -10,7 +10,7 @@ Ostracon fixes [CometBFT Commit](https://github.com/cometbft/cometbft/blob/v0.34
 
 In CometBFT、`Commit` assumes mempool is locked. It needs this assumption only for connection states sync. However `Commit` usually takes long time (about 500ms~1s), mempool is locked too long. Additionally, connection state sync only needs to be performed between `Commit` and rechecks. `BeginRecheckTx` and `EndRecheckTx` are added to notify the application of the start and end of the recheck so that connection states sync can be performed at the appropriate time.
 
-The PR [#160](https://github.com/line/ostracon/pull/160) contains this change.
+The PR [#160](https://github.com/Finschia/ostracon/pull/160) contains this change.
 
 ### BeginRecheckTx
 

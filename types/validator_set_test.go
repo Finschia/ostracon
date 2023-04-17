@@ -15,10 +15,10 @@ import (
 	"github.com/stretchr/testify/require"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/ed25519"
-	tmmath "github.com/line/ostracon/libs/math"
-	tmrand "github.com/line/ostracon/libs/rand"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	tmmath "github.com/Finschia/ostracon/libs/math"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
 )
 
 func TestValidatorSetBasic(t *testing.T) {

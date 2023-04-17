@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/line/ostracon/light"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/light"
+	"github.com/Finschia/ostracon/types"
 )
 
 // verify verifies the evidence fully by checking:

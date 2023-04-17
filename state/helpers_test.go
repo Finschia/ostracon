@@ -9,15 +9,15 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	ocabci "github.com/line/ostracon/abci/types"
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/ed25519"
-	tmrand "github.com/line/ostracon/libs/rand"
-	tmstate "github.com/line/ostracon/proto/ostracon/state"
-	"github.com/line/ostracon/proxy"
-	sm "github.com/line/ostracon/state"
-	"github.com/line/ostracon/types"
-	tmtime "github.com/line/ostracon/types/time"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	tmstate "github.com/Finschia/ostracon/proto/ostracon/state"
+	"github.com/Finschia/ostracon/proxy"
+	sm "github.com/Finschia/ostracon/state"
+	"github.com/Finschia/ostracon/types"
+	tmtime "github.com/Finschia/ostracon/types/time"
 )
 
 type paramsChangeTestCase struct {

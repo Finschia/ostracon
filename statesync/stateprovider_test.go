@@ -16,16 +16,16 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 
-	"github.com/line/ostracon/config"
-	"github.com/line/ostracon/libs/log"
-	tmrand "github.com/line/ostracon/libs/rand"
-	"github.com/line/ostracon/light"
-	ctypes "github.com/line/ostracon/rpc/core/types"
-	rpcserver "github.com/line/ostracon/rpc/jsonrpc/server"
-	rpctypes "github.com/line/ostracon/rpc/jsonrpc/types"
-	"github.com/line/ostracon/types"
-	tmtime "github.com/line/ostracon/types/time"
-	"github.com/line/ostracon/version"
+	"github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/libs/log"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	"github.com/Finschia/ostracon/light"
+	ctypes "github.com/Finschia/ostracon/rpc/core/types"
+	rpcserver "github.com/Finschia/ostracon/rpc/jsonrpc/server"
+	rpctypes "github.com/Finschia/ostracon/rpc/jsonrpc/types"
+	"github.com/Finschia/ostracon/types"
+	tmtime "github.com/Finschia/ostracon/types/time"
+	"github.com/Finschia/ostracon/version"
 )
 
 func TestNewLightClientStateProvider(t *testing.T) {

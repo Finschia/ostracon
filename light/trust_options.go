@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/line/ostracon/crypto/tmhash"
+	"github.com/Finschia/ostracon/crypto/tmhash"
 )
 
 // TrustOptions are the trust parameters needed when a new light client

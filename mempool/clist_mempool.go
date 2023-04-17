@@ -11,17 +11,17 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	ocabci "github.com/line/ostracon/abci/types"
-	cfg "github.com/line/ostracon/config"
-	auto "github.com/line/ostracon/libs/autofile"
-	"github.com/line/ostracon/libs/clist"
-	"github.com/line/ostracon/libs/log"
-	tmmath "github.com/line/ostracon/libs/math"
-	tmos "github.com/line/ostracon/libs/os"
-	tmsync "github.com/line/ostracon/libs/sync"
-	"github.com/line/ostracon/p2p"
-	"github.com/line/ostracon/proxy"
-	"github.com/line/ostracon/types"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	cfg "github.com/Finschia/ostracon/config"
+	auto "github.com/Finschia/ostracon/libs/autofile"
+	"github.com/Finschia/ostracon/libs/clist"
+	"github.com/Finschia/ostracon/libs/log"
+	tmmath "github.com/Finschia/ostracon/libs/math"
+	tmos "github.com/Finschia/ostracon/libs/os"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
+	"github.com/Finschia/ostracon/p2p"
+	"github.com/Finschia/ostracon/proxy"
+	"github.com/Finschia/ostracon/types"
 )
 
 // TxKeySize is the size of the transaction key index

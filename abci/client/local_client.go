@@ -3,9 +3,9 @@ package abcicli
 import (
 	"github.com/tendermint/tendermint/abci/types"
 
-	ocabci "github.com/line/ostracon/abci/types"
-	"github.com/line/ostracon/libs/service"
-	tmsync "github.com/line/ostracon/libs/sync"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	"github.com/Finschia/ostracon/libs/service"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
 )
 
 var _ Client = (*localClient)(nil)

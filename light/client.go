@@ -9,12 +9,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/line/ostracon/libs/log"
-	tmmath "github.com/line/ostracon/libs/math"
-	tmsync "github.com/line/ostracon/libs/sync"
-	"github.com/line/ostracon/light/provider"
-	"github.com/line/ostracon/light/store"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/libs/log"
+	tmmath "github.com/Finschia/ostracon/libs/math"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
+	"github.com/Finschia/ostracon/light/provider"
+	"github.com/Finschia/ostracon/light/store"
+	"github.com/Finschia/ostracon/types"
 )
 
 type mode byte

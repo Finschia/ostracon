@@ -7,8 +7,8 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/line/ostracon/abci/example/code"
-	"github.com/line/ostracon/abci/types"
+	"github.com/Finschia/ostracon/abci/example/code"
+	"github.com/Finschia/ostracon/abci/types"
 )
 
 var abciType string

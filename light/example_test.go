@@ -11,13 +11,13 @@ import (
 
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/line/ostracon/abci/example/kvstore"
-	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/light"
-	"github.com/line/ostracon/light/provider"
-	httpp "github.com/line/ostracon/light/provider/http"
-	dbs "github.com/line/ostracon/light/store/db"
-	rpctest "github.com/line/ostracon/rpc/test"
+	"github.com/Finschia/ostracon/abci/example/kvstore"
+	"github.com/Finschia/ostracon/libs/log"
+	"github.com/Finschia/ostracon/light"
+	"github.com/Finschia/ostracon/light/provider"
+	httpp "github.com/Finschia/ostracon/light/provider/http"
+	dbs "github.com/Finschia/ostracon/light/store/db"
+	rpctest "github.com/Finschia/ostracon/rpc/test"
 )
 
 // Automatically getting new headers and verifying them.

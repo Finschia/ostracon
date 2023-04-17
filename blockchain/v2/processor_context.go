@@ -3,8 +3,8 @@ package v2
 import (
 	"fmt"
 
-	"github.com/line/ostracon/state"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/state"
+	"github.com/Finschia/ostracon/types"
 )
 
 type processorContext interface {

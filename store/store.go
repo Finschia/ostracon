@@ -10,9 +10,9 @@ import (
 	tmstore "github.com/tendermint/tendermint/proto/tendermint/store"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	tmsync "github.com/line/ostracon/libs/sync"
-	ocproto "github.com/line/ostracon/proto/ostracon/types"
-	"github.com/line/ostracon/types"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
+	ocproto "github.com/Finschia/ostracon/proto/ostracon/types"
+	"github.com/Finschia/ostracon/types"
 )
 
 /*

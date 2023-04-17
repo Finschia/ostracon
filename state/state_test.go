@@ -17,14 +17,14 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	cfg "github.com/line/ostracon/config"
-	"github.com/line/ostracon/crypto/ed25519"
-	cryptoenc "github.com/line/ostracon/crypto/encoding"
-	tmrand "github.com/line/ostracon/libs/rand"
-	tmstate "github.com/line/ostracon/proto/ostracon/state"
-	sm "github.com/line/ostracon/state"
-	"github.com/line/ostracon/types"
-	tmtime "github.com/line/ostracon/types/time"
+	cfg "github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	cryptoenc "github.com/Finschia/ostracon/crypto/encoding"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	tmstate "github.com/Finschia/ostracon/proto/ostracon/state"
+	sm "github.com/Finschia/ostracon/state"
+	"github.com/Finschia/ostracon/types"
+	tmtime "github.com/Finschia/ostracon/types/time"
 )
 
 // setupTestCase does setup common to all test cases.

@@ -9,10 +9,10 @@ import (
 
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/line/ostracon/crypto/vrf"
-	tmrand "github.com/line/ostracon/libs/rand"
-	sm "github.com/line/ostracon/state"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/crypto/vrf"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	sm "github.com/Finschia/ostracon/state"
+	"github.com/Finschia/ostracon/types"
 )
 
 func TestTxFilter(t *testing.T) {

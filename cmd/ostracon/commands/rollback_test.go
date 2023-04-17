@@ -3,7 +3,7 @@ package commands
 import (
 	"testing"
 
-	cfg "github.com/line/ostracon/config"
+	cfg "github.com/Finschia/ostracon/config"
 	"github.com/stretchr/testify/require"
 )
 

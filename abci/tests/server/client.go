@@ -7,10 +7,10 @@ import (
 
 	"github.com/tendermint/tendermint/abci/types"
 
-	abcicli "github.com/line/ostracon/abci/client"
-	"github.com/line/ostracon/abci/example/kvstore"
-	ocabci "github.com/line/ostracon/abci/types"
-	tmrand "github.com/line/ostracon/libs/rand"
+	abcicli "github.com/Finschia/ostracon/abci/client"
+	"github.com/Finschia/ostracon/abci/example/kvstore"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
 )
 
 func InitChain(client abcicli.Client) error {

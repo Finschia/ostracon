@@ -3,10 +3,10 @@ package core
 import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/line/ostracon/libs/bytes"
-	"github.com/line/ostracon/proxy"
-	ctypes "github.com/line/ostracon/rpc/core/types"
-	rpctypes "github.com/line/ostracon/rpc/jsonrpc/types"
+	"github.com/Finschia/ostracon/libs/bytes"
+	"github.com/Finschia/ostracon/proxy"
+	ctypes "github.com/Finschia/ostracon/rpc/core/types"
+	rpctypes "github.com/Finschia/ostracon/rpc/jsonrpc/types"
 )
 
 // ABCIQuery queries the application for some information.

@@ -7,11 +7,11 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	ocabci "github.com/line/ostracon/abci/types"
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/libs/bytes"
-	"github.com/line/ostracon/p2p"
-	"github.com/line/ostracon/types"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/libs/bytes"
+	"github.com/Finschia/ostracon/p2p"
+	"github.com/Finschia/ostracon/types"
 )
 
 // List of blocks

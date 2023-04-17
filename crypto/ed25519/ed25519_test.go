@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/ed25519"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/ed25519"
 )
 
 func TestSignAndValidateEd25519(t *testing.T) {

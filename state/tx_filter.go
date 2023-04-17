@@ -1,8 +1,8 @@
 package state
 
 import (
-	mempl "github.com/line/ostracon/mempool"
-	"github.com/line/ostracon/types"
+	mempl "github.com/Finschia/ostracon/mempool"
+	"github.com/Finschia/ostracon/types"
 )
 
 // TxPreCheck returns a function to filter transactions before processing.

@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/line/ostracon/p2p"
+	"github.com/Finschia/ostracon/p2p"
 )
 
 // ShowNodeIDCmd dumps node's ID to the standard output.

@@ -5,14 +5,14 @@ import (
 	"net"
 	"time"
 
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/ed25519"
-	"github.com/line/ostracon/libs/log"
-	tmnet "github.com/line/ostracon/libs/net"
-	tmrand "github.com/line/ostracon/libs/rand"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	"github.com/Finschia/ostracon/libs/log"
+	tmnet "github.com/Finschia/ostracon/libs/net"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
 
-	"github.com/line/ostracon/config"
-	"github.com/line/ostracon/p2p/conn"
+	"github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/p2p/conn"
 )
 
 const testCh = 0x01

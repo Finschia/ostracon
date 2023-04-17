@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/line/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto"
 )
 
 // the purpose of this test is primarily to ensure that the randomness

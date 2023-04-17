@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"strings"
 
-	tmjson "github.com/line/ostracon/libs/json"
+	tmjson "github.com/Finschia/ostracon/libs/json"
 )
 
 // a wrapper to emulate a sum type: jsonrpcid = string | int

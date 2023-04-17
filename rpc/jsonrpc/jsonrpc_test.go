@@ -16,13 +16,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	tmbytes "github.com/line/ostracon/libs/bytes"
-	"github.com/line/ostracon/libs/log"
-	tmrand "github.com/line/ostracon/libs/rand"
+	tmbytes "github.com/Finschia/ostracon/libs/bytes"
+	"github.com/Finschia/ostracon/libs/log"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
 
-	client "github.com/line/ostracon/rpc/jsonrpc/client"
-	server "github.com/line/ostracon/rpc/jsonrpc/server"
-	types "github.com/line/ostracon/rpc/jsonrpc/types"
+	client "github.com/Finschia/ostracon/rpc/jsonrpc/client"
+	server "github.com/Finschia/ostracon/rpc/jsonrpc/server"
+	types "github.com/Finschia/ostracon/rpc/jsonrpc/types"
 )
 
 // Client and Server should work over tcp or unix sockets

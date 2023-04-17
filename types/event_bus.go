@@ -6,9 +6,9 @@ import (
 
 	"github.com/tendermint/tendermint/abci/types"
 
-	"github.com/line/ostracon/libs/log"
-	tmpubsub "github.com/line/ostracon/libs/pubsub"
-	"github.com/line/ostracon/libs/service"
+	"github.com/Finschia/ostracon/libs/log"
+	tmpubsub "github.com/Finschia/ostracon/libs/pubsub"
+	"github.com/Finschia/ostracon/libs/service"
 )
 
 const defaultCapacity = 0

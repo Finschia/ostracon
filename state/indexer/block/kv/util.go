@@ -7,8 +7,8 @@ import (
 
 	"github.com/google/orderedcode"
 
-	"github.com/line/ostracon/libs/pubsub/query"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/libs/pubsub/query"
+	"github.com/Finschia/ostracon/types"
 )
 
 func intInSlice(a int, list []int) bool {

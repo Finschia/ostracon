@@ -10,11 +10,11 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/line/ostracon/crypto/merkle"
-	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/proxy"
-	sm "github.com/line/ostracon/state"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/crypto/merkle"
+	"github.com/Finschia/ostracon/libs/log"
+	"github.com/Finschia/ostracon/proxy"
+	sm "github.com/Finschia/ostracon/state"
+	"github.com/Finschia/ostracon/types"
 )
 
 var crc32c = crc32.MakeTable(crc32.Castagnoli)

@@ -10,9 +10,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/line/ostracon/p2p"
-	"github.com/line/ostracon/state"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/p2p"
+	"github.com/Finschia/ostracon/state"
+	"github.com/Finschia/ostracon/types"
 )
 
 type scTestParams struct {

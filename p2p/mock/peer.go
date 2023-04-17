@@ -3,10 +3,10 @@ package mock
 import (
 	"net"
 
-	"github.com/line/ostracon/crypto/ed25519"
-	"github.com/line/ostracon/libs/service"
-	"github.com/line/ostracon/p2p"
-	"github.com/line/ostracon/p2p/conn"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	"github.com/Finschia/ostracon/libs/service"
+	"github.com/Finschia/ostracon/p2p"
+	"github.com/Finschia/ostracon/p2p/conn"
 )
 
 type Peer struct {

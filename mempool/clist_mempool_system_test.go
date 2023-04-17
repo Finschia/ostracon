@@ -17,13 +17,13 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 
-	"github.com/line/ostracon/abci/example/counter"
-	ocabci "github.com/line/ostracon/abci/types"
-	"github.com/line/ostracon/config"
-	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/proxy"
-	"github.com/line/ostracon/types"
-	"github.com/line/ostracon/version"
+	"github.com/Finschia/ostracon/abci/example/counter"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	"github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/libs/log"
+	"github.com/Finschia/ostracon/proxy"
+	"github.com/Finschia/ostracon/types"
+	"github.com/Finschia/ostracon/version"
 	"github.com/stretchr/testify/require"
 )
 

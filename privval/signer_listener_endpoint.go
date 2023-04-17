@@ -7,10 +7,10 @@ import (
 
 	privvalproto "github.com/tendermint/tendermint/proto/tendermint/privval"
 
-	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/libs/service"
-	tmsync "github.com/line/ostracon/libs/sync"
-	ocprivvalproto "github.com/line/ostracon/proto/ostracon/privval"
+	"github.com/Finschia/ostracon/libs/log"
+	"github.com/Finschia/ostracon/libs/service"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
+	ocprivvalproto "github.com/Finschia/ostracon/proto/ostracon/privval"
 )
 
 // SignerListenerEndpointOption sets an optional parameter on the SignerListenerEndpoint.

@@ -22,12 +22,12 @@ import (
 	"golang.org/x/crypto/hkdf"
 	"golang.org/x/crypto/nacl/box"
 
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/ed25519"
-	cryptoenc "github.com/line/ostracon/crypto/encoding"
-	"github.com/line/ostracon/libs/async"
-	"github.com/line/ostracon/libs/protoio"
-	tmsync "github.com/line/ostracon/libs/sync"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	cryptoenc "github.com/Finschia/ostracon/crypto/encoding"
+	"github.com/Finschia/ostracon/libs/async"
+	"github.com/Finschia/ostracon/libs/protoio"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
 )
 
 // 4 + 1024 == 1028 total frame size

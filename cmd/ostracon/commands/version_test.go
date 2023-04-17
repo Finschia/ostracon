@@ -3,7 +3,7 @@ package commands
 import (
 	"testing"
 
-	"github.com/line/ostracon/version"
+	"github.com/Finschia/ostracon/version"
 )
 
 func TestVersionCmd(t *testing.T) {

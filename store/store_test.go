@@ -17,14 +17,14 @@ import (
 	tmstore "github.com/tendermint/tendermint/proto/tendermint/store"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 
-	cfg "github.com/line/ostracon/config"
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/libs/log"
-	tmrand "github.com/line/ostracon/libs/rand"
-	sm "github.com/line/ostracon/state"
-	"github.com/line/ostracon/types"
-	tmtime "github.com/line/ostracon/types/time"
-	"github.com/line/ostracon/version"
+	cfg "github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/libs/log"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	sm "github.com/Finschia/ostracon/state"
+	"github.com/Finschia/ostracon/types"
+	tmtime "github.com/Finschia/ostracon/types/time"
+	"github.com/Finschia/ostracon/version"
 )
 
 // A cleanupFunc cleans up any config / test files created for a particular

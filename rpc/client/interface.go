@@ -23,10 +23,10 @@ implementation.
 import (
 	"context"
 
-	"github.com/line/ostracon/libs/bytes"
-	"github.com/line/ostracon/libs/service"
-	ctypes "github.com/line/ostracon/rpc/core/types"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/libs/bytes"
+	"github.com/Finschia/ostracon/libs/service"
+	ctypes "github.com/Finschia/ostracon/rpc/core/types"
+	"github.com/Finschia/ostracon/types"
 )
 
 // Client wraps most important rpc calls a client would make if you want to

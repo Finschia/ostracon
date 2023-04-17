@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/line/ostracon/light/provider"
-	"github.com/line/ostracon/light/provider/http"
-	"github.com/line/ostracon/light/store"
+	"github.com/Finschia/ostracon/light/provider"
+	"github.com/Finschia/ostracon/light/provider/http"
+	"github.com/Finschia/ostracon/light/store"
 )
 
 // NewHTTPClient initiates an instance of a light client using HTTP addresses

@@ -13,11 +13,11 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/proto/tendermint/crypto"
 
-	"github.com/line/ostracon/abci/example/code"
-	ocabci "github.com/line/ostracon/abci/types"
-	cryptoenc "github.com/line/ostracon/crypto/encoding"
-	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/version"
+	"github.com/Finschia/ostracon/abci/example/code"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	cryptoenc "github.com/Finschia/ostracon/crypto/encoding"
+	"github.com/Finschia/ostracon/libs/log"
+	"github.com/Finschia/ostracon/version"
 )
 
 const E2EAppVersion = 999

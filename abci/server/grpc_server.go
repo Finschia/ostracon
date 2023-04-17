@@ -5,9 +5,9 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/line/ostracon/abci/types"
-	tmnet "github.com/line/ostracon/libs/net"
-	"github.com/line/ostracon/libs/service"
+	"github.com/Finschia/ostracon/abci/types"
+	tmnet "github.com/Finschia/ostracon/libs/net"
+	"github.com/Finschia/ostracon/libs/service"
 )
 
 type GRPCServer struct {

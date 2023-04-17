@@ -25,7 +25,7 @@ jobs:
           elif [[ $GITHUB_REF == refs/heads/* ]]; then
             VERSION=$(echo ${GITHUB_REF#refs/heads/} | sed -r 's#/+#-#g')
             DEFAULT_BRANCH=$(curl -s -H "Accept: application/vnd.github.v3+json" \
-                             https://api.github.com/repos/line/ostracon | \
+                             https://api.github.com/repos/Finschia/ostracon | \
                              grep default_branch | \
                              cut -d"\"" -f4)
             if [ "$DEFAULT_BRANCH" = "$VERSION" ]; then

@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	net2 "github.com/line/ostracon/libs/net"
+	net2 "github.com/Finschia/ostracon/libs/net"
 )
 
 const HttpRequestTimeout = 30 * time.Second

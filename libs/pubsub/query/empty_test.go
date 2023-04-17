@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/line/ostracon/libs/pubsub/query"
+	"github.com/Finschia/ostracon/libs/pubsub/query"
 )
 
 func TestEmptyQueryMatchesAnything(t *testing.T) {

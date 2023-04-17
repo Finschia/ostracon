@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/types"
 )
 
 // Waiter is informed of current height, decided whether to quit early

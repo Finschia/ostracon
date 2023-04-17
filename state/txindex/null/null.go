@@ -6,8 +6,8 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/line/ostracon/libs/pubsub/query"
-	"github.com/line/ostracon/state/txindex"
+	"github.com/Finschia/ostracon/libs/pubsub/query"
+	"github.com/Finschia/ostracon/state/txindex"
 )
 
 var _ txindex.TxIndexer = (*TxIndex)(nil)

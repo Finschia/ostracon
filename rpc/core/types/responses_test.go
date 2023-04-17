@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/line/ostracon/p2p"
+	"github.com/Finschia/ostracon/p2p"
 )
 
 func TestStatusIndexer(t *testing.T) {

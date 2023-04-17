@@ -13,16 +13,16 @@ import (
 	ssproto "github.com/tendermint/tendermint/proto/tendermint/statesync"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 
-	"github.com/line/ostracon/config"
-	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/p2p"
-	p2pmocks "github.com/line/ostracon/p2p/mocks"
-	"github.com/line/ostracon/proxy"
-	proxymocks "github.com/line/ostracon/proxy/mocks"
-	sm "github.com/line/ostracon/state"
-	"github.com/line/ostracon/statesync/mocks"
-	"github.com/line/ostracon/types"
-	"github.com/line/ostracon/version"
+	"github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/libs/log"
+	"github.com/Finschia/ostracon/p2p"
+	p2pmocks "github.com/Finschia/ostracon/p2p/mocks"
+	"github.com/Finschia/ostracon/proxy"
+	proxymocks "github.com/Finschia/ostracon/proxy/mocks"
+	sm "github.com/Finschia/ostracon/state"
+	"github.com/Finschia/ostracon/statesync/mocks"
+	"github.com/Finschia/ostracon/types"
+	"github.com/Finschia/ostracon/version"
 )
 
 func TestReactor_Receive_ChunkRequest(t *testing.T) {

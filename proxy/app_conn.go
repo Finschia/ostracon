@@ -3,8 +3,8 @@ package proxy
 import (
 	"github.com/tendermint/tendermint/abci/types"
 
-	abcicli "github.com/line/ostracon/abci/client"
-	ocabci "github.com/line/ostracon/abci/types"
+	abcicli "github.com/Finschia/ostracon/abci/client"
+	ocabci "github.com/Finschia/ostracon/abci/types"
 )
 
 //nolint

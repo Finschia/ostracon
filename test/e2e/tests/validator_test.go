@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/line/ostracon/crypto/vrf"
-	e2e "github.com/line/ostracon/test/e2e/pkg"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/crypto/vrf"
+	e2e "github.com/Finschia/ostracon/test/e2e/pkg"
+	"github.com/Finschia/ostracon/types"
 )
 
 // Tests that validator sets are available and correct according to

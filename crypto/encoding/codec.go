@@ -5,10 +5,10 @@ import (
 
 	pc "github.com/tendermint/tendermint/proto/tendermint/crypto"
 
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/ed25519"
-	"github.com/line/ostracon/crypto/secp256k1"
-	"github.com/line/ostracon/libs/json"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	"github.com/Finschia/ostracon/crypto/secp256k1"
+	"github.com/Finschia/ostracon/libs/json"
 )
 
 func init() {

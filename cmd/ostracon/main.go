@@ -4,11 +4,11 @@ import (
 	"os"
 	"path/filepath"
 
-	cmd "github.com/line/ostracon/cmd/ostracon/commands"
-	"github.com/line/ostracon/cmd/ostracon/commands/debug"
-	cfg "github.com/line/ostracon/config"
-	"github.com/line/ostracon/libs/cli"
-	nm "github.com/line/ostracon/node"
+	cmd "github.com/Finschia/ostracon/cmd/ostracon/commands"
+	"github.com/Finschia/ostracon/cmd/ostracon/commands/debug"
+	cfg "github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/libs/cli"
+	nm "github.com/Finschia/ostracon/node"
 )
 
 func main() {

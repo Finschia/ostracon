@@ -11,11 +11,11 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 
-	"github.com/line/ostracon/crypto"
-	ocstate "github.com/line/ostracon/proto/ostracon/state"
-	"github.com/line/ostracon/types"
-	tmtime "github.com/line/ostracon/types/time"
-	"github.com/line/ostracon/version"
+	"github.com/Finschia/ostracon/crypto"
+	ocstate "github.com/Finschia/ostracon/proto/ostracon/state"
+	"github.com/Finschia/ostracon/types"
+	tmtime "github.com/Finschia/ostracon/types/time"
+	"github.com/Finschia/ostracon/version"
 )
 
 var (

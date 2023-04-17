@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/line/ostracon/crypto/tmhash"
+	"github.com/Finschia/ostracon/crypto/tmhash"
 )
 
 func TestHash(t *testing.T) {

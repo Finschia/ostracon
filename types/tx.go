@@ -7,9 +7,9 @@ import (
 
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/line/ostracon/crypto/merkle"
-	"github.com/line/ostracon/crypto/tmhash"
-	tmbytes "github.com/line/ostracon/libs/bytes"
+	"github.com/Finschia/ostracon/crypto/merkle"
+	"github.com/Finschia/ostracon/crypto/tmhash"
+	tmbytes "github.com/Finschia/ostracon/libs/bytes"
 )
 
 // Tx is an arbitrary byte array.

@@ -3,7 +3,7 @@ package pex
 import (
 	"time"
 
-	"github.com/line/ostracon/p2p"
+	"github.com/Finschia/ostracon/p2p"
 )
 
 // knownAddress tracks information about a known network address

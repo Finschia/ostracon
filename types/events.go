@@ -5,9 +5,9 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	tmjson "github.com/line/ostracon/libs/json"
-	tmpubsub "github.com/line/ostracon/libs/pubsub"
-	tmquery "github.com/line/ostracon/libs/pubsub/query"
+	tmjson "github.com/Finschia/ostracon/libs/json"
+	tmpubsub "github.com/Finschia/ostracon/libs/pubsub"
+	tmquery "github.com/Finschia/ostracon/libs/pubsub/query"
 )
 
 // Reserved event types (alphabetically sorted).

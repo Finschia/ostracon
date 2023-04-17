@@ -7,13 +7,13 @@ import (
 
 	bcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
 
-	bc "github.com/line/ostracon/blockchain"
-	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/p2p"
-	ocbcproto "github.com/line/ostracon/proto/ostracon/blockchain"
-	sm "github.com/line/ostracon/state"
-	"github.com/line/ostracon/store"
-	"github.com/line/ostracon/types"
+	bc "github.com/Finschia/ostracon/blockchain"
+	"github.com/Finschia/ostracon/libs/log"
+	"github.com/Finschia/ostracon/p2p"
+	ocbcproto "github.com/Finschia/ostracon/proto/ostracon/blockchain"
+	sm "github.com/Finschia/ostracon/state"
+	"github.com/Finschia/ostracon/store"
+	"github.com/Finschia/ostracon/types"
 )
 
 const (

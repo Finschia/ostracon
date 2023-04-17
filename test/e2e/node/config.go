@@ -6,7 +6,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 
-	"github.com/line/ostracon/test/e2e/app"
+	"github.com/Finschia/ostracon/test/e2e/app"
 )
 
 // Config is the application configuration.

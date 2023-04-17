@@ -1,7 +1,7 @@
 package p2p
 
 import (
-	"github.com/line/ostracon/p2p/conn"
+	"github.com/Finschia/ostracon/p2p/conn"
 )
 
 type ChannelDescriptor = conn.ChannelDescriptor

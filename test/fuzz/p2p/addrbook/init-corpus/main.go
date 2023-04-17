@@ -11,8 +11,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/line/ostracon/crypto/ed25519"
-	"github.com/line/ostracon/p2p"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	"github.com/Finschia/ostracon/p2p"
 )
 
 func main() {

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/line/ostracon/crypto/ed25519"
-	"github.com/line/ostracon/libs/log"
-	tmnet "github.com/line/ostracon/libs/net"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	"github.com/Finschia/ostracon/libs/log"
+	tmnet "github.com/Finschia/ostracon/libs/net"
 )
 
 // IsConnTimeout returns a boolean indicating whether the error is known to

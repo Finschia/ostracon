@@ -16,18 +16,18 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	config2 "github.com/line/ostracon/config"
+	config2 "github.com/Finschia/ostracon/config"
 
-	abcicli "github.com/line/ostracon/abci/client"
-	"github.com/line/ostracon/evidence"
-	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/libs/service"
-	tmsync "github.com/line/ostracon/libs/sync"
-	mempl "github.com/line/ostracon/mempool"
-	"github.com/line/ostracon/p2p"
-	sm "github.com/line/ostracon/state"
-	"github.com/line/ostracon/store"
-	"github.com/line/ostracon/types"
+	abcicli "github.com/Finschia/ostracon/abci/client"
+	"github.com/Finschia/ostracon/evidence"
+	"github.com/Finschia/ostracon/libs/log"
+	"github.com/Finschia/ostracon/libs/service"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
+	mempl "github.com/Finschia/ostracon/mempool"
+	"github.com/Finschia/ostracon/p2p"
+	sm "github.com/Finschia/ostracon/state"
+	"github.com/Finschia/ostracon/store"
+	"github.com/Finschia/ostracon/types"
 )
 
 //----------------------------------------------

@@ -8,12 +8,12 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	db "github.com/tendermint/tm-db"
 
-	ocabci "github.com/line/ostracon/abci/types"
-	"github.com/line/ostracon/libs/log"
-	blockidxkv "github.com/line/ostracon/state/indexer/block/kv"
-	"github.com/line/ostracon/state/txindex"
-	"github.com/line/ostracon/state/txindex/kv"
-	"github.com/line/ostracon/types"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	"github.com/Finschia/ostracon/libs/log"
+	blockidxkv "github.com/Finschia/ostracon/state/indexer/block/kv"
+	"github.com/Finschia/ostracon/state/txindex"
+	"github.com/Finschia/ostracon/state/txindex/kv"
+	"github.com/Finschia/ostracon/types"
 )
 
 func TestIndexerServiceIndexesBlocks(t *testing.T) {

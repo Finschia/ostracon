@@ -20,7 +20,7 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/line/ostracon/crypto/tmhash"
+	"github.com/Finschia/ostracon/crypto/tmhash"
 )
 
 func TestRFC6962Hasher(t *testing.T) {

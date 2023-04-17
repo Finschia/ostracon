@@ -5,9 +5,9 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	ocabci "github.com/line/ostracon/abci/types"
-	core "github.com/line/ostracon/rpc/core"
-	rpctypes "github.com/line/ostracon/rpc/jsonrpc/types"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	core "github.com/Finschia/ostracon/rpc/core"
+	rpctypes "github.com/Finschia/ostracon/rpc/jsonrpc/types"
 )
 
 type broadcastAPI struct {

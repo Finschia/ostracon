@@ -8,11 +8,11 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	ocabci "github.com/line/ostracon/abci/types"
-	mempl "github.com/line/ostracon/mempool"
-	ctypes "github.com/line/ostracon/rpc/core/types"
-	rpctypes "github.com/line/ostracon/rpc/jsonrpc/types"
-	"github.com/line/ostracon/types"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	mempl "github.com/Finschia/ostracon/mempool"
+	ctypes "github.com/Finschia/ostracon/rpc/core/types"
+	rpctypes "github.com/Finschia/ostracon/rpc/jsonrpc/types"
+	"github.com/Finschia/ostracon/types"
 )
 
 //-----------------------------------------------------------------------------

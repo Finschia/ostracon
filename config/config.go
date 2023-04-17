@@ -784,7 +784,7 @@ type MempoolConfig struct {
 	MaxTxBytes int `mapstructure:"max_tx_bytes"`
 	// Maximum size of a batch of transactions to send to a peer
 	// Including space needed by encoding (one varint per transaction).
-	// XXX: Unused due to https://github.com/line/ostracon/issues/5796
+	// XXX: Unused due to https://github.com/tendermint/tendermint/issues/5796
 	MaxBatchBytes int `mapstructure:"max_batch_bytes"`
 }
 

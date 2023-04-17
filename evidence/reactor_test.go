@@ -16,16 +16,16 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	cfg "github.com/line/ostracon/config"
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/tmhash"
-	"github.com/line/ostracon/evidence"
-	"github.com/line/ostracon/evidence/mocks"
-	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/p2p"
-	p2pmocks "github.com/line/ostracon/p2p/mocks"
-	sm "github.com/line/ostracon/state"
-	"github.com/line/ostracon/types"
+	cfg "github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/tmhash"
+	"github.com/Finschia/ostracon/evidence"
+	"github.com/Finschia/ostracon/evidence/mocks"
+	"github.com/Finschia/ostracon/libs/log"
+	"github.com/Finschia/ostracon/p2p"
+	p2pmocks "github.com/Finschia/ostracon/p2p/mocks"
+	sm "github.com/Finschia/ostracon/state"
+	"github.com/Finschia/ostracon/types"
 )
 
 var (

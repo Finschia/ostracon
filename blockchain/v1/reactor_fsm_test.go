@@ -7,12 +7,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/line/ostracon/libs/log"
-	tmmath "github.com/line/ostracon/libs/math"
-	tmrand "github.com/line/ostracon/libs/rand"
-	"github.com/line/ostracon/p2p"
-	sm "github.com/line/ostracon/state"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/libs/log"
+	tmmath "github.com/Finschia/ostracon/libs/math"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	"github.com/Finschia/ostracon/p2p"
+	sm "github.com/Finschia/ostracon/state"
+	"github.com/Finschia/ostracon/types"
 )
 
 type lastBlockRequestT struct {

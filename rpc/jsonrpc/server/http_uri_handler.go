@@ -8,9 +8,9 @@ import (
 	"regexp"
 	"strings"
 
-	tmjson "github.com/line/ostracon/libs/json"
-	"github.com/line/ostracon/libs/log"
-	types "github.com/line/ostracon/rpc/jsonrpc/types"
+	tmjson "github.com/Finschia/ostracon/libs/json"
+	"github.com/Finschia/ostracon/libs/log"
+	types "github.com/Finschia/ostracon/rpc/jsonrpc/types"
 )
 
 // HTTP + URI handler

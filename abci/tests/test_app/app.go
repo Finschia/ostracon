@@ -7,8 +7,8 @@ import (
 
 	"github.com/tendermint/tendermint/abci/types"
 
-	abcicli "github.com/line/ostracon/abci/client"
-	"github.com/line/ostracon/libs/log"
+	abcicli "github.com/Finschia/ostracon/abci/client"
+	"github.com/Finschia/ostracon/libs/log"
 )
 
 func startClient(abciType string) abcicli.Client {

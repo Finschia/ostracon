@@ -14,8 +14,8 @@ import (
 	tmp2p "github.com/tendermint/tendermint/proto/tendermint/p2p"
 	"github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/libs/protoio"
+	"github.com/Finschia/ostracon/libs/log"
+	"github.com/Finschia/ostracon/libs/protoio"
 )
 
 const maxPingPongPacketSize = 1024 // bytes

@@ -8,7 +8,7 @@ package vrf
 import (
 	"bytes"
 
-	libsodium "github.com/line/ostracon/crypto/vrf/internal/vrf"
+	libsodium "github.com/Finschia/ostracon/crypto/vrf/internal/vrf"
 )
 
 type vrfEd25519libsodium struct {

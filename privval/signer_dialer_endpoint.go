@@ -3,8 +3,8 @@ package privval
 import (
 	"time"
 
-	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/libs/service"
+	"github.com/Finschia/ostracon/libs/log"
+	"github.com/Finschia/ostracon/libs/service"
 )
 
 const (

@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/line/ostracon/libs/log"
-	rs "github.com/line/ostracon/rpc/jsonrpc/server"
-	types "github.com/line/ostracon/rpc/jsonrpc/types"
+	"github.com/Finschia/ostracon/libs/log"
+	rs "github.com/Finschia/ostracon/rpc/jsonrpc/server"
+	types "github.com/Finschia/ostracon/rpc/jsonrpc/types"
 )
 
 var rpcFuncMap = map[string]*rs.RPCFunc{

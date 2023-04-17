@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/line/ostracon/libs/log"
-	rpctypes "github.com/line/ostracon/rpc/core/types"
-	e2e "github.com/line/ostracon/test/e2e/pkg"
+	"github.com/Finschia/ostracon/libs/log"
+	rpctypes "github.com/Finschia/ostracon/rpc/core/types"
+	e2e "github.com/Finschia/ostracon/test/e2e/pkg"
 )
 
 // Perturbs a running testnet.

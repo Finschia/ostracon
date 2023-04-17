@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/types"
 )
 
 //-----------------------------------------------------

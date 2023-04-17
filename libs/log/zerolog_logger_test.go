@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/line/ostracon/libs/log"
+	"github.com/Finschia/ostracon/libs/log"
 )
 
 func TestZeroLogLoggerLogsItsErrors(t *testing.T) {

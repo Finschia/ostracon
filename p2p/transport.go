@@ -10,9 +10,9 @@ import (
 
 	tmp2p "github.com/tendermint/tendermint/proto/tendermint/p2p"
 
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/libs/protoio"
-	"github.com/line/ostracon/p2p/conn"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/libs/protoio"
+	"github.com/Finschia/ostracon/p2p/conn"
 )
 
 const (

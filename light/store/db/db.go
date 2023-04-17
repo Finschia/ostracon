@@ -9,9 +9,9 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	tmsync "github.com/line/ostracon/libs/sync"
-	"github.com/line/ostracon/light/store"
-	"github.com/line/ostracon/types"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
+	"github.com/Finschia/ostracon/light/store"
+	"github.com/Finschia/ostracon/types"
 )
 
 var (

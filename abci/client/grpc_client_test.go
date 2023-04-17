@@ -6,9 +6,9 @@ import (
 
 	"github.com/tendermint/tendermint/abci/types"
 
-	"github.com/line/ostracon/abci/server"
-	ocabci "github.com/line/ostracon/abci/types"
-	"github.com/line/ostracon/libs/rand"
+	"github.com/Finschia/ostracon/abci/server"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	"github.com/Finschia/ostracon/libs/rand"
 	"github.com/stretchr/testify/require"
 )
 

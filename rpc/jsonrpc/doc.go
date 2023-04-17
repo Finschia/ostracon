@@ -81,5 +81,5 @@
 //
 // Examples
 //
-// - [Ostracon](https://github.com/line/ostracon/blob/main/rpc/core/routes.go)
+// - [Ostracon](https://github.com/Finschia/ostracon/blob/main/rpc/core/routes.go)
 package jsonrpc

@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/ed25519"
-	tmjson "github.com/line/ostracon/libs/json"
-	tmos "github.com/line/ostracon/libs/os"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	tmjson "github.com/Finschia/ostracon/libs/json"
+	tmos "github.com/Finschia/ostracon/libs/os"
 )
 
 // ID is a hex-encoded crypto.Address

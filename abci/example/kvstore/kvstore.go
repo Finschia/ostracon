@@ -9,9 +9,9 @@ import (
 	"github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/line/ostracon/abci/example/code"
-	ocabci "github.com/line/ostracon/abci/types"
-	"github.com/line/ostracon/version"
+	"github.com/Finschia/ostracon/abci/example/code"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	"github.com/Finschia/ostracon/version"
 )
 
 var (

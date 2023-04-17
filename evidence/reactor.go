@@ -6,10 +6,10 @@ import (
 
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	clist "github.com/line/ostracon/libs/clist"
-	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/p2p"
-	"github.com/line/ostracon/types"
+	clist "github.com/Finschia/ostracon/libs/clist"
+	"github.com/Finschia/ostracon/libs/log"
+	"github.com/Finschia/ostracon/p2p"
+	"github.com/Finschia/ostracon/types"
 )
 
 const (

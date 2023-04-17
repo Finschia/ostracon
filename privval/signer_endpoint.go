@@ -5,10 +5,10 @@ import (
 	"net"
 	"time"
 
-	"github.com/line/ostracon/libs/protoio"
-	"github.com/line/ostracon/libs/service"
-	tmsync "github.com/line/ostracon/libs/sync"
-	privvalproto "github.com/line/ostracon/proto/ostracon/privval"
+	"github.com/Finschia/ostracon/libs/protoio"
+	"github.com/Finschia/ostracon/libs/service"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
+	privvalproto "github.com/Finschia/ostracon/proto/ostracon/privval"
 )
 
 const (

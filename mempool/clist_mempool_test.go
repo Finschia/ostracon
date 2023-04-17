@@ -21,16 +21,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/line/ostracon/abci/example/counter"
-	"github.com/line/ostracon/abci/example/kvstore"
-	abciserver "github.com/line/ostracon/abci/server"
-	ocabci "github.com/line/ostracon/abci/types"
-	cfg "github.com/line/ostracon/config"
-	"github.com/line/ostracon/libs/log"
-	tmrand "github.com/line/ostracon/libs/rand"
-	"github.com/line/ostracon/libs/service"
-	"github.com/line/ostracon/proxy"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/abci/example/counter"
+	"github.com/Finschia/ostracon/abci/example/kvstore"
+	abciserver "github.com/Finschia/ostracon/abci/server"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	cfg "github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/libs/log"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	"github.com/Finschia/ostracon/libs/service"
+	"github.com/Finschia/ostracon/proxy"
+	"github.com/Finschia/ostracon/types"
 )
 
 // A cleanupFunc cleans up any config / test files created for a particular

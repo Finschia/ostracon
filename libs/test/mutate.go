@@ -1,7 +1,7 @@
 package test
 
 import (
-	tmrand "github.com/line/ostracon/libs/rand"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
 )
 
 // Contract: !bytes.Equal(input, output) && len(input) >= len(output)

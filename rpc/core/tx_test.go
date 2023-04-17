@@ -10,12 +10,12 @@ import (
 
 	dbm "github.com/tendermint/tm-db"
 
-	txidxkv "github.com/line/ostracon/state/txindex/kv"
-	txidxnull "github.com/line/ostracon/state/txindex/null"
+	txidxkv "github.com/Finschia/ostracon/state/txindex/kv"
+	txidxnull "github.com/Finschia/ostracon/state/txindex/null"
 	"github.com/stretchr/testify/require"
 
-	rpctypes "github.com/line/ostracon/rpc/jsonrpc/types"
-	"github.com/line/ostracon/types"
+	rpctypes "github.com/Finschia/ostracon/rpc/jsonrpc/types"
+	"github.com/Finschia/ostracon/types"
 )
 
 func TestTxSearchByTxHashQuery(t *testing.T) {

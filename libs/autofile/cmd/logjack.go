@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	auto "github.com/line/ostracon/libs/autofile"
-	tmos "github.com/line/ostracon/libs/os"
+	auto "github.com/Finschia/ostracon/libs/autofile"
+	tmos "github.com/Finschia/ostracon/libs/os"
 )
 
 const Version = "0.0.1"

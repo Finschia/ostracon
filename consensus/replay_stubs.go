@@ -3,12 +3,12 @@ package consensus
 import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	ocabci "github.com/line/ostracon/abci/types"
-	"github.com/line/ostracon/libs/clist"
-	mempl "github.com/line/ostracon/mempool"
-	tmstate "github.com/line/ostracon/proto/ostracon/state"
-	"github.com/line/ostracon/proxy"
-	"github.com/line/ostracon/types"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	"github.com/Finschia/ostracon/libs/clist"
+	mempl "github.com/Finschia/ostracon/mempool"
+	tmstate "github.com/Finschia/ostracon/proto/ostracon/state"
+	"github.com/Finschia/ostracon/proxy"
+	"github.com/Finschia/ostracon/types"
 )
 
 //-----------------------------------------------------------------------------

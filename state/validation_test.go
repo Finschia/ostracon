@@ -12,14 +12,14 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/line/ostracon/crypto/ed25519"
-	"github.com/line/ostracon/crypto/tmhash"
-	"github.com/line/ostracon/libs/log"
-	memmock "github.com/line/ostracon/mempool/mock"
-	sm "github.com/line/ostracon/state"
-	"github.com/line/ostracon/state/mocks"
-	"github.com/line/ostracon/types"
-	tmtime "github.com/line/ostracon/types/time"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	"github.com/Finschia/ostracon/crypto/tmhash"
+	"github.com/Finschia/ostracon/libs/log"
+	memmock "github.com/Finschia/ostracon/mempool/mock"
+	sm "github.com/Finschia/ostracon/state"
+	"github.com/Finschia/ostracon/state/mocks"
+	"github.com/Finschia/ostracon/types"
+	tmtime "github.com/Finschia/ostracon/types/time"
 )
 
 const validationTestsStopHeight int64 = 10

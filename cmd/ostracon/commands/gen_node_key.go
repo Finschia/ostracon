@@ -5,8 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	tmos "github.com/line/ostracon/libs/os"
-	"github.com/line/ostracon/p2p"
+	tmos "github.com/Finschia/ostracon/libs/os"
+	"github.com/Finschia/ostracon/p2p"
 )
 
 // GenNodeKeyCmd allows the generation of a node key. It prints node's ID to

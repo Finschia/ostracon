@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/line/ostracon/libs/bits"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/libs/bits"
+	"github.com/Finschia/ostracon/types"
 )
 
 //-----------------------------------------------------------------------------

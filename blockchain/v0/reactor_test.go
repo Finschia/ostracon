@@ -13,16 +13,16 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tm-db"
 
-	ocabci "github.com/line/ostracon/abci/types"
-	cfg "github.com/line/ostracon/config"
-	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/mempool/mock"
-	"github.com/line/ostracon/p2p"
-	"github.com/line/ostracon/proxy"
-	sm "github.com/line/ostracon/state"
-	"github.com/line/ostracon/store"
-	"github.com/line/ostracon/types"
-	tmtime "github.com/line/ostracon/types/time"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	cfg "github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/libs/log"
+	"github.com/Finschia/ostracon/mempool/mock"
+	"github.com/Finschia/ostracon/p2p"
+	"github.com/Finschia/ostracon/proxy"
+	sm "github.com/Finschia/ostracon/state"
+	"github.com/Finschia/ostracon/store"
+	"github.com/Finschia/ostracon/types"
+	tmtime "github.com/Finschia/ostracon/types/time"
 )
 
 var config *cfg.Config

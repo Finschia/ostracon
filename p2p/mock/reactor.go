@@ -1,9 +1,9 @@
 package mock
 
 import (
-	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/p2p"
-	"github.com/line/ostracon/p2p/conn"
+	"github.com/Finschia/ostracon/libs/log"
+	"github.com/Finschia/ostracon/p2p"
+	"github.com/Finschia/ostracon/p2p/conn"
 )
 
 type Reactor struct {

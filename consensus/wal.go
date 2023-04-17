@@ -13,12 +13,12 @@ import (
 
 	tmcons "github.com/tendermint/tendermint/proto/tendermint/consensus"
 
-	auto "github.com/line/ostracon/libs/autofile"
-	tmjson "github.com/line/ostracon/libs/json"
-	"github.com/line/ostracon/libs/log"
-	tmos "github.com/line/ostracon/libs/os"
-	"github.com/line/ostracon/libs/service"
-	tmtime "github.com/line/ostracon/types/time"
+	auto "github.com/Finschia/ostracon/libs/autofile"
+	tmjson "github.com/Finschia/ostracon/libs/json"
+	"github.com/Finschia/ostracon/libs/log"
+	tmos "github.com/Finschia/ostracon/libs/os"
+	"github.com/Finschia/ostracon/libs/service"
+	tmtime "github.com/Finschia/ostracon/types/time"
 )
 
 const (

@@ -4,8 +4,8 @@ package events
 import (
 	"fmt"
 
-	"github.com/line/ostracon/libs/service"
-	tmsync "github.com/line/ostracon/libs/sync"
+	"github.com/Finschia/ostracon/libs/service"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
 )
 
 // ErrListenerWasRemoved is returned by AddEvent if the listener was removed.

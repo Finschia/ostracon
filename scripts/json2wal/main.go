@@ -14,9 +14,9 @@ import (
 	"os"
 	"strings"
 
-	cs "github.com/line/ostracon/consensus"
-	tmjson "github.com/line/ostracon/libs/json"
-	"github.com/line/ostracon/types"
+	cs "github.com/Finschia/ostracon/consensus"
+	tmjson "github.com/Finschia/ostracon/libs/json"
+	"github.com/Finschia/ostracon/types"
 )
 
 func main() {

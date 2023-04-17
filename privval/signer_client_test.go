@@ -12,13 +12,13 @@ import (
 	privvalproto "github.com/tendermint/tendermint/proto/tendermint/privval"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/ed25519"
-	"github.com/line/ostracon/crypto/tmhash"
-	"github.com/line/ostracon/crypto/vrf"
-	tmrand "github.com/line/ostracon/libs/rand"
-	ocprivvalproto "github.com/line/ostracon/proto/ostracon/privval"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	"github.com/Finschia/ostracon/crypto/tmhash"
+	"github.com/Finschia/ostracon/crypto/vrf"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	ocprivvalproto "github.com/Finschia/ostracon/proto/ostracon/privval"
+	"github.com/Finschia/ostracon/types"
 )
 
 type signerTestCase struct {

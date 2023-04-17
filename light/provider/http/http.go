@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/line/ostracon/light/provider"
-	rpcclient "github.com/line/ostracon/rpc/client"
-	rpchttp "github.com/line/ostracon/rpc/client/http"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/light/provider"
+	rpcclient "github.com/Finschia/ostracon/rpc/client"
+	rpchttp "github.com/Finschia/ostracon/rpc/client/http"
+	"github.com/Finschia/ostracon/types"
 )
 
 var (

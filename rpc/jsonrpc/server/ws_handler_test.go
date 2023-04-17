@@ -8,8 +8,8 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/require"
 
-	"github.com/line/ostracon/libs/log"
-	types "github.com/line/ostracon/rpc/jsonrpc/types"
+	"github.com/Finschia/ostracon/libs/log"
+	types "github.com/Finschia/ostracon/rpc/jsonrpc/types"
 )
 
 func TestWebsocketManagerHandler(t *testing.T) {

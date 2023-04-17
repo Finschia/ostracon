@@ -3,8 +3,8 @@ package types
 import (
 	"github.com/tendermint/tendermint/abci/types"
 
-	"github.com/line/ostracon/crypto"
-	cryptoenc "github.com/line/ostracon/crypto/encoding"
+	"github.com/Finschia/ostracon/crypto"
+	cryptoenc "github.com/Finschia/ostracon/crypto/encoding"
 )
 
 func NewValidatorUpdate(pk crypto.PubKey, power int64) types.ValidatorUpdate {

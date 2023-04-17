@@ -11,10 +11,10 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/tmhash"
-	tmrand "github.com/line/ostracon/libs/rand"
-	"github.com/line/ostracon/version"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/tmhash"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	"github.com/Finschia/ostracon/version"
 )
 
 var defaultVoteTime = time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)

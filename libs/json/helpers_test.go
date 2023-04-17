@@ -3,7 +3,7 @@ package json_test
 import (
 	"time"
 
-	"github.com/line/ostracon/libs/json"
+	"github.com/Finschia/ostracon/libs/json"
 )
 
 // Register Car, an instance of the Vehicle interface.

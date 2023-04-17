@@ -1,6 +1,6 @@
 #! /bin/bash
 
-PKGS=$(go list github.com/line/ostracon/...)
+PKGS=$(go list github.com/Finschia/ostracon/...)
 
 set -e
 

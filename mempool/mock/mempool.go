@@ -3,10 +3,10 @@ package mock
 import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	ocabci "github.com/line/ostracon/abci/types"
-	"github.com/line/ostracon/libs/clist"
-	mempl "github.com/line/ostracon/mempool"
-	"github.com/line/ostracon/types"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	"github.com/Finschia/ostracon/libs/clist"
+	mempl "github.com/Finschia/ostracon/mempool"
+	"github.com/Finschia/ostracon/types"
 )
 
 // Mempool is an empty implementation of a Mempool, useful for testing.

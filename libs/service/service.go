@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/line/ostracon/libs/log"
+	"github.com/Finschia/ostracon/libs/log"
 )
 
 var (

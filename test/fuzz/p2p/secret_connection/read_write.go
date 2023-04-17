@@ -6,9 +6,9 @@ import (
 	"io"
 	"log"
 
-	"github.com/line/ostracon/crypto/ed25519"
-	"github.com/line/ostracon/libs/async"
-	sc "github.com/line/ostracon/p2p/conn"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	"github.com/Finschia/ostracon/libs/async"
+	sc "github.com/Finschia/ostracon/p2p/conn"
 )
 
 func Fuzz(data []byte) int {

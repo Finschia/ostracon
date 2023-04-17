@@ -7,8 +7,8 @@ import (
 
 	"context"
 
-	tmjson "github.com/line/ostracon/libs/json"
-	coregrpc "github.com/line/ostracon/rpc/grpc"
+	tmjson "github.com/Finschia/ostracon/libs/json"
+	coregrpc "github.com/Finschia/ostracon/rpc/grpc"
 )
 
 var grpcAddr = "tcp://localhost:36656"

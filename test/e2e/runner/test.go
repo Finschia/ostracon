@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	e2e "github.com/line/ostracon/test/e2e/pkg"
+	e2e "github.com/Finschia/ostracon/test/e2e/pkg"
 )
 
 // Test runs test cases under tests/

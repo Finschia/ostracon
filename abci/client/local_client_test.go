@@ -6,7 +6,7 @@ import (
 
 	"github.com/tendermint/tendermint/abci/types"
 
-	ocabci "github.com/line/ostracon/abci/types"
+	ocabci "github.com/Finschia/ostracon/abci/types"
 	"github.com/stretchr/testify/require"
 )
 

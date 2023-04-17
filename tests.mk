@@ -35,14 +35,14 @@ test_abci_cli:
 
 test_integrations:
 	make build_docker_test_image
-	#make tools # XXX Should remove "make tools": https://github.com/line/ostracon/commit/c6e0d20d4bf062921fcc1eb5b2399447a7d2226e#diff-76ed074a9305c04054cdebb9e9aad2d818052b07091de1f20cad0bbac34ffb52
+	#make tools # XXX Should remove "make tools": https://github.com/Finschia/ostracon/commit/c6e0d20d4bf062921fcc1eb5b2399447a7d2226e#diff-76ed074a9305c04054cdebb9e9aad2d818052b07091de1f20cad0bbac34ffb52
 	make install
 	make install_abci
 	make test_cover
 	make test_apps
 	make test_abci_apps
 	make test_abci_cli
-	#make test_libs # XXX Should remove "make test_libs": https://github.com/line/ostracon/commit/9b9f1beef3cfc5e501fc494afeb4862bd86482f3#diff-76ed074a9305c04054cdebb9e9aad2d818052b07091de1f20cad0bbac34ffb52L114
+	#make test_libs # XXX Should remove "make test_libs": https://github.com/Finschia/ostracon/commit/9b9f1beef3cfc5e501fc494afeb4862bd86482f3#diff-76ed074a9305c04054cdebb9e9aad2d818052b07091de1f20cad0bbac34ffb52L114
 .PHONY: test_integrations
 
 test_release:

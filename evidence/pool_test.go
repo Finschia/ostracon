@@ -13,15 +13,15 @@ import (
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/evidence"
-	"github.com/line/ostracon/evidence/mocks"
-	"github.com/line/ostracon/libs/log"
-	sm "github.com/line/ostracon/state"
-	smmocks "github.com/line/ostracon/state/mocks"
-	"github.com/line/ostracon/store"
-	"github.com/line/ostracon/types"
-	"github.com/line/ostracon/version"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/evidence"
+	"github.com/Finschia/ostracon/evidence/mocks"
+	"github.com/Finschia/ostracon/libs/log"
+	sm "github.com/Finschia/ostracon/state"
+	smmocks "github.com/Finschia/ostracon/state/mocks"
+	"github.com/Finschia/ostracon/store"
+	"github.com/Finschia/ostracon/types"
+	"github.com/Finschia/ostracon/version"
 )
 
 func TestMain(m *testing.M) {

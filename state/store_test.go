@@ -14,14 +14,14 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	cfg "github.com/line/ostracon/config"
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/ed25519"
-	tmrand "github.com/line/ostracon/libs/rand"
-	ocstate "github.com/line/ostracon/proto/ostracon/state"
-	sm "github.com/line/ostracon/state"
-	statemocks "github.com/line/ostracon/state/mocks"
-	"github.com/line/ostracon/types"
+	cfg "github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	ocstate "github.com/Finschia/ostracon/proto/ostracon/state"
+	sm "github.com/Finschia/ostracon/state"
+	statemocks "github.com/Finschia/ostracon/state/mocks"
+	"github.com/Finschia/ostracon/types"
 )
 
 const (

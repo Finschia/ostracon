@@ -14,16 +14,16 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/line/ostracon/abci/example/counter"
-	ocabci "github.com/line/ostracon/abci/types"
-	"github.com/line/ostracon/abci/types/mocks"
-	cstypes "github.com/line/ostracon/consensus/types"
-	"github.com/line/ostracon/crypto/tmhash"
-	"github.com/line/ostracon/libs/log"
-	tmpubsub "github.com/line/ostracon/libs/pubsub"
-	tmrand "github.com/line/ostracon/libs/rand"
-	p2pmock "github.com/line/ostracon/p2p/mock"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/abci/example/counter"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	"github.com/Finschia/ostracon/abci/types/mocks"
+	cstypes "github.com/Finschia/ostracon/consensus/types"
+	"github.com/Finschia/ostracon/crypto/tmhash"
+	"github.com/Finschia/ostracon/libs/log"
+	tmpubsub "github.com/Finschia/ostracon/libs/pubsub"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	p2pmock "github.com/Finschia/ostracon/p2p/mock"
+	"github.com/Finschia/ostracon/types"
 )
 
 /*

@@ -10,10 +10,10 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	tmmath "github.com/line/ostracon/libs/math"
-	tmos "github.com/line/ostracon/libs/os"
-	ocstate "github.com/line/ostracon/proto/ostracon/state"
-	"github.com/line/ostracon/types"
+	tmmath "github.com/Finschia/ostracon/libs/math"
+	tmos "github.com/Finschia/ostracon/libs/os"
+	ocstate "github.com/Finschia/ostracon/proto/ostracon/state"
+	"github.com/Finschia/ostracon/types"
 )
 
 const (

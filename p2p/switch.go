@@ -6,11 +6,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/line/ostracon/config"
-	"github.com/line/ostracon/libs/cmap"
-	"github.com/line/ostracon/libs/rand"
-	"github.com/line/ostracon/libs/service"
-	"github.com/line/ostracon/p2p/conn"
+	"github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/libs/cmap"
+	"github.com/Finschia/ostracon/libs/rand"
+	"github.com/Finschia/ostracon/libs/service"
+	"github.com/Finschia/ostracon/p2p/conn"
 )
 
 const (

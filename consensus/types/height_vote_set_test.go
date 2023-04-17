@@ -7,11 +7,11 @@ import (
 
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	cfg "github.com/line/ostracon/config"
-	"github.com/line/ostracon/crypto/tmhash"
-	tmrand "github.com/line/ostracon/libs/rand"
-	"github.com/line/ostracon/types"
-	tmtime "github.com/line/ostracon/types/time"
+	cfg "github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/crypto/tmhash"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	"github.com/Finschia/ostracon/types"
+	tmtime "github.com/Finschia/ostracon/types/time"
 )
 
 var config *cfg.Config // NOTE: must be reset for each _test.go file

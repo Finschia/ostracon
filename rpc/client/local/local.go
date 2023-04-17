@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/line/ostracon/libs/bytes"
-	"github.com/line/ostracon/libs/log"
-	tmpubsub "github.com/line/ostracon/libs/pubsub"
-	tmquery "github.com/line/ostracon/libs/pubsub/query"
-	nm "github.com/line/ostracon/node"
-	rpcclient "github.com/line/ostracon/rpc/client"
-	"github.com/line/ostracon/rpc/core"
-	ctypes "github.com/line/ostracon/rpc/core/types"
-	rpctypes "github.com/line/ostracon/rpc/jsonrpc/types"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/libs/bytes"
+	"github.com/Finschia/ostracon/libs/log"
+	tmpubsub "github.com/Finschia/ostracon/libs/pubsub"
+	tmquery "github.com/Finschia/ostracon/libs/pubsub/query"
+	nm "github.com/Finschia/ostracon/node"
+	rpcclient "github.com/Finschia/ostracon/rpc/client"
+	"github.com/Finschia/ostracon/rpc/core"
+	ctypes "github.com/Finschia/ostracon/rpc/core/types"
+	rpctypes "github.com/Finschia/ostracon/rpc/jsonrpc/types"
+	"github.com/Finschia/ostracon/types"
 )
 
 /*

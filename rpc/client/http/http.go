@@ -7,16 +7,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/line/ostracon/libs/bytes"
-	tmjson "github.com/line/ostracon/libs/json"
-	"github.com/line/ostracon/libs/log"
-	tmpubsub "github.com/line/ostracon/libs/pubsub"
-	"github.com/line/ostracon/libs/service"
-	tmsync "github.com/line/ostracon/libs/sync"
-	rpcclient "github.com/line/ostracon/rpc/client"
-	ctypes "github.com/line/ostracon/rpc/core/types"
-	jsonrpcclient "github.com/line/ostracon/rpc/jsonrpc/client"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/libs/bytes"
+	tmjson "github.com/Finschia/ostracon/libs/json"
+	"github.com/Finschia/ostracon/libs/log"
+	tmpubsub "github.com/Finschia/ostracon/libs/pubsub"
+	"github.com/Finschia/ostracon/libs/service"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
+	rpcclient "github.com/Finschia/ostracon/rpc/client"
+	ctypes "github.com/Finschia/ostracon/rpc/core/types"
+	jsonrpcclient "github.com/Finschia/ostracon/rpc/jsonrpc/client"
+	"github.com/Finschia/ostracon/types"
 )
 
 /*

@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"reflect"
 
-	tmjson "github.com/line/ostracon/libs/json"
+	tmjson "github.com/Finschia/ostracon/libs/json"
 )
 
 func argsToURLValues(args map[string]interface{}) (url.Values, error) {

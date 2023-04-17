@@ -5,11 +5,11 @@ import (
 
 	bcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
 
-	bc "github.com/line/ostracon/blockchain"
-	"github.com/line/ostracon/p2p"
-	ocbcproto "github.com/line/ostracon/proto/ostracon/blockchain"
-	"github.com/line/ostracon/state"
-	"github.com/line/ostracon/types"
+	bc "github.com/Finschia/ostracon/blockchain"
+	"github.com/Finschia/ostracon/p2p"
+	ocbcproto "github.com/Finschia/ostracon/proto/ostracon/blockchain"
+	"github.com/Finschia/ostracon/state"
+	"github.com/Finschia/ostracon/types"
 )
 
 type iIO interface {

@@ -10,13 +10,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/ed25519"
-	"github.com/line/ostracon/libs/bytes"
-	"github.com/line/ostracon/libs/log"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	"github.com/Finschia/ostracon/libs/bytes"
+	"github.com/Finschia/ostracon/libs/log"
 
-	"github.com/line/ostracon/config"
-	tmconn "github.com/line/ostracon/p2p/conn"
+	"github.com/Finschia/ostracon/config"
+	tmconn "github.com/Finschia/ostracon/p2p/conn"
 )
 
 func TestPeerBasic(t *testing.T) {

@@ -6,8 +6,8 @@ import (
 	"math/rand"
 	"sort"
 
-	tmsync "github.com/line/ostracon/libs/sync"
-	"github.com/line/ostracon/p2p"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
+	"github.com/Finschia/ostracon/p2p"
 )
 
 // snapshotKey is a snapshot key used for lookups.

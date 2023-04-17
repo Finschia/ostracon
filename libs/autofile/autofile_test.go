@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	tmos "github.com/line/ostracon/libs/os"
+	tmos "github.com/Finschia/ostracon/libs/os"
 )
 
 func TestSIGHUP(t *testing.T) {

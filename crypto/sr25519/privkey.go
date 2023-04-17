@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/line/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto"
 
 	schnorrkel "github.com/ChainSafe/go-schnorrkel"
 )

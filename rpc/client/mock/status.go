@@ -3,8 +3,8 @@ package mock
 import (
 	"context"
 
-	"github.com/line/ostracon/rpc/client"
-	ctypes "github.com/line/ostracon/rpc/core/types"
+	"github.com/Finschia/ostracon/rpc/client"
+	ctypes "github.com/Finschia/ostracon/rpc/core/types"
 )
 
 // StatusMock returns the result specified by the Call

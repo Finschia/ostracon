@@ -3,12 +3,12 @@ package proxy
 import (
 	"fmt"
 
-	abcicli "github.com/line/ostracon/abci/client"
-	"github.com/line/ostracon/abci/example/counter"
-	"github.com/line/ostracon/abci/example/kvstore"
-	"github.com/line/ostracon/abci/types"
-	tmsync "github.com/line/ostracon/libs/sync"
-	e2e "github.com/line/ostracon/test/e2e/app"
+	abcicli "github.com/Finschia/ostracon/abci/client"
+	"github.com/Finschia/ostracon/abci/example/counter"
+	"github.com/Finschia/ostracon/abci/example/kvstore"
+	"github.com/Finschia/ostracon/abci/types"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
+	e2e "github.com/Finschia/ostracon/test/e2e/app"
 )
 
 // ClientCreator creates new ABCI clients.

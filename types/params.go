@@ -8,8 +8,8 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/line/ostracon/crypto/tmhash"
-	"github.com/line/ostracon/version"
+	"github.com/Finschia/ostracon/crypto/tmhash"
+	"github.com/Finschia/ostracon/version"
 )
 
 const (

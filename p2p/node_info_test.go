@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/line/ostracon/crypto/ed25519"
+	"github.com/Finschia/ostracon/crypto/ed25519"
 )
 
 func TestNodeInfoValidate(t *testing.T) {

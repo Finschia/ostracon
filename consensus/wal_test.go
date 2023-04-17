@@ -14,12 +14,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/line/ostracon/consensus/types"
-	"github.com/line/ostracon/crypto/merkle"
-	"github.com/line/ostracon/libs/autofile"
-	"github.com/line/ostracon/libs/log"
-	tmtypes "github.com/line/ostracon/types"
-	tmtime "github.com/line/ostracon/types/time"
+	"github.com/Finschia/ostracon/consensus/types"
+	"github.com/Finschia/ostracon/crypto/merkle"
+	"github.com/Finschia/ostracon/libs/autofile"
+	"github.com/Finschia/ostracon/libs/log"
+	tmtypes "github.com/Finschia/ostracon/types"
+	tmtime "github.com/Finschia/ostracon/types/time"
 )
 
 const (

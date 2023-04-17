@@ -12,16 +12,16 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/line/ostracon/abci/example/kvstore"
-	ocabci "github.com/line/ostracon/abci/types"
-	"github.com/line/ostracon/crypto/ed25519"
-	cryptoenc "github.com/line/ostracon/crypto/encoding"
-	"github.com/line/ostracon/crypto/tmhash"
-	tmrand "github.com/line/ostracon/libs/rand"
-	"github.com/line/ostracon/privval"
-	"github.com/line/ostracon/rpc/client"
-	rpctest "github.com/line/ostracon/rpc/test"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/abci/example/kvstore"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	cryptoenc "github.com/Finschia/ostracon/crypto/encoding"
+	"github.com/Finschia/ostracon/crypto/tmhash"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	"github.com/Finschia/ostracon/privval"
+	"github.com/Finschia/ostracon/rpc/client"
+	rpctest "github.com/Finschia/ostracon/rpc/test"
+	"github.com/Finschia/ostracon/types"
 )
 
 // For some reason the empty node used in tests has a time of

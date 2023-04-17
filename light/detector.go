@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/line/ostracon/light/provider"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/light/provider"
+	"github.com/Finschia/ostracon/types"
 )
 
 // The detector component of the light client detects and handles attacks on the light client.

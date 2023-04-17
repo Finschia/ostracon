@@ -9,7 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/line/ostracon/libs/log"
+	"github.com/Finschia/ostracon/libs/log"
 )
 
 func TestTracingLogger(t *testing.T) {

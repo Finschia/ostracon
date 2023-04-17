@@ -10,9 +10,9 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tm-db"
 
-	ocabci "github.com/line/ostracon/abci/types"
-	"github.com/line/ostracon/libs/pubsub/query"
-	"github.com/line/ostracon/types"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	"github.com/Finschia/ostracon/libs/pubsub/query"
+	"github.com/Finschia/ostracon/types"
 )
 
 func BenchmarkTxSearch(b *testing.B) {

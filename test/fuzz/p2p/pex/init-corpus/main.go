@@ -12,8 +12,8 @@ import (
 
 	tmp2p "github.com/tendermint/tendermint/proto/tendermint/p2p"
 
-	"github.com/line/ostracon/crypto/ed25519"
-	"github.com/line/ostracon/p2p"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	"github.com/Finschia/ostracon/p2p"
 )
 
 func main() {

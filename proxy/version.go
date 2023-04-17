@@ -3,7 +3,7 @@ package proxy
 import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/line/ostracon/version"
+	"github.com/Finschia/ostracon/version"
 )
 
 // RequestInfo contains all the information for sending

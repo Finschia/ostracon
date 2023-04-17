@@ -1,8 +1,8 @@
 package types
 
 import (
-	"github.com/line/ostracon/crypto/ed25519"
-	tmmath "github.com/line/ostracon/libs/math"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	tmmath "github.com/Finschia/ostracon/libs/math"
 )
 
 var (

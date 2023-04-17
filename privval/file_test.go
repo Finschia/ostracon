@@ -14,12 +14,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/line/ostracon/crypto/ed25519"
-	"github.com/line/ostracon/crypto/tmhash"
-	tmjson "github.com/line/ostracon/libs/json"
-	tmrand "github.com/line/ostracon/libs/rand"
-	"github.com/line/ostracon/types"
-	tmtime "github.com/line/ostracon/types/time"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	"github.com/Finschia/ostracon/crypto/tmhash"
+	tmjson "github.com/Finschia/ostracon/libs/json"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	"github.com/Finschia/ostracon/types"
+	tmtime "github.com/Finschia/ostracon/types/time"
 )
 
 func TestGenFilePV(t *testing.T) {

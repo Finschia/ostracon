@@ -8,12 +8,12 @@ import (
 
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/line/ostracon/crypto/merkle"
-	"github.com/line/ostracon/libs/bits"
-	tmbytes "github.com/line/ostracon/libs/bytes"
-	tmjson "github.com/line/ostracon/libs/json"
-	tmmath "github.com/line/ostracon/libs/math"
-	tmsync "github.com/line/ostracon/libs/sync"
+	"github.com/Finschia/ostracon/crypto/merkle"
+	"github.com/Finschia/ostracon/libs/bits"
+	tmbytes "github.com/Finschia/ostracon/libs/bytes"
+	tmjson "github.com/Finschia/ostracon/libs/json"
+	tmmath "github.com/Finschia/ostracon/libs/math"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
 )
 
 var (

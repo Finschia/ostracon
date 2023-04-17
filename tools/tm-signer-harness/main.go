@@ -8,11 +8,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/line/ostracon/crypto/ed25519"
-	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/privval"
-	"github.com/line/ostracon/tools/tm-signer-harness/internal"
-	"github.com/line/ostracon/version"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	"github.com/Finschia/ostracon/libs/log"
+	"github.com/Finschia/ostracon/privval"
+	"github.com/Finschia/ostracon/tools/tm-signer-harness/internal"
+	"github.com/Finschia/ostracon/version"
 )
 
 const (

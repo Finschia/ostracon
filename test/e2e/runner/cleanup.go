@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/line/ostracon/libs/log"
-	e2e "github.com/line/ostracon/test/e2e/pkg"
+	"github.com/Finschia/ostracon/libs/log"
+	e2e "github.com/Finschia/ostracon/test/e2e/pkg"
 )
 
 // Cleanup removes the Docker Compose containers and testnet directory.

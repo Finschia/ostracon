@@ -4,8 +4,8 @@ import (
 	"io"
 	"testing"
 
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/internal/benchmarking"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/internal/benchmarking"
 )
 
 func BenchmarkKeyGeneration(b *testing.B) {

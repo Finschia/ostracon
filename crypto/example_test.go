@@ -17,7 +17,7 @@ package crypto_test
 import (
 	"fmt"
 
-	"github.com/line/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto"
 )
 
 func ExampleSha256() {

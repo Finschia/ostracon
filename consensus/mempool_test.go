@@ -14,11 +14,11 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/line/ostracon/abci/example/code"
-	ocabci "github.com/line/ostracon/abci/types"
-	mempl "github.com/line/ostracon/mempool"
-	sm "github.com/line/ostracon/state"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/abci/example/code"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	mempl "github.com/Finschia/ostracon/mempool"
+	sm "github.com/Finschia/ostracon/state"
+	"github.com/Finschia/ostracon/types"
 )
 
 // for testing

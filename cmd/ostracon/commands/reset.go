@@ -6,9 +6,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/line/ostracon/libs/log"
-	tmos "github.com/line/ostracon/libs/os"
-	"github.com/line/ostracon/privval"
+	"github.com/Finschia/ostracon/libs/log"
+	tmos "github.com/Finschia/ostracon/libs/os"
+	"github.com/Finschia/ostracon/privval"
 )
 
 // ResetAllCmd removes the database of this Ostracon core

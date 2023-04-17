@@ -10,11 +10,11 @@ import (
 
 	"github.com/tendermint/tendermint/abci/types"
 
-	abcicli "github.com/line/ostracon/abci/client"
-	"github.com/line/ostracon/abci/server"
-	ocabci "github.com/line/ostracon/abci/types"
-	tmrand "github.com/line/ostracon/libs/rand"
-	"github.com/line/ostracon/libs/service"
+	abcicli "github.com/Finschia/ostracon/abci/client"
+	"github.com/Finschia/ostracon/abci/server"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	"github.com/Finschia/ostracon/libs/service"
 )
 
 func TestProperSyncCalls(t *testing.T) {

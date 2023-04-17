@@ -10,13 +10,13 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	cfg "github.com/line/ostracon/config"
-	"github.com/line/ostracon/libs/bytes"
-	tmrand "github.com/line/ostracon/libs/rand"
-	"github.com/line/ostracon/p2p"
-	"github.com/line/ostracon/privval"
-	"github.com/line/ostracon/types"
-	tmtime "github.com/line/ostracon/types/time"
+	cfg "github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/libs/bytes"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
+	"github.com/Finschia/ostracon/p2p"
+	"github.com/Finschia/ostracon/privval"
+	"github.com/Finschia/ostracon/types"
+	tmtime "github.com/Finschia/ostracon/types/time"
 )
 
 var (

@@ -7,13 +7,13 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/types"
 
-	cfg "github.com/line/ostracon/config"
-	"github.com/line/ostracon/crypto"
-	tmjson "github.com/line/ostracon/libs/json"
-	tmos "github.com/line/ostracon/libs/os"
-	"github.com/line/ostracon/privval"
+	cfg "github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/crypto"
+	tmjson "github.com/Finschia/ostracon/libs/json"
+	tmos "github.com/Finschia/ostracon/libs/os"
+	"github.com/Finschia/ostracon/privval"
 	"github.com/stretchr/testify/require"
 )
 

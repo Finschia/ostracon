@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/crypto/tmhash"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/tmhash"
 
 	schnorrkel "github.com/ChainSafe/go-schnorrkel"
 )

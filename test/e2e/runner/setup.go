@@ -15,15 +15,15 @@ import (
 
 	"github.com/BurntSushi/toml"
 
-	"github.com/line/ostracon/config"
-	"github.com/line/ostracon/crypto/ed25519"
-	cryptoenc "github.com/line/ostracon/crypto/encoding"
-	"github.com/line/ostracon/libs/log"
-	"github.com/line/ostracon/p2p"
-	"github.com/line/ostracon/privval"
-	e2e "github.com/line/ostracon/test/e2e/pkg"
-	"github.com/line/ostracon/test/e2e/pkg/infra"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	cryptoenc "github.com/Finschia/ostracon/crypto/encoding"
+	"github.com/Finschia/ostracon/libs/log"
+	"github.com/Finschia/ostracon/p2p"
+	"github.com/Finschia/ostracon/privval"
+	e2e "github.com/Finschia/ostracon/test/e2e/pkg"
+	"github.com/Finschia/ostracon/test/e2e/pkg/infra"
+	"github.com/Finschia/ostracon/types"
 )
 
 const (

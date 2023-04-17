@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"time"
 
-	cfg "github.com/line/ostracon/config"
-	"github.com/line/ostracon/libs/net"
-	rpchttp "github.com/line/ostracon/rpc/client/http"
+	cfg "github.com/Finschia/ostracon/config"
+	"github.com/Finschia/ostracon/libs/net"
+	rpchttp "github.com/Finschia/ostracon/rpc/client/http"
 )
 
 // dumpStatus gets node status state dump from the Ostracon RPC and writes it

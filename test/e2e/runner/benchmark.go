@@ -6,8 +6,8 @@ import (
 	"math"
 	"time"
 
-	e2e "github.com/line/ostracon/test/e2e/pkg"
-	"github.com/line/ostracon/types"
+	e2e "github.com/Finschia/ostracon/test/e2e/pkg"
+	"github.com/Finschia/ostracon/types"
 )
 
 // Benchmark is a simple function for fetching, calculating and printing

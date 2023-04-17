@@ -16,13 +16,13 @@ import (
 
 	tmp2p "github.com/tendermint/tendermint/proto/tendermint/p2p"
 
-	flow "github.com/line/ostracon/libs/flowrate"
-	"github.com/line/ostracon/libs/log"
-	tmmath "github.com/line/ostracon/libs/math"
-	"github.com/line/ostracon/libs/protoio"
-	"github.com/line/ostracon/libs/service"
-	tmsync "github.com/line/ostracon/libs/sync"
-	"github.com/line/ostracon/libs/timer"
+	flow "github.com/Finschia/ostracon/libs/flowrate"
+	"github.com/Finschia/ostracon/libs/log"
+	tmmath "github.com/Finschia/ostracon/libs/math"
+	"github.com/Finschia/ostracon/libs/protoio"
+	"github.com/Finschia/ostracon/libs/service"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
+	"github.com/Finschia/ostracon/libs/timer"
 )
 
 const (

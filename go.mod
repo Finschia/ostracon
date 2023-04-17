@@ -1,4 +1,4 @@
-module github.com/line/ostracon
+module github.com/Finschia/ostracon
 
 go 1.18
 

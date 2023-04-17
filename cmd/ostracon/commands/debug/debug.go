@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/line/ostracon/libs/log"
+	"github.com/Finschia/ostracon/libs/log"
 )
 
 var (

@@ -8,9 +8,9 @@ import (
 
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/line/ostracon/crypto"
-	ce "github.com/line/ostracon/crypto/encoding"
-	tmrand "github.com/line/ostracon/libs/rand"
+	"github.com/Finschia/ostracon/crypto"
+	ce "github.com/Finschia/ostracon/crypto/encoding"
+	tmrand "github.com/Finschia/ostracon/libs/rand"
 )
 
 // Volatile state for each Validator

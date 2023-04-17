@@ -7,10 +7,10 @@ import (
 
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/line/ostracon/crypto"
-	"github.com/line/ostracon/libs/bits"
-	tmjson "github.com/line/ostracon/libs/json"
-	tmsync "github.com/line/ostracon/libs/sync"
+	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/libs/bits"
+	tmjson "github.com/Finschia/ostracon/libs/json"
+	tmsync "github.com/Finschia/ostracon/libs/sync"
 )
 
 const (

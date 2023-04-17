@@ -16,16 +16,16 @@ This document is a specification of the Ostracon. Ostracon is designed to have m
 
 ### Core
 
-- [![oc](./static/oc.svg)Data Structure](./core/data_structures.md): Ostacon uses a more secure proposer election algorithm. Add definitions for the data structures required for this election algorithm.
+- [![oc](./static/oc.svg)Data Structure](./core/data_structures.md): Ostracon uses a more secure proposer election algorithm. Add definitions for the data structures required for this election algorithm.
 - [![tm](./static/tm.svg)Encoding](https://github.com/cometbft/cometbft/blob/v0.34.x/spec/core/encoding.md)
 - [![tm](./static/tm.svg)Genesis](https://github.com/cometbft/cometbft/blob/v0.34.x/spec/core/genesis.md)
-- [![oc](./static/oc.svg)State](./core/state.md): Ostacon uses a more secure proposer election algorithm. Add the data required for this election algorithm to the state.
+- [![oc](./static/oc.svg)State](./core/state.md): Ostracon uses a more secure proposer election algorithm. Add the data required for this election algorithm to the state.
 
 ### Consensus Protocol
 
 - [![tm](./static/tm.svg)Consensus Algorithm](https://github.com/cometbft/cometbft/blob/v0.34.x/spec//consensus/consensus.md)
 - [![tm](./static/tm.svg)BFT Time](https://github.com/cometbft/cometbft/blob/v0.34.x/spec/consensus/bft-time.md)
-- [![oc](./static/oc.svg)Proposer Selection](./consensus/proposer-selection.md): Ostacon adopts a proposer selection algorithm using VRF. Using VRF makes the election unpredictable and makes the Proposer election more secure.
+- [![oc](./static/oc.svg)Proposer Selection](./consensus/proposer-selection.md): Ostracon adopts a proposer selection algorithm using VRF. Using VRF makes the election unpredictable and makes the Proposer election more secure.
 - [![tm](./static/tm.svg)Creating a proposal](https://github.com/cometbft/cometbft/blob/v0.34.x/spec//consensus/creating-proposal.md)
 - [![tm](./static/tm.svg)Siging](https://github.com/cometbft/cometbft/blob/v0.34.x/spec//consensus/signing.md)
 - [![tm](./static/tm.svg)Write-Ahead Log](https://github.com/cometbft/cometbft/blob/v0.34.x/spec/consensus/wal.md)

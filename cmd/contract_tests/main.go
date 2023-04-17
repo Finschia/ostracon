@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/line/ostracon/cmd/contract_tests/unmarshaler"
+	"github.com/Finschia/ostracon/cmd/contract_tests/unmarshaler"
 
 	"github.com/snikch/goodman/hooks"
 	"github.com/snikch/goodman/transaction"

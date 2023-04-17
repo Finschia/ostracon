@@ -10,14 +10,14 @@ import (
 
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/line/ostracon/crypto/ed25519"
-	"github.com/line/ostracon/crypto/tmhash"
-	"github.com/line/ostracon/libs/log"
-	tmnet "github.com/line/ostracon/libs/net"
-	tmos "github.com/line/ostracon/libs/os"
-	"github.com/line/ostracon/privval"
-	"github.com/line/ostracon/state"
-	"github.com/line/ostracon/types"
+	"github.com/Finschia/ostracon/crypto/ed25519"
+	"github.com/Finschia/ostracon/crypto/tmhash"
+	"github.com/Finschia/ostracon/libs/log"
+	tmnet "github.com/Finschia/ostracon/libs/net"
+	tmos "github.com/Finschia/ostracon/libs/os"
+	"github.com/Finschia/ostracon/privval"
+	"github.com/Finschia/ostracon/state"
+	"github.com/Finschia/ostracon/types"
 )
 
 // Test harness error codes (which act as exit codes when the test harness fails).

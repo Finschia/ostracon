@@ -7,8 +7,8 @@ import (
 	"github.com/gogo/protobuf/proto"
 	bcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
 
-	ocbcproto "github.com/line/ostracon/proto/ostracon/blockchain"
-	"github.com/line/ostracon/types"
+	ocbcproto "github.com/Finschia/ostracon/proto/ostracon/blockchain"
+	"github.com/Finschia/ostracon/types"
 )
 
 const (

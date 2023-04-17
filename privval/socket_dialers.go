@@ -5,9 +5,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/line/ostracon/crypto"
-	tmnet "github.com/line/ostracon/libs/net"
-	p2pconn "github.com/line/ostracon/p2p/conn"
+	"github.com/Finschia/ostracon/crypto"
+	tmnet "github.com/Finschia/ostracon/libs/net"
+	p2pconn "github.com/Finschia/ostracon/p2p/conn"
 )
 
 // Socket errors.

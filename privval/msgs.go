@@ -7,7 +7,7 @@ import (
 
 	privvalproto "github.com/tendermint/tendermint/proto/tendermint/privval"
 
-	ocprivvalproto "github.com/line/ostracon/proto/ostracon/privval"
+	ocprivvalproto "github.com/Finschia/ostracon/proto/ostracon/privval"
 )
 
 // TODO: Add ChainIDRequest

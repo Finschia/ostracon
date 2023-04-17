@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/line/ostracon/libs/log"
+	"github.com/Finschia/ostracon/libs/log"
 )
 
 func TestVariousLevels(t *testing.T) {
