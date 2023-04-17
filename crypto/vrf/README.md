@@ -4,7 +4,7 @@ VRF implementation is set by `func init()` with `build` option
 
 ## Interface
 * package/file
-  * line/ostracon/crypto/vrf
+  * crypto/vrf
     * `var defaultVrf vrfEd25519`
     * vrf.go
     * vrf_test.go
@@ -20,7 +20,7 @@ type vrfEd25519 interface {
 Use `func init()` with `build` option
 
 * package/file
-  * line/ostracon/crypto/vrf
+  * crypto/vrf
     * (r2ishiguro = default)
       * `//go:build libsodium`
       * `// +build !libsodium,!coniks`
@@ -57,7 +57,7 @@ Use `func init()` with `build` option
 
 ### libsodium (bind C implementations)
 * package/file
-  * line/ostracon/crypto/vrf/internal/vrf
+  * crypto/vrf/internal/vrf
     * `// +build libsodium`
     * vrf.go
     * vrf_test.go
@@ -68,23 +68,23 @@ Use `func init()` with `build` option
 
 ```shell
 # r2ishiguro
-go test github.com/line/ostracon/crypto/vrf -tags r2ishiguro
+go test github.com/Finschia/ostracon/crypto/vrf -tags r2ishiguro
 # libsodium
-go test github.com/line/ostracon/crypto/vrf -tags libsodium
+go test github.com/Finschia/ostracon/crypto/vrf -tags libsodium
 # internal libsodium only
-go test github.com/line/ostracon/crypto/vrf/internal/vrf -v -tags libsodium
+go test github.com/Finschia/ostracon/crypto/vrf/internal/vrf -v -tags libsodium
 
 # coniks is not available, but if you want to do, you can see no-compatibility
-go test github.com/line/ostracon/crypto/vrf -tags coniks
+go test github.com/Finschia/ostracon/crypto/vrf -tags coniks
 ```
 
 ## How to benchmark
 
 ```shell
 # r2ishiguro
-go test -bench Benchmark github.com/line/ostracon/crypto/vrf -run ^$ -benchtime=1000x -count 10 -benchmem -v
+go test -bench Benchmark github.com/Finschia/ostracon/crypto/vrf -run ^$ -benchtime=1000x -count 10 -benchmem -v
 # libsodium
-go test -bench Benchmark github.com/line/ostracon/crypto/vrf -run ^$ -benchtime=1000x -count 10 -benchmem -v -tags libsodium
+go test -bench Benchmark github.com/Finschia/ostracon/crypto/vrf -run ^$ -benchtime=1000x -count 10 -benchmem -v -tags libsodium
 ```
 
 ## How to build

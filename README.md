@@ -1,7 +1,7 @@
 # Ostracon
 
-![example workflow](https://github.com/line/ostracon/actions/workflows/build.yml/badge.svg)
-![example workflow](https://github.com/line/ostracon/actions/workflows/coverage.yml/badge.svg)
+![example workflow](https://github.com/Finschia/ostracon/actions/workflows/build.yml/badge.svg)
+![example workflow](https://github.com/Finschia/ostracon/actions/workflows/coverage.yml/badge.svg)
 
 [Ostracon](docs/en/01-overview.md "Ostracon: A Fast, Secure Consensus Layer for The Blockchain of New Token Economy")
 is forked from Tendermint Core [v0.34.19](https://github.com/tendermint/tendermint/tree/v0.34.19) at 2021-03-15.
@@ -16,14 +16,14 @@ is forked from Tendermint Core [v0.34.19](https://github.com/tendermint/tendermi
 
 ## git clone
 ```shell
-git clone https://github.com/line/ostracon.git
+git clone https://github.com/Finschia/ostracon.git
 # or
 git clone git@github.com:Finschia/ostracon.git
 ```
 
 ### git clone with recursive if you want to use libsodium
 ```shell
-git clone --recursive https://github.com/line/ostracon.git
+git clone --recursive https://github.com/Finschia/ostracon.git
 # or
 git clone --recursive git@github.com:Finschia/ostracon.git
 ```
