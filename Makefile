@@ -2,7 +2,7 @@ PACKAGES=$(shell go list ./...)
 SRCPATH=$(shell pwd)
 OUTPUT?=build/ostracon
 
-INCLUDE = -I=${GOPATH}/src/github.com/line/ostracon -I=${GOPATH}/src -I=${GOPATH}/src/github.com/gogo/protobuf/protobuf
+INCLUDE = -I=${GOPATH}/src/github.com/Finschia/ostracon -I=${GOPATH}/src -I=${GOPATH}/src/github.com/gogo/protobuf/protobuf
 BUILD_TAGS ?= ostracon
 VERSION := $(shell git describe --always)
 ifeq ($(LIBSODIUM), 1)
@@ -12,9 +12,9 @@ else
   BUILD_TAGS += r2ishiguro
   LIBSODIUM_TARGET =
 endif
-LD_FLAGS = -X github.com/line/ostracon/version.OCCoreSemVer=$(VERSION)
+LD_FLAGS = -X github.com/Finschia/ostracon/version.OCCoreSemVer=$(VERSION)
 BUILD_FLAGS = -mod=readonly -ldflags "$(LD_FLAGS)"
-HTTPS_GIT := https://github.com/line/ostracon.git
+HTTPS_GIT := https://github.com/Finschia/ostracon.git
 DOCKER_BUF := docker run -v $(shell pwd):/workspace --workdir /workspace bufbuild/buf
 CGO_ENABLED ?= 0
 TARGET_OS ?= $(shell go env GOOS)
@@ -192,7 +192,7 @@ go.sum: go.mod
 draw_deps:
 	@# requires brew install graphviz or apt-get install graphviz
 	go get github.com/RobotsAndPencils/goviz
-	@goviz -i github.com/line/ostracon/cmd/ostracon -d 3 | dot -Tpng -o dependency-graph.png
+	@goviz -i github.com/Finschia/ostracon/cmd/ostracon -d 3 | dot -Tpng -o dependency-graph.png
 .PHONY: draw_deps
 
 get_deps_bin_size:
@@ -228,7 +228,7 @@ clean_certs:
 
 format:
 	find . -name '*.go' -type f -not -path "*.git*" -not -name '*.pb.go' -not -name '*pb_test.go' | xargs gofmt -w -s
-	find . -name '*.go' -type f -not -path "*.git*"  -not -name '*.pb.go' -not -name '*pb_test.go' | xargs goimports -w -local github.com/line/ostracon
+	find . -name '*.go' -type f -not -path "*.git*"  -not -name '*.pb.go' -not -name '*pb_test.go' | xargs goimports -w -local github.com/Finschia/ostracon
 .PHONY: format
 
 lint:
@@ -293,7 +293,7 @@ build_c-amazonlinux:
 ###                       Local testnet using docker                        ###
 ###############################################################################
 
-DOCKER_HOME = /go/src/github.com/line/ostracon
+DOCKER_HOME = /go/src/github.com/Finschia/ostracon
 DOCKER_CMD = docker run --rm \
                         -v `pwd`:$(DOCKER_HOME) \
                         -w $(DOCKER_HOME)

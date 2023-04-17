@@ -3,7 +3,7 @@ info:
   title: Ostracon RPC
   contact:
     name: Ostracon RPC
-    url: https://github.com/line/ostracon/issues/new/choose
+    url: https://github.com/Finschia/ostracon/issues/new/choose
   description: |
     Ostracon supports the following RPC protocols:
 
@@ -261,8 +261,8 @@ paths:
         DeliverTx response.
 
         import (
-            abci "github.com/line/ostracon/abci/types"
-            "github.com/line/ostracon/libs/pubsub/query"
+            abci "github.com/Finschia/ostracon/abci/types"
+            "github.com/Finschia/ostracon/libs/pubsub/query"
         )
 
         abci.ResponseDeliverTx{
@@ -329,14 +329,14 @@ paths:
         query.MustParse("tm.event = 'Tx' AND rewards.withdraw.source = 'W'")
 
         See list of all possible events here
-        https://godoc.org/github.com/line/ostracon/types#pkg-constants
+        https://godoc.org/github.com/Finschia/ostracon/types#pkg-constants
 
         For complete query syntax, check out
-        https://godoc.org/github.com/line/ostracon/libs/pubsub/query.
+        https://godoc.org/github.com/Finschia/ostracon/libs/pubsub/query.
 
         ```go
-        import rpchttp "github.com/line/ostracon/rpc/client/http"
-        import "github.com/line/ostracon/types"
+        import rpchttp "github.com/Finschia/ostracon/rpc/client/http"
+        import "github.com/Finschia/ostracon/types"
 
         client := rpchttp.New("tcp:0.0.0.0:26657", "/websocket")
         err := client.Start()
@@ -835,7 +835,7 @@ paths:
           description: |
             Complete consensus state.
 
-            See https://pkg.go.dev/github.com/line/ostracon/types?tab=doc#Vote.String for Vote string description.
+            See https://pkg.go.dev/github.com/Finschia/ostracon/types?tab=doc#Vote.String for Vote string description.
           content:
             application/json:
               schema:
