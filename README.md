@@ -18,14 +18,14 @@ is forked from Tendermint Core [v0.34.19](https://github.com/tendermint/tendermi
 ```shell
 git clone https://github.com/line/ostracon.git
 # or
-git clone git@github.com:line/ostracon.git
+git clone git@github.com:Finschia/ostracon.git
 ```
 
 ### git clone with recursive if you want to use libsodium
 ```shell
 git clone --recursive https://github.com/line/ostracon.git
 # or
-git clone --recursive git@github.com:line/ostracon.git
+git clone --recursive git@github.com:Finschia/ostracon.git
 ```
 
 ### git submodule if you forget to clone with submodule
