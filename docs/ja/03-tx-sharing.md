@@ -28,4 +28,4 @@ ABCI (Application Blockchain Interface) はアプリケーションが Ostracon 
 
 未確定トランザクションの検証過程では ABCI 経由でアプリケーションにも問い合わせを行います。この動作により (データの観点では正しいが) 本質的に不要なトランザクションをブロックに含めないようにアプリケーションが判断することができます。Ostracon ではこのための [`CheckTx` リクエスト](https://github.com/tendermint/tendermint/blob/v0.34.x/spec/abci/abci.md#mempool-connection)を非同期化する変更を行い ABCI 側の検証結果を待つことなく次のトランザクションの検証処理を開始できるようにしています。これによりアプリケーションに個別の CPU コアが割り当てられているような環境でのパフォーマンスが向上します。
 
-一方この非同期化の副作用として、アプリケーションが 1 つの ABCI リクエストを処理している間に別の `CheckTx` リクエストを受信するようになります。例えば [LBM SDK](https://github.com/line/lbm-sdk) の ABCI アプリケーションインターフェース ([BaseApp](https://github.com/line/lbm-sdk/blob/main/baseapp/baseapp.go)) が内部で保持するチェック状態はこの並行実行を適切に排他制御を行う必要があります。このようなロックスコープをアプリケーションレイヤーで適切に設定できるように、Ostracon の ABCI は `RecheckTx` の開始と終了時を通知する API を追加しています。
+一方この非同期化の副作用として、アプリケーションが 1 つの ABCI リクエストを処理している間に別の `CheckTx` リクエストを受信するようになります。例えば [Finschia SDK](https://github.com/Finschia/finschia-sdk) の ABCI アプリケーションインターフェース ([BaseApp](https://github.com/Finschia/lbm-sdk/blob/main/baseapp/baseapp.go)) が内部で保持するチェック状態はこの並行実行を適切に排他制御を行う必要があります。このようなロックスコープをアプリケーションレイヤーで適切に設定できるように、Ostracon の ABCI は `RecheckTx` の開始と終了時を通知する API を追加しています。
