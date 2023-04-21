@@ -1,9 +1,28 @@
 # Changelog
 
+## v1.1.0
+*Apr 21, 2023*
+
+* The organization is changed to `Finschia` from `line`
+
+### BREAKING CHANGE
+- [Finschia] [\#601](https://github.com/Finschia/ostracon/pull/601) Update into Finschia
+
+### FEATURES
+- Nothing
+
+### IMPROVEMENTS
+- [github] [\#590](https://github.com/Finschia/ostracon/pull/590) Remove the code-owner
+- [docs] [\#593](https://github.com/Finschia/ostracon/pull/593) Fix the wrong link in CHANGELOG.md
+- [docs] [\#602](https://github.com/Finschia/ostracon/pull/602) Fix the wrong link of BaseApp in docs
+
+### BUG FIXES
+- Nothing
+
 ## v1.0.9
 *Mar 16, 2023*
 
-* Make a breaking change to the consensus logic for tendermint compatibity
+* Make a breaking change to the consensus logic for tendermint compatibility
 * Define the specification of Ostracon
 
 ### BREAKING CHANGE
