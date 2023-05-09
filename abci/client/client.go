@@ -11,7 +11,6 @@ import (
 	tmsync "github.com/Finschia/ostracon/libs/sync"
 )
 
-//go:generate mockery --case underscore --name Client
 const (
 	dialRetryIntervalSeconds = 3
 	echoRetryIntervalSeconds = 1
@@ -22,6 +21,9 @@ const (
 // All `Sync` methods return the appropriate protobuf ResponseXxx struct and an error.
 // Note these are client errors, eg. ABCI socket connectivity issues.
 // Application-related errors are reflected in response via ABCI error codes and logs.
+//
+//go:generate ../../scripts/mockery_generate.sh Client
+
 type Client interface {
 	service.Service
 

@@ -11,6 +11,8 @@ import (
 	e2e "github.com/Finschia/ostracon/test/e2e/app"
 )
 
+//go:generate ../scripts/mockery_generate.sh ClientCreator
+
 // ClientCreator creates new ABCI clients.
 type ClientCreator interface {
 	// NewABCIClient returns a new ABCI client.

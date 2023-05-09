@@ -6,7 +6,7 @@ import (
 	"github.com/tendermint/tendermint/abci/types"
 )
 
-//go:generate mockery --case underscore --name Application
+//go:generate ../../scripts/mockery_generate.sh Application
 
 type CheckTxCallback func(ResponseCheckTx)
 
