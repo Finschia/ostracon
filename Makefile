@@ -73,21 +73,12 @@ install: $(LIBSODIUM_TARGET)
 .PHONY: install
 
 ###############################################################################
-###                                 Mockery                                 ###
+###                                Mocks                                    ###
 ###############################################################################
 
-###
-# https://github.com/vektra/mockery
-# Should install
-### brew
-# brew install mockery
-# brew upgrade mockery
-### go get
-# go get github.com/vektra/mockery/v2/.../
-
-mock-gen:
-	go generate ./...
-.PHONY: mock
+mockery:
+	go generate -run="./scripts/mockery_generate.sh" ./...
+.PHONY: mockery
 
 ###############################################################################
 ###                                Protobuf                                 ###

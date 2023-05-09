@@ -31,7 +31,8 @@ import (
 
 // Client wraps most important rpc calls a client would make if you want to
 // listen for events, test if it also implements events.EventSwitch.
-//go:generate mockery --case underscore --name Client
+//
+//go:generate ../../scripts/mockery_generate.sh Client
 type Client interface {
 	service.Service
 	ABCIClient
@@ -145,7 +146,8 @@ type EvidenceClient interface {
 }
 
 // RemoteClient is a Client, which can also return the remote network address.
-//go:generate mockery --case underscore --name RemoteClient
+//
+//go:generate ../../scripts/mockery_generate.sh RemoteClient
 type RemoteClient interface {
 	Client
 

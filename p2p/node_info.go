@@ -13,7 +13,7 @@ import (
 	"github.com/Finschia/ostracon/version"
 )
 
-//go:generate mockery --case underscore --name NodeInfo
+//go:generate ../scripts/mockery_generate.sh NodeInfo
 
 const (
 	maxNodeInfoSize = 10240 // 10KB
