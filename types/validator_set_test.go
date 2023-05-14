@@ -1624,6 +1624,33 @@ func TestDividePoint(t *testing.T) {
 	}
 }
 
+func TestNextRandom(t *testing.T) {
+	const (
+		SEED = 1387366483214
+	)
+
+	var vals = [...]uint64{
+		0xdde04155bf79df63,
+		0xfcfed2e9d540b529,
+		0x4c5aa74b9be7ff3e,
+		0xa38a0ef197e488d9,
+		0xeda0ba12aa8b5343,
+		0x94ac0ee844ba7cb6,
+		0x644375ebe6f55aaf,
+		0xbd7df1ef1c84093d,
+		0xdbdb00e0a41be9ab,
+		0xc7a8eb53eb467566,
+	}
+
+	seed := uint64(SEED)
+	for _, v := range vals {
+		n := nextRandom(&seed)
+		if n != v {
+			t.Fatalf("Expected %X, got %X", v, n)
+		}
+	}
+}
+
 // ---------------------
 // Sort validators by priority and address
 type validatorsByPriority []*Validator
