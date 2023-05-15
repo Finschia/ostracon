@@ -1645,9 +1645,7 @@ func TestNextRandom(t *testing.T) {
 	seed := uint64(SEED)
 	for _, v := range vals {
 		n := nextRandom(&seed)
-		if n != v {
-			require.Equal(t, v, n)
-		}
+		require.Equal(t, v, n)
 	}
 }
 
