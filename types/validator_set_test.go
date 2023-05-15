@@ -1646,7 +1646,7 @@ func TestNextRandom(t *testing.T) {
 	for _, v := range vals {
 		n := nextRandom(&seed)
 		if n != v {
-			t.Fatalf("Expected %X, got %X", v, n)
+			require.Equal(t, v, n)
 		}
 	}
 }
