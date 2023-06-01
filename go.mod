@@ -51,7 +51,7 @@ require (
 	github.com/bufbuild/buf v1.20.0
 	github.com/golangci/golangci-lint v1.52.2
 	github.com/rs/zerolog v1.29.1
-	github.com/vektra/mockery/v2 v2.27.1
+	github.com/vektra/mockery/v2 v2.28.1
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
