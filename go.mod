@@ -3,7 +3,7 @@ module github.com/Finschia/ostracon
 go 1.18
 
 require (
-	github.com/BurntSushi/toml v1.2.1
+	github.com/BurntSushi/toml v1.3.0
 	github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d
 	github.com/Workiva/go-datastructures v1.1.0
 	github.com/adlio/schema v1.3.4
