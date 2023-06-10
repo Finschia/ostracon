@@ -2,6 +2,7 @@ package privval
 
 import (
 	"fmt"
+	curve25519voi "github.com/oasisprotocol/curve25519-voi/primitives/ed25519"
 	"testing"
 	"time"
 
@@ -162,16 +163,16 @@ func TestSignerGenerateVRFProof(t *testing.T) {
 		proof, err := tc.signerClient.GenerateVRFProof(message)
 		require.Nil(t, err)
 		require.True(t, len(proof) > 0)
-		output, err := vrf.ProofToHash(vrf.Proof(proof))
+		output, err := vrf.ProofToHash(proof)
 		require.Nil(t, err)
 		require.NotNil(t, output)
 		pubKey, err := tc.signerClient.GetPubKey()
 		require.Nil(t, err)
 		ed25519PubKey, ok := pubKey.(ed25519.PubKey)
 		require.True(t, ok)
-		expected, err := vrf.Verify(ed25519PubKey, vrf.Proof(proof), message)
-		require.Nil(t, err)
-		assert.True(t, expected)
+		flag, bz := vrf.Verify(curve25519voi.PublicKey(ed25519PubKey), proof, message)
+		require.NotNil(t, bz)
+		assert.True(t, flag)
 	}
 }
 

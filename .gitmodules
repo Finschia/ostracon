@@ -1,3 +1,0 @@
-[submodule "crypto/vrf/internal/vrf/libsodium"]
-	path = crypto/vrf/internal/vrf/libsodium
-	url = https://github.com/algorand/libsodium.git

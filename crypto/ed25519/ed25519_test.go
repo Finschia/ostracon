@@ -1,6 +1,7 @@
 package ed25519_test
 
 import (
+	"encoding/hex"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -27,4 +28,35 @@ func TestSignAndValidateEd25519(t *testing.T) {
 	sig[7] ^= byte(0x01)
 
 	assert.False(t, pubKey.VerifySignature(msg, sig))
+}
+
+func TestVRFProveAndVRFVerify(t *testing.T) {
+
+	privKey := ed25519.GenPrivKey()
+	pubKey := privKey.PubKey()
+	message, _ := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000000")
+	proof, err := privKey.VRFProve(message)
+	assert.Nil(t, err)
+	assert.NotNil(t, proof)
+
+	output, err := pubKey.VRFVerify(proof, message)
+	assert.Nil(t, err)
+	assert.NotNil(t, output)
+
+	// *** If the combination of (pubkey, message, proof) is incorrect ***
+	// invalid message
+	inValidMessage, _ := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000001")
+	_, err1 := pubKey.VRFVerify(proof, inValidMessage)
+	assert.Error(t, err1)
+
+	// invalid pubkey
+	invalidPrivKey := ed25519.GenPrivKey()
+	invalidPubkey := invalidPrivKey.PubKey()
+	_, err2 := invalidPubkey.VRFVerify(proof, message)
+	assert.Error(t, err2)
+
+	// invalid proof
+	invalidProof, _ := invalidPrivKey.VRFProve(message)
+	_, err3 := pubKey.VRFVerify(invalidProof, message)
+	assert.Error(t, err3)
 }

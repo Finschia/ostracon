@@ -171,16 +171,12 @@ func (pubKey PubKey) Type() string {
 
 // VRFVerify verifies that the given VRF Proof was generated from the message by the owner of this public key.
 func (pubKey PubKey) VRFVerify(proof []byte, message []byte) (crypto.Output, error) {
-	valid, err := vrf.Verify(ed25519.PublicKey(pubKey), proof, message)
-	if !valid {
-		return nil, fmt.Errorf("the specified proof is not a valid ed25519 proof: err: %s",
+	isValid, hash := vrf.Verify(ed25519.PublicKey(pubKey), proof, message)
+	if !isValid {
+		return nil, fmt.Errorf("either Public Key or Proof is an invalid value.: err: %s",
 			hex.EncodeToString(proof))
 	}
-	output, err2 := vrf.ProofToHash(proof)
-	if err != nil {
-		return nil, err2
-	}
-	return output, nil
+	return hash, nil
 }
 
 func (pubKey PubKey) Equals(other crypto.PubKey) bool {

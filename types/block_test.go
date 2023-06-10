@@ -444,7 +444,7 @@ func TestHeaderHash(t *testing.T) {
 						s.Type().Field(i).Name)
 
 					switch f := f.Interface().(type) {
-					case int32, int64, bytes.HexBytes, vrf.Proof, string:
+					case int32, int64, bytes.HexBytes, []byte, string:
 						byteSlices = append(byteSlices, cdcEncode(f))
 					case time.Time:
 						bz, err := gogotypes.StdTimeMarshal(f)
@@ -1072,7 +1072,7 @@ func TestEntropyHash(t *testing.T) {
 						s.Type().Field(i).Name)
 
 					switch f := f.Interface().(type) {
-					case int32, int64, bytes.HexBytes, vrf.Proof, string:
+					case int32, int64, bytes.HexBytes, []byte, string:
 						byteSlices = append(byteSlices, cdcEncode(f))
 					case time.Time:
 						bz, err := gogotypes.StdTimeMarshal(f)

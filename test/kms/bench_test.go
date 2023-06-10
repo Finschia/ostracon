@@ -2,7 +2,6 @@
 // To test, address the KMS connection to port 45666 on the machine running this program and run the following:
 //
 // $ cd test/kms
-// $ go test -tags libsodium -bench . -benchmem
 package main
 
 import (
