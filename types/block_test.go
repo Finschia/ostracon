@@ -22,12 +22,12 @@ import (
 	"github.com/Finschia/ostracon/crypto"
 	"github.com/Finschia/ostracon/crypto/merkle"
 	"github.com/Finschia/ostracon/crypto/tmhash"
-	"github.com/Finschia/ostracon/crypto/vrf"
 	"github.com/Finschia/ostracon/libs/bits"
 	"github.com/Finschia/ostracon/libs/bytes"
 	tmrand "github.com/Finschia/ostracon/libs/rand"
 	tmtime "github.com/Finschia/ostracon/types/time"
 	"github.com/Finschia/ostracon/version"
+	vrf "github.com/oasisprotocol/curve25519-voi/primitives/ed25519/extra/ecvrf"
 )
 
 var TestConsensusVersion = tmversion.Consensus{

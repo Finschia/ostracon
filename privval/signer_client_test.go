@@ -15,10 +15,10 @@ import (
 	"github.com/Finschia/ostracon/crypto"
 	"github.com/Finschia/ostracon/crypto/ed25519"
 	"github.com/Finschia/ostracon/crypto/tmhash"
-	"github.com/Finschia/ostracon/crypto/vrf"
 	tmrand "github.com/Finschia/ostracon/libs/rand"
 	ocprivvalproto "github.com/Finschia/ostracon/proto/ostracon/privval"
 	"github.com/Finschia/ostracon/types"
+	vrf "github.com/oasisprotocol/curve25519-voi/primitives/ed25519/extra/ecvrf"
 )
 
 type signerTestCase struct {

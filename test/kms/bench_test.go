@@ -19,13 +19,13 @@ import (
 	"github.com/Finschia/ostracon/config"
 	"github.com/Finschia/ostracon/crypto"
 	"github.com/Finschia/ostracon/crypto/ed25519"
-	"github.com/Finschia/ostracon/crypto/vrf"
 	"github.com/Finschia/ostracon/libs/log"
 	tmnet "github.com/Finschia/ostracon/libs/net"
 	"github.com/Finschia/ostracon/node"
 	"github.com/Finschia/ostracon/privval"
 	ocprivvalproto "github.com/Finschia/ostracon/proto/ostracon/privval"
 	octypes "github.com/Finschia/ostracon/types"
+	vrf "github.com/oasisprotocol/curve25519-voi/primitives/ed25519/extra/ecvrf"
 )
 
 var logger = log.NewOCLogger(log.NewSyncWriter(os.Stdout))

@@ -28,7 +28,7 @@ type PubKey interface {
 	Address() Address
 	Bytes() []byte
 	VerifySignature(msg []byte, sig []byte) bool
-	VRFVerify(proof Proof, seed []byte) (Output, error) // TODO 🏺 rename to VerifyVRFProof to match VerifySignature
+	VRFVerify(proof []byte, seed []byte) (Output, error) // TODO 🏺 rename to VerifyVRFProof to match VerifySignature
 	Equals(PubKey) bool
 	Type() string
 }

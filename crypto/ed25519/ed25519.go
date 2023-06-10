@@ -7,12 +7,11 @@ import (
 	"fmt"
 	"io"
 
-	"golang.org/x/crypto/ed25519"
-
 	"github.com/Finschia/ostracon/crypto"
 	"github.com/Finschia/ostracon/crypto/tmhash"
-	"github.com/Finschia/ostracon/crypto/vrf"
 	tmjson "github.com/Finschia/ostracon/libs/json"
+	"github.com/oasisprotocol/curve25519-voi/primitives/ed25519"
+	vrf "github.com/oasisprotocol/curve25519-voi/primitives/ed25519/extra/ecvrf"
 )
 
 //-------------------------------------
@@ -63,11 +62,8 @@ func (privKey PrivKey) Sign(msg []byte) ([]byte, error) {
 
 // VRFProve generates a VRF Proof for given message to generate a verifiable random.
 func (privKey PrivKey) VRFProve(message []byte) (crypto.Proof, error) {
-	proof, err := vrf.Prove(privKey[:], message)
-	if err != nil {
-		return nil, err
-	}
-	return crypto.Proof(proof[:]), nil
+	proof := vrf.Prove(ed25519.PrivateKey(privKey[:]), message)
+	return proof, nil
 }
 
 // PubKey gets the corresponding public key from the private key.
@@ -174,20 +170,17 @@ func (pubKey PubKey) Type() string {
 }
 
 // VRFVerify verifies that the given VRF Proof was generated from the message by the owner of this public key.
-func (pubKey PubKey) VRFVerify(proof crypto.Proof, message []byte) (crypto.Output, error) {
-	valid, err := vrf.Verify(pubKey[:], vrf.Proof(proof), message)
-	if err != nil {
-		return nil, fmt.Errorf("the specified proof is not a valid ed25519 proof: err: %s", err.Error())
-	}
+func (pubKey PubKey) VRFVerify(proof []byte, message []byte) (crypto.Output, error) {
+	valid, err := vrf.Verify(ed25519.PublicKey(pubKey), proof, message)
 	if !valid {
-		return nil, fmt.Errorf("the specified Proof is not generated with this pair-key: %s",
+		return nil, fmt.Errorf("the specified proof is not a valid ed25519 proof: err: %s",
 			hex.EncodeToString(proof))
 	}
-	output, err := vrf.ProofToHash(vrf.Proof(proof))
+	output, err2 := vrf.ProofToHash(proof)
 	if err != nil {
-		return nil, err
+		return nil, err2
 	}
-	return crypto.Output(output), nil
+	return output, nil
 }
 
 func (pubKey PubKey) Equals(other crypto.PubKey) bool {
