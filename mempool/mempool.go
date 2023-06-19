@@ -17,7 +17,7 @@ import (
 type Mempool interface {
 	// CheckTx executes a new transaction against the application to determine
 	// its validity and whether it should be added to the mempool.
-	CheckTxSync(tx types.Tx, txInfo TxInfo) (*ocabci.Response, error)
+	CheckTxSync(tx types.Tx, checkTxCb func(*ocabci.Response), txInfo TxInfo) error
 	CheckTxAsync(tx types.Tx, txInfo TxInfo, prepareCb func(error), checkTxCb func(*ocabci.Response))
 
 	// ReapMaxBytesMaxGas reaps transactions from the mempool up to maxBytes

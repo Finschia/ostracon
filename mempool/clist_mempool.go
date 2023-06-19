@@ -239,25 +239,25 @@ func (mem *CListMempool) TxsWaitChan() <-chan struct{} {
 
 // It blocks if we're waiting on Update() or Reap().
 // Safe for concurrent use by multiple goroutines.
-func (mem *CListMempool) CheckTxSync(tx types.Tx, txInfo TxInfo) (res *ocabci.Response, err error) {
+func (mem *CListMempool) CheckTxSync(tx types.Tx, cb func(*ocabci.Response), txInfo TxInfo) error {
 	mem.updateMtx.RLock()
 	// use defer to unlock mutex because application (*local client*) might panic
 	defer mem.updateMtx.RUnlock()
 
-	if err = mem.prepareCheckTx(tx, txInfo); err != nil {
-		return res, err
+	if err := mem.prepareCheckTx(tx, txInfo); err != nil {
+		return err
 	}
 
 	// CONTRACT: `app.CheckTxSync()` should check whether `GasWanted` is valid (0 <= GasWanted <= block.masGas)
 	var r *ocabci.ResponseCheckTx
-	r, err = mem.proxyAppConn.CheckTxSync(abci.RequestCheckTx{Tx: tx})
+	r, err := mem.proxyAppConn.CheckTxSync(abci.RequestCheckTx{Tx: tx})
 	if err != nil {
-		return res, err
+		return err
 	}
 
-	res = ocabci.ToResponseCheckTx(*r)
-	mem.reqResCb(tx, txInfo.SenderID, txInfo.SenderP2PID, res, nil)
-	return res, err
+	res := ocabci.ToResponseCheckTx(*r)
+	mem.reqResCb(tx, txInfo.SenderID, txInfo.SenderP2PID, res, cb)
+	return err
 }
 
 // cb: A callback from the CheckTx command.

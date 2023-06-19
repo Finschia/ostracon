@@ -20,8 +20,8 @@ var _ mempl.Mempool = emptyMempool{}
 func (emptyMempool) Lock()     {}
 func (emptyMempool) Unlock()   {}
 func (emptyMempool) Size() int { return 0 }
-func (emptyMempool) CheckTxSync(_ types.Tx, _ mempl.TxInfo) (*ocabci.Response, error) {
-	return nil, nil
+func (emptyMempool) CheckTxSync(_ types.Tx, _ func(*ocabci.Response), _ mempl.TxInfo) error {
+	return nil
 }
 func (emptyMempool) CheckTxAsync(_ types.Tx, _ mempl.TxInfo, _ func(error), _ func(*ocabci.Response)) {
 }
