@@ -41,7 +41,7 @@ require (
 	github.com/tendermint/tm-db v0.6.7
 	github.com/yahoo/coname v0.0.0-20170609175141-84592ddf8673 // indirect
 	golang.org/x/crypto v0.10.0
-	golang.org/x/net v0.10.0
+	golang.org/x/net v0.11.0
 	gonum.org/v1/gonum v0.13.0
 	google.golang.org/grpc v1.55.0
 	gopkg.in/yaml.v3 v3.0.1
