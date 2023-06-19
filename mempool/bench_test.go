@@ -18,7 +18,7 @@ func BenchmarkReap(b *testing.B) {
 	for i := 0; i < size; i++ {
 		tx := make([]byte, 8)
 		binary.BigEndian.PutUint64(tx, uint64(i))
-		mempool.CheckTxSync(tx, TxInfo{}) // nolint: errcheck
+		mempool.CheckTxSync(tx, nil, TxInfo{}) // nolint: errcheck
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -53,7 +53,7 @@ func BenchmarkCheckTxSync(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		tx := make([]byte, 8)
 		binary.BigEndian.PutUint64(tx, uint64(i))
-		mempool.CheckTxSync(tx, TxInfo{}) // nolint: errcheck
+		mempool.CheckTxSync(tx, nil, TxInfo{}) // nolint: errcheck
 	}
 }
 

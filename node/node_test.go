@@ -303,7 +303,7 @@ func TestCreateProposalBlock(t *testing.T) {
 	txLength := 100
 	for i := 0; i <= maxBytes/txLength; i++ {
 		tx := tmrand.Bytes(txLength)
-		_, err := mempool.CheckTxSync(tx, mempl.TxInfo{})
+		err := mempool.CheckTxSync(tx, nil, mempl.TxInfo{})
 		assert.NoError(t, err)
 	}
 
@@ -377,7 +377,7 @@ func TestMaxProposalBlockSize(t *testing.T) {
 	// fill the mempool with one txs just below the maximum size
 	txLength := int(types.MaxDataBytesNoEvidence(maxBytes, 1))
 	tx := tmrand.Bytes(txLength - 4) // to account for the varint
-	_, err = mempool.CheckTxSync(tx, mempl.TxInfo{})
+	err = mempool.CheckTxSync(tx, nil, mempl.TxInfo{})
 	assert.NoError(t, err)
 
 	blockExec := sm.NewBlockExecutor(

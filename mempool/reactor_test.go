@@ -177,7 +177,7 @@ func TestReactor_MaxTxBytes(t *testing.T) {
 	// Broadcast a tx, which has the max size
 	// => ensure it's received by the second reactor.
 	tx1 := tmrand.Bytes(config.Mempool.MaxTxBytes)
-	_, err := reactors[0].mempool.CheckTxSync(tx1, TxInfo{SenderID: UnknownPeerID})
+	err := reactors[0].mempool.CheckTxSync(tx1, nil, TxInfo{SenderID: UnknownPeerID})
 	require.NoError(t, err)
 	waitForTxsOnReactors(t, []types.Tx{tx1}, reactors)
 
@@ -187,7 +187,7 @@ func TestReactor_MaxTxBytes(t *testing.T) {
 	// Broadcast a tx, which is beyond the max size
 	// => ensure it's not sent
 	tx2 := tmrand.Bytes(config.Mempool.MaxTxBytes + 1)
-	_, err = reactors[0].mempool.CheckTxSync(tx2, TxInfo{SenderID: UnknownPeerID})
+	err = reactors[0].mempool.CheckTxSync(tx2, nil, TxInfo{SenderID: UnknownPeerID})
 	require.Error(t, err)
 }
 
