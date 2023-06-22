@@ -43,7 +43,7 @@ require (
 	golang.org/x/crypto v0.10.0
 	golang.org/x/net v0.11.0
 	gonum.org/v1/gonum v0.13.0
-	google.golang.org/grpc v1.55.0
+	google.golang.org/grpc v1.56.1
 	gopkg.in/yaml.v3 v3.0.1
 )
 
