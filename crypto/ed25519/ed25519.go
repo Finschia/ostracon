@@ -169,7 +169,10 @@ func (pubKey PubKey) Type() string {
 	return KeyType
 }
 
-// VRFVerify verifies that the given VRF Proof was generated from the message by the owner of this public key.
+// VRFVerify guarantees that the public key is validated such that the "full uniqueness" and
+// "full collision" properties are satisfied.
+// The internal function of VRFVerify is implemented based on the IETF draft.
+// See sections 3.1 and 3.2 here https://datatracker.ietf.org/doc/draft-irtf-cfrg-vrf/.
 func (pubKey PubKey) VRFVerify(proof []byte, message []byte) (crypto.Output, error) {
 	isValid, hash := vrf.Verify(ed25519.PublicKey(pubKey), proof, message)
 	if !isValid {
