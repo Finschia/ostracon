@@ -187,7 +187,7 @@ func (pubKey PubKey) String() string {
 }
 
 // VRFVerify is not supported in Secp256k1.
-func (pubKey PubKey) VRFVerify(proof []byte, message []byte) (crypto.Output, error) {
+func (pubKey PubKey) VRFVerify(_ []byte, _ []byte) (crypto.Output, error) {
 	return nil, fmt.Errorf("VRF verify is not supported by the secp256k1")
 }
 
