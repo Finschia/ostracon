@@ -21,18 +21,6 @@ git clone https://github.com/Finschia/ostracon.git
 git clone git@github.com:Finschia/ostracon.git
 ```
 
-### git clone with recursive if you want to use libsodium
-```shell
-git clone --recursive https://github.com/Finschia/ostracon.git
-# or
-git clone --recursive git@github.com:Finschia/ostracon.git
-```
-
-### git submodule if you forget to clone with submodule
-```shell
-git submodule update --init --recursive
-```
-
 ## Local Standalone
 **Build**
  ```sh

@@ -11,7 +11,6 @@ import (
 	ocabci "github.com/Finschia/ostracon/abci/types"
 	"github.com/Finschia/ostracon/crypto"
 	cryptoenc "github.com/Finschia/ostracon/crypto/encoding"
-	"github.com/Finschia/ostracon/crypto/vrf"
 	"github.com/Finschia/ostracon/libs/fail"
 	"github.com/Finschia/ostracon/libs/log"
 	mempl "github.com/Finschia/ostracon/mempool"
@@ -19,6 +18,7 @@ import (
 	"github.com/Finschia/ostracon/proxy"
 	"github.com/Finschia/ostracon/types"
 	canonictime "github.com/Finschia/ostracon/types/time"
+	vrf "github.com/oasisprotocol/curve25519-voi/primitives/ed25519/extra/ecvrf"
 )
 
 //-----------------------------------------------------------------------------

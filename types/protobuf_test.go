@@ -146,13 +146,13 @@ func TestABCIEvidence(t *testing.T) {
 
 type pubKeyEddie struct{}
 
-func (pubKeyEddie) Address() Address                                                { return []byte{} }
-func (pubKeyEddie) Bytes() []byte                                                   { return []byte{} }
-func (pubKeyEddie) VerifySignature(msg []byte, sig []byte) bool                     { return false }
-func (pubKeyEddie) VRFVerify(proof crypto.Proof, msg []byte) (crypto.Output, error) { return nil, nil }
-func (pubKeyEddie) Equals(crypto.PubKey) bool                                       { return false }
-func (pubKeyEddie) String() string                                                  { return "" }
-func (pubKeyEddie) Type() string                                                    { return "pubKeyEddie" }
+func (pubKeyEddie) Address() Address                                          { return []byte{} }
+func (pubKeyEddie) Bytes() []byte                                             { return []byte{} }
+func (pubKeyEddie) VerifySignature(msg []byte, sig []byte) bool               { return false }
+func (pubKeyEddie) VRFVerify(proof []byte, msg []byte) (crypto.Output, error) { return nil, nil }
+func (pubKeyEddie) Equals(crypto.PubKey) bool                                 { return false }
+func (pubKeyEddie) String() string                                            { return "" }
+func (pubKeyEddie) Type() string                                              { return "pubKeyEddie" }
 
 func TestABCIValidatorFromPubKeyAndPower(t *testing.T) {
 	pubkey := ed25519.GenPrivKey().PubKey()

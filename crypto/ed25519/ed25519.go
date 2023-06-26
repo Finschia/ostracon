@@ -7,12 +7,11 @@ import (
 	"fmt"
 	"io"
 
-	"golang.org/x/crypto/ed25519"
-
 	"github.com/Finschia/ostracon/crypto"
 	"github.com/Finschia/ostracon/crypto/tmhash"
-	"github.com/Finschia/ostracon/crypto/vrf"
 	tmjson "github.com/Finschia/ostracon/libs/json"
+	"github.com/oasisprotocol/curve25519-voi/primitives/ed25519"
+	vrf "github.com/oasisprotocol/curve25519-voi/primitives/ed25519/extra/ecvrf"
 )
 
 //-------------------------------------
@@ -63,11 +62,8 @@ func (privKey PrivKey) Sign(msg []byte) ([]byte, error) {
 
 // VRFProve generates a VRF Proof for given message to generate a verifiable random.
 func (privKey PrivKey) VRFProve(message []byte) (crypto.Proof, error) {
-	proof, err := vrf.Prove(privKey[:], message)
-	if err != nil {
-		return nil, err
-	}
-	return crypto.Proof(proof[:]), nil
+	proof := vrf.Prove(ed25519.PrivateKey(privKey[:]), message)
+	return proof, nil
 }
 
 // PubKey gets the corresponding public key from the private key.
@@ -173,21 +169,17 @@ func (pubKey PubKey) Type() string {
 	return KeyType
 }
 
-// VRFVerify verifies that the given VRF Proof was generated from the message by the owner of this public key.
-func (pubKey PubKey) VRFVerify(proof crypto.Proof, message []byte) (crypto.Output, error) {
-	valid, err := vrf.Verify(pubKey[:], vrf.Proof(proof), message)
-	if err != nil {
-		return nil, fmt.Errorf("the specified proof is not a valid ed25519 proof: err: %s", err.Error())
-	}
-	if !valid {
-		return nil, fmt.Errorf("the specified Proof is not generated with this pair-key: %s",
+// VRFVerify guarantees that the public key is validated such that the "full uniqueness" and
+// "full collision" properties are satisfied.
+// The internal function of VRFVerify is implemented based on the IETF draft.
+// See sections 3.1 and 3.2 here https://datatracker.ietf.org/doc/draft-irtf-cfrg-vrf/.
+func (pubKey PubKey) VRFVerify(proof []byte, message []byte) (crypto.Output, error) {
+	isValid, hash := vrf.Verify(ed25519.PublicKey(pubKey), proof, message)
+	if !isValid {
+		return nil, fmt.Errorf("either Public Key or Proof is an invalid value.: err: %s",
 			hex.EncodeToString(proof))
 	}
-	output, err := vrf.ProofToHash(vrf.Proof(proof))
-	if err != nil {
-		return nil, err
-	}
-	return crypto.Output(output), nil
+	return hash, nil
 }
 
 func (pubKey PubKey) Equals(other crypto.PubKey) bool {

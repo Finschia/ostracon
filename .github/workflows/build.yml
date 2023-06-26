@@ -37,6 +37,3 @@ jobs:
       - name: Build Linux
         run: GOOS=linux GOARCH=${{ matrix.goarch }} CC=${{ matrix.gcc }} TARGET_HOST=${{ matrix.host }} make build
         if: "env.GIT_DIFF != ''"
-      - name: Build Linux with Libsodium
-        run: GOOS=linux GOARCH=${{ matrix.goarch }} CC=${{ matrix.gcc }} TARGET_HOST=${{ matrix.host }} LIBSODIUM=1 make build
-        if: "env.GIT_DIFF != ''"

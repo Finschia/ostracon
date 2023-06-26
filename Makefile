@@ -5,13 +5,6 @@ OUTPUT?=build/ostracon
 INCLUDE = -I=${GOPATH}/src/github.com/Finschia/ostracon -I=${GOPATH}/src -I=${GOPATH}/src/github.com/gogo/protobuf/protobuf
 BUILD_TAGS ?= ostracon
 VERSION := $(shell git describe --always)
-ifeq ($(LIBSODIUM), 1)
-  BUILD_TAGS += libsodium
-  LIBSODIUM_TARGET = libsodium
-else
-  BUILD_TAGS += r2ishiguro
-  LIBSODIUM_TARGET =
-endif
 LD_FLAGS = -X github.com/Finschia/ostracon/version.OCCoreSemVer=$(VERSION)
 BUILD_FLAGS = -mod=readonly -ldflags "$(LD_FLAGS)"
 HTTPS_GIT := https://github.com/Finschia/ostracon.git
@@ -64,11 +57,11 @@ include tests.mk
 ###                                Build Ostracon                           ###
 ###############################################################################
 
-build: $(LIBSODIUM_TARGET)
+build:
 	CGO_ENABLED=1 go build $(BUILD_FLAGS) -tags "$(BUILD_TAGS)" -o $(OUTPUT) ./cmd/ostracon/
 .PHONY: build
 
-install: $(LIBSODIUM_TARGET)
+install:
 	CGO_ENABLED=1 go install $(BUILD_FLAGS) -tags "$(BUILD_TAGS)" ./cmd/ostracon
 .PHONY: install
 
@@ -146,29 +139,6 @@ install_abci:
 ###############################################################################
 ###                              Distribution                               ###
 ###############################################################################
-
-########################################
-### libsodium
-
-VRF_ROOT = $(SRCPATH)/crypto/vrf/internal/vrf
-LIBSODIUM_ROOT = $(VRF_ROOT)/libsodium
-LIBSODIUM_OS = $(VRF_ROOT)/sodium/$(TARGET_OS)_$(TARGET_ARCH)
-ifneq ($(TARGET_HOST), "")
-LIBSODIUM_HOST = "--host=$(TARGET_HOST)"
-endif
-
-libsodium:
-	@if [ ! -f $(LIBSODIUM_OS)/lib/libsodium.a ]; then \
-		rm -rf $(LIBSODIUM_ROOT) && \
-		mkdir $(LIBSODIUM_ROOT) && \
-		git submodule update --init --recursive && \
-		cd $(LIBSODIUM_ROOT) && \
-		./autogen.sh && \
-		./configure --disable-shared --prefix="$(LIBSODIUM_OS)" $(LIBSODIUM_HOST) && \
-		$(MAKE) && \
-		$(MAKE) install; \
-	fi
-.PHONY: libsodium
 
 ########################################
 ### Distribution
@@ -300,7 +270,7 @@ DOCKER_CMD = docker run --rm \
 DOCKER_IMG = golang:1.18-alpine
 BUILD_CMD = apk add --update --no-cache git make gcc libc-dev build-base curl jq bash file gmp-dev clang libtool autoconf automake \
 	&& cd $(DOCKER_HOME) \
-	&& LIBSODIUM=$(LIBSODIUM) make build-linux
+	&& make build-linux
 
 # Login docker-container for confirmation building linux binary
 build-shell:

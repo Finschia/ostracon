@@ -59,7 +59,7 @@ func (pubKey PubKey) VerifySignature(msg []byte, sig []byte) bool {
 }
 
 // VRFVerify is not supported in Sr25519.
-func (pubKey PubKey) VRFVerify(proof crypto.Proof, seed []byte) (crypto.Output, error) {
+func (pubKey PubKey) VRFVerify(_ []byte, _ []byte) (crypto.Output, error) {
 	return nil, fmt.Errorf("VRF verify is not supported by the sr25519")
 }
 

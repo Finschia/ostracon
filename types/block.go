@@ -17,13 +17,13 @@ import (
 	"github.com/Finschia/ostracon/crypto/ed25519"
 	"github.com/Finschia/ostracon/crypto/merkle"
 	"github.com/Finschia/ostracon/crypto/tmhash"
-	"github.com/Finschia/ostracon/crypto/vrf"
 	"github.com/Finschia/ostracon/libs/bits"
 	tmbytes "github.com/Finschia/ostracon/libs/bytes"
 	tmmath "github.com/Finschia/ostracon/libs/math"
 	tmsync "github.com/Finschia/ostracon/libs/sync"
 	ocproto "github.com/Finschia/ostracon/proto/ostracon/types"
 	"github.com/Finschia/ostracon/version"
+	vrf "github.com/oasisprotocol/curve25519-voi/primitives/ed25519/extra/ecvrf"
 )
 
 const (

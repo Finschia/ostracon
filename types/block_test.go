@@ -22,12 +22,12 @@ import (
 	"github.com/Finschia/ostracon/crypto"
 	"github.com/Finschia/ostracon/crypto/merkle"
 	"github.com/Finschia/ostracon/crypto/tmhash"
-	"github.com/Finschia/ostracon/crypto/vrf"
 	"github.com/Finschia/ostracon/libs/bits"
 	"github.com/Finschia/ostracon/libs/bytes"
 	tmrand "github.com/Finschia/ostracon/libs/rand"
 	tmtime "github.com/Finschia/ostracon/types/time"
 	"github.com/Finschia/ostracon/version"
+	vrf "github.com/oasisprotocol/curve25519-voi/primitives/ed25519/extra/ecvrf"
 )
 
 var TestConsensusVersion = tmversion.Consensus{
@@ -444,7 +444,7 @@ func TestHeaderHash(t *testing.T) {
 						s.Type().Field(i).Name)
 
 					switch f := f.Interface().(type) {
-					case int32, int64, bytes.HexBytes, vrf.Proof, string:
+					case int32, int64, bytes.HexBytes, []byte, string:
 						byteSlices = append(byteSlices, cdcEncode(f))
 					case time.Time:
 						bz, err := gogotypes.StdTimeMarshal(f)
@@ -1072,7 +1072,7 @@ func TestEntropyHash(t *testing.T) {
 						s.Type().Field(i).Name)
 
 					switch f := f.Interface().(type) {
-					case int32, int64, bytes.HexBytes, vrf.Proof, string:
+					case int32, int64, bytes.HexBytes, []byte, string:
 						byteSlices = append(byteSlices, cdcEncode(f))
 					case time.Time:
 						bz, err := gogotypes.StdTimeMarshal(f)
