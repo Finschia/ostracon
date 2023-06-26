@@ -21,11 +21,6 @@ git clone https://github.com/Finschia/ostracon.git
 git clone git@github.com:Finschia/ostracon.git
 ```
 
-### git submodule if you forget to clone with submodule
-```shell
-git submodule update --init --recursive
-```
-
 ## Local Standalone
 **Build**
  ```sh
