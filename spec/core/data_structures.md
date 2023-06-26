@@ -50,7 +50,7 @@ Ostracon adds the following steps to the validation of a new block:
 
 Ostracon introduces Entropy as a new data structure. This represents height-specific complexity and is used by proposer-election. This consists of a vrf proof and round in which the proposer generates it.
 
-| Name | Type | Description | Validation                                                                  |
-|------|------|-------------|-----------------------------------------------------------------------------|
-| Round | int32                     | Round in which proposer generate a vrf proof             | Must be >= 0                                                                |
-| Proof | slice of bytes (`[]byte`) | Proof is a vrf proof | Length of proof must be == 0, == 80 (curve25519-voi) |
+| Name | Type | Description | Validation                                             |
+|------|------|-------------|--------------------------------------------------------|
+| Round | int32                     | Round in which proposer generate a vrf proof             | Must be >= 0                                           |
+| Proof | slice of bytes (`[]byte`) | Proof is a vrf proof | Length of proof must be == 0 or == 80 (curve25519-voi) |
