@@ -10,7 +10,6 @@ require (
 	github.com/btcsuite/btcd v0.22.1
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
-	github.com/coniks-sys/coniks-go v0.0.0-20180722014011-11acf4819b71
 	github.com/fortytw2/leaktest v1.3.0
 	github.com/go-kit/kit v0.12.0
 	github.com/go-kit/log v0.2.1
@@ -20,7 +19,6 @@ require (
 	github.com/google/orderedcode v0.0.1
 	github.com/gorilla/websocket v1.5.0
 	github.com/gtank/merlin v0.1.1
-	github.com/hdevalence/ed25519consensus v0.1.0
 	github.com/lib/pq v1.10.9
 	github.com/libp2p/go-buffer-pool v0.1.0
 	github.com/miekg/dns v1.1.55
@@ -28,7 +26,6 @@ require (
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.16.0
-	github.com/r2ishiguro/vrf v0.0.0-20180716233122-192de52975eb
 	github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0
 	github.com/rs/cors v1.9.0
 	github.com/sasha-s/go-deadlock v0.3.1
@@ -39,7 +36,6 @@ require (
 	github.com/tendermint/go-amino v0.16.0
 	github.com/tendermint/tendermint v0.34.19
 	github.com/tendermint/tm-db v0.6.7
-	github.com/yahoo/coname v0.0.0-20170609175141-84592ddf8673 // indirect
 	golang.org/x/crypto v0.10.0
 	golang.org/x/net v0.11.0
 	gonum.org/v1/gonum v0.13.0
@@ -50,6 +46,7 @@ require (
 require (
 	github.com/bufbuild/buf v1.21.0
 	github.com/golangci/golangci-lint v1.53.3
+	github.com/oasisprotocol/curve25519-voi v0.0.0-20230110094441-db37f07504ce
 	github.com/rs/zerolog v1.29.1
 	github.com/vektra/mockery/v2 v2.30.1
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
@@ -58,7 +55,6 @@ require (
 require (
 	4d63.com/gocheckcompilerdirectives v1.2.1 // indirect
 	4d63.com/gochecknoglobals v0.2.1 // indirect
-	filippo.io/edwards25519 v1.0.0 // indirect
 	github.com/4meepo/tagalign v1.2.2 // indirect
 	github.com/Abirdcfly/dupword v0.0.11 // indirect
 	github.com/Antonboom/errname v0.1.10 // indirect

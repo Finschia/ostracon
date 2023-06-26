@@ -12,12 +12,12 @@ docker:
 # order to build a binary with an Ostracon node in it (for built-in
 # ABCI testing).
 node:
-	go build -o build/node -tags libsodium,badgerdb,boltdb,cleveldb,rocksdb ./node
+	go build -o build/node -tags badgerdb,boltdb,cleveldb,rocksdb ./node
 
 generator:
-	go build -o build/generator -tags libsodium ./generator
+	go build -o build/generator ./generator
 
 runner:
-	go build -o build/runner -tags libsodium ./runner
+	go build -o build/runner ./runner
 
 .PHONY: all node docker generator maverick runner

@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/Finschia/ostracon/crypto/tmhash"
-	"github.com/Finschia/ostracon/crypto/vrf"
 	tmtime "github.com/Finschia/ostracon/types/time"
+	vrf "github.com/oasisprotocol/curve25519-voi/primitives/ed25519/extra/ecvrf"
 )
 
 // ValidateTime does a basic time validation ensuring time does not drift too

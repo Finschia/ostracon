@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Finschia/ostracon/crypto/vrf"
 	e2e "github.com/Finschia/ostracon/test/e2e/pkg"
 	"github.com/Finschia/ostracon/types"
+	vrf "github.com/oasisprotocol/curve25519-voi/primitives/ed25519/extra/ecvrf"
 )
 
 // Tests that validator sets are available and correct according to

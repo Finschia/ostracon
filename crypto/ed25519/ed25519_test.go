@@ -4,8 +4,6 @@ import (
 	"encoding/hex"
 	"testing"
 
-	coniks "github.com/coniks-sys/coniks-go/crypto/vrf"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -36,7 +34,6 @@ func TestVRFProveAndVRFVerify(t *testing.T) {
 
 	privKey := ed25519.GenPrivKey()
 	pubKey := privKey.PubKey()
-
 	message, _ := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000000")
 	proof, err := privKey.VRFProve(message)
 	assert.Nil(t, err)
@@ -46,26 +43,20 @@ func TestVRFProveAndVRFVerify(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, output)
 
-	// error
-	{
-		message, _ = hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000001")
-		output, err = pubKey.VRFVerify(proof, message)
-		assert.NotNil(t, err)
-		assert.Nil(t, output)
-	}
+	// *** If the combination of (pubkey, message, proof) is incorrect ***
+	// invalid message
+	inValidMessage, _ := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000001")
+	_, err1 := pubKey.VRFVerify(proof, inValidMessage)
+	assert.Error(t, err1)
 
-	// invalid
-	{
-		privateKey, _ := coniks.GenerateKey(nil)
-		copy(privKey[:], privateKey)
-		pubKey = privKey.PubKey()
+	// invalid pubkey
+	invalidPrivKey := ed25519.GenPrivKey()
+	invalidPubkey := invalidPrivKey.PubKey()
+	_, err2 := invalidPubkey.VRFVerify(proof, message)
+	assert.Error(t, err2)
 
-		proof, err = privKey.VRFProve(message)
-		assert.Nil(t, err)
-		assert.NotNil(t, proof)
-
-		output, err = pubKey.VRFVerify(proof, message)
-		assert.NotNil(t, err)
-		assert.Nil(t, output)
-	}
+	// invalid proof
+	invalidProof, _ := invalidPrivKey.VRFProve(message)
+	_, err3 := pubKey.VRFVerify(invalidProof, message)
+	assert.Error(t, err3)
 }
