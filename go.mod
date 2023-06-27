@@ -48,7 +48,7 @@ require (
 	github.com/golangci/golangci-lint v1.53.3
 	github.com/oasisprotocol/curve25519-voi v0.0.0-20230110094441-db37f07504ce
 	github.com/rs/zerolog v1.29.1
-	github.com/vektra/mockery/v2 v2.30.1
+	github.com/vektra/mockery/v2 v2.30.10
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
