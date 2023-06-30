@@ -36,6 +36,7 @@ require (
 	github.com/tendermint/go-amino v0.16.0
 	github.com/tendermint/tendermint v0.34.19
 	github.com/tendermint/tm-db v0.6.7
+	github.com/yahoo/coname v0.0.0-20170609175141-84592ddf8673 // indirect
 	golang.org/x/crypto v0.10.0
 	golang.org/x/net v0.11.0
 	gonum.org/v1/gonum v0.13.0
@@ -47,6 +48,7 @@ require (
 	github.com/bufbuild/buf v1.21.0
 	github.com/golangci/golangci-lint v1.53.3
 	github.com/oasisprotocol/curve25519-voi v0.0.0-20230110094441-db37f07504ce
+	github.com/r2ishiguro/vrf v0.0.0-20180716233122-192de52975eb
 	github.com/rs/zerolog v1.29.1
 	github.com/vektra/mockery/v2 v2.30.1
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
@@ -280,3 +282,5 @@ require (
 	mvdan.cc/lint v0.0.0-20170908181259-adc824a0674b // indirect
 	mvdan.cc/unparam v0.0.0-20221223090309-7455f1af531d // indirect
 )
+
+replace github.com/r2ishiguro/vrf => github.com/Finschia/vrf v0.1.0

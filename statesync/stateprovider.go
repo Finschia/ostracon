@@ -20,7 +20,7 @@ import (
 	sm "github.com/Finschia/ostracon/state"
 	"github.com/Finschia/ostracon/types"
 	"github.com/Finschia/ostracon/version"
-	vrf "github.com/oasisprotocol/curve25519-voi/primitives/ed25519/extra/ecvrf"
+	"github.com/Finschia/ostracon/crypto/ed25519"
 )
 
 //go:generate ../scripts/mockery_generate.sh StateProvider
@@ -213,7 +213,7 @@ func (s *lightClientStateProvider) State(ctx context.Context, height uint64) (sm
 		return sm.State{}, fmt.Errorf("unable to fetch block for height %v: %w",
 			lastLightBlock.Height, err)
 	}
-	proofHash, err := vrf.ProofToHash(resultBlock.Block.Proof.Bytes())
+	proofHash, err := ed25519.ProofToHash(resultBlock.Block.Proof.Bytes())
 	if err != nil {
 		return sm.State{}, err
 	}

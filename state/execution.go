@@ -18,7 +18,7 @@ import (
 	"github.com/Finschia/ostracon/proxy"
 	"github.com/Finschia/ostracon/types"
 	canonictime "github.com/Finschia/ostracon/types/time"
-	vrf "github.com/oasisprotocol/curve25519-voi/primitives/ed25519/extra/ecvrf"
+	"github.com/Finschia/ostracon/crypto/ed25519"
 )
 
 //-----------------------------------------------------------------------------
@@ -542,7 +542,7 @@ func updateState(
 	nextVersion := state.Version
 
 	// get proof hash from vrf proof
-	proofHash, err := vrf.ProofToHash(entropy.Proof.Bytes())
+	proofHash, err := ed25519.ProofToHash(entropy.Proof.Bytes())
 	if err != nil {
 		return state, fmt.Errorf("error get proof of hash: %v", err)
 	}
