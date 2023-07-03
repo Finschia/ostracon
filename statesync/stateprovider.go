@@ -9,6 +9,7 @@ import (
 	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
 	dbm "github.com/tendermint/tm-db"
 
+	"github.com/Finschia/ostracon/crypto/ed25519"
 	"github.com/Finschia/ostracon/libs/log"
 	tmsync "github.com/Finschia/ostracon/libs/sync"
 	"github.com/Finschia/ostracon/light"
@@ -20,7 +21,6 @@ import (
 	sm "github.com/Finschia/ostracon/state"
 	"github.com/Finschia/ostracon/types"
 	"github.com/Finschia/ostracon/version"
-	"github.com/Finschia/ostracon/crypto/ed25519"
 )
 
 //go:generate ../scripts/mockery_generate.sh StateProvider

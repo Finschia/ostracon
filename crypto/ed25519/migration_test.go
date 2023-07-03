@@ -12,7 +12,7 @@ import (
 )
 
 func TestVRFVerify(t *testing.T) {
-	cases := map[string]struct{
+	cases := map[string]struct {
 		proof []byte
 		valid bool
 	}{
@@ -37,7 +37,7 @@ func TestVRFVerify(t *testing.T) {
 }
 
 func TestProofToHash(t *testing.T) {
-	cases := map[string]struct{
+	cases := map[string]struct {
 		proof []byte
 		valid bool
 	}{

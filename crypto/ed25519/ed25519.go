@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"io"
 
-	vrf "github.com/oasisprotocol/curve25519-voi/primitives/ed25519/extra/ecvrf"
 	"github.com/oasisprotocol/curve25519-voi/primitives/ed25519"
+	vrf "github.com/oasisprotocol/curve25519-voi/primitives/ed25519/extra/ecvrf"
 
 	"github.com/Finschia/ostracon/crypto"
 	"github.com/Finschia/ostracon/crypto/tmhash"

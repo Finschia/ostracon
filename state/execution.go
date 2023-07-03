@@ -10,6 +10,7 @@ import (
 
 	ocabci "github.com/Finschia/ostracon/abci/types"
 	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/ed25519"
 	cryptoenc "github.com/Finschia/ostracon/crypto/encoding"
 	"github.com/Finschia/ostracon/libs/fail"
 	"github.com/Finschia/ostracon/libs/log"
@@ -18,7 +19,6 @@ import (
 	"github.com/Finschia/ostracon/proxy"
 	"github.com/Finschia/ostracon/types"
 	canonictime "github.com/Finschia/ostracon/types/time"
-	"github.com/Finschia/ostracon/crypto/ed25519"
 )
 
 //-----------------------------------------------------------------------------

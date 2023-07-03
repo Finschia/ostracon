@@ -6,9 +6,9 @@ import (
 
 	vrf "github.com/oasisprotocol/curve25519-voi/primitives/ed25519/extra/ecvrf"
 
+	r2vrf "github.com/Finschia/ostracon/crypto/legacy/r2ishiguro"
 	"github.com/Finschia/ostracon/crypto/tmhash"
 	tmtime "github.com/Finschia/ostracon/types/time"
-	r2vrf "github.com/Finschia/ostracon/crypto/legacy/r2ishiguro"
 )
 
 // ValidateTime does a basic time validation ensuring time does not drift too

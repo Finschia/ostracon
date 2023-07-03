@@ -3,8 +3,8 @@ package ed25519
 import (
 	"fmt"
 
-	voivrf "github.com/oasisprotocol/curve25519-voi/primitives/ed25519/extra/ecvrf"
 	"github.com/oasisprotocol/curve25519-voi/primitives/ed25519"
+	voivrf "github.com/oasisprotocol/curve25519-voi/primitives/ed25519/extra/ecvrf"
 
 	r2vrf "github.com/Finschia/ostracon/crypto/legacy/r2ishiguro"
 )
@@ -17,7 +17,7 @@ type vrfNoProve interface {
 
 var vrfs = map[int]vrfNoProve{
 	voivrf.ProofSize: &voi{},
-	r2vrf.ProofSize: &r2{},
+	r2vrf.ProofSize:  &r2{},
 }
 
 func getVrf(proof []byte) (vrfNoProve, error) {
@@ -48,7 +48,8 @@ func ProofToHash(proof []byte) ([]byte, error) {
 
 // voi
 var _ vrfNoProve = (*voi)(nil)
-type voi struct {}
+
+type voi struct{}
 
 func (_ voi) Verify(pubKey ed25519.PublicKey, proof []byte, message []byte) (bool, []byte) {
 	return voivrf.Verify(pubKey, proof, message)
@@ -60,7 +61,8 @@ func (_ voi) ProofToHash(proof []byte) ([]byte, error) {
 
 // r2ishiguro
 var _ vrfNoProve = (*r2)(nil)
-type r2 struct {}
+
+type r2 struct{}
 
 func (_ r2) Verify(pubKey ed25519.PublicKey, proof []byte, message []byte) (bool, []byte) {
 	return r2vrf.Verify(pubKey, proof, message)
