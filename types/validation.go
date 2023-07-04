@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	vrf "github.com/oasisprotocol/curve25519-voi/primitives/ed25519/extra/ecvrf"
-
-	r2vrf "github.com/Finschia/ostracon/crypto/legacy/r2ishiguro"
+	"github.com/Finschia/ostracon/crypto/ed25519"
 	"github.com/Finschia/ostracon/crypto/tmhash"
 	tmtime "github.com/Finschia/ostracon/types/time"
 )
@@ -42,14 +40,6 @@ func ValidateHash(h []byte) error {
 	return nil
 }
 
-// ValidateProof returns an error if the proof is not empty, but its
-// size != vrf.ProofSize.
 func ValidateProof(h []byte) error {
-	if len(h) > 0 && len(h) != vrf.ProofSize && len(h) != r2vrf.ProofSize {
-		return fmt.Errorf("expected size to be %d bytes, got %d bytes",
-			vrf.ProofSize,
-			len(h),
-		)
-	}
-	return nil
+	return ed25519.ValidateProof(h)
 }

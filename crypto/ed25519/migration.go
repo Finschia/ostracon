@@ -6,7 +6,7 @@ import (
 	"github.com/oasisprotocol/curve25519-voi/primitives/ed25519"
 	voivrf "github.com/oasisprotocol/curve25519-voi/primitives/ed25519/extra/ecvrf"
 
-	r2vrf "github.com/Finschia/ostracon/crypto/legacy/r2ishiguro"
+	r2vrf "github.com/Finschia/ostracon/crypto/ed25519/internal/r2ishiguro"
 )
 
 // vrf w/o prove
@@ -44,6 +44,20 @@ func ProofToHash(proof []byte) ([]byte, error) {
 	}
 
 	return vrf.ProofToHash(proof)
+}
+
+// ValidateProof returns an error if the proof is not empty, but its
+// size != vrf.ProofSize.
+func ValidateProof(h []byte) error {
+	if len(h) > 0 {
+		if _, err := getVrf(h); err != nil {
+			return fmt.Errorf("expected size to be %d bytes, got %d bytes",
+				voivrf.ProofSize,
+				len(h),
+			)
+		}
+	}
+	return nil
 }
 
 // voi

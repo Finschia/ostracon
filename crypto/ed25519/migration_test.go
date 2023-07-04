@@ -8,7 +8,7 @@ import (
 	"github.com/Finschia/ostracon/crypto/ed25519"
 	voivrf "github.com/oasisprotocol/curve25519-voi/primitives/ed25519/extra/ecvrf"
 
-	r2vrf "github.com/Finschia/ostracon/crypto/legacy/r2ishiguro"
+	r2vrf "github.com/Finschia/ostracon/crypto/ed25519/internal/r2ishiguro"
 )
 
 func TestVRFVerify(t *testing.T) {
@@ -56,6 +56,36 @@ func TestProofToHash(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			_, err := ed25519.ProofToHash(tc.proof)
+			if !tc.valid {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+}
+
+func TestValidateProof(t *testing.T) {
+	cases := map[string]struct {
+		proof []byte
+		valid bool
+	}{
+		"invalid": {
+			proof: make([]byte, 1),
+		},
+		"voi proof": {
+			proof: make([]byte, voivrf.ProofSize),
+			valid: true,
+		},
+		"r2ishiguro proof": {
+			proof: make([]byte, r2vrf.ProofSize),
+			valid: true,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			err := ed25519.ValidateProof(tc.proof)
 			if !tc.valid {
 				require.Error(t, err)
 				return
