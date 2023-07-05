@@ -60,7 +60,7 @@ func ValidateProof(h []byte) error {
 	return nil
 }
 
-// voi
+// github.com/oasisprotocol/curve25519-voi
 var _ vrfNoProve = (*voi)(nil)
 
 type voi struct{}
@@ -73,7 +73,7 @@ func (_ voi) ProofToHash(proof []byte) ([]byte, error) {
 	return voivrf.ProofToHash(proof)
 }
 
-// r2ishiguro
+// github.com/r2ishiguro/vrf
 var _ vrfNoProve = (*r2)(nil)
 
 type r2 struct{}
