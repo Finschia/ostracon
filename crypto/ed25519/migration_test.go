@@ -11,7 +11,11 @@ import (
 	r2vrf "github.com/Finschia/ostracon/crypto/ed25519/internal/r2ishiguro"
 )
 
-func TestVRFVerify(t *testing.T) {
+func TestVerify(t *testing.T) {
+	pubkey, message := []byte("pubkey"), []byte("message")
+	valid, _ := ed25519.VRFVerify(pubkey, make([]byte, 1), message)
+	require.False(t, valid)
+
 	cases := map[string]struct {
 		proof []byte
 		valid bool
@@ -29,14 +33,16 @@ func TestVRFVerify(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			pubkey, message := []byte("pubkey"), []byte("message")
-			valid, _ := ed25519.VRFVerify(pubkey, tc.proof, message)
+			valid, _ := ed25519.NewVersionedVrfNoProve().Verify(pubkey, tc.proof, message)
 			require.Equal(t, tc.valid, valid)
 		})
 	}
 }
 
 func TestProofToHash(t *testing.T) {
+	_, err := ed25519.ProofToHash(make([]byte, 1))
+	require.Error(t, err)
+
 	cases := map[string]struct {
 		proof []byte
 		valid bool
@@ -55,7 +61,7 @@ func TestProofToHash(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			_, err := ed25519.ProofToHash(tc.proof)
+			_, err := ed25519.NewVersionedVrfNoProve().ProofToHash(tc.proof)
 			if !tc.valid {
 				require.Error(t, err)
 				return
@@ -66,14 +72,19 @@ func TestProofToHash(t *testing.T) {
 }
 
 func TestValidateProof(t *testing.T) {
+	err := ed25519.ValidateProof(make([]byte, 1))
+	require.Error(t, err)
+	err = ed25519.ValidateProof(make([]byte, 0))
+	require.NoError(t, err)
+
 	cases := map[string]struct {
 		proof []byte
 		valid bool
 	}{
-		"invalid": {
+		"invalid format": {
 			proof: make([]byte, 1),
 		},
-		"voi proof": {
+		"voi invalid proof": {
 			proof: make([]byte, voivrf.ProofSize),
 			valid: true,
 		},
@@ -85,7 +96,7 @@ func TestValidateProof(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			err := ed25519.ValidateProof(tc.proof)
+			err := ed25519.NewVersionedVrfNoProve().ValidateProof(tc.proof)
 			if !tc.valid {
 				require.Error(t, err)
 				return
@@ -93,4 +104,19 @@ func TestValidateProof(t *testing.T) {
 			require.NoError(t, err)
 		})
 	}
+}
+
+func TestVersionControl(t *testing.T) {
+	vrf := ed25519.NewVersionedVrfNoProve()
+
+	// old one is valid for now
+	oldProof := make([]byte, r2vrf.ProofSize)
+	require.NoError(t, vrf.ValidateProof(oldProof))
+
+	// new one is valid
+	newProof := make([]byte, voivrf.ProofSize)
+	require.NoError(t, vrf.ValidateProof(newProof))
+
+	// old one is not valid anymore
+	require.NoError(t, vrf.ValidateProof(oldProof))
 }

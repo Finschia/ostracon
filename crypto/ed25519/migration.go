@@ -10,47 +10,27 @@ import (
 )
 
 // vrf w/o prove
-type vrfNoProve interface {
+type VrfNoProve interface {
 	Verify(pubKey ed25519.PublicKey, proof []byte, message []byte) (bool, []byte)
 	ProofToHash(proof []byte) ([]byte, error)
+	ValidateProof(proof []byte) error
 }
 
-var vrfs = map[int]vrfNoProve{
-	voivrf.ProofSize: &voi{},
-	r2vrf.ProofSize:  &r2{},
-}
-
-func getVrf(proof []byte) (vrfNoProve, error) {
-	proofSize := len(proof)
-	if vrf, exists := vrfs[proofSize]; exists {
-		return vrf, nil
-	}
-	return nil, fmt.Errorf("invalid proof size: %d", proofSize)
-}
+var globalVrf = NewVersionedVrfNoProve()
 
 func VRFVerify(pubKey ed25519.PublicKey, proof []byte, message []byte) (bool, []byte) {
-	vrf, err := getVrf(proof)
-	if err != nil {
-		return false, nil
-	}
-
-	return vrf.Verify(pubKey, proof, message)
+	return globalVrf.Verify(pubKey, proof, message)
 }
 
 func ProofToHash(proof []byte) ([]byte, error) {
-	vrf, err := getVrf(proof)
-	if err != nil {
-		return nil, err
-	}
-
-	return vrf.ProofToHash(proof)
+	return globalVrf.ProofToHash(proof)
 }
 
 // ValidateProof returns an error if the proof is not empty, but its
 // size != vrf.ProofSize.
 func ValidateProof(h []byte) error {
 	if len(h) > 0 {
-		if _, err := getVrf(h); err != nil {
+		if err := globalVrf.ValidateProof(h); err != nil {
 			return fmt.Errorf("expected size to be %d bytes, got %d bytes",
 				voivrf.ProofSize,
 				len(h),
@@ -60,28 +40,97 @@ func ValidateProof(h []byte) error {
 	return nil
 }
 
+// versioned vrf
+var _ VrfNoProve = (*versionedVrfNoProve)(nil)
+
+type versionedVrfNoProve struct {
+	version int
+}
+
+func NewVersionedVrfNoProve() VrfNoProve {
+	return &versionedVrfNoProve{}
+}
+
+func (v versionedVrfNoProve) getVrf(proof []byte) (VrfNoProve, error) {
+	vrfs := map[int]VrfNoProve{
+		0: &r2VrfNoProve{},
+		1: &voiVrfNoProve{},
+	}
+	proofSizeToVersion := map[int]int{
+		r2vrf.ProofSize:  0,
+		voivrf.ProofSize: 1,
+	}
+
+	proofSize := len(proof)
+	if version, exists := proofSizeToVersion[proofSize]; exists && version >= v.version {
+		v.version = version
+		return vrfs[version], nil
+	}
+	return nil, fmt.Errorf("invalid proof size: %d", proofSize)
+}
+
+func (v versionedVrfNoProve) Verify(pubKey ed25519.PublicKey, proof []byte, message []byte) (bool, []byte) {
+	vrf, err := v.getVrf(proof)
+	if err != nil {
+		return false, nil
+	}
+	return vrf.Verify(pubKey, proof, message)
+}
+
+func (v versionedVrfNoProve) ProofToHash(proof []byte) ([]byte, error) {
+	vrf, err := v.getVrf(proof)
+	if err != nil {
+		return nil, err
+	}
+	return vrf.ProofToHash(proof)
+}
+
+func (v versionedVrfNoProve) ValidateProof(proof []byte) error {
+	vrf, err := v.getVrf(proof)
+	if err != nil {
+		return err
+	}
+	return vrf.ValidateProof(proof)
+}
+
 // github.com/oasisprotocol/curve25519-voi
-var _ vrfNoProve = (*voi)(nil)
+var _ VrfNoProve = (*voiVrfNoProve)(nil)
 
-type voi struct{}
+type voiVrfNoProve struct{}
 
-func (_ voi) Verify(pubKey ed25519.PublicKey, proof []byte, message []byte) (bool, []byte) {
+func (_ voiVrfNoProve) Verify(pubKey ed25519.PublicKey, proof []byte, message []byte) (bool, []byte) {
 	return voivrf.Verify(pubKey, proof, message)
 }
 
-func (_ voi) ProofToHash(proof []byte) ([]byte, error) {
+func (_ voiVrfNoProve) ProofToHash(proof []byte) ([]byte, error) {
 	return voivrf.ProofToHash(proof)
 }
 
+func (_ voiVrfNoProve) ValidateProof(proof []byte) error {
+	proofSize := len(proof)
+	if proofSize != voivrf.ProofSize {
+		return fmt.Errorf("invalid proof size: %d", proofSize)
+	}
+	return nil
+}
+
 // github.com/r2ishiguro/vrf
-var _ vrfNoProve = (*r2)(nil)
+var _ VrfNoProve = (*r2VrfNoProve)(nil)
 
-type r2 struct{}
+type r2VrfNoProve struct{}
 
-func (_ r2) Verify(pubKey ed25519.PublicKey, proof []byte, message []byte) (bool, []byte) {
+func (_ r2VrfNoProve) Verify(pubKey ed25519.PublicKey, proof []byte, message []byte) (bool, []byte) {
 	return r2vrf.Verify(pubKey, proof, message)
 }
 
-func (_ r2) ProofToHash(proof []byte) ([]byte, error) {
+func (_ r2VrfNoProve) ProofToHash(proof []byte) ([]byte, error) {
 	return r2vrf.ProofToHash(proof)
+}
+
+func (_ r2VrfNoProve) ValidateProof(proof []byte) error {
+	proofSize := len(proof)
+	if proofSize != r2vrf.ProofSize {
+		return fmt.Errorf("invalid proof size: %d", proofSize)
+	}
+	return nil
 }
