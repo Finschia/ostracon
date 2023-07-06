@@ -118,5 +118,5 @@ func TestVersionControl(t *testing.T) {
 	require.NoError(t, vrf.ValidateProof(newProof))
 
 	// old one is not valid anymore
-	require.NoError(t, vrf.ValidateProof(oldProof))
+	require.Error(t, vrf.ValidateProof(oldProof))
 }

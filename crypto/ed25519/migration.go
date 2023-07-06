@@ -10,12 +10,18 @@ import (
 )
 
 // vrf w/o prove
+// vrf Prove() MUST use its latest implementation, while this allows
+// to verify the old blocks.
 type VrfNoProve interface {
 	Verify(pubKey ed25519.PublicKey, proof []byte, message []byte) (bool, []byte)
 	ProofToHash(proof []byte) ([]byte, error)
 	ValidateProof(proof []byte) error
 }
 
+// following logics MUST use this instance:
+// - VRFVerify()
+// - ProofToHash()
+// - ValidateProof()
 var globalVrf = NewVersionedVrfNoProve()
 
 func VRFVerify(pubKey ed25519.PublicKey, proof []byte, message []byte) (bool, []byte) {
@@ -40,7 +46,9 @@ func ValidateProof(h []byte) error {
 	return nil
 }
 
-// versioned vrf
+// versioned vrf have all the implementations inside.
+// it updates its version whenever it encounters the new proof format.
+// it CANNOT downgrade its version.
 var _ VrfNoProve = (*versionedVrfNoProve)(nil)
 
 type versionedVrfNoProve struct {
@@ -63,6 +71,7 @@ func NewVersionedVrfNoProve() VrfNoProve {
 	}
 }
 
+// getVersion emits error if the proof is old one.
 func (v *versionedVrfNoProve) getVrf(proof []byte) (VrfNoProve, error) {
 	proofSize := len(proof)
 	if version, exists := v.proofSizeToVersion[proofSize]; exists && version >= v.version {
@@ -72,15 +81,17 @@ func (v *versionedVrfNoProve) getVrf(proof []byte) (VrfNoProve, error) {
 	return nil, fmt.Errorf("invalid proof size: %d", proofSize)
 }
 
-func (v versionedVrfNoProve) Verify(pubKey ed25519.PublicKey, proof []byte, message []byte) (bool, []byte) {
+// Verify updates the version information if the verification succeeds.
+func (v *versionedVrfNoProve) Verify(pubKey ed25519.PublicKey, proof []byte, message []byte) (bool, []byte) {
 	vrf, err := v.getVrf(proof)
 	if err != nil {
 		return false, nil
 	}
+
 	return vrf.Verify(pubKey, proof, message)
 }
 
-func (v versionedVrfNoProve) ProofToHash(proof []byte) ([]byte, error) {
+func (v *versionedVrfNoProve) ProofToHash(proof []byte) ([]byte, error) {
 	vrf, err := v.getVrf(proof)
 	if err != nil {
 		return nil, err
@@ -88,7 +99,7 @@ func (v versionedVrfNoProve) ProofToHash(proof []byte) ([]byte, error) {
 	return vrf.ProofToHash(proof)
 }
 
-func (v versionedVrfNoProve) ValidateProof(proof []byte) error {
+func (v *versionedVrfNoProve) ValidateProof(proof []byte) error {
 	vrf, err := v.getVrf(proof)
 	if err != nil {
 		return err

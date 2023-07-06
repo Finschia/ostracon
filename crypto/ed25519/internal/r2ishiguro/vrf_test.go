@@ -1,7 +1,6 @@
 package r2ishiguro_test
 
 import (
-	"crypto/ed25519"
 	"fmt"
 	"testing"
 
@@ -11,25 +10,21 @@ import (
 	"github.com/r2ishiguro/vrf/go/vrf_ed25519"
 
 	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/ed25519"
 	"github.com/Finschia/ostracon/crypto/ed25519/internal/r2ishiguro"
 )
 
-const (
-	SEEDBYTES = ed25519.SeedSize
-)
-
 func prove(privateKey []byte, message []byte) (crypto.Proof, error) {
-	publicKey := ed25519.PrivateKey(privateKey).Public().(ed25519.PublicKey)
+	publicKey := ed25519.PrivKey(privateKey).PubKey().Bytes()
 	return vrf_ed25519.ECVRF_prove(publicKey, privateKey, message)
 }
 
 func TestVerify(t *testing.T) {
-	secret := [SEEDBYTES]byte{}
-	privateKey := ed25519.NewKeyFromSeed(secret[:])
-	publicKey := privateKey.Public().(ed25519.PublicKey)
-
+	privKey := ed25519.GenPrivKey()
+	pubKey := privKey.PubKey().Bytes()
 	message := []byte("hello, world")
-	proof, err := prove(privateKey, message)
+
+	proof, err := prove(privKey, message)
 	assert.NoError(t, err)
 	assert.NotNil(t, proof)
 
@@ -48,19 +43,18 @@ func TestVerify(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			valid, _ := r2ishiguro.Verify(publicKey, proof, tc.message)
+			valid, _ := r2ishiguro.Verify(pubKey, proof, tc.message)
 			require.Equal(t, tc.valid, valid)
 		})
 	}
 }
 
 func TestProofToHash(t *testing.T) {
-	secret := [SEEDBYTES]byte{}
-	privateKey := ed25519.NewKeyFromSeed(secret[:])
+	privKey := ed25519.GenPrivKey()
 	message := []byte("hello, world")
 
 	t.Run("to hash r2ishiguro proof", func(t *testing.T) {
-		proof, err := prove(privateKey, message)
+		proof, err := prove(privKey, message)
 		require.NoError(t, err)
 		require.NotNil(t, proof)
 
@@ -78,9 +72,8 @@ func TestProofToHash(t *testing.T) {
 }
 
 func BenchmarkProveAndVerify(b *testing.B) {
-	secret := [SEEDBYTES]byte{}
-	privateKey := ed25519.NewKeyFromSeed(secret[:])
-	publicKey := privateKey.Public().(ed25519.PublicKey)
+	privKey := ed25519.GenPrivKey()
+	pubKey := privKey.PubKey().Bytes()
 	message := []byte("hello, world")
 
 	var proof []byte
@@ -88,13 +81,13 @@ func BenchmarkProveAndVerify(b *testing.B) {
 	b.Run("VRF prove", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			proof, err = prove(privateKey, message)
+			proof, err = prove(privKey, message)
 		}
 	})
 	require.NoError(b, err)
 	b.Run("VRF verify", func(b *testing.B) {
 		b.ResetTimer()
-		isValid, _ := r2ishiguro.Verify(publicKey, proof, message)
+		isValid, _ := r2ishiguro.Verify(pubKey, proof, message)
 		if !isValid {
 			err = fmt.Errorf("invalid")
 		} else {
