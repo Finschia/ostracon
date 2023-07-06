@@ -2,6 +2,7 @@ package ed25519
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/oasisprotocol/curve25519-voi/primitives/ed25519"
 	voivrf "github.com/oasisprotocol/curve25519-voi/primitives/ed25519/extra/ecvrf"
@@ -15,20 +16,25 @@ import (
 type VrfNoProve interface {
 	Verify(pubKey ed25519.PublicKey, proof []byte, message []byte) (bool, []byte)
 	ProofToHash(proof []byte) ([]byte, error)
-	ValidateProof(proof []byte) error
 }
 
 // following logics MUST use this instance:
 // - VRFVerify()
 // - ProofToHash()
-// - ValidateProof()
-var globalVrf = NewVersionedVrfNoProve()
+var (
+	globalVrf   = NewVersionedVrfNoProve()
+	globalVrfMu = sync.Mutex{}
+)
 
 func VRFVerify(pubKey ed25519.PublicKey, proof []byte, message []byte) (bool, []byte) {
+	globalVrfMu.Lock()
+	defer globalVrfMu.Unlock()
 	return globalVrf.Verify(pubKey, proof, message)
 }
 
 func ProofToHash(proof []byte) ([]byte, error) {
+	globalVrfMu.Lock()
+	defer globalVrfMu.Unlock()
 	return globalVrf.ProofToHash(proof)
 }
 
@@ -36,7 +42,8 @@ func ProofToHash(proof []byte) ([]byte, error) {
 // size != vrf.ProofSize.
 func ValidateProof(h []byte) error {
 	if len(h) > 0 {
-		if err := globalVrf.ValidateProof(h); err != nil {
+		proofSize := len(h)
+		if proofSize != voivrf.ProofSize && proofSize != r2vrf.ProofSize {
 			return fmt.Errorf("expected size to be %d bytes, got %d bytes",
 				voivrf.ProofSize,
 				len(h),
@@ -52,7 +59,9 @@ func ValidateProof(h []byte) error {
 var _ VrfNoProve = (*versionedVrfNoProve)(nil)
 
 type versionedVrfNoProve struct {
-	version            int
+	mu      sync.Mutex
+	version int
+
 	proofSizeToVersion map[int]int
 	vrfs               map[int]VrfNoProve
 }
@@ -73,6 +82,9 @@ func NewVersionedVrfNoProve() VrfNoProve {
 
 // getVersion emits error if the proof is old one.
 func (v *versionedVrfNoProve) getVrf(proof []byte) (VrfNoProve, error) {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+
 	proofSize := len(proof)
 	if version, exists := v.proofSizeToVersion[proofSize]; exists && version >= v.version {
 		v.version = version
@@ -98,14 +110,6 @@ func (v *versionedVrfNoProve) ProofToHash(proof []byte) ([]byte, error) {
 	return vrf.ProofToHash(proof)
 }
 
-func (v *versionedVrfNoProve) ValidateProof(proof []byte) error {
-	vrf, err := v.getVrf(proof)
-	if err != nil {
-		return err
-	}
-	return vrf.ValidateProof(proof)
-}
-
 // github.com/oasisprotocol/curve25519-voi
 var _ VrfNoProve = (*voiVrfNoProve)(nil)
 
@@ -119,14 +123,6 @@ func (_ voiVrfNoProve) ProofToHash(proof []byte) ([]byte, error) {
 	return voivrf.ProofToHash(proof)
 }
 
-func (_ voiVrfNoProve) ValidateProof(proof []byte) error {
-	proofSize := len(proof)
-	if proofSize != voivrf.ProofSize {
-		return fmt.Errorf("invalid proof size: %d", proofSize)
-	}
-	return nil
-}
-
 // github.com/r2ishiguro/vrf
 var _ VrfNoProve = (*r2VrfNoProve)(nil)
 
@@ -138,12 +134,4 @@ func (_ r2VrfNoProve) Verify(pubKey ed25519.PublicKey, proof []byte, message []b
 
 func (_ r2VrfNoProve) ProofToHash(proof []byte) ([]byte, error) {
 	return r2vrf.ProofToHash(proof)
-}
-
-func (_ r2VrfNoProve) ValidateProof(proof []byte) error {
-	proofSize := len(proof)
-	if proofSize != r2vrf.ProofSize {
-		return fmt.Errorf("invalid proof size: %d", proofSize)
-	}
-	return nil
 }
