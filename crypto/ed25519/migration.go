@@ -44,27 +44,30 @@ func ValidateProof(h []byte) error {
 var _ VrfNoProve = (*versionedVrfNoProve)(nil)
 
 type versionedVrfNoProve struct {
-	version int
+	version            int
+	proofSizeToVersion map[int]int
+	vrfs               map[int]VrfNoProve
 }
 
 func NewVersionedVrfNoProve() VrfNoProve {
-	return &versionedVrfNoProve{}
+	return &versionedVrfNoProve{
+		version: 0,
+		proofSizeToVersion: map[int]int{
+			r2vrf.ProofSize:  0,
+			voivrf.ProofSize: 1,
+		},
+		vrfs: map[int]VrfNoProve{
+			0: &r2VrfNoProve{},
+			1: &voiVrfNoProve{},
+		},
+	}
 }
 
-func (v versionedVrfNoProve) getVrf(proof []byte) (VrfNoProve, error) {
-	vrfs := map[int]VrfNoProve{
-		0: &r2VrfNoProve{},
-		1: &voiVrfNoProve{},
-	}
-	proofSizeToVersion := map[int]int{
-		r2vrf.ProofSize:  0,
-		voivrf.ProofSize: 1,
-	}
-
+func (v *versionedVrfNoProve) getVrf(proof []byte) (VrfNoProve, error) {
 	proofSize := len(proof)
-	if version, exists := proofSizeToVersion[proofSize]; exists && version >= v.version {
+	if version, exists := v.proofSizeToVersion[proofSize]; exists && version >= v.version {
 		v.version = version
-		return vrfs[version], nil
+		return v.vrfs[version], nil
 	}
 	return nil, fmt.Errorf("invalid proof size: %d", proofSize)
 }
