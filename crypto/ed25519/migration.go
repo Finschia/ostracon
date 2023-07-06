@@ -81,7 +81,6 @@ func (v *versionedVrfNoProve) getVrf(proof []byte) (VrfNoProve, error) {
 	return nil, fmt.Errorf("invalid proof size: %d", proofSize)
 }
 
-// Verify updates the version information if the verification succeeds.
 func (v *versionedVrfNoProve) Verify(pubKey ed25519.PublicKey, proof []byte, message []byte) (bool, []byte) {
 	vrf, err := v.getVrf(proof)
 	if err != nil {
