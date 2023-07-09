@@ -86,7 +86,9 @@ endif
 proto-gen:
 	@echo "Generating Protobuf files"
 	@go run github.com/bufbuild/buf/cmd/buf generate
-	@mv ./proto/tendermint/abci/types.pb.go ./abci/types/
+	@mv ./proto/ostracon/abci/types.pb.go ./abci/types/
+	@mv ./proto/ostracon/rpc/grpc/types.pb.go ./rpc/grpc/
+	@rm -rf ./proto/tendermint
 .PHONY: proto-gen
 
 # These targets are provided for convenience and are intended for local

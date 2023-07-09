@@ -1,7 +1,6 @@
 version: v1
 deps:
   - buf.build/gogo/protobuf
-#  - buf.build/tendermint/tendermint # don't use since can't specify tendermint-v0.34.19
 breaking:
   use:
     - FILE
