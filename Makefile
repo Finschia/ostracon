@@ -77,29 +77,23 @@ mockery:
 ###                                Protobuf                                 ###
 ###############################################################################
 
-containerProtoVer=v0.2
-containerProtoImage=tendermintdev/sdk-proto-gen:$(containerProtoVer)
-
-###
-# https://github.com/protocolbuffers/protobuf
-# https://developers.google.com/protocol-buffers/docs/gotutorial
-# Should install
-### go install
-# go install google.golang.org/protobuf/cmd/protoc-gen-go
-### Docker for Protocol Buffer
-# https://hub.docker.com/r/bufbuild/buf
-
-proto-all: proto-gen proto-lint proto-check-breaking
-.PHONY: proto-all
+check-proto-deps:
+ifeq (,$(shell which protoc-gen-gogofaster))
+	$(error "gogofaster plugin for protoc is required. Run 'go install github.com/gogo/protobuf/protoc-gen-gogofaster@latest' to install")
+endif
+.PHONY: check-proto-deps
 
 proto-gen:
-	@docker pull -q tendermintdev/docker-build-proto
 	@echo "Generating Protobuf files"
-	@docker run --rm -v $(shell pwd):/workspace --workdir /workspace $(containerProtoImage) sh ./scripts/protocgen.sh
+	@go run github.com/bufbuild/buf/cmd/buf generate
+	@mv ./proto/tendermint/abci/types.pb.go ./abci/types/
 .PHONY: proto-gen
 
-proto-lint:
-	@$(DOCKER_BUF) lint --error-format=json
+# These targets are provided for convenience and are intended for local
+# execution only.
+proto-lint: check-proto-deps
+	@echo "Linting Protobuf files"
+	@go run github.com/bufbuild/buf/cmd/buf lint
 .PHONY: proto-lint
 
 proto-format:
@@ -107,8 +101,12 @@ proto-format:
 	docker run --rm -v $(shell pwd):/workspace --workdir /workspace tendermintdev/docker-build-proto find ./ -not -path "./third_party/*" -name *.proto -exec clang-format -i {} \;
 .PHONY: proto-format
 
-proto-check-breaking:
-	@$(DOCKER_BUF) breaking --against .git#branch=main
+proto-check-breaking: check-proto-deps
+	@echo "Checking for breaking changes in Protobuf files against local branch"
+	@echo "Note: This is only useful if your changes have not yet been committed."
+	@echo "      Otherwise read up on buf's \"breaking\" command usage:"
+	@echo "      https://docs.buf.build/breaking/usage"
+	@go run github.com/bufbuild/buf/cmd/buf breaking --against ".git"
 .PHONY: proto-check-breaking
 
 proto-check-breaking-ci:
