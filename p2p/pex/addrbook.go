@@ -16,6 +16,7 @@ import (
 	"github.com/minio/highwayhash"
 
 	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/libs/log"
 	tmmath "github.com/Finschia/ostracon/libs/math"
 	tmrand "github.com/Finschia/ostracon/libs/rand"
 	"github.com/Finschia/ostracon/libs/service"
@@ -740,7 +741,7 @@ func (a *addrBook) expireNew(bucketIdx int) {
 	for addrStr, ka := range a.bucketsNew[bucketIdx] {
 		// If an entry is bad, throw it away
 		if ka.isBad() {
-			a.Logger.Info(fmt.Sprintf("expiring bad address %v", addrStr))
+			a.Logger.Info("expire new", "msg", log.NewLazySprintf("expiring bad address %v", addrStr))
 			a.removeFromBucket(ka, bucketTypeNew, bucketIdx)
 			return
 		}

@@ -8,6 +8,7 @@ import (
 
 	"github.com/Finschia/ostracon/config"
 	"github.com/Finschia/ostracon/libs/cmap"
+	"github.com/Finschia/ostracon/libs/log"
 	"github.com/Finschia/ostracon/libs/rand"
 	"github.com/Finschia/ostracon/libs/service"
 	"github.com/Finschia/ostracon/p2p/conn"
@@ -262,7 +263,7 @@ func (sw *Switch) OnStop() {
 //
 // NOTE: Broadcast uses goroutines, so order of broadcast may not be preserved.
 func (sw *Switch) Broadcast(chID byte, msgBytes []byte) chan bool {
-	sw.Logger.Debug("Broadcast", "channel", chID, "msgBytes", fmt.Sprintf("%X", msgBytes))
+	sw.Logger.Debug("Broadcast", "channel", chID, "msgBytes", log.NewLazySprintf("%X", msgBytes))
 
 	peers := sw.peers.List()
 	var wg sync.WaitGroup
