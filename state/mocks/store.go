@@ -261,13 +261,12 @@ func (_m *Store) SaveABCIResponses(_a0 int64, _a1 *ostraconstate.ABCIResponses) 
 	return r0
 }
 
-type mockConstructorTestingTNewStore interface {
+// NewStore creates a new instance of Store. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewStore(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewStore creates a new instance of Store. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewStore(t mockConstructorTestingTNewStore) *Store {
+}) *Store {
 	mock := &Store{}
 	mock.Mock.Test(t)
 

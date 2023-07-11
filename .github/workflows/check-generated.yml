@@ -26,7 +26,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          readonly MOCKERY=2.31.4  # N.B. no leading "v"
+          readonly MOCKERY=2.30.18  # N.B. no leading "v"
           curl -sL "https://github.com/vektra/mockery/releases/download/v${MOCKERY}/mockery_${MOCKERY}_Linux_x86_64.tar.gz" | tar -C /usr/local/bin -xzf -
           make mockery 2>/dev/null
 
