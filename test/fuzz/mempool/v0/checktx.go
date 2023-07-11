@@ -1,9 +1,10 @@
-package checktx
+package v0
 
 import (
 	"github.com/Finschia/ostracon/abci/example/kvstore"
 	"github.com/Finschia/ostracon/config"
 	mempl "github.com/Finschia/ostracon/mempool"
+	mempoolv0 "github.com/Finschia/ostracon/mempool/v0"
 	"github.com/Finschia/ostracon/proxy"
 )
 
@@ -20,8 +21,7 @@ func init() {
 
 	cfg := config.DefaultMempoolConfig()
 	cfg.Broadcast = false
-
-	mempool = mempl.NewCListMempool(cfg, appConnMem, 0)
+	mempool = mempoolv0.NewCListMempool(cfg, appConnMem, 0)
 }
 
 func Fuzz(data []byte) int {

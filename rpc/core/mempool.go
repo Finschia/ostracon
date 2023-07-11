@@ -164,7 +164,7 @@ func UnconfirmedTxs(ctx *rpctypes.Context, limitPtr *int) (*ctypes.ResultUnconfi
 	return &ctypes.ResultUnconfirmedTxs{
 		Count:      len(txs),
 		Total:      env.Mempool.Size(),
-		TotalBytes: env.Mempool.TxsBytes(),
+		TotalBytes: env.Mempool.SizeBytes(),
 		Txs:        txs}, nil
 }
 
@@ -174,7 +174,7 @@ func NumUnconfirmedTxs(ctx *rpctypes.Context) (*ctypes.ResultUnconfirmedTxs, err
 	return &ctypes.ResultUnconfirmedTxs{
 		Count:      env.Mempool.Size(),
 		Total:      env.Mempool.Size(),
-		TotalBytes: env.Mempool.TxsBytes()}, nil
+		TotalBytes: env.Mempool.SizeBytes()}, nil
 }
 
 // CheckTx checks the transaction without executing it. The transaction won't

@@ -9,6 +9,7 @@ import (
 	"github.com/Finschia/ostracon/config"
 	"github.com/Finschia/ostracon/libs/log"
 	"github.com/Finschia/ostracon/mempool"
+	memv0 "github.com/Finschia/ostracon/mempool/v0"
 	"github.com/Finschia/ostracon/proxy/mocks"
 	ctypes "github.com/Finschia/ostracon/rpc/core/types"
 	rpctypes "github.com/Finschia/ostracon/rpc/jsonrpc/types"
@@ -69,7 +70,7 @@ func TestBroadcastTxAsync(t *testing.T) {
 	mockAppConnMempool := &mocks.AppConnMempool{}
 	mockAppConnMempool.On("SetGlobalCallback", mock.Anything)
 	mockAppConnMempool.On("CheckTxAsync", mock.Anything, mock.Anything).Return(&ocabcicli.ReqRes{})
-	env.Mempool = mempool.NewCListMempool(config.TestConfig().Mempool, mockAppConnMempool, 0)
+	env.Mempool = memv0.NewCListMempool(config.TestConfig().Mempool, mockAppConnMempool, 0)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockAppConnMempool.On("Error").Return(tt.err).Once()
@@ -128,7 +129,7 @@ func TestBroadcastTxSync(t *testing.T) {
 	mockAppConnMempool := &mocks.AppConnMempool{}
 	mockAppConnMempool.On("SetGlobalCallback", mock.Anything)
 	mockAppConnMempool.On("CheckTxSync", mock.Anything).Return(&ocabci.ResponseCheckTx{}, nil)
-	env.Mempool = mempool.NewCListMempool(config.TestConfig().Mempool, mockAppConnMempool, 0)
+	env.Mempool = memv0.NewCListMempool(config.TestConfig().Mempool, mockAppConnMempool, 0)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockAppConnMempool.On("Error").Return(tt.err).Once()
@@ -179,7 +180,7 @@ func TestBroadcastTxSyncWithCancelContextForCheckTxSync(t *testing.T) {
 		&ocabci.ResponseCheckTx{Code: abci.CodeTypeOK}, nil).WaitUntil(
 		time.After(1000 * time.Millisecond)) // Wait calling the context cancel
 	mockAppConnMempool.On("Error").Return(nil) // Not to use tt.err
-	env.Mempool = mempool.NewCListMempool(config.TestConfig().Mempool, mockAppConnMempool, 0)
+	env.Mempool = memv0.NewCListMempool(config.TestConfig().Mempool, mockAppConnMempool, 0)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// cancel context for while doing `env.Mempool.CheckTxSync`
@@ -260,7 +261,7 @@ func TestBroadcastTxCommit(t *testing.T) {
 	mockAppConnMempool := &mocks.AppConnMempool{}
 	mockAppConnMempool.On("SetGlobalCallback", mock.Anything)
 	mockAppConnMempool.On("Error").Return(nil)
-	env.Mempool = mempool.NewCListMempool(config.TestConfig().Mempool, mockAppConnMempool, 0)
+	env.Mempool = memv0.NewCListMempool(config.TestConfig().Mempool, mockAppConnMempool, 0)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockAppConnMempool.On("CheckTxSync", mock.Anything).Return(&tt.want.CheckTx, nil).Once()
@@ -340,7 +341,7 @@ func TestBroadcastTxCommitWithCancelContextForCheckTxSync(t *testing.T) {
 	mockAppConnMempool.On("Error").Return(nil)
 	mockAppConnMempool.On("CheckTxSync", mock.Anything).Return(&resCheckTx, nil).WaitUntil(
 		time.After(1 * time.Second)) // Wait calling the context cancel
-	env.Mempool = mempool.NewCListMempool(config.TestConfig().Mempool, mockAppConnMempool, 0)
+	env.Mempool = memv0.NewCListMempool(config.TestConfig().Mempool, mockAppConnMempool, 0)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			wg := &sync.WaitGroup{}
@@ -417,7 +418,7 @@ func TestBroadcastTxCommitTimeout(t *testing.T) {
 	mockAppConnMempool := &mocks.AppConnMempool{}
 	mockAppConnMempool.On("SetGlobalCallback", mock.Anything)
 	mockAppConnMempool.On("Error").Return(nil)
-	env.Mempool = mempool.NewCListMempool(config.TestConfig().Mempool, mockAppConnMempool, 0)
+	env.Mempool = memv0.NewCListMempool(config.TestConfig().Mempool, mockAppConnMempool, 0)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockAppConnMempool.On("CheckTxSync", mock.Anything).Return(&tt.want.CheckTx, nil).Once()
