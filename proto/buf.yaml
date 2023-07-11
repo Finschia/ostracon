@@ -8,5 +8,4 @@ breaking:
 lint:
   use:
     - BASIC
-    - FILE_LOWER_SNAKE_CASE
     - UNARY_RPC
