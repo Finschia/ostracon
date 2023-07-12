@@ -45,7 +45,7 @@ require (
 )
 
 require (
-	github.com/Finschia/r2ishiguro_vrf v0.1.2-0.20230710075141-4a90cfb64a15
+	github.com/Finschia/r2ishiguro_vrf v0.1.2
 	github.com/bufbuild/buf v1.23.1
 	github.com/golangci/golangci-lint v1.53.3
 	github.com/oasisprotocol/curve25519-voi v0.0.0-20230110094441-db37f07504ce
