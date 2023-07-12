@@ -1,7 +1,7 @@
 package r2ishiguro
 
 import (
-	"github.com/r2ishiguro/vrf/go/vrf_ed25519"
+	"github.com/Finschia/r2ishiguro_vrf/go/vrf_ed25519"
 )
 
 const (

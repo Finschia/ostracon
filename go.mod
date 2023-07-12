@@ -45,10 +45,10 @@ require (
 )
 
 require (
+	github.com/Finschia/r2ishiguro_vrf v0.1.2-0.20230710075141-4a90cfb64a15
 	github.com/bufbuild/buf v1.23.1
 	github.com/golangci/golangci-lint v1.53.3
 	github.com/oasisprotocol/curve25519-voi v0.0.0-20230110094441-db37f07504ce
-	github.com/r2ishiguro/vrf v0.0.0-20180716233122-192de52975eb
 	github.com/rs/zerolog v1.29.1
 	github.com/vektra/mockery/v2 v2.30.17
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
@@ -283,5 +283,3 @@ require (
 	mvdan.cc/lint v0.0.0-20170908181259-adc824a0674b // indirect
 	mvdan.cc/unparam v0.0.0-20221223090309-7455f1af531d // indirect
 )
-
-replace github.com/r2ishiguro/vrf => github.com/Finschia/vrf v0.1.0
