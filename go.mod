@@ -36,6 +36,7 @@ require (
 	github.com/tendermint/go-amino v0.16.0
 	github.com/tendermint/tendermint v0.34.19
 	github.com/tendermint/tm-db v0.6.7
+	github.com/yahoo/coname v0.0.0-20170609175141-84592ddf8673 // indirect
 	golang.org/x/crypto v0.11.0
 	golang.org/x/net v0.12.0
 	gonum.org/v1/gonum v0.13.0
@@ -44,6 +45,7 @@ require (
 )
 
 require (
+	github.com/Finschia/r2ishiguro_vrf v0.1.2
 	github.com/bufbuild/buf v1.23.1
 	github.com/golangci/golangci-lint v1.53.3
 	github.com/oasisprotocol/curve25519-voi v0.0.0-20230110094441-db37f07504ce
