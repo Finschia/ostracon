@@ -228,6 +228,9 @@ func (txmp *TxMempool) CheckTx(tx types.Tx, cb func(*abci.Response), txInfo memp
 	// the callback deadlock trying to acquire the same lock. This isn't a
 	// problem with out-of-process calls, but this has to work for both.
 	reqRes := txmp.proxyAppConn.CheckTxAsync(abci.RequestCheckTx{Tx: tx})
+	if err := txmp.proxyAppConn.FlushSync(); err != nil {
+		return err
+	}
 	reqRes.SetCallback(func(res *abci.Response) {
 		wtx := &WrappedTx{
 			tx:        tx,
@@ -724,6 +727,10 @@ func (txmp *TxMempool) recheckTransactions() {
 			Tx:   wtx.tx,
 			Type: abci.CheckTxType_Recheck,
 		})
+		if err := txmp.proxyAppConn.FlushSync(); err != nil {
+			atomic.AddInt64(&txmp.txRecheck, -1)
+			txmp.logger.Error("mempool: error flushing re-CheckTx", "key", wtx.tx.Key(), "err", err)
+		}
 	}
 
 	txmp.proxyAppConn.FlushAsync()
