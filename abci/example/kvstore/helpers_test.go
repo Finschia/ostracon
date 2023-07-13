@@ -1,7 +1,7 @@
 package kvstore
 
 import (
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,9 +11,9 @@ import (
 )
 
 func TestLoadPrivValidatorKeyFile(t *testing.T) {
-	tempKeyFile, err := ioutil.TempFile("", "priv_validator_key_")
+	tempKeyFile, err := os.CreateTemp("", "priv_validator_key_")
 	require.Nil(t, err)
-	tempStateFile, err := ioutil.TempFile("", "priv_validator_state_")
+	tempStateFile, err := os.CreateTemp("", "priv_validator_state_")
 	require.Nil(t, err)
 
 	{

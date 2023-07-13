@@ -2,13 +2,12 @@ package main
 
 import (
 	"github.com/stretchr/testify/require"
-	"io/ioutil"
 	"os"
 	"testing"
 )
 
 func TestNewCLI(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "generator")
+	tempDir, err := os.MkdirTemp("", "generator")
 	require.NoError(t, err)
 	defer os.RemoveAll(tempDir) //nolint:staticcheck
 	cmd := NewCLI()
