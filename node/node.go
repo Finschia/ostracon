@@ -432,7 +432,6 @@ func createMempoolAndMempoolReactor(
 		)
 
 		mp.SetLogger(logger)
-		mp.SetLogger(logger)
 
 		reactor := mempoolv0.NewReactor(
 			config.Mempool,
