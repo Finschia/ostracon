@@ -9,6 +9,7 @@ import (
 	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
 	dbm "github.com/tendermint/tm-db"
 
+	"github.com/Finschia/ostracon/crypto/ed25519"
 	"github.com/Finschia/ostracon/libs/log"
 	tmsync "github.com/Finschia/ostracon/libs/sync"
 	"github.com/Finschia/ostracon/light"
@@ -20,7 +21,6 @@ import (
 	sm "github.com/Finschia/ostracon/state"
 	"github.com/Finschia/ostracon/types"
 	"github.com/Finschia/ostracon/version"
-	vrf "github.com/oasisprotocol/curve25519-voi/primitives/ed25519/extra/ecvrf"
 )
 
 //go:generate mockery --case underscore --name StateProvider
@@ -213,7 +213,7 @@ func (s *lightClientStateProvider) State(ctx context.Context, height uint64) (sm
 		return sm.State{}, fmt.Errorf("unable to fetch block for height %v: %w",
 			lastLightBlock.Height, err)
 	}
-	proofHash, err := vrf.ProofToHash(resultBlock.Block.Proof.Bytes())
+	proofHash, err := ed25519.ProofToHash(resultBlock.Block.Proof.Bytes())
 	if err != nil {
 		return sm.State{}, err
 	}
