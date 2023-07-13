@@ -227,7 +227,7 @@ const (
 )
 
 func randQuadraticCurveInterval(min, max, radix float64) time.Duration {
-	rand.Seed(time.Now().UnixNano())
+	rand := rand.New(rand.NewSource(time.Now().UnixNano()))
 	x := rand.Float64()*(max-min) + min
 	y := (x * x) * radix
 	return time.Duration(y*1000) * time.Millisecond

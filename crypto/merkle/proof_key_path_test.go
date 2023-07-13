@@ -1,6 +1,7 @@
 package merkle
 
 import (
+	crand "crypto/rand"
 	// it is ok to use math/rand here: we do not need a cryptographically secure random
 	// number generator here and we can run the tests a bit faster
 	"math/rand"
@@ -26,7 +27,8 @@ func TestKeyPath(t *testing.T) {
 					keys[i][j] = alphanum[rand.Intn(len(alphanum))]
 				}
 			case KeyEncodingHex:
-				rand.Read(keys[i])
+				_, err := crand.Read(keys[i])
+				require.NoError(t, err)
 			default:
 				panic("Unexpected encoding")
 			}
