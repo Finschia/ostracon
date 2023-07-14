@@ -18,6 +18,7 @@ func setupEnv(t *testing.T) string {
 	viper.SetEnvPrefix("OC")
 	require.NoError(t, viper.BindEnv("HOME"))
 	require.NoError(t, os.Setenv("OC_HOME", rootDir))
+	require.NoError(t, os.Setenv("OCHOME", rootDir))
 	return rootDir
 }
 
