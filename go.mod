@@ -53,7 +53,7 @@ require (
 	github.com/prometheus/common v0.42.0 // indirect
 	github.com/rs/zerolog v1.29.1
 	github.com/syndtr/goleveldb v1.0.1-0.20200815110645-5c35d600f0ca
-	github.com/vektra/mockery/v2 v2.30.17
+	github.com/vektra/mockery/v2 v2.32.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
