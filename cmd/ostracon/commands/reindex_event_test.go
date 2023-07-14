@@ -10,9 +10,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	abcitypes "github.com/tendermint/tendermint/abci/types"
+	prototmstate "github.com/tendermint/tendermint/proto/tendermint/state"
 
 	tmcfg "github.com/Finschia/ostracon/config"
-	prototmstate "github.com/Finschia/ostracon/proto/ostracon/state"
 	blockmocks "github.com/Finschia/ostracon/state/indexer/mocks"
 	"github.com/Finschia/ostracon/state/mocks"
 	txmocks "github.com/Finschia/ostracon/state/txindex/mocks"

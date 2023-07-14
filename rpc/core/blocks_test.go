@@ -11,12 +11,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	abci "github.com/tendermint/tendermint/abci/types"
+	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
 	dbm "github.com/tendermint/tm-db"
 
 	cfg "github.com/Finschia/ostracon/config"
 	"github.com/Finschia/ostracon/crypto"
 	tmrand "github.com/Finschia/ostracon/libs/rand"
-	tmstate "github.com/Finschia/ostracon/proto/ostracon/state"
 	ctypes "github.com/Finschia/ostracon/rpc/core/types"
 	rpctypes "github.com/Finschia/ostracon/rpc/jsonrpc/types"
 	sm "github.com/Finschia/ostracon/state"
@@ -91,7 +91,9 @@ func TestBlockResults(t *testing.T) {
 	}
 
 	env = &Environment{}
-	env.StateStore = sm.NewStore(dbm.NewMemDB())
+	env.StateStore = sm.NewStore(dbm.NewMemDB(), sm.StoreOptions{
+		DiscardABCIResponses: false,
+	})
 	err := env.StateStore.SaveABCIResponses(100, results)
 	require.NoError(t, err)
 	env.BlockStore = mockBlockStore{height: 100}
@@ -270,7 +272,9 @@ func TestBlockSearch_errors(t *testing.T) {
 func makeTestState() (sm.State, func()) {
 	config := cfg.ResetTestRoot("rpc_core_test")
 	env = &Environment{}
-	env.StateStore = sm.NewStore(dbm.NewMemDB())
+	env.StateStore = sm.NewStore(dbm.NewMemDB(), sm.StoreOptions{
+		DiscardABCIResponses: false,
+	})
 	env.BlockStore = store.NewBlockStore(dbm.NewMemDB())
 	env.BlockIndexer = blockidxkv.New(dbm.NewMemDB())
 	env.TxIndexer = txidxkv.NewTxIndex(dbm.NewMemDB())

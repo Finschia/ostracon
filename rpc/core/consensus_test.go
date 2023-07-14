@@ -42,7 +42,9 @@ var (
 )
 
 func makeTestStateStore(t *testing.T) (sm.State, func()) {
-	stateStore := sm.NewStore(dbm.NewMemDB())
+	stateStore := sm.NewStore(dbm.NewMemDB(), sm.StoreOptions{
+		DiscardABCIResponses: false,
+	})
 	blockStore := &mocks.BlockStore{}
 
 	config := cfg.ResetTestRoot("rpc_core_test")
