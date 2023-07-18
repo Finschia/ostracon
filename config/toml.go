@@ -286,6 +286,9 @@ timeout_broadcast_tx_commit = "{{ .RPC.TimeoutBroadcastTxCommit }}"
 # Maximum size of request body, in bytes
 max_body_bytes = {{ .RPC.MaxBodyBytes }}
 
+# Maximum number of requests in a request body
+max_request_batch_request = {{ .RPC.MaxRequestBatchRequest }}
+
 # Maximum size of request header, in bytes
 max_header_bytes = {{ .RPC.MaxHeaderBytes }}
 

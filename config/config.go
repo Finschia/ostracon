@@ -434,6 +434,9 @@ type RPCConfig struct {
 	// Maximum size of request body, in bytes
 	MaxBodyBytes int64 `mapstructure:"max_body_bytes"`
 
+	// Maximum number of requests in a request body
+	MaxRequestBatchRequest int `mapstructure:"max_request_batch_request"`
+
 	// Maximum size of request header, in bytes
 	MaxHeaderBytes int `mapstructure:"max_header_bytes"`
 
@@ -481,8 +484,9 @@ func DefaultRPCConfig() *RPCConfig {
 		TimeoutBroadcastTxCommit:  10 * time.Second,
 		WebSocketWriteBufferSize:  defaultSubscriptionBufferSize,
 
-		MaxBodyBytes:   int64(1000000), // 1MB
-		MaxHeaderBytes: 1 << 20,        // same as the net/http default
+		MaxBodyBytes:           int64(1000000), // 1MB
+		MaxRequestBatchRequest: 10,
+		MaxHeaderBytes:         1 << 20, // same as the net/http default
 
 		TLSCertFile: "",
 		TLSKeyFile:  "",
@@ -539,6 +543,9 @@ func (cfg *RPCConfig) ValidateBasic() error {
 	}
 	if cfg.MaxBodyBytes < 0 {
 		return errors.New("max_body_bytes can't be negative")
+	}
+	if cfg.MaxRequestBatchRequest < 0 {
+		return errors.New("max_request_batch_request can't be negative")
 	}
 	if cfg.MaxHeaderBytes < 0 {
 		return errors.New("max_header_bytes can't be negative")
