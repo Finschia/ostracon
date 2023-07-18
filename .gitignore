@@ -25,6 +25,7 @@ docs/.vuepress/dist
 docs/package-lock.json   # To avoid security notifications. If the time comes to use VuePress, activate this.
 *.log
 docs/node_modules/
+docs/.vuepress/public/rpc
 index.html.md
 node/data
 
