@@ -1,7 +1,10 @@
 package payload_test
 
 import (
+	"bytes"
 	"testing"
+
+	"github.com/google/uuid"
 
 	"github.com/Finschia/ostracon/test/loadtime/payload"
 )
@@ -23,10 +26,12 @@ func TestRoundTrip(t *testing.T) {
 		testConns = 512
 		testRate  = 4
 	)
+	testID := [16]byte(uuid.New())
 	b, err := payload.NewBytes(&payload.Payload{
 		Size:        payloadSizeTarget,
 		Connections: testConns,
 		Rate:        testRate,
+		Id:          testID[:],
 	})
 	if err != nil {
 		t.Fatalf("generating payload %s", err)
@@ -46,5 +51,8 @@ func TestRoundTrip(t *testing.T) {
 	}
 	if p.Rate != testRate {
 		t.Fatalf("payload rate value %d does not match expected %d", p.Rate, testRate)
+	}
+	if !bytes.Equal(p.Id, testID[:]) {
+		t.Fatalf("payload ID value %d does not match expected %d", p.Id, testID)
 	}
 }

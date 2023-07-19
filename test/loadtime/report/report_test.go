@@ -4,10 +4,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"github.com/Finschia/ostracon/test/loadtime/payload"
 	"github.com/Finschia/ostracon/test/loadtime/report"
 	"github.com/Finschia/ostracon/types"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type mockBlockStore struct {
@@ -29,7 +31,9 @@ func (m *mockBlockStore) LoadBlock(i int64) *types.Block {
 
 func TestGenerateReport(t *testing.T) {
 	t1 := time.Now()
+	u := [16]byte(uuid.New())
 	b1, err := payload.NewBytes(&payload.Payload{
+		Id:   u[:],
 		Time: timestamppb.New(t1.Add(-10 * time.Second)),
 		Size: 1024,
 	})
@@ -37,6 +41,7 @@ func TestGenerateReport(t *testing.T) {
 		t.Fatalf("generating payload %s", err)
 	}
 	b2, err := payload.NewBytes(&payload.Payload{
+		Id:   u[:],
 		Time: timestamppb.New(t1.Add(-4 * time.Second)),
 		Size: 1024,
 	})
@@ -44,6 +49,7 @@ func TestGenerateReport(t *testing.T) {
 		t.Fatalf("generating payload %s", err)
 	}
 	b3, err := payload.NewBytes(&payload.Payload{
+		Id:   u[:],
 		Time: timestamppb.New(t1.Add(2 * time.Second)),
 		Size: 1024,
 	})
@@ -83,15 +89,20 @@ func TestGenerateReport(t *testing.T) {
 			},
 		},
 	}
-	r, err := report.GenerateFromBlockStore(s)
+	rs, err := report.GenerateFromBlockStore(s)
 	if err != nil {
 		t.Fatalf("generating report %s", err)
 	}
+	if rs.ErrorCount() != 1 {
+		t.Fatalf("ErrorCount did not match expected. Expected %d but contained %d", 1, rs.ErrorCount())
+	}
+	rl := rs.List()
+	if len(rl) != 1 {
+		t.Fatalf("number of reports did not match expected. Expected %d but contained %d", 1, len(rl))
+	}
+	r := rl[0]
 	if len(r.All) != 4 {
 		t.Fatalf("report contained different number of data points from expected. Expected %d but contained %d", 4, len(r.All)) //nolint:lll
-	}
-	if r.ErrorCount != 1 {
-		t.Fatalf("ErrorCount did not match expected. Expected %d but contained %d", 1, r.ErrorCount)
 	}
 	if r.NegativeCount != 2 {
 		t.Fatalf("NegativeCount did not match expected. Expected %d but contained %d", 2, r.NegativeCount)

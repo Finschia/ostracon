@@ -9,7 +9,9 @@ require (
 	github.com/adlio/schema v1.3.4
 	github.com/btcsuite/btcd v0.22.1
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
+	github.com/bufbuild/buf v1.25.0
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
+	github.com/creachadair/taskgroup v0.3.2
 	github.com/fortytw2/leaktest v1.3.0
 	github.com/go-kit/kit v0.12.0
 	github.com/go-kit/log v0.2.1
@@ -21,7 +23,6 @@ require (
 	github.com/gtank/merlin v0.1.1
 	github.com/lib/pq v1.10.9
 	github.com/libp2p/go-buffer-pool v0.1.0
-	github.com/miekg/dns v1.1.55
 	github.com/minio/highwayhash v1.0.2
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/pkg/errors v0.9.1
@@ -33,29 +34,42 @@ require (
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.16.0
 	github.com/stretchr/testify v1.8.4
+	github.com/syndtr/goleveldb v1.0.1-0.20200815110645-5c35d600f0ca
+)
+
+// ========================================
+// Added by Ostracon
+require (
+	github.com/Finschia/r2ishiguro_vrf v0.1.2
+	github.com/miekg/dns v1.1.55
+	github.com/oasisprotocol/curve25519-voi v0.0.0-20230110094441-db37f07504ce
+	github.com/rs/zerolog v1.29.1
 	github.com/tendermint/go-amino v0.16.0
 	github.com/tendermint/tendermint v0.34.21
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
+	gopkg.in/yaml.v3 v3.0.1
+)
+// ========================================
+
+require (
+	github.com/gofrs/uuid v4.4.0+incompatible
+	github.com/google/uuid v1.3.0
 	github.com/tendermint/tm-db v0.6.7
-	github.com/yahoo/coname v0.0.0-20170609175141-84592ddf8673 // indirect
 	golang.org/x/crypto v0.11.0
 	golang.org/x/net v0.12.0
-	gonum.org/v1/gonum v0.13.0
 	google.golang.org/grpc v1.56.2
-	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
-	github.com/Finschia/r2ishiguro_vrf v0.1.2
-	github.com/bufbuild/buf v1.25.0
-	github.com/creachadair/taskgroup v0.3.2
 	github.com/golangci/golangci-lint v1.53.3
-	github.com/klauspost/pgzip v1.2.6 // indirect
-	github.com/oasisprotocol/curve25519-voi v0.0.0-20230110094441-db37f07504ce
 	github.com/prometheus/common v0.42.0 // indirect
-	github.com/rs/zerolog v1.29.1
-	github.com/syndtr/goleveldb v1.0.1-0.20200815110645-5c35d600f0ca
 	github.com/vektra/mockery/v2 v2.32.0
-	gopkg.in/natefinch/lumberjack.v2 v2.2.1
+)
+
+require (
+	github.com/informalsystems/tm-load-test v1.0.0
+	gonum.org/v1/gonum v0.13.0
+	google.golang.org/protobuf v1.31.0
 )
 
 require (
@@ -66,11 +80,6 @@ require (
 	github.com/Antonboom/errname v0.1.10 // indirect
 	github.com/Antonboom/nilnil v0.1.5 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
-	github.com/informalsystems/tm-load-test v1.0.0
-	google.golang.org/protobuf v1.31.0
-)
-
-require (
 	github.com/DataDog/zstd v1.4.1 // indirect
 	github.com/Djarvur/go-err113 v0.0.0-20210108212216-aea10b59be24 // indirect
 	github.com/GaijinEntertainment/go-exhaustruct/v2 v2.3.0 // indirect
@@ -139,7 +148,6 @@ require (
 	github.com/go-xmlfmt/xmlfmt v1.1.2 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect
-	github.com/gofrs/uuid v4.4.0+incompatible // indirect
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/golangci/check v0.0.0-20180506172741-cfe4005ccda2 // indirect
 	github.com/golangci/dupl v0.0.0-20180902072040-3e9179ac440a // indirect
@@ -178,6 +186,7 @@ require (
 	github.com/kisielk/gotool v1.0.0 // indirect
 	github.com/kkHAIKE/contextcheck v1.1.4 // indirect
 	github.com/klauspost/compress v1.16.7 // indirect
+	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/kulti/thelper v0.6.3 // indirect
 	github.com/kunwardeep/paralleltest v1.0.7 // indirect
 	github.com/kyoh86/exportloopref v0.1.11 // indirect
@@ -258,6 +267,7 @@ require (
 	github.com/vbatts/tar-split v0.11.3 // indirect
 	github.com/xen0n/gosmopolitan v1.2.1 // indirect
 	github.com/yagipy/maintidx v1.0.0 // indirect
+	github.com/yahoo/coname v0.0.0-20170609175141-84592ddf8673 // indirect
 	github.com/yeya24/promlinter v0.2.0 // indirect
 	github.com/ykadowak/zerologlint v0.1.2 // indirect
 	gitlab.com/bosi/decorder v0.2.3 // indirect

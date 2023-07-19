@@ -3,8 +3,10 @@ package main
 import (
 	"fmt"
 
-	"github.com/Finschia/ostracon/test/loadtime/payload"
+	"github.com/google/uuid"
 	"github.com/informalsystems/tm-load-test/pkg/loadtest"
+
+	"github.com/Finschia/ostracon/test/loadtime/payload"
 )
 
 // Ensure all of the interfaces are correctly satisfied.
@@ -20,6 +22,7 @@ type ClientFactory struct{}
 // TxGenerator holds the set of information that will be used to generate
 // each transaction.
 type TxGenerator struct {
+	id    []byte
 	conns uint64
 	rate  uint64
 	size  uint64
@@ -49,7 +52,9 @@ func (f *ClientFactory) ValidateConfig(cfg loadtest.Config) error {
 }
 
 func (f *ClientFactory) NewClient(cfg loadtest.Config) (loadtest.Client, error) {
+	u := [16]byte(uuid.New())
 	return &TxGenerator{
+		id:    u[:],
 		conns: uint64(cfg.Connections),
 		rate:  uint64(cfg.Rate),
 		size:  uint64(cfg.Size),
@@ -61,5 +66,6 @@ func (c *TxGenerator) GenerateTx() ([]byte, error) {
 		Connections: c.conns,
 		Rate:        c.rate,
 		Size:        c.size,
+		Id:          c.id,
 	})
 }
