@@ -923,13 +923,12 @@ func (_m *RemoteClient) Validators(ctx context.Context, height *int64, page *int
 	return r0, r1
 }
 
-type mockConstructorTestingTNewRemoteClient interface {
+// NewRemoteClient creates a new instance of RemoteClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewRemoteClient(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewRemoteClient creates a new instance of RemoteClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewRemoteClient(t mockConstructorTestingTNewRemoteClient) *RemoteClient {
+}) *RemoteClient {
 	mock := &RemoteClient{}
 	mock.Mock.Test(t)
 

@@ -1,9 +1,6 @@
 syntax = "proto3";
 package ostracon.privval;
 
-import "tendermint/crypto/keys.proto";
-import "gogoproto/gogo.proto";
-import "tendermint/types/types.proto";
 import "tendermint/privval/types.proto";
 
 option go_package = "github.com/Finschia/ostracon/proto/ostracon/privval";

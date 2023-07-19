@@ -30,6 +30,9 @@ import (
 	"github.com/Finschia/ostracon/libs/log"
 	tmsync "github.com/Finschia/ostracon/libs/sync"
 	mempl "github.com/Finschia/ostracon/mempool"
+	mempoolv0 "github.com/Finschia/ostracon/mempool/v0"
+
+	//mempoolv1 "github.com/Finschia/ostracon/mempool/v1"
 	"github.com/Finschia/ostracon/p2p"
 	p2pmock "github.com/Finschia/ostracon/p2p/mock"
 	sm "github.com/Finschia/ostracon/state"
@@ -152,14 +155,36 @@ func TestReactorWithEvidence(t *testing.T) {
 		blockDB := dbm.NewMemDB()
 		blockStore := store.NewBlockStore(blockDB)
 
-		// one for mempool, one for consensus
 		mtx := new(tmsync.Mutex)
-		proxyAppConnMem := abcicli.NewLocalClient(mtx, app)
+		memplMetrics := mempl.NopMetrics()
+		// one for mempool, one for consensus
 		proxyAppConnCon := abcicli.NewLocalClient(mtx, app)
+		proxyAppConnConMem := abcicli.NewLocalClient(mtx, app)
 
 		// Make Mempool
-		mempool := mempl.NewCListMempool(thisConfig.Mempool, proxyAppConnMem, 0)
-		mempool.SetLogger(log.TestingLogger().With("module", "mempool"))
+		var mempool mempl.Mempool
+
+		switch config.Mempool.Version {
+		case cfg.MempoolV0:
+			mempool = mempoolv0.NewCListMempool(config.Mempool,
+				proxyAppConnConMem,
+				state.LastBlockHeight,
+				mempoolv0.WithMetrics(memplMetrics),
+				mempoolv0.WithPreCheck(sm.TxPreCheck(state)),
+				mempoolv0.WithPostCheck(sm.TxPostCheck(state)))
+		case cfg.MempoolV1: // XXX Deprecated MempoolV1
+			panic("Deprecated MempoolV1")
+			/*
+				mempool = mempoolv1.NewTxMempool(logger,
+					config.Mempool,
+					proxyAppConnConMem,
+					state.LastBlockHeight,
+					mempoolv1.WithMetrics(memplMetrics),
+					mempoolv1.WithPreCheck(sm.TxPreCheck(state)),
+					mempoolv1.WithPostCheck(sm.TxPostCheck(state)),
+				)
+			*/
+		}
 		if thisConfig.Consensus.WaitForTxs() {
 			mempool.EnableTxsAvailable()
 		}
@@ -221,7 +246,7 @@ func TestReactorCreatesBlockWhenEmptyBlocksFalse(t *testing.T) {
 	defer stopConsensusNet(log.TestingLogger(), reactors, eventBuses)
 
 	// send a tx
-	if _, err := assertMempool(css[3].txNotifier).CheckTxSync([]byte{1, 2, 3}, mempl.TxInfo{}); err != nil {
+	if err := assertMempool(css[3].txNotifier).CheckTxSync([]byte{1, 2, 3}, nil, mempl.TxInfo{}); err != nil {
 		t.Error(err)
 	}
 
@@ -549,7 +574,7 @@ func waitForAndValidateBlock(
 		err := validateBlock(newBlock, activeVals)
 		assert.Nil(t, err)
 		for _, tx := range txs {
-			_, err := assertMempool(css[j].txNotifier).CheckTxSync(tx, mempl.TxInfo{})
+			err := assertMempool(css[j].txNotifier).CheckTxSync(tx, nil, mempl.TxInfo{})
 			assert.Nil(t, err)
 		}
 	}, css)

@@ -16,14 +16,17 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	config2 "github.com/Finschia/ostracon/config"
-
 	abcicli "github.com/Finschia/ostracon/abci/client"
 	"github.com/Finschia/ostracon/evidence"
 	"github.com/Finschia/ostracon/libs/log"
 	"github.com/Finschia/ostracon/libs/service"
 	tmsync "github.com/Finschia/ostracon/libs/sync"
 	mempl "github.com/Finschia/ostracon/mempool"
+
+	cfg "github.com/Finschia/ostracon/config"
+	mempoolv0 "github.com/Finschia/ostracon/mempool/v0"
+
+	//mempoolv1 "github.com/Finschia/ostracon/mempool/v1"
 	"github.com/Finschia/ostracon/p2p"
 	sm "github.com/Finschia/ostracon/state"
 	"github.com/Finschia/ostracon/store"
@@ -60,14 +63,34 @@ func TestByzantinePrevoteEquivocation(t *testing.T) {
 		blockDB := dbm.NewMemDB()
 		blockStore := store.NewBlockStore(blockDB)
 
-		// one for mempool, one for consensus
 		mtx := new(tmsync.Mutex)
-		proxyAppConnMem := abcicli.NewLocalClient(mtx, app)
+		// one for mempool, one for consensus
 		proxyAppConnCon := abcicli.NewLocalClient(mtx, app)
+		proxyAppConnConMem := abcicli.NewLocalClient(mtx, app)
 
 		// Make Mempool
-		mempool := mempl.NewCListMempool(thisConfig.Mempool, proxyAppConnMem, 0)
-		mempool.SetLogger(log.TestingLogger().With("module", "mempool"))
+		var mempool mempl.Mempool
+
+		switch thisConfig.Mempool.Version {
+		case cfg.MempoolV0:
+			mempool = mempoolv0.NewCListMempool(config.Mempool,
+				proxyAppConnConMem,
+				state.LastBlockHeight,
+				mempoolv0.WithPreCheck(sm.TxPreCheck(state)),
+				mempoolv0.WithPostCheck(sm.TxPostCheck(state)))
+		case cfg.MempoolV1: // XXX Deprecated
+			panic("Deprecated MempoolV1")
+			/*
+				mempool = mempoolv1.NewTxMempool(logger,
+					config.Mempool,
+					proxyAppConnConMem,
+					state.LastBlockHeight,
+					mempoolv1.WithPreCheck(sm.TxPreCheck(state)),
+					mempoolv1.WithPostCheck(sm.TxPostCheck(state)),
+				)
+			*/
+		}
+
 		if thisConfig.Consensus.WaitForTxs() {
 			mempool.EnableTxsAvailable()
 		}
@@ -124,7 +147,7 @@ func TestByzantinePrevoteEquivocation(t *testing.T) {
 		}
 	}
 	// make connected switches and start all reactors
-	p2p.MakeConnectedSwitches(config.P2P, nValidators, func(i int, s *p2p.Switch, c *config2.P2PConfig) *p2p.Switch {
+	p2p.MakeConnectedSwitches(config.P2P, nValidators, func(i int, s *p2p.Switch, c *cfg.P2PConfig) *p2p.Switch {
 		s.AddReactor("CONSENSUS", reactors[i])
 		s.SetLogger(log.NewNopLogger().With("module", "p2p")) // Switch log is noisy for this test
 		return s
@@ -311,7 +334,7 @@ func TestByzantineConflictingProposalsWithPartition(t *testing.T) {
 			config.P2P,
 			i,
 			"foo", "1.0.0",
-			func(i int, sw *p2p.Switch, config *config2.P2PConfig) *p2p.Switch {
+			func(i int, sw *p2p.Switch, config *cfg.P2PConfig) *p2p.Switch {
 				return sw
 			})
 		switches[i].SetLogger(p2pLogger.With("validator", i))
@@ -373,7 +396,7 @@ func TestByzantineConflictingProposalsWithPartition(t *testing.T) {
 		}
 	}()
 
-	p2p.MakeConnectedSwitches(config.P2P, N, func(i int, s *p2p.Switch, config *config2.P2PConfig) *p2p.Switch {
+	p2p.MakeConnectedSwitches(config.P2P, N, func(i int, s *p2p.Switch, config *cfg.P2PConfig) *p2p.Switch {
 		// ignore new switch s, we already made ours
 		switches[i].AddReactor("CONSENSUS", reactors[i])
 		return switches[i]

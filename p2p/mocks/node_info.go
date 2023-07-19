@@ -80,13 +80,12 @@ func (_m *NodeInfo) Validate() error {
 	return r0
 }
 
-type mockConstructorTestingTNewNodeInfo interface {
+// NewNodeInfo creates a new instance of NodeInfo. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewNodeInfo(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewNodeInfo creates a new instance of NodeInfo. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewNodeInfo(t mockConstructorTestingTNewNodeInfo) *NodeInfo {
+}) *NodeInfo {
 	mock := &NodeInfo{}
 	mock.Mock.Test(t)
 

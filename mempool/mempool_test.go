@@ -3,8 +3,9 @@ package mempool
 import (
 	"testing"
 
-	abci "github.com/Finschia/ostracon/abci/types"
 	"github.com/stretchr/testify/require"
+
+	abci "github.com/Finschia/ostracon/abci/types"
 )
 
 func TestPostCheckMaxGas(t *testing.T) {

@@ -229,13 +229,12 @@ func (_m *Application) SetOption(_a0 types.RequestSetOption) types.ResponseSetOp
 	return r0
 }
 
-type mockConstructorTestingTNewApplication interface {
+// NewApplication creates a new instance of Application. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewApplication(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewApplication creates a new instance of Application. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewApplication(t mockConstructorTestingTNewApplication) *Application {
+}) *Application {
 	mock := &Application{}
 	mock.Mock.Test(t)
 

@@ -105,7 +105,7 @@ func deliverTxsRange(cs *State, start, end int) {
 	for i := start; i < end; i++ {
 		txBytes := make([]byte, 8)
 		binary.BigEndian.PutUint64(txBytes, uint64(i))
-		_, err := assertMempool(cs.txNotifier).CheckTxSync(txBytes, mempl.TxInfo{})
+		err := assertMempool(cs.txNotifier).CheckTxSync(txBytes, nil, mempl.TxInfo{})
 		if err != nil {
 			panic(fmt.Sprintf("Error after CheckTx: %v", err))
 		}

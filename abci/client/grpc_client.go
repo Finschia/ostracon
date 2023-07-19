@@ -310,6 +310,7 @@ func (cli *grpcClient) finishAsyncCall(req *ocabci.Request, res *ocabci.Response
 }
 
 // ----------------------------------------
+
 func (cli *grpcClient) FlushSync() (*types.ResponseFlush, error) {
 	reqres := cli.FlushAsync(nil)
 	reqres.Wait()
