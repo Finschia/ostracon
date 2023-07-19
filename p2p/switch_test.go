@@ -837,6 +837,19 @@ func BenchmarkSwitchBroadcast(b *testing.B) {
 	b.Logf("success: %v, failure: %v", numSuccess, numFailure)
 }
 
+func TestSwitchRemovalErr(t *testing.T) {
+
+	sw1, sw2 := MakeSwitchPair(t, func(i int, sw *Switch, config *config.P2PConfig) *Switch {
+		return initSwitchFunc(i, sw, config)
+	})
+	assert.Equal(t, len(sw1.Peers().List()), 1)
+	p := sw1.Peers().List()[0]
+
+	sw2.StopPeerForError(p, fmt.Errorf("peer should error"))
+
+	assert.Equal(t, sw2.peers.Add(p).Error(), ErrPeerRemoval{}.Error())
+}
+
 type addrBookMock struct {
 	addrs    map[string]struct{}
 	ourAddrs map[string]struct{}
