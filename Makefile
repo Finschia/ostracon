@@ -258,7 +258,7 @@ DOCKER_HOME = /go/src/github.com/Finschia/ostracon
 DOCKER_CMD = docker run --rm \
                         -v `pwd`:$(DOCKER_HOME) \
                         -w $(DOCKER_HOME)
-DOCKER_IMG = golang:1.18-alpine
+DOCKER_IMG = golang:1.20-alpine
 BUILD_CMD = apk add --update --no-cache git make gcc libc-dev build-base curl jq bash file gmp-dev clang libtool autoconf automake \
 	&& cd $(DOCKER_HOME) \
 	&& make build-linux
