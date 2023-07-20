@@ -32,6 +32,9 @@ import (
 	tmpubsub "github.com/Finschia/ostracon/libs/pubsub"
 	tmsync "github.com/Finschia/ostracon/libs/sync"
 	mempl "github.com/Finschia/ostracon/mempool"
+	mempoolv0 "github.com/Finschia/ostracon/mempool/v0"
+
+	//mempoolv1 "github.com/Finschia/ostracon/mempool/v1"
 	"github.com/Finschia/ostracon/p2p"
 	"github.com/Finschia/ostracon/privval"
 	sm "github.com/Finschia/ostracon/state"
@@ -419,12 +422,38 @@ func newStateWithConfigAndBlockStoreWithLoggers(
 
 	// one for mempool, one for consensus
 	mtx := new(tmsync.Mutex)
-	proxyAppConnMem := abcicli.NewLocalClient(mtx, app)
+
 	proxyAppConnCon := abcicli.NewLocalClient(mtx, app)
+	proxyAppConnConMem := abcicli.NewLocalClient(mtx, app)
+	// Make Mempool
+	memplMetrics := mempl.NopMetrics()
 
 	// Make Mempool
-	mempool := mempl.NewCListMempool(thisConfig.Mempool, proxyAppConnMem, 0)
-	mempool.SetLogger(loggers.memLogger.With("module", "mempool"))
+	var mempool mempl.Mempool
+
+	switch config.Mempool.Version {
+	case cfg.MempoolV0:
+		mempool = mempoolv0.NewCListMempool(config.Mempool,
+			proxyAppConnConMem,
+			state.LastBlockHeight,
+			mempoolv0.WithMetrics(memplMetrics),
+			mempoolv0.WithPreCheck(sm.TxPreCheck(state)),
+			mempoolv0.WithPostCheck(sm.TxPostCheck(state)))
+		mempool.(*mempoolv0.CListMempool).SetLogger(loggers.memLogger.With("module", "mempool"))
+	case cfg.MempoolV1: // XXX Deprecated
+		panic("Deprecated MempoolV1")
+		/*
+			logger := consensusLogger()
+			mempool = mempoolv1.NewTxMempool(logger,
+				config.Mempool,
+				proxyAppConnConMem,
+				state.LastBlockHeight,
+				mempoolv1.WithMetrics(memplMetrics),
+				mempoolv1.WithPreCheck(sm.TxPreCheck(state)),
+				mempoolv1.WithPostCheck(sm.TxPostCheck(state)),
+			)
+		*/
+	}
 	if thisConfig.Consensus.WaitForTxs() {
 		mempool.EnableTxsAvailable()
 	}
@@ -433,7 +462,9 @@ func newStateWithConfigAndBlockStoreWithLoggers(
 
 	// Make State
 	stateDB := blockDB
-	stateStore := sm.NewStore(stateDB)
+	stateStore := sm.NewStore(stateDB, sm.StoreOptions{
+		DiscardABCIResponses: false,
+	})
 	if err := stateStore.Save(state); err != nil { // for save height 1's validators info
 		panic(err)
 	}
@@ -798,7 +829,9 @@ func randConsensusNet(nValidators int, testName string, tickerFunc func() Timeou
 	configRootDirs := make([]string, 0, nValidators)
 	for i := 0; i < nValidators; i++ {
 		stateDB := dbm.NewMemDB() // each state needs its own db
-		stateStore := sm.NewStore(stateDB)
+		stateStore := sm.NewStore(stateDB, sm.StoreOptions{
+			DiscardABCIResponses: false,
+		})
 		state, err := stateStore.LoadFromDBOrGenesisDoc(genDoc)
 		if err != nil {
 			panic(fmt.Errorf("error constructing state from genesis file: %w", err))
@@ -854,7 +887,9 @@ func createPeersAndValidators(nValidators, nPeers int, testName string,
 	configRootDirs := make([]string, 0, nPeers)
 	for i := 0; i < nPeers; i++ {
 		stateDB := dbm.NewMemDB() // each state needs its own db
-		stateStore := sm.NewStore(stateDB)
+		stateStore := sm.NewStore(stateDB, sm.StoreOptions{
+			DiscardABCIResponses: false,
+		})
 		state, _ := stateStore.LoadFromDBOrGenesisDoc(genDoc)
 		thisConfig := ResetConfig(fmt.Sprintf("%s_%d", testName, i))
 		configRootDirs = append(configRootDirs, thisConfig.RootDir)

@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
+	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
@@ -29,7 +30,6 @@ import (
 	tmrand "github.com/Finschia/ostracon/libs/rand"
 	mempl "github.com/Finschia/ostracon/mempool"
 	"github.com/Finschia/ostracon/privval"
-	tmstate "github.com/Finschia/ostracon/proto/ostracon/state"
 	ocproto "github.com/Finschia/ostracon/proto/ostracon/types"
 	"github.com/Finschia/ostracon/proxy"
 	sm "github.com/Finschia/ostracon/state"
@@ -120,7 +120,7 @@ func sendTxs(ctx context.Context, cs *State) {
 			return
 		default:
 			tx := []byte{byte(i)}
-			if _, err := assertMempool(cs.txNotifier).CheckTxSync(tx, mempl.TxInfo{}); err != nil {
+			if err := assertMempool(cs.txNotifier).CheckTxSync(tx, nil, mempl.TxInfo{}); err != nil {
 				panic(err)
 			}
 			i++
@@ -172,7 +172,9 @@ LOOP:
 		// create consensus state from a clean slate
 		blockDB := dbm.NewMemDB()
 		stateDB := blockDB
-		stateStore := sm.NewStore(stateDB)
+		stateStore := sm.NewStore(stateDB, sm.StoreOptions{
+			DiscardABCIResponses: false,
+		})
 		state, err := sm.MakeGenesisStateFromFile(consensusReplayConfig.GenesisFile())
 		require.NoError(t, err)
 		privValidator := loadPrivValidator(consensusReplayConfig)
@@ -470,7 +472,7 @@ func TestSimulateValidatorsChange(t *testing.T) {
 		valPubKey1ABCI, err := cryptoenc.PubKeyToProto(newValidatorPubKey1)
 		assert.Nil(t, err)
 		newValidatorTx1 := kvstore.MakeValSetChangeTx(valPubKey1ABCI, testMinPower)
-		_, err = assertMempool(css[0].txNotifier).CheckTxSync(newValidatorTx1, mempl.TxInfo{})
+		err = assertMempool(css[0].txNotifier).CheckTxSync(newValidatorTx1, nil, mempl.TxInfo{})
 		assert.Nil(t, err)
 	})
 
@@ -484,7 +486,7 @@ func TestSimulateValidatorsChange(t *testing.T) {
 		updatePubKey1ABCI, err := cryptoenc.PubKeyToProto(updateValidatorPubKey1)
 		require.NoError(t, err)
 		updateValidatorTx1 := kvstore.MakeValSetChangeTx(updatePubKey1ABCI, 25)
-		_, err = assertMempool(css[0].txNotifier).CheckTxSync(updateValidatorTx1, mempl.TxInfo{})
+		err = assertMempool(css[0].txNotifier).CheckTxSync(updateValidatorTx1, nil, mempl.TxInfo{})
 		assert.Nil(t, err)
 	})
 
@@ -501,14 +503,14 @@ func TestSimulateValidatorsChange(t *testing.T) {
 		newVal2ABCI, err := cryptoenc.PubKeyToProto(newValidatorPubKey2)
 		require.NoError(t, err)
 		newValidatorTx2 := kvstore.MakeValSetChangeTx(newVal2ABCI, testMinPower)
-		_, err = assertMempool(css[0].txNotifier).CheckTxSync(newValidatorTx2, mempl.TxInfo{})
+		err = assertMempool(css[0].txNotifier).CheckTxSync(newValidatorTx2, nil, mempl.TxInfo{})
 		assert.Nil(t, err)
 		newValidatorPubKey3, err := css[nVals+2].privValidator.GetPubKey()
 		require.NoError(t, err)
 		newVal3ABCI, err := cryptoenc.PubKeyToProto(newValidatorPubKey3)
 		require.NoError(t, err)
 		newValidatorTx3 := kvstore.MakeValSetChangeTx(newVal3ABCI, testMinPower)
-		_, err = assertMempool(css[0].txNotifier).CheckTxSync(newValidatorTx3, mempl.TxInfo{})
+		err = assertMempool(css[0].txNotifier).CheckTxSync(newValidatorTx3, nil, mempl.TxInfo{})
 		assert.Nil(t, err)
 	})
 
@@ -548,7 +550,7 @@ func TestSimulateValidatorsChange(t *testing.T) {
 		newVal3ABCI, err := cryptoenc.PubKeyToProto(newValidatorPubKey3)
 		require.NoError(t, err)
 		removeValidatorTx3 := kvstore.MakeValSetChangeTx(newVal3ABCI, 0)
-		_, err = assertMempool(css[0].txNotifier).CheckTxSync(removeValidatorTx3, mempl.TxInfo{})
+		err = assertMempool(css[0].txNotifier).CheckTxSync(removeValidatorTx3, nil, mempl.TxInfo{})
 		assert.Nil(t, err)
 	})
 
@@ -718,7 +720,9 @@ func testHandshakeReplay(t *testing.T, config *cfg.Config, nBlocks int, mode uin
 		stateDB, genesisState, store = stateAndStore(config, pubKey, kvstore.ProtocolVersion)
 
 	}
-	stateStore := sm.NewStore(stateDB)
+	stateStore := sm.NewStore(stateDB, sm.StoreOptions{
+		DiscardABCIResponses: false,
+	})
 	store.chain = chain
 	store.commits = commits
 
@@ -737,7 +741,9 @@ func testHandshakeReplay(t *testing.T, config *cfg.Config, nBlocks int, mode uin
 		// use a throwaway ostracon state
 		proxyApp := proxy.NewAppConns(clientCreator2)
 		stateDB1 := dbm.NewMemDB()
-		stateStore := sm.NewStore(stateDB1)
+		stateStore := sm.NewStore(stateDB1, sm.StoreOptions{
+			DiscardABCIResponses: false,
+		})
 		err := stateStore.Save(genesisState)
 		require.NoError(t, err)
 		buildAppStateFromChain(proxyApp, stateStore, genesisState, chain, nBlocks, mode)
@@ -924,7 +930,9 @@ func TestHandshakePanicsIfAppReturnsWrongAppHash(t *testing.T) {
 	pubKey, err := privVal.GetPubKey()
 	require.NoError(t, err)
 	stateDB, state, store := stateAndStore(config, pubKey, version.AppProtocol)
-	stateStore := sm.NewStore(stateDB)
+	stateStore := sm.NewStore(stateDB, sm.StoreOptions{
+		DiscardABCIResponses: false,
+	})
 	genDoc, _ := sm.MakeGenesisDocFromFile(config.GenesisFile())
 	state.LastValidators = state.Validators.Copy()
 	// mode = 0 for committing all the blocks
@@ -1184,7 +1192,9 @@ func stateAndStore(
 	pubKey crypto.PubKey,
 	appVersion uint64) (dbm.DB, sm.State, *mockBlockStore) {
 	stateDB := dbm.NewMemDB()
-	stateStore := sm.NewStore(stateDB)
+	stateStore := sm.NewStore(stateDB, sm.StoreOptions{
+		DiscardABCIResponses: false,
+	})
 	state, _ := sm.MakeGenesisStateFromFile(config.GenesisFile())
 	state.ConsensusParams.Version.AppVersion = appVersion
 	state.Version.Consensus.App = appVersion
@@ -1262,7 +1272,9 @@ func TestHandshakeUpdatesValidators(t *testing.T) {
 	pubKey, err := privVal.GetPubKey()
 	require.NoError(t, err)
 	stateDB, state, store := stateAndStore(config, pubKey, version.AppProtocol)
-	stateStore := sm.NewStore(stateDB)
+	stateStore := sm.NewStore(stateDB, sm.StoreOptions{
+		DiscardABCIResponses: false,
+	})
 
 	oldValAddr := state.Validators.Validators[0].Address
 

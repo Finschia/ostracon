@@ -1,4 +1,4 @@
-package mempool
+package v0
 
 import (
 	"context"
@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
@@ -21,10 +22,10 @@ import (
 	ocabci "github.com/Finschia/ostracon/abci/types"
 	"github.com/Finschia/ostracon/config"
 	"github.com/Finschia/ostracon/libs/log"
+	"github.com/Finschia/ostracon/mempool"
 	"github.com/Finschia/ostracon/proxy"
 	"github.com/Finschia/ostracon/types"
 	"github.com/Finschia/ostracon/version"
-	"github.com/stretchr/testify/require"
 )
 
 func setupCListMempool(ctx context.Context, t testing.TB,
@@ -122,23 +123,23 @@ func commitBlock(ctx context.Context, t *testing.T,
 func receiveTx(ctx context.Context, t *testing.T,
 	mem *CListMempool, tx []byte, receiveTxCounter *receiveTxCounter) {
 	atomic.AddInt64(&receiveTxCounter.sent, 1)
-	txInfo := TxInfo{}
+	txInfo := mempool.TxInfo{}
 	// mempool.lock/unlock in CheckTxAsync
 	mem.CheckTxAsync(tx, txInfo,
 		func(err error) {
 			if err != nil {
 				switch err {
-				case ErrTxInCache:
+				case mempool.ErrTxInCache:
 					atomic.AddInt64(&receiveTxCounter.failInCache, 1)
-				case ErrTxInMap:
+				case mempool.ErrTxInMap:
 					atomic.AddInt64(&receiveTxCounter.failInMap, 1)
 				}
 				switch err.(type) {
-				case ErrTxTooLarge:
+				case mempool.ErrTxTooLarge:
 					atomic.AddInt64(&receiveTxCounter.failTooLarge, 1)
-				case ErrMempoolIsFull:
+				case mempool.ErrMempoolIsFull:
 					atomic.AddInt64(&receiveTxCounter.failIsFull, 1)
-				case ErrPreCheck:
+				case mempool.ErrPreCheck:
 					atomic.AddInt64(&receiveTxCounter.failPreCheck, 1)
 				}
 			}

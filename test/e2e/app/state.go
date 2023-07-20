@@ -1,3 +1,5 @@
+// nolint: gosec
+
 package app
 
 import (

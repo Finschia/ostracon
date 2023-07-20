@@ -36,7 +36,7 @@ func Load(ctx context.Context, testnet *e2e.Testnet, multiplier int) error {
 	defer cancel()
 
 	// Spawn job generator and processors.
-	logger.Info(fmt.Sprintf("Starting transaction load (%v workers)...", concurrency))
+	logger.Info("load", "msg", log.NewLazySprintf("Starting transaction load (%v workers)...", concurrency))
 	started := time.Now()
 
 	go loadGenerate(ctx, chTx, multiplier)

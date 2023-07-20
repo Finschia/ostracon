@@ -1,31 +1,20 @@
-package mempool
+//go:build deprecated
+
+package v1
 
 import (
 	"errors"
 	"fmt"
-	"math"
 	"time"
 
+	cfg "github.com/tendermint/tendermint/config"
+	"github.com/tendermint/tendermint/libs/clist"
+	"github.com/tendermint/tendermint/libs/log"
+	tmsync "github.com/tendermint/tendermint/libs/sync"
+	"github.com/tendermint/tendermint/mempool"
+	"github.com/tendermint/tendermint/p2p"
 	protomem "github.com/tendermint/tendermint/proto/tendermint/mempool"
-
-	cfg "github.com/Finschia/ostracon/config"
-	"github.com/Finschia/ostracon/libs/clist"
-	"github.com/Finschia/ostracon/libs/log"
-	tmsync "github.com/Finschia/ostracon/libs/sync"
-	"github.com/Finschia/ostracon/p2p"
-	"github.com/Finschia/ostracon/types"
-)
-
-const (
-	MempoolChannel = byte(0x30)
-
-	peerCatchupSleepIntervalMS = 100 // If peer is behind, sleep this amount
-
-	// UnknownPeerID is the peer ID to use when running CheckTx when there is
-	// no peer (e.g. RPC)
-	UnknownPeerID uint16 = 0
-
-	maxActiveIDs = math.MaxUint16
+	"github.com/tendermint/tendermint/types"
 )
 
 // Reactor handles mempool tx broadcasting amongst peers.
@@ -34,7 +23,7 @@ const (
 type Reactor struct {
 	p2p.BaseReactor
 	config  *cfg.MempoolConfig
-	mempool *CListMempool
+	mempool *TxMempool
 	ids     *mempoolIDs
 }
 
@@ -59,8 +48,8 @@ func (ids *mempoolIDs) ReserveForPeer(peer p2p.Peer) {
 // nextPeerID returns the next unused peer ID to use.
 // This assumes that ids's mutex is already locked.
 func (ids *mempoolIDs) nextPeerID() uint16 {
-	if len(ids.activeIDs) == maxActiveIDs {
-		panic(fmt.Sprintf("node has maximum %d active IDs and wanted to get one more", maxActiveIDs))
+	if len(ids.activeIDs) == mempool.MaxActiveIDs {
+		panic(fmt.Sprintf("node has maximum %d active IDs and wanted to get one more", mempool.MaxActiveIDs))
 	}
 
 	_, idExists := ids.activeIDs[ids.nextID]
@@ -102,13 +91,13 @@ func newMempoolIDs() *mempoolIDs {
 }
 
 // NewReactor returns a new Reactor with the given config and mempool.
-func NewReactor(config *cfg.MempoolConfig, async bool, recvBufSize int, mempool *CListMempool) *Reactor {
+func NewReactor(config *cfg.MempoolConfig, mempool *TxMempool) *Reactor {
 	memR := &Reactor{
 		config:  config,
 		mempool: mempool,
 		ids:     newMempoolIDs(),
 	}
-	memR.BaseReactor = *p2p.NewBaseReactor("Mempool", memR, async, recvBufSize)
+	memR.BaseReactor = *p2p.NewBaseReactor("Mempool", memR)
 	return memR
 }
 
@@ -121,17 +110,10 @@ func (memR *Reactor) InitPeer(peer p2p.Peer) p2p.Peer {
 // SetLogger sets the Logger on the reactor and the underlying mempool.
 func (memR *Reactor) SetLogger(l log.Logger) {
 	memR.Logger = l
-	memR.mempool.SetLogger(l)
 }
 
 // OnStart implements p2p.BaseReactor.
 func (memR *Reactor) OnStart() error {
-	// call BaseReactor's OnStart()
-	err := memR.BaseReactor.OnStart()
-	if err != nil {
-		return err
-	}
-
 	if !memR.config.Broadcast {
 		memR.Logger.Info("Tx broadcasting is disabled")
 	}
@@ -150,7 +132,7 @@ func (memR *Reactor) GetChannels() []*p2p.ChannelDescriptor {
 
 	return []*p2p.ChannelDescriptor{
 		{
-			ID:                  MempoolChannel,
+			ID:                  mempool.MempoolChannel,
 			Priority:            5,
 			RecvMessageCapacity: batchMsg.Size(),
 		},
@@ -182,19 +164,17 @@ func (memR *Reactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 	}
 	memR.Logger.Debug("Receive", "src", src, "chId", chID, "msg", msg)
 
-	txInfo := TxInfo{SenderID: memR.ids.GetForPeer(src)}
+	txInfo := mempool.TxInfo{SenderID: memR.ids.GetForPeer(src)}
 	if src != nil {
 		txInfo.SenderP2PID = src.ID()
 	}
 	for _, tx := range msg.Txs {
-		tx := tx // pin! workaround for `scopelint` error
-		memR.mempool.CheckTxAsync(tx, txInfo, func(err error) {
-			if err == ErrTxInCache {
-				memR.Logger.Debug("Tx already exists in cache", "tx", txID(tx))
-			} else if err != nil {
-				memR.Logger.Info("Could not check tx", "tx", txID(tx), "err", err)
-			}
-		}, nil)
+		err = memR.mempool.CheckTx(tx, nil, txInfo)
+		if err == mempool.ErrTxInCache {
+			memR.Logger.Debug("Tx already exists in cache", "tx", tx.String())
+		} else if err != nil {
+			memR.Logger.Info("Could not check tx", "tx", tx.String(), "err", err)
+		}
 	}
 	// broadcasting happens from go routines per peer
 }
@@ -214,6 +194,7 @@ func (memR *Reactor) broadcastTxRoutine(peer p2p.Peer) {
 		if !memR.IsRunning() || !peer.IsRunning() {
 			return
 		}
+
 		// This happens because the CElement we were looking at got garbage
 		// collected (removed). That is, .NextWait() returned nil. Go ahead and
 		// start from the beginning.
@@ -223,8 +204,10 @@ func (memR *Reactor) broadcastTxRoutine(peer p2p.Peer) {
 				if next = memR.mempool.TxsFront(); next == nil {
 					continue
 				}
+
 			case <-peer.Quit():
 				return
+
 			case <-memR.Quit():
 				return
 			}
@@ -238,33 +221,34 @@ func (memR *Reactor) broadcastTxRoutine(peer p2p.Peer) {
 			// different every time due to us using a map. Sometimes other reactors
 			// will be initialized before the consensus reactor. We should wait a few
 			// milliseconds and retry.
-			time.Sleep(peerCatchupSleepIntervalMS * time.Millisecond)
+			time.Sleep(mempool.PeerCatchupSleepIntervalMS * time.Millisecond)
 			continue
 		}
 
 		// Allow for a lag of 1 block.
-		memTx := next.Value.(*mempoolTx)
-		if peerState.GetHeight() < memTx.Height()-1 {
-			time.Sleep(peerCatchupSleepIntervalMS * time.Millisecond)
+		memTx := next.Value.(*WrappedTx)
+		if peerState.GetHeight() < memTx.height-1 {
+			time.Sleep(mempool.PeerCatchupSleepIntervalMS * time.Millisecond)
 			continue
 		}
 
 		// NOTE: Transaction batching was disabled due to
 		// https://github.com/tendermint/tendermint/issues/5796
-
-		if _, ok := memTx.senders.Load(peerID); !ok {
+		if !memTx.HasPeer(peerID) {
 			msg := protomem.Message{
 				Sum: &protomem.Message_Txs{
 					Txs: &protomem.Txs{Txs: [][]byte{memTx.tx}},
 				},
 			}
+
 			bz, err := msg.Marshal()
 			if err != nil {
 				panic(err)
 			}
-			success := peer.Send(MempoolChannel, bz)
+
+			success := peer.Send(mempool.MempoolChannel, bz)
 			if !success {
-				time.Sleep(peerCatchupSleepIntervalMS * time.Millisecond)
+				time.Sleep(mempool.PeerCatchupSleepIntervalMS * time.Millisecond)
 				continue
 			}
 		}
@@ -273,8 +257,10 @@ func (memR *Reactor) broadcastTxRoutine(peer p2p.Peer) {
 		case <-next.NextWaitChan():
 			// see the start of the for loop for nil check
 			next = next.Next()
+
 		case <-peer.Quit():
 			return
+
 		case <-memR.Quit():
 			return
 		}

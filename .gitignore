@@ -26,6 +26,7 @@ docs/package-lock.json   # To avoid security notifications. If the time comes to
 *.log
 docs/node_modules/
 index.html.md
+node/data
 
 scripts/wal2json/wal2json
 scripts/cutWALUntil/cutWALUntil
@@ -53,5 +54,9 @@ test/fuzz/**/corpus
 test/fuzz/**/crashers
 test/fuzz/**/suppressions
 test/fuzz/**/*.zip
-node/data
-crypto/vrf/internal/vrf/sodium
+*.aux
+*.bbl
+*.blg
+*.pdf
+*.gz
+*.dvi
