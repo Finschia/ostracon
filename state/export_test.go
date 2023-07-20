@@ -2,10 +2,10 @@ package state
 
 import (
 	abci "github.com/tendermint/tendermint/abci/types"
+	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	tmstate "github.com/Finschia/ostracon/proto/ostracon/state"
 	"github.com/Finschia/ostracon/types"
 )
 
@@ -49,7 +49,7 @@ func SaveValidatorsInfo(
 	proofHash []byte,
 	valSet *types.ValidatorSet,
 ) error {
-	stateStore := dbStore{db}
+	stateStore := dbStore{db, StoreOptions{DiscardABCIResponses: false}}
 	if err := db.Set(calcProofHashKey(height-1), proofHash); err != nil {
 		return err
 	}
@@ -57,6 +57,6 @@ func SaveValidatorsInfo(
 }
 
 func SaveProofHash(db dbm.DB, height int64, proofHash []byte) error {
-	stateStore := dbStore{db}
+	stateStore := dbStore{db, StoreOptions{DiscardABCIResponses: false}}
 	return stateStore.saveProofHash(height, proofHash)
 }

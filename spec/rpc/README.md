@@ -22,6 +22,7 @@ Ostracon adds entropy to the [Block](https://github.com/cometbft/cometbft/blob/v
 
 ```sh
 curl http://127.0.0.1:26657/block
+
 curl http://127.0.0.1:26657/block?height=1
 ```
 

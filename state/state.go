@@ -18,6 +18,7 @@ import (
 	"github.com/Finschia/ostracon/version"
 )
 
+// database key
 var (
 	// database keys
 	stateKey = []byte("stateKey")

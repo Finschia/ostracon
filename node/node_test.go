@@ -260,7 +260,9 @@ func TestCreateProposalBlock(t *testing.T) {
 
 	var height int64 = 1
 	state, stateDB, privVals := state(1, height)
-	stateStore := sm.NewStore(stateDB)
+	stateStore := sm.NewStore(stateDB, sm.StoreOptions{
+		DiscardABCIResponses: false,
+	})
 	maxBytes := 16384
 	var partSize uint32 = 256
 	maxEvidenceBytes := int64(maxBytes / 2)
@@ -373,7 +375,9 @@ func TestMaxProposalBlockSize(t *testing.T) {
 
 	var height int64 = 1
 	state, stateDB, privVals := state(1, height)
-	stateStore := sm.NewStore(stateDB)
+	stateStore := sm.NewStore(stateDB, sm.StoreOptions{
+		DiscardABCIResponses: false,
+	})
 	var maxBytes int64 = 16384
 	var partSize uint32 = 256
 	state.ConsensusParams.Block.MaxBytes = maxBytes
@@ -593,7 +597,9 @@ func state(nVals int, height int64) (sm.State, dbm.DB, []types.PrivValidator) {
 
 	// save validators to db for 2 heights
 	stateDB := dbm.NewMemDB()
-	stateStore := sm.NewStore(stateDB)
+	stateStore := sm.NewStore(stateDB, sm.StoreOptions{
+		DiscardABCIResponses: false,
+	})
 	if err := stateStore.Save(s); err != nil {
 		panic(err)
 	}

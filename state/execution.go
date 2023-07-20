@@ -6,6 +6,7 @@ import (
 	"time"
 
 	abci "github.com/tendermint/tendermint/abci/types"
+	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	ocabci "github.com/Finschia/ostracon/abci/types"
@@ -15,7 +16,6 @@ import (
 	"github.com/Finschia/ostracon/libs/fail"
 	"github.com/Finschia/ostracon/libs/log"
 	mempl "github.com/Finschia/ostracon/mempool"
-	tmstate "github.com/Finschia/ostracon/proto/ostracon/state"
 	"github.com/Finschia/ostracon/proxy"
 	"github.com/Finschia/ostracon/types"
 	canonictime "github.com/Finschia/ostracon/types/time"

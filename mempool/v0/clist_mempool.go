@@ -201,7 +201,13 @@ func (mem *CListMempool) TxsWaitChan() <-chan struct{} {
 	return mem.txs.WaitChan()
 }
 
-// It blocks if we're waiting on Update() or Reap().
+// CheckTxSync : It blocks if we're waiting on Update() or Reap().
+// cb: A callback from the CheckTxSync command.
+//
+//	It gets called from another goroutine.
+//
+// CONTRACT: Either cb will get called, or err returned.
+//
 // Safe for concurrent use by multiple goroutines.
 func (mem *CListMempool) CheckTxSync(
 	tx types.Tx,
