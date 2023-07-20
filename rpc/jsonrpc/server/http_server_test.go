@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -104,7 +104,7 @@ func TestServeTLS(t *testing.T) {
 	defer res.Body.Close()
 	assert.Equal(t, http.StatusOK, res.StatusCode)
 
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	require.NoError(t, err)
 	assert.Equal(t, []byte("some body"), body)
 }
@@ -117,7 +117,7 @@ func TestWriteRPCResponseHTTP(t *testing.T) {
 	err := WriteRPCResponseHTTP(w, types.NewRPCSuccessResponse(id, &sampleResult{"hello"}))
 	require.NoError(t, err)
 	resp := w.Result()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	_ = resp.Body.Close()
 	require.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
@@ -137,7 +137,7 @@ func TestWriteRPCResponseHTTP(t *testing.T) {
 		types.NewRPCSuccessResponse(id, &sampleResult{"world"}))
 	require.NoError(t, err)
 	resp = w.Result()
-	body, err = ioutil.ReadAll(resp.Body)
+	body, err = io.ReadAll(resp.Body)
 	_ = resp.Body.Close()
 	require.NoError(t, err)
 
@@ -169,7 +169,7 @@ func TestWriteRPCResponseHTTPError(t *testing.T) {
 		types.RPCInternalError(types.JSONRPCIntID(-1), errors.New("foo")))
 	require.NoError(t, err)
 	resp := w.Result()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	_ = resp.Body.Close()
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)

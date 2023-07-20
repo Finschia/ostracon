@@ -65,28 +65,7 @@ func (mp mockPeer) String() string { return fmt.Sprintf("%v", mp.id) }
 func (mp mockPeer) SetRemovalFailed()      {}
 func (mp mockPeer) GetRemovalFailed() bool { return false }
 
-// nolint:unused // ignore
-type mockBlockStore struct {
-	blocks map[int64]*types.Block
-}
-
-// nolint:unused // ignore
-func (ml *mockBlockStore) Height() int64 {
-	return int64(len(ml.blocks))
-}
-
-// nolint:unused // ignore
-func (ml *mockBlockStore) LoadBlock(height int64) *types.Block {
-	return ml.blocks[height]
-}
-
-// nolint:unused // ignore
-func (ml *mockBlockStore) SaveBlock(block *types.Block, part *types.PartSet, commit *types.Commit) {
-	ml.blocks[block.Height] = block
-}
-
-type mockBlockApplier struct {
-}
+type mockBlockApplier struct{}
 
 // XXX: Add whitelist/blacklist?
 func (mba *mockBlockApplier) ApplyBlock(
@@ -358,9 +337,8 @@ func newTestReactor(p testReactorParams) *BlockchainReactor {
 // }
 
 func TestReactorHelperMode(t *testing.T) {
-	var (
-		channelID = byte(0x40)
-	)
+	channelID := byte(0x40)
+
 	config := cfg.ResetTestRoot("blockchain_reactor_v2_test")
 	defer os.RemoveAll(config.RootDir)
 	genDoc, privVals := randGenesisDoc(config.ChainID(), 1, false, 30)
@@ -475,7 +453,8 @@ type testApp struct {
 }
 
 func randGenesisDoc(chainID string, numValidators int, randPower bool, minPower int64) (
-	*types.GenesisDoc, []types.PrivValidator) {
+	*types.GenesisDoc, []types.PrivValidator,
+) {
 	validators := make([]types.GenesisValidator, numValidators)
 	privValidators := make([]types.PrivValidator, numValidators)
 	for i := 0; i < numValidators; i++ {
@@ -500,7 +479,8 @@ func randGenesisDoc(chainID string, numValidators int, randPower bool, minPower 
 func newReactorStore(
 	genDoc *types.GenesisDoc,
 	privVals []types.PrivValidator,
-	maxBlockHeight int64) (*store.BlockStore, sm.State, *sm.BlockExecutor) {
+	maxBlockHeight int64,
+) (*store.BlockStore, sm.State, *sm.BlockExecutor) {
 	if len(privVals) != 1 {
 		panic("only support one validator")
 	}
@@ -524,7 +504,8 @@ func newReactorStore(
 
 	db := dbm.NewMemDB()
 	stateStore = sm.NewStore(db, sm.StoreOptions{
-		DiscardABCIResponses: false},
+		DiscardABCIResponses: false,
+	},
 	)
 	blockExec := sm.NewBlockExecutor(stateStore, log.TestingLogger(), proxyApp.Consensus(),
 		mock.Mempool{}, sm.EmptyEvidencePool{})
