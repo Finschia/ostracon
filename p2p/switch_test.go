@@ -946,6 +946,10 @@ func (nr *NormalReactor) AddPeer(peer Peer) {}
 
 func (nr *NormalReactor) RemovePeer(peer Peer, reason interface{}) {}
 
+func (nr *NormalReactor) ReceiveEnvelope(e Envelope) {
+	nr.msgChan <- []byte{0}
+}
+
 func (nr *NormalReactor) Receive(chID byte, peer Peer, msgBytes []byte) {
 	nr.msgChan <- msgBytes
 }
@@ -974,6 +978,10 @@ func (br *BlockedReactor) AddPeer(peer Peer) {}
 
 func (br *BlockedReactor) RemovePeer(peer Peer, reason interface{}) {}
 
+func (br *BlockedReactor) ReceiveEnvelope(e Envelope) {
+	<-br.waitChan
+}
+
 func (br *BlockedReactor) Receive(chID byte, peer Peer, msgBytes []byte) {
 	<-br.waitChan
 }
@@ -1001,9 +1009,18 @@ func TestSyncReactor(t *testing.T) {
 
 	normalReactor := s2.Reactor(reactorNameNormal).(*NormalReactor)
 	blockedReactor := s2.Reactor(reactorNameBlocked).(*BlockedReactor)
-	s1.Broadcast(0x01, []byte{1})      // the message for blocked reactor is first
-	time.Sleep(time.Millisecond * 200) // to make order among messages
-	s1.Broadcast(0x00, []byte{0})      // and then second message is for normal reactor
+	// the message for blocked reactor is first
+	s1.BroadcastEnvelope(Envelope{
+		ChannelID: blockedReactor.channels[0].ID,
+		Message:   &p2pproto.PexRequest{},
+	})
+	// to make order among messages
+	time.Sleep(time.Millisecond * 200)
+	// and then second message is for normal reactor
+	s1.BroadcastEnvelope(Envelope{
+		ChannelID: normalReactor.channels[0].ID,
+		Message:   &p2pproto.PexRequest{},
+	})
 
 	select {
 	case <-normalReactor.msgChan:
@@ -1034,9 +1051,19 @@ func TestAsyncReactor(t *testing.T) {
 	}()
 
 	normalReactor := s2.Reactor(reactorNameNormal).(*NormalReactor)
-	s1.Broadcast(0x01, []byte{1})      // the message for blocked reactor is first
-	time.Sleep(time.Millisecond * 200) // to make order among messages
-	s1.Broadcast(0x00, []byte{0})      // and then second message is for normal reactor
+	blockedReactor := s2.Reactor(reactorNameBlocked).(*BlockedReactor)
+	// the message for blocked reactor is first
+	s1.BroadcastEnvelope(Envelope{
+		ChannelID: blockedReactor.channels[0].ID,
+		Message:   &p2pproto.PexRequest{},
+	})
+	// to make order among messages
+	time.Sleep(time.Millisecond * 200)
+	// and then second message is for normal reactor
+	s1.BroadcastEnvelope(Envelope{
+		ChannelID: normalReactor.channels[0].ID,
+		Message:   &p2pproto.PexRequest{},
+	})
 
 	select {
 	case msg := <-normalReactor.msgChan:
@@ -1054,10 +1081,10 @@ func getInitSwitchFunc(bufSize int) func(int, *Switch, *config.P2PConfig) *Switc
 
 		// Make two reactors of two channels each
 		sw.AddReactor(reactorNameNormal, NewNormalReactor([]*conn.ChannelDescriptor{
-			{ID: byte(0x00), Priority: 10},
+			{ID: byte(0x00), Priority: 10, MessageType: &p2pproto.Message{}},
 		}, config.RecvAsync, bufSize))
 		sw.AddReactor(reactorNameBlocked, NewBlockedReactor([]*conn.ChannelDescriptor{
-			{ID: byte(0x01), Priority: 10},
+			{ID: byte(0x01), Priority: 10, MessageType: &p2pproto.Message{}},
 		}, config.RecvAsync, bufSize))
 
 		return sw
