@@ -112,7 +112,15 @@ func (br *BaseReactor) RecvRoutine() {
 	for {
 		select {
 		case msg := <-br.recvMsgBuf:
-			br.impl.Receive(msg.ChID, msg.Peer, msg.Msg)
+			if nr, ok := br.impl.(EnvelopeReceiver); ok {
+				nr.ReceiveEnvelope(Envelope{
+					ChannelID: msg.ChID,
+					Src:       msg.Peer,
+					Message:   msg.Message,
+				})
+			} else {
+				br.impl.Receive(msg.ChID, msg.Peer, msg.Msg)
+			}
 		case <-br.Quit():
 			return
 		}
