@@ -181,7 +181,9 @@ func (memR *Reactor) ReceiveEnvelope(e p2p.Envelope) {
 		for _, tx := range protoTxs {
 			ntx := types.Tx(tx)
 			memR.mempool.CheckTxAsync(tx, txInfo, func(err error) {
-				if errors.Is(err, mempool.ErrTxInCache) {
+				if errors.Is(err, mempool.ErrTxInMap) {
+					memR.Logger.Debug("Tx already exists in Map", "tx", ntx.String())
+				} else if errors.Is(err, mempool.ErrTxInCache) {
 					memR.Logger.Debug("Tx already exists in cache", "tx", ntx.String())
 				} else if err != nil {
 					memR.Logger.Info("Could not check tx", "tx", ntx.String(), "err", err)
