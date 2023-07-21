@@ -16,6 +16,7 @@ import (
 )
 
 //go:generate ../scripts/mockery_generate.sh Peer
+//go:generate ../scripts/mockery_generate.sh EnvelopeSender
 
 const metricsTickerDuration = 10 * time.Second
 

@@ -26,6 +26,11 @@ import (
 	"github.com/Finschia/ostracon/version"
 )
 
+type Peer struct {
+	*p2pmocks.Peer
+	*p2pmocks.EnvelopeSender
+}
+
 func TestReactor_Receive_ChunkRequest(t *testing.T) {
 	testcases := map[string]struct {
 		request        *ssproto.ChunkRequest
@@ -59,11 +64,11 @@ func TestReactor_Receive_ChunkRequest(t *testing.T) {
 			}).Return(&abci.ResponseLoadSnapshotChunk{Chunk: tc.chunk}, nil)
 
 			// Mock peer to store response, if found
-			peer := &p2pmocks.Peer{}
-			peer.On("ID").Return(p2p.ID("id"))
+			peer := &Peer{Peer: &p2pmocks.Peer{}, EnvelopeSender: &p2pmocks.EnvelopeSender{}}
+			peer.Peer.On("ID").Return(p2p.ID("id"))
 			var response *ssproto.ChunkResponse
 			if tc.expectResponse != nil {
-				peer.On("SendEnvelope", mock.MatchedBy(func(i interface{}) bool {
+				peer.EnvelopeSender.On("SendEnvelope", mock.MatchedBy(func(i interface{}) bool {
 					e, ok := i.(p2p.Envelope)
 					return ok && e.ChannelID == ChunkChannel
 				})).Run(func(args mock.Arguments) {
@@ -98,7 +103,8 @@ func TestReactor_Receive_ChunkRequest(t *testing.T) {
 			assert.Equal(t, tc.expectResponse, response)
 
 			conn.AssertExpectations(t)
-			peer.AssertExpectations(t)
+			peer.Peer.AssertExpectations(t)
+			peer.EnvelopeSender.AssertExpectations(t)
 		})
 	}
 }
@@ -150,10 +156,10 @@ func TestReactor_Receive_SnapshotsRequest(t *testing.T) {
 
 			// Mock peer to catch responses and store them in a slice
 			responses := []*ssproto.SnapshotsResponse{}
-			peer := &p2pmocks.Peer{}
+			peer := &Peer{Peer: &p2pmocks.Peer{}, EnvelopeSender: &p2pmocks.EnvelopeSender{}}
 			if len(tc.expectResponses) > 0 {
-				peer.On("ID").Return(p2p.ID("id"))
-				peer.On("SendEnvelope", mock.MatchedBy(func(i interface{}) bool {
+				peer.Peer.On("ID").Return(p2p.ID("id"))
+				peer.EnvelopeSender.On("SendEnvelope", mock.MatchedBy(func(i interface{}) bool {
 					e, ok := i.(p2p.Envelope)
 					return ok && e.ChannelID == SnapshotChannel
 				})).Run(func(args mock.Arguments) {
@@ -188,7 +194,8 @@ func TestReactor_Receive_SnapshotsRequest(t *testing.T) {
 			assert.Equal(t, tc.expectResponses, responses)
 
 			conn.AssertExpectations(t)
-			peer.AssertExpectations(t)
+			peer.Peer.AssertExpectations(t)
+			peer.EnvelopeSender.AssertExpectations(t)
 		})
 	}
 }

@@ -28,6 +28,11 @@ import (
 	"github.com/Finschia/ostracon/types"
 )
 
+type Peer struct {
+	*p2pmocks.Peer
+	*p2pmocks.EnvelopeSender
+}
+
 var (
 	numEvidence = 10
 	timeout     = 120 * time.Second // ridiculously high because CircleCI is slow
@@ -200,24 +205,24 @@ func TestReactorBroadcastEvidenceMemoryLeak(t *testing.T) {
 	pool, err := evidence.NewPool(evidenceDB, stateStore, blockStore)
 	require.NoError(t, err)
 
-	p := &p2pmocks.Peer{}
+	p := &Peer{Peer: &p2pmocks.Peer{}, EnvelopeSender: &p2pmocks.EnvelopeSender{}}
 
-	p.On("IsRunning").Once().Return(true)
-	p.On("IsRunning").Return(false)
+	p.Peer.On("IsRunning").Once().Return(true)
+	p.Peer.On("IsRunning").Return(false)
 	// check that we are not leaking any go-routines
 	// i.e. broadcastEvidenceRoutine finishes when peer is stopped
 	defer leaktest.CheckTimeout(t, 10*time.Second)()
 
-	p.On("SendEnvelope", mock.MatchedBy(func(i interface{}) bool {
+	p.EnvelopeSender.On("SendEnvelope", mock.MatchedBy(func(i interface{}) bool {
 		e, ok := i.(p2p.Envelope)
 		return ok && e.ChannelID == evidence.EvidenceChannel
 	})).Return(false)
 	quitChan := make(<-chan struct{})
-	p.On("Quit").Return(quitChan)
+	p.Peer.On("Quit").Return(quitChan)
 	ps := peerState{2}
-	p.On("Get", types.PeerStateKey).Return(ps)
-	p.On("ID").Return("ABC")
-	p.On("String").Return("mock")
+	p.Peer.On("Get", types.PeerStateKey).Return(ps)
+	p.Peer.On("ID").Return("ABC")
+	p.Peer.On("String").Return("mock")
 
 	r := evidence.NewReactor(pool, config.P2P.RecvAsync, config.P2P.EvidenceRecvBufSize)
 	r.SetLogger(log.TestingLogger())
