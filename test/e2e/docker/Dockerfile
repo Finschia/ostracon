@@ -13,7 +13,7 @@ ARG ROCKSDB_FILE=rocksdb-v${ROCKSDB_VERSION}.tar.gz
 ARG ROCKSDB_DIR=rocksdb-${ROCKSDB_VERSION}
 RUN wget -O ${ROCKSDB_FILE} https://github.com/facebook/rocksdb/archive/v${ROCKSDB_VERSION}.tar.gz
 RUN tar -zxvf ${ROCKSDB_FILE}
-RUN cd ${ROCKSDB_DIR} && make -j2 shared_lib && make install-shared
+RUN cd ${ROCKSDB_DIR} && DISABLE_WARNING_AS_ERROR=1 make -j2 shared_lib && make install-shared
 RUN cp /usr/local/lib/librocksdb.so* /usr/lib
 RUN rm -rf ${ROCKSDB_FILE} ${ROCKSDB_DIR}
 
