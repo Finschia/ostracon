@@ -3,10 +3,8 @@ package v2
 import (
 	"fmt"
 
-	"github.com/tendermint/tendermint/p2p"
 	bcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
 
-	bc "github.com/Finschia/ostracon/blockchain"
 	"github.com/Finschia/ostracon/p2p"
 	ocbcproto "github.com/Finschia/ostracon/proto/ostracon/blockchain"
 	"github.com/Finschia/ostracon/state"
@@ -89,18 +87,10 @@ func (sio *switchIO) sendBlockToPeer(block *types.Block, peerID p2p.ID) error {
 		return err
 	}
 
-<<<<<<< HEAD
-	msgBytes, err := bc.EncodeMsg(&ocbcproto.BlockResponse{Block: bpb})
-	if err != nil {
-		return err
-	}
-	if queued := peer.TrySend(BlockchainChannel, msgBytes); !queued {
-=======
 	if queued := p2p.TrySendEnvelopeShim(peer, p2p.Envelope{ //nolint: staticcheck
 		ChannelID: BlockchainChannel,
-		Message:   &bcproto.BlockResponse{Block: bpb},
+		Message:   &ocbcproto.BlockResponse{Block: bpb},
 	}, sio.sw.Logger); !queued {
->>>>>>> bdedf2ec2 (p2p: add a per-message type send and receive metric (backport #9622) (#9641))
 		return fmt.Errorf("peer queue full")
 	}
 

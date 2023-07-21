@@ -79,7 +79,7 @@ func EncodeMsg(pb proto.Message) ([]byte, error) {
 //
 // Deprecated: Will be removed in v0.37.
 func DecodeMsg(bz []byte) (proto.Message, error) {
-	pb := &bcproto.Message{}
+	pb := &ocbcproto.Message{}
 
 	err := proto.Unmarshal(bz, pb)
 	if err != nil {

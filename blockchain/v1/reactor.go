@@ -182,7 +182,7 @@ func (bcR *BlockchainReactor) GetChannels() []*p2p.ChannelDescriptor {
 			SendQueueCapacity:   2000,
 			RecvBufferCapacity:  50 * 4096,
 			RecvMessageCapacity: bc.MaxMsgSize,
-			MessageType:         &bcproto.Message{},
+			MessageType:         &ocbcproto.Message{},
 		},
 	}
 }
@@ -215,19 +215,10 @@ func (bcR *BlockchainReactor) sendBlockToPeer(msg *bcproto.BlockRequest,
 			bcR.Logger.Error("Could not send block message to peer", "err", err)
 			return false
 		}
-<<<<<<< HEAD
-		msgBytes, err := bc.EncodeMsg(&ocbcproto.BlockResponse{Block: pbbi})
-		if err != nil {
-			bcR.Logger.Error("unable to marshal msg", "err", err)
-			return false
-		}
-		return src.TrySend(BlockchainChannel, msgBytes)
-=======
 		return p2p.TrySendEnvelopeShim(src, p2p.Envelope{ //nolint: staticcheck
 			ChannelID: BlockchainChannel,
-			Message:   &bcproto.BlockResponse{Block: pbbi},
+			Message:   &ocbcproto.BlockResponse{Block: pbbi},
 		}, bcR.Logger)
->>>>>>> bdedf2ec2 (p2p: add a per-message type send and receive metric (backport #9622) (#9641))
 	}
 
 	bcR.Logger.Info("peer asking for a block we don't have", "src", src, "height", msg.Height)

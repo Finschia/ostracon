@@ -154,7 +154,7 @@ func (bcR *BlockchainReactor) GetChannels() []*p2p.ChannelDescriptor {
 			SendQueueCapacity:   1000,
 			RecvBufferCapacity:  50 * 4096,
 			RecvMessageCapacity: bc.MaxMsgSize,
-			MessageType:         &bcproto.Message{},
+			MessageType:         &ocbcproto.Message{},
 		},
 	}
 }
@@ -191,21 +191,10 @@ func (bcR *BlockchainReactor) respondToPeer(msg *bcproto.BlockRequest,
 			bcR.Logger.Error("could not convert msg to protobuf", "err", err)
 			return false
 		}
-<<<<<<< HEAD
-
-		msgBytes, err := bc.EncodeMsg(&ocbcproto.BlockResponse{Block: bl})
-		if err != nil {
-			bcR.Logger.Error("could not marshal msg", "err", err)
-			return false
-		}
-
-		return src.TrySend(BlockchainChannel, msgBytes)
-=======
 		return p2p.TrySendEnvelopeShim(src, p2p.Envelope{ //nolint: staticcheck
 			ChannelID: BlockchainChannel,
-			Message:   &bcproto.BlockResponse{Block: bl},
+			Message:   &ocbcproto.BlockResponse{Block: bl},
 		}, bcR.Logger)
->>>>>>> bdedf2ec2 (p2p: add a per-message type send and receive metric (backport #9622) (#9641))
 	}
 
 	return p2p.TrySendEnvelopeShim(src, p2p.Envelope{ //nolint: staticcheck
@@ -225,13 +214,8 @@ func (bcR *BlockchainReactor) ReceiveEnvelope(e p2p.Envelope) {
 
 	switch msg := e.Message.(type) {
 	case *bcproto.BlockRequest:
-<<<<<<< HEAD
-		bcR.respondToPeer(msg, src)
-	case *ocbcproto.BlockResponse:
-=======
 		bcR.respondToPeer(msg, e.Src)
-	case *bcproto.BlockResponse:
->>>>>>> bdedf2ec2 (p2p: add a per-message type send and receive metric (backport #9622) (#9641))
+	case *ocbcproto.BlockResponse:
 		bi, err := types.BlockFromProto(msg.Block)
 		if err != nil {
 			bcR.Logger.Error("Block content is invalid", "err", err)
@@ -258,7 +242,7 @@ func (bcR *BlockchainReactor) ReceiveEnvelope(e p2p.Envelope) {
 }
 
 func (bcR *BlockchainReactor) Receive(chID byte, peer p2p.Peer, msgBytes []byte) {
-	var msg *bcproto.Message
+	var msg *ocbcproto.Message
 	err := proto.Unmarshal(msgBytes, msg)
 	if err != nil {
 		panic(err)
