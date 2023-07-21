@@ -730,6 +730,7 @@ type ChannelDescriptor struct {
 	SendQueueCapacity   int
 	RecvBufferCapacity  int
 	RecvMessageCapacity int
+	MessageType         proto.Message
 }
 
 func (chDesc ChannelDescriptor) FillDefaults() (filled ChannelDescriptor) {

@@ -10,14 +10,16 @@ require (
 	github.com/btcsuite/btcd v0.22.1
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/bufbuild/buf v1.25.0
-	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
+	github.com/cosmos/gogoproto v1.4.2
 	github.com/creachadair/taskgroup v0.3.2
 	github.com/fortytw2/leaktest v1.3.0
 	github.com/go-kit/kit v0.12.0
 	github.com/go-kit/log v0.2.1
 	github.com/go-logfmt/logfmt v0.6.0
+	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/protobuf v1.5.3
+	github.com/golangci/golangci-lint v1.53.3
 	github.com/google/orderedcode v0.0.1
 	github.com/gorilla/websocket v1.5.0
 	github.com/gtank/merlin v0.1.1
@@ -52,7 +54,6 @@ require (
 // ========================================
 
 require (
-	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/tendermint/tm-db v0.6.7
 	golang.org/x/crypto v0.11.0
@@ -60,13 +61,10 @@ require (
 	google.golang.org/grpc v1.56.2
 )
 
-require (
-	github.com/golangci/golangci-lint v1.53.3
-	github.com/prometheus/common v0.42.0 // indirect
-	github.com/vektra/mockery/v2 v2.32.0
-)
+require github.com/vektra/mockery/v2 v2.32.0
 
 require (
+	github.com/gogo/protobuf v1.3.2
 	github.com/informalsystems/tm-load-test v1.0.0
 	gonum.org/v1/gonum v0.13.0
 	google.golang.org/protobuf v1.31.0

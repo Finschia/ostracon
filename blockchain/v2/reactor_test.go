@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -17,7 +18,6 @@ import (
 
 	abci "github.com/Finschia/ostracon/abci/types"
 	"github.com/Finschia/ostracon/behaviour"
-	bc "github.com/Finschia/ostracon/blockchain"
 	cfg "github.com/Finschia/ostracon/config"
 	"github.com/Finschia/ostracon/libs/log"
 	"github.com/Finschia/ostracon/libs/service"
@@ -53,6 +53,9 @@ func (mp mockPeer) NodeInfo() p2p.NodeInfo {
 }
 func (mp mockPeer) Status() conn.ConnectionStatus { return conn.ConnectionStatus{} }
 func (mp mockPeer) SocketAddr() *p2p.NetAddress   { return &p2p.NetAddress{} }
+
+func (mp mockPeer) SendEnvelope(e p2p.Envelope) bool    { return true }
+func (mp mockPeer) TrySendEnvelope(e p2p.Envelope) bool { return true }
 
 func (mp mockPeer) Send(byte, []byte) bool    { return true }
 func (mp mockPeer) TrySend(byte, []byte) bool { return true }
@@ -115,8 +118,7 @@ func (sio *mockSwitchIo) trySwitchToConsensus(state sm.State, skipWAL bool) bool
 	return true
 }
 
-func (sio *mockSwitchIo) broadcastStatusRequest() error {
-	return nil
+func (sio *mockSwitchIo) broadcastStatusRequest() {
 }
 
 type testReactorParams struct {
@@ -353,7 +355,7 @@ func TestReactorHelperMode(t *testing.T) {
 
 	type testEvent struct {
 		peer  string
-		event interface{}
+		event proto.Message
 	}
 
 	tests := []struct {
@@ -365,10 +367,10 @@ func TestReactorHelperMode(t *testing.T) {
 			name:   "status request",
 			params: params,
 			msgs: []testEvent{
-				{"P1", bcproto.StatusRequest{}},
-				{"P1", bcproto.BlockRequest{Height: 13}},
-				{"P1", bcproto.BlockRequest{Height: 20}},
-				{"P1", bcproto.BlockRequest{Height: 22}},
+				{"P1", &bcproto.StatusRequest{}},
+				{"P1", &bcproto.BlockRequest{Height: 13}},
+				{"P1", &bcproto.BlockRequest{Height: 20}},
+				{"P1", &bcproto.BlockRequest{Height: 22}},
 			},
 		},
 	}
@@ -385,25 +387,27 @@ func TestReactorHelperMode(t *testing.T) {
 			for i := 0; i < len(tt.msgs); i++ {
 				step := tt.msgs[i]
 				switch ev := step.event.(type) {
-				case bcproto.StatusRequest:
+				case *bcproto.StatusRequest:
 					old := mockSwitch.numStatusResponse
-					msg, err := bc.EncodeMsg(&ev)
-					assert.NoError(t, err)
-					reactor.Receive(channelID, mockPeer{id: p2p.ID(step.peer)}, msg)
+					reactor.ReceiveEnvelope(p2p.Envelope{
+						ChannelID: channelID,
+						Src:       mockPeer{id: p2p.ID(step.peer)},
+						Message:   ev})
 					assert.Equal(t, old+1, mockSwitch.numStatusResponse)
-				case bcproto.BlockRequest:
+				case *bcproto.BlockRequest:
 					if ev.Height > params.startHeight {
 						old := mockSwitch.numNoBlockResponse
-						msg, err := bc.EncodeMsg(&ev)
-						assert.NoError(t, err)
-						reactor.Receive(channelID, mockPeer{id: p2p.ID(step.peer)}, msg)
+						reactor.ReceiveEnvelope(p2p.Envelope{
+							ChannelID: channelID,
+							Src:       mockPeer{id: p2p.ID(step.peer)},
+							Message:   ev})
 						assert.Equal(t, old+1, mockSwitch.numNoBlockResponse)
 					} else {
 						old := mockSwitch.numBlockResponse
-						msg, err := bc.EncodeMsg(&ev)
-						assert.NoError(t, err)
-						assert.NoError(t, err)
-						reactor.Receive(channelID, mockPeer{id: p2p.ID(step.peer)}, msg)
+						reactor.ReceiveEnvelope(p2p.Envelope{
+							ChannelID: channelID,
+							Src:       mockPeer{id: p2p.ID(step.peer)},
+							Message:   ev})
 						assert.Equal(t, old+1, mockSwitch.numBlockResponse)
 					}
 				}

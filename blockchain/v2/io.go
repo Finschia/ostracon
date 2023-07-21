@@ -3,6 +3,7 @@ package v2
 import (
 	"fmt"
 
+	"github.com/tendermint/tendermint/p2p"
 	bcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
 
 	bc "github.com/Finschia/ostracon/blockchain"
@@ -18,7 +19,7 @@ type iIO interface {
 	sendBlockNotFound(height int64, peerID p2p.ID) error
 	sendStatusResponse(base, height int64, peerID p2p.ID) error
 
-	broadcastStatusRequest() error
+	broadcastStatusRequest()
 
 	trySwitchToConsensus(state state.State, skipWAL bool) bool
 }
@@ -49,13 +50,10 @@ func (sio *switchIO) sendBlockRequest(peerID p2p.ID, height int64) error {
 	if peer == nil {
 		return fmt.Errorf("peer not found")
 	}
-	msgBytes, err := bc.EncodeMsg(&bcproto.BlockRequest{Height: height})
-	if err != nil {
-		return err
-	}
-
-	queued := peer.TrySend(BlockchainChannel, msgBytes)
-	if !queued {
+	if queued := p2p.TrySendEnvelopeShim(peer, p2p.Envelope{ //nolint: staticcheck
+		ChannelID: BlockchainChannel,
+		Message:   &bcproto.BlockRequest{Height: height},
+	}, sio.sw.Logger); !queued {
 		return fmt.Errorf("send queue full")
 	}
 	return nil
@@ -67,12 +65,10 @@ func (sio *switchIO) sendStatusResponse(base int64, height int64, peerID p2p.ID)
 		return fmt.Errorf("peer not found")
 	}
 
-	msgBytes, err := bc.EncodeMsg(&bcproto.StatusResponse{Height: height, Base: base})
-	if err != nil {
-		return err
-	}
-
-	if queued := peer.TrySend(BlockchainChannel, msgBytes); !queued {
+	if queued := p2p.TrySendEnvelopeShim(peer, p2p.Envelope{ //nolint: staticcheck
+		ChannelID: BlockchainChannel,
+		Message:   &bcproto.StatusRequest{},
+	}, sio.sw.Logger); !queued {
 		return fmt.Errorf("peer queue full")
 	}
 
@@ -93,11 +89,18 @@ func (sio *switchIO) sendBlockToPeer(block *types.Block, peerID p2p.ID) error {
 		return err
 	}
 
+<<<<<<< HEAD
 	msgBytes, err := bc.EncodeMsg(&ocbcproto.BlockResponse{Block: bpb})
 	if err != nil {
 		return err
 	}
 	if queued := peer.TrySend(BlockchainChannel, msgBytes); !queued {
+=======
+	if queued := p2p.TrySendEnvelopeShim(peer, p2p.Envelope{ //nolint: staticcheck
+		ChannelID: BlockchainChannel,
+		Message:   &bcproto.BlockResponse{Block: bpb},
+	}, sio.sw.Logger); !queued {
+>>>>>>> bdedf2ec2 (p2p: add a per-message type send and receive metric (backport #9622) (#9641))
 		return fmt.Errorf("peer queue full")
 	}
 
@@ -109,12 +112,10 @@ func (sio *switchIO) sendBlockNotFound(height int64, peerID p2p.ID) error {
 	if peer == nil {
 		return fmt.Errorf("peer not found")
 	}
-	msgBytes, err := bc.EncodeMsg(&bcproto.NoBlockResponse{Height: height})
-	if err != nil {
-		return err
-	}
-
-	if queued := peer.TrySend(BlockchainChannel, msgBytes); !queued {
+	if queued := p2p.TrySendEnvelopeShim(peer, p2p.Envelope{ //nolint: staticcheck
+		ChannelID: BlockchainChannel,
+		Message:   &bcproto.NoBlockResponse{Height: height},
+	}, sio.sw.Logger); !queued {
 		return fmt.Errorf("peer queue full")
 	}
 
@@ -129,14 +130,10 @@ func (sio *switchIO) trySwitchToConsensus(state state.State, skipWAL bool) bool 
 	return ok
 }
 
-func (sio *switchIO) broadcastStatusRequest() error {
-	msgBytes, err := bc.EncodeMsg(&bcproto.StatusRequest{})
-	if err != nil {
-		return err
-	}
-
+func (sio *switchIO) broadcastStatusRequest() {
 	// XXX: maybe we should use an io specific peer list here
-	sio.sw.Broadcast(BlockchainChannel, msgBytes)
-
-	return nil
+	sio.sw.BroadcastEnvelope(p2p.Envelope{
+		ChannelID: BlockchainChannel,
+		Message:   &bcproto.StatusRequest{},
+	})
 }

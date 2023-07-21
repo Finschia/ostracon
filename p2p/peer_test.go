@@ -7,8 +7,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/tendermint/tendermint/proto/tendermint/p2p"
 
 	"github.com/Finschia/ostracon/crypto"
 	"github.com/Finschia/ostracon/crypto/ed25519"
@@ -70,7 +73,7 @@ func TestPeerSend(t *testing.T) {
 	})
 
 	assert.True(p.CanSend(testCh))
-	assert.True(p.Send(testCh, []byte("Asylum")))
+	assert.True(SendEnvelopeShim(p, Envelope{ChannelID: testCh, Message: &p2p.Message{}}, p.Logger))
 }
 
 func createOutboundPeerAndPerformHandshake(
@@ -82,6 +85,9 @@ func createOutboundPeerAndPerformHandshake(
 		{ID: testCh, Priority: 1},
 	}
 	reactorsByCh := map[byte]Reactor{testCh: NewTestReactor(chDescs, true, 1000, true)}
+	msgTypeByChID := map[byte]proto.Message{
+		testCh: &p2p.Message{},
+	}
 	pk := ed25519.GenPrivKey()
 	pc, err := testOutboundPeerConn(addr, config, false, pk)
 	if err != nil {
@@ -94,7 +100,7 @@ func createOutboundPeerAndPerformHandshake(
 		return nil, err
 	}
 
-	p := newPeer(pc, mConfig, peerNodeInfo, reactorsByCh, chDescs, func(p Peer, r interface{}) {})
+	p := newPeer(pc, mConfig, peerNodeInfo, reactorsByCh, msgTypeByChID, chDescs, func(p Peer, r interface{}) {}, newMetricsLabelCache())
 	p.SetLogger(log.TestingLogger().With("peer", addr))
 	return p, nil
 }

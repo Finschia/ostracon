@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/gogo/protobuf/proto"
+
+	"github.com/tendermint/tendermint/p2p"
 	bcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
 
 	ocbcproto "github.com/Finschia/ostracon/proto/ostracon/blockchain"
@@ -19,58 +21,6 @@ const (
 		BlockResponseMessagePrefixSize +
 		BlockResponseMessageFieldKeySize
 )
-
-// EncodeMsg encodes a Protobuf message
-func EncodeMsg(pb proto.Message) ([]byte, error) {
-	msg := ocbcproto.Message{}
-
-	switch pb := pb.(type) {
-	case *bcproto.BlockRequest:
-		msg.Sum = &ocbcproto.Message_BlockRequest{BlockRequest: pb}
-	case *ocbcproto.BlockResponse:
-		msg.Sum = &ocbcproto.Message_BlockResponse{BlockResponse: pb}
-	case *bcproto.NoBlockResponse:
-		msg.Sum = &ocbcproto.Message_NoBlockResponse{NoBlockResponse: pb}
-	case *bcproto.StatusRequest:
-		msg.Sum = &ocbcproto.Message_StatusRequest{StatusRequest: pb}
-	case *bcproto.StatusResponse:
-		msg.Sum = &ocbcproto.Message_StatusResponse{StatusResponse: pb}
-	default:
-		return nil, fmt.Errorf("unknown message type %T", pb)
-	}
-
-	bz, err := proto.Marshal(&msg)
-	if err != nil {
-		return nil, fmt.Errorf("unable to marshal %T: %w", pb, err)
-	}
-
-	return bz, nil
-}
-
-// DecodeMsg decodes a Protobuf message.
-func DecodeMsg(bz []byte) (proto.Message, error) {
-	pb := &ocbcproto.Message{}
-
-	err := proto.Unmarshal(bz, pb)
-	if err != nil {
-		return nil, err
-	}
-
-	switch msg := pb.Sum.(type) {
-	case *ocbcproto.Message_BlockRequest:
-		return msg.BlockRequest, nil
-	case *ocbcproto.Message_BlockResponse:
-		return msg.BlockResponse, nil
-	case *ocbcproto.Message_NoBlockResponse:
-		return msg.NoBlockResponse, nil
-	case *ocbcproto.Message_StatusRequest:
-		return msg.StatusRequest, nil
-	case *ocbcproto.Message_StatusResponse:
-		return msg.StatusResponse, nil
-	default:
-		return nil, fmt.Errorf("unknown message type %T", msg)
-	}
-}
 
 // ValidateMsg validates a message.
 func ValidateMsg(pb proto.Message) error {
@@ -108,4 +58,32 @@ func ValidateMsg(pb proto.Message) error {
 		return fmt.Errorf("unknown message type %T", msg)
 	}
 	return nil
+}
+
+// EncodeMsg encodes a Protobuf message
+//
+// Deprecated: Will be removed in v0.37.
+func EncodeMsg(pb proto.Message) ([]byte, error) {
+	if um, ok := pb.(p2p.Wrapper); ok {
+		pb = um.Wrap()
+	}
+	bz, err := proto.Marshal(pb)
+	if err != nil {
+		return nil, fmt.Errorf("unable to marshal %T: %w", pb, err)
+	}
+
+	return bz, nil
+}
+
+// DecodeMsg decodes a Protobuf message.
+//
+// Deprecated: Will be removed in v0.37.
+func DecodeMsg(bz []byte) (proto.Message, error) {
+	pb := &bcproto.Message{}
+
+	err := proto.Unmarshal(bz, pb)
+	if err != nil {
+		return nil, err
+	}
+	return pb.Unwrap()
 }
