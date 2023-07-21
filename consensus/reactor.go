@@ -1155,23 +1155,17 @@ func (ps *PeerState) SetHasProposalBlockPart(height int64, round int32, index in
 // Returns true if vote was sent.
 func (ps *PeerState) PickSendVote(votes types.VoteSetReader) bool {
 	if vote, ok := ps.PickVoteToSend(votes); ok {
-<<<<<<< HEAD
-		msg := &VoteMessage{vote}
 		// Remove the logging `PeerState`
 		// See: https://github.com/Finschia/ostracon/issues/457
 		// See: https://github.com/tendermint/tendermint/discussions/9353
-		// ps.logger.Debug("Sending vote message", "ps", ps, "vote", vote)
+		//ps.logger.Debug("Sending vote message", "ps", ps, "vote", vote)
 		ps.logger.Debug("Sending vote message", "vote", vote)
-		if ps.peer.Send(VoteChannel, MustEncode(msg)) {
-=======
-		ps.logger.Debug("Sending vote message", "ps", ps, "vote", vote)
 		if p2p.SendEnvelopeShim(ps.peer, p2p.Envelope{ //nolint: staticcheck
 			ChannelID: VoteChannel,
 			Message: &tmcons.Vote{
 				Vote: vote.ToProto(),
 			},
 		}, ps.logger) {
->>>>>>> bdedf2ec2 (p2p: add a per-message type send and receive metric (backport #9622) (#9641))
 			ps.SetHasVote(vote)
 			return true
 		}
