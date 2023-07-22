@@ -200,6 +200,24 @@ func TestReactor_Receive_SnapshotsRequest(t *testing.T) {
 	}
 }
 
+func TestLegacyReactorReceiveBasic(t *testing.T) {
+	cfg := config.DefaultStateSyncConfig()
+	conn := &proxymocks.AppConnSnapshot{}
+	reactor := NewReactor(*cfg, conn, nil, true, 1000)
+	peer := p2p.CreateRandomPeer(false)
+
+	reactor.InitPeer(peer)
+	reactor.AddPeer(peer)
+	m := &ssproto.ChunkRequest{Height: 1, Format: 1, Index: 1}
+	wm := m.Wrap()
+	msg, err := proto.Marshal(wm)
+	assert.NoError(t, err)
+
+	assert.NotPanics(t, func() {
+		reactor.Receive(ChunkChannel, peer, msg)
+	})
+}
+
 func makeTestStateSyncReactor(
 	t *testing.T, appHash string, height int64, snapshot *snapshot, chunks []*chunk) *Reactor {
 	connSnapshot := makeMockAppConnSnapshot(appHash, snapshot, chunks)

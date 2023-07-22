@@ -521,7 +521,7 @@ func (r *BlockchainReactor) ReceiveEnvelope(e p2p.Envelope) {
 }
 
 func (r *BlockchainReactor) Receive(chID byte, peer p2p.Peer, msgBytes []byte) {
-	var msg *bcproto.Message
+	msg := &bcproto.Message{}
 	err := proto.Unmarshal(msgBytes, msg)
 	if err != nil {
 		panic(err)

@@ -7,10 +7,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	abci "github.com/tendermint/tendermint/abci/types"
+	bcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
 	dbm "github.com/tendermint/tm-db"
 
 	ocabci "github.com/Finschia/ostracon/abci/types"
@@ -195,6 +197,26 @@ func TestNoBlockResponse(t *testing.T) {
 			assert.True(t, block == nil)
 		}
 	}
+}
+
+func TestLegacyReactorReceiveBasic(t *testing.T) {
+	config = cfg.ResetTestRoot("blockchain_reactor_test")
+	defer os.RemoveAll(config.RootDir)
+	genDoc, privVals := randGenesisDoc(1, false, 30)
+	reactor := newBlockchainReactor(log.TestingLogger(), genDoc, privVals, 10,
+		config.P2P.RecvAsync, config.P2P.BlockchainRecvBufSize).reactor
+	peer := p2p.CreateRandomPeer(false)
+
+	reactor.InitPeer(peer)
+	reactor.AddPeer(peer)
+	m := &bcproto.StatusRequest{}
+	wm := m.Wrap()
+	msg, err := proto.Marshal(wm)
+	assert.NoError(t, err)
+
+	assert.NotPanics(t, func() {
+		reactor.Receive(BlockchainChannel, peer, msg)
+	})
 }
 
 // NOTE: This is too hard to test without
