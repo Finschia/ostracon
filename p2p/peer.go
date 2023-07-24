@@ -57,7 +57,7 @@ type BufferedMsg struct {
 	ChID    byte
 	Peer    Peer
 	Msg     []byte
-	Message proto.Message
+	ProtoMsg proto.Message
 }
 
 type EnvelopeSender interface {
