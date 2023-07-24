@@ -1112,11 +1112,13 @@ func (n *Node) startRPC() ([]net.Listener, error) {
 
 	config := rpcserver.DefaultConfig()
 	config.MaxBodyBytes = n.config.RPC.MaxBodyBytes
+	config.MaxRequestBatchRequest = n.config.RPC.MaxRequestBatchRequest
 	config.MaxHeaderBytes = n.config.RPC.MaxHeaderBytes
 	config.MaxOpenConnections = n.config.RPC.MaxOpenConnections
 	config.ReadTimeout = n.config.RPC.ReadTimeout
 	config.WriteTimeout = n.config.RPC.WriteTimeout
 	config.IdleTimeout = n.config.RPC.IdleTimeout
+
 	// If necessary adjust global WriteTimeout to ensure it's greater than
 	// TimeoutBroadcastTxCommit.
 	// See https://github.com/tendermint/tendermint/issues/3435
@@ -1195,6 +1197,7 @@ func (n *Node) startRPC() ([]net.Listener, error) {
 		config := rpcserver.DefaultConfig()
 		config.MaxBodyBytes = n.config.RPC.MaxBodyBytes
 		config.MaxHeaderBytes = n.config.RPC.MaxHeaderBytes
+		config.MaxRequestBatchRequest = n.config.RPC.MaxRequestBatchRequest
 		// NOTE: GRPCMaxOpenConnections is used, not MaxOpenConnections
 		config.MaxOpenConnections = n.config.RPC.GRPCMaxOpenConnections
 		// If necessary adjust global WriteTimeout to ensure it's greater than

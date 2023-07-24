@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"reflect"
 	"sort"
+	"strconv"
 
 	tmjson "github.com/Finschia/ostracon/libs/json"
 	"github.com/Finschia/ostracon/libs/log"
@@ -53,6 +54,29 @@ func makeJSONRPCHandler(funcMap map[string]*RPCFunc, logger log.Logger) http.Han
 				return
 			}
 			requests = []types.RPCRequest{request}
+		}
+		// read the maxRequestBatchRequest from header
+		maxRequestBatchRequest, err := strconv.Atoi(r.Header.Get("MaxRequestBatchRequest"))
+		if err != nil {
+			res := types.RPCInvalidRequestError(nil,
+				fmt.Errorf("error reading request header key"),
+			)
+			if wErr := WriteRPCResponseHTTPError(w, http.StatusInternalServerError, res); wErr != nil {
+				logger.Error("failed to write response", "res", res, "err", wErr)
+			}
+			return
+		}
+
+		// if the number of requests in the batch exceeds the max_request_batch_request
+		// return a invalid request error
+		if len(requests) > maxRequestBatchRequest {
+			res := types.RPCInvalidRequestError(nil,
+				fmt.Errorf("too many requests in a request batch, current is %d, where the upper limit is %d", len(requests), maxRequestBatchRequest),
+			)
+			if wErr := WriteRPCResponseHTTPError(w, http.StatusBadRequest, res); wErr != nil {
+				logger.Error("failed to write response", "res", res, "err", wErr)
+			}
+			return
 		}
 
 		for _, request := range requests {
@@ -176,8 +200,9 @@ func arrayParamsToArgs(
 // array.
 //
 // Example:
-//   rpcFunc.args = [rpctypes.Context string]
-//   rpcFunc.argNames = ["arg"]
+//
+//	rpcFunc.args = [rpctypes.Context string]
+//	rpcFunc.argNames = ["arg"]
 func jsonParamsToArgs(rpcFunc *RPCFunc, raw []byte) ([]reflect.Value, error) {
 	const argsOffset = 1
 

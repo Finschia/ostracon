@@ -28,6 +28,8 @@ var (
 	TestFuncMap   = map[string]*RPCFunc{"c": TestRPCFunc}
 	TestGoodBody  = `{"jsonrpc": "2.0", "method": "c", "id": "0", "params": null}`
 	TestBadParams = `{"jsonrpc": "2.0", "method": "c", "id": "0", "params": "s=a,i=b"}`
+
+	TestMaxRequestBatchRequest = "10"
 )
 
 type FailManager struct {

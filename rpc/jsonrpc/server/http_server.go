@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"time"
 
@@ -32,6 +33,8 @@ type Config struct {
 	// MaxBodyBytes controls the maximum number of bytes the
 	// server will read parsing the request body.
 	MaxBodyBytes int64
+	// MaxBodyBytes controls the maximum number of one request batch
+	MaxRequestBatchRequest int
 	// mirrors http.Server#MaxHeaderBytes
 	MaxHeaderBytes int
 }
@@ -39,24 +42,36 @@ type Config struct {
 // DefaultConfig returns a default configuration.
 func DefaultConfig() *Config {
 	return &Config{
-		MaxOpenConnections: 0, // unlimited
-		ReadTimeout:        10 * time.Second,
-		WriteTimeout:       10 * time.Second,
-		IdleTimeout:        60 * time.Second,
-		MaxBodyBytes:       int64(1000000), // 1MB
-		MaxHeaderBytes:     1 << 20,        // same as the net/http default
+		MaxOpenConnections:     0, // unlimited
+		ReadTimeout:            10 * time.Second,
+		WriteTimeout:           10 * time.Second,
+		IdleTimeout:            60 * time.Second,
+		MaxBodyBytes:           int64(1000000), // 1MB
+		MaxRequestBatchRequest: 10,
+		MaxHeaderBytes:         1 << 20, // same as the net/http default
 	}
 }
 
 // Serve creates a http.Server and calls Serve with the given listener. It
-// wraps handler with RecoverAndLogHandler and a handler, which limits the max
-// body size to config.MaxBodyBytes.
+// wraps handler with RecoverAndLogHandler and handlers. Handlers contain
+// a maxBytesHandler, which limits the max body size to config.MaxBodyBytes and
+// a maxBatchRequestHandler, which limits the max number of requests in a batch.
 //
 // NOTE: This function blocks - you may want to call it in a go-routine.
 func Serve(listener net.Listener, handler http.Handler, logger log.Logger, config *Config) error {
 	logger.Info(fmt.Sprintf("Starting RPC HTTP server on %s", listener.Addr()))
+
+	handlers := maxBatchRequestHandler{
+		h: maxBytesHandler{
+			h: handler,
+			n: config.MaxBodyBytes,
+		},
+		NewHeaderName:  "MaxRequestBatchRequest",
+		NewHeaderValue: strconv.Itoa(config.MaxRequestBatchRequest),
+	}
+
 	s := &http.Server{
-		Handler:        RecoverAndLogHandler(maxBytesHandler{h: handler, n: config.MaxBodyBytes}, logger),
+		Handler:        RecoverAndLogHandler(handlers, logger),
 		ReadTimeout:    config.ReadTimeout,
 		WriteTimeout:   config.WriteTimeout,
 		IdleTimeout:    config.IdleTimeout,
@@ -68,8 +83,9 @@ func Serve(listener net.Listener, handler http.Handler, logger log.Logger, confi
 }
 
 // Serve creates a http.Server and calls ServeTLS with the given listener,
-// certFile and keyFile. It wraps handler with RecoverAndLogHandler and a
-// handler, which limits the max body size to config.MaxBodyBytes.
+// certFile and keyFile. It wraps handler with RecoverAndLogHandler and handlers.
+// Handlers contain a maxBytesHandler, which limits the max body size to config.MaxBodyBytes and
+// a maxBatchRequestHandler, which limits the max number of requests in a batch.
 //
 // NOTE: This function blocks - you may want to call it in a go-routine.
 func ServeTLS(
@@ -81,8 +97,18 @@ func ServeTLS(
 ) error {
 	logger.Info(fmt.Sprintf("Starting RPC HTTPS server on %s (cert: %q, key: %q)",
 		listener.Addr(), certFile, keyFile))
+
+	handlers := maxBatchRequestHandler{
+		h: maxBytesHandler{
+			h: handler,
+			n: config.MaxBodyBytes,
+		},
+		NewHeaderName:  "MaxRequestBatchRequest",
+		NewHeaderValue: strconv.Itoa(config.MaxRequestBatchRequest),
+	}
+
 	s := &http.Server{
-		Handler:        RecoverAndLogHandler(maxBytesHandler{h: handler, n: config.MaxBodyBytes}, logger),
+		Handler:        RecoverAndLogHandler(handlers, logger),
 		ReadTimeout:    config.ReadTimeout,
 		WriteTimeout:   config.WriteTimeout,
 		IdleTimeout:    config.IdleTimeout,
@@ -238,6 +264,17 @@ type maxBytesHandler struct {
 
 func (h maxBytesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, h.n)
+	h.h.ServeHTTP(w, r)
+}
+
+type maxBatchRequestHandler struct {
+	h              http.Handler
+	NewHeaderName  string
+	NewHeaderValue string
+}
+
+func (h maxBatchRequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	r.Header.Set(h.NewHeaderName, h.NewHeaderValue)
 	h.h.ServeHTTP(w, r)
 }
 

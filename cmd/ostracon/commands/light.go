@@ -203,6 +203,7 @@ func runProxy(cmd *cobra.Command, args []string) error {
 
 	cfg := rpcserver.DefaultConfig()
 	cfg.MaxBodyBytes = config.RPC.MaxBodyBytes
+	cfg.MaxRequestBatchRequest = config.RPC.MaxRequestBatchRequest
 	cfg.MaxHeaderBytes = config.RPC.MaxHeaderBytes
 	cfg.MaxOpenConnections = maxOpenConnections
 	// If necessary adjust global WriteTimeout to ensure it's greater than
