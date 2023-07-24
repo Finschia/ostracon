@@ -1,4 +1,3 @@
-// nolint: gosec
 package e2e
 
 import (
@@ -416,7 +415,8 @@ func (t Testnet) ArchiveNodes() []*Node {
 // RandomNode returns a random non-seed node.
 func (t Testnet) RandomNode() *Node {
 	for {
-		node := t.Nodes[rand.Intn(len(t.Nodes))] //nolint:gosec
+		//nolint:gosec // G404: Use of weak random number generator (math/rand instead of crypto/rand)
+		node := t.Nodes[rand.Intn(len(t.Nodes))]
 		if node.Mode != ModeSeed {
 			return node
 		}

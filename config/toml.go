@@ -12,7 +12,7 @@ import (
 )
 
 // DefaultDirPerm is the default permissions used when creating directories.
-const DefaultDirPerm = 0700
+const DefaultDirPerm = 0o700
 
 var configTemplate *template.Template
 
@@ -63,7 +63,7 @@ func WriteConfigFile(configFilePath string, config *Config) {
 		panic(err)
 	}
 
-	tmos.MustWriteFile(configFilePath, buffer.Bytes(), 0644)
+	tmos.MustWriteFile(configFilePath, buffer.Bytes(), 0o644)
 }
 
 // Note: any changes to the comments/variables/mapstructure
@@ -630,12 +630,12 @@ func ResetTestRootWithChainID(testName string, chainID string) *Config {
 			chainID = "ostracon_test"
 		}
 		testGenesis := fmt.Sprintf(testGenesisFmt, chainID)
-		tmos.MustWriteFile(genesisFilePath, []byte(testGenesis), 0644)
+		tmos.MustWriteFile(genesisFilePath, []byte(testGenesis), 0o644)
 	}
 	// we always overwrite the priv val
-	tmos.MustWriteFile(privKeyFilePath, []byte(testPrivValidatorKey), 0644)
-	tmos.MustWriteFile(privStateFilePath, []byte(testPrivValidatorState), 0644)
-	tmos.MustWriteFile(nodeKeyFilePath, []byte(testNodeKey), 0644)
+	tmos.MustWriteFile(privKeyFilePath, []byte(testPrivValidatorKey), 0o644)
+	tmos.MustWriteFile(privStateFilePath, []byte(testPrivValidatorState), 0o644)
+	tmos.MustWriteFile(nodeKeyFilePath, []byte(testNodeKey), 0o644)
 
 	config := TestConfig().SetRoot(rootDir)
 	return config

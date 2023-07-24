@@ -3,7 +3,6 @@ package pex
 import (
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -21,9 +20,7 @@ import (
 	"github.com/Finschia/ostracon/p2p/mock"
 )
 
-var (
-	cfg *config.P2PConfig
-)
+var cfg *config.P2PConfig
 
 func init() {
 	cfg = config.DefaultP2PConfig()
@@ -74,7 +71,7 @@ func TestPEXReactorRunning(t *testing.T) {
 	switches := make([]*p2p.Switch, N)
 
 	// directory to store address books
-	dir, err := ioutil.TempDir("", "pex_reactor")
+	dir, err := os.MkdirTemp("", "pex_reactor")
 	require.Nil(t, err)
 	defer os.RemoveAll(dir)
 
@@ -134,12 +131,11 @@ func TestPEXReactorReceive(t *testing.T) {
 	r.RequestAddrs(peer)
 
 	size := book.Size()
-	msg := mustEncode(&tmp2p.PexAddrs{Addrs: []tmp2p.NetAddress{peer.SocketAddr().ToProto()}})
-	r.Receive(PexChannel, peer, msg)
+	msg := &tmp2p.PexAddrs{Addrs: []tmp2p.NetAddress{peer.SocketAddr().ToProto()}}
+	r.ReceiveEnvelope(p2p.Envelope{ChannelID: PexChannel, Src: peer, Message: msg})
 	assert.Equal(t, size+1, book.Size())
 
-	msg = mustEncode(&tmp2p.PexRequest{})
-	r.Receive(PexChannel, peer, msg) // should not panic.
+	r.ReceiveEnvelope(p2p.Envelope{ChannelID: PexChannel, Src: peer, Message: &tmp2p.PexRequest{}})
 }
 
 func TestPEXReactorRequestMessageAbuse(t *testing.T) {
@@ -158,20 +154,19 @@ func TestPEXReactorRequestMessageAbuse(t *testing.T) {
 	require.True(t, book.HasAddress(peerAddr))
 
 	id := string(peer.ID())
-	msg := mustEncode(&tmp2p.PexRequest{})
 
 	// first time creates the entry
-	r.Receive(PexChannel, peer, msg)
+	r.ReceiveEnvelope(p2p.Envelope{ChannelID: PexChannel, Src: peer, Message: &tmp2p.PexRequest{}})
 	assert.True(t, r.lastReceivedRequests.Has(id))
 	assert.True(t, sw.Peers().Has(peer.ID()))
 
 	// next time sets the last time value
-	r.Receive(PexChannel, peer, msg)
+	r.ReceiveEnvelope(p2p.Envelope{ChannelID: PexChannel, Src: peer, Message: &tmp2p.PexRequest{}})
 	assert.True(t, r.lastReceivedRequests.Has(id))
 	assert.True(t, sw.Peers().Has(peer.ID()))
 
 	// third time is too many too soon - peer is removed
-	r.Receive(PexChannel, peer, msg)
+	r.ReceiveEnvelope(p2p.Envelope{ChannelID: PexChannel, Src: peer, Message: &tmp2p.PexRequest{}})
 	assert.False(t, r.lastReceivedRequests.Has(id))
 	assert.False(t, sw.Peers().Has(peer.ID()))
 	assert.True(t, book.IsBanned(peerAddr))
@@ -195,22 +190,22 @@ func TestPEXReactorAddrsMessageAbuse(t *testing.T) {
 	assert.True(t, r.requestsSent.Has(id))
 	assert.True(t, sw.Peers().Has(peer.ID()))
 
-	msg := mustEncode(&tmp2p.PexAddrs{Addrs: []tmp2p.NetAddress{peer.SocketAddr().ToProto()}})
+	msg := &tmp2p.PexAddrs{Addrs: []tmp2p.NetAddress{peer.SocketAddr().ToProto()}}
 
 	// receive some addrs. should clear the request
-	r.Receive(PexChannel, peer, msg)
+	r.ReceiveEnvelope(p2p.Envelope{ChannelID: PexChannel, Src: peer, Message: msg})
 	assert.False(t, r.requestsSent.Has(id))
 	assert.True(t, sw.Peers().Has(peer.ID()))
 
 	// receiving more unsolicited addrs causes a disconnect and ban
-	r.Receive(PexChannel, peer, msg)
+	r.ReceiveEnvelope(p2p.Envelope{ChannelID: PexChannel, Src: peer, Message: msg})
 	assert.False(t, sw.Peers().Has(peer.ID()))
 	assert.True(t, book.IsBanned(peer.SocketAddr()))
 }
 
 func TestCheckSeeds(t *testing.T) {
 	// directory to store address books
-	dir, err := ioutil.TempDir("", "pex_reactor")
+	dir, err := os.MkdirTemp("", "pex_reactor")
 	require.Nil(t, err)
 	defer os.RemoveAll(dir)
 
@@ -229,8 +224,10 @@ func TestCheckSeeds(t *testing.T) {
 
 	// 4. test create peer with all seeds having unresolvable DNS fails
 	badPeerConfig := &ReactorConfig{
-		Seeds: []string{"ed3dfd27bfc4af18f67a49862f04cc100696e84d@bad.network.addr:26657",
-			"d824b13cb5d40fa1d8a614e089357c7eff31b670@anotherbad.network.addr:26657"},
+		Seeds: []string{
+			"ed3dfd27bfc4af18f67a49862f04cc100696e84d@bad.network.addr:26657",
+			"d824b13cb5d40fa1d8a614e089357c7eff31b670@anotherbad.network.addr:26657",
+		},
 	}
 	peerSwitch = testCreatePeerWithConfig(dir, 2, badPeerConfig)
 	require.Error(t, peerSwitch.Start())
@@ -238,9 +235,11 @@ func TestCheckSeeds(t *testing.T) {
 
 	// 5. test create peer with one good seed address succeeds
 	badPeerConfig = &ReactorConfig{
-		Seeds: []string{"ed3dfd27bfc4af18f67a49862f04cc100696e84d@bad.network.addr:26657",
+		Seeds: []string{
+			"ed3dfd27bfc4af18f67a49862f04cc100696e84d@bad.network.addr:26657",
 			"d824b13cb5d40fa1d8a614e089357c7eff31b670@anotherbad.network.addr:26657",
-			seed.NetAddress().String()},
+			seed.NetAddress().String(),
+		},
 	}
 	peerSwitch = testCreatePeerWithConfig(dir, 2, badPeerConfig)
 	require.Nil(t, peerSwitch.Start())
@@ -249,7 +248,7 @@ func TestCheckSeeds(t *testing.T) {
 
 func TestPEXReactorUsesSeedsIfNeeded(t *testing.T) {
 	// directory to store address books
-	dir, err := ioutil.TempDir("", "pex_reactor")
+	dir, err := os.MkdirTemp("", "pex_reactor")
 	require.Nil(t, err)
 	defer os.RemoveAll(dir)
 
@@ -269,7 +268,7 @@ func TestPEXReactorUsesSeedsIfNeeded(t *testing.T) {
 
 func TestConnectionSpeedForPeerReceivedFromSeed(t *testing.T) {
 	// directory to store address books
-	dir, err := ioutil.TempDir("", "pex_reactor")
+	dir, err := os.MkdirTemp("", "pex_reactor")
 	require.Nil(t, err)
 	defer os.RemoveAll(dir)
 
@@ -298,7 +297,7 @@ func TestConnectionSpeedForPeerReceivedFromSeed(t *testing.T) {
 
 func TestPEXReactorSeedMode(t *testing.T) {
 	// directory to store address books
-	dir, err := ioutil.TempDir("", "pex_reactor")
+	dir, err := os.MkdirTemp("", "pex_reactor")
 	require.Nil(t, err)
 	defer os.RemoveAll(dir)
 
@@ -337,7 +336,7 @@ func TestPEXReactorSeedMode(t *testing.T) {
 
 func TestPEXReactorDoesNotDisconnectFromPersistentPeerInSeedMode(t *testing.T) {
 	// directory to store address books
-	dir, err := ioutil.TempDir("", "pex_reactor")
+	dir, err := os.MkdirTemp("", "pex_reactor")
 	require.Nil(t, err)
 	defer os.RemoveAll(dir)
 
@@ -375,7 +374,7 @@ func TestPEXReactorDoesNotDisconnectFromPersistentPeerInSeedMode(t *testing.T) {
 
 func TestPEXReactorDialsPeerUpToMaxAttemptsInSeedMode(t *testing.T) {
 	// directory to store address books
-	dir, err := ioutil.TempDir("", "pex_reactor")
+	dir, err := os.MkdirTemp("", "pex_reactor")
 	require.Nil(t, err)
 	defer os.RemoveAll(dir)
 
@@ -411,7 +410,7 @@ func TestPEXReactorSeedModeFlushStop(t *testing.T) {
 	switches := make([]*p2p.Switch, N)
 
 	// directory to store address books
-	dir, err := ioutil.TempDir("", "pex_reactor")
+	dir, err := os.MkdirTemp("", "pex_reactor")
 	require.Nil(t, err)
 	defer os.RemoveAll(dir)
 
@@ -490,12 +489,32 @@ func TestPEXReactorDoesNotAddPrivatePeersToAddrBook(t *testing.T) {
 	pexR.RequestAddrs(peer)
 
 	size := book.Size()
-	msg := mustEncode(&tmp2p.PexAddrs{Addrs: []tmp2p.NetAddress{peer.SocketAddr().ToProto()}})
-	pexR.Receive(PexChannel, peer, msg)
+	msg := &tmp2p.PexAddrs{Addrs: []tmp2p.NetAddress{peer.SocketAddr().ToProto()}}
+	pexR.ReceiveEnvelope(p2p.Envelope{
+		ChannelID: PexChannel,
+		Src:       peer,
+		Message:   msg,
+	})
 	assert.Equal(t, size, book.Size())
 
 	pexR.AddPeer(peer)
 	assert.Equal(t, size, book.Size())
+}
+
+func TestLegacyReactorReceiveBasic(t *testing.T) {
+	pexR, _ := createReactor(&ReactorConfig{})
+	peer := p2p.CreateRandomPeer(false)
+
+	pexR.InitPeer(peer)
+	pexR.AddPeer(peer)
+	m := &tmp2p.PexAddrs{}
+	wm := m.Wrap()
+	msg, err := proto.Marshal(wm)
+	assert.NoError(t, err)
+
+	assert.NotPanics(t, func() {
+		pexR.Receive(PexChannel, peer, msg)
+	})
 }
 
 func TestPEXReactorDialPeer(t *testing.T) {
@@ -651,7 +670,7 @@ func testCreatePeerWithSeed(dir string, id int, seed *p2p.Switch) *p2p.Switch {
 
 func createReactor(conf *ReactorConfig) (r *Reactor, book AddrBook) {
 	// directory to store address book
-	dir, err := ioutil.TempDir("", "pex_reactor")
+	dir, err := os.MkdirTemp("", "pex_reactor")
 	if err != nil {
 		panic(err)
 	}
@@ -683,7 +702,6 @@ func createSwitchAndAddReactors(reactors ...p2p.Reactor) *p2p.Switch {
 }
 
 func TestPexVectors(t *testing.T) {
-
 	addr := tmp2p.NetAddress{
 		ID:   "1",
 		IP:   "127.0.0.1",
@@ -702,7 +720,9 @@ func TestPexVectors(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 
-		bz := mustEncode(tc.msg)
+		w := tc.msg.(p2p.Wrapper).Wrap()
+		bz, err := proto.Marshal(w)
+		require.NoError(t, err)
 
 		require.Equal(t, tc.expBytes, hex.EncodeToString(bz), tc.testName)
 	}

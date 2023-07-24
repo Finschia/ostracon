@@ -44,6 +44,12 @@ type Reactor interface {
 	// copying.
 	//
 	// CONTRACT: msgBytes are not nil.
+	//
+	// Only one of Receive or ReceiveEnvelope are called per message. If ReceiveEnvelope
+	// is implemented, it will be used, otherwise the switch will fallback to
+	// using Receive.
+	// Deprecated: Reactors looking to receive data from a peer should implement ReceiveEnvelope.
+	// Receive will be deprecated in favor of ReceiveEnvelope in v0.37.
 	Receive(chID byte, peer Peer, msgBytes []byte)
 
 	// receive async version
@@ -51,6 +57,16 @@ type Reactor interface {
 
 	// receive routine per reactor
 	RecvRoutine()
+}
+
+type EnvelopeReceiver interface {
+	// ReceiveEnvelope is called by the switch when an envelope is received from any connected
+	// peer on any of the channels registered by the reactor.
+	//
+	// Only one of Receive or ReceiveEnvelope are called per message. If ReceiveEnvelope
+	// is implemented, it will be used, otherwise the switch will fallback to
+	// using Receive. Receive will be replaced by ReceiveEnvelope in a future version
+	ReceiveEnvelope(Envelope)
 }
 
 //--------------------------------------
@@ -80,6 +96,7 @@ func (br *BaseReactor) SetSwitch(sw *Switch) {
 func (*BaseReactor) GetChannels() []*conn.ChannelDescriptor        { return nil }
 func (*BaseReactor) AddPeer(peer Peer)                             {}
 func (*BaseReactor) RemovePeer(peer Peer, reason interface{})      {}
+func (*BaseReactor) ReceiveEnvelope(e Envelope)                    {}
 func (*BaseReactor) Receive(chID byte, peer Peer, msgBytes []byte) {}
 func (*BaseReactor) InitPeer(peer Peer) Peer                       { return peer }
 
@@ -95,7 +112,15 @@ func (br *BaseReactor) RecvRoutine() {
 	for {
 		select {
 		case msg := <-br.recvMsgBuf:
-			br.impl.Receive(msg.ChID, msg.Peer, msg.Msg)
+			if nr, ok := br.impl.(EnvelopeReceiver); ok {
+				nr.ReceiveEnvelope(Envelope{
+					ChannelID: msg.ChID,
+					Src:       msg.Peer,
+					Message:   msg.ProtoMsg,
+				})
+			} else {
+				br.impl.Receive(msg.ChID, msg.Peer, msg.Msg)
+			}
 		case <-br.Quit():
 			return
 		}
