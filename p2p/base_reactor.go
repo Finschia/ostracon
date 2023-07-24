@@ -116,7 +116,7 @@ func (br *BaseReactor) RecvRoutine() {
 				nr.ReceiveEnvelope(Envelope{
 					ChannelID: msg.ChID,
 					Src:       msg.Peer,
-					Message:   msg.Message,
+					Message:   msg.ProtoMsg,
 				})
 			} else {
 				br.impl.Receive(msg.ChID, msg.Peer, msg.Msg)

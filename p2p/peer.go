@@ -54,9 +54,9 @@ type Peer interface {
 }
 
 type BufferedMsg struct {
-	ChID    byte
-	Peer    Peer
-	Msg     []byte
+	ChID     byte
+	Peer     Peer
+	Msg      []byte
 	ProtoMsg proto.Message
 }
 
@@ -550,7 +550,7 @@ func createMConnection(
 			copied := make([]byte, len(msgBytes))
 			copy(copied, msgBytes)
 			// if the channel is full, we are blocking a message until it can send into the channel
-			ch <- &BufferedMsg{ChID: chID, Peer: p, Msg: copied, Message: msg}
+			ch <- &BufferedMsg{ChID: chID, Peer: p, Msg: copied, ProtoMsg: msg}
 		} else if nr, ok := reactor.(EnvelopeReceiver); ok {
 			nr.ReceiveEnvelope(Envelope{
 				ChannelID: chID,
