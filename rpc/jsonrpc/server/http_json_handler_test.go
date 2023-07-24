@@ -217,6 +217,40 @@ func TestRPCNotificationInBatch(t *testing.T) {
 	}
 }
 
+func TestTooManyRPCNotificationInBatch_error(t *testing.T) {
+	// prepare the mock batch request
+	var jsonArray []json.RawMessage
+	for i := 0; i < 11; i++ {
+		jsonArray = append(jsonArray, json.RawMessage(TestGoodBody))
+	}
+	jsonData, err := json.Marshal(jsonArray)
+	if err != nil {
+		t.Errorf("expected an array, couldn't marshal it")
+	}
+	// execute the batch request
+	mux := testMux()
+	req, _ := http.NewRequest("POST", "http://localhost/", strings.NewReader(string(jsonData)))
+	req.Header.Set("MaxRequestBatchRequest", TestMaxRequestBatchRequest)
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	res := rec.Result()
+	res.Body.Close()
+	// always expecting back a 400 error
+	assert.Equal(t, http.StatusBadRequest, res.StatusCode, "should always return 400")
+}
+
+func TestNoMaxRequestBatchRequestField_error(t *testing.T) {
+	// execute the batch request
+	mux := testMux()
+	req, _ := http.NewRequest("POST", "http://localhost/", strings.NewReader(TestGoodBody))
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	res := rec.Result()
+	res.Body.Close()
+	// always expecting back a 500 error
+	assert.Equal(t, http.StatusInternalServerError, res.StatusCode, "should always return 500")
+}
+
 func TestUnknownRPCPath(t *testing.T) {
 	mux := testMux()
 	req, _ := http.NewRequest("GET", "http://localhost/unknownrpcpath", nil)
