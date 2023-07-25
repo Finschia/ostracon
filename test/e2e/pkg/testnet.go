@@ -88,6 +88,7 @@ type Node struct {
 	StartAt          int64
 	FastSync         string
 	StateSync        bool
+	Mempool          string
 	Database         string
 	ABCIProtocol     Protocol
 	PrivvalProtocol  Protocol
@@ -184,6 +185,7 @@ func LoadTestnet(manifest Manifest, fname string, ifd InfrastructureData) (*Test
 			PrivvalProtocol:  ProtocolFile,
 			StartAt:          nodeManifest.StartAt,
 			FastSync:         nodeManifest.FastSync,
+			Mempool:          nodeManifest.Mempool,
 			StateSync:        nodeManifest.StateSync,
 			PersistInterval:  1,
 			SnapshotInterval: nodeManifest.SnapshotInterval,
@@ -329,6 +331,12 @@ func (n Node) Validate(testnet Testnet) error {
 	case "", "v0", "v1", "v2":
 	default:
 		return fmt.Errorf("invalid fast sync setting %q", n.FastSync)
+
+	}
+	switch n.Mempool {
+	case "", "v0", "v1":
+	default:
+		return fmt.Errorf("invalid mempool version %q", n.Mempool)
 	}
 	switch n.Database {
 	case "goleveldb", "cleveldb", "boltdb", "rocksdb", "badgerdb":
@@ -407,7 +415,8 @@ func (t Testnet) ArchiveNodes() []*Node {
 // RandomNode returns a random non-seed node.
 func (t Testnet) RandomNode() *Node {
 	for {
-		node := t.Nodes[rand.Intn(len(t.Nodes))] //nolint:gosec
+		//nolint:gosec // G404: Use of weak random number generator (math/rand instead of crypto/rand)
+		node := t.Nodes[rand.Intn(len(t.Nodes))]
 		if node.Mode != ModeSeed {
 			return node
 		}

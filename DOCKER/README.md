@@ -1,6 +1,6 @@
 # Docker
 
-Basically, see the [Tendermint v0.34.8 Docker](https://github.com/tendermint/tendermint/blob/v0.34.8/DOCKER/README.md).
+Basically, see the [Tendermint v0.34 Docker](https://github.com/tendermint/tendermint/blob/v0.34.x/DOCKER/README.md).
 
 ## Quick Start
 

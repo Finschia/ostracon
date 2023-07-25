@@ -3,11 +3,12 @@
 package mocks
 
 import (
-	ostraconstate "github.com/Finschia/ostracon/proto/ostracon/state"
 	ostracontypes "github.com/Finschia/ostracon/types"
 	mock "github.com/stretchr/testify/mock"
 
 	state "github.com/Finschia/ostracon/state"
+
+	tendermintstate "github.com/tendermint/tendermint/proto/tendermint/state"
 
 	types "github.com/tendermint/tendermint/proto/tendermint/types"
 )
@@ -70,19 +71,19 @@ func (_m *Store) Load() (state.State, error) {
 }
 
 // LoadABCIResponses provides a mock function with given fields: _a0
-func (_m *Store) LoadABCIResponses(_a0 int64) (*ostraconstate.ABCIResponses, error) {
+func (_m *Store) LoadABCIResponses(_a0 int64) (*tendermintstate.ABCIResponses, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *ostraconstate.ABCIResponses
+	var r0 *tendermintstate.ABCIResponses
 	var r1 error
-	if rf, ok := ret.Get(0).(func(int64) (*ostraconstate.ABCIResponses, error)); ok {
+	if rf, ok := ret.Get(0).(func(int64) (*tendermintstate.ABCIResponses, error)); ok {
 		return rf(_a0)
 	}
-	if rf, ok := ret.Get(0).(func(int64) *ostraconstate.ABCIResponses); ok {
+	if rf, ok := ret.Get(0).(func(int64) *tendermintstate.ABCIResponses); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*ostraconstate.ABCIResponses)
+			r0 = ret.Get(0).(*tendermintstate.ABCIResponses)
 		}
 	}
 
@@ -159,6 +160,32 @@ func (_m *Store) LoadFromDBOrGenesisFile(_a0 string) (state.State, error) {
 	}
 
 	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(_a0)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// LoadLastABCIResponse provides a mock function with given fields: _a0
+func (_m *Store) LoadLastABCIResponse(_a0 int64) (*tendermintstate.ABCIResponses, error) {
+	ret := _m.Called(_a0)
+
+	var r0 *tendermintstate.ABCIResponses
+	var r1 error
+	if rf, ok := ret.Get(0).(func(int64) (*tendermintstate.ABCIResponses, error)); ok {
+		return rf(_a0)
+	}
+	if rf, ok := ret.Get(0).(func(int64) *tendermintstate.ABCIResponses); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*tendermintstate.ABCIResponses)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(int64) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
@@ -248,11 +275,11 @@ func (_m *Store) Save(_a0 state.State) error {
 }
 
 // SaveABCIResponses provides a mock function with given fields: _a0, _a1
-func (_m *Store) SaveABCIResponses(_a0 int64, _a1 *ostraconstate.ABCIResponses) error {
+func (_m *Store) SaveABCIResponses(_a0 int64, _a1 *tendermintstate.ABCIResponses) error {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int64, *ostraconstate.ABCIResponses) error); ok {
+	if rf, ok := ret.Get(0).(func(int64, *tendermintstate.ABCIResponses) error); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		r0 = ret.Error(0)
@@ -261,13 +288,12 @@ func (_m *Store) SaveABCIResponses(_a0 int64, _a1 *ostraconstate.ABCIResponses) 
 	return r0
 }
 
-type mockConstructorTestingTNewStore interface {
+// NewStore creates a new instance of Store. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewStore(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewStore creates a new instance of Store. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewStore(t mockConstructorTestingTNewStore) *Store {
+}) *Store {
 	mock := &Store{}
 	mock.Mock.Test(t)
 

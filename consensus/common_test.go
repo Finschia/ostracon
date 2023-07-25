@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"os"
 	"path"
@@ -33,6 +32,9 @@ import (
 	tmpubsub "github.com/Finschia/ostracon/libs/pubsub"
 	tmsync "github.com/Finschia/ostracon/libs/sync"
 	mempl "github.com/Finschia/ostracon/mempool"
+	mempoolv0 "github.com/Finschia/ostracon/mempool/v0"
+
+	//mempoolv1 "github.com/Finschia/ostracon/mempool/v1"
 	"github.com/Finschia/ostracon/p2p"
 	"github.com/Finschia/ostracon/privval"
 	sm "github.com/Finschia/ostracon/state"
@@ -89,8 +91,8 @@ func newValidatorStub(privValidator types.PrivValidator, valIndex int32) *valida
 func (vs *validatorStub) signVote(
 	voteType tmproto.SignedMsgType,
 	hash []byte,
-	header types.PartSetHeader) (*types.Vote, error) {
-
+	header types.PartSetHeader,
+) (*types.Vote, error) {
 	pubKey, err := vs.PrivValidator.GetPubKey()
 	if err != nil {
 		return nil, fmt.Errorf("can't get pubkey: %w", err)
@@ -138,7 +140,8 @@ func signVotes(
 	voteType tmproto.SignedMsgType,
 	hash []byte,
 	header types.PartSetHeader,
-	vss ...*validatorStub) []*types.Vote {
+	vss ...*validatorStub,
+) []*types.Vote {
 	votes := make([]*types.Vote, len(vss))
 	for i, vs := range vss {
 		votes[i] = signVote(vs, voteType, hash, header)
@@ -420,12 +423,38 @@ func newStateWithConfigAndBlockStoreWithLoggers(
 
 	// one for mempool, one for consensus
 	mtx := new(tmsync.Mutex)
-	proxyAppConnMem := abcicli.NewLocalClient(mtx, app)
+
 	proxyAppConnCon := abcicli.NewLocalClient(mtx, app)
+	proxyAppConnConMem := abcicli.NewLocalClient(mtx, app)
+	// Make Mempool
+	memplMetrics := mempl.NopMetrics()
 
 	// Make Mempool
-	mempool := mempl.NewCListMempool(thisConfig.Mempool, proxyAppConnMem, 0)
-	mempool.SetLogger(loggers.memLogger.With("module", "mempool"))
+	var mempool mempl.Mempool
+
+	switch config.Mempool.Version {
+	case cfg.MempoolV0:
+		mempool = mempoolv0.NewCListMempool(config.Mempool,
+			proxyAppConnConMem,
+			state.LastBlockHeight,
+			mempoolv0.WithMetrics(memplMetrics),
+			mempoolv0.WithPreCheck(sm.TxPreCheck(state)),
+			mempoolv0.WithPostCheck(sm.TxPostCheck(state)))
+		mempool.(*mempoolv0.CListMempool).SetLogger(loggers.memLogger.With("module", "mempool"))
+	case cfg.MempoolV1: // XXX Deprecated
+		panic("Deprecated MempoolV1")
+		/*
+			logger := consensusLogger()
+			mempool = mempoolv1.NewTxMempool(logger,
+				config.Mempool,
+				proxyAppConnConMem,
+				state.LastBlockHeight,
+				mempoolv1.WithMetrics(memplMetrics),
+				mempoolv1.WithPreCheck(sm.TxPreCheck(state)),
+				mempoolv1.WithPostCheck(sm.TxPostCheck(state)),
+			)
+		*/
+	}
 	if thisConfig.Consensus.WaitForTxs() {
 		mempool.EnableTxsAvailable()
 	}
@@ -434,7 +463,9 @@ func newStateWithConfigAndBlockStoreWithLoggers(
 
 	// Make State
 	stateDB := blockDB
-	stateStore := sm.NewStore(stateDB)
+	stateStore := sm.NewStore(stateDB, sm.StoreOptions{
+		DiscardABCIResponses: false,
+	})
 	if err := stateStore.Save(state); err != nil { // for save height 1's validators info
 		panic(err)
 	}
@@ -456,7 +487,7 @@ func newStateWithConfigAndBlockStoreWithLoggers(
 
 func loadPrivValidator(config *cfg.Config) *privval.FilePV {
 	privValidatorKeyFile := config.PrivValidatorKeyFile()
-	ensureDir(filepath.Dir(privValidatorKeyFile), 0700)
+	ensureDir(filepath.Dir(privValidatorKeyFile), 0o700)
 	privValidatorStateFile := config.PrivValidatorStateFile()
 	privValidator := privval.LoadOrGenFilePV(privValidatorKeyFile, privValidatorStateFile)
 	privValidator.Reset()
@@ -530,7 +561,8 @@ func forceProposer(cs *State, vals []*validatorStub, index []int, height []int64
 //-------------------------------------------------------------------------------
 
 func ensureNoNewEvent(ch <-chan tmpubsub.Message, timeout time.Duration,
-	errorMessage string) {
+	errorMessage string,
+) {
 	select {
 	case <-time.After(timeout):
 		break
@@ -708,7 +740,8 @@ func ensurePrevote(voteCh <-chan tmpubsub.Message, height int64, round int32) {
 }
 
 func ensureVote(voteCh <-chan tmpubsub.Message, height int64, round int32,
-	voteType tmproto.SignedMsgType) {
+	voteType tmproto.SignedMsgType,
+) {
 	select {
 	case <-time.After(ensureTimeout):
 		panic("Timeout expired while waiting for NewVote event")
@@ -792,14 +825,17 @@ func consensusLogger() log.Logger {
 }
 
 func randConsensusNet(nValidators int, testName string, tickerFunc func() TimeoutTicker,
-	appFunc func() ocabci.Application, configOpts ...func(*cfg.Config)) ([]*State, cleanupFunc) {
+	appFunc func() ocabci.Application, configOpts ...func(*cfg.Config),
+) ([]*State, cleanupFunc) {
 	genDoc, privVals := randGenesisDoc(nValidators, false, 30)
 	css := make([]*State, nValidators)
 	logger := consensusLogger()
 	configRootDirs := make([]string, 0, nValidators)
 	for i := 0; i < nValidators; i++ {
 		stateDB := dbm.NewMemDB() // each state needs its own db
-		stateStore := sm.NewStore(stateDB)
+		stateStore := sm.NewStore(stateDB, sm.StoreOptions{
+			DiscardABCIResponses: false,
+		})
 		state, err := stateStore.LoadFromDBOrGenesisDoc(genDoc)
 		if err != nil {
 			panic(fmt.Errorf("error constructing state from genesis file: %w", err))
@@ -811,7 +847,7 @@ func randConsensusNet(nValidators int, testName string, tickerFunc func() Timeou
 		for _, opt := range configOpts {
 			opt(thisConfig)
 		}
-		ensureDir(filepath.Dir(thisConfig.Consensus.WalFile()), 0700) // dir for wal
+		ensureDir(filepath.Dir(thisConfig.Consensus.WalFile()), 0o700) // dir for wal
 		app := appFunc()
 		vals := types.OC2PB.ValidatorUpdates(state.Validators)
 		app.InitChain(abci.RequestInitChain{Validators: vals})
@@ -855,11 +891,13 @@ func createPeersAndValidators(nValidators, nPeers int, testName string,
 	configRootDirs := make([]string, 0, nPeers)
 	for i := 0; i < nPeers; i++ {
 		stateDB := dbm.NewMemDB() // each state needs its own db
-		stateStore := sm.NewStore(stateDB)
+		stateStore := sm.NewStore(stateDB, sm.StoreOptions{
+			DiscardABCIResponses: false,
+		})
 		state, _ := stateStore.LoadFromDBOrGenesisDoc(genDoc)
 		thisConfig := ResetConfig(fmt.Sprintf("%s_%d", testName, i))
 		configRootDirs = append(configRootDirs, thisConfig.RootDir)
-		ensureDir(filepath.Dir(thisConfig.Consensus.WalFile()), 0700) // dir for wal
+		ensureDir(filepath.Dir(thisConfig.Consensus.WalFile()), 0o700) // dir for wal
 		if i == 0 {
 			peer0Config = thisConfig
 		}
@@ -867,11 +905,11 @@ func createPeersAndValidators(nValidators, nPeers int, testName string,
 		if i < nValidators {
 			privVal = privVals[i]
 		} else {
-			tempKeyFile, err := ioutil.TempFile("", "priv_validator_key_")
+			tempKeyFile, err := os.CreateTemp("", "priv_validator_key_")
 			if err != nil {
 				panic(err)
 			}
-			tempStateFile, err := ioutil.TempFile("", "priv_validator_state_")
+			tempStateFile, err := os.CreateTemp("", "priv_validator_state_")
 			if err != nil {
 				panic(err)
 			}
@@ -989,7 +1027,7 @@ func newCounter() ocabci.Application {
 }
 
 func newPersistentKVStore() ocabci.Application {
-	dir, err := ioutil.TempDir("", "persistent-kvstore")
+	dir, err := os.MkdirTemp("", "persistent-kvstore")
 	if err != nil {
 		panic(err)
 	}

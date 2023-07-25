@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/Finschia/ostracon/libs/log"
 )
 
 type logger interface {
@@ -20,7 +22,7 @@ func TrapSignal(logger logger, cb func()) {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		for sig := range c {
-			logger.Info(fmt.Sprintf("captured %v, exiting...", sig))
+			logger.Info("signal trapped", "msg", log.NewLazySprintf("captured %v, exiting...", sig))
 			if cb != nil {
 				cb()
 			}

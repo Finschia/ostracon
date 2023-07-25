@@ -6,6 +6,7 @@ import (
 	"time"
 
 	abci "github.com/tendermint/tendermint/abci/types"
+	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/Finschia/ostracon/crypto"
 	"github.com/Finschia/ostracon/crypto/ed25519"
 	tmrand "github.com/Finschia/ostracon/libs/rand"
-	tmstate "github.com/Finschia/ostracon/proto/ostracon/state"
 	"github.com/Finschia/ostracon/proxy"
 	sm "github.com/Finschia/ostracon/state"
 	"github.com/Finschia/ostracon/types"
@@ -125,7 +125,9 @@ func makeState(nVals, height int) (sm.State, dbm.DB, map[string]types.PrivValida
 	})
 
 	stateDB := dbm.NewMemDB()
-	stateStore := sm.NewStore(stateDB)
+	stateStore := sm.NewStore(stateDB, sm.StoreOptions{
+		DiscardABCIResponses: false,
+	})
 	if err := stateStore.Save(s); err != nil {
 		panic(err)
 	}

@@ -53,6 +53,20 @@ func (_m *Peer) Get(_a0 string) interface{} {
 	return r0
 }
 
+// GetRemovalFailed provides a mock function with given fields:
+func (_m *Peer) GetRemovalFailed() bool {
+	ret := _m.Called()
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
 // ID provides a mock function with given fields:
 func (_m *Peer) ID() p2p.ID {
 	ret := _m.Called()
@@ -244,6 +258,11 @@ func (_m *Peer) SetLogger(_a0 log.Logger) {
 	_m.Called(_a0)
 }
 
+// SetRemovalFailed provides a mock function with given fields:
+func (_m *Peer) SetRemovalFailed() {
+	_m.Called()
+}
+
 // SocketAddr provides a mock function with given fields:
 func (_m *Peer) SocketAddr() *p2p.NetAddress {
 	ret := _m.Called()
@@ -330,13 +349,12 @@ func (_m *Peer) TrySend(_a0 byte, _a1 []byte) bool {
 	return r0
 }
 
-type mockConstructorTestingTNewPeer interface {
+// NewPeer creates a new instance of Peer. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewPeer(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewPeer creates a new instance of Peer. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewPeer(t mockConstructorTestingTNewPeer) *Peer {
+}) *Peer {
 	mock := &Peer{}
 	mock.Mock.Test(t)
 

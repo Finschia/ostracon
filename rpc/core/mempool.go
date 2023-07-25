@@ -20,7 +20,7 @@ import (
 
 // BroadcastTxAsync returns right away, with no response. Does not wait for
 // CheckTx nor DeliverTx results.
-// More: https://docs.tendermint.com/master/rpc/#/Tx/broadcast_tx_async
+// More: https://docs.tendermint.com/v0.34/rpc/#/Tx/broadcast_tx_async
 func BroadcastTxAsync(ctx *rpctypes.Context, tx types.Tx) (*ctypes.ResultBroadcastTx, error) {
 	chErr := make(chan error)
 	env.Mempool.CheckTxAsync(tx, mempl.TxInfo{}, func(err error) {
@@ -36,25 +36,37 @@ func BroadcastTxAsync(ctx *rpctypes.Context, tx types.Tx) (*ctypes.ResultBroadca
 
 // BroadcastTxSync returns with the response from CheckTx. Does not wait for
 // DeliverTx result.
-// More: https://docs.tendermint.com/master/rpc/#/Tx/broadcast_tx_sync
+// More: https://docs.tendermint.com/v0.34/rpc/#/Tx/broadcast_tx_sync
 func BroadcastTxSync(ctx *rpctypes.Context, tx types.Tx) (*ctypes.ResultBroadcastTx, error) {
-	res, err := env.Mempool.CheckTxSync(tx, mempl.TxInfo{})
+	resCh := make(chan *ocabci.Response, 1)
+	err := env.Mempool.CheckTxSync(tx, func(res *ocabci.Response) {
+		select {
+		case <-ctx.Context().Done():
+		case resCh <- res:
+		}
+
+	}, mempl.TxInfo{})
 	if err != nil {
 		return nil, err
 	}
-	r := res.GetCheckTx()
-	return &ctypes.ResultBroadcastTx{
-		Code:         r.Code,
-		Data:         r.Data,
-		Log:          r.Log,
-		Codespace:    r.Codespace,
-		MempoolError: r.MempoolError,
-		Hash:         tx.Hash(),
-	}, nil
+
+	select {
+	case <-ctx.Context().Done():
+		return nil, fmt.Errorf("broadcast confirmation not received: %w", ctx.Context().Err())
+	case res := <-resCh:
+		r := res.GetCheckTx()
+		return &ctypes.ResultBroadcastTx{
+			Code:      r.Code,
+			Data:      r.Data,
+			Log:       r.Log,
+			Codespace: r.Codespace,
+			Hash:      tx.Hash(),
+		}, nil
+	}
 }
 
 // BroadcastTxCommit returns with the responses from CheckTx and DeliverTx.
-// More: https://docs.tendermint.com/master/rpc/#/Tx/broadcast_tx_commit
+// More: https://docs.tendermint.com/v0.34/rpc/#/Tx/broadcast_tx_commit
 func BroadcastTxCommit(ctx *rpctypes.Context, tx types.Tx) (*ctypes.ResultBroadcastTxCommit, error) {
 	subscriber := ctx.RemoteAddr()
 
@@ -80,59 +92,70 @@ func BroadcastTxCommit(ctx *rpctypes.Context, tx types.Tx) (*ctypes.ResultBroadc
 		}
 	}()
 
-	// Broadcast tx and check tx
-	checkTxResMsg, err := env.Mempool.CheckTxSync(tx, mempl.TxInfo{})
+	// Broadcast tx and wait for CheckTx result
+	checkTxResCh := make(chan *ocabci.Response, 1)
+	err = env.Mempool.CheckTxSync(tx, func(res *ocabci.Response) {
+		select {
+		case <-ctx.Context().Done():
+		case checkTxResCh <- res:
+		}
+	}, mempl.TxInfo{})
 	if err != nil {
 		env.Logger.Error("Error on broadcastTxCommit", "err", err)
 		return nil, fmt.Errorf("error on broadcastTxCommit: %v", err)
 	}
-	checkTxRes := checkTxResMsg.GetCheckTx()
-	if checkTxRes.Code != ocabci.CodeTypeOK {
-		return &ctypes.ResultBroadcastTxCommit{
-			CheckTx:   *checkTxRes,
-			DeliverTx: abci.ResponseDeliverTx{},
-			Hash:      tx.Hash(),
-		}, nil
-	}
-
-	// Wait for the tx to be included in a block or timeout.
 	select {
-	case msg := <-deliverTxSub.Out(): // The tx was included in a block.
-		deliverTxRes := msg.Data().(types.EventDataTx)
-		return &ctypes.ResultBroadcastTxCommit{
-			CheckTx:   *checkTxRes,
-			DeliverTx: deliverTxRes.Result,
-			Hash:      tx.Hash(),
-			Height:    deliverTxRes.Height,
-		}, nil
-	case <-deliverTxSub.Cancelled():
-		var reason string
-		if deliverTxSub.Err() == nil {
-			reason = "Ostracon exited"
-		} else {
-			reason = deliverTxSub.Err().Error()
+	case <-ctx.Context().Done():
+		return nil, fmt.Errorf("broadcast confirmation not received: %w", ctx.Context().Err())
+	case checkTxResMsg := <-checkTxResCh:
+		checkTxRes := checkTxResMsg.GetCheckTx()
+		if checkTxRes.Code != abci.CodeTypeOK {
+			return &ctypes.ResultBroadcastTxCommit{
+				CheckTx:   *checkTxRes,
+				DeliverTx: abci.ResponseDeliverTx{},
+				Hash:      tx.Hash(),
+			}, nil
 		}
-		err = fmt.Errorf("deliverTxSub was cancelled (reason: %s)", reason)
-		env.Logger.Error("Error on broadcastTxCommit", "err", err)
-		return &ctypes.ResultBroadcastTxCommit{
-			CheckTx:   *checkTxRes,
-			DeliverTx: abci.ResponseDeliverTx{},
-			Hash:      tx.Hash(),
-		}, err
-	case <-time.After(env.Config.TimeoutBroadcastTxCommit):
-		err = errors.New("timed out waiting for tx to be included in a block")
-		env.Logger.Error("Error on broadcastTxCommit", "err", err)
-		return &ctypes.ResultBroadcastTxCommit{
-			CheckTx:   *checkTxRes,
-			DeliverTx: abci.ResponseDeliverTx{},
-			Hash:      tx.Hash(),
-		}, err
+
+		// Wait for the tx to be included in a block or timeout.
+		select {
+		case msg := <-deliverTxSub.Out(): // The tx was included in a block.
+			deliverTxRes := msg.Data().(types.EventDataTx)
+			return &ctypes.ResultBroadcastTxCommit{
+				CheckTx:   *checkTxRes,
+				DeliverTx: deliverTxRes.Result,
+				Hash:      tx.Hash(),
+				Height:    deliverTxRes.Height,
+			}, nil
+		case <-deliverTxSub.Cancelled():
+			var reason string
+			if deliverTxSub.Err() == nil {
+				reason = "Tendermint exited"
+			} else {
+				reason = deliverTxSub.Err().Error()
+			}
+			err = fmt.Errorf("deliverTxSub was cancelled (reason: %s)", reason)
+			env.Logger.Error("Error on broadcastTxCommit", "err", err)
+			return &ctypes.ResultBroadcastTxCommit{
+				CheckTx:   *checkTxRes,
+				DeliverTx: abci.ResponseDeliverTx{},
+				Hash:      tx.Hash(),
+			}, err
+		case <-time.After(env.Config.TimeoutBroadcastTxCommit):
+			err = errors.New("timed out waiting for tx to be included in a block")
+			env.Logger.Error("Error on broadcastTxCommit", "err", err)
+			return &ctypes.ResultBroadcastTxCommit{
+				CheckTx:   *checkTxRes,
+				DeliverTx: abci.ResponseDeliverTx{},
+				Hash:      tx.Hash(),
+			}, err
+		}
 	}
 }
 
 // UnconfirmedTxs gets unconfirmed transactions (maximum ?limit entries)
 // including their number.
-// More: https://docs.tendermint.com/master/rpc/#/Info/unconfirmed_txs
+// More: https://docs.tendermint.com/v0.34/rpc/#/Info/unconfirmed_txs
 func UnconfirmedTxs(ctx *rpctypes.Context, limitPtr *int) (*ctypes.ResultUnconfirmedTxs, error) {
 	// reuse per_page validator
 	limit := validatePerPage(limitPtr)
@@ -141,22 +164,22 @@ func UnconfirmedTxs(ctx *rpctypes.Context, limitPtr *int) (*ctypes.ResultUnconfi
 	return &ctypes.ResultUnconfirmedTxs{
 		Count:      len(txs),
 		Total:      env.Mempool.Size(),
-		TotalBytes: env.Mempool.TxsBytes(),
+		TotalBytes: env.Mempool.SizeBytes(),
 		Txs:        txs}, nil
 }
 
 // NumUnconfirmedTxs gets number of unconfirmed transactions.
-// More: https://docs.tendermint.com/master/rpc/#/Info/num_unconfirmed_txs
+// More: https://docs.tendermint.com/v0.34/rpc/#/Info/num_unconfirmed_txs
 func NumUnconfirmedTxs(ctx *rpctypes.Context) (*ctypes.ResultUnconfirmedTxs, error) {
 	return &ctypes.ResultUnconfirmedTxs{
 		Count:      env.Mempool.Size(),
 		Total:      env.Mempool.Size(),
-		TotalBytes: env.Mempool.TxsBytes()}, nil
+		TotalBytes: env.Mempool.SizeBytes()}, nil
 }
 
 // CheckTx checks the transaction without executing it. The transaction won't
 // be added to the mempool either.
-// More: https://docs.tendermint.com/master/rpc/#/Tx/check_tx
+// More: https://docs.tendermint.com/v0.34/rpc/#/Tx/check_tx
 func CheckTx(ctx *rpctypes.Context, tx types.Tx) (*ctypes.ResultCheckTx, error) {
 	res, err := env.ProxyAppMempool.CheckTxSync(abci.RequestCheckTx{Tx: tx})
 	if err != nil {

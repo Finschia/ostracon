@@ -11,11 +11,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	abci "github.com/tendermint/tendermint/abci/types"
+	tmcons "github.com/tendermint/tendermint/proto/tendermint/consensus"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
@@ -30,6 +32,9 @@ import (
 	"github.com/Finschia/ostracon/libs/log"
 	tmsync "github.com/Finschia/ostracon/libs/sync"
 	mempl "github.com/Finschia/ostracon/mempool"
+	mempoolv0 "github.com/Finschia/ostracon/mempool/v0"
+
+	//mempoolv1 "github.com/Finschia/ostracon/mempool/v1"
 	"github.com/Finschia/ostracon/p2p"
 	p2pmock "github.com/Finschia/ostracon/p2p/mock"
 	sm "github.com/Finschia/ostracon/state"
@@ -136,7 +141,9 @@ func TestReactorWithEvidence(t *testing.T) {
 	logger := consensusLogger()
 	for i := 0; i < nValidators; i++ {
 		stateDB := dbm.NewMemDB() // each state needs its own db
-		stateStore := sm.NewStore(stateDB)
+		stateStore := sm.NewStore(stateDB, sm.StoreOptions{
+			DiscardABCIResponses: false,
+		})
 		state, _ := stateStore.LoadFromDBOrGenesisDoc(genDoc)
 		thisConfig := ResetConfig(fmt.Sprintf("%s_%d", testName, i))
 		defer os.RemoveAll(thisConfig.RootDir)
@@ -152,14 +159,36 @@ func TestReactorWithEvidence(t *testing.T) {
 		blockDB := dbm.NewMemDB()
 		blockStore := store.NewBlockStore(blockDB)
 
-		// one for mempool, one for consensus
 		mtx := new(tmsync.Mutex)
-		proxyAppConnMem := abcicli.NewLocalClient(mtx, app)
+		memplMetrics := mempl.NopMetrics()
+		// one for mempool, one for consensus
 		proxyAppConnCon := abcicli.NewLocalClient(mtx, app)
+		proxyAppConnConMem := abcicli.NewLocalClient(mtx, app)
 
 		// Make Mempool
-		mempool := mempl.NewCListMempool(thisConfig.Mempool, proxyAppConnMem, 0)
-		mempool.SetLogger(log.TestingLogger().With("module", "mempool"))
+		var mempool mempl.Mempool
+
+		switch config.Mempool.Version {
+		case cfg.MempoolV0:
+			mempool = mempoolv0.NewCListMempool(config.Mempool,
+				proxyAppConnConMem,
+				state.LastBlockHeight,
+				mempoolv0.WithMetrics(memplMetrics),
+				mempoolv0.WithPreCheck(sm.TxPreCheck(state)),
+				mempoolv0.WithPostCheck(sm.TxPostCheck(state)))
+		case cfg.MempoolV1: // XXX Deprecated MempoolV1
+			panic("Deprecated MempoolV1")
+			/*
+				mempool = mempoolv1.NewTxMempool(logger,
+					config.Mempool,
+					proxyAppConnConMem,
+					state.LastBlockHeight,
+					mempoolv1.WithMetrics(memplMetrics),
+					mempoolv1.WithPreCheck(sm.TxPreCheck(state)),
+					mempoolv1.WithPostCheck(sm.TxPostCheck(state)),
+				)
+			*/
+		}
 		if thisConfig.Consensus.WaitForTxs() {
 			mempool.EnableTxsAvailable()
 		}
@@ -221,7 +250,7 @@ func TestReactorCreatesBlockWhenEmptyBlocksFalse(t *testing.T) {
 	defer stopConsensusNet(log.TestingLogger(), reactors, eventBuses)
 
 	// send a tx
-	if _, err := assertMempool(css[3].txNotifier).CheckTxSync([]byte{1, 2, 3}, mempl.TxInfo{}); err != nil {
+	if err := assertMempool(css[3].txNotifier).CheckTxSync([]byte{1, 2, 3}, nil, mempl.TxInfo{}); err != nil {
 		t.Error(err)
 	}
 
@@ -231,7 +260,7 @@ func TestReactorCreatesBlockWhenEmptyBlocksFalse(t *testing.T) {
 	}, css)
 }
 
-func TestReactorReceiveDoesNotPanicIfAddPeerHasntBeenCalledYet(t *testing.T) {
+func TestLegacyReactorReceiveBasicIfAddPeerHasntBeenCalledYet(t *testing.T) {
 	N := 1
 	css, cleanup := randConsensusNet(N, "consensus_reactor_test", newMockTickerFunc(true), newCounter)
 	defer cleanup()
@@ -241,13 +270,45 @@ func TestReactorReceiveDoesNotPanicIfAddPeerHasntBeenCalledYet(t *testing.T) {
 	var (
 		reactor = reactors[0]
 		peer    = p2pmock.NewPeer(nil)
-		msg     = MustEncode(&HasVoteMessage{Height: 1,
-			Round: 1, Index: 1, Type: tmproto.PrevoteType})
 	)
 
 	reactor.InitPeer(peer)
 
 	// simulate switch calling Receive before AddPeer
+	assert.NotPanics(t, func() {
+		reactor.ReceiveEnvelope(p2p.Envelope{
+			ChannelID: StateChannel,
+			Src:       peer,
+			Message: &tmcons.HasVote{Height: 1,
+				Round: 1, Index: 1, Type: tmproto.PrevoteType},
+		})
+		reactor.AddPeer(peer)
+	})
+}
+
+func TestLegacyReactorReceiveBasic(t *testing.T) {
+	N := 1
+	css, cleanup := randConsensusNet(N, "consensus_reactor_test", newMockTickerFunc(true), newCounter)
+	defer cleanup()
+	reactors, _, eventBuses := startConsensusNet(t, css, N)
+	defer stopConsensusNet(log.TestingLogger(), reactors, eventBuses)
+
+	var (
+		reactor = reactors[0]
+		peer    = p2pmock.NewPeer(nil)
+	)
+
+	reactor.InitPeer(peer)
+	v := &tmcons.HasVote{
+		Height: 1,
+		Round:  1,
+		Index:  1,
+		Type:   tmproto.PrevoteType,
+	}
+	w := v.Wrap()
+	msg, err := proto.Marshal(w)
+	assert.NoError(t, err)
+
 	assert.NotPanics(t, func() {
 		reactor.Receive(StateChannel, peer, msg)
 		reactor.AddPeer(peer)
@@ -264,15 +325,18 @@ func TestReactorReceivePanicsIfInitPeerHasntBeenCalledYet(t *testing.T) {
 	var (
 		reactor = reactors[0]
 		peer    = p2pmock.NewPeer(nil)
-		msg     = MustEncode(&HasVoteMessage{Height: 1,
-			Round: 1, Index: 1, Type: tmproto.PrevoteType})
 	)
 
 	// we should call InitPeer here
 
 	// simulate switch calling Receive before AddPeer
 	assert.Panics(t, func() {
-		reactor.Receive(StateChannel, peer, msg)
+		reactor.ReceiveEnvelope(p2p.Envelope{
+			ChannelID: StateChannel,
+			Src:       peer,
+			Message: &tmcons.HasVote{Height: 1,
+				Round: 1, Index: 1, Type: tmproto.PrevoteType},
+		})
 	})
 }
 
@@ -549,7 +613,7 @@ func waitForAndValidateBlock(
 		err := validateBlock(newBlock, activeVals)
 		assert.Nil(t, err)
 		for _, tx := range txs {
-			_, err := assertMempool(css[j].txNotifier).CheckTxSync(tx, mempl.TxInfo{})
+			err := assertMempool(css[j].txNotifier).CheckTxSync(tx, nil, mempl.TxInfo{})
 			assert.Nil(t, err)
 		}
 	}, css)

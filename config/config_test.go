@@ -27,7 +27,6 @@ func TestDefaultConfig(t *testing.T) {
 	assert.Equal("/foo/bar", cfg.GenesisFile())
 	assert.Equal("/opt/data", cfg.DBDir())
 	assert.Equal("/foo/wal/mem", cfg.Mempool.WalDir())
-
 }
 
 func TestConfigValidateBasic(t *testing.T) {
@@ -170,6 +169,7 @@ func TestFastSyncConfigValidateBasic(t *testing.T) {
 	assert.Error(t, cfg.ValidateBasic())
 }
 
+//nolint:lll
 func TestConsensusConfig_ValidateBasic(t *testing.T) {
 	// nolint: lll
 	testcases := map[string]struct {

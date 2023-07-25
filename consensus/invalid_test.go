@@ -3,6 +3,7 @@ package consensus
 import (
 	"testing"
 
+	tmcons "github.com/tendermint/tendermint/proto/tendermint/consensus"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/Finschia/ostracon/libs/bytes"
@@ -95,7 +96,10 @@ func invalidDoPrevoteFunc(t *testing.T, height int64, round int32, cs *State, sw
 		peers := sw.Peers().List()
 		for _, peer := range peers {
 			cs.Logger.Info("Sending bad vote", "block", blockHash, "peer", peer)
-			peer.Send(VoteChannel, MustEncode(&VoteMessage{precommit}))
+			p2p.SendEnvelopeShim(peer, p2p.Envelope{ //nolint: staticcheck
+				Message:   &tmcons.Vote{Vote: precommit.ToProto()},
+				ChannelID: VoteChannel,
+			}, cs.Logger)
 		}
 	}()
 }

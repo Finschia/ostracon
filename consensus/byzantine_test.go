@@ -13,10 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	abci "github.com/tendermint/tendermint/abci/types"
+	tmcons "github.com/tendermint/tendermint/proto/tendermint/consensus"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
-
-	config2 "github.com/Finschia/ostracon/config"
 
 	abcicli "github.com/Finschia/ostracon/abci/client"
 	"github.com/Finschia/ostracon/evidence"
@@ -24,6 +23,11 @@ import (
 	"github.com/Finschia/ostracon/libs/service"
 	tmsync "github.com/Finschia/ostracon/libs/sync"
 	mempl "github.com/Finschia/ostracon/mempool"
+
+	cfg "github.com/Finschia/ostracon/config"
+	mempoolv0 "github.com/Finschia/ostracon/mempool/v0"
+
+	//mempoolv1 "github.com/Finschia/ostracon/mempool/v1"
 	"github.com/Finschia/ostracon/p2p"
 	sm "github.com/Finschia/ostracon/state"
 	"github.com/Finschia/ostracon/store"
@@ -48,7 +52,9 @@ func TestByzantinePrevoteEquivocation(t *testing.T) {
 	for i := 0; i < nValidators; i++ {
 		logger := consensusLogger().With("test", "byzantine", "validator", i)
 		stateDB := dbm.NewMemDB() // each state needs its own db
-		stateStore := sm.NewStore(stateDB)
+		stateStore := sm.NewStore(stateDB, sm.StoreOptions{
+			DiscardABCIResponses: false,
+		})
 		state, _ := stateStore.LoadFromDBOrGenesisDoc(genDoc)
 		thisConfig := ResetConfig(fmt.Sprintf("%s_%d", testName, i))
 		defer os.RemoveAll(thisConfig.RootDir)
@@ -60,14 +66,34 @@ func TestByzantinePrevoteEquivocation(t *testing.T) {
 		blockDB := dbm.NewMemDB()
 		blockStore := store.NewBlockStore(blockDB)
 
-		// one for mempool, one for consensus
 		mtx := new(tmsync.Mutex)
-		proxyAppConnMem := abcicli.NewLocalClient(mtx, app)
+		// one for mempool, one for consensus
 		proxyAppConnCon := abcicli.NewLocalClient(mtx, app)
+		proxyAppConnConMem := abcicli.NewLocalClient(mtx, app)
 
 		// Make Mempool
-		mempool := mempl.NewCListMempool(thisConfig.Mempool, proxyAppConnMem, 0)
-		mempool.SetLogger(log.TestingLogger().With("module", "mempool"))
+		var mempool mempl.Mempool
+
+		switch thisConfig.Mempool.Version {
+		case cfg.MempoolV0:
+			mempool = mempoolv0.NewCListMempool(config.Mempool,
+				proxyAppConnConMem,
+				state.LastBlockHeight,
+				mempoolv0.WithPreCheck(sm.TxPreCheck(state)),
+				mempoolv0.WithPostCheck(sm.TxPostCheck(state)))
+		case cfg.MempoolV1: // XXX Deprecated
+			panic("Deprecated MempoolV1")
+			/*
+				mempool = mempoolv1.NewTxMempool(logger,
+					config.Mempool,
+					proxyAppConnConMem,
+					state.LastBlockHeight,
+					mempoolv1.WithPreCheck(sm.TxPreCheck(state)),
+					mempoolv1.WithPostCheck(sm.TxPostCheck(state)),
+				)
+			*/
+		}
+
 		if thisConfig.Consensus.WaitForTxs() {
 			mempool.EnableTxsAvailable()
 		}
@@ -124,7 +150,7 @@ func TestByzantinePrevoteEquivocation(t *testing.T) {
 		}
 	}
 	// make connected switches and start all reactors
-	p2p.MakeConnectedSwitches(config.P2P, nValidators, func(i int, s *p2p.Switch, c *config2.P2PConfig) *p2p.Switch {
+	p2p.MakeConnectedSwitches(config.P2P, nValidators, func(i int, s *p2p.Switch, c *cfg.P2PConfig) *p2p.Switch {
 		s.AddReactor("CONSENSUS", reactors[i])
 		s.SetLogger(log.NewNopLogger().With("module", "p2p")) // Switch log is noisy for this test
 		return s
@@ -148,10 +174,16 @@ func TestByzantinePrevoteEquivocation(t *testing.T) {
 			for i, peer := range peerList {
 				if i < len(peerList)/2 {
 					bcs.Logger.Info("Signed and pushed vote", "vote", prevote1, "peer", peer)
-					peer.Send(VoteChannel, MustEncode(&VoteMessage{prevote1}))
+					p2p.SendEnvelopeShim(peer, p2p.Envelope{ //nolint: staticcheck
+						Message:   &tmcons.Vote{Vote: prevote1.ToProto()},
+						ChannelID: VoteChannel,
+					}, bcs.Logger)
 				} else {
 					bcs.Logger.Info("Signed and pushed vote", "vote", prevote2, "peer", peer)
-					peer.Send(VoteChannel, MustEncode(&VoteMessage{prevote2}))
+					p2p.SendEnvelopeShim(peer, p2p.Envelope{ //nolint: staticcheck
+						Message:   &tmcons.Vote{Vote: prevote2.ToProto()},
+						ChannelID: VoteChannel,
+					}, bcs.Logger)
 				}
 			}
 		} else {
@@ -311,7 +343,7 @@ func TestByzantineConflictingProposalsWithPartition(t *testing.T) {
 			config.P2P,
 			i,
 			"foo", "1.0.0",
-			func(i int, sw *p2p.Switch, config *config2.P2PConfig) *p2p.Switch {
+			func(i int, sw *p2p.Switch, config *cfg.P2PConfig) *p2p.Switch {
 				return sw
 			})
 		switches[i].SetLogger(p2pLogger.With("validator", i))
@@ -373,7 +405,7 @@ func TestByzantineConflictingProposalsWithPartition(t *testing.T) {
 		}
 	}()
 
-	p2p.MakeConnectedSwitches(config.P2P, N, func(i int, s *p2p.Switch, config *config2.P2PConfig) *p2p.Switch {
+	p2p.MakeConnectedSwitches(config.P2P, N, func(i int, s *p2p.Switch, config *cfg.P2PConfig) *p2p.Switch {
 		// ignore new switch s, we already made ours
 		switches[i].AddReactor("CONSENSUS", reactors[i])
 		return switches[i]
@@ -514,18 +546,26 @@ func sendProposalAndParts(
 	parts *types.PartSet,
 ) {
 	// proposal
-	msg := &ProposalMessage{Proposal: proposal}
-	peer.Send(DataChannel, MustEncode(msg))
+	p2p.SendEnvelopeShim(peer, p2p.Envelope{ //nolint: staticcheck
+		ChannelID: DataChannel,
+		Message:   &tmcons.Proposal{Proposal: *proposal.ToProto()},
+	}, cs.Logger)
 
 	// parts
 	for i := 0; i < int(parts.Total()); i++ {
 		part := parts.GetPart(i)
-		msg := &BlockPartMessage{
-			Height: height, // This tells peer that this part applies to us.
-			Round:  round,  // This tells peer that this part applies to us.
-			Part:   part,
+		pp, err := part.ToProto()
+		if err != nil {
+			panic(err) // TODO: wbanfield better error handling
 		}
-		peer.Send(DataChannel, MustEncode(msg))
+		p2p.SendEnvelopeShim(peer, p2p.Envelope{ //nolint: staticcheck
+			ChannelID: DataChannel,
+			Message: &tmcons.BlockPart{
+				Height: height, // This tells peer that this part applies to us.
+				Round:  round,  // This tells peer that this part applies to us.
+				Part:   *pp,
+			},
+		}, cs.Logger)
 	}
 
 	// votes
@@ -533,9 +573,14 @@ func sendProposalAndParts(
 	prevote, _ := cs.signVote(tmproto.PrevoteType, blockHash, parts.Header())
 	precommit, _ := cs.signVote(tmproto.PrecommitType, blockHash, parts.Header())
 	cs.mtx.Unlock()
-
-	peer.Send(VoteChannel, MustEncode(&VoteMessage{prevote}))
-	peer.Send(VoteChannel, MustEncode(&VoteMessage{precommit}))
+	p2p.SendEnvelopeShim(peer, p2p.Envelope{ //nolint: staticcheck
+		ChannelID: VoteChannel,
+		Message:   &tmcons.Vote{Vote: prevote.ToProto()},
+	}, cs.Logger)
+	p2p.SendEnvelopeShim(peer, p2p.Envelope{ //nolint: staticcheck
+		ChannelID: VoteChannel,
+		Message:   &tmcons.Vote{Vote: precommit.ToProto()},
+	}, cs.Logger)
 }
 
 //----------------------------------------
@@ -573,8 +618,11 @@ func (br *ByzantineReactor) AddPeer(peer p2p.Peer) {
 func (br *ByzantineReactor) RemovePeer(peer p2p.Peer, reason interface{}) {
 	br.reactor.RemovePeer(peer, reason)
 }
-func (br *ByzantineReactor) Receive(chID byte, peer p2p.Peer, msgBytes []byte) {
-	br.reactor.Receive(chID, peer, msgBytes)
+func (br *ByzantineReactor) ReceiveEnvelope(e p2p.Envelope) {
+	br.reactor.ReceiveEnvelope(e)
+}
+func (br *ByzantineReactor) Receive(chID byte, p p2p.Peer, m []byte) {
+	br.reactor.Receive(chID, p, m)
 }
 func (br *ByzantineReactor) InitPeer(peer p2p.Peer) p2p.Peer { return peer }
 func (br *ByzantineReactor) RecvRoutine() {

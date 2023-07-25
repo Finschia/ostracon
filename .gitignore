@@ -25,7 +25,9 @@ docs/.vuepress/dist
 docs/package-lock.json   # To avoid security notifications. If the time comes to use VuePress, activate this.
 *.log
 docs/node_modules/
+docs/.vuepress/public/rpc
 index.html.md
+node/data
 
 scripts/wal2json/wal2json
 scripts/cutWALUntil/cutWALUntil
@@ -49,9 +51,23 @@ terraform.tfstate
 terraform.tfstate.backup
 terraform.tfstate.d
 profile\.out
+test/app/grpc_client
+test/loadtime/build
+test/e2e/build
+test/e2e/networks/*/
+test/logs
+test/maverick/maverick
+test/p2p/data/
+vendor
 test/fuzz/**/corpus
 test/fuzz/**/crashers
 test/fuzz/**/suppressions
 test/fuzz/**/*.zip
-node/data
-crypto/vrf/internal/vrf/sodium
+*.aux
+*.bbl
+*.blg
+*.pdf
+*.gz
+*.dvi
+# Python virtual environments
+.venv

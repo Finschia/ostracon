@@ -9,7 +9,8 @@ import (
 
 // execute executes a shell command.
 func exec(args ...string) error {
-	cmd := osexec.Command(args[0], args[1:]...) //nolint:gosec
+	//nolint:gosec // G204: Subprocess launched with a potential tainted input or cmd arguments
+	cmd := osexec.Command(args[0], args[1:]...)
 	out, err := cmd.CombinedOutput()
 	switch err := err.(type) {
 	case nil:
@@ -23,7 +24,8 @@ func exec(args ...string) error {
 
 // execVerbose executes a shell command while displaying its output.
 func execVerbose(args ...string) error {
-	cmd := osexec.Command(args[0], args[1:]...) //nolint:gosec
+	//nolint:gosec // G204: Subprocess launched with a potential tainted input or cmd arguments
+	cmd := osexec.Command(args[0], args[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()

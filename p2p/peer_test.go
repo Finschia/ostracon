@@ -2,13 +2,17 @@ package p2p
 
 import (
 	"fmt"
+	"github.com/Finschia/ostracon/libs/service"
 	golog "log"
 	"net"
 	"testing"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/tendermint/tendermint/proto/tendermint/p2p"
 
 	"github.com/Finschia/ostracon/crypto"
 	"github.com/Finschia/ostracon/crypto/ed25519"
@@ -18,6 +22,35 @@ import (
 	"github.com/Finschia/ostracon/config"
 	tmconn "github.com/Finschia/ostracon/p2p/conn"
 )
+
+// OldPeer does not implement EnvelopeSender(SendEnvelope/TrySendEnvelope)
+type OldPeer struct {
+	service.BaseService
+}
+
+func (mp *OldPeer) FlushStop()                        {}
+func (mp *OldPeer) TrySend(_ byte, _ []byte) bool     { return true }
+func (mp *OldPeer) Send(_ byte, _ []byte) bool        { return true }
+func (mp *OldPeer) NodeInfo() NodeInfo                { return DefaultNodeInfo{} }
+func (mp *OldPeer) Status() tmconn.ConnectionStatus   { return tmconn.ConnectionStatus{} }
+func (mp *OldPeer) ID() ID                            { return "" }
+func (mp *OldPeer) IsOutbound() bool                  { return true }
+func (mp *OldPeer) IsPersistent() bool                { return true }
+func (mp *OldPeer) Get(key string) interface{}        { return nil }
+func (mp *OldPeer) Set(key string, value interface{}) {}
+func (mp *OldPeer) RemoteIP() net.IP                  { return []byte{0} }
+func (mp *OldPeer) SocketAddr() *NetAddress           { return &NetAddress{} }
+func (mp *OldPeer) RemoteAddr() net.Addr              { return &net.TCPAddr{} }
+func (mp *OldPeer) CloseConn() error                  { return nil }
+func (mp *OldPeer) SetRemovalFailed()                 {}
+func (mp *OldPeer) GetRemovalFailed() bool            { return false }
+
+func TestSendWithOldPeer(t *testing.T) {
+	logger := log.TestingLogger()
+	p := &OldPeer{}
+	assert.True(t, SendEnvelopeShim(p, Envelope{ChannelID: testCh, Message: &p2p.Message{}}, logger))
+	assert.True(t, TrySendEnvelopeShim(p, Envelope{ChannelID: testCh, Message: &p2p.Message{}}, logger))
+}
 
 func TestPeerBasic(t *testing.T) {
 	assert, require := assert.New(t), require.New(t)
@@ -60,6 +93,10 @@ func TestPeerSend(t *testing.T) {
 	p, err := createOutboundPeerAndPerformHandshake(rp.Addr(), config, tmconn.DefaultMConnConfig())
 	require.Nil(err)
 
+	// False Test: isn't running peer
+	require.NoError(err)
+	require.False(SendEnvelopeShim(p, Envelope{ChannelID: testCh, Message: &p2p.Message{}}, p.Logger))
+
 	err = p.Start()
 	require.Nil(err)
 
@@ -70,7 +107,11 @@ func TestPeerSend(t *testing.T) {
 	})
 
 	assert.True(p.CanSend(testCh))
-	assert.True(p.Send(testCh, []byte("Asylum")))
+	assert.True(SendEnvelopeShim(p, Envelope{ChannelID: testCh, Message: &p2p.Message{}}, p.Logger))
+
+	// False Test: hasn't channels
+	p.channels = []byte{}
+	require.False(SendEnvelopeShim(p, Envelope{ChannelID: testCh, Message: &p2p.Message{}}, p.Logger))
 }
 
 func createOutboundPeerAndPerformHandshake(
@@ -82,6 +123,9 @@ func createOutboundPeerAndPerformHandshake(
 		{ID: testCh, Priority: 1},
 	}
 	reactorsByCh := map[byte]Reactor{testCh: NewTestReactor(chDescs, true, 1000, true)}
+	msgTypeByChID := map[byte]proto.Message{
+		testCh: &p2p.Message{},
+	}
 	pk := ed25519.GenPrivKey()
 	pc, err := testOutboundPeerConn(addr, config, false, pk)
 	if err != nil {
@@ -94,7 +138,7 @@ func createOutboundPeerAndPerformHandshake(
 		return nil, err
 	}
 
-	p := newPeer(pc, mConfig, peerNodeInfo, reactorsByCh, chDescs, func(p Peer, r interface{}) {})
+	p := newPeer(pc, mConfig, peerNodeInfo, reactorsByCh, msgTypeByChID, chDescs, func(p Peer, r interface{}) {}, newMetricsLabelCache())
 	p.SetLogger(log.TestingLogger().With("peer", addr))
 	return p, nil
 }
