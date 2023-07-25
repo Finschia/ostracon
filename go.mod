@@ -295,15 +295,3 @@ require (
 	mvdan.cc/lint v0.0.0-20170908181259-adc824a0674b // indirect
 	mvdan.cc/unparam v0.0.0-20221223090309-7455f1af531d // indirect
 )
-
-// This is a "replace" directive for "golang-v1.18". If upgrading to golang-v1.19, we can remove
-replace (
-	github.com/bufbuild/buf => github.com/bufbuild/buf v1.14.0
-	github.com/bufbuild/connect-go => github.com/bufbuild/connect-go v1.5.0
-	github.com/docker/cli => github.com/docker/cli v24.0.2+incompatible
-	github.com/docker/docker-credential-helpers => github.com/docker/docker-credential-helpers v0.7.0
-	github.com/google/go-containerregistry => github.com/google/go-containerregistry v0.13.0
-	go.opentelemetry.io/otel => go.opentelemetry.io/otel v1.12.0
-	go.opentelemetry.io/otel/sdk => go.opentelemetry.io/otel/sdk v1.12.0
-	go.uber.org/multierr => go.uber.org/multierr v1.8.0
-)
