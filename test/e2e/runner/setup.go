@@ -86,7 +86,8 @@ func Setup(testnet *e2e.Testnet, infp infra.Provider) error {
 		if err != nil {
 			return err
 		}
-		err = os.WriteFile(filepath.Join(nodeDir, "config", "app.toml"), appCfg, 0o644) //nolint:gosec
+		//nolint:gosec // G306: Expect WriteFile permissions to be 0600 or less
+		err = os.WriteFile(filepath.Join(nodeDir, "config", "app.toml"), appCfg, 0o644)
 		if err != nil {
 			return err
 		}
@@ -338,5 +339,6 @@ func UpdateConfigStateSync(node *e2e.Node, height int64, hash []byte) error {
 	}
 	bz = regexp.MustCompile(`(?m)^trust_height =.*`).ReplaceAll(bz, []byte(fmt.Sprintf(`trust_height = %v`, height)))
 	bz = regexp.MustCompile(`(?m)^trust_hash =.*`).ReplaceAll(bz, []byte(fmt.Sprintf(`trust_hash = "%X"`, hash)))
-	return os.WriteFile(cfgPath, bz, 0o644) //nolint:gosec
+	//nolint:gosec // G306: Expect WriteFile permissions to be 0600 or less
+	return os.WriteFile(cfgPath, bz, 0o644)
 }

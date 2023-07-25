@@ -91,7 +91,6 @@ func (state State) MakeHashMessage(round int32) []byte {
 
 // Copy makes a copy of the State for mutating.
 func (state State) Copy() State {
-
 	return State{
 		Version:       state.Version,
 		ChainID:       state.ChainID,
@@ -256,7 +255,6 @@ func (state State) MakeBlock(
 	round int32,
 	proof crypto.Proof,
 ) (*types.Block, *types.PartSet) {
-
 	// Build base block with block data.
 	block := types.MakeBlock(height, txs, commit, evidence, state.Version.Consensus)
 

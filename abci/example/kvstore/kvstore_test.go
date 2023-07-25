@@ -6,7 +6,6 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/tendermint/tendermint/abci/types"
@@ -116,7 +115,6 @@ func TestPersistentKVStoreInfo(t *testing.T) {
 	if resInfo.LastBlockHeight != height {
 		t.Fatalf("expected height of %d, got %d", height, resInfo.LastBlockHeight)
 	}
-
 }
 
 // add a validator, remove a validator, update a validator
@@ -183,10 +181,6 @@ func TestValUpdates(t *testing.T) {
 	vals1 = append([]types.ValidatorUpdate{v1}, vals1[1:]...)
 	vals2 = kvstore.Validators()
 	valsEqual(t, vals1, vals2)
-
-	for _, v := range vals2 {
-		existInPersistStore(t, kvstore, v)
-	}
 }
 
 func makeApplyBlock(
@@ -194,7 +188,8 @@ func makeApplyBlock(
 	kvstore ocabci.Application,
 	heightInt int,
 	diff []types.ValidatorUpdate,
-	txs ...[]byte) {
+	txs ...[]byte,
+) {
 	// make and apply block
 	height := int64(heightInt)
 	hash := []byte("foo")
@@ -212,28 +207,6 @@ func makeApplyBlock(
 	kvstore.Commit()
 
 	valsEqual(t, diff, resEndBlock.ValidatorUpdates)
-
-}
-
-func existInPersistStore(t *testing.T, kvstore ocabci.Application, v types.ValidatorUpdate) {
-	// success
-	pubkeyStr, _ := MakeValSetChangeTxAndMore(v.PubKey, v.Power)
-	resQuery := kvstore.Query(types.RequestQuery{Path: "/val", Data: []byte(pubkeyStr)})
-	assert.False(t, resQuery.IsErr(), resQuery)
-	assert.Equal(t, "", resQuery.Log)
-	// failures
-	{
-		// default Query: does not exist
-		r := kvstore.Query(types.RequestQuery{Path: "/val_", Data: []byte(pubkeyStr)})
-		assert.False(t, r.IsErr(), r)
-		assert.Contains(t, r.Log, "does not exist")
-	}
-	{
-		// Query: does not exist
-		r := kvstore.Query(types.RequestQuery{Path: "/val", Data: []byte{}})
-		assert.False(t, r.IsErr(), r)
-		assert.Equal(t, "", resQuery.Log)
-	}
 }
 
 // order doesn't matter
