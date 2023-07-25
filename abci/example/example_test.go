@@ -26,9 +26,7 @@ import (
 	tmnet "github.com/Finschia/ostracon/libs/net"
 )
 
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
+var globalRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 func TestKVStore(t *testing.T) {
 	fmt.Println("### Testing KVStore")
@@ -47,7 +45,7 @@ func TestGRPC(t *testing.T) {
 
 func testStream(t *testing.T, app ocabci.Application) {
 	numDeliverTxs := 20000
-	socketFile := fmt.Sprintf("test-%08x.sock", rand.Int31n(1<<30))
+	socketFile := fmt.Sprintf("test-%08x.sock", globalRand.Int31n(1<<30))
 	defer os.Remove(socketFile)
 	socket := fmt.Sprintf("unix://%v", socketFile)
 
@@ -131,7 +129,7 @@ func dialerFunc(ctx context.Context, addr string) (net.Conn, error) {
 
 func testGRPCSync(t *testing.T, app ocabci.ABCIApplicationServer) {
 	numDeliverTxs := 2000
-	socketFile := fmt.Sprintf("/tmp/test-%08x.sock", rand.Int31n(1<<30))
+	socketFile := fmt.Sprintf("/tmp/test-%08x.sock", globalRand.Int31n(1<<30))
 	defer os.Remove(socketFile)
 	socket := fmt.Sprintf("unix://%v", socketFile)
 

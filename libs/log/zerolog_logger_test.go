@@ -3,7 +3,6 @@ package log_test
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"strings"
@@ -14,7 +13,7 @@ import (
 )
 
 func TestZeroLogLoggerLogsItsErrors(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "zerolog-test")
+	dir, err := os.MkdirTemp("/tmp", "zerolog-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,7 +32,7 @@ func TestZeroLogLoggerLogsItsErrors(t *testing.T) {
 		t.Errorf("expected logger msg to contain ErrInvalidKey, got %s", msg)
 	}
 
-	str, err := ioutil.ReadFile(filepath)
+	str, err := os.ReadFile(filepath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -43,7 +42,7 @@ func TestZeroLogLoggerLogsItsErrors(t *testing.T) {
 }
 
 func TestZeroLogInfo(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "zerolog-test")
+	dir, err := os.MkdirTemp("/tmp", "zerolog-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,7 +66,7 @@ func TestZeroLogInfo(t *testing.T) {
 		t.Fatalf("received %s, expected %s", msg, expectedMsg)
 	}
 
-	str, err := ioutil.ReadFile(filepath)
+	str, err := os.ReadFile(filepath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +77,7 @@ func TestZeroLogInfo(t *testing.T) {
 }
 
 func TestZeroLogDebug(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "zerolog-test")
+	dir, err := os.MkdirTemp("/tmp", "zerolog-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,7 +101,7 @@ func TestZeroLogDebug(t *testing.T) {
 		t.Fatalf("received %s, expected %s", msg, expectedMsg)
 	}
 
-	str, err := ioutil.ReadFile(filepath)
+	str, err := os.ReadFile(filepath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -113,7 +112,7 @@ func TestZeroLogDebug(t *testing.T) {
 }
 
 func TestZeroLogError(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "zerolog-test")
+	dir, err := os.MkdirTemp("/tmp", "zerolog-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,7 +136,7 @@ func TestZeroLogError(t *testing.T) {
 		t.Fatalf("received %s, expected %s", msg, expectedMsg)
 	}
 
-	str, err := ioutil.ReadFile(filepath)
+	str, err := os.ReadFile(filepath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -148,7 +147,7 @@ func TestZeroLogError(t *testing.T) {
 }
 
 func TestZeroLogLevelForModules(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "zerolog-test")
+	dir, err := os.MkdirTemp("/tmp", "zerolog-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -174,7 +173,7 @@ func TestZeroLogLevelForModules(t *testing.T) {
 		if !strings.Contains(msg, expectedMsg) {
 			t.Fatalf("received %s, expected %s", msg, expectedMsg)
 		}
-		str, err := ioutil.ReadFile(filepath)
+		str, err := os.ReadFile(filepath)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -191,7 +190,7 @@ func TestZeroLogLevelForModules(t *testing.T) {
 		if !strings.Contains(msg, expectedMsg) {
 			t.Fatalf("received %s, expected %s", msg, expectedMsg)
 		}
-		str, err = ioutil.ReadFile(filepath)
+		str, err = os.ReadFile(filepath)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -208,7 +207,7 @@ func TestZeroLogLevelForModules(t *testing.T) {
 		if !strings.Contains(msg, expectedMsg) {
 			t.Fatalf("received %s, expected %s", msg, expectedMsg)
 		}
-		str, err = ioutil.ReadFile(filepath)
+		str, err = os.ReadFile(filepath)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -231,7 +230,7 @@ func TestZeroLogLevelForModules(t *testing.T) {
 		if strings.Contains(msg, expectedMsg) {
 			t.Fatalf("received %s, expected %s", msg, expectedMsg)
 		}
-		str, err := ioutil.ReadFile(filepath)
+		str, err := os.ReadFile(filepath)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -248,7 +247,7 @@ func TestZeroLogLevelForModules(t *testing.T) {
 		if !strings.Contains(msg, expectedMsg) {
 			t.Fatalf("received %s, expected %s", msg, expectedMsg)
 		}
-		str, err = ioutil.ReadFile(filepath)
+		str, err = os.ReadFile(filepath)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -265,7 +264,7 @@ func TestZeroLogLevelForModules(t *testing.T) {
 		if !strings.Contains(msg, expectedMsg) {
 			t.Fatalf("received %s, expected %s", msg, expectedMsg)
 		}
-		str, err = ioutil.ReadFile(filepath)
+		str, err = os.ReadFile(filepath)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -288,7 +287,7 @@ func TestZeroLogLevelForModules(t *testing.T) {
 		if strings.Contains(msg, expectedMsg) {
 			t.Fatalf("received %s, expected %s", msg, expectedMsg)
 		}
-		str, err := ioutil.ReadFile(filepath)
+		str, err := os.ReadFile(filepath)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -305,7 +304,7 @@ func TestZeroLogLevelForModules(t *testing.T) {
 		if strings.Contains(msg, expectedMsg) {
 			t.Fatalf("received %s, expected %s", msg, expectedMsg)
 		}
-		str, err = ioutil.ReadFile(filepath)
+		str, err = os.ReadFile(filepath)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -322,7 +321,7 @@ func TestZeroLogLevelForModules(t *testing.T) {
 		if !strings.Contains(msg, expectedMsg) {
 			t.Fatalf("received %s, expected %s", msg, expectedMsg)
 		}
-		str, err = ioutil.ReadFile(filepath)
+		str, err = os.ReadFile(filepath)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -334,7 +333,7 @@ func TestZeroLogLevelForModules(t *testing.T) {
 }
 
 func TestZeroLogRotateFiles(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "zerolog-test")
+	dir, err := os.MkdirTemp("/tmp", "zerolog-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -355,7 +354,7 @@ func TestZeroLogRotateFiles(t *testing.T) {
 
 	// check if only two log files is created
 	// ex) app.log, app-2022-12-16T10-21-41.295.log
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -385,7 +384,7 @@ func TestZeroLogRotateFiles(t *testing.T) {
 	}
 
 	// check if old log file is removed
-	files, err = ioutil.ReadDir(dir)
+	files, err = os.ReadDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -400,7 +399,7 @@ func TestZeroLogRotateFiles(t *testing.T) {
 }
 
 func BenchmarkZeroLogLoggerSimple(b *testing.B) {
-	dir, err := ioutil.TempDir("/tmp", "zerolog-test")
+	dir, err := os.MkdirTemp("/tmp", "zerolog-test")
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -417,7 +416,7 @@ func BenchmarkZeroLogLoggerSimple(b *testing.B) {
 }
 
 func BenchmarkZeroLogLoggerContextual(b *testing.B) {
-	dir, err := ioutil.TempDir("/tmp", "zerolog-test")
+	dir, err := os.MkdirTemp("/tmp", "zerolog-test")
 	if err != nil {
 		b.Fatal(err)
 	}

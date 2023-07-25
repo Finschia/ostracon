@@ -14,7 +14,6 @@ import (
 
 	tmpubsub "github.com/Finschia/ostracon/libs/pubsub"
 	tmquery "github.com/Finschia/ostracon/libs/pubsub/query"
-	tmrand "github.com/Finschia/ostracon/libs/rand"
 )
 
 func TestEventBusPublishEventTx(t *testing.T) {
@@ -411,7 +410,7 @@ func BenchmarkEventBus(b *testing.B) {
 
 func benchmarkEventBus(numClients int, randQueries bool, randEvents bool, b *testing.B) {
 	// for random* functions
-	rand.Seed(time.Now().Unix())
+	rnd := rand.New(rand.NewSource(time.Now().Unix()))
 
 	eventBus := NewEventBusWithBufferCapacity(0) // set buffer capacity to 0 so we are not testing cache
 	err := eventBus.Start()
@@ -429,7 +428,7 @@ func benchmarkEventBus(numClients int, randQueries bool, randEvents bool, b *tes
 
 	for i := 0; i < numClients; i++ {
 		if randQueries {
-			q = randQuery()
+			q = randQuery(rnd)
 		}
 		sub, err := eventBus.Subscribe(ctx, fmt.Sprintf("client-%d", i), q)
 		if err != nil {
@@ -452,7 +451,7 @@ func benchmarkEventBus(numClients int, randQueries bool, randEvents bool, b *tes
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		if randEvents {
-			eventType = randEvent()
+			eventType = randEvent(rnd)
 		}
 
 		err := eventBus.Publish(eventType, EventDataString("Gamora"))
@@ -476,8 +475,8 @@ var events = []string{
 	EventTimeoutWait,
 	EventVote}
 
-func randEvent() string {
-	return events[tmrand.Intn(len(events))]
+func randEvent(r *rand.Rand) string {
+	return events[r.Intn(len(events))]
 }
 
 var queries = []tmpubsub.Query{
@@ -494,6 +493,6 @@ var queries = []tmpubsub.Query{
 	EventQueryTimeoutWait,
 	EventQueryVote}
 
-func randQuery() tmpubsub.Query {
-	return queries[tmrand.Intn(len(queries))]
+func randQuery(r *rand.Rand) tmpubsub.Query {
+	return queries[r.Intn(len(queries))]
 }

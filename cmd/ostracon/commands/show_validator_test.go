@@ -2,7 +2,6 @@ package commands
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"sync"
 	"testing"
@@ -154,7 +153,7 @@ func TestLoadChainIDWithoutStateDB(t *testing.T) {
 
 func loadFilePVKey(t *testing.T, file string) privval.FilePVKey {
 	// output must match the locally stored priv_validator key
-	keyJSONBytes, err := ioutil.ReadFile(file)
+	keyJSONBytes, err := os.ReadFile(file)
 	require.NoError(t, err)
 	privKey := privval.FilePVKey{}
 	err = tmjson.Unmarshal(keyJSONBytes, &privKey)

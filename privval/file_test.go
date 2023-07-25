@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -281,9 +280,9 @@ func TestSignProposal(t *testing.T) {
 }
 
 func TestGenerateVRFProof(t *testing.T) {
-	tempKeyFile, err := ioutil.TempFile("", "priv_validator_key_")
+	tempKeyFile, err := os.CreateTemp("", "priv_validator_key_")
 	require.Nil(t, err)
-	tempStateFile, err := ioutil.TempFile("", "priv_validator_state_")
+	tempStateFile, err := os.CreateTemp("", "priv_validator_state_")
 	require.Nil(t, err)
 
 	privVal := GenFilePV(tempKeyFile.Name(), tempStateFile.Name())
