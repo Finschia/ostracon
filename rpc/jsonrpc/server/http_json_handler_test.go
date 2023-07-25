@@ -272,6 +272,7 @@ func TestRPCResponseCache(t *testing.T) {
 	mux := testMux()
 	body := strings.NewReader(`{"jsonrpc": "2.0","method":"block","id": 0, "params": ["1"]}`)
 	req, _ := http.NewRequest("Get", "http://localhost/", body)
+	req.Header.Set("MaxRequestBatchRequest", TestMaxRequestBatchRequest)
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 	res := rec.Result()
@@ -287,6 +288,7 @@ func TestRPCResponseCache(t *testing.T) {
 	// send a request with default height.
 	body = strings.NewReader(`{"jsonrpc": "2.0","method":"block","id": 0, "params": ["0"]}`)
 	req, _ = http.NewRequest("Get", "http://localhost/", body)
+	req.Header.Set("MaxRequestBatchRequest", TestMaxRequestBatchRequest)
 	rec = httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 	res = rec.Result()
@@ -303,6 +305,7 @@ func TestRPCResponseCache(t *testing.T) {
 	// send a request with default height, but as empty set of parameters.
 	body = strings.NewReader(`{"jsonrpc": "2.0","method":"block","id": 0, "params": []}`)
 	req, _ = http.NewRequest("Get", "http://localhost/", body)
+	req.Header.Set("MaxRequestBatchRequest", TestMaxRequestBatchRequest)
 	rec = httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 	res = rec.Result()
