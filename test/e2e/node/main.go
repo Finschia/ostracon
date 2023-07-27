@@ -174,6 +174,7 @@ func startLightClient(cfg *Config) error {
 
 	rpccfg := rpcserver.DefaultConfig()
 	rpccfg.MaxBodyBytes = tmcfg.RPC.MaxBodyBytes
+	rpccfg.MaxBatchRequestNum = tmcfg.RPC.MaxBatchRequestNum
 	rpccfg.MaxHeaderBytes = tmcfg.RPC.MaxHeaderBytes
 	rpccfg.MaxOpenConnections = tmcfg.RPC.MaxOpenConnections
 	// If necessary adjust global WriteTimeout to ensure it's greater than
