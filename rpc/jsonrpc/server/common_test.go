@@ -25,10 +25,9 @@ var (
 	TestWSRPCFunc = NewWSRPCFunc(
 		func(ctx *types.Context, s string, i int) (string, error) { return TestText, nil }, "s,i")
 
-	TestFuncMap   = map[string]*RPCFunc{"c": TestRPCFunc}
-	TestGoodBody  = `{"jsonrpc": "2.0", "method": "c", "id": "0", "params": null}`
-	TestBadParams = `{"jsonrpc": "2.0", "method": "c", "id": "0", "params": "s=a,i=b"}`
-
+	TestFuncMap            = map[string]*RPCFunc{"c": TestRPCFunc}
+	TestGoodBody           = `{"jsonrpc": "2.0", "method": "c", "id": "0", "params": null}`
+	TestBadParams          = `{"jsonrpc": "2.0", "method": "c", "id": "0", "params": "s=a,i=b"}`
 	TestMaxBatchRequestNum = "10"
 )
 
