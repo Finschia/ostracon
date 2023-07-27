@@ -181,31 +181,37 @@ func TestMaxBatchRequestHandler(t *testing.T) {
 			},
 		},
 	}
+
+	// defer in a loop
+	// https://stackoverflow.com/questions/45617758/proper-way-to-release-resources-with-defer-in-a-loop
 	for _, tt := range tests {
-		// start the listener
-		l, err := tt.ListenFunc()
-		require.NoError(t, err)
-		defer l.Close()
-
-		// start the server
-		chErr := make(chan error, 1)
-		go func() {
-			defer close(chErr)
-			chErr <- tt.Server(l)
-		}()
-		select {
-		case err := <-chErr:
+		func() {
+			// start the listener
+			l, err := tt.ListenFunc()
 			require.NoError(t, err)
-		case <-time.After(100 * time.Millisecond):
-		}
+			defer l.Close()
 
-		// make a post call to the server
-		res, err := tt.PostCall(l)
-		require.NoError(t, err)
-		defer res.Body.Close()
+			// start the server
+			chErr := make(chan error, 1)
+			go func() {
+				defer close(chErr)
+				chErr <- tt.Server(l)
+			}()
+			select {
+			case err := <-chErr:
+				require.NoError(t, err)
+			case <-time.After(100 * time.Millisecond):
+			}
 
-		// check the request
-		assert.Equal(t, "20", capturedRequest.Header.Get("MaxBatchRequestNum"))
+			// make a post call to the server
+			res, err := tt.PostCall(l)
+			require.NoError(t, err)
+			defer res.Body.Close()
+
+			// check the request
+			assert.Equal(t, "20", capturedRequest.Header.Get("MaxBatchRequestNum"))
+
+		}()
 	}
 }
 
