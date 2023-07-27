@@ -1235,8 +1235,8 @@ func (n *Node) startRPC() ([]net.Listener, error) {
 	if grpcListenAddr != "" {
 		config := rpcserver.DefaultConfig()
 		config.MaxBodyBytes = n.config.RPC.MaxBodyBytes
-		config.MaxHeaderBytes = n.config.RPC.MaxHeaderBytes
 		config.MaxBatchRequestNum = n.config.RPC.MaxBatchRequestNum
+		config.MaxHeaderBytes = n.config.RPC.MaxHeaderBytes
 		// NOTE: GRPCMaxOpenConnections is used, not MaxOpenConnections
 		config.MaxOpenConnections = n.config.RPC.GRPCMaxOpenConnections
 		// If necessary adjust global WriteTimeout to ensure it's greater than
