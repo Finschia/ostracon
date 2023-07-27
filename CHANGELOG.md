@@ -1,5 +1,36 @@
 # Changelog
 
+## v1.1.1
+*Jul 27, 2023*
+
+* Change VRF library to curve25519-voi's VRF
+* Apply changes up to tendermint v0.34.24
+* Upgrade to Golang-1.20
+
+### BREAKING CHANGE
+- [build] [\#665](https://github.com/Finschia/ostracon/pull/665) Upgrade to Golang-1.20
+- [vrf] [\#633](https://github.com/Finschia/ostracon/pull/633) Change to use curve25519-voi's VRF
+- [vrf] [\#652](https://github.com/Finschia/ostracon/pull/652) Allow ostracon to verify the old r2ishiguro vrf proofs
+
+### FEATURES
+- nothing
+
+### IMPROVEMENTS
+- [json-rpc] [\#672](https://github.com/Finschia/ostracon/pull/672) Add max_batch_request_num feature
+- [mock] [\#604](https://github.com/Finschia/ostracon/pull/604) Improve mocks generation
+- [test] [\#605](https://github.com/Finschia/ostracon/pull/605) Add a test for func nextRandom
+- [dependabot] [\#606](https://github.com/Finschia/ostracon/pull/606) Update dependabot.yml: Remove npm for docs
+- [dependency] [\#662](https://github.com/Finschia/ostracon/pull/662) Change pathlib version from v1.0.0 to v0.15.0
+- [backport/tendermint] [\#642](https://github.com/Finschia/ostracon/pull/642) Backport tendermint-v0.34.20 into main
+- [backport/tendermint] [\#667](https://github.com/Finschia/ostracon/pull/667) Backport tendermint-v0.34.21 into main
+- [backport/tendermint] [\#669](https://github.com/Finschia/ostracon/pull/669) Backport tendermint-v0.34.22 into main
+- [backport/tendermint] [\#674](https://github.com/Finschia/ostracon/pull/674) Backport tendermint-v0.34.23 into main
+- [backport/tendermint] [\#678](https://github.com/Finschia/ostracon/pull/678) Backport tendermint-v0.34.24 into main
+- [chore] [\#651](https://github.com/Finschia/ostracon/pull/651) Update the comment in the source
+
+### BUG FIXES
+- Nothing
+
 ## v1.1.0
 *Apr 21, 2023*
 
