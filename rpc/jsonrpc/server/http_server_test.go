@@ -144,7 +144,7 @@ func TestWriteRPCResponseHTTP(t *testing.T) {
 // This function is to test whether the max_requeset_batch_request is work in HTTP and TLS
 func TestMaxBatchRequestHandler(t *testing.T) {
 	config := DefaultConfig()
-	config.MaxRequestBatchRequest = 20
+	config.MaxBatchRequestNum = 20
 
 	mux := http.NewServeMux()
 	var capturedRequest *http.Request
@@ -199,7 +199,7 @@ func TestMaxBatchRequestHandler(t *testing.T) {
 		require.NoError(t, err)
 		defer res.Body.Close()
 		// check the request
-		assert.Equal(t, "20", capturedRequest.Header.Get("MaxRequestBatchRequest"))
+		assert.Equal(t, "20", capturedRequest.Header.Get("MaxBatchRequestNum"))
 	}
 }
 

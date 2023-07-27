@@ -74,7 +74,7 @@ func TestRPCConfigValidateBasic(t *testing.T) {
 		"MaxSubscriptionsPerClient",
 		"TimeoutBroadcastTxCommit",
 		"MaxBodyBytes",
-		"MaxRequestBatchRequest",
+		"MaxBatchRequestNum",
 		"MaxHeaderBytes",
 	}
 

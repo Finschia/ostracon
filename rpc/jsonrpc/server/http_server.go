@@ -34,7 +34,7 @@ type Config struct {
 	// server will read parsing the request body.
 	MaxBodyBytes int64
 	// MaxBodyBytes controls the maximum number of one request batch
-	MaxRequestBatchRequest int
+	MaxBatchRequestNum int
 	// mirrors http.Server#MaxHeaderBytes
 	MaxHeaderBytes int
 }
@@ -42,13 +42,13 @@ type Config struct {
 // DefaultConfig returns a default configuration.
 func DefaultConfig() *Config {
 	return &Config{
-		MaxOpenConnections:     0, // unlimited
-		ReadTimeout:            10 * time.Second,
-		WriteTimeout:           10 * time.Second,
-		IdleTimeout:            60 * time.Second,
-		MaxBodyBytes:           int64(1000000), // 1MB
-		MaxRequestBatchRequest: 10,
-		MaxHeaderBytes:         1 << 20, // same as the net/http default
+		MaxOpenConnections: 0, // unlimited
+		ReadTimeout:        10 * time.Second,
+		WriteTimeout:       10 * time.Second,
+		IdleTimeout:        60 * time.Second,
+		MaxBodyBytes:       int64(1000000), // 1MB
+		MaxBatchRequestNum: 10,
+		MaxHeaderBytes:     1 << 20, // same as the net/http default
 	}
 }
 
@@ -66,8 +66,8 @@ func Serve(listener net.Listener, handler http.Handler, logger log.Logger, confi
 			h: handler,
 			n: config.MaxBodyBytes,
 		},
-		NewHeaderName:  "MaxRequestBatchRequest",
-		NewHeaderValue: strconv.Itoa(config.MaxRequestBatchRequest),
+		NewHeaderName:  "MaxBatchRequestNum",
+		NewHeaderValue: strconv.Itoa(config.MaxBatchRequestNum),
 	}
 
 	s := &http.Server{
@@ -104,8 +104,8 @@ func ServeTLS(
 			h: handler,
 			n: config.MaxBodyBytes,
 		},
-		NewHeaderName:  "MaxRequestBatchRequest",
-		NewHeaderValue: strconv.Itoa(config.MaxRequestBatchRequest),
+		NewHeaderName:  "MaxBatchRequestNum",
+		NewHeaderValue: strconv.Itoa(config.MaxBatchRequestNum),
 	}
 
 	s := &http.Server{

@@ -55,8 +55,8 @@ func makeJSONRPCHandler(funcMap map[string]*RPCFunc, logger log.Logger) http.Han
 			}
 			requests = []types.RPCRequest{request}
 		}
-		// read the maxRequestBatchRequest from header
-		maxRequestBatchRequest, err := strconv.Atoi(r.Header.Get("MaxRequestBatchRequest"))
+		// read the maxBatchRequestNum from header
+		maxBatchRequestNum, err := strconv.Atoi(r.Header.Get("MaxBatchRequestNum"))
 		if err != nil {
 			res := types.RPCInvalidRequestError(nil,
 				fmt.Errorf("error reading request header key"),
@@ -67,11 +67,11 @@ func makeJSONRPCHandler(funcMap map[string]*RPCFunc, logger log.Logger) http.Han
 			return
 		}
 
-		// if the number of requests in the batch exceeds the max_request_batch_request
+		// if the number of requests in the batch exceeds the max_batch_request_num
 		// return a invalid request error
-		if len(requests) > maxRequestBatchRequest {
+		if len(requests) > maxBatchRequestNum {
 			res := types.RPCInvalidRequestError(nil,
-				fmt.Errorf("too many requests in a request batch, current is %d, where the upper limit is %d", len(requests), maxRequestBatchRequest),
+				fmt.Errorf("too many requests in a request batch, current is %d, where the upper limit is %d", len(requests), maxBatchRequestNum),
 			)
 			if wErr := WriteRPCResponseHTTPError(w, http.StatusBadRequest, res); wErr != nil {
 				logger.Error("failed to write response", "res", res, "err", wErr)
