@@ -55,8 +55,8 @@ func makeJSONRPCHandler(funcMap map[string]*RPCFunc, logger log.Logger) http.Han
 			}
 			requests = []types.RPCRequest{request}
 		}
-		// read the maxBatchRequestNum from header
-		maxBatchRequestNum, err := strconv.Atoi(r.Header.Get("MaxBatchRequestNum"))
+		// read the Max-Batch-Request-Num from header
+		maxBatchRequestNum, err := strconv.Atoi(r.Header.Get("Max-Batch-Request-Num"))
 		if err != nil {
 			res := types.RPCInvalidRequestError(nil,
 				fmt.Errorf("error reading request header key"),

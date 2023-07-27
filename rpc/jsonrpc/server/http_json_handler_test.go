@@ -62,7 +62,7 @@ func TestRPCParams(t *testing.T) {
 
 	for i, tt := range tests {
 		req, _ := http.NewRequest("POST", "http://localhost/", strings.NewReader(tt.payload))
-		req.Header.Set("MaxBatchRequestNum", TestMaxBatchRequestNum)
+		req.Header.Set("Max-Batch-Request-Num", TestMaxBatchRequestNum)
 		rec := httptest.NewRecorder()
 		mux.ServeHTTP(rec, req)
 		res := rec.Result()
@@ -111,7 +111,7 @@ func TestJSONRPCID(t *testing.T) {
 
 	for i, tt := range tests {
 		req, _ := http.NewRequest("POST", "http://localhost/", strings.NewReader(tt.payload))
-		req.Header.Set("MaxBatchRequestNum", TestMaxBatchRequestNum)
+		req.Header.Set("Max-Batch-Request-Num", TestMaxBatchRequestNum)
 		rec := httptest.NewRecorder()
 		mux.ServeHTTP(rec, req)
 		res := rec.Result()
@@ -141,7 +141,7 @@ func TestRPCNotification(t *testing.T) {
 	mux := testMux()
 	body := strings.NewReader(`{"jsonrpc": "2.0"}`)
 	req, _ := http.NewRequest("POST", "http://localhost/", body)
-	req.Header.Set("MaxBatchRequestNum", TestMaxBatchRequestNum)
+	req.Header.Set("Max-Batch-Request-Num", TestMaxBatchRequestNum)
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 	res := rec.Result()
@@ -179,7 +179,7 @@ func TestRPCNotificationInBatch(t *testing.T) {
 	}
 	for i, tt := range tests {
 		req, _ := http.NewRequest("POST", "http://localhost/", strings.NewReader(tt.payload))
-		req.Header.Set("MaxBatchRequestNum", TestMaxBatchRequestNum)
+		req.Header.Set("Max-Batch-Request-Num", TestMaxBatchRequestNum)
 		rec := httptest.NewRecorder()
 		mux.ServeHTTP(rec, req)
 		res := rec.Result()
@@ -235,7 +235,7 @@ func TestTooManyRPCNotificationInBatch_error(t *testing.T) {
 	// execute the batch request
 	mux := testMux()
 	req, _ := http.NewRequest("POST", "http://localhost/", strings.NewReader(string(jsonData)))
-	req.Header.Set("MaxBatchRequestNum", TestMaxBatchRequestNum)
+	req.Header.Set("Max-Batch-Request-Num", TestMaxBatchRequestNum)
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 	res := rec.Result()
@@ -272,7 +272,7 @@ func TestRPCResponseCache(t *testing.T) {
 	mux := testMux()
 	body := strings.NewReader(`{"jsonrpc": "2.0","method":"block","id": 0, "params": ["1"]}`)
 	req, _ := http.NewRequest("Get", "http://localhost/", body)
-	req.Header.Set("MaxBatchRequestNum", TestMaxBatchRequestNum)
+	req.Header.Set("Max-Batch-Request-Num", TestMaxBatchRequestNum)
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 	res := rec.Result()
@@ -288,7 +288,7 @@ func TestRPCResponseCache(t *testing.T) {
 	// send a request with default height.
 	body = strings.NewReader(`{"jsonrpc": "2.0","method":"block","id": 0, "params": ["0"]}`)
 	req, _ = http.NewRequest("Get", "http://localhost/", body)
-	req.Header.Set("MaxBatchRequestNum", TestMaxBatchRequestNum)
+	req.Header.Set("Max-Batch-Request-Num", TestMaxBatchRequestNum)
 	rec = httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 	res = rec.Result()
@@ -305,7 +305,7 @@ func TestRPCResponseCache(t *testing.T) {
 	// send a request with default height, but as empty set of parameters.
 	body = strings.NewReader(`{"jsonrpc": "2.0","method":"block","id": 0, "params": []}`)
 	req, _ = http.NewRequest("Get", "http://localhost/", body)
-	req.Header.Set("MaxBatchRequestNum", TestMaxBatchRequestNum)
+	req.Header.Set("Max-Batch-Request-Num", TestMaxBatchRequestNum)
 	rec = httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 	res = rec.Result()
@@ -335,7 +335,7 @@ func TestMakeJSONRPCHandler_Unmarshal_WriteRPCResponseHTTPError_error(t *testing
 func TestMakeJSONRPCHandler_last_WriteRPCResponseHTTP_error(t *testing.T) {
 	handlerFunc := makeJSONRPCHandler(TestFuncMap, log.TestingLogger())
 	req, _ := http.NewRequest("GET", "http://localhost/", strings.NewReader(TestGoodBody))
-	req.Header.Set("MaxBatchRequestNum", TestMaxBatchRequestNum)
+	req.Header.Set("Max-Batch-Request-Num", TestMaxBatchRequestNum)
 	// WriteRPCResponseHTTP error
 	rec := NewFailedWriteResponseWriter()
 	handlerFunc.ServeHTTP(rec, req)

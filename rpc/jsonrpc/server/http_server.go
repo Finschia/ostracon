@@ -66,7 +66,7 @@ func Serve(listener net.Listener, handler http.Handler, logger log.Logger, confi
 			h: handler,
 			n: config.MaxBodyBytes,
 		},
-		NewHeaderName:  "MaxBatchRequestNum",
+		NewHeaderName:  "Max-Batch-Request-Num",
 		NewHeaderValue: strconv.Itoa(config.MaxBatchRequestNum),
 	}
 
@@ -104,7 +104,7 @@ func ServeTLS(
 			h: handler,
 			n: config.MaxBodyBytes,
 		},
-		NewHeaderName:  "MaxBatchRequestNum",
+		NewHeaderName:  "Max-Batch-Request-Num",
 		NewHeaderValue: strconv.Itoa(config.MaxBatchRequestNum),
 	}
 

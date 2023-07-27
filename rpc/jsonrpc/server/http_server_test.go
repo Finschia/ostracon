@@ -209,7 +209,7 @@ func TestMaxBatchRequestHandler(t *testing.T) {
 			defer res.Body.Close()
 
 			// check the request
-			assert.Equal(t, "20", capturedRequest.Header.Get("MaxBatchRequestNum"))
+			assert.Equal(t, "20", capturedRequest.Header.Get("Max-Batch-Request-Num"))
 
 		}()
 	}
