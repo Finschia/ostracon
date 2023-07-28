@@ -141,6 +141,80 @@ func TestWriteRPCResponseHTTP(t *testing.T) {
 	assert.Equal(t, `[{"jsonrpc":"2.0","id":-1,"result":{"value":"hello"}},{"jsonrpc":"2.0","id":-1,"result":{"value":"world"}}]`, string(body))
 }
 
+// This function is to test whether the max_requeset_batch_request is work in HTTP and TLS
+func TestMaxBatchRequestHandler(t *testing.T) {
+	config := DefaultConfig()
+	config.MaxBatchRequestNum = 20
+
+	mux := http.NewServeMux()
+	var capturedRequest *http.Request
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		capturedRequest = r
+	})
+
+	tests := []struct {
+		ListenFunc func() (net.Listener, error)
+		Server     func(l net.Listener) error
+		PostCall   func(l net.Listener) (*http.Response, error)
+	}{
+		{
+			ListenFunc: func() (net.Listener, error) { return Listen("tcp://127.0.0.1:0", config) },
+			Server:     func(l net.Listener) error { return Serve(l, mux, log.TestingLogger(), config) },
+			PostCall: func(l net.Listener) (*http.Response, error) {
+				c := http.Client{Timeout: 3 * time.Second}
+				res, err := c.Post("http://"+l.Addr().String(), "application/json", strings.NewReader(TestGoodBody))
+				return res, err
+			},
+		},
+		{
+			ListenFunc: func() (net.Listener, error) { return net.Listen("tcp", "localhost:0") },
+			Server: func(l net.Listener) error {
+				return ServeTLS(l, mux, "test.crt", "test.key", log.TestingLogger(), config)
+			},
+			PostCall: func(l net.Listener) (*http.Response, error) {
+				tr := &http.Transport{
+					TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+				}
+				c := &http.Client{Transport: tr}
+				res, err := c.Post("https://"+l.Addr().String(), "application/json", strings.NewReader(TestGoodBody))
+				return res, err
+			},
+		},
+	}
+
+	// defer in a loop
+	// https://stackoverflow.com/questions/45617758/proper-way-to-release-resources-with-defer-in-a-loop
+	for _, tt := range tests {
+		func() {
+			// start the listener
+			l, err := tt.ListenFunc()
+			require.NoError(t, err)
+			defer l.Close()
+
+			// start the server
+			chErr := make(chan error, 1)
+			go func() {
+				defer close(chErr)
+				chErr <- tt.Server(l)
+			}()
+			select {
+			case err := <-chErr:
+				require.NoError(t, err)
+			case <-time.After(100 * time.Millisecond):
+			}
+
+			// make a post call to the server
+			res, err := tt.PostCall(l)
+			require.NoError(t, err)
+			defer res.Body.Close()
+
+			// check the request
+			assert.Equal(t, "20", capturedRequest.Header.Get("Max-Batch-Request-Num"))
+
+		}()
+	}
+}
+
 func TestWriteRPCResponseHTTPError(t *testing.T) {
 	w := httptest.NewRecorder()
 	err := WriteRPCResponseHTTPError(

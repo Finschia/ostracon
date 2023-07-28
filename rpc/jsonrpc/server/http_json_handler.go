@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"reflect"
 	"sort"
+	"strconv"
 
 	tmjson "github.com/Finschia/ostracon/libs/json"
 	"github.com/Finschia/ostracon/libs/log"
@@ -53,6 +54,29 @@ func makeJSONRPCHandler(funcMap map[string]*RPCFunc, logger log.Logger) http.Han
 				return
 			}
 			requests = []types.RPCRequest{request}
+		}
+		// read the Max-Batch-Request-Num from header
+		maxBatchRequestNum, err := strconv.Atoi(r.Header.Get("Max-Batch-Request-Num"))
+		if err != nil {
+			res := types.RPCInvalidRequestError(nil,
+				fmt.Errorf("error reading request header key"),
+			)
+			if wErr := WriteRPCResponseHTTPError(w, http.StatusInternalServerError, res); wErr != nil {
+				logger.Error("failed to write response", "res", res, "err", wErr)
+			}
+			return
+		}
+
+		// if the number of requests in the batch exceeds the max_batch_request_num
+		// return a invalid request error
+		if len(requests) > maxBatchRequestNum {
+			res := types.RPCInvalidRequestError(nil,
+				fmt.Errorf("too many requests in a request batch, current is %d, where the upper limit is %d", len(requests), maxBatchRequestNum),
+			)
+			if wErr := WriteRPCResponseHTTPError(w, http.StatusBadRequest, res); wErr != nil {
+				logger.Error("failed to write response", "res", res, "err", wErr)
+			}
+			return
 		}
 
 		// Set the default response cache to true unless
