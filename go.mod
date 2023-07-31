@@ -44,7 +44,7 @@ require (
 	github.com/Finschia/r2ishiguro_vrf v0.1.2
 	github.com/miekg/dns v1.1.55
 	github.com/oasisprotocol/curve25519-voi v0.0.0-20230110094441-db37f07504ce
-	github.com/rs/zerolog v1.29.1
+	github.com/rs/zerolog v1.30.0
 	github.com/tendermint/go-amino v0.16.0
 	github.com/tendermint/tendermint v0.34.24
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
