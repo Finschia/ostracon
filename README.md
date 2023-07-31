@@ -4,7 +4,8 @@
 ![example workflow](https://github.com/Finschia/ostracon/actions/workflows/coverage.yml/badge.svg)
 
 [Ostracon](docs/en/01-overview.md "Ostracon: A Fast, Secure Consensus Layer for The Blockchain of New Token Economy")
-is forked from Tendermint Core [v0.34.19](https://github.com/tendermint/tendermint/tree/v0.34.19) at 2021-03-15.
+is forked from Tendermint Core [v0.34.8](https://github.com/tendermint/tendermint/tree/v0.34.8) on 2021-03-15.
+And we synced up with Tendermint-[v0.34.24](https://github.com/tendermint/tendermint/tree/v0.34.24) on 2023-07-24.
 
 **Node**: Requires [Go 1.20+](https://golang.org/dl/)
 
