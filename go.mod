@@ -61,7 +61,7 @@ require (
 	google.golang.org/grpc v1.57.0
 )
 
-require github.com/vektra/mockery/v2 v2.32.0
+require github.com/vektra/mockery/v2 v2.32.2
 
 require (
 	github.com/informalsystems/tm-load-test v1.3.0
