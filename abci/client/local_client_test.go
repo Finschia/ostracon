@@ -51,7 +51,7 @@ func TestLocalClientCalls(t *testing.T) {
 	c.QueryAsync(types.RequestQuery{}, getResponseCallback(t))
 	c.CommitAsync(getResponseCallback(t))
 	c.InitChainAsync(types.RequestInitChain{}, getResponseCallback(t))
-	c.BeginBlockAsync(ocabci.RequestBeginBlock{}, getResponseCallback(t))
+	c.BeginBlockAsync(types.RequestBeginBlock{}, getResponseCallback(t))
 	c.EndBlockAsync(types.RequestEndBlock{}, getResponseCallback(t))
 	c.BeginRecheckTxAsync(ocabci.RequestBeginRecheckTx{}, getResponseCallback(t))
 	c.EndRecheckTxAsync(ocabci.RequestEndRecheckTx{}, getResponseCallback(t))
@@ -87,7 +87,7 @@ func TestLocalClientCalls(t *testing.T) {
 	_, err = c.InitChainSync(types.RequestInitChain{})
 	require.NoError(t, err)
 
-	_, err = c.BeginBlockSync(ocabci.RequestBeginBlock{})
+	_, err = c.BeginBlockSync(types.RequestBeginBlock{})
 	require.NoError(t, err)
 
 	_, err = c.EndBlockSync(types.RequestEndBlock{})

@@ -27,11 +27,11 @@ type Application interface {
 	EndRecheckTx(RequestEndRecheckTx) ResponseEndRecheckTx       // Signals the end of rechecking
 
 	// Consensus Connection
-	InitChain(types.RequestInitChain) types.ResponseInitChain // Initialize blockchain w validators/other info from OstraconCore
-	BeginBlock(RequestBeginBlock) types.ResponseBeginBlock    // Signals the beginning of a block
-	DeliverTx(types.RequestDeliverTx) types.ResponseDeliverTx // Deliver a tx for full processing
-	EndBlock(types.RequestEndBlock) types.ResponseEndBlock    // Signals the end of a block, returns changes to the validator set
-	Commit() types.ResponseCommit                             // Commit the state and return the application Merkle root hash
+	InitChain(types.RequestInitChain) types.ResponseInitChain    // Initialize blockchain w validators/other info from OstraconCore
+	BeginBlock(types.RequestBeginBlock) types.ResponseBeginBlock // Signals the beginning of a block
+	DeliverTx(types.RequestDeliverTx) types.ResponseDeliverTx    // Deliver a tx for full processing
+	EndBlock(types.RequestEndBlock) types.ResponseEndBlock       // Signals the end of a block, returns changes to the validator set
+	Commit() types.ResponseCommit                                // Commit the state and return the application Merkle root hash
 
 	// State Sync Connection
 	ListSnapshots(types.RequestListSnapshots) types.ResponseListSnapshots                // List available snapshots
@@ -92,7 +92,7 @@ func (BaseApplication) InitChain(req types.RequestInitChain) types.ResponseInitC
 	return types.ResponseInitChain{}
 }
 
-func (BaseApplication) BeginBlock(req RequestBeginBlock) types.ResponseBeginBlock {
+func (BaseApplication) BeginBlock(req types.RequestBeginBlock) types.ResponseBeginBlock {
 	return types.ResponseBeginBlock{}
 }
 
@@ -181,7 +181,7 @@ func (app *GRPCApplication) InitChain(ctx context.Context, req *types.RequestIni
 	return &res, nil
 }
 
-func (app *GRPCApplication) BeginBlock(ctx context.Context, req *RequestBeginBlock) (*types.ResponseBeginBlock, error) {
+func (app *GRPCApplication) BeginBlock(ctx context.Context, req *types.RequestBeginBlock) (*types.ResponseBeginBlock, error) {
 	res := app.app.BeginBlock(*req)
 	return &res, nil
 }

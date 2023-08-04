@@ -107,7 +107,7 @@ func TestPersistentKVStoreInfo(t *testing.T) {
 	header := tmproto.Header{
 		Height: height,
 	}
-	kvstore.BeginBlock(ocabci.RequestBeginBlock{Hash: hash, Header: header})
+	kvstore.BeginBlock(types.RequestBeginBlock{Hash: hash, Header: header})
 	kvstore.EndBlock(types.RequestEndBlock{Height: header.Height})
 	kvstore.Commit()
 
@@ -197,7 +197,7 @@ func makeApplyBlock(
 		Height: height,
 	}
 
-	kvstore.BeginBlock(ocabci.RequestBeginBlock{Hash: hash, Header: header})
+	kvstore.BeginBlock(types.RequestBeginBlock{Hash: hash, Header: header})
 	for _, tx := range txs {
 		if r := kvstore.DeliverTx(types.RequestDeliverTx{Tx: tx}); r.IsErr() {
 			t.Fatal(r)

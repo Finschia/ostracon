@@ -125,7 +125,7 @@ func ToRequestInitChain(req types.RequestInitChain) *Request {
 	}
 }
 
-func ToRequestBeginBlock(req RequestBeginBlock) *Request {
+func ToRequestBeginBlock(req types.RequestBeginBlock) *Request {
 	return &Request{
 		Value: &Request_BeginBlock{&req},
 	}

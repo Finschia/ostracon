@@ -7,7 +7,6 @@ option go_package = "github.com/Finschia/ostracon/abci/types";
 // https://github.com/gogo/protobuf/blob/master/extensions.md
 import "tendermint/abci/types.proto";
 import "tendermint/types/types.proto";
-import "ostracon/types/types.proto";
 import "gogoproto/gogo.proto";
 
 // This file is copied from http://github.com/tendermint/abci
@@ -25,7 +24,7 @@ message Request {
     tendermint.abci.RequestSetOption          set_option           = 4;
     tendermint.abci.RequestInitChain          init_chain           = 5;
     tendermint.abci.RequestQuery              query                = 6;
-    RequestBeginBlock                         begin_block          = 7;
+    tendermint.abci.RequestBeginBlock         begin_block          = 7;
     tendermint.abci.RequestCheckTx            check_tx             = 8;
     tendermint.abci.RequestDeliverTx          deliver_tx           = 9;
     tendermint.abci.RequestEndBlock           end_block            = 10;
@@ -37,16 +36,6 @@ message Request {
     RequestBeginRecheckTx                     begin_recheck_tx     = 1000;  // 16~99 are reserved for merging original tendermint
     RequestEndRecheckTx                       end_recheck_tx       = 1001;
   }
-}
-
-message RequestBeginBlock {
-  bytes                          hash                    = 1;
-  tendermint.types.Header        header                  = 2 [(gogoproto.nullable) = false];
-  tendermint.abci.LastCommitInfo last_commit_info        = 3 [(gogoproto.nullable) = false];
-  repeated tendermint.abci.Evidence byzantine_validators = 4 [(gogoproto.nullable) = false];
-
-  // *** Ostracon Extended Fields ***
-  ostracon.types.Entropy entropy = 1000 [(gogoproto.nullable) = false];
 }
 
 message RequestBeginRecheckTx {
@@ -122,7 +111,7 @@ service ABCIApplication {
   rpc Query(tendermint.abci.RequestQuery) returns (tendermint.abci.ResponseQuery);
   rpc Commit(tendermint.abci.RequestCommit) returns (tendermint.abci.ResponseCommit);
   rpc InitChain(tendermint.abci.RequestInitChain) returns (tendermint.abci.ResponseInitChain);
-  rpc BeginBlock(RequestBeginBlock) returns (tendermint.abci.ResponseBeginBlock);
+  rpc BeginBlock(tendermint.abci.RequestBeginBlock) returns (tendermint.abci.ResponseBeginBlock);
   rpc EndBlock(tendermint.abci.RequestEndBlock) returns (tendermint.abci.ResponseEndBlock);
   rpc ListSnapshots(tendermint.abci.RequestListSnapshots) returns (tendermint.abci.ResponseListSnapshots);
   rpc OfferSnapshot(tendermint.abci.RequestOfferSnapshot) returns (tendermint.abci.ResponseOfferSnapshot);

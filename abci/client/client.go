@@ -40,7 +40,7 @@ type Client interface {
 	QueryAsync(types.RequestQuery, ResponseCallback) *ReqRes
 	CommitAsync(ResponseCallback) *ReqRes
 	InitChainAsync(types.RequestInitChain, ResponseCallback) *ReqRes
-	BeginBlockAsync(ocabci.RequestBeginBlock, ResponseCallback) *ReqRes
+	BeginBlockAsync(types.RequestBeginBlock, ResponseCallback) *ReqRes
 	EndBlockAsync(types.RequestEndBlock, ResponseCallback) *ReqRes
 	BeginRecheckTxAsync(ocabci.RequestBeginRecheckTx, ResponseCallback) *ReqRes
 	EndRecheckTxAsync(ocabci.RequestEndRecheckTx, ResponseCallback) *ReqRes
@@ -58,7 +58,7 @@ type Client interface {
 	QuerySync(types.RequestQuery) (*types.ResponseQuery, error)
 	CommitSync() (*types.ResponseCommit, error)
 	InitChainSync(types.RequestInitChain) (*types.ResponseInitChain, error)
-	BeginBlockSync(ocabci.RequestBeginBlock) (*types.ResponseBeginBlock, error)
+	BeginBlockSync(types.RequestBeginBlock) (*types.ResponseBeginBlock, error)
 	EndBlockSync(types.RequestEndBlock) (*types.ResponseEndBlock, error)
 	BeginRecheckTxSync(ocabci.RequestBeginRecheckTx) (*ocabci.ResponseBeginRecheckTx, error)
 	EndRecheckTxSync(ocabci.RequestEndRecheckTx) (*ocabci.ResponseEndRecheckTx, error)
