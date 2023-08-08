@@ -184,12 +184,12 @@ func TestFilterRemoteConnectionByIP(t *testing.T) {
 			}{"127.0.0.1", addrStub{"10.0.0.2:45678"}, false},
 		},
 		{
-			"empty allowIP should deny all",
+			"empty allowIP should allow all",
 			struct {
 				allowIP    string
 				remoteAddr net.Addr
 				expected   bool
-			}{"", addrStub{"127.0.0.1:45678"}, false},
+			}{"", addrStub{"127.0.0.1:45678"}, true},
 		},
 	}
 	for _, tt := range tests {

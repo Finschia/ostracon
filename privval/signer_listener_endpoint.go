@@ -50,7 +50,7 @@ type SignerListenerEndpoint struct {
 
 	instanceMtx tmsync.Mutex // Ensures instance public methods access, i.e. SendRequest
 
-	allowAddr string
+	allowAddr string // empty value allows all
 }
 
 // NewSignerListenerEndpoint returns an instance of SignerListenerEndpoint.
@@ -195,14 +195,13 @@ func (sl *SignerListenerEndpoint) serviceLoop() {
 		case <-sl.connectRequestCh:
 			{
 				conn, err := sl.acceptNewConnection()
-				remoteAddr := conn.RemoteAddr()
-				if !sl.isAllowedAddr(remoteAddr) {
-					sl.Logger.Info(fmt.Sprintf("deny a connection request from remote address=%s", remoteAddr))
-					conn.Close()
-					continue
-				}
-
 				if err == nil {
+					remoteAddr := conn.RemoteAddr()
+					if !sl.isAllowedAddr(remoteAddr) {
+						sl.Logger.Info(fmt.Sprintf("deny a connection request from remote address=%s", remoteAddr))
+						conn.Close()
+						continue
+					}
 					sl.Logger.Info("SignerListener: Connected")
 
 					// We have a good connection, wait for someone that needs one otherwise cancellation
@@ -225,8 +224,14 @@ func (sl *SignerListenerEndpoint) serviceLoop() {
 }
 
 func (sl *SignerListenerEndpoint) isAllowedAddr(addr net.Addr) bool {
-	addrOnly := addr.String()[:strings.Index(addr.String(), ":")]
-	return sl.allowAddr == addrOnly
+	if len(sl.allowAddr) == 0 {
+		return true
+	}
+	if strings.Contains(addr.String(), ":") {
+		addrOnly := addr.String()[:strings.Index(addr.String(), ":")]
+		return sl.allowAddr == addrOnly
+	}
+	return sl.allowAddr == addr.String()
 }
 
 func (sl *SignerListenerEndpoint) pingLoop() {
