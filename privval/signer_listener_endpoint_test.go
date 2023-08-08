@@ -174,6 +174,13 @@ func TestFilterRemoteConnectionByIP(t *testing.T) {
 				remoteAddr net.Addr
 				expected   bool
 			}{"127.0.0.1", addrStub{"127.0.0.1:45678"}, true},
+		}, {
+			"should allow correct ip without port",
+			struct {
+				allowIP    string
+				remoteAddr net.Addr
+				expected   bool
+			}{"127.0.0.1", addrStub{"127.0.0.1"}, true},
 		},
 		{
 			"should not allow different ip",
@@ -198,6 +205,14 @@ func TestFilterRemoteConnectionByIP(t *testing.T) {
 			assert.Equalf(t, tt.fields.expected, sl.isAllowedAddr(tt.fields.remoteAddr), tt.name)
 		})
 	}
+}
+
+func TestSignerListenerEndpointAllowAddress(t *testing.T) {
+	expected := "192.168.0.1"
+
+	cut := NewSignerListenerEndpoint(nil, nil, SignerListenerEndpointAllowAddress(expected))
+
+	assert.Equal(t, expected, cut.allowAddr)
 }
 
 func newSignerListenerEndpoint(logger log.Logger, addr string, timeoutReadWrite time.Duration) *SignerListenerEndpoint {
