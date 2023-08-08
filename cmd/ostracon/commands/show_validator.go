@@ -31,7 +31,7 @@ func showValidator(cmd *cobra.Command, args []string, config *cfg.Config) error 
 		if err != nil {
 			return err
 		}
-		pv, err = node.CreateAndStartPrivValidatorSocketClient(config.PrivValidatorListenAddr, chainID, logger)
+		pv, err = node.CreateAndStartPrivValidatorSocketClient(config, chainID, logger)
 		if err != nil {
 			return err
 		}

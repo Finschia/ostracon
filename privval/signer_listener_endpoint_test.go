@@ -145,6 +145,61 @@ func TestRetryConnToRemoteSigner(t *testing.T) {
 	}
 }
 
+type addrStub struct {
+	address string
+}
+
+func (a addrStub) Network() string {
+	return ""
+}
+
+func (a addrStub) String() string {
+	return a.address
+}
+
+func TestFilterRemoteConnectionByIP(t *testing.T) {
+	type fields struct {
+		allowIP    string
+		remoteAddr net.Addr
+		expected   bool
+	}
+	tests := []struct {
+		name   string
+		fields fields
+	}{
+		{
+			"should allow correct ip",
+			struct {
+				allowIP    string
+				remoteAddr net.Addr
+				expected   bool
+			}{"127.0.0.1", addrStub{"127.0.0.1:45678"}, true},
+		},
+		{
+			"should not allow different ip",
+			struct {
+				allowIP    string
+				remoteAddr net.Addr
+				expected   bool
+			}{"127.0.0.1", addrStub{"10.0.0.2:45678"}, false},
+		},
+		{
+			"empty allowIP should deny all",
+			struct {
+				allowIP    string
+				remoteAddr net.Addr
+				expected   bool
+			}{"", addrStub{"127.0.0.1:45678"}, false},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sl := &SignerListenerEndpoint{allowAddr: tt.fields.allowIP}
+			assert.Equalf(t, tt.fields.expected, sl.isAllowedAddr(tt.fields.remoteAddr), tt.name)
+		})
+	}
+}
+
 func newSignerListenerEndpoint(logger log.Logger, addr string, timeoutReadWrite time.Duration) *SignerListenerEndpoint {
 	proto, address := tmnet.ProtocolAndAddress(addr)
 

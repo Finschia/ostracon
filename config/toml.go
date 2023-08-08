@@ -156,7 +156,13 @@ priv_validator_state_file = "{{ js .BaseConfig.PrivValidatorState }}"
 
 # TCP or UNIX socket address for Ostracon to listen on for
 # connections from an external PrivValidator process
+# example) 0.0.0.0:26659
 priv_validator_laddr = "{{ .BaseConfig.PrivValidatorListenAddr }}"
+
+# Validator's remote address to allow a connection
+# ostracon only allow a connection from this address
+# example) 10.0.0.7
+priv_validator_raddr = "{{ .BaseConfig.PrivValidatorRemoteAddr }}"
 
 # Path to the JSON file containing the private key to use for node authentication in the p2p protocol
 node_key_file = "{{ js .BaseConfig.NodeKey }}"

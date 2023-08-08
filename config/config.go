@@ -242,7 +242,13 @@ type BaseConfig struct { //nolint: maligned
 
 	// TCP or UNIX socket address for Ostracon to listen on for
 	// connections from an external PrivValidator process
+	// example) 0.0.0.0:26659
 	PrivValidatorListenAddr string `mapstructure:"priv_validator_laddr"`
+
+	// Validator's remote address(without port) to allow a connection
+	// ostracon only allow a connection from this address
+	// example) 10.0.0.7
+	PrivValidatorRemoteAddr string `mapstructure:"priv_validator_raddr"`
 
 	// A JSON file containing the private key to use for p2p authenticated encryption
 	NodeKey string `mapstructure:"node_key_file"`

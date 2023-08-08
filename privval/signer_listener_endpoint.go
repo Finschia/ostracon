@@ -3,6 +3,7 @@ package privval
 import (
 	"fmt"
 	"net"
+	"strings"
 	"time"
 
 	privvalproto "github.com/tendermint/tendermint/proto/tendermint/privval"
@@ -24,6 +25,13 @@ func SignerListenerEndpointTimeoutReadWrite(timeout time.Duration) SignerListene
 	return func(sl *SignerListenerEndpoint) { sl.signerEndpoint.timeoutReadWrite = timeout }
 }
 
+// SignerListenerEndpointAllowAddress sets the address to allow
+// connections from the only allowed address
+//
+func SignerListenerEndpointAllowAddress(addr string) SignerListenerEndpointOption {
+	return func(sl *SignerListenerEndpoint) { sl.allowAddr = addr }
+}
+
 // SignerListenerEndpoint listens for an external process to dial in and keeps
 // the connection alive by dropping and reconnecting.
 //
@@ -41,6 +49,8 @@ type SignerListenerEndpoint struct {
 	pingInterval  time.Duration
 
 	instanceMtx tmsync.Mutex // Ensures instance public methods access, i.e. SendRequest
+
+	allowAddr string
 }
 
 // NewSignerListenerEndpoint returns an instance of SignerListenerEndpoint.
@@ -185,6 +195,13 @@ func (sl *SignerListenerEndpoint) serviceLoop() {
 		case <-sl.connectRequestCh:
 			{
 				conn, err := sl.acceptNewConnection()
+				remoteAddr := conn.RemoteAddr()
+				if !sl.isAllowedAddr(remoteAddr) {
+					sl.Logger.Info(fmt.Sprintf("deny a connection request from remote address=%s", remoteAddr))
+					conn.Close()
+					continue
+				}
+
 				if err == nil {
 					sl.Logger.Info("SignerListener: Connected")
 
@@ -205,6 +222,11 @@ func (sl *SignerListenerEndpoint) serviceLoop() {
 			return
 		}
 	}
+}
+
+func (sl *SignerListenerEndpoint) isAllowedAddr(addr net.Addr) bool {
+	addrOnly := addr.String()[:strings.Index(addr.String(), ":")]
+	return sl.allowAddr == addrOnly
 }
 
 func (sl *SignerListenerEndpoint) pingLoop() {
