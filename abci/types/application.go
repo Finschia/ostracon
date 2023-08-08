@@ -8,7 +8,7 @@ import (
 
 //go:generate ../../scripts/mockery_generate.sh Application
 
-type CheckTxCallback func(ResponseCheckTx)
+type CheckTxCallback func(types.ResponseCheckTx)
 
 // Application is an interface that enables any finite, deterministic state machine
 // to be driven by a blockchain-based replication engine via the ABCI.
@@ -21,7 +21,7 @@ type Application interface {
 	Query(types.RequestQuery) types.ResponseQuery             // Query for state
 
 	// Mempool Connection
-	CheckTxSync(types.RequestCheckTx) ResponseCheckTx            // Validate a tx for the mempool
+	CheckTxSync(types.RequestCheckTx) types.ResponseCheckTx      // Validate a tx for the mempool
 	CheckTxAsync(types.RequestCheckTx, CheckTxCallback)          // Asynchronously validate a tx for the mempool
 	BeginRecheckTx(RequestBeginRecheckTx) ResponseBeginRecheckTx // Signals the beginning of rechecking
 	EndRecheckTx(RequestEndRecheckTx) ResponseEndRecheckTx       // Signals the end of rechecking
@@ -61,23 +61,23 @@ func (BaseApplication) SetOption(req types.RequestSetOption) types.ResponseSetOp
 }
 
 func (BaseApplication) DeliverTx(req types.RequestDeliverTx) types.ResponseDeliverTx {
-	return types.ResponseDeliverTx{Code: CodeTypeOK}
+	return types.ResponseDeliverTx{Code: types.CodeTypeOK}
 }
 
-func (BaseApplication) CheckTxSync(req types.RequestCheckTx) ResponseCheckTx {
-	return ResponseCheckTx{Code: CodeTypeOK}
+func (BaseApplication) CheckTxSync(req types.RequestCheckTx) types.ResponseCheckTx {
+	return types.ResponseCheckTx{Code: types.CodeTypeOK}
 }
 
 func (BaseApplication) CheckTxAsync(req types.RequestCheckTx, callback CheckTxCallback) {
-	callback(ResponseCheckTx{Code: CodeTypeOK})
+	callback(types.ResponseCheckTx{Code: types.CodeTypeOK})
 }
 
 func (BaseApplication) BeginRecheckTx(req RequestBeginRecheckTx) ResponseBeginRecheckTx {
-	return ResponseBeginRecheckTx{Code: CodeTypeOK}
+	return ResponseBeginRecheckTx{Code: types.CodeTypeOK}
 }
 
 func (BaseApplication) EndRecheckTx(req RequestEndRecheckTx) ResponseEndRecheckTx {
-	return ResponseEndRecheckTx{Code: CodeTypeOK}
+	return ResponseEndRecheckTx{Code: types.CodeTypeOK}
 }
 
 func (BaseApplication) Commit() types.ResponseCommit {
@@ -85,7 +85,7 @@ func (BaseApplication) Commit() types.ResponseCommit {
 }
 
 func (BaseApplication) Query(req types.RequestQuery) types.ResponseQuery {
-	return types.ResponseQuery{Code: CodeTypeOK}
+	return types.ResponseQuery{Code: types.CodeTypeOK}
 }
 
 func (BaseApplication) InitChain(req types.RequestInitChain) types.ResponseInitChain {
@@ -150,7 +150,7 @@ func (app *GRPCApplication) DeliverTx(ctx context.Context, req *types.RequestDel
 	return &res, nil
 }
 
-func (app *GRPCApplication) CheckTx(ctx context.Context, req *types.RequestCheckTx) (*ResponseCheckTx, error) {
+func (app *GRPCApplication) CheckTx(ctx context.Context, req *types.RequestCheckTx) (*types.ResponseCheckTx, error) {
 	res := app.app.CheckTxSync(*req)
 	return &res, nil
 }

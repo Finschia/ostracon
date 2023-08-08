@@ -105,7 +105,7 @@ func createProposalBlockAndDeliverTxs(
 	deliverTxResponses := make([]*abci.ResponseDeliverTx, len(block.Txs))
 	for i, tx := range block.Txs {
 		deliverTxResponses[i] = &abci.ResponseDeliverTx{
-			Code: ocabci.CodeTypeOK,
+			Code: abci.CodeTypeOK,
 			Data: tx,
 		}
 	}
@@ -146,7 +146,7 @@ func receiveTx(ctx context.Context, t *testing.T,
 		},
 		func(res *ocabci.Response) {
 			resCheckTx := res.GetCheckTx()
-			if resCheckTx.Code != ocabci.CodeTypeOK && len(resCheckTx.Log) != 0 {
+			if resCheckTx.Code != abci.CodeTypeOK && len(resCheckTx.Log) != 0 {
 				atomic.AddInt64(&receiveTxCounter.abciFail, 1)
 			} else {
 				atomic.AddInt64(&receiveTxCounter.success, 1)

@@ -117,7 +117,7 @@ func (app *Application) DeliverTx(req types.RequestDeliverTx) types.ResponseDeli
 	return types.ResponseDeliverTx{Code: code.CodeTypeOK, Events: events}
 }
 
-func (app *Application) CheckTxSync(req types.RequestCheckTx) ocabci.ResponseCheckTx {
+func (app *Application) CheckTxSync(req types.RequestCheckTx) types.ResponseCheckTx {
 	return app.checkTx(req)
 }
 
@@ -125,8 +125,8 @@ func (app *Application) CheckTxAsync(req types.RequestCheckTx, callback ocabci.C
 	callback(app.checkTx(req))
 }
 
-func (app *Application) checkTx(req types.RequestCheckTx) ocabci.ResponseCheckTx {
-	return ocabci.ResponseCheckTx{Code: code.CodeTypeOK, GasWanted: 1}
+func (app *Application) checkTx(req types.RequestCheckTx) types.ResponseCheckTx {
+	return types.ResponseCheckTx{Code: code.CodeTypeOK, GasWanted: 1}
 }
 
 func (app *Application) Commit() types.ResponseCommit {

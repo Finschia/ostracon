@@ -20,7 +20,6 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	ocabci "github.com/Finschia/ostracon/abci/types"
 	"github.com/Finschia/ostracon/state/txindex"
 	"github.com/Finschia/ostracon/types"
 
@@ -309,7 +308,7 @@ func txResultWithEvents(events []abci.Event) *abci.TxResult {
 		Tx:     types.Tx("HELLO WORLD"),
 		Result: abci.ResponseDeliverTx{
 			Data:   []byte{0},
-			Code:   ocabci.CodeTypeOK,
+			Code:   abci.CodeTypeOK,
 			Log:    "",
 			Events: events,
 		},

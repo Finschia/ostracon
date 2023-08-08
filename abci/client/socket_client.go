@@ -341,7 +341,7 @@ func (cli *socketClient) DeliverTxSync(req types.RequestDeliverTx) (*types.Respo
 	return reqres.Response.GetDeliverTx(), cli.Error()
 }
 
-func (cli *socketClient) CheckTxSync(req types.RequestCheckTx) (*ocabci.ResponseCheckTx, error) {
+func (cli *socketClient) CheckTxSync(req types.RequestCheckTx) (*types.ResponseCheckTx, error) {
 	reqres := cli.queueRequest(ocabci.ToRequestCheckTx(req), nil)
 	if _, err := cli.FlushSync(); err != nil {
 		return nil, err

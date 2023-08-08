@@ -342,7 +342,7 @@ func (cli *grpcClient) DeliverTxSync(params types.RequestDeliverTx) (*types.Resp
 	return reqres.Response.GetDeliverTx(), cli.Error()
 }
 
-func (cli *grpcClient) CheckTxSync(params types.RequestCheckTx) (*ocabci.ResponseCheckTx, error) {
+func (cli *grpcClient) CheckTxSync(params types.RequestCheckTx) (*types.ResponseCheckTx, error) {
 	reqres := cli.CheckTxAsync(params, nil)
 	reqres.Wait()
 	return reqres.Response.GetCheckTx(), cli.Error()

@@ -4,8 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"sync"
+	"testing"
+	"time"
+
 	ocabcicli "github.com/Finschia/ostracon/abci/client"
-	ocabci "github.com/Finschia/ostracon/abci/types"
 	"github.com/Finschia/ostracon/config"
 	"github.com/Finschia/ostracon/libs/log"
 	"github.com/Finschia/ostracon/mempool"
@@ -17,10 +21,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	abci "github.com/tendermint/tendermint/abci/types"
-	"net/http"
-	"sync"
-	"testing"
-	"time"
 )
 
 type ErrorAssertionFunc func(t assert.TestingT, theError error, contains string, msgAndArgs ...interface{}) bool
@@ -104,7 +104,7 @@ func TestBroadcastTxSync(t *testing.T) {
 				tx:  tx,
 			},
 			want: &ctypes.ResultBroadcastTx{
-				Code:         ocabci.CodeTypeOK,
+				Code:         abci.CodeTypeOK,
 				Data:         nil,
 				Log:          "",
 				Codespace:    "",
@@ -128,7 +128,7 @@ func TestBroadcastTxSync(t *testing.T) {
 	env = &Environment{}
 	mockAppConnMempool := &mocks.AppConnMempool{}
 	mockAppConnMempool.On("SetGlobalCallback", mock.Anything)
-	mockAppConnMempool.On("CheckTxSync", mock.Anything).Return(&ocabci.ResponseCheckTx{}, nil)
+	mockAppConnMempool.On("CheckTxSync", mock.Anything).Return(&abci.ResponseCheckTx{}, nil)
 	env.Mempool = memv0.NewCListMempool(config.TestConfig().Mempool, mockAppConnMempool, 0)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -177,7 +177,7 @@ func TestBroadcastTxSyncWithCancelContextForCheckTxSync(t *testing.T) {
 	mockAppConnMempool := &mocks.AppConnMempool{}
 	mockAppConnMempool.On("SetGlobalCallback", mock.Anything)
 	mockAppConnMempool.On("CheckTxSync", mock.Anything).Return(
-		&ocabci.ResponseCheckTx{Code: abci.CodeTypeOK}, nil).WaitUntil(
+		&abci.ResponseCheckTx{Code: abci.CodeTypeOK}, nil).WaitUntil(
 		time.After(1000 * time.Millisecond)) // Wait calling the context cancel
 	mockAppConnMempool.On("Error").Return(nil) // Not to use tt.err
 	env.Mempool = memv0.NewCListMempool(config.TestConfig().Mempool, mockAppConnMempool, 0)
@@ -222,7 +222,7 @@ func TestBroadcastTxCommit(t *testing.T) {
 				tx:  tx,
 			},
 			want: &ctypes.ResultBroadcastTxCommit{
-				CheckTx: ocabci.ResponseCheckTx{
+				CheckTx: abci.ResponseCheckTx{
 					Code: abci.CodeTypeOK,
 				},
 				DeliverTx: abci.ResponseDeliverTx{
@@ -241,7 +241,7 @@ func TestBroadcastTxCommit(t *testing.T) {
 				tx:  tx1,
 			},
 			want: &ctypes.ResultBroadcastTxCommit{
-				CheckTx: ocabci.ResponseCheckTx{
+				CheckTx: abci.ResponseCheckTx{
 					Code: abci.CodeTypeOK + 1, // Not OK
 				},
 				DeliverTx: abci.ResponseDeliverTx{}, // return empty response
@@ -304,7 +304,7 @@ func TestBroadcastTxCommitWithCancelContextForCheckTxSync(t *testing.T) {
 	errRpcContext := rpctypes.Context{HTTPReq: req}
 	height := int64(1)
 	tx := types.Tx{}
-	resCheckTx := ocabci.ResponseCheckTx{
+	resCheckTx := abci.ResponseCheckTx{
 		Code: abci.CodeTypeOK,
 	}
 	resDeliverTx := abci.ResponseDeliverTx{
@@ -396,7 +396,7 @@ func TestBroadcastTxCommitTimeout(t *testing.T) {
 				tx:  tx,
 			},
 			want: &ctypes.ResultBroadcastTxCommit{
-				CheckTx: ocabci.ResponseCheckTx{
+				CheckTx: abci.ResponseCheckTx{
 					Code: abci.CodeTypeOK,
 				},
 				DeliverTx: abci.ResponseDeliverTx{}, // return empty response

@@ -211,7 +211,7 @@ func ToResponseDeliverTx(res types.ResponseDeliverTx) *Response {
 	}
 }
 
-func ToResponseCheckTx(res ResponseCheckTx) *Response {
+func ToResponseCheckTx(res types.ResponseCheckTx) *Response {
 	return &Response{
 		Value: &Response_CheckTx{&res},
 	}

@@ -7,7 +7,6 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	ocabci "github.com/Finschia/ostracon/abci/types"
 	"github.com/Finschia/ostracon/crypto"
 	"github.com/Finschia/ostracon/libs/bytes"
 	"github.com/Finschia/ostracon/p2p"
@@ -181,15 +180,15 @@ type ResultBroadcastTx struct {
 
 // CheckTx and DeliverTx results
 type ResultBroadcastTxCommit struct {
-	CheckTx   ocabci.ResponseCheckTx `json:"check_tx"`
+	CheckTx   abci.ResponseCheckTx   `json:"check_tx"`
 	DeliverTx abci.ResponseDeliverTx `json:"deliver_tx"`
 	Hash      bytes.HexBytes         `json:"hash"`
 	Height    int64                  `json:"height"`
 }
 
-// ResultCheckTx wraps ocabci.ResponseCheckTx.
+// ResultCheckTx wraps types.ResponseCheckTx.
 type ResultCheckTx struct {
-	ocabci.ResponseCheckTx
+	abci.ResponseCheckTx
 }
 
 // Result of querying for a tx

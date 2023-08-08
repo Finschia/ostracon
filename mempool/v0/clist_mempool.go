@@ -224,7 +224,7 @@ func (mem *CListMempool) CheckTxSync(
 	}
 
 	// CONTRACT: `app.CheckTxSync()` should check whether `GasWanted` is valid (0 <= GasWanted <= block.masGas)
-	var r *ocabci.ResponseCheckTx
+	var r *abci.ResponseCheckTx
 	r, err := mem.proxyAppConn.CheckTxSync(abci.RequestCheckTx{Tx: tx})
 	if err != nil {
 		return err
@@ -496,7 +496,7 @@ func (mem *CListMempool) resCbFirstTime(
 ) {
 	switch r := res.Value.(type) {
 	case *ocabci.Response_CheckTx:
-		if r.CheckTx.Code == ocabci.CodeTypeOK {
+		if r.CheckTx.Code == abci.CodeTypeOK {
 			memTx := &mempoolTx{
 				height:    mem.height,
 				gasWanted: r.CheckTx.GasWanted,
@@ -550,7 +550,7 @@ func (mem *CListMempool) resCbRecheck(req *ocabci.Request, res *ocabci.Response)
 		}
 
 		var postCheckErr error
-		if r.CheckTx.Code == ocabci.CodeTypeOK {
+		if r.CheckTx.Code == abci.CodeTypeOK {
 			if mem.postCheck == nil {
 				return
 			}
@@ -719,7 +719,7 @@ func (mem *CListMempool) Update(
 	}
 
 	for i, tx := range block.Txs {
-		if deliverTxResponses[i].Code == ocabci.CodeTypeOK {
+		if deliverTxResponses[i].Code == abci.CodeTypeOK {
 			// Add valid committed tx to the cache (if missing).
 			_ = mem.cache.Push(tx)
 		} else if !mem.config.KeepInvalidTxsInCache {

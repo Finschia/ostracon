@@ -1,14 +1,14 @@
 package main
 
 import (
+	"context"
 	"encoding/hex"
 	"fmt"
 	"os"
 
-	"context"
+	coregrpc "github.com/tendermint/tendermint/rpc/grpc"
 
 	tmjson "github.com/Finschia/ostracon/libs/json"
-	coregrpc "github.com/Finschia/ostracon/rpc/grpc"
 )
 
 var grpcAddr = "tcp://localhost:36656"

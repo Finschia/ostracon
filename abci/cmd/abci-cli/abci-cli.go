@@ -776,7 +776,7 @@ func printResponse(cmd *cobra.Command, args []string, rsp response) {
 	}
 
 	// Always print the status code.
-	if rsp.Code == ocabci.CodeTypeOK {
+	if rsp.Code == types.CodeTypeOK {
 		fmt.Printf("-> code: OK\n")
 	} else {
 		fmt.Printf("-> code: %d\n", rsp.Code)

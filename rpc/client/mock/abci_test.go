@@ -12,7 +12,6 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/Finschia/ostracon/abci/example/kvstore"
-	ocabci "github.com/Finschia/ostracon/abci/types"
 	"github.com/Finschia/ostracon/libs/bytes"
 	"github.com/Finschia/ostracon/rpc/client"
 	"github.com/Finschia/ostracon/rpc/client/mock"
@@ -39,7 +38,7 @@ func TestABCIMock(t *testing.T) {
 		BroadcastCommit: mock.Call{
 			Args: goodTx,
 			Response: &ctypes.ResultBroadcastTxCommit{
-				CheckTx:   ocabci.ResponseCheckTx{Data: bytes.HexBytes("stand")},
+				CheckTx:   abci.ResponseCheckTx{Data: bytes.HexBytes("stand")},
 				DeliverTx: abci.ResponseDeliverTx{Data: bytes.HexBytes("deliver")},
 			},
 			Error: errors.New("bad tx"),

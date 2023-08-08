@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	core_grpc "github.com/tendermint/tendermint/rpc/grpc"
+
 	abci "github.com/Finschia/ostracon/abci/types"
 	cfg "github.com/Finschia/ostracon/config"
 	"github.com/Finschia/ostracon/libs/log"
@@ -17,7 +19,7 @@ import (
 	"github.com/Finschia/ostracon/privval"
 	"github.com/Finschia/ostracon/proxy"
 	ctypes "github.com/Finschia/ostracon/rpc/core/types"
-	core_grpc "github.com/Finschia/ostracon/rpc/grpc"
+	occore_grpc "github.com/Finschia/ostracon/rpc/grpc"
 	rpcclient "github.com/Finschia/ostracon/rpc/jsonrpc/client"
 )
 
@@ -111,7 +113,7 @@ func GetConfig(forceCreate ...bool) *cfg.Config {
 
 func GetGRPCClient() core_grpc.BroadcastAPIClient {
 	grpcAddr := globalConfig.RPC.GRPCListenAddress
-	return core_grpc.StartGRPCClient(grpcAddr)
+	return occore_grpc.StartGRPCClient(grpcAddr)
 }
 
 // StartOstracon starts a test ostracon server in a go routine and returns when it is initialized

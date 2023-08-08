@@ -6,8 +6,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	abci "github.com/tendermint/tendermint/abci/types"
+
 	"github.com/Finschia/ostracon/abci/example/kvstore"
-	abci "github.com/Finschia/ostracon/abci/types"
 	"github.com/Finschia/ostracon/mempool"
 	"github.com/Finschia/ostracon/proxy"
 	"github.com/Finschia/ostracon/types"

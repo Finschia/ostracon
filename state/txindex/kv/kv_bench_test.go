@@ -10,7 +10,6 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tm-db"
 
-	ocabci "github.com/Finschia/ostracon/abci/types"
 	"github.com/Finschia/ostracon/libs/pubsub/query"
 	"github.com/Finschia/ostracon/types"
 )
@@ -50,7 +49,7 @@ func BenchmarkTxSearch(b *testing.B) {
 			Tx:     types.Tx(string(txBz)),
 			Result: abci.ResponseDeliverTx{
 				Data:   []byte{0},
-				Code:   ocabci.CodeTypeOK,
+				Code:   abci.CodeTypeOK,
 				Log:    "",
 				Events: events,
 			},

@@ -4,8 +4,8 @@ import (
 	"context"
 
 	abci "github.com/tendermint/tendermint/abci/types"
+	core_grpc "github.com/tendermint/tendermint/rpc/grpc"
 
-	ocabci "github.com/Finschia/ostracon/abci/types"
 	core "github.com/Finschia/ostracon/rpc/core"
 	rpctypes "github.com/Finschia/ostracon/rpc/jsonrpc/types"
 )
@@ -13,12 +13,12 @@ import (
 type broadcastAPI struct {
 }
 
-func (bapi *broadcastAPI) Ping(ctx context.Context, req *RequestPing) (*ResponsePing, error) {
+func (bapi *broadcastAPI) Ping(ctx context.Context, req *core_grpc.RequestPing) (*core_grpc.ResponsePing, error) {
 	// kvstore so we can check if the server is up
-	return &ResponsePing{}, nil
+	return &core_grpc.ResponsePing{}, nil
 }
 
-func (bapi *broadcastAPI) BroadcastTx(ctx context.Context, req *RequestBroadcastTx) (*ResponseBroadcastTx, error) {
+func (bapi *broadcastAPI) BroadcastTx(ctx context.Context, req *core_grpc.RequestBroadcastTx) (*core_grpc.ResponseBroadcastTx, error) {
 	// NOTE: there's no way to get client's remote address
 	// see https://stackoverflow.com/questions/33684570/session-and-remote-ip-address-in-grpc-go
 	res, err := core.BroadcastTxCommit(&rpctypes.Context{}, req.Tx)
@@ -26,8 +26,8 @@ func (bapi *broadcastAPI) BroadcastTx(ctx context.Context, req *RequestBroadcast
 		return nil, err
 	}
 
-	return &ResponseBroadcastTx{
-		CheckTx: &ocabci.ResponseCheckTx{
+	return &core_grpc.ResponseBroadcastTx{
+		CheckTx: &abci.ResponseCheckTx{
 			Code: res.CheckTx.Code,
 			Data: res.CheckTx.Data,
 			Log:  res.CheckTx.Log,

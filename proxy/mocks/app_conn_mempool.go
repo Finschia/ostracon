@@ -59,19 +59,19 @@ func (_m *AppConnMempool) CheckTxAsync(_a0 abcitypes.RequestCheckTx, _a1 abcicli
 }
 
 // CheckTxSync provides a mock function with given fields: _a0
-func (_m *AppConnMempool) CheckTxSync(_a0 abcitypes.RequestCheckTx) (*types.ResponseCheckTx, error) {
+func (_m *AppConnMempool) CheckTxSync(_a0 abcitypes.RequestCheckTx) (*abcitypes.ResponseCheckTx, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *types.ResponseCheckTx
+	var r0 *abcitypes.ResponseCheckTx
 	var r1 error
-	if rf, ok := ret.Get(0).(func(abcitypes.RequestCheckTx) (*types.ResponseCheckTx, error)); ok {
+	if rf, ok := ret.Get(0).(func(abcitypes.RequestCheckTx) (*abcitypes.ResponseCheckTx, error)); ok {
 		return rf(_a0)
 	}
-	if rf, ok := ret.Get(0).(func(abcitypes.RequestCheckTx) *types.ResponseCheckTx); ok {
+	if rf, ok := ret.Get(0).(func(abcitypes.RequestCheckTx) *abcitypes.ResponseCheckTx); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*types.ResponseCheckTx)
+			r0 = ret.Get(0).(*abcitypes.ResponseCheckTx)
 		}
 	}
 

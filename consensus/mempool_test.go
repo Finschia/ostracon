@@ -252,7 +252,7 @@ func (app *CounterApplication) DeliverTx(req abci.RequestDeliverTx) abci.Respons
 	return abci.ResponseDeliverTx{Code: code.CodeTypeOK}
 }
 
-func (app *CounterApplication) CheckTxSync(req abci.RequestCheckTx) ocabci.ResponseCheckTx {
+func (app *CounterApplication) CheckTxSync(req abci.RequestCheckTx) abci.ResponseCheckTx {
 	return app.checkTx(req)
 }
 
@@ -260,17 +260,17 @@ func (app *CounterApplication) CheckTxAsync(req abci.RequestCheckTx, callback oc
 	callback(app.checkTx(req))
 }
 
-func (app *CounterApplication) checkTx(req abci.RequestCheckTx) ocabci.ResponseCheckTx {
+func (app *CounterApplication) checkTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 	txValue := txAsUint64(req.Tx)
 	app.mempoolTxCountMtx.Lock()
 	defer app.mempoolTxCountMtx.Unlock()
 	if txValue != uint64(app.mempoolTxCount) {
-		return ocabci.ResponseCheckTx{
+		return abci.ResponseCheckTx{
 			Code: code.CodeTypeBadNonce,
 			Log:  fmt.Sprintf("Invalid nonce. Expected %v, got %v", app.mempoolTxCount, txValue)}
 	}
 	app.mempoolTxCount++
-	return ocabci.ResponseCheckTx{Code: code.CodeTypeOK}
+	return abci.ResponseCheckTx{Code: code.CodeTypeOK}
 }
 
 func (app *CounterApplication) BeginRecheckTx(ocabci.RequestBeginRecheckTx) ocabci.ResponseBeginRecheckTx {

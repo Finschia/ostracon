@@ -360,12 +360,12 @@ func (app *testApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 	return abci.ResponseDeliverTx{Events: []abci.Event{}}
 }
 
-func (app *testApp) CheckTxSync(req abci.RequestCheckTx) ocabci.ResponseCheckTx {
-	return ocabci.ResponseCheckTx{}
+func (app *testApp) CheckTxSync(req abci.RequestCheckTx) abci.ResponseCheckTx {
+	return abci.ResponseCheckTx{}
 }
 
 func (app *testApp) CheckTxAsync(req abci.RequestCheckTx, callback ocabci.CheckTxCallback) {
-	callback(ocabci.ResponseCheckTx{})
+	callback(abci.ResponseCheckTx{})
 }
 
 func (app *testApp) Commit() abci.ResponseCommit {
