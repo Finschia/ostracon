@@ -14,7 +14,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	abci "github.com/Finschia/ostracon/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
+
+	ocabci "github.com/Finschia/ostracon/abci/types"
 	tmjson "github.com/Finschia/ostracon/libs/json"
 	"github.com/Finschia/ostracon/libs/log"
 	tmmath "github.com/Finschia/ostracon/libs/math"
@@ -368,11 +370,11 @@ func TestBroadcastTxCommit(t *testing.T) {
 func TestUnconfirmedTxs(t *testing.T) {
 	_, _, tx := MakeTxKV()
 
-	ch := make(chan *abci.Response, 1)
+	ch := make(chan *ocabci.Response, 1)
 	mempool := node.Mempool()
 	mempool.CheckTxAsync(tx, mempl.TxInfo{}, func(err error) {
 		require.NoError(t, err)
-	}, func(resp *abci.Response) {
+	}, func(resp *ocabci.Response) {
 		ch <- resp
 	})
 
@@ -401,11 +403,11 @@ func TestUnconfirmedTxs(t *testing.T) {
 func TestNumUnconfirmedTxs(t *testing.T) {
 	_, _, tx := MakeTxKV()
 
-	ch := make(chan *abci.Response, 1)
+	ch := make(chan *ocabci.Response, 1)
 	mempool := node.Mempool()
 	mempool.CheckTxAsync(tx, mempl.TxInfo{}, func(err error) {
 		require.NoError(t, err)
-	}, func(resp *abci.Response) {
+	}, func(resp *ocabci.Response) {
 		ch <- resp
 	})
 

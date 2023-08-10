@@ -262,7 +262,7 @@ func (cli *socketClient) InitChainAsync(req types.RequestInitChain, cb ResponseC
 	return cli.queueRequest(ocabci.ToRequestInitChain(req), cb)
 }
 
-func (cli *socketClient) BeginBlockAsync(req ocabci.RequestBeginBlock, cb ResponseCallback) *ReqRes {
+func (cli *socketClient) BeginBlockAsync(req types.RequestBeginBlock, cb ResponseCallback) *ReqRes {
 	return cli.queueRequest(ocabci.ToRequestBeginBlock(req), cb)
 }
 
@@ -341,7 +341,7 @@ func (cli *socketClient) DeliverTxSync(req types.RequestDeliverTx) (*types.Respo
 	return reqres.Response.GetDeliverTx(), cli.Error()
 }
 
-func (cli *socketClient) CheckTxSync(req types.RequestCheckTx) (*ocabci.ResponseCheckTx, error) {
+func (cli *socketClient) CheckTxSync(req types.RequestCheckTx) (*types.ResponseCheckTx, error) {
 	reqres := cli.queueRequest(ocabci.ToRequestCheckTx(req), nil)
 	if _, err := cli.FlushSync(); err != nil {
 		return nil, err
@@ -377,7 +377,7 @@ func (cli *socketClient) InitChainSync(req types.RequestInitChain) (*types.Respo
 	return reqres.Response.GetInitChain(), cli.Error()
 }
 
-func (cli *socketClient) BeginBlockSync(req ocabci.RequestBeginBlock) (*types.ResponseBeginBlock, error) {
+func (cli *socketClient) BeginBlockSync(req types.RequestBeginBlock) (*types.ResponseBeginBlock, error) {
 	reqres := cli.queueRequest(ocabci.ToRequestBeginBlock(req), nil)
 	if _, err := cli.FlushSync(); err != nil {
 		return nil, err

@@ -13,7 +13,6 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	db "github.com/tendermint/tm-db"
 
-	ocabci "github.com/Finschia/ostracon/abci/types"
 	"github.com/Finschia/ostracon/libs/pubsub/query"
 	tmrand "github.com/Finschia/ostracon/libs/rand"
 	"github.com/Finschia/ostracon/state/txindex"
@@ -30,7 +29,7 @@ func TestTxIndex(t *testing.T) {
 		Tx:     tx,
 		Result: abci.ResponseDeliverTx{
 			Data: []byte{0},
-			Code: ocabci.CodeTypeOK, Log: "", Events: nil,
+			Code: abci.CodeTypeOK, Log: "", Events: nil,
 		},
 	}
 	hash := tx.Hash()
@@ -53,7 +52,7 @@ func TestTxIndex(t *testing.T) {
 		Tx:     tx2,
 		Result: abci.ResponseDeliverTx{
 			Data: []byte{0},
-			Code: ocabci.CodeTypeOK, Log: "", Events: nil,
+			Code: abci.CodeTypeOK, Log: "", Events: nil,
 		},
 	}
 	hash2 := tx2.Hash()
@@ -418,7 +417,7 @@ func txResultWithEvents(events []abci.Event) *abci.TxResult {
 		Tx:     tx,
 		Result: abci.ResponseDeliverTx{
 			Data:   []byte{0},
-			Code:   ocabci.CodeTypeOK,
+			Code:   abci.CodeTypeOK,
 			Log:    "",
 			Events: events,
 		},
@@ -444,7 +443,7 @@ func benchmarkTxIndex(txsCount int64, b *testing.B) {
 			Tx:     tx,
 			Result: abci.ResponseDeliverTx{
 				Data:   []byte{0},
-				Code:   ocabci.CodeTypeOK,
+				Code:   abci.CodeTypeOK,
 				Log:    "",
 				Events: []abci.Event{},
 			},

@@ -348,7 +348,7 @@ func (app *testApp) Info(req abci.RequestInfo) (resInfo abci.ResponseInfo) {
 	return abci.ResponseInfo{}
 }
 
-func (app *testApp) BeginBlock(req ocabci.RequestBeginBlock) abci.ResponseBeginBlock {
+func (app *testApp) BeginBlock(req abci.RequestBeginBlock) abci.ResponseBeginBlock {
 	return abci.ResponseBeginBlock{}
 }
 
@@ -360,12 +360,12 @@ func (app *testApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx 
 	return abci.ResponseDeliverTx{Events: []abci.Event{}}
 }
 
-func (app *testApp) CheckTxSync(req abci.RequestCheckTx) ocabci.ResponseCheckTx {
-	return ocabci.ResponseCheckTx{}
+func (app *testApp) CheckTxSync(req abci.RequestCheckTx) abci.ResponseCheckTx {
+	return abci.ResponseCheckTx{}
 }
 
 func (app *testApp) CheckTxAsync(req abci.RequestCheckTx, callback ocabci.CheckTxCallback) {
-	callback(ocabci.ResponseCheckTx{})
+	callback(abci.ResponseCheckTx{})
 }
 
 func (app *testApp) Commit() abci.ResponseCommit {

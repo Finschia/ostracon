@@ -140,10 +140,10 @@ func (app *Application) InitChain(req abci.RequestInitChain) abci.ResponseInitCh
 }
 
 // CheckTx implements ABCI.
-func (app *Application) CheckTx(req abci.RequestCheckTx) ocabci.ResponseCheckTx {
+func (app *Application) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 	_, _, err := parseTx(req.Tx)
 	if err != nil {
-		return ocabci.ResponseCheckTx{
+		return abci.ResponseCheckTx{
 			Code: code.CodeTypeEncodingError,
 			Log:  err.Error(),
 		}
@@ -153,7 +153,7 @@ func (app *Application) CheckTx(req abci.RequestCheckTx) ocabci.ResponseCheckTx 
 		time.Sleep(app.cfg.CheckTxDelay)
 	}
 
-	return ocabci.ResponseCheckTx{Code: code.CodeTypeOK, GasWanted: 1}
+	return abci.ResponseCheckTx{Code: code.CodeTypeOK, GasWanted: 1}
 }
 
 // DeliverTx implements ABCI.

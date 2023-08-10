@@ -640,7 +640,7 @@ func TestMockProxyApp(t *testing.T) {
 				// TODO: make use of this info
 				// Blocks may include invalid txs.
 				txRes := r.DeliverTx
-				if txRes.Code == ocabci.CodeTypeOK {
+				if txRes.Code == abci.CodeTypeOK {
 					validTxs++
 				} else {
 					logger.Debug("Invalid tx", "code", txRes.Code, "log", txRes.Log)

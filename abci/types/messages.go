@@ -125,7 +125,7 @@ func ToRequestInitChain(req types.RequestInitChain) *Request {
 	}
 }
 
-func ToRequestBeginBlock(req RequestBeginBlock) *Request {
+func ToRequestBeginBlock(req types.RequestBeginBlock) *Request {
 	return &Request{
 		Value: &Request_BeginBlock{&req},
 	}
@@ -211,7 +211,7 @@ func ToResponseDeliverTx(res types.ResponseDeliverTx) *Response {
 	}
 }
 
-func ToResponseCheckTx(res ResponseCheckTx) *Response {
+func ToResponseCheckTx(res types.ResponseCheckTx) *Response {
 	return &Response{
 		Value: &Response_CheckTx{&res},
 	}

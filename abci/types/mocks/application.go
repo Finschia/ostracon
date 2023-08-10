@@ -29,11 +29,11 @@ func (_m *Application) ApplySnapshotChunk(_a0 types.RequestApplySnapshotChunk) t
 }
 
 // BeginBlock provides a mock function with given fields: _a0
-func (_m *Application) BeginBlock(_a0 abcitypes.RequestBeginBlock) types.ResponseBeginBlock {
+func (_m *Application) BeginBlock(_a0 types.RequestBeginBlock) types.ResponseBeginBlock {
 	ret := _m.Called(_a0)
 
 	var r0 types.ResponseBeginBlock
-	if rf, ok := ret.Get(0).(func(abcitypes.RequestBeginBlock) types.ResponseBeginBlock); ok {
+	if rf, ok := ret.Get(0).(func(types.RequestBeginBlock) types.ResponseBeginBlock); ok {
 		r0 = rf(_a0)
 	} else {
 		r0 = ret.Get(0).(types.ResponseBeginBlock)
@@ -62,14 +62,14 @@ func (_m *Application) CheckTxAsync(_a0 types.RequestCheckTx, _a1 abcitypes.Chec
 }
 
 // CheckTxSync provides a mock function with given fields: _a0
-func (_m *Application) CheckTxSync(_a0 types.RequestCheckTx) abcitypes.ResponseCheckTx {
+func (_m *Application) CheckTxSync(_a0 types.RequestCheckTx) types.ResponseCheckTx {
 	ret := _m.Called(_a0)
 
-	var r0 abcitypes.ResponseCheckTx
-	if rf, ok := ret.Get(0).(func(types.RequestCheckTx) abcitypes.ResponseCheckTx); ok {
+	var r0 types.ResponseCheckTx
+	if rf, ok := ret.Get(0).(func(types.RequestCheckTx) types.ResponseCheckTx); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(abcitypes.ResponseCheckTx)
+		r0 = ret.Get(0).(types.ResponseCheckTx)
 	}
 
 	return r0

@@ -63,8 +63,8 @@ func (a ABCIApp) BroadcastTxCommit(ctx context.Context, tx types.Tx) (*ctypes.Re
 }
 
 func (a ABCIApp) BroadcastTxAsync(ctx context.Context, tx types.Tx) (*ctypes.ResultBroadcastTx, error) {
-	chRes := make(chan ocabci.ResponseCheckTx, 1)
-	a.App.CheckTxAsync(abci.RequestCheckTx{Tx: tx}, func(res ocabci.ResponseCheckTx) {
+	chRes := make(chan abci.ResponseCheckTx, 1)
+	a.App.CheckTxAsync(abci.RequestCheckTx{Tx: tx}, func(res abci.ResponseCheckTx) {
 		chRes <- res
 	})
 	c := <-chRes

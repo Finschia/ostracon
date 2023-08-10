@@ -10,7 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	abci "github.com/Finschia/ostracon/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
+
 	tmrand "github.com/Finschia/ostracon/libs/rand"
 	"github.com/Finschia/ostracon/rpc/client"
 	ctypes "github.com/Finschia/ostracon/rpc/core/types"

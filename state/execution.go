@@ -358,7 +358,7 @@ func execBlockOnProxyApp(
 			// TODO: make use of this info
 			// Blocks may include invalid txs.
 			txRes := r.DeliverTx
-			if txRes.Code == ocabci.CodeTypeOK {
+			if txRes.Code == abci.CodeTypeOK {
 				validTxs++
 			} else {
 				logger.Debug("invalid tx", "code", txRes.Code, "log", txRes.Log)
@@ -385,17 +385,11 @@ func execBlockOnProxyApp(
 		return nil, errors.New("nil header")
 	}
 
-	pbe := block.Entropy.ToProto()
-	if pbe == nil {
-		return nil, errors.New("nil entropy")
-	}
-
-	abciResponses.BeginBlock, err = proxyAppConn.BeginBlockSync(ocabci.RequestBeginBlock{
+	abciResponses.BeginBlock, err = proxyAppConn.BeginBlockSync(abci.RequestBeginBlock{
 		Hash:                block.Hash(),
 		Header:              *pbh,
 		LastCommitInfo:      commitInfo,
 		ByzantineValidators: byzVals,
-		Entropy:             *pbe,
 	})
 	if err != nil {
 		logger.Error("error in proxyAppConn.BeginBlock", "err", err)

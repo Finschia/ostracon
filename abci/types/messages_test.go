@@ -18,7 +18,7 @@ func TestMarshalJSON(t *testing.T) {
 	assert.Nil(t, err)
 	// include empty fields.
 	assert.True(t, strings.Contains(string(b), "code"))
-	r1 := ResponseCheckTx{
+	r1 := types.ResponseCheckTx{
 		Code:      1,
 		Data:      []byte("hello"),
 		GasWanted: 43,
@@ -34,7 +34,7 @@ func TestMarshalJSON(t *testing.T) {
 	b, err = json.Marshal(&r1)
 	assert.Nil(t, err)
 
-	var r2 ResponseCheckTx
+	var r2 types.ResponseCheckTx
 	err = json.Unmarshal(b, &r2)
 	assert.Nil(t, err)
 	assert.Equal(t, r1, r2)
@@ -85,7 +85,7 @@ func TestWriteReadMessage(t *testing.T) {
 func TestWriteReadMessage2(t *testing.T) {
 	phrase := "hello-world"
 	cases := []proto.Message{
-		&ResponseCheckTx{
+		&types.ResponseCheckTx{
 			Data:      []byte(phrase),
 			Log:       phrase,
 			GasWanted: 10,
@@ -106,7 +106,7 @@ func TestWriteReadMessage2(t *testing.T) {
 		err := WriteMessage(c, buf)
 		assert.Nil(t, err)
 
-		msg := new(ResponseCheckTx)
+		msg := new(types.ResponseCheckTx)
 		err = ReadMessage(buf, msg)
 		assert.Nil(t, err)
 

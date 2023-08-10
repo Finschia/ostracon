@@ -7,7 +7,6 @@ option go_package = "github.com/Finschia/ostracon/abci/types";
 // https://github.com/gogo/protobuf/blob/master/extensions.md
 import "tendermint/abci/types.proto";
 import "tendermint/types/types.proto";
-import "ostracon/types/types.proto";
 import "gogoproto/gogo.proto";
 
 // This file is copied from http://github.com/tendermint/abci
@@ -25,7 +24,7 @@ message Request {
     tendermint.abci.RequestSetOption          set_option           = 4;
     tendermint.abci.RequestInitChain          init_chain           = 5;
     tendermint.abci.RequestQuery              query                = 6;
-    RequestBeginBlock                         begin_block          = 7;
+    tendermint.abci.RequestBeginBlock         begin_block          = 7;
     tendermint.abci.RequestCheckTx            check_tx             = 8;
     tendermint.abci.RequestDeliverTx          deliver_tx           = 9;
     tendermint.abci.RequestEndBlock           end_block            = 10;
@@ -37,16 +36,6 @@ message Request {
     RequestBeginRecheckTx                     begin_recheck_tx     = 1000;  // 16~99 are reserved for merging original tendermint
     RequestEndRecheckTx                       end_recheck_tx       = 1001;
   }
-}
-
-message RequestBeginBlock {
-  bytes                          hash                    = 1;
-  tendermint.types.Header        header                  = 2 [(gogoproto.nullable) = false];
-  tendermint.abci.LastCommitInfo last_commit_info        = 3 [(gogoproto.nullable) = false];
-  repeated tendermint.abci.Evidence byzantine_validators = 4 [(gogoproto.nullable) = false];
-
-  // *** Ostracon Extended Fields ***
-  ostracon.types.Entropy entropy = 1000 [(gogoproto.nullable) = false];
 }
 
 message RequestBeginRecheckTx {
@@ -70,7 +59,7 @@ message Response {
     tendermint.abci.ResponseInitChain          init_chain           = 6;
     tendermint.abci.ResponseQuery              query                = 7;
     tendermint.abci.ResponseBeginBlock         begin_block          = 8;
-    ResponseCheckTx                            check_tx             = 9;
+    tendermint.abci.ResponseCheckTx            check_tx             = 9;
     tendermint.abci.ResponseDeliverTx          deliver_tx           = 10;
     tendermint.abci.ResponseEndBlock           end_block            = 11;
     tendermint.abci.ResponseCommit             commit               = 12;
@@ -81,24 +70,6 @@ message Response {
     ResponseBeginRecheckTx                     begin_recheck_tx     = 1000;  // 17~99 are reserved for merging original tendermint
     ResponseEndRecheckTx                       end_recheck_tx       = 1001;
   }
-}
-
-message ResponseCheckTx {
-  uint32   code                         = 1;
-  bytes    data                         = 2;
-  string   log                          = 3;  // nondeterministic
-  string   info                         = 4;  // nondeterministic
-  int64    gas_wanted                   = 5 [json_name = "gas_wanted"];
-  int64    gas_used                     = 6 [json_name = "gas_used"];
-  repeated tendermint.abci.Event events = 7
-      [(gogoproto.nullable) = false, (gogoproto.jsontag) = "events,omitempty"];
-  string codespace = 8;
-  string sender    = 9;   // MEMO: not used, just reservation to implement https://github.com/tendermint/tendermint/pull/6740 first
-  int64  priority  = 10;  // MEMO: not used, just reservation to implement https://github.com/tendermint/tendermint/pull/6740 first
-
-  // mempool_error is set by Ostracon.
-  // ABCI applictions creating a ResponseCheckTX should not set mempool_error.
-  string mempool_error = 11;
 }
 
 message ResponseBeginRecheckTx {
@@ -118,11 +89,11 @@ service ABCIApplication {
   rpc Info(tendermint.abci.RequestInfo) returns (tendermint.abci.ResponseInfo);
   rpc SetOption(tendermint.abci.RequestSetOption) returns (tendermint.abci.ResponseSetOption);
   rpc DeliverTx(tendermint.abci.RequestDeliverTx) returns (tendermint.abci.ResponseDeliverTx);
-  rpc CheckTx(tendermint.abci.RequestCheckTx) returns (ResponseCheckTx);
+  rpc CheckTx(tendermint.abci.RequestCheckTx) returns (tendermint.abci.ResponseCheckTx);
   rpc Query(tendermint.abci.RequestQuery) returns (tendermint.abci.ResponseQuery);
   rpc Commit(tendermint.abci.RequestCommit) returns (tendermint.abci.ResponseCommit);
   rpc InitChain(tendermint.abci.RequestInitChain) returns (tendermint.abci.ResponseInitChain);
-  rpc BeginBlock(RequestBeginBlock) returns (tendermint.abci.ResponseBeginBlock);
+  rpc BeginBlock(tendermint.abci.RequestBeginBlock) returns (tendermint.abci.ResponseBeginBlock);
   rpc EndBlock(tendermint.abci.RequestEndBlock) returns (tendermint.abci.ResponseEndBlock);
   rpc ListSnapshots(tendermint.abci.RequestListSnapshots) returns (tendermint.abci.ResponseListSnapshots);
   rpc OfferSnapshot(tendermint.abci.RequestOfferSnapshot) returns (tendermint.abci.ResponseOfferSnapshot);

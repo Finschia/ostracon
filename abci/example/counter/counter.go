@@ -64,7 +64,7 @@ func (app *Application) DeliverTx(req types.RequestDeliverTx) types.ResponseDeli
 	return types.ResponseDeliverTx{Code: code.CodeTypeOK}
 }
 
-func (app *Application) CheckTxSync(req types.RequestCheckTx) ocabci.ResponseCheckTx {
+func (app *Application) CheckTxSync(req types.RequestCheckTx) types.ResponseCheckTx {
 	return app.checkTx(req)
 }
 
@@ -72,10 +72,10 @@ func (app *Application) CheckTxAsync(req types.RequestCheckTx, callback ocabci.C
 	callback(app.checkTx(req))
 }
 
-func (app *Application) checkTx(req types.RequestCheckTx) ocabci.ResponseCheckTx {
+func (app *Application) checkTx(req types.RequestCheckTx) types.ResponseCheckTx {
 	if app.serial {
 		if len(req.Tx) > 8 {
-			return ocabci.ResponseCheckTx{
+			return types.ResponseCheckTx{
 				Code: code.CodeTypeEncodingError,
 				Log:  fmt.Sprintf("Max tx size is 8 bytes, got %d", len(req.Tx))}
 		}
@@ -83,12 +83,12 @@ func (app *Application) checkTx(req types.RequestCheckTx) ocabci.ResponseCheckTx
 		copy(tx8[len(tx8)-len(req.Tx):], req.Tx)
 		txValue := binary.BigEndian.Uint64(tx8)
 		if txValue < uint64(app.txCount) {
-			return ocabci.ResponseCheckTx{
+			return types.ResponseCheckTx{
 				Code: code.CodeTypeBadNonce,
 				Log:  fmt.Sprintf("Invalid nonce. Expected >= %v, got %v", app.txCount, txValue)}
 		}
 	}
-	return ocabci.ResponseCheckTx{Code: code.CodeTypeOK}
+	return types.ResponseCheckTx{Code: code.CodeTypeOK}
 }
 
 func (app *Application) Commit() (resp types.ResponseCommit) {

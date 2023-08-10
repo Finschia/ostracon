@@ -111,7 +111,7 @@ func (app *localClient) CheckTxAsync(req types.RequestCheckTx, cb ResponseCallba
 
 	reqRes := NewReqRes(ocabci.ToRequestCheckTx(req), cb)
 
-	app.Application.CheckTxAsync(req, func(r ocabci.ResponseCheckTx) {
+	app.Application.CheckTxAsync(req, func(r types.ResponseCheckTx) {
 		res := ocabci.ToResponseCheckTx(r)
 		app.done(reqRes, res)
 	})
@@ -146,7 +146,7 @@ func (app *localClient) InitChainAsync(req types.RequestInitChain, cb ResponseCa
 	return app.done(reqRes, ocabci.ToResponseInitChain(res))
 }
 
-func (app *localClient) BeginBlockAsync(req ocabci.RequestBeginBlock, cb ResponseCallback) *ReqRes {
+func (app *localClient) BeginBlockAsync(req types.RequestBeginBlock, cb ResponseCallback) *ReqRes {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 
@@ -257,7 +257,7 @@ func (app *localClient) DeliverTxSync(req types.RequestDeliverTx) (*types.Respon
 	return &res, nil
 }
 
-func (app *localClient) CheckTxSync(req types.RequestCheckTx) (*ocabci.ResponseCheckTx, error) {
+func (app *localClient) CheckTxSync(req types.RequestCheckTx) (*types.ResponseCheckTx, error) {
 	// NOTE: commented out for performance. delete all after commenting out all `app.mtx`
 	// app.mtx.Lock()
 	// defer app.mtx.Unlock()
@@ -290,7 +290,7 @@ func (app *localClient) InitChainSync(req types.RequestInitChain) (*types.Respon
 	return &res, nil
 }
 
-func (app *localClient) BeginBlockSync(req ocabci.RequestBeginBlock) (*types.ResponseBeginBlock, error) {
+func (app *localClient) BeginBlockSync(req types.RequestBeginBlock) (*types.ResponseBeginBlock, error) {
 	app.mtx.Lock()
 	defer app.mtx.Unlock()
 

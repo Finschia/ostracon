@@ -8,7 +8,7 @@ import (
 
 //go:generate ../../scripts/mockery_generate.sh Application
 
-type CheckTxCallback func(ResponseCheckTx)
+type CheckTxCallback func(types.ResponseCheckTx)
 
 // Application is an interface that enables any finite, deterministic state machine
 // to be driven by a blockchain-based replication engine via the ABCI.
@@ -21,17 +21,17 @@ type Application interface {
 	Query(types.RequestQuery) types.ResponseQuery             // Query for state
 
 	// Mempool Connection
-	CheckTxSync(types.RequestCheckTx) ResponseCheckTx            // Validate a tx for the mempool
+	CheckTxSync(types.RequestCheckTx) types.ResponseCheckTx      // Validate a tx for the mempool
 	CheckTxAsync(types.RequestCheckTx, CheckTxCallback)          // Asynchronously validate a tx for the mempool
 	BeginRecheckTx(RequestBeginRecheckTx) ResponseBeginRecheckTx // Signals the beginning of rechecking
 	EndRecheckTx(RequestEndRecheckTx) ResponseEndRecheckTx       // Signals the end of rechecking
 
 	// Consensus Connection
-	InitChain(types.RequestInitChain) types.ResponseInitChain // Initialize blockchain w validators/other info from OstraconCore
-	BeginBlock(RequestBeginBlock) types.ResponseBeginBlock    // Signals the beginning of a block
-	DeliverTx(types.RequestDeliverTx) types.ResponseDeliverTx // Deliver a tx for full processing
-	EndBlock(types.RequestEndBlock) types.ResponseEndBlock    // Signals the end of a block, returns changes to the validator set
-	Commit() types.ResponseCommit                             // Commit the state and return the application Merkle root hash
+	InitChain(types.RequestInitChain) types.ResponseInitChain    // Initialize blockchain w validators/other info from OstraconCore
+	BeginBlock(types.RequestBeginBlock) types.ResponseBeginBlock // Signals the beginning of a block
+	DeliverTx(types.RequestDeliverTx) types.ResponseDeliverTx    // Deliver a tx for full processing
+	EndBlock(types.RequestEndBlock) types.ResponseEndBlock       // Signals the end of a block, returns changes to the validator set
+	Commit() types.ResponseCommit                                // Commit the state and return the application Merkle root hash
 
 	// State Sync Connection
 	ListSnapshots(types.RequestListSnapshots) types.ResponseListSnapshots                // List available snapshots
@@ -61,23 +61,23 @@ func (BaseApplication) SetOption(req types.RequestSetOption) types.ResponseSetOp
 }
 
 func (BaseApplication) DeliverTx(req types.RequestDeliverTx) types.ResponseDeliverTx {
-	return types.ResponseDeliverTx{Code: CodeTypeOK}
+	return types.ResponseDeliverTx{Code: types.CodeTypeOK}
 }
 
-func (BaseApplication) CheckTxSync(req types.RequestCheckTx) ResponseCheckTx {
-	return ResponseCheckTx{Code: CodeTypeOK}
+func (BaseApplication) CheckTxSync(req types.RequestCheckTx) types.ResponseCheckTx {
+	return types.ResponseCheckTx{Code: types.CodeTypeOK}
 }
 
 func (BaseApplication) CheckTxAsync(req types.RequestCheckTx, callback CheckTxCallback) {
-	callback(ResponseCheckTx{Code: CodeTypeOK})
+	callback(types.ResponseCheckTx{Code: types.CodeTypeOK})
 }
 
 func (BaseApplication) BeginRecheckTx(req RequestBeginRecheckTx) ResponseBeginRecheckTx {
-	return ResponseBeginRecheckTx{Code: CodeTypeOK}
+	return ResponseBeginRecheckTx{Code: types.CodeTypeOK}
 }
 
 func (BaseApplication) EndRecheckTx(req RequestEndRecheckTx) ResponseEndRecheckTx {
-	return ResponseEndRecheckTx{Code: CodeTypeOK}
+	return ResponseEndRecheckTx{Code: types.CodeTypeOK}
 }
 
 func (BaseApplication) Commit() types.ResponseCommit {
@@ -85,14 +85,14 @@ func (BaseApplication) Commit() types.ResponseCommit {
 }
 
 func (BaseApplication) Query(req types.RequestQuery) types.ResponseQuery {
-	return types.ResponseQuery{Code: CodeTypeOK}
+	return types.ResponseQuery{Code: types.CodeTypeOK}
 }
 
 func (BaseApplication) InitChain(req types.RequestInitChain) types.ResponseInitChain {
 	return types.ResponseInitChain{}
 }
 
-func (BaseApplication) BeginBlock(req RequestBeginBlock) types.ResponseBeginBlock {
+func (BaseApplication) BeginBlock(req types.RequestBeginBlock) types.ResponseBeginBlock {
 	return types.ResponseBeginBlock{}
 }
 
@@ -150,7 +150,7 @@ func (app *GRPCApplication) DeliverTx(ctx context.Context, req *types.RequestDel
 	return &res, nil
 }
 
-func (app *GRPCApplication) CheckTx(ctx context.Context, req *types.RequestCheckTx) (*ResponseCheckTx, error) {
+func (app *GRPCApplication) CheckTx(ctx context.Context, req *types.RequestCheckTx) (*types.ResponseCheckTx, error) {
 	res := app.app.CheckTxSync(*req)
 	return &res, nil
 }
@@ -181,7 +181,7 @@ func (app *GRPCApplication) InitChain(ctx context.Context, req *types.RequestIni
 	return &res, nil
 }
 
-func (app *GRPCApplication) BeginBlock(ctx context.Context, req *RequestBeginBlock) (*types.ResponseBeginBlock, error) {
+func (app *GRPCApplication) BeginBlock(ctx context.Context, req *types.RequestBeginBlock) (*types.ResponseBeginBlock, error) {
 	res := app.app.BeginBlock(*req)
 	return &res, nil
 }

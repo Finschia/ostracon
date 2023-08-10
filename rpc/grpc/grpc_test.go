@@ -7,8 +7,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	core_grpc "github.com/tendermint/tendermint/rpc/grpc"
+
 	"github.com/Finschia/ostracon/abci/example/kvstore"
-	core_grpc "github.com/Finschia/ostracon/rpc/grpc"
 	rpctest "github.com/Finschia/ostracon/rpc/test"
 )
 

@@ -219,7 +219,7 @@ func (cli *grpcClient) InitChainAsync(params types.RequestInitChain, cb Response
 	return cli.finishAsyncCall(req, &ocabci.Response{Value: &ocabci.Response_InitChain{InitChain: res}}, cb)
 }
 
-func (cli *grpcClient) BeginBlockAsync(params ocabci.RequestBeginBlock, cb ResponseCallback) *ReqRes {
+func (cli *grpcClient) BeginBlockAsync(params types.RequestBeginBlock, cb ResponseCallback) *ReqRes {
 	req := ocabci.ToRequestBeginBlock(params)
 	res, err := cli.client.BeginBlock(context.Background(), req.GetBeginBlock(), grpc.WaitForReady(true))
 	if err != nil {
@@ -342,7 +342,7 @@ func (cli *grpcClient) DeliverTxSync(params types.RequestDeliverTx) (*types.Resp
 	return reqres.Response.GetDeliverTx(), cli.Error()
 }
 
-func (cli *grpcClient) CheckTxSync(params types.RequestCheckTx) (*ocabci.ResponseCheckTx, error) {
+func (cli *grpcClient) CheckTxSync(params types.RequestCheckTx) (*types.ResponseCheckTx, error) {
 	reqres := cli.CheckTxAsync(params, nil)
 	reqres.Wait()
 	return reqres.Response.GetCheckTx(), cli.Error()
@@ -366,7 +366,7 @@ func (cli *grpcClient) InitChainSync(params types.RequestInitChain) (*types.Resp
 	return reqres.Response.GetInitChain(), cli.Error()
 }
 
-func (cli *grpcClient) BeginBlockSync(params ocabci.RequestBeginBlock) (*types.ResponseBeginBlock, error) {
+func (cli *grpcClient) BeginBlockSync(params types.RequestBeginBlock) (*types.ResponseBeginBlock, error) {
 	reqres := cli.BeginBlockAsync(params, nil)
 	reqres.Wait()
 	return reqres.Response.GetBeginBlock(), cli.Error()

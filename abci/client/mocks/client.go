@@ -61,11 +61,11 @@ func (_m *Client) ApplySnapshotChunkSync(_a0 types.RequestApplySnapshotChunk) (*
 }
 
 // BeginBlockAsync provides a mock function with given fields: _a0, _a1
-func (_m *Client) BeginBlockAsync(_a0 abcitypes.RequestBeginBlock, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
+func (_m *Client) BeginBlockAsync(_a0 types.RequestBeginBlock, _a1 abcicli.ResponseCallback) *abcicli.ReqRes {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 *abcicli.ReqRes
-	if rf, ok := ret.Get(0).(func(abcitypes.RequestBeginBlock, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
+	if rf, ok := ret.Get(0).(func(types.RequestBeginBlock, abcicli.ResponseCallback) *abcicli.ReqRes); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
@@ -77,15 +77,15 @@ func (_m *Client) BeginBlockAsync(_a0 abcitypes.RequestBeginBlock, _a1 abcicli.R
 }
 
 // BeginBlockSync provides a mock function with given fields: _a0
-func (_m *Client) BeginBlockSync(_a0 abcitypes.RequestBeginBlock) (*types.ResponseBeginBlock, error) {
+func (_m *Client) BeginBlockSync(_a0 types.RequestBeginBlock) (*types.ResponseBeginBlock, error) {
 	ret := _m.Called(_a0)
 
 	var r0 *types.ResponseBeginBlock
 	var r1 error
-	if rf, ok := ret.Get(0).(func(abcitypes.RequestBeginBlock) (*types.ResponseBeginBlock, error)); ok {
+	if rf, ok := ret.Get(0).(func(types.RequestBeginBlock) (*types.ResponseBeginBlock, error)); ok {
 		return rf(_a0)
 	}
-	if rf, ok := ret.Get(0).(func(abcitypes.RequestBeginBlock) *types.ResponseBeginBlock); ok {
+	if rf, ok := ret.Get(0).(func(types.RequestBeginBlock) *types.ResponseBeginBlock); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
@@ -93,7 +93,7 @@ func (_m *Client) BeginBlockSync(_a0 abcitypes.RequestBeginBlock) (*types.Respon
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(abcitypes.RequestBeginBlock) error); ok {
+	if rf, ok := ret.Get(1).(func(types.RequestBeginBlock) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
@@ -161,19 +161,19 @@ func (_m *Client) CheckTxAsync(_a0 types.RequestCheckTx, _a1 abcicli.ResponseCal
 }
 
 // CheckTxSync provides a mock function with given fields: _a0
-func (_m *Client) CheckTxSync(_a0 types.RequestCheckTx) (*abcitypes.ResponseCheckTx, error) {
+func (_m *Client) CheckTxSync(_a0 types.RequestCheckTx) (*types.ResponseCheckTx, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *abcitypes.ResponseCheckTx
+	var r0 *types.ResponseCheckTx
 	var r1 error
-	if rf, ok := ret.Get(0).(func(types.RequestCheckTx) (*abcitypes.ResponseCheckTx, error)); ok {
+	if rf, ok := ret.Get(0).(func(types.RequestCheckTx) (*types.ResponseCheckTx, error)); ok {
 		return rf(_a0)
 	}
-	if rf, ok := ret.Get(0).(func(types.RequestCheckTx) *abcitypes.ResponseCheckTx); ok {
+	if rf, ok := ret.Get(0).(func(types.RequestCheckTx) *types.ResponseCheckTx); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*abcitypes.ResponseCheckTx)
+			r0 = ret.Get(0).(*types.ResponseCheckTx)
 		}
 	}
 
