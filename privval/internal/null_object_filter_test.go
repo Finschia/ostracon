@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"github.com/stretchr/testify/assert"
 	"net"
 	"reflect"
 	"testing"
@@ -26,10 +27,14 @@ func TestNullObject_filter(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			n := &NullObject{}
+			n := NewNullObject()
 			if got := n.Filter(tt.addr); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Filter() = %v, want %v", got, tt.want)
 			}
 		})
 	}
+}
+
+func TestNullObjectString(t *testing.T) {
+	assert.Equal(t, "NullObject", NewNullObject().String())
 }

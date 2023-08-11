@@ -242,7 +242,7 @@ type BaseConfig struct { //nolint: maligned
 
 	// TCP or UNIX socket address for Ostracon to listen on for
 	// connections from an external PrivValidator process
-	// example) 0.0.0.0:26659
+	// example) tcp://0.0.0.0:26659
 	PrivValidatorListenAddr string `mapstructure:"priv_validator_laddr"`
 
 	// Validator's remote address(without port) to allow a connection

@@ -6,8 +6,8 @@ import "net"
 type NullObject struct {
 }
 
-func NewNullObject() NullObject {
-	return NullObject{}
+func NewNullObject() *NullObject {
+	return &NullObject{}
 }
 
 func (n NullObject) Filter(addr net.Addr) net.Addr {
