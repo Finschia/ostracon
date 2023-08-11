@@ -2,8 +2,8 @@ package privval
 
 import (
 	"fmt"
+	"github.com/Finschia/ostracon/privval/internal"
 	"net"
-	"strings"
 	"time"
 
 	privvalproto "github.com/tendermint/tendermint/proto/tendermint/privval"
@@ -28,8 +28,14 @@ func SignerListenerEndpointTimeoutReadWrite(timeout time.Duration) SignerListene
 // SignerListenerEndpointAllowAddress sets the address to allow
 // connections from the only allowed address
 //
-func SignerListenerEndpointAllowAddress(addr string) SignerListenerEndpointOption {
-	return func(sl *SignerListenerEndpoint) { sl.allowAddr = addr }
+func SignerListenerEndpointAllowAddress(protocol string, addr string) SignerListenerEndpointOption {
+	return func(sl *SignerListenerEndpoint) {
+		if protocol == "tcp" || len(protocol) == 0 {
+			sl.connFilter = internal.NewIpFilter(addr, sl.Logger)
+			return
+		}
+		sl.connFilter = internal.NewNullObject()
+	}
 }
 
 // SignerListenerEndpoint listens for an external process to dial in and keeps
@@ -49,8 +55,7 @@ type SignerListenerEndpoint struct {
 	pingInterval  time.Duration
 
 	instanceMtx tmsync.Mutex // Ensures instance public methods access, i.e. SendRequest
-
-	allowAddr string // empty value allows all
+	connFilter  internal.ConnectionFilter
 }
 
 // NewSignerListenerEndpoint returns an instance of SignerListenerEndpoint.
@@ -197,8 +202,8 @@ func (sl *SignerListenerEndpoint) serviceLoop() {
 				conn, err := sl.acceptNewConnection()
 				if err == nil {
 					remoteAddr := conn.RemoteAddr()
-					if !sl.isAllowedAddr(remoteAddr) {
-						sl.Logger.Info(fmt.Sprintf("deny a connection request from remote address=%s", remoteAddr))
+					if sl.filter(remoteAddr) == nil {
+						sl.Logger.Info(fmt.Sprintf("SignerListener: deny a connection request from remote address=%s, expected=%s", remoteAddr, sl.connFilter))
 						conn.Close()
 						continue
 					}
@@ -223,15 +228,11 @@ func (sl *SignerListenerEndpoint) serviceLoop() {
 	}
 }
 
-func (sl *SignerListenerEndpoint) isAllowedAddr(addr net.Addr) bool {
-	if len(sl.allowAddr) == 0 {
-		return true
+func (sl *SignerListenerEndpoint) filter(addr net.Addr) net.Addr {
+	if sl.connFilter == nil {
+		return addr
 	}
-	if strings.Contains(addr.String(), ":") {
-		addrOnly := addr.String()[:strings.Index(addr.String(), ":")]
-		return sl.allowAddr == addrOnly
-	}
-	return sl.allowAddr == addr.String()
+	return sl.connFilter.Filter(addr)
 }
 
 func (sl *SignerListenerEndpoint) pingLoop() {
