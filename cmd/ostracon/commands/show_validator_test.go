@@ -3,6 +3,7 @@ package commands
 import (
 	"bytes"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 
@@ -79,6 +80,7 @@ func TestShowValidatorWithKMS(t *testing.T) {
 	}
 	privval.WithMockKMS(t, dir, chainID, func(addr string, privKey crypto.PrivKey) {
 		config.PrivValidatorListenAddr = addr
+		config.PrivValidatorRemoteAddr = addr[:strings.Index(addr, ":")]
 		require.NoFileExists(t, config.PrivValidatorKeyFile())
 		output, err := captureStdout(func() {
 			err := showValidator(ShowValidatorCmd, nil, config)

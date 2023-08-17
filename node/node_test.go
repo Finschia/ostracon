@@ -160,11 +160,17 @@ func TestNodeSetAppVersion(t *testing.T) {
 }
 
 func TestNodeSetPrivValTCP(t *testing.T) {
+	address := testFreeAddr(t)
 	addr := "tcp://" + testFreeAddr(t)
 
 	config := cfg.ResetTestRoot("node_priv_val_tcp_test")
 	defer os.RemoveAll(config.RootDir)
 	config.BaseConfig.PrivValidatorListenAddr = addr
+	addrPart, _, err := net.SplitHostPort(address)
+	if err != nil {
+		return
+	}
+	config.BaseConfig.PrivValidatorRemoteAddr = addrPart
 
 	dialer := privval.DialTCPFn(addr, 100*time.Millisecond, ed25519.GenPrivKey())
 	dialerEndpoint := privval.NewSignerDialerEndpoint(

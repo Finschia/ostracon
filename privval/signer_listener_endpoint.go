@@ -2,6 +2,7 @@ package privval
 
 import (
 	"fmt"
+	"github.com/Finschia/ostracon/privval/internal"
 	"net"
 	"time"
 
@@ -24,6 +25,19 @@ func SignerListenerEndpointTimeoutReadWrite(timeout time.Duration) SignerListene
 	return func(sl *SignerListenerEndpoint) { sl.signerEndpoint.timeoutReadWrite = timeout }
 }
 
+// SignerListenerEndpointAllowAddress sets the address to allow
+// connections from the only allowed address
+//
+func SignerListenerEndpointAllowAddress(protocol string, addr string) SignerListenerEndpointOption {
+	return func(sl *SignerListenerEndpoint) {
+		if protocol == "tcp" || len(protocol) == 0 {
+			sl.connFilter = internal.NewIpFilter(addr, sl.Logger)
+			return
+		}
+		sl.connFilter = internal.NewNullObject()
+	}
+}
+
 // SignerListenerEndpoint listens for an external process to dial in and keeps
 // the connection alive by dropping and reconnecting.
 //
@@ -41,6 +55,7 @@ type SignerListenerEndpoint struct {
 	pingInterval  time.Duration
 
 	instanceMtx tmsync.Mutex // Ensures instance public methods access, i.e. SendRequest
+	connFilter  internal.ConnectionFilter
 }
 
 // NewSignerListenerEndpoint returns an instance of SignerListenerEndpoint.
@@ -186,6 +201,12 @@ func (sl *SignerListenerEndpoint) serviceLoop() {
 			{
 				conn, err := sl.acceptNewConnection()
 				if err == nil {
+					remoteAddr := conn.RemoteAddr()
+					if sl.filter(remoteAddr) == nil {
+						sl.Logger.Info(fmt.Sprintf("SignerListener: deny a connection request from remote address=%s, expected=%s", remoteAddr, sl.connFilter))
+						conn.Close()
+						continue
+					}
 					sl.Logger.Info("SignerListener: Connected")
 
 					// We have a good connection, wait for someone that needs one otherwise cancellation
@@ -205,6 +226,13 @@ func (sl *SignerListenerEndpoint) serviceLoop() {
 			return
 		}
 	}
+}
+
+func (sl *SignerListenerEndpoint) filter(addr net.Addr) net.Addr {
+	if sl.connFilter == nil {
+		return addr
+	}
+	return sl.connFilter.Filter(addr)
 }
 
 func (sl *SignerListenerEndpoint) pingLoop() {

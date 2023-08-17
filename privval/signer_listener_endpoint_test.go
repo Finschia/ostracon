@@ -1,6 +1,7 @@
 package privval
 
 import (
+	"github.com/Finschia/ostracon/privval/internal"
 	"net"
 	"testing"
 	"time"
@@ -212,4 +213,16 @@ func getMockEndpoints(
 	<-endpointIsOpenCh
 
 	return listenerEndpoint, dialerEndpoint
+}
+
+func TestSignerListenerEndpointAllowAddressSetIpFilterForTCP(t *testing.T) {
+	cut := NewSignerListenerEndpoint(nil, nil, SignerListenerEndpointAllowAddress("tcp", "127.0.0.1"))
+	_, ok := cut.connFilter.(*internal.IpFilter)
+	assert.True(t, ok)
+}
+
+func TestSignerListenerEndpointAllowAddressSetNullObjectFilterForUDS(t *testing.T) {
+	cut := NewSignerListenerEndpoint(nil, nil, SignerListenerEndpointAllowAddress("unix", "/mnt/uds/sock01"))
+	_, ok := cut.connFilter.(*internal.NullObject)
+	assert.True(t, ok)
 }
