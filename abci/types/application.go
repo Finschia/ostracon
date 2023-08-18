@@ -15,29 +15,12 @@ type CheckTxCallback func(types.ResponseCheckTx)
 // All methods take a RequestXxx argument and return a ResponseXxx argument,
 // except CheckTx/DeliverTx, which take `tx []byte`, and `Commit`, which takes nothing.
 type Application interface {
-	// Info/Query Connection
-	Info(types.RequestInfo) types.ResponseInfo                // Return application info
-	SetOption(types.RequestSetOption) types.ResponseSetOption // Set application option
-	Query(types.RequestQuery) types.ResponseQuery             // Query for state
+	types.Application
 
 	// Mempool Connection
-	CheckTxSync(types.RequestCheckTx) types.ResponseCheckTx      // Validate a tx for the mempool
 	CheckTxAsync(types.RequestCheckTx, CheckTxCallback)          // Asynchronously validate a tx for the mempool
 	BeginRecheckTx(RequestBeginRecheckTx) ResponseBeginRecheckTx // Signals the beginning of rechecking
 	EndRecheckTx(RequestEndRecheckTx) ResponseEndRecheckTx       // Signals the end of rechecking
-
-	// Consensus Connection
-	InitChain(types.RequestInitChain) types.ResponseInitChain    // Initialize blockchain w validators/other info from OstraconCore
-	BeginBlock(types.RequestBeginBlock) types.ResponseBeginBlock // Signals the beginning of a block
-	DeliverTx(types.RequestDeliverTx) types.ResponseDeliverTx    // Deliver a tx for full processing
-	EndBlock(types.RequestEndBlock) types.ResponseEndBlock       // Signals the end of a block, returns changes to the validator set
-	Commit() types.ResponseCommit                                // Commit the state and return the application Merkle root hash
-
-	// State Sync Connection
-	ListSnapshots(types.RequestListSnapshots) types.ResponseListSnapshots                // List available snapshots
-	OfferSnapshot(types.RequestOfferSnapshot) types.ResponseOfferSnapshot                // Offer a snapshot to the application
-	LoadSnapshotChunk(types.RequestLoadSnapshotChunk) types.ResponseLoadSnapshotChunk    // Load a snapshot chunk
-	ApplySnapshotChunk(types.RequestApplySnapshotChunk) types.ResponseApplySnapshotChunk // Apply a shapshot chunk
 }
 
 //-------------------------------------------------------
@@ -64,7 +47,7 @@ func (BaseApplication) DeliverTx(req types.RequestDeliverTx) types.ResponseDeliv
 	return types.ResponseDeliverTx{Code: types.CodeTypeOK}
 }
 
-func (BaseApplication) CheckTxSync(req types.RequestCheckTx) types.ResponseCheckTx {
+func (BaseApplication) CheckTx(req types.RequestCheckTx) types.ResponseCheckTx {
 	return types.ResponseCheckTx{Code: types.CodeTypeOK}
 }
 
@@ -151,7 +134,7 @@ func (app *GRPCApplication) DeliverTx(ctx context.Context, req *types.RequestDel
 }
 
 func (app *GRPCApplication) CheckTx(ctx context.Context, req *types.RequestCheckTx) (*types.ResponseCheckTx, error) {
-	res := app.app.CheckTxSync(*req)
+	res := app.app.CheckTx(*req)
 	return &res, nil
 }
 

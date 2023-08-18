@@ -262,7 +262,7 @@ func (app *localClient) CheckTxSync(req types.RequestCheckTx) (*types.ResponseCh
 	// app.mtx.Lock()
 	// defer app.mtx.Unlock()
 
-	res := app.Application.CheckTxSync(req)
+	res := app.Application.CheckTx(req)
 	return &res, nil
 }
 

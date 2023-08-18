@@ -53,7 +53,7 @@ func (a ABCIApp) ABCIQueryWithOptions(
 // TODO: Make it wait for a commit and set res.Height appropriately.
 func (a ABCIApp) BroadcastTxCommit(ctx context.Context, tx types.Tx) (*ctypes.ResultBroadcastTxCommit, error) {
 	res := ctypes.ResultBroadcastTxCommit{}
-	res.CheckTx = a.App.CheckTxSync(abci.RequestCheckTx{Tx: tx})
+	res.CheckTx = a.App.CheckTx(abci.RequestCheckTx{Tx: tx})
 	if res.CheckTx.IsErr() {
 		return &res, nil
 	}
@@ -80,7 +80,7 @@ func (a ABCIApp) BroadcastTxAsync(ctx context.Context, tx types.Tx) (*ctypes.Res
 }
 
 func (a ABCIApp) BroadcastTxSync(ctx context.Context, tx types.Tx) (*ctypes.ResultBroadcastTx, error) {
-	c := a.App.CheckTxSync(abci.RequestCheckTx{Tx: tx})
+	c := a.App.CheckTx(abci.RequestCheckTx{Tx: tx})
 	// and this gets written in a background thread...
 	if !c.IsErr() {
 		go func() { a.App.DeliverTx(abci.RequestDeliverTx{Tx: tx}) }()
