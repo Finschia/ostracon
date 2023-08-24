@@ -156,6 +156,7 @@ priv_validator_state_file = "{{ js .BaseConfig.PrivValidatorState }}"
 
 # TCP or UNIX socket address for Ostracon to listen on for
 # connections from an external PrivValidator process
+# If this value is set, key file(priv_validator_key.json) will not be generated.
 # example) tcp://0.0.0.0:26659
 priv_validator_laddr = "{{ .BaseConfig.PrivValidatorListenAddr }}"
 
