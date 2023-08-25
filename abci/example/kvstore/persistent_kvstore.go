@@ -82,7 +82,7 @@ func (app *PersistentKVStoreApplication) DeliverTx(req types.RequestDeliverTx) t
 }
 
 func (app *PersistentKVStoreApplication) CheckTx(req types.RequestCheckTx) types.ResponseCheckTx {
-	return app.app.CheckTxSync(req)
+	return app.app.CheckTx(req)
 }
 
 func (app *PersistentKVStoreApplication) CheckTxAsync(req types.RequestCheckTx, callback ocabci.CheckTxCallback) {

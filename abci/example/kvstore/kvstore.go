@@ -117,7 +117,7 @@ func (app *Application) DeliverTx(req types.RequestDeliverTx) types.ResponseDeli
 	return types.ResponseDeliverTx{Code: code.CodeTypeOK, Events: events}
 }
 
-func (app *Application) CheckTxSync(req types.RequestCheckTx) types.ResponseCheckTx {
+func (app *Application) CheckTx(req types.RequestCheckTx) types.ResponseCheckTx {
 	return app.checkTx(req)
 }
 

@@ -252,7 +252,7 @@ func (app *CounterApplication) DeliverTx(req abci.RequestDeliverTx) abci.Respons
 	return abci.ResponseDeliverTx{Code: code.CodeTypeOK}
 }
 
-func (app *CounterApplication) CheckTxSync(req abci.RequestCheckTx) abci.ResponseCheckTx {
+func (app *CounterApplication) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 	return app.checkTx(req)
 }
 
