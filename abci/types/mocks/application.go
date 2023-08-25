@@ -56,13 +56,8 @@ func (_m *Application) BeginRecheckTx(_a0 abcitypes.RequestBeginRecheckTx) abcit
 	return r0
 }
 
-// CheckTxAsync provides a mock function with given fields: _a0, _a1
-func (_m *Application) CheckTxAsync(_a0 types.RequestCheckTx, _a1 abcitypes.CheckTxCallback) {
-	_m.Called(_a0, _a1)
-}
-
-// CheckTxSync provides a mock function with given fields: _a0
-func (_m *Application) CheckTxSync(_a0 types.RequestCheckTx) types.ResponseCheckTx {
+// CheckTx provides a mock function with given fields: _a0
+func (_m *Application) CheckTx(_a0 types.RequestCheckTx) types.ResponseCheckTx {
 	ret := _m.Called(_a0)
 
 	var r0 types.ResponseCheckTx
@@ -73,6 +68,11 @@ func (_m *Application) CheckTxSync(_a0 types.RequestCheckTx) types.ResponseCheck
 	}
 
 	return r0
+}
+
+// CheckTxAsync provides a mock function with given fields: _a0, _a1
+func (_m *Application) CheckTxAsync(_a0 types.RequestCheckTx, _a1 abcitypes.CheckTxCallback) {
+	_m.Called(_a0, _a1)
 }
 
 // Commit provides a mock function with given fields:
