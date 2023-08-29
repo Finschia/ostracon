@@ -4,16 +4,17 @@ import (
 	"fmt"
 	"github.com/Finschia/ostracon/libs/log"
 	"net"
+	"strings"
 )
 
 type IpFilter struct {
-	allowAddr string
+	allowList []string
 	log       log.Logger
 }
 
-func NewIpFilter(addr string, l log.Logger) *IpFilter {
+func NewIpFilter(allowAddresses []string, l log.Logger) *IpFilter {
 	return &IpFilter{
-		allowAddr: addr,
+		allowList: allowAddresses,
 		log:       l,
 	}
 }
@@ -26,11 +27,11 @@ func (f *IpFilter) Filter(addr net.Addr) net.Addr {
 }
 
 func (f *IpFilter) String() string {
-	return f.allowAddr
+	return strings.Join(f.allowList, ",")
 }
 
 func (f *IpFilter) isAllowedAddr(addr net.Addr) bool {
-	if len(f.allowAddr) == 0 {
+	if len(f.allowList) == 0 {
 		return false
 	}
 	hostAddr, _, err := net.SplitHostPort(addr.String())
@@ -40,5 +41,10 @@ func (f *IpFilter) isAllowedAddr(addr net.Addr) bool {
 		}
 		return false
 	}
-	return f.allowAddr == hostAddr
+	for _, address := range f.allowList {
+		if address == hostAddr {
+			return true
+		}
+	}
+	return false
 }

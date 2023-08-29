@@ -80,7 +80,7 @@ func TestShowValidatorWithKMS(t *testing.T) {
 	}
 	privval.WithMockKMS(t, dir, chainID, func(addr string, privKey crypto.PrivKey) {
 		config.PrivValidatorListenAddr = addr
-		config.PrivValidatorRemoteAddr = addr[:strings.Index(addr, ":")]
+		config.PrivValidatorRemoteAddresses = []string{addr[:strings.Index(addr, ":")]}
 		require.NoFileExists(t, config.PrivValidatorKeyFile())
 		output, err := captureStdout(func() {
 			err := showValidator(ShowValidatorCmd, nil, config)
