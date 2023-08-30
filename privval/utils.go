@@ -26,7 +26,7 @@ func IsConnTimeout(err error) bool {
 }
 
 // NewSignerListener creates a new SignerListenerEndpoint using the corresponding listen address
-func NewSignerListener(logger log.Logger, listenAddr, remoteAddr string) (*SignerListenerEndpoint, error) {
+func NewSignerListener(logger log.Logger, listenAddr string, remoteAddresses []string) (*SignerListenerEndpoint, error) {
 	var listener net.Listener
 
 	protocol, address := tmnet.ProtocolAndAddress(listenAddr)
@@ -47,7 +47,7 @@ func NewSignerListener(logger log.Logger, listenAddr, remoteAddr string) (*Signe
 		)
 	}
 
-	pve := NewSignerListenerEndpoint(logger.With("module", "privval"), listener, SignerListenerEndpointAllowAddress(protocol, remoteAddr))
+	pve := NewSignerListenerEndpoint(logger.With("module", "privval"), listener, SignerListenerEndpointAllowAddress(protocol, remoteAddresses))
 
 	return pve, nil
 }

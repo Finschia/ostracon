@@ -26,12 +26,11 @@ func SignerListenerEndpointTimeoutReadWrite(timeout time.Duration) SignerListene
 }
 
 // SignerListenerEndpointAllowAddress sets the address to allow
-// connections from the only allowed address
-//
-func SignerListenerEndpointAllowAddress(protocol string, addr string) SignerListenerEndpointOption {
+// connections from the only allowed addresses
+func SignerListenerEndpointAllowAddress(protocol string, allowedAddresses []string) SignerListenerEndpointOption {
 	return func(sl *SignerListenerEndpoint) {
 		if protocol == "tcp" || len(protocol) == 0 {
-			sl.connFilter = internal.NewIpFilter(addr, sl.Logger)
+			sl.connFilter = internal.NewIpFilter(allowedAddresses, sl.Logger)
 			return
 		}
 		sl.connFilter = internal.NewNullObject()

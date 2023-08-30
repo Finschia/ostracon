@@ -216,13 +216,13 @@ func getMockEndpoints(
 }
 
 func TestSignerListenerEndpointAllowAddressSetIpFilterForTCP(t *testing.T) {
-	cut := NewSignerListenerEndpoint(nil, nil, SignerListenerEndpointAllowAddress("tcp", "127.0.0.1"))
+	cut := NewSignerListenerEndpoint(nil, nil, SignerListenerEndpointAllowAddress("tcp", []string{"127.0.0.1"}))
 	_, ok := cut.connFilter.(*internal.IpFilter)
 	assert.True(t, ok)
 }
 
 func TestSignerListenerEndpointAllowAddressSetNullObjectFilterForUDS(t *testing.T) {
-	cut := NewSignerListenerEndpoint(nil, nil, SignerListenerEndpointAllowAddress("unix", "/mnt/uds/sock01"))
+	cut := NewSignerListenerEndpoint(nil, nil, SignerListenerEndpointAllowAddress("unix", []string{"don't care"}))
 	_, ok := cut.connFilter.(*internal.NullObject)
 	assert.True(t, ok)
 }

@@ -170,7 +170,7 @@ func TestNodeSetPrivValTCP(t *testing.T) {
 	if err != nil {
 		return
 	}
-	config.BaseConfig.PrivValidatorRemoteAddr = addrPart
+	config.BaseConfig.PrivValidatorRemoteAddresses = []string{addrPart}
 
 	dialer := privval.DialTCPFn(addr, 100*time.Millisecond, ed25519.GenPrivKey())
 	dialerEndpoint := privval.NewSignerDialerEndpoint(

@@ -245,10 +245,12 @@ type BaseConfig struct { //nolint: maligned
 	// example) tcp://0.0.0.0:26659
 	PrivValidatorListenAddr string `mapstructure:"priv_validator_laddr"`
 
-	// Validator's remote address(without port) to allow a connection
-	// ostracon only allow a connection from this address
-	// example) 10.0.0.7
-	PrivValidatorRemoteAddr string `mapstructure:"priv_validator_raddr"`
+	// Validator's remote addresses to allow a connection
+	// Comma separated list of addresses to allow
+	// ostracon only allows a connection from these addresses separated by a comma
+	// example) 127.0.0.1
+	// example) 127.0.0.1,192.168.1.2
+	PrivValidatorRemoteAddresses []string `mapstructure:"priv_validator_raddrs"`
 
 	// A JSON file containing the private key to use for p2p authenticated encryption
 	NodeKey string `mapstructure:"node_key_file"`

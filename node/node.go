@@ -1524,7 +1524,7 @@ func saveGenesisDoc(db dbm.DB, genDoc *types.GenesisDoc) error {
 }
 
 func CreateAndStartPrivValidatorSocketClient(config *cfg.Config, chainID string, logger log.Logger) (types.PrivValidator, error) {
-	pve, err := privval.NewSignerListener(logger, config.PrivValidatorListenAddr, config.PrivValidatorRemoteAddr)
+	pve, err := privval.NewSignerListener(logger, config.PrivValidatorListenAddr, config.PrivValidatorRemoteAddresses)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start private validator: %w", err)
 	}
