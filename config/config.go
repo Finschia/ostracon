@@ -245,7 +245,7 @@ type BaseConfig struct { //nolint: maligned
 	// example) tcp://0.0.0.0:26659
 	PrivValidatorListenAddr string `mapstructure:"priv_validator_laddr"`
 
-	// Validator's remote address to allow a connection
+	// Validator's remote addresses to allow a connection
 	// Comma separated list of addresses to allow
 	// ostracon only allows a connection from these addresses separated by a comma
 	// example) 127.0.0.1
