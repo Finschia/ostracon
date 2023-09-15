@@ -58,7 +58,7 @@ jobs:
         if: "env.GIT_DIFF != ''"
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
         if: "env.GIT_DIFF != '' && steps.cache.outputs.cache-hit != 'true'"
 
       - name: Get cached Docker layers
