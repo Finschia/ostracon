@@ -44,7 +44,7 @@ require (
 	github.com/Finschia/r2ishiguro_vrf v0.1.2
 	github.com/miekg/dns v1.1.56
 	github.com/oasisprotocol/curve25519-voi v0.0.0-20230110094441-db37f07504ce
-	github.com/rs/zerolog v1.30.0
+	github.com/rs/zerolog v1.31.0
 	github.com/tendermint/go-amino v0.16.0
 	github.com/tendermint/tendermint v0.34.24
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
@@ -201,7 +201,7 @@ require (
 	github.com/maratori/testpackage v1.1.1 // indirect
 	github.com/matoous/godox v0.0.0-20230222163458-006bad1f9d26 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.17 // indirect
+	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/mbilski/exhaustivestruct v1.2.0 // indirect
