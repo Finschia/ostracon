@@ -1,5 +1,7 @@
 package version
 
+// hogehoge
+
 var (
 	// OCCoreSemVer is the current version of Ostracon Core.
 	// It's the Semantic Version of the software.
