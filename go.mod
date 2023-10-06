@@ -61,7 +61,7 @@ require (
 	google.golang.org/grpc v1.58.2
 )
 
-require github.com/vektra/mockery/v2 v2.33.3
+require github.com/vektra/mockery/v2 v2.35.2
 
 require (
 	github.com/informalsystems/tm-load-test v1.3.0
@@ -175,6 +175,7 @@ require (
 	github.com/hashicorp/go-version v1.6.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hexops/gotextdiff v1.0.3 // indirect
+	github.com/huandu/xstrings v1.4.0 // indirect
 	github.com/iancoleman/strcase v0.2.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jdxcode/netrc v0.0.0-20221124155335-4616370d1a84 // indirect
