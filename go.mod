@@ -58,7 +58,7 @@ require (
 	github.com/tendermint/tm-db v0.6.7
 	golang.org/x/crypto v0.13.0
 	golang.org/x/net v0.15.0
-	google.golang.org/grpc v1.58.2
+	google.golang.org/grpc v1.58.3
 )
 
 require github.com/vektra/mockery/v2 v2.35.2
