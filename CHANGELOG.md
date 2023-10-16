@@ -1,5 +1,24 @@
 # Changelog
 
+## v1.1.2
+*Oct 16, 2023*
+
+* Improve KMS features of IP filter and multiple allow IPs
+
+### BREAKING CHANGE
+- Nothing
+
+### FEATURES
+- [kms] [\#692](https://github.com/Finschia/ostracon/pull/692) Add remote IP filter to allow a connection from remote kms
+- [kms] [\#707](https://github.com/Finschia/ostracon/pull/707) Support multiple allowIPs for a remote connection from one of KMS servers
+
+### IMPROVEMENTS
+- [config] [\#705](https://github.com/Finschia/ostracon/pull/705) Add description for generation of priv_validator_key to config.toml
+- [test] [\#732](https://github.com/Finschia/ostracon/pull/732) Remove docker building during e2e test
+
+### BUG FIXES
+- Nothing
+
 ## v1.1.1
 *Jul 27, 2023*
 
