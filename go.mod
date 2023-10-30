@@ -9,7 +9,7 @@ require (
 	github.com/adlio/schema v1.3.4
 	github.com/btcsuite/btcd v0.22.1
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
-	github.com/bufbuild/buf v1.27.1
+	github.com/bufbuild/buf v1.27.2
 	github.com/creachadair/taskgroup v0.6.1
 	github.com/fortytw2/leaktest v1.3.0
 	github.com/go-kit/kit v0.13.0
@@ -193,7 +193,7 @@ require (
 	github.com/kisielk/errcheck v1.6.3 // indirect
 	github.com/kisielk/gotool v1.0.0 // indirect
 	github.com/kkHAIKE/contextcheck v1.1.4 // indirect
-	github.com/klauspost/compress v1.17.1 // indirect
+	github.com/klauspost/compress v1.17.2 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/kulti/thelper v0.6.3 // indirect
 	github.com/kunwardeep/paralleltest v1.0.8 // indirect
