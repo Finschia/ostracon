@@ -12,7 +12,8 @@
 - Nothing
 
 ### IMPROVEMENTS
-- Nothing
+- [github] [\#755](https://github.com/Finschia/ostracon/pull/755) Change codeowner
+- [github] [\#761](https://github.com/Finschia/ostracon/pull/761) Stop dependabot
 
 ### BUG FIXES
 - [codec] [\#762](https://github.com/Finschia/ostracon/pull/762) Modify proto pubkey regisiter name for IBC relayer compatibility
