@@ -1,5 +1,23 @@
 # Changelog
 
+## v1.1.3
+*Mar 4, 2024*
+
+* Modify codec for the compatibility with IBC relayer.
+
+### BREAKING CHANGE
+- Nothing
+
+### FEATURES
+- Nothing
+
+### IMPROVEMENTS
+- [github] [\#755](https://github.com/Finschia/ostracon/pull/755) Change codeowner
+- [github] [\#761](https://github.com/Finschia/ostracon/pull/761) Stop dependabot
+
+### BUG FIXES
+- [codec] [\#762](https://github.com/Finschia/ostracon/pull/762) Modify proto pubkey regisiter name for IBC relayer compatibility
+
 ## v1.1.2
 *Oct 16, 2023*
 
