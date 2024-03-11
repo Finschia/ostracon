@@ -2,9 +2,10 @@ package privval
 
 import (
 	"fmt"
-	"github.com/Finschia/ostracon/privval/internal"
 	"net"
 	"time"
+
+	"github.com/Finschia/ostracon/privval/internal"
 
 	privvalproto "github.com/tendermint/tendermint/proto/tendermint/privval"
 
@@ -29,7 +30,7 @@ func SignerListenerEndpointTimeoutReadWrite(timeout time.Duration) SignerListene
 // connections from the only allowed addresses
 func SignerListenerEndpointAllowAddress(protocol string, allowedAddresses []string) SignerListenerEndpointOption {
 	return func(sl *SignerListenerEndpoint) {
-		if protocol == "tcp" || len(protocol) == 0 {
+		if protocol == "tcp" {
 			sl.connFilter = internal.NewIpFilter(allowedAddresses, sl.Logger)
 			return
 		}
