@@ -16,6 +16,7 @@ import (
 
 	cfg "github.com/Finschia/ostracon/config"
 	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/ed25519"
 	tmrand "github.com/Finschia/ostracon/libs/rand"
 	ctypes "github.com/Finschia/ostracon/rpc/core/types"
 	rpctypes "github.com/Finschia/ostracon/rpc/jsonrpc/types"
@@ -306,7 +307,11 @@ func storeTestBlocks(startHeight, numToMakeBlocks, numToMakeTxs int64, state sm.
 			env.TxIndexer.Index(&abci.TxResult{Height: height, Index: uint32(txIndex), Tx: tx}) // nolint:errcheck
 		}
 		lastCommit := types.NewCommit(lastHeight, round, blockID, commitSigs)
-		block, _ := state.MakeBlock(height, txs, lastCommit, nil, proposer.Address, round, nil)
+		message := state.MakeHashMessage(round)
+		pk := ed25519.GenPrivKeyFromSecret([]byte("test private validator"))
+		privVal := types.NewMockPVWithParams(pk, false, false)
+		proof, _ := privVal.GenerateVRFProof(message)
+		block, _ := state.MakeBlock(height, txs, lastCommit, nil, proposer.Address, round, proof)
 		blockPart := block.MakePartSet(partSize)
 		// Indexing
 		env.BlockIndexer.Index(types.EventDataNewBlockHeader{Header: block.Header}) // nolint:errcheck
