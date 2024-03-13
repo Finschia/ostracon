@@ -5,11 +5,10 @@ import (
 	"net"
 	"time"
 
-	"github.com/Finschia/ostracon/privval/internal"
-
 	privvalproto "github.com/tendermint/tendermint/proto/tendermint/privval"
 
 	"github.com/Finschia/ostracon/libs/log"
+	"github.com/Finschia/ostracon/privval/internal"
 	"github.com/Finschia/ostracon/libs/service"
 	tmsync "github.com/Finschia/ostracon/libs/sync"
 	ocprivvalproto "github.com/Finschia/ostracon/proto/ostracon/privval"
