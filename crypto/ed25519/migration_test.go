@@ -72,6 +72,41 @@ func TestProofToHash(t *testing.T) {
 	}
 }
 
+func TestValidateProof(t *testing.T) {
+	cases := map[string]struct {
+		h     []byte
+		valid bool
+	}{
+		"empty proof": {
+			h:     []byte{},
+			valid: false,
+		},
+		"voi invalid proof": {
+			h:     make([]byte, voivrf.ProofSize),
+			valid: true,
+		},
+		"r2ishiguro proof": {
+			h:     make([]byte, r2vrf.ProofSize),
+			valid: true,
+		},
+		"invalid proof": {
+			h:     make([]byte, 1),
+			valid: false,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			err := ed25519.ValidateProof(tc.h)
+			if !tc.valid {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+}
+
 func TestVersionControl(t *testing.T) {
 	vrf := ed25519.NewVersionedVrfNoProve()
 

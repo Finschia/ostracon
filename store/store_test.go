@@ -19,6 +19,7 @@ import (
 
 	cfg "github.com/Finschia/ostracon/config"
 	"github.com/Finschia/ostracon/crypto"
+	"github.com/Finschia/ostracon/crypto/ed25519"
 	"github.com/Finschia/ostracon/libs/log"
 	tmrand "github.com/Finschia/ostracon/libs/rand"
 	sm "github.com/Finschia/ostracon/state"
@@ -51,8 +52,13 @@ func makeTxs(height int64) (txs []types.Tx) {
 }
 
 func makeBlock(height int64, state sm.State, lastCommit *types.Commit) *types.Block {
+	round := int32(0)
+	message := state.MakeHashMessage(round)
+	pk := ed25519.GenPrivKeyFromSecret([]byte("test private validator"))
+	privVal := types.NewMockPVWithParams(pk, false, false)
+	proof, _ := privVal.GenerateVRFProof(message)
 	block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, nil,
-		state.Validators.SelectProposer(state.LastProofHash, height, 0).Address, 0, nil)
+		state.Validators.SelectProposer(state.LastProofHash, height, round).Address, round, proof)
 	return block
 }
 

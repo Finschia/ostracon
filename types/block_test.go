@@ -137,7 +137,10 @@ func TestBlockValidateBasic(t *testing.T) {
 		i := i
 		t.Run(tc.testName, func(t *testing.T) {
 			block := MakeBlock(h, txs, commit, evList, TestConsensusVersion)
-			block.ProposerAddress = valSet.SelectProposer([]byte{}, block.Height, 0).Address
+			round := int32(0)
+			block.ProposerAddress = valSet.SelectProposer([]byte{}, block.Height, round).Address
+			proof := make([]byte, vrf.ProofSize)
+			block.Entropy.Populate(round, proof)
 			tc.malleateBlock(block)
 			err = block.ValidateBasic()
 			assert.Equal(t, tc.expErr, err != nil, "#%d: %v", i, err)
@@ -812,9 +815,12 @@ func TestBlockIDValidateBasic(t *testing.T) {
 
 func TestBlockProtoBuf(t *testing.T) {
 	h := tmrand.Int63()
+	round := int32(0)
+	proof := make([]byte, vrf.ProofSize)
 	c1 := randCommit(time.Now())
 	b1 := MakeBlock(h, []Tx{Tx([]byte{1})}, &Commit{Signatures: []CommitSig{}}, []Evidence{}, TestConsensusVersion)
 	b1.ProposerAddress = tmrand.Bytes(crypto.AddressSize)
+	b1.Entropy.Populate(round, proof)
 
 	b2 := MakeBlock(h, []Tx{Tx([]byte{1})}, c1, []Evidence{}, TestConsensusVersion)
 	b2.ProposerAddress = tmrand.Bytes(crypto.AddressSize)
@@ -822,9 +828,11 @@ func TestBlockProtoBuf(t *testing.T) {
 	evi := NewMockDuplicateVoteEvidence(h, evidenceTime, "block-test-chain")
 	b2.Evidence = EvidenceData{Evidence: EvidenceList{evi}}
 	b2.EvidenceHash = b2.Evidence.Hash()
+	b2.Entropy.Populate(round, proof)
 
 	b3 := MakeBlock(h, []Tx{}, c1, []Evidence{}, TestConsensusVersion)
 	b3.ProposerAddress = tmrand.Bytes(crypto.AddressSize)
+	b3.Entropy.Populate(round, proof)
 	testCases := []struct {
 		msg      string
 		b1       *Block
@@ -1163,7 +1171,7 @@ func TestEntropyProto(t *testing.T) {
 		expPass bool
 	}{
 		{"success", &vp1, true},
-		{"success empty Entropy", &Entropy{}, true},
+		{"failed empty Entropy", &Entropy{}, false},
 	}
 
 	for _, tt := range tc {
