@@ -834,7 +834,7 @@ func init() {
 	divider.Add(divider, big.NewInt(1))
 }
 
-// dividePoint computes x÷(MaxUint64+1)×y without overflow for uint64. it returns a value in the [0, y) range when x≠0.
+// dividePoint computes and returns the value in the [0, y) range when x≠0.
 // Otherwise returns 0.
 func dividePoint(x uint64, y int64) uint64 {
 	totalBig := big.NewInt(y)
@@ -847,10 +847,10 @@ func dividePoint(x uint64, y int64) uint64 {
 // nextRandom implements SplitMix64 (based on http://xoshiro.di.unimi.it/splitmix64.c)
 //
 // The PRNG used for this random selection:
-//   1. must be deterministic.
-//   2. should easily portable, independent of language or library
-//   3. is not necessary to keep a long period like MT, since there aren't many random numbers to generate and
-//      we expect a certain amount of randomness in the seed.
+//  1. must be deterministic.
+//  2. should easily portable, independent of language or library
+//  3. is not necessary to keep a long period like MT, since there aren't many random numbers to generate and
+//     we expect a certain amount of randomness in the seed.
 //
 // The shift-register type pRNG fits these requirements well, but there are too many variants. So we adopted SplitMix64,
 // which is used in Java's SplittableStream.
