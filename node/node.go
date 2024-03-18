@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	_ "net/http/pprof" // nolint: gosec // securely exposed on separate, optional port
 	"strings"
 	"time"
 
@@ -52,8 +53,6 @@ import (
 	"github.com/Finschia/ostracon/types"
 	tmtime "github.com/Finschia/ostracon/types/time"
 	"github.com/Finschia/ostracon/version"
-
-	_ "net/http/pprof" // nolint: gosec // securely exposed on separate, optional port
 
 	_ "github.com/lib/pq" // provide the psql db driver
 )
@@ -124,7 +123,7 @@ func NewOstraconNode(config *cfg.Config, logger log.Logger) (*Node, error) {
 	}
 
 	var privKey types.PrivValidator
-	if config.PrivValidatorListenAddr == "" {
+	if strings.TrimSpace(config.PrivValidatorListenAddr) == "" {
 		privKey = privval.LoadFilePV(
 			config.PrivValidatorKeyFile(),
 			config.PrivValidatorStateFile())
@@ -792,7 +791,7 @@ func NewNode(config *cfg.Config,
 
 	// If an address is provided, listen on the socket for a connection from an
 	// external signing process.
-	if config.PrivValidatorListenAddr != "" {
+	if strings.TrimSpace(config.PrivValidatorListenAddr) != "" {
 		// FIXME: we should start services inside OnStart
 		privValidator, err = CreateAndStartPrivValidatorSocketClient(config, genDoc.ChainID, logger)
 		if err != nil {

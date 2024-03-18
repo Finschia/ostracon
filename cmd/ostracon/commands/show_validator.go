@@ -2,15 +2,16 @@ package commands
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/Finschia/ostracon/node"
-	"github.com/Finschia/ostracon/types"
 	"github.com/spf13/cobra"
 
 	cfg "github.com/Finschia/ostracon/config"
 	tmjson "github.com/Finschia/ostracon/libs/json"
 	tmos "github.com/Finschia/ostracon/libs/os"
+	"github.com/Finschia/ostracon/node"
 	"github.com/Finschia/ostracon/privval"
+	"github.com/Finschia/ostracon/types"
 )
 
 // ShowValidatorCmd adds capabilities for showing the validator info.
@@ -24,9 +25,9 @@ var ShowValidatorCmd = &cobra.Command{
 	PreRun: deprecateSnakeCase,
 }
 
-func showValidator(cmd *cobra.Command, args []string, config *cfg.Config) error {
+func showValidator(_ *cobra.Command, _ []string, config *cfg.Config) error {
 	var pv types.PrivValidator
-	if config.PrivValidatorListenAddr != "" {
+	if strings.TrimSpace(config.PrivValidatorListenAddr) != "" {
 		chainID, err := loadChainID(config)
 		if err != nil {
 			return err
