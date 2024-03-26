@@ -13,6 +13,8 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 
+	vrf "github.com/oasisprotocol/curve25519-voi/primitives/ed25519/extra/ecvrf"
+
 	"github.com/Finschia/ostracon/crypto"
 	"github.com/Finschia/ostracon/crypto/ed25519"
 	"github.com/Finschia/ostracon/crypto/merkle"
@@ -23,7 +25,6 @@ import (
 	tmsync "github.com/Finschia/ostracon/libs/sync"
 	ocproto "github.com/Finschia/ostracon/proto/ostracon/types"
 	"github.com/Finschia/ostracon/version"
-	vrf "github.com/oasisprotocol/curve25519-voi/primitives/ed25519/extra/ecvrf"
 )
 
 const (
@@ -824,7 +825,11 @@ func CommitToVoteSet(chainID string, commit *Commit, vals *ValidatorSet) *VoteSe
 		if commitSig.Absent() {
 			continue // OK, some precommits can be missing.
 		}
-		added, err := voteSet.AddVote(commit.GetVote(int32(idx)))
+		vote := commit.GetVote(int32(idx))
+		if err := vote.ValidateBasic(); err != nil {
+			panic(fmt.Errorf("failed to validate vote reconstructed from LastCommit: %w", err))
+		}
+		added, err := voteSet.AddVote(vote)
 		if !added || err != nil {
 			panic(fmt.Sprintf("Failed to reconstruct LastCommit: %v", err))
 		}
