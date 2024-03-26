@@ -19,6 +19,8 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 
+	vrf "github.com/oasisprotocol/curve25519-voi/primitives/ed25519/extra/ecvrf"
+
 	"github.com/Finschia/ostracon/crypto"
 	"github.com/Finschia/ostracon/crypto/merkle"
 	"github.com/Finschia/ostracon/crypto/tmhash"
@@ -27,7 +29,6 @@ import (
 	tmrand "github.com/Finschia/ostracon/libs/rand"
 	tmtime "github.com/Finschia/ostracon/types/time"
 	"github.com/Finschia/ostracon/version"
-	vrf "github.com/oasisprotocol/curve25519-voi/primitives/ed25519/extra/ecvrf"
 )
 
 var TestConsensusVersion = tmversion.Consensus{
@@ -715,6 +716,21 @@ func TestCommitToVoteSet(t *testing.T) {
 		assert.Equal(t, vote1bz, vote2bz)
 		assert.Equal(t, vote1bz, vote3bz)
 	}
+}
+
+func TestCommitToVoteSetShouldPanicWhenInvalidVote(t *testing.T) {
+	voteSet, valSet, _ := randVoteSet(1, 1, tmproto.PrecommitType, 10, 1)
+	chainID := voteSet.ChainID()
+	commitWithInvalidVote := &Commit{
+		Height: 1,
+		Signatures: []CommitSig{{
+			BlockIDFlag: BlockIDFlagCommit,
+		}},
+	}
+
+	assert.Panics(t, func() {
+		CommitToVoteSet(chainID, commitWithInvalidVote, valSet)
+	})
 }
 
 func TestCommitToVoteSetWithVotesForNilBlock(t *testing.T) {
