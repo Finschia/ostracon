@@ -1,5 +1,28 @@
 # Changelog
 
+## v1.1.4
+*Jun 10, 2024*
+
+### BREAKING CHANGE
+- Nothing
+
+### FEATURES
+- Nothing
+
+### IMPROVEMENTS
+- Nothing
+
+### BUG FIXES
+* [lib] [\#764](https://github.com/Finschia/ostracon/pull/764) Remove duplicated initialization of rand
+* [privval] [\#766](https://github.com/Finschia/ostracon/pull/766) remove unnecessary condition
+* [vrf] [\#765](https://github.com/Finschia/ostracon/pull/765) add proof size check when the VRF proof is empty
+* [config] [\#767](https://github.com/Finschia/ostracon/pull/767) fix incompatible type of priv_validator_raddrs
+* [types] [\#769](https://github.com/Finschia/ostracon/pull/769) fix inconsistent comment for dividePoint()
+* [cli] [\#768](https://github.com/Finschia/ostracon/pull/768) add string trim for PrivValidatorListenAddr string
+* [types] [\#770](https://github.com/Finschia/ostracon/pull/770) run validateBasic for vote before AddVote
+* [deps] [\#771](https://github.com/Finschia/ostracon/pull/771) bump up x/crypto to v0.24.0 and x/net v0.26.0
+
+
 ## v1.1.3
 *Mar 4, 2024*
 
