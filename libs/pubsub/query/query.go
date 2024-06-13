@@ -39,10 +39,15 @@ type Condition struct {
 // invalid.
 func New(s string) (*Query, error) {
 	p := &QueryParser{Buffer: fmt.Sprintf(`"%s"`, s)}
-	p.Init()
+	err := p.Init()
+	if err != nil {
+		return nil, err
+	}
+
 	if err := p.Parse(); err != nil {
 		return nil, err
 	}
+
 	return &Query{str: s, parser: p}, nil
 }
 
