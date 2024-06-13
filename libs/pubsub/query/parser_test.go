@@ -87,9 +87,9 @@ func TestParser(t *testing.T) {
 
 		{"root.dummy.v1.EventDummy.seq='\"1\"'", true},
 		{"root.dummy.v1.EventDummy.descr='\\\"slash included\\\"'", true},
-		{"root.dummy.v1.EventDummy.desc2='\"single quote \\' included\"'", true},
-		{"root.dummy.v1.EventDummy.desc3='\"single quote ' included\"'", false},
-		{"root.dummy.v1.EventDummy.desc3='{\"object\":\"style\"}'", true},
+		{"root.dummy.v1.EventDummy.descr='\"single quote \\' included\"'", true},
+		{"root.dummy.v1.EventDummy.descr='\"single quote ' included\"'", false},
+		{"root.dummy.v1.EventDummy.descr='{\"object\":\"style\"}'", true},
 	}
 
 	for _, c := range cases {
