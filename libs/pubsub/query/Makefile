@@ -1,6 +1,8 @@
-gen_query_parser:
-	go get -u -v github.com/pointlander/peg
+gen_query_parser: peg
 	peg -inline -switch query.peg
+
+peg:
+	@go install github.com/pointlander/peg@v1.0.1
 
 fuzzy_test:
 	go get -u -v github.com/dvyukov/go-fuzz/go-fuzz

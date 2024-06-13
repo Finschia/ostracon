@@ -84,6 +84,11 @@ func TestParser(t *testing.T) {
 
 		{"hash='136E18F7E4C348B780CF873A0BF43922E5BAFA63'", true},
 		{"hash=136E18F7E4C348B780CF873A0BF43922E5BAFA63", false},
+
+		{"fnsa.dummy.v1.EventDummy.seq='\"1\"'", true},
+		{"fnsa.dummy.v1.EventDummy.descr='\\\"slash included\\\"'", true},
+		{"fnsa.dummy.v1.EventDummy.desc2='\"single quote \\' included\"'", true},
+		{"fnsa.dummy.v1.EventDummy.desc3='\"single quote ' included\"'", false},
 	}
 
 	for _, c := range cases {
