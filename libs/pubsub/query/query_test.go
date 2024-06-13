@@ -150,6 +150,13 @@ func TestMatches(t *testing.T) {
 			false,
 			false,
 		},
+		{
+			"root.dummy.v1.EventDummy.seq = '\"1\"'",
+			map[string][]string{"root.dummy.v1.EventDummy.seq": {"\"1\""}},
+			false,
+			true,
+			false,
+		},
 	}
 
 	for _, tc := range testCases {
