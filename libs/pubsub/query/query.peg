@@ -15,7 +15,7 @@ condition <- tag ' '* (le ' '* (number / time / date)
                       )
 
 tag <- < (![ \t\n\r\\()"'=><] .)+ >
-value <- < '\'' (!["'] .)* '\''>
+value <- < '\'' (('\\' .) / (!['] .))* '\''>
 number <- < ('0'
            / [1-9] digit* ('.' digit*)?) >
 digit <- [0-9]

@@ -39,10 +39,15 @@ type Condition struct {
 // invalid.
 func New(s string) (*Query, error) {
 	p := &QueryParser{Buffer: fmt.Sprintf(`"%s"`, s)}
-	p.Init()
+	err := p.Init()
+	if err != nil {
+		return nil, err
+	}
+
 	if err := p.Parse(); err != nil {
 		return nil, err
 	}
+
 	return &Query{str: s, parser: p}, nil
 }
 
@@ -101,7 +106,7 @@ func (q *Query) Conditions() ([]Condition, error) {
 	buffer, begin, end := q.parser.Buffer, 0, 0
 
 	// tokens must be in the following order: tag ("tx.gas") -> operator ("=") -> operand ("7")
-	for token := range q.parser.Tokens() {
+	for _, token := range q.parser.Tokens() {
 		switch token.pegRule {
 		case rulePegText:
 			begin, end = int(token.begin), int(token.end)
@@ -213,7 +218,7 @@ func (q *Query) Matches(events map[string][]string) (bool, error) {
 	// tokens must be in the following order:
 
 	// tag ("tx.gas") -> operator ("=") -> operand ("7")
-	for token := range q.parser.Tokens() {
+	for _, token := range q.parser.Tokens() {
 		switch token.pegRule {
 		case rulePegText:
 			begin, end = int(token.begin), int(token.end)
