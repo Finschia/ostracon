@@ -1,5 +1,11 @@
 # Changelog
 
+# v1.1.5
+* Jun 18, 2024*
+
+### BUG FIXES
+* [lib] [\#774](https://github.com/Finschia/ostracon/pull/774) Modify PEG rule to support escape chracter
+
 ## v1.1.4
 *Jun 10, 2024*
 
