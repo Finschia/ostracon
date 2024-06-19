@@ -1,13 +1,13 @@
 # We need to build in a Linux environment to support C libraries, e.g. RocksDB.
 # We use Debian instead of Alpine, so that we can use binary database packages
 # instead of spending time compiling them.
-FROM golang:1.20
+FROM golang:1.22
 
 RUN apt-get -qq update -y && apt-get -qq upgrade -y >/dev/null
 RUN apt-get -qq install -y libleveldb-dev make libc-dev libtool >/dev/null
 
 # RocksDB 6.24.2+ is required to build with tm-db 0.6.7 (but RocksDB 7.x is not yet supported).
-# librocksdb-dev installed by apt with golang:1.20 is 7.8.3-2, so we have to build it from the latest 6.x sources.
+# librocksdb-dev installed by apt with golang:1.22 is 7.8.3-2, so we have to build it from the latest 6.x sources.
 ARG ROCKSDB_VERSION=6.29.5
 ARG ROCKSDB_FILE=rocksdb-v${ROCKSDB_VERSION}.tar.gz
 ARG ROCKSDB_DIR=rocksdb-${ROCKSDB_VERSION}

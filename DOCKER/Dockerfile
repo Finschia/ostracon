@@ -1,5 +1,5 @@
 # stage 1 Generate Ostracon Binary
-FROM golang:1.20-alpine as builder
+FROM golang:1.22-alpine as builder
 RUN apk update && \
     apk upgrade && \
     apk add --no-cache git make gcc libc-dev build-base curl jq bash file gmp-dev clang libtool autoconf automake
@@ -8,7 +8,7 @@ WORKDIR /ostracon
 RUN make build-linux
 
 # stage 2
-FROM golang:1.20-alpine
+FROM golang:1.22-alpine
 LABEL maintainer="hello@finschia.org"
 
 # Ostracon will be looking for the genesis file in /ostracon/config/genesis.json
